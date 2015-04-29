@@ -1,101 +1,99 @@
-<div class="bs-sidebar col-sm-3 " data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
-<div id="content-area" class="col-sm-9" role="main">
-    <kc-navigation data-kc-current="general" data-kc-realm="realm.realm" data-kc-social="social"></kc-navigation>
-    <h2></h2>
-    <div id="content">
-        <div data-ng-show="access.viewRealm">
-            <h2><span>{{realm.realm}}</span> Theme Settings <span tooltip-placement="right" tooltip="Change the style for any rendered page." class="fa fa-info-circle"></span></h2>
-            <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
-                <fieldset class="border-top">
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="loginTheme">Login Theme</label>
-                        <div class="col-sm-4">
-                            <div class="select-kc">
-                                <select id="loginTheme"
-                                        ng-model="realm.loginTheme"
-                                        ng-options="o as o for o in serverInfo.themes.login">
-                                    <option value="" disabled selected>Select one...</option>
-                                </select>
-                            </div>
-                        </div>
-                        <span tooltip-placement="right" tooltip="Select theme for login, TOTP, grant, registration, and forgot password pages." class="fa fa-info-circle"></span>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="accountTheme">Account Theme</label>
-                        <div class="col-sm-4">
-                            <div class="select-kc">
-                                <select id="accountTheme"
-                                        ng-model="realm.accountTheme"
-                                        ng-options="o as o for o in serverInfo.themes.account">
-                                    <option value="" disabled selected>Select one...</option>
-                                </select>
-                            </div>
-                        </div>
-                        <span tooltip-placement="right" tooltip="Select theme for user account management pages." class="fa fa-info-circle"></span>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="adminTheme">Admin Console Theme</label>
-                        <div class="col-sm-4">
-                            <div class="select-kc">
-                                <select id="adminTheme"
-                                        ng-model="realm.adminTheme"
-                                        ng-options="o as o for o in serverInfo.themes.admin">
-                                    <option value="" disabled selected>Select one...</option>
-                                </select>
-                            </div>
-                        </div>
-                        <span tooltip-placement="right" tooltip="Select theme for admin console." class="fa fa-info-circle"></span>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="emailTheme">Email Theme</label>
-                        <div class="col-sm-4">
-                            <div class="select-kc">
-                                <select id="emailTheme"
-                                        ng-model="realm.emailTheme"
-                                        ng-options="o as o for o in serverInfo.themes.email">
-                                    <option value="" disabled selected>Select one...</option>
-                                </select>
-                            </div>
-                        </div>
-                        <span tooltip-placement="right" tooltip="Select theme for emails that are sent by the server." class="fa fa-info-circle"></span>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="internationalizationEnabled">Internationalization Enabled</label>
-                        <div class="col-sm-4">
-                            <input ng-model="realm.internationalizationEnabled" name="internationalizationEnabled" id="internationalizationEnabled" onoffswitch />
-                        </div>
-                    </div>
-                    <div class="form-group" data-ng-show="realm.internationalizationEnabled">
-                        <label class="col-sm-2 control-label" for="supportedLocales" class="control-label two-lines">Supported Locales</label>
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <h1><strong>Settings</strong> {{realm.realm|capitalize}}</h1>
 
-                        <div class="col-sm-4">
-                            <input id="supportedLocales" type="text" ui-select2="supportedLocalesOptions" ng-model="realm.supportedLocales" placeholder="Type a locale and enter" ng-required="realm.internationalizationEnabled" ng-disabled="!realm.internationalizationEnabled">
-                        </div>
+    <kc-tabs-realm></kc-tabs-realm>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="loginTheme">Login Theme</label>
+                <div class="col-md-3">
+                    <div>
+                        <select class="form-control" id="loginTheme"
+                                ng-model="realm.loginTheme"
+                                ng-options="o as o for o in serverInfo.themes.login">
+                            <option value="" disabled selected>Select one...</option>
+                        </select>
                     </div>
-                    <div class="form-group" data-ng-show="realm.internationalizationEnabled">
-                        <label class="col-sm-2 control-label" for="defaultLocale">Default Locale</label>
-                        <div class="col-sm-4">
-                            <div class="select-kc">
-                                <select id="defaultLocale"
-                                        ng-model="realm.defaultLocale"
-                                        ng-options="o as o for o in realm.supportedLocales"
-                                        ng-required="realm.internationalizationEnabled"
-                                        ng-disabled="!realm.internationalizationEnabled">
-                                    <option value="" disabled selected>Select one...</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </fieldset>
-                <div class="pull-right form-actions" data-ng-show="access.manageRealm">
-                    <button kc-reset data-ng-show="changed">Clear changes</button>
-                    <button kc-save  data-ng-show="changed">Save</button>
                 </div>
-            </form>
-        </div>
-        <div data-ng-hide="access.viewRealm">
-            <h2 ><span>{{realm.realm}}</span></h2>
-        </div>
+                <kc-tooltip>Select theme for login, TOTP, grant, registration, and forgot password pages.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="accountTheme">Account Theme</label>
+                <div class="col-md-3">
+                    <div>
+                        <select class="form-control" id="accountTheme"
+                                ng-model="realm.accountTheme"
+                                ng-options="o as o for o in serverInfo.themes.account">
+                            <option value="" disabled selected>Select one...</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>Select theme for user account management pages.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="adminTheme">Admin Console Theme</label>
+                <div class="col-md-3">
+                    <div>
+                        <select class="form-control" id="adminTheme"
+                                ng-model="realm.adminTheme"
+                                ng-options="o as o for o in serverInfo.themes.admin">
+                            <option value="" disabled selected>Select one...</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>Select theme for admin console.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="emailTheme">Email Theme</label>
+                <div class="col-md-3">
+                    <div>
+                        <select class="form-control" id="emailTheme"
+                                ng-model="realm.emailTheme"
+                                ng-options="o as o for o in serverInfo.themes.email">
+                            <option value="" disabled selected>Select one...</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>Select theme for emails that are sent by the server.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="internationalizationEnabled">Internationalization Enabled</label>
+                <div class="col-md-3">
+                    <input ng-model="realm.internationalizationEnabled" name="internationalizationEnabled" id="internationalizationEnabled" onoffswitch />
+                </div>
+            </div>
+            <div class="form-group" data-ng-show="realm.internationalizationEnabled">
+                <label class="col-md-2 control-label" for="supportedLocales" class="control-label two-lines">Supported Locales</label>
 
-    </div>
+                <div class="col-md-6">
+                    <input id="supportedLocales" type="text" ui-select2="supportedLocalesOptions" ng-model="realm.supportedLocales" placeholder="Type a locale and enter" ng-required="realm.internationalizationEnabled" ng-disabled="!realm.internationalizationEnabled">
+                </div>
+            </div>
+            <div class="form-group" data-ng-show="realm.internationalizationEnabled">
+                <label class="col-md-2 control-label" for="defaultLocale">Default Locale</label>
+                <div class="col-md-3">
+                    <div>
+                        <select class="form-control" id="defaultLocale"
+                                ng-model="realm.defaultLocale"
+                                ng-options="o as o for o in realm.supportedLocales"
+                                ng-required="realm.internationalizationEnabled"
+                                ng-disabled="!realm.internationalizationEnabled">
+                            <option value="" disabled selected>Select one...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+
+        <div class="form-group" data-ng-show="access.manageRealm">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save  data-ng-show="changed">Save</button>
+                <button kc-reset data-ng-show="changed">Cancel</button>
+            </div>
+        </div>
+    </form>
 </div>
+
+
+<kc-menu></kc-menu>

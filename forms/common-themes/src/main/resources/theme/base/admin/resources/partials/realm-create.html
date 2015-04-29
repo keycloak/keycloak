@@ -1,54 +1,51 @@
-<div class="bs-sidebar col-sm-3 "></div>
-<div id="content-area" class="col-sm-9" role="main">
-    <div id="content">
-        <h2 class="margin-top pull-left">Add Realm</h2>
-        <p class="subtitle margin-top"><span class="required">*</span> Required fields</p>
+<div class="col-md-12">
 
-        <form class="form-horizontal" name="realmForm" novalidate>
-            <fieldset>
-                <legend><span class="text">Import Realm</span></legend>
-                <div class="form-group">
-                    <label for="name" class="col-sm-2 control-label">Upload JSON File </label>
-                    <div class="col-sm-4">
-                        <div class="controls kc-button-input-file" data-ng-show="!files || files.length == 0">
-                            <a href="#" class="btn btn-default"><span class="kc-icon-upload">Icon: Upload</span>Choose a JSON File...</a>
-                            <input id="import-file" type="file" class="transparent" ng-file-select="onFileSelect($files)">
-                        </div>
-                        <span class="kc-uploaded-file" data-ng-show="files.length > 0">
-                            {{files[0].name}}
-                        </span>
+    <h1>Add Realm</h1>
+
+    <form class="form-horizontal" name="realmForm" novalidate>
+        <fieldset>
+            <legend><span class="text">Import Realm</span></legend>
+            <div class="form-group">
+                <label for="import-file" class="col-sm-2 control-label">Import JSON File </label>
+                <div class="col-md-6">
+                    <div class="controls kc-button-input-file" data-ng-show="!files || files.length == 0">
+                        <label for="import-file" class="btn btn-default">Select file <i class="pficon pficon-import"></i></label>
+                        <input id="import-file" type="file" class="hidden" ng-file-select="onFileSelect($files)">
                     </div>
+                    <span class="kc-uploaded-file" data-ng-show="files.length > 0">{{files[0].name}}</span>
                 </div>
-                <div class="pull-right form-actions" data-ng-show="files.length > 0">
-                    <button type="submit" data-ng-click="clearFileSelect()" class="btn btn-lg btn-default">Cancel</button>
-                    <button type="submit" data-ng-click="uploadFile()" class="btn btn-lg btn-primary">Upload</button>
+            </div>
+            <div class="form-group" data-ng-show="files.length > 0">
+                <div class="col-md-10 col-md-offset-2">
+                    <button type="submit" data-ng-click="uploadFile()" class="btn btn-primary">Upload</button>
+                    <button type="submit" data-ng-click="clearFileSelect()" class="btn btn-default">Cancel</button>
                 </div>
-            </fieldset>
-        </form>
+            </div>
+        </fieldset>
+    </form>
 
-        <form class="form-horizontal" name="realmForm" novalidate>
-            <fieldset>
-                <legend><span class="text">Create Realm</span></legend>
-                <div class="form-group">
-                    <label for="name" class="col-sm-2 control-label">Name <span class="required">*</span></label>
+    <form class="form-horizontal" name="realmForm" novalidate>
+        <fieldset>
+            <legend><span class="text">Create Realm</span></legend>
+            <div class="form-group">
+                <label for="name" class="col-sm-2 control-label">Name <span class="required">*</span></label>
 
-                    <div class="col-sm-4">
-                        <input class="form-control" type="text" id="name" name="name" data-ng-model="realm.realm" autofocusrequired>
-                    </div>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" id="name" name="name" data-ng-model="realm.realm" autofocusrequired>
                 </div>
-                <div class="form-group">
-                    <label for="enabled" class="col-sm-2 control-label">Enabled</label>
-                    <div class="col-sm-4">
-                        <input ng-model="realm.enabled" name="enabled" id="enabled" onoffswitch />
-                    </div>
+            </div>
+            <div class="form-group">
+                <label for="enabled" class="col-sm-2 control-label">Enabled</label>
+                <div class="col-md-6">
+                    <input ng-model="realm.enabled" name="enabled" id="enabled" onoffswitch />
                 </div>
-            </fieldset>
+            </div>
+        </fieldset>
 
-            <div class="pull-right form-actions">
-                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2">
                 <button kc-save data-ng-show="changed">Save</button>
             </div>
-
-        </form>
-    </div>
+        </div>
+    </form>
 </div>

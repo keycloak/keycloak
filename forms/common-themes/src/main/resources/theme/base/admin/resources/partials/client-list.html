@@ -1,47 +1,50 @@
-<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
-<div id="content-area" class="col-md-9" role="main">
-    <h2></h2>
-    <div id="content">
-        <h2><span>{{realm.realm}}</span> Clients  <span tooltip-placement="right" tooltip="Clients are trusted browser apps and web services in a realm.  These clients can request a login. You can also define client specific roles." class="fa fa-info-circle"></span></h2>
-        <table class="table table-striped table-bordered">
-            <thead>
-            <tr>
-                <th class="kc-table-actions" colspan="3">
-                    <div class="search-comp clearfix">
-                        <input type="text" placeholder="Search..." class="form-control search" data-ng-model="search.clientId"
-                               onkeyup="if(event.keyCode == 13){$(this).next('button').click();}">
-                        <button type="submit" class="kc-icon-search" tooltip-placement="right"
-                                tooltip="Search by client clientId.">
-                            Icon: search
-                        </button>
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <h1>
+        <span><strong>Clients</strong> {{realm.realm|capitalize}}</span>
+        <kc-tooltip>Clients are trusted browser apps and web services in a realm.  These clients can request a login. You can also define client specific roles.</kc-tooltip>
+    </h1>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+        <tr>
+            <th class="kc-table-actions" colspan="3">
+                <div class="form-inline">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input type="text" placeholder="Search..." data-ng-model="search.clientId" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                            <div class="input-group-addon">
+                                <i class="fa fa-search" type="submit"></i>
+                            </div>
+                        </div>
                     </div>
-                    <div class="pull-right">
+
+                    <div class="pull-right" data-ng-show="access.manageRealm">
                         <a class="btn btn-primary" href="#/import/client/{{realm.realm}}" data-ng-show="importButton">Import</a>
                         <a class="btn btn-primary" href="#/create/client/{{realm.realm}}">Create</a>
                     </div>
-                </th>
-            </tr>
-            <tr data-ng-hide="clients.length == 0">
-                <th>Client ID</th>
-                <th>Enabled</th>
-                <th>Base URL</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr ng-repeat="client in clients | filter:search">
-                <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></td>
-                <td>{{client.enabled}}</td>
-                <td ng-class="{'text-muted': !client.baseUrl}">
-                    <a href="{{client.baseUrl}}" data-ng-show="client.baseUrl">{{client.baseUrl}}</a>
-                    <span data-ng-hide="client.baseUrl">Not defined</span>
-            </tr>
-            <tr data-ng-show="clients.length == 0">
-                <td>No clients available</td>
-            </tr>
-            </tbody>
-        </table>
-        <div class="feedback warning inline" data-ng-show="search && clients.length == 0">
-            <p><strong>Your search returned no results.</strong><br>Try modifying the query and try again.</p>
-        </div>
-    </div>
+                </div>
+            </th>
+        </tr>
+        <tr data-ng-hide="clients.length == 0">
+            <th>Client ID</th>
+            <th>Enabled</th>
+            <th>Base URL</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="client in clients | filter:search">
+            <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></td>
+            <td>{{client.enabled}}</td>
+            <td ng-class="{'text-muted': !client.baseUrl}">
+                <a href="{{client.baseUrl}}" data-ng-show="client.baseUrl">{{client.baseUrl}}</a>
+                <span data-ng-hide="client.baseUrl">Not defined</span>
+        </tr>
+        <tr data-ng-show="(clients | filter:search).length == 0">
+            <td class="text-muted" colspan="3" data-ng-show="search.clientId">No results</td>
+            <td class="text-muted" colspan="3" data-ng-hide="search.clientId">No clients available</td>
+        </tr>
+        </tbody>
+    </table>
 </div>
+
+<kc-menu></kc-menu>

@@ -1,36 +1,31 @@
-<div class="bs-sidebar col-sm-3 " data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
-<div id="content-area" class="col-sm-9" role="main">
-    <kc-navigation data-kc-current="general" data-kc-realm="realm.realm" data-kc-social="social"></kc-navigation>
-    <h2></h2>
-    <div id="content">
-        <div data-ng-show="access.viewRealm">
-            <h2><span>{{realm.realm}}</span> Cache Settings</h2>
-            <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
-                <fieldset class="border-top">
-                     <div class="form-group">
-                        <label class="col-sm-2 control-label" for="realmCacheEnabled">Realm Cache Enabled</label>
-                        <div class="col-sm-4">
-                            <input ng-model="realm.realmCacheEnabled" name="realmCacheEnabled" id="realmCacheEnabled" onoffswitch />
-                        </div>
-                         <span tooltip-placement="right" tooltip="Enable/disable cache for realm, client and role data." class="fa fa-info-circle"></span>
-                     </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="userCacheEnabled">User Cache Enabled</label>
-                        <div class="col-sm-4">
-                            <input ng-model="realm.userCacheEnabled" name="userCacheEnabled" id="userCacheEnabled" onoffswitch />
-                        </div>
-                        <span tooltip-placement="right" tooltip="Enable/disable user and user role mapping cache." class="fa fa-info-circle"></span>
-                    </div>
-                </fieldset>
-                <div class="pull-right form-actions" data-ng-show="access.manageRealm">
-                    <button kc-reset data-ng-show="changed">Clear changes</button>
-                    <button kc-save  data-ng-show="changed">Save</button>
-                </div>
-            </form>
-        </div>
-        <div data-ng-hide="access.viewRealm">
-            <h2 ><span>{{realm.realm}}</span></h2>
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <h1><strong>Settings</strong> {{realm.realm|capitalize}}</h1>
+
+    <kc-tabs-realm></kc-tabs-realm>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="realmCacheEnabled">Realm Cache Enabled</label>
+            <div class="col-md-6">
+                <input ng-model="realm.realmCacheEnabled" name="realmCacheEnabled" id="realmCacheEnabled" onoffswitch />
+            </div>
+             <kc-tooltip>Enable/disable cache for realm, client and role data.</kc-tooltip>
+         </div>
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="userCacheEnabled">User Cache Enabled</label>
+            <div class="col-md-6">
+                <input ng-model="realm.userCacheEnabled" name="userCacheEnabled" id="userCacheEnabled" onoffswitch />
+            </div>
+            <kc-tooltip>Enable/disable user and user role mapping cache.</kc-tooltip>
         </div>
 
-    </div>
+        <div class="form-group" data-ng-show="access.manageRealm">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save  data-ng-show="changed">Save</button>
+                <button kc-reset data-ng-show="changed">Cancel</button>
+            </div>
+        </div>
+    </form>
 </div>
+
+<kc-menu></kc-menu>

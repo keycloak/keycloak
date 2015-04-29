@@ -1,86 +1,78 @@
-<div class="bs-sidebar col-sm-3 " data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
-<div id="content-area" class="col-sm-9" role="main">
-    <kc-navigation-client></kc-navigation-client>
-    <div id="content">
-        <ol class="breadcrumb" data-ng-show="create">
-            <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
-            <li><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{identityProvider.alias}} Provider</a></li>
-            <li><a href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers">Identity Provider Mappers</a></li>
-            <li class="active">Create IdentityProvider Mapper</li>
-        </ol>
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
+        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{identityProvider.alias}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers">Identity Provider Mappers</a></li>
+        <li class="active" data-ng-show="create">Create IdentityProvider Mapper</li>
+        <li class="active" data-ng-hide="create">{{mapper.name}}</li>
+    </ol>
 
-        <ol class="breadcrumb" data-ng-hide="create">
-            <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
-            <li><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{identityProvider.alias}} Provider</a></li>
-            <li><a href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers">Identity Provider Mappers</a></li>
-            <li class="active">{{mapper.name}}</li>
-        </ol>
-        <h2 class="pull-left" data-ng-hide="create">{{mapper.name}} Identity Provider Mapper</h2>
-        <h2 class="pull-left" data-ng-show="create">Create Identity Provider Mapper</h2>
-        <p class="subtitle"><span class="required">*</span> Required fields</p>
-        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+    <h1 data-ng-hide="create"><strong>Identity Provider Mapper</strong> {{mapper.name}}</h1>
+    <h1 data-ng-show="create"><strong>Add Identity Provider Mapper</strong></h1>
 
-            <fieldset>
-                <div class="form-group clearfix" data-ng-show="!create">
-                    <label class="col-sm-2 control-label" for="mapperId">ID </label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="mapperId" type="text" ng-model="mapper.id" readonly>
-                    </div>
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <fieldset>
+            <div class="form-group clearfix" data-ng-show="!create">
+                <label class="col-md-2 control-label" for="mapperId">ID </label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mapperId" type="text" ng-model="mapper.id" readonly>
                 </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="name">Name <span class="required">*</span></label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="name" type="text" ng-model="mapper.name" data-ng-readonly="!create" required>
-                    </div>
-                    <span tooltip-placement="right" tooltip="Name of the mapper." class="fa fa-info-circle"></span>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="name">Name <span class="required">*</span></label>
+                <div class="col-md-6">
+                    <input class="form-control" id="name" type="text" ng-model="mapper.name" data-ng-readonly="!create" required>
                 </div>
-                <div class="form-group" data-ng-show="create">
-                    <label class="col-sm-2 control-label" for="mapperTypeCreate">Mapper Type</label>
-                    <div class="col-sm-6">
-                        <div class="select-kc">
-                            <select id="mapperTypeCreate"
-                                    ng-model="mapperType"
-                                    ng-options="mapperType.name for (mapperKey, mapperType) in mapperTypes">
-                            </select>
-                        </div>
-                    </div>
-                    <span tooltip-placement="right" tooltip="{{mapperType.helpText}}" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix" data-ng-hide="create">
-                    <label class="col-sm-2 control-label" for="mapperType">Mapper Type</label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="mapperType" type="text" ng-model="mapperType.name" data-ng-readonly="true">
-                    </div>
-                    <span tooltip-placement="right" tooltip="{{mapperType.helpText}}" class="fa fa-info-circle"></span>
-                </div>
-                <div data-ng-repeat="option in mapperType.properties" class="form-group">
-                    <label class="col-sm-2 control-label">{{option.label}}</label>
-
-                    <div class="col-sm-4" data-ng-hide="option.type == 'boolean' || option.type == 'List'">
-                        <input class="form-control" type="text" data-ng-model="mapper.config[ option.name ]" >
-                    </div>
-                    <div class="col-sm-4" data-ng-show="option.type == 'boolean'">
-                        <input ng-model="mapper.config[ option.name ]" value="'true'" name="option.name" id="option.name" onoffswitchmodel />
-                    </div>
-                    <div class="col-sm-4" data-ng-show="option.type == 'List'">
-                        <select ng-model="mapper.config[ option.name ]" ng-options="data for data in option.defaultValue">
-                            <option value="" selected> Select one... </option>
+                <kc-tooltip>Name of the mapper.</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="create">
+                <label class="col-md-2 control-label" for="mapperTypeCreate">Mapper Type</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="mapperTypeCreate"
+                                ng-model="mapperType"
+                                ng-options="mapperType.name for (mapperKey, mapperType) in mapperTypes">
                         </select>
                     </div>
-                    <span tooltip-placement="right" tooltip="{{option.helpText}}" class="fa fa-info-circle"></span>
                 </div>
+                <kc-tooltip>{{mapperType.helpText}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-hide="create">
+                <label class="col-md-2 control-label" for="mapperType">Mapper Type</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mapperType" type="text" ng-model="mapperType.name" data-ng-readonly="true">
+                </div>
+                <kc-tooltip>{{mapperType.helpText}}</kc-tooltip>
+            </div>
+            <div data-ng-repeat="option in mapperType.properties" class="form-group">
+                <label class="col-md-2 control-label">{{option.label}}</label>
 
-            </fieldset>
-            <div class="pull-right form-actions" data-ng-show="create && access.manageRealm">
-                <button kc-cancel data-ng-click="cancel()">Cancel</button>
-                <button kc-save>Save</button>
+                <div class="col-sm-4" data-ng-hide="option.type == 'boolean' || option.type == 'List'">
+                    <input class="form-control" type="text" data-ng-model="mapper.config[ option.name ]" >
+                </div>
+                <div class="col-sm-4" data-ng-show="option.type == 'boolean'">
+                    <input ng-model="mapper.config[ option.name ]" value="'true'" name="option.name" id="option.name" onoffswitchmodel />
+                </div>
+                <div class="col-sm-4" data-ng-show="option.type == 'List'">
+                    <select ng-model="mapper.config[ option.name ]" ng-options="data for data in option.defaultValue">
+                        <option value="" selected> Select one... </option>
+                    </select>
+                </div>
+                <kc-tooltip>{{option.helpText}}</kc-tooltip>
             </div>
 
-            <div class="pull-right form-actions" data-ng-show="!create && access.manageRealm">
-                <button kc-reset data-ng-show="changed">Clear changes</button>
-                <button kc-save  data-ng-show="changed">Save</button>
-                <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>
-            </div>
-        </form>
-    </div>
+        </fieldset>
+        <div class="pull-right form-actions" data-ng-show="create && access.manageRealm">
+            <button kc-cancel data-ng-click="cancel()">Cancel</button>
+            <button kc-save>Save</button>
+        </div>
+
+        <div class="pull-right form-actions" data-ng-show="!create && access.manageRealm">
+            <button kc-reset data-ng-show="changed">Clear changes</button>
+            <button kc-save  data-ng-show="changed">Save</button>
+            <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>
+        </div>
+    </form>
 </div>
+
+<kc-menu></kc-menu>

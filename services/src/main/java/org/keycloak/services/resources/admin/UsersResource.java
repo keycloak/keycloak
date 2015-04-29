@@ -76,8 +76,6 @@ public class UsersResource {
     protected RealmModel realm;
 
     private RealmAuth auth;
-
-    private TokenManager tokenManager;
     
     @Context
     protected ClientConnection clientConnection;
@@ -94,7 +92,6 @@ public class UsersResource {
     public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager) {
         this.auth = auth;
         this.realm = realm;
-        this.tokenManager = tokenManager;
 
         auth.init(RealmAuth.Resource.USER);
     }
@@ -357,7 +354,10 @@ public class UsersResource {
 
         ClientModel client = realm.getClientByClientId(clientId);
         boolean revoked = user.revokeConsentForClient(client.getId());
-        if (!revoked) {
+        if (revoked) {
+            // Logout clientSessions for this user and client
+            AuthenticationManager.backchannelUserFromClient(session, realm, user, client, uriInfo, headers);
+        } else {
             throw new NotFoundException("Consent not found for user " + username + " and client " + clientId);
         }
     }

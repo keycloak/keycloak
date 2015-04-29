@@ -1,31 +1,32 @@
-<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
-<div id="content-area" class="col-md-9" role="main">
-    <kc-navigation-client></kc-navigation-client>
-    <div id="content">
-        <ol class="breadcrumb">
-            <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
-            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
-            <li class="active">Revocation</li>
-        </ol>
-        <h2 data-ng-hide="create"><span>{{client.clientId}}</span> Revocation Policies</h2>
-        <form class="form-horizontal" name="credentialForm" novalidate kc-read-only="!access.manageRealm">
-            <fieldset class="border-top">
-                <div class="form-group">
-                    <label class="col-sm-2 control-label" for="notBefore">Not Before</label>
-                    <div class="col-sm-4">
-                        <input ng-disabled="true" class="form-control" type="text" id="notBefore" name="notBefore" data-ng-model="notBefore" autofocus>
-                    </div>
-                    <span tooltip-placement="right" tooltip="Revoke any tokens issued before this date for this client." class="fa fa-info-circle"></span>
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+        <li>{{client.clientId}}</li>
+    </ol>
+
+    <h1><strong>Client</strong> {{client.clientId|capitalize}}</h1>
+
+    <kc-tabs-client></kc-tabs-client>
+
+    <form class="form-horizontal" name="credentialForm" novalidate kc-read-only="!access.manageRealm">
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="notBefore">Not Before</label>
+                <div class="col-md-6">
+                    <input ng-disabled="true" class="form-control" type="text" id="notBefore" name="notBefore" data-ng-model="notBefore" autofocus>
                 </div>
-            </fieldset>
-            <div class="pull-right form-actions" data-ng-show="access.manageClients">
-                <button type="submit" data-ng-click="clear()" class="btn btn-default btn-lg">Clear
-                </button>
-                <button type="submit" data-ng-click="setNotBeforeNow()" class="btn btn-primary btn-lg">Set To Now
-                </button>
-                <button type="submit" data-ng-click="pushRevocation()" class="btn btn-primary btn-lg" tooltip="If admin URL is configured for this client, push this policy to that client." tooltip-placement="bottom">Push
-                </button>
+                <kc-tooltip>Revoke any tokens issued before this date for this client.</kc-tooltip>
             </div>
-        </form>
-    </div>
+        </fieldset>
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageClients">
+                <button type="submit" data-ng-click="clear()" class="btn btn-default">Clear</button>
+                <button type="submit" data-ng-click="setNotBeforeNow()" class="btn btn-default">Set To Now</button>
+                <button type="submit" data-ng-click="pushRevocation()" class="btn btn-primary" tooltip="If admin URL is configured for this client, push this policy to that client." tooltip-placement="bottom">Push</button>
+            </div>
+        </div>
+    </form>
 </div>
+
+<kc-menu></kc-menu>

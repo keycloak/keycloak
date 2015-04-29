@@ -626,7 +626,7 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clien
 
 });
 
-module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload, $http, realm, instance, providerFactory, IdentityProvider, serverInfo, $location, Notifications, Dialog) {
+module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload, $http, $route, realm, instance, providerFactory, IdentityProvider, serverInfo, $location, Notifications, Dialog) {
     console.log('RealmIdentityProviderCtrl');
 
     $scope.realm = angular.copy(realm);
@@ -832,7 +832,6 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     $scope.callbackUrl = $location.absUrl().replace(/\/admin.*/, "/realms/") + realm.realm + "/broker/" ;
 
     $scope.addProvider = function(provider) {
-        console.log('addProvider');
         $location.url("/create/identity-provider/" + realm.realm + "/" + provider.id);
     };
 
@@ -857,22 +856,22 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             IdentityProvider.save({
                 realm: $scope.realm.realm, alias: ''
             }, $scope.identityProvider, function () {
-                $location.url("/realms/" + realm.realm + "/identity-provider-settings");
-                Notifications.success("The " + $scope.identityProvider.name + " provider has been created.");
+                $location.url("/realms/" + realm.realm + "/identity-provider-settings/provider/" + $scope.identityProvider.providerId + "/" + $scope.identityProvider.alias);
+                Notifications.success("The " + $scope.identityProvider.alias + " provider has been created.");
             });
         } else {
             IdentityProvider.update({
                 realm: $scope.realm.realm,
                 id: $scope.identityProvider.internalId
             }, $scope.identityProvider, function () {
-                $location.url("/realms/" + realm.realm + "/identity-provider-settings");
-                Notifications.success("The " + $scope.identityProvider.name + " provider has been update.");
+                $route.reload();
+                Notifications.success("The " + $scope.identityProvider.alias + " provider has been update.");
             });
         }
     };
 
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/identity-provider-settings");
+        $route.reload();
     };
 
 

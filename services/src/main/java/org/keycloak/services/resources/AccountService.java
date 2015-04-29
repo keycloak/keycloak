@@ -517,16 +517,7 @@ public class AccountService {
         user.revokeConsentForClient(client.getId());
 
         // Logout clientSessions for this user and client
-        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-        for (UserSessionModel userSession : userSessions) {
-            List<ClientSessionModel> clientSessions = userSession.getClientSessions();
-            for (ClientSessionModel clientSession : clientSessions) {
-                if (clientSession.getClient().getId().equals(clientId)) {
-                    AuthenticationManager.backchannelLogoutClientSession(session, realm, clientSession, userSession, uriInfo, headers);
-                    TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
-                }
-            }
-        }
+        AuthenticationManager.backchannelUserFromClient(session, realm, user, client, uriInfo, headers);
 
         event.event(EventType.REVOKE_GRANT).client(auth.getClient()).user(auth.getUser()).detail(Details.REVOKED_CLIENT, client.getClientId()).success();
         setReferrerOnPage();
