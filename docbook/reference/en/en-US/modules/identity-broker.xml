@@ -289,7 +289,7 @@
                             <literal>Stored Tokens Readable</literal>
                         </entry>
                         <entry>
-                            Automatically assigns a <literal>broker.READ_TOKEN</literal> role that allows the user
+                            Automatically assigns a <literal>broker.read-token</literal> role that allows the user
                             to access any stored external tokens via the broker service.
                         </entry>
                     </row>
@@ -1151,7 +1151,7 @@ Authorization: Bearer {keycloak_access_token}]]></programlisting>
         </para>
         <para>
             By default, the Keycloak access token issued for the application can't be automatically used for retrieve thirdparty token.
-            A user will have to have the <literal>broker.READ_TOKEN</literal> role.  The client will also have to have that role
+            A user will have to have the <literal>broker.read-token</literal> role.  The client will also have to have that role
             in its scope.  In the broker configuration page you can automatically assign this role to newly imported users by
             turning on the <literal>Stored Tokens Readable</literal> switch.
         </para>

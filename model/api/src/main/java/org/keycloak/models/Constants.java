@@ -13,6 +13,6 @@ public interface Constants {
 
     String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
     String INSTALLED_APP_URL = "http://localhost";
-    String READ_TOKEN_ROLE = "READ_TOKEN";
+    String READ_TOKEN_ROLE = "read-token";
     String[] BROKER_SERVICE_ROLES = {READ_TOKEN_ROLE};
 }
