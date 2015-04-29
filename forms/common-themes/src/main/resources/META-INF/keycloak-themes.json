@@ -3,10 +3,7 @@
         "name" : "base",
         "types": [ "admin", "account", "login" ]
     }, {
-        "name" : "patternfly",
-        "types": [ "admin", "account", "login" ]
-    }, {
         "name" : "keycloak",
-        "types": [ "account", "login", "common", "email", "welcome" ]
+        "types": [ "admin", "account", "login", "common", "email", "welcome" ]
     }]
 }
