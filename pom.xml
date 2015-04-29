@@ -464,6 +464,12 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-subsystem-test-framework</artifactId>
+                <version>${wildfly.core.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-core-feature-pack</artifactId>
                 <type>pom</type>
                 <version>${wildfly.core.version}</version>

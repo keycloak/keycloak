@@ -62,22 +62,6 @@
             <artifactId>wildfly-server</artifactId>
             <scope>provided</scope>
         </dependency>
-        <!--<dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-version</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-ee</artifactId>
-            <scope>provided</scope>
-        </dependency> -->
-        <dependency>
-            <groupId>org.jboss.metadata</groupId>
-            <artifactId>jboss-metadata-common</artifactId>
-            <version>8.1.2.Final</version>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-web-common</artifactId>
@@ -106,7 +90,6 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-subsystem-test-framework</artifactId>
             <scope>test</scope>
-            <version>1.0.0.Beta3</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
