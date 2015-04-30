@@ -69,7 +69,7 @@
 
     "connectionsHttpClient": {
         "default": {
-
+            "disableTrustManager": true
         }
     },
 

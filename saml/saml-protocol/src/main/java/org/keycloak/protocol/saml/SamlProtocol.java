@@ -471,6 +471,11 @@ public class SamlProtocol implements LoginProtocol {
     public Response finishLogout(UserSessionModel userSession) {
         logger.debug("finishLogout");
         String logoutBindingUri = userSession.getNote(SAML_LOGOUT_BINDING_URI);
+        if (logoutBindingUri == null) {
+            logger.error("Can't finish SAML logout as there is no logout binding set");
+            return ErrorPage.error(session, Messages.FAILED_LOGOUT);
+
+        }
         String logoutRelayState = userSession.getNote(SAML_LOGOUT_RELAY_STATE);
         SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
         builder.logoutRequestID(userSession.getNote(SAML_LOGOUT_REQUEST_ID));

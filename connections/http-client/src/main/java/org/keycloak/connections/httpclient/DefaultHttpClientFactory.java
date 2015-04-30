@@ -92,7 +92,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
         long connectionTTL = config.getLong("connectionTTLMillis", -1L);
         int maxPooledPerRoute = config.getInt("maxPooledPerRoute", 0);
         int connectionPoolSize = config.getInt("connectionPoolSize", 200);
-        boolean disableTrustManager = config.getBoolean("disableTrustManager", true);
+        boolean disableTrustManager = config.getBoolean("disableTrustManager", false);
         boolean disableCookies = config.getBoolean("disableCookies", true);
         String hostnameVerificationPolicy = config.get("hostnameVerificationPolicy", "WILDCARD");
         HttpClientBuilder.HostnameVerificationPolicy hostnamePolicy = HttpClientBuilder.HostnameVerificationPolicy.valueOf(hostnameVerificationPolicy);
