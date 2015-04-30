@@ -16,7 +16,6 @@
         AccessTokenResponse tokenResponse = ProductDatabaseClient.getTokenResponse(request);
         if (tokenResponse.getIdToken() != null) {
             IDToken idToken = ServletOAuthClient.extractIdToken(tokenResponse.getIdToken());
-            out.println("<p><i>Change client claims in admin console to view personal info of user</i></p>");
             if (idToken.getPreferredUsername() != null) {
                 out.println("<p>Username: " + idToken.getPreferredUsername() + "</p>");
             }
