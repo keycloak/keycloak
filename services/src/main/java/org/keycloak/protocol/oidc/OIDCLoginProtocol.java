@@ -22,7 +22,6 @@
 package org.keycloak.protocol.oidc;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
@@ -166,14 +165,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public void backchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession) {
         if (!(clientSession.getClient() instanceof ClientModel)) return;
         ClientModel app = clientSession.getClient();
-        // TODO: Probably non-effective to build executor every time from scratch. Should be likely shared for whole OIDCLoginProtocolFactory
-        ApacheHttpClient4Executor executor = ResourceAdminManager.createExecutor();
-
-        try {
-            new ResourceAdminManager().logoutClientSession(uriInfo.getRequestUri(), realm, app, clientSession, executor);
-        } finally {
-            executor.getHttpClient().getConnectionManager().shutdown();
-        }
+        new ResourceAdminManager(session).logoutClientSession(uriInfo.getRequestUri(), realm, app, clientSession);
     }
 
     @Override

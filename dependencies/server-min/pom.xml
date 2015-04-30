@@ -135,6 +135,11 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-export-import-single-file</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-connections-http-client</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

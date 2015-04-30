@@ -1,13 +1,13 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -16,7 +16,6 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.social.SocialIdentityProvider;
 
@@ -93,16 +92,18 @@ public class IdentityProvidersResource {
 
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
-        ApacheHttpClient4Executor executor = ResourceAdminManager.createExecutor();
-        InputStream inputStream = null;
+        InputStream inputStream = session.getProvider(HttpClientProvider.class).get(from);
         try {
-            inputStream = executor.createRequest(from).getTarget(InputStream.class);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
+            Map<String, String> config;
+            config = providerFactory.parseConfig(inputStream);
+            return config;
+        } finally {
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+            }
         }
-        IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
-        Map<String, String> config = providerFactory.parseConfig(inputStream);
-        return config;
     }
 
     @GET

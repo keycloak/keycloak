@@ -359,7 +359,7 @@ public class AdapterTestStrategy extends ExternalResource {
         realm = session.realms().getRealmByName("demo");
         // need to cleanup so other tests don't fail, so invalidate http sessions on remote clients.
         UserModel user = session.users().getUserByUsername("bburke@redhat.com", realm);
-        new ResourceAdminManager().logoutUser(null, realm, user, session);
+        new ResourceAdminManager(session).logoutUser(null, realm, user, session);
         realm.setSsoSessionIdleTimeout(originalIdle);
         session.getTransaction().commit();
         session.close();

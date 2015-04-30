@@ -63,6 +63,12 @@
         "interval": 900
     },
 
+    "connectionsHttpClient": {
+        "default": {
+            "disable-trust-manager": true
+        }
+    },
+
     "connectionsJpa": {
         "default": {
             "dataSource": "java:jboss/datasources/KeycloakDS",

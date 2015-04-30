@@ -1,4 +1,4 @@
-package org.keycloak.adapters;
+package org.keycloak.util;
 
 import org.keycloak.constants.GenericConstants;
 

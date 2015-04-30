@@ -14,6 +14,7 @@
         <module name="org.keycloak.keycloak-broker-saml" services="import"/>
         <module name="org.keycloak.keycloak-connections-infinispan" services="import"/>
         <module name="org.keycloak.keycloak-connections-jpa" services="import"/>
+        <module name="org.keycloak.keycloak-connections-http-client" services="import"/>
         <module name="org.keycloak.keycloak-connections-jpa-liquibase" services="import"/>
         <module name="org.keycloak.keycloak-connections-mongo" services="import"/>
         <module name="org.keycloak.keycloak-connections-mongo-update" services="import"/>
