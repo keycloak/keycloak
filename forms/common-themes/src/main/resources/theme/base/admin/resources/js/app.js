@@ -1571,8 +1571,9 @@ module.directive('kcTooltip', function($compile) {
             terminal: true,
             priority: 1000,
             link: function link(scope,element, attrs) {
-                var tooltip = element[0].innerText;
-                element[0].innerText = null;
+                var angularElement = angular.element(element[0]);
+                var tooltip = angularElement.text();
+                angularElement.text('');
                 element.addClass('hidden');
 
                 var label = angular.element(element.parent().children()[0]);
