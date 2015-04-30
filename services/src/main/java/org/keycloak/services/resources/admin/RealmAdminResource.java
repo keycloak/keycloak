@@ -254,7 +254,7 @@ public class RealmAdminResource {
     @POST
     public GlobalRequestResult pushRevocation() {
         auth.requireManage();
-        return new ResourceAdminManager().pushRealmRevocationPolicy(uriInfo.getRequestUri(), realm);
+        return new ResourceAdminManager(session).pushRealmRevocationPolicy(uriInfo.getRequestUri(), realm);
     }
 
     /**
@@ -266,7 +266,7 @@ public class RealmAdminResource {
     @POST
     public GlobalRequestResult logoutAll() {
         session.sessions().removeUserSessions(realm);
-        return new ResourceAdminManager().logoutAll(uriInfo.getRequestUri(), realm);
+        return new ResourceAdminManager(session).logoutAll(uriInfo.getRequestUri(), realm);
     }
 
     /**
@@ -364,7 +364,6 @@ public class RealmAdminResource {
      * Query events.  Returns all events, or will query based on URL query parameters listed here
      *
      * @param client app or oauth client name
-     * @param types type type
      * @param user user id
      * @param ipAddress
      * @param firstResult

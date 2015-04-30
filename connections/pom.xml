@@ -19,6 +19,7 @@
         <module>mongo</module>
         <module>file</module>
         <module>mongo-update</module>
+        <module>http-client</module>
     </modules>
 
     <build>

@@ -289,7 +289,7 @@ public class ClientResource {
     @POST
     public GlobalRequestResult pushRevocation() {
         auth.requireManage();
-        return new ResourceAdminManager().pushClientRevocationPolicy(uriInfo.getRequestUri(), realm, client);
+        return new ResourceAdminManager(session).pushClientRevocationPolicy(uriInfo.getRequestUri(), realm, client);
     }
 
     /**
@@ -341,7 +341,7 @@ public class ClientResource {
     @POST
     public GlobalRequestResult logoutAll() {
         auth.requireManage();
-        return new ResourceAdminManager().logoutClient(uriInfo.getRequestUri(), realm, client);
+        return new ResourceAdminManager(session).logoutClient(uriInfo.getRequestUri(), realm, client);
     }
 
     /**
@@ -356,7 +356,7 @@ public class ClientResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        new ResourceAdminManager().logoutUserFromClient(uriInfo.getRequestUri(), realm, client, user, session);
+        new ResourceAdminManager(session).logoutUserFromClient(uriInfo.getRequestUri(), realm, client, user);
     }
 
     /**
@@ -410,7 +410,7 @@ public class ClientResource {
         auth.requireManage();
         logger.debug("Test availability of cluster nodes");
 
-        return new ResourceAdminManager().testNodesAvailability(uriInfo.getRequestUri(), realm, client);
+        return new ResourceAdminManager(session).testNodesAvailability(uriInfo.getRequestUri(), realm, client);
     }
 
 }

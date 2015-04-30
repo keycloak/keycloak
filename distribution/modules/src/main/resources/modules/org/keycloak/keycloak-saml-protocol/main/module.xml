@@ -21,6 +21,7 @@
         <module name="javax.ws.rs.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         <module name="org.jboss.resteasy.resteasy-multipart-provider"/>
+        <module name="org.keycloak.keycloak-connections-http-client" services="import"/>
 
         <module name="javax.api"/>
     </dependencies>

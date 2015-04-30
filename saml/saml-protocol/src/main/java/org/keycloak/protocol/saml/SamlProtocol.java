@@ -1,9 +1,14 @@
 package org.keycloak.protocol.saml;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.client.ClientRequest;
-import org.jboss.resteasy.client.ClientResponse;
-import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
+import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
@@ -37,7 +42,9 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -515,35 +522,38 @@ public class SamlProtocol implements LoginProtocol {
         }
 
 
-        ApacheHttpClient4Executor executor = ResourceAdminManager.createExecutor();
-
-
-        try {
-            ClientRequest request = executor.createRequest(logoutUrl);
-            request.formParameter(GeneralConstants.SAML_REQUEST_KEY, logoutRequestString);
-            request.formParameter("BACK_CHANNEL_LOGOUT", "BACK_CHANNEL_LOGOUT"); // for Picketlink adapter, todo remove this
-            ClientResponse response = null;
+        HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        for (int i = 0; i < 2; i++) { // follow redirects once
             try {
-                response = request.post();
-                response.releaseConnection();
-                // Undertow will redirect root urls not ending in "/" to root url + "/".  Test for this weird behavior
-                if (response.getStatus() == 302  && !logoutUrl.endsWith("/")) {
-                    String redirect = (String)response.getHeaders().getFirst(HttpHeaders.LOCATION);
-                    String withSlash = logoutUrl + "/";
-                    if (withSlash.equals(redirect)) {
-                        request = executor.createRequest(withSlash);
-                        request.formParameter(GeneralConstants.SAML_REQUEST_KEY, logoutRequestString);
-                        request.formParameter("BACK_CHANNEL_LOGOUT", "BACK_CHANNEL_LOGOUT"); // for Picketlink adapter, todo remove this
-                        response = request.post();
-                        response.releaseConnection();
+                List<NameValuePair> formparams = new ArrayList<NameValuePair>();
+                formparams.add(new BasicNameValuePair(GeneralConstants.SAML_REQUEST_KEY, logoutRequestString));
+                formparams.add(new BasicNameValuePair("BACK_CHANNEL_LOGOUT", "BACK_CHANNEL_LOGOUT")); // for Picketlink todo remove this
+                UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
+                HttpPost post = new HttpPost(logoutUrl);
+                post.setEntity(form);
+                HttpResponse response = httpClient.execute(post);
+                try {
+                    int status = response.getStatusLine().getStatusCode();
+                    if (status == 302  && !logoutUrl.endsWith("/")) {
+                        String redirect = response.getFirstHeader(HttpHeaders.LOCATION).getValue();
+                        String withSlash = logoutUrl + "/";
+                        if (withSlash.equals(redirect)) {
+                            logoutUrl = withSlash;
+                            continue;
+                        }
                     }
+                } finally {
+                    HttpEntity entity = response.getEntity();
+                    if (entity != null) {
+                        InputStream is = entity.getContent();
+                        if (is != null) is.close();
+                    }
+
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 logger.warn("failed to send saml logout", e);
             }
-
-        } finally {
-            executor.getHttpClient().getConnectionManager().shutdown();
+            break;
         }
 
     }

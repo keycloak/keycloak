@@ -67,6 +67,13 @@
         "interval": 900
     },
 
+    "connectionsHttpClient": {
+        "default": {
+
+        }
+    },
+
+
     "connectionsJpa": {
         "default": {
             "url": "${keycloak.connectionsJpa.url:jdbc:h2:mem:test}",

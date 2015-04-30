@@ -169,6 +169,10 @@
 
         <!-- server all dependencies -->
 
+        <module-def name="org.keycloak.keycloak-connections-http-client">
+            <maven-resource group="org.keycloak" artifact="keycloak-connections-http-client"/>
+        </module-def>
+
         <module-def name="org.keycloak.keycloak-connections-jpa">
             <maven-resource group="org.keycloak" artifact="keycloak-connections-jpa"/>
         </module-def>
