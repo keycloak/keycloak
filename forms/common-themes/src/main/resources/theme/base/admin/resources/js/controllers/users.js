@@ -384,7 +384,7 @@ module.controller('UserFederationCtrl', function($scope, $location, realm, UserF
 
 });
 
-module.controller('GenericUserFederationCtrl', function($scope, $location, Notifications, Dialog, realm, instance, providerFactory, UserFederationInstances, UserFederationSync) {
+module.controller('GenericUserFederationCtrl', function($scope, $location, Notifications, $route, Dialog, realm, instance, providerFactory, UserFederationInstances, UserFederationSync) {
     console.log('GenericUserFederationCtrl');
 
     $scope.create = !instance.providerName;
@@ -453,9 +453,13 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
     $scope.save = function() {
         $scope.changed = false;
         if ($scope.create) {
-            UserFederationInstances.save({realm: realm.realm}, $scope.instance,  function () {
+            UserFederationInstances.save({realm: realm.realm}, $scope.instance,  function (data, headers) {
                 $scope.changed = false;
-                $location.url("/realms/" + realm.realm + "/user-federation");
+
+                var l = headers().location;
+                var id = l.substring(l.lastIndexOf("/") + 1);
+
+                $location.url("/realms/" + realm.realm + "/user-federation/providers/" + $scope.instance.providerName + "/" + id);
                 Notifications.success("The provider has been created.");
             });
         } else {
@@ -463,11 +467,9 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
                     instance: instance.id
                 },
                 $scope.instance,  function () {
-                    $scope.changed = false;
-                    $location.url("/realms/" + realm.realm + "/user-federation");
+                    $route.reload();
                     Notifications.success("The provider has been updated.");
                 });
-
         }
     };
 

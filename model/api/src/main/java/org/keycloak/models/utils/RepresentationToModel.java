@@ -531,6 +531,7 @@ public class RepresentationToModel {
         if (resourceRep.getBaseUrl() != null) client.setBaseUrl(resourceRep.getBaseUrl());
         if (resourceRep.isBearerOnly() != null) client.setBearerOnly(resourceRep.isBearerOnly());
         if (resourceRep.isConsentRequired() != null) client.setConsentRequired(resourceRep.isConsentRequired());
+        if (resourceRep.isDirectGrantsOnly() != null) client.setDirectGrantsOnly(resourceRep.isDirectGrantsOnly());
         if (resourceRep.isPublicClient() != null) client.setPublicClient(resourceRep.isPublicClient());
         if (resourceRep.isFrontchannelLogout() != null) client.setFrontchannelLogout(resourceRep.isFrontchannelLogout());
         if (resourceRep.getProtocol() != null) client.setProtocol(resourceRep.getProtocol());
@@ -619,6 +620,7 @@ public class RepresentationToModel {
         if (rep.isEnabled() != null) resource.setEnabled(rep.isEnabled());
         if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
         if (rep.isConsentRequired() != null) resource.setConsentRequired(rep.isConsentRequired());
+        if (rep.isDirectGrantsOnly() != null) resource.setDirectGrantsOnly(rep.isDirectGrantsOnly());
         if (rep.isPublicClient() != null) resource.setPublicClient(rep.isPublicClient());
         if (rep.isFullScopeAllowed() != null) resource.setFullScopeAllowed(rep.isFullScopeAllowed());
         if (rep.isFrontchannelLogout() != null) resource.setFrontchannelLogout(rep.isFrontchannelLogout());

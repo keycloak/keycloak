@@ -59,6 +59,7 @@ import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -217,7 +218,20 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
 
-        return ModelToRepresentation.toRepresentation(user);
+        UserRepresentation rep = ModelToRepresentation.toRepresentation(user);
+
+        if (realm.isIdentityFederationEnabled()) {
+            Set<FederatedIdentityModel> identities = session.users().getFederatedIdentities(user, realm);
+            if (!identities.isEmpty()) {
+                List<FederatedIdentityRepresentation> reps = new LinkedList<>();
+                for (FederatedIdentityModel m : identities) {
+                    reps.add(ModelToRepresentation.toRepresentation(m));
+                }
+                rep.setFederatedIdentities(reps);
+            }
+        }
+
+        return rep;
     }
 
     /**

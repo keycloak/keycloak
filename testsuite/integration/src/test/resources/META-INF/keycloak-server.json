@@ -43,7 +43,7 @@
 
     "theme": {
         "default": "keycloak",
-        "staticMaxAge": 2592000,
+        "staticMaxAge": "${keycloak.theme.staticMaxAge:2592000}",
         "cacheTemplates": "${keycloak.theme.cacheTemplates:true}",
         "cacheThemes": "${keycloak.theme.cacheThemes:true}",
         "folder": {
