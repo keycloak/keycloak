@@ -80,6 +80,24 @@
     <section>
         <title>Version specific migration</title>
         <section>
+            <title>Migrating from 1.2.0.Beta1 to 1.2.0.RC1</title>
+            <simplesect>
+                <title>Database changed</title>
+                <para>
+                    This release contains again a number of changes to the database. The biggest one is Application and OAuth client merge.
+                    Remember to backup your database prior to upgrading.
+                </para>
+            </simplesect>
+            <simplesect>
+                <title>Application and OAuth client merge</title>
+                <para>
+                    Application and OAuth clients are now merged into <literal>Clients</literal>. The UI of admin console is updated and database as well.
+                    Your data from database should be automatically updated. The previously set Applications will be converted into Clients with <literal>Consent required</literal>
+                    switch off and OAuth Clients will be converted into Clients with this switch on.
+                </para>
+            </simplesect>
+        </section>
+        <section>
             <title>Migrating from 1.1.0.Final to 1.2.0.Beta1</title>
             <simplesect>
                 <title>Database changed</title>
