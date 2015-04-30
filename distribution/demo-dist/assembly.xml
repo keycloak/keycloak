@@ -8,27 +8,39 @@
 
     <includeBaseDirectory>true</includeBaseDirectory>
 
-    <dependencySets>
-        <dependencySet>
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>
+            <outputDirectory>keycloak</outputDirectory>
+            <excludes>
+                <exclude>**/*.sh</exclude>
+                <exclude>standalone/configuration/standalone.xml</exclude>
+                <exclude>standalone/configuration/standalone-keycloak.xml</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>
+            <outputDirectory>keycloak</outputDirectory>
             <includes>
-                <include>org.keycloak:keycloak-server-dist:zip</include>
+                <include>**/*.sh</include>
             </includes>
-            <outputDirectory></outputDirectory>
-            <unpack>true</unpack>
-        </dependencySet>
-        <dependencySet>
-            <includes>
-                <include>org.keycloak:keycloak-examples-dist:zip</include>
-            </includes>
-            <outputDirectory></outputDirectory>
-            <unpack>true</unpack>
-        </dependencySet>
-        <dependencySet>
-            <includes>
-                <include>org.keycloak:keycloak-docs-dist:zip</include>
-            </includes>
-            <outputDirectory></outputDirectory>
-            <unpack>true</unpack>
-        </dependencySet>
-    </dependencySets>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-docs-${project.version}</directory>
+            <outputDirectory>docs</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-examples-${project.version}</directory>
+            <outputDirectory>examples</outputDirectory>
+        </fileSet>
+    </fileSets>
+
+    <files>
+        <file>
+            <source>${project.build.directory}/unpacked/wildfly-${wildfly.version}/standalone/configuration/standalone-keycloak.xml</source>
+            <outputDirectory>keycloak/standalone/configuration</outputDirectory>
+            <destName>standalone.xml</destName>
+        </file>
+    </files>
 </assembly>
