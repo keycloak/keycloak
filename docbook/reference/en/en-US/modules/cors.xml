@@ -8,11 +8,11 @@
         against XSS and other Javascript-based attacks.  Keycloak has support for validated CORS requests.
     </para>
     <para>
-        Keycloak's CORS support is configured per application and oauth client.  You specify the allowed origins
-        in the application's or oauth client's configuration page in the admin console.  You can add as many you want.  The value
+        Keycloak's CORS support is configured per client.  You specify the allowed origins
+        in the client's configuration page in the admin console.  You can add as many you want.  The value
         must be what the browser would send as a value in the <literal>Origin</literal> header.  For example <literal>http://example.com</literal>
         is what you must specify to allow CORS requests from <literal>example.com</literal>.  When an access token is
-        created for the application or OAuth client, these allowed origins are embedded within the token.  On authenticated
+        created for the client, these allowed origins are embedded within the token.  On authenticated
         CORS requests, your application's Keycloak adapter will handle the CORS protocol and validate the <literal>Origin</literal>
         header against the allowed origins embedded in the token.  If there is no match, then the request is denied.
     </para>

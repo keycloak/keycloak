@@ -1,7 +1,7 @@
 <chapter id="access-types">
-    <title>Application and Client Access Types</title>
+    <title>Client Access Types</title>
     <para>
-        When you create an Application or OAuth Client you may be wondering what the "Access Types" are.
+        When you create a Client in admin console you may be wondering what the "Access Types" are.
     </para>
     <para>
         <variablelist>
@@ -43,8 +43,8 @@
                 <term>direct access only</term>
                 <listitem>
                     <para>
-                        For OAuth clients, you would also see a "Direct Access Only" switch when creating the OAuth Client.
-                        This switch is for oauth clients that only use the  <link linkend='direct-access-grants'>Direct Access Grant</link>
+                        You would also see a "Direct Access Only" switch when creating the Client.
+                        This switch is for clients that only use the  <link linkend='direct-access-grants'>Direct Access Grant</link>
                         protocol to obtain access tokens.
                     </para>
                 </listitem>
