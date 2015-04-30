@@ -144,7 +144,7 @@ public class ClientRepresentation {
         this.consentRequired = consentRequired;
     }
 
-    public Boolean getDirectGrantsOnly() {
+    public Boolean isDirectGrantsOnly() {
         return directGrantsOnly;
     }
 

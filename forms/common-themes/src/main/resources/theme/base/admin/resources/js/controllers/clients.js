@@ -792,7 +792,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, serverInfo
         $scope.client.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;
         $scope.client.attributes['saml_name_id_format'] = $scope.nameIdFormat;
 
-        if ($scope.client.protocol != 'saml' && !$scope.client.bearerOnly && (!$scope.client.redirectUris || $scope.client.redirectUris.length == 0)) {
+        if ($scope.client.protocol != 'saml' && !$scope.client.bearerOnly && !$scope.client.directGrantsOnly && (!$scope.client.redirectUris || $scope.client.redirectUris.length == 0)) {
             Notifications.error("You must specify at least one redirect uri");
         } else {
             if ($scope.create) {

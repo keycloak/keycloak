@@ -158,7 +158,7 @@
                 <kc-tooltip>The name ID format to use for the subject.</kc-tooltip>
             </div>
 
-            <div class="form-group clearfix block" data-ng-show="!client.bearerOnly">
+            <div class="form-group clearfix block" data-ng-hide="client.bearerOnly || client.directGrantsOnly">
                 <label class="col-md-2 control-label" for="newRedirectUri"><span class="required" data-ng-show="protocol != 'saml'">*</span> Valid Redirect URIs</label>
 
                 <div class="col-sm-6">
@@ -204,7 +204,7 @@
                 <kc-tooltip>If configured, this URL will be used for every binding to both the SP's Assertion Consumer and Single Logout Services.  This can be individually overiden for each binding and service in the Fine Grain SAML Endpoint Configuration.</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="!client.bearerOnly && !create && protocol == 'openid-connect'">
-                <label class="col-md-2 control-label" for="newWebOrigin">Web Origin</label>
+                <label class="col-md-2 control-label" for="newWebOrigin">Web Origins</label>
 
                 <div class="col-sm-6">
                     <div class="input-group" ng-repeat="(i, webOrigin) in client.webOrigins track by $index">
