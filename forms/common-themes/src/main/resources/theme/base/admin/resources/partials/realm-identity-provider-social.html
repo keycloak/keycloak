@@ -92,9 +92,12 @@
             </div>
         </fieldset>
 
-        <div class="pull-right form-actions">
-            <button kc-save>Save</button>
-            <button kc-delete data-ng-click="remove()" data-ng-show="!newIdentityProvider">Delete</button>
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save data-ng-show="changed">Save</button>
+                <button kc-cancel data-ng-click="cancel()" data-ng-show="changed">Cancel</button>
+                <button kc-delete data-ng-click="remove()" data-ng-show="!newIdentityProvider">Delete</button>
+            </div>
         </div>
     </form>
 </div>

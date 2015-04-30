@@ -871,7 +871,11 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     };
 
     $scope.cancel = function() {
-        $route.reload();
+        if ($scope.newIdentityProvider) {
+            $location.url("/realms/" + realm.realm + "/identity-provider-settings");
+        } else {
+            $route.reload();
+        }
     };
 
 
