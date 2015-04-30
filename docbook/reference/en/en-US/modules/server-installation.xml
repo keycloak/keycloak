@@ -1,95 +1,130 @@
 <chapter id="server-installation">
     <title>Installation and Configuration of Keycloak Server</title>
 
-    <para>
-        The Keycloak Server has two downloadable distributions.
-    </para>
-    <para>
-        <itemizedlist>
-
-            <listitem>
-                keycloak-&project.version;.zip
-            </listitem>
-
-            <listitem>
-                keycloak-overlay-&project.version;.zip
-            </listitem>
-
-        </itemizedlist>
-
-    </para>
-    <section id="server_install">
-        <title>Server Install</title>
+    <section>
+        <title>Installation</title>
         <para>
-            The
-            <literal>keycloak-&project.version;.zip</literal>
-            is quite large, but contains a complete server (backed by Wildfly)
-            that runs out of the box. The only thing you'll have to enable and configure is SSL. Unzipping it, the
-            directory layout looks
-            something like this:
-        </para>
-
-        <para>
-<programlisting>
-keycloak-&project.version;/
-    bin/
-        standalone.sh
-        standalone.bat
-        standalone/configuration/
-            keycloak-server.json
-            themes/
-    docs/
-</programlisting>
+            Keycloak Server has three downloadable distributions.
         </para>
         <para>
-            The
-            <literal>standalone.sh</literal>
-            or
-            <literal>standalone.bat</literal>
-            script is used to start the server.
-            After executing that, log into the admin console at<ulink
-                url="http://localhost:8080/auth/admin/index.html">
-            http://localhost:8080/auth/admin/index.html</ulink>.
-            Username: <emphasis>admin</emphasis>
-            Password: <emphasis>admin</emphasis>. Keycloak will then prompt you to
-            enter in a new password.
+            <itemizedlist>
+                <listitem>
+                    <literal>keycloak-&project.version;.[zip|tar.gz]</literal> - Standalone server
+                </listitem>
+                <listitem>
+                    <literal>keycloak-overlay-&project.version;.[zip|tar.gz]</literal> - Installer for WildFly or JBoss EAP
+                </listitem>
+                <listitem>
+                    <literal>keycloak-demo-&project.version;.[zip|tar.gz]</literal> - Development bundle including WildFly, Keycloak, examples and documentation
+                </listitem>
+            </itemizedlist>
         </para>
+        <section id="server_install">
+            <title>Install Standalone Server</title>
+            <para>
+                For production and for non-JavaEE developers we recommend using the standalone Keycloak server. All you need to
+                do is to download <literal>keycloak-&project.version;.zip</literal> or  <literal>keycloak-&project.version;.tar.gz</literal>,
+                unpackage and start to have a Keycloak server up and running.
+            </para>
+
+            <para>
+                To install first download either the zip or tar.gz and extract. Then start by running either:
+                <programlisting>keycloak-&project.version;/bin/standalone.sh</programlisting>
+                or:
+                <programlisting>keycloak-&project.version;/bin/standalone.bat</programlisting>
+            </para>
+            <para>
+                Once the server is started log into the admin console at
+                <ulink url="http://localhost:8080/auth/admin/index.html">http://localhost:8080/auth/admin/index.html</ulink>
+                (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
+                enter in a new password.
+            </para>
+        </section>
+
+
+        <section id="overlay_install">
+            <title>Install on existing WildFly 8.2.0.Final</title>
+            <para>
+                Keycloak can be installed into an existing WildFly 8.2.0.Final server. To do this download
+                <literal>keycloak-overlay-&project.version;.zip</literal> or  <literal>keycloak-overlay-&project.version;.tar.gz</literal>.
+                Once downloaded extract into the root directory of your WildFly installation. To start WildFly with Keycloak
+                run:
+                <programlisting>keycloak-&project.version;/bin/standalone.sh --server-config=standalone-keycloak.xml</programlisting>
+                or:
+                <programlisting>keycloak-&project.version;/bin/standalone.bat --server-config=standalone-keycloak.xml</programlisting>
+            </para>
+            <para>
+                Once the server is started log into the admin console at
+                <ulink url="http://localhost:8080/auth/admin/index.html">http://localhost:8080/auth/admin/index.html</ulink>
+                (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
+                enter in a new password.
+            </para>
+            <para>
+                To add Keycloak to other sever configurations (standalone.xml, standalone-ha.xml, etc.) open
+                <literal>standalone/configuration/standalone-keycloak.xml</literal> and the configuration you want to add it
+                to, for example <literal>standalone/configuration/standalone.xml</literal>. From <literal>standalone-keycloak.xml</literal>
+                you need to copy 3 elements:
+                <itemizedlist>
+                    <listitem><literal>&lt;extension module="org.keycloak.keycloak-subsystem"/&gt;</literal></listitem>
+                    <listitem><literal>&lt;datasource jndi-name="java:jboss/datasources/KeycloakDS" ...&gt;</literal></listitem>
+                    <listitem><literal>&lt;subsystem xmlns="urn:jboss:domain:security:1.2" ...&gt;</literal></listitem>
+                </itemizedlist>
+            </para>
+        </section>
+        <section>
+            <title>Install on existing EAP 6.4.0.GA</title>
+            <para>
+                Keycloak can be installed into an existing EAP 6.4.0.GA server. To do this download
+                <literal>keycloak-overlay-&project.version;.zip</literal> or  <literal>keycloak-overlay-&project.version;.tar.gz</literal>.
+                Once downloaded extract into the root directory of your EAP installation.
+            </para>
+            <para>
+                To add Keycloak to the a EAP sever configurations (standalone.xml, standalone-ha.xml, etc.) open
+                <literal>standalone/configuration/standalone-keycloak.xml</literal> and the configuration you want to add it
+                to, for example <literal>standalone/configuration/standalone.xml</literal>. From <literal>standalone-keycloak.xml</literal>
+                you need to copy 3 elements:
+                <itemizedlist>
+                    <listitem><literal>&lt;extension module="org.keycloak.keycloak-subsystem"/&gt;</literal></listitem>
+                    <listitem><literal>&lt;datasource jndi-name="java:jboss/datasources/KeycloakDS" ...&gt;</literal></listitem>
+                    <listitem><literal>&lt;subsystem xmlns="urn:jboss:domain:security:1.2" ...&gt;</literal></listitem>
+                </itemizedlist>
+                <note>
+                    <literal>standalone-keycloak.xml</literal> is aimed at WildFly and won't work with EAP so you need to
+                    copy the required configuration
+                </note>
+            </para>
+            <para>
+                Once the server is started log into the admin console at
+                <ulink url="http://localhost:8080/auth/admin/index.html">http://localhost:8080/auth/admin/index.html</ulink>
+                (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
+                enter in a new password.
+            </para>
+        </section>
+        <section>
+            <title id="demo_install">Install Development Bundle</title>
+            <para>
+                The demo bundle contains everything you need to get started with Keycloak including documentation and examples.
+                To install it first download <literal>keycloak-demo-&project.version;.zip</literal> or
+                <literal>keycloak-demo-&project.version;.tar.gz</literal>. Once downloaded extract it inside
+                <literal>keycloak-demo-&project.version;</literal> you'll find <literal>keycloak</literal> which contains
+                a full WildFly 8.2.0.Final server with Keycloak Server and Adapters included. You'll also find <literal>docs</literal>
+                and <literal>examples</literal> which contains everything you need to get started developing applications that use Keycloak.
+            </para>
+            <para>
+                To start WildFly with Keycloak run:
+                <programlisting>keycloak-&project.version;/bin/standalone.sh</programlisting>
+                or:
+                <programlisting>keycloak-&project.version;/bin/standalone.bat</programlisting>
+            </para>
+            <para>
+                Once the server is started log into the admin console at
+                <ulink url="http://localhost:8080/auth/admin/index.html">http://localhost:8080/auth/admin/index.html</ulink>
+                (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
+                enter in a new password.
+            </para>
+        </section>
     </section>
-    <section id="WAR_distribution_installation">
-        <title>Server Overlay Installation</title>
-        <para>
-            The
-            <literal>keycloak-overlay-&project.version;.zip</literal>
-            contains
-            just the bits you need to install keycloak on an existing WildFly 8.2.0.Final installation.
-        </para>
-        <para>
-            The directory structure of this distro looks like this:
-        </para>
-        <para>
-<programlisting>
-   standalone/
-        configuration/
-            keycloak-server.json
-            themes/
-            providers/
-    modules
-    docs/
-</programlisting>
-        </para>
-        <para>
-            Unzip this archive into the root of your WildFly installation.
-        </para>
-        <para>
-            After booting up the Wildfly distro, you can then make sure it is installed properly
-            by logging into the admin console at<ulink
-                url="http://localhost:8080/auth/admin/index.html">
-            http://localhost:8080/auth/admin/index.html</ulink>.
-            Username: <emphasis>admin</emphasis>
-            Password: <emphasis>admin</emphasis>. Keycloak will then prompt you to
-            enter in a new password.
-        </para>
-    </section>
+
     <section>
         <title id="configure-server">Configuring the Server</title>
         <para>
