@@ -395,6 +395,150 @@ All configuration options are optional. Default value for directory is <literal>
             </para>
         </section>
 
+        <section>
+            <title>Outgoing Server HTTP Requests</title>
+            <para>
+                Keycloak server needs to invoke on remote HTTP endpoints to do things like backchannel logouts and other
+                management functions.  Keycloak maintains a HTTP client connection pool which has various configuration
+                settings you can specify before boot time.  This is configured in the
+                <literal>standalone/configuration/keycloak-server.json</literal>.
+                By default the setting is like this:
+                <programlisting><![CDATA[
+    "connectionsHttpClient": {
+        "default": {
+            "disable-trust-manager": true
+        }
+    },
+]]></programlisting>
+                Possible configuration options are:
+                <variablelist>
+                    <varlistentry>
+                        <term>establish-connection-timeout-millis</term>
+                        <listitem>
+                            <para>
+                                Timeout for establishing a socket connection.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>socket-timeout-millis</term>
+                        <listitem>
+                            <para>
+                                If an outgoing request does not receive data for this amount of time, timeout the connection.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>connection-pool-size</term>
+                        <listitem>
+                            <para>
+                                How many connections can be in the pool.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>max-pooled-per-route</term>
+                        <listitem>
+                            <para>
+                                How many connections can be pooled per host.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>disable-trust-manager</term>
+                        <listitem>
+                            <para>
+                                If true, HTTPS server certificates are not verified.  If you set this to false, you must
+                                configure a truststore.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>disable-cookies</term>
+                        <listitem>
+                            <para>
+                                <literal>true</literal> by default.  When set to true, this will disable any cookie
+                                caching.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>hostname-verification-policy</term>
+                        <listitem>
+                            <para>
+                                <literal>WILDCARD</literal> by default.  For HTTPS requests, this verifies the hostname
+                                of the server's certificate.  <literal>ANY</literal> means that the hostname is not verified.
+                                <literal>WILDCARD</literal> Allows wildcards in subdomain names i.e. *.foo.com.
+                                <literal>STRICT</literal> CN must match hostname exactly.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>truststore</term>
+                        <listitem>
+                            <para>
+                                The value is the file path to a Java keystore file.  If
+                                you prefix the path with <literal>classpath:</literal>, then the truststore will be obtained
+                                from the deployment's classpath instead.
+                                HTTPS
+                                requests need a way to verify the host of the server they are talking to. This is
+                                what the trustore does. The keystore contains one or more trusted
+                                host certificates or certificate authorities.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>truststore-password</term>
+                        <listitem>
+                            <para>
+                                Password for the truststore keystore.
+                                This is
+                                <emphasis>REQUIRED</emphasis>
+                                if
+                                <literal>truststore</literal>
+                                is set.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>client-keystore</term>
+                        <listitem>
+                            <para>
+                                This is the file path to a Java keystore file.
+                                This keystore contains client certificate for two-way SSL.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>client-keystore-password</term>
+                        <listitem>
+                            <para>
+                                Password for the client keystore.
+                                This is
+                                <emphasis>REQUIRED</emphasis>
+                                if
+                                <literal>client-keystore</literal>
+                                is set.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>client-key-password</term>
+                        <listitem>
+                            <para>
+                                <emphasis>Not supported yet, but we will support in future versions.</emphasis>
+                                Password for the client's key.
+                                This is
+                                <emphasis>REQUIRED</emphasis>
+                                if
+                                <literal>client-keystore</literal>
+                                is set.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
+            </para>
+        </section>
         <section id="ssl_modes">
             <title>SSL/HTTPS Requirement/Modes</title>
             <warning>

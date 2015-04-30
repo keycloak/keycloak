@@ -87,25 +87,23 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
     @Override
     public void init(Config.Scope config) {
-        long socketTimeout = config.getLong("socketTimeoutMillis", -1L);
-        long establishConnectionTimeout = config.getLong("establishConnectionTimeoutMillis", -1L);
-        long connectionTTL = config.getLong("connectionTTLMillis", -1L);
-        int maxPooledPerRoute = config.getInt("maxPooledPerRoute", 0);
-        int connectionPoolSize = config.getInt("connectionPoolSize", 200);
-        boolean disableTrustManager = config.getBoolean("disableTrustManager", false);
-        boolean disableCookies = config.getBoolean("disableCookies", true);
-        String hostnameVerificationPolicy = config.get("hostnameVerificationPolicy", "WILDCARD");
+        long socketTimeout = config.getLong("socket-timeout-millis", -1L);
+        long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
+        int maxPooledPerRoute = config.getInt("max-pooled-per-route", 0);
+        int connectionPoolSize = config.getInt("connection-pool-size", 200);
+        boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
+        boolean disableCookies = config.getBoolean("disable-cookies", true);
+        String hostnameVerificationPolicy = config.get("hostname-verification-policy", "WILDCARD");
         HttpClientBuilder.HostnameVerificationPolicy hostnamePolicy = HttpClientBuilder.HostnameVerificationPolicy.valueOf(hostnameVerificationPolicy);
         String truststore = config.get("truststore");
-        String truststorePassword = config.get("truststorePassword");
-        String clientKeystore = config.get("clientKeyStore");
-        String clientKeystorePassword = config.get("clientKeyStorePassword");
-        String clientPrivateKeyPassword = config.get("clientPrivateKeyPassword");
+        String truststorePassword = config.get("truststore-password");
+        String clientKeystore = config.get("client-keystore");
+        String clientKeystorePassword = config.get("client-keystore-password");
+        String clientPrivateKeyPassword = config.get("client-key-password");
 
         HttpClientBuilder builder = new HttpClientBuilder();
         builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
                .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
-               .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
                 .maxPooledPerRoute(maxPooledPerRoute)
                 .connectionPoolSize(connectionPoolSize)
                 .hostnameVerification(hostnamePolicy)
