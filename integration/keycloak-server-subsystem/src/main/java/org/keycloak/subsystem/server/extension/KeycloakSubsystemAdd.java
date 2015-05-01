@@ -18,17 +18,13 @@ package org.keycloak.subsystem.server.extension;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.dmr.ModelNode;
 
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
-import org.jboss.msc.service.ServiceController;
 import org.keycloak.subsystem.server.extension.authserver.KeycloakServerDeploymentProcessor;
-
-import java.util.List;
 
 /**
  * The Keycloak subsystem add update handler.
@@ -39,11 +35,8 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
 
     static final KeycloakSubsystemAdd INSTANCE = new KeycloakSubsystemAdd();
 
-    /*
-     * TODO: Fix deprecated signature when dropping WildFly 8 support
-     */
     @Override
-    protected void performBoottime(final OperationContext context, ModelNode operation, final ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) {
+    protected void performBoottime(final OperationContext context, ModelNode operation, final ModelNode model) {
         context.addStep(new AbstractDeploymentChainStep() {
             @Override
             protected void execute(DeploymentProcessorTarget processorTarget) {

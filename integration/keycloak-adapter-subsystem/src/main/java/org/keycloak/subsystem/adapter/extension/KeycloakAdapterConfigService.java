@@ -19,7 +19,6 @@ package org.keycloak.subsystem.adapter.extension;
 
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.jboss.logging.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
 public final class KeycloakAdapterConfigService {
-    protected Logger log = Logger.getLogger(KeycloakAdapterConfigService.class);
+
     private static final String CREDENTIALS_JSON_NAME = "credentials";
 
     private static final KeycloakAdapterConfigService INSTANCE = new KeycloakAdapterConfigService();
@@ -47,28 +46,8 @@ public final class KeycloakAdapterConfigService {
     // keycloak-secured deployments
     private final Map<String, ModelNode> secureDeployments = new HashMap<String, ModelNode>();
 
-    // key=auth-server deployment name; value=web-context
-    private final Map<String, String> webContexts = new HashMap<String, String>();
-
-
 
     private KeycloakAdapterConfigService() {
-    }
-
-    public void addServerDeployment(String deploymentName, String webContext) {
-        this.webContexts.put(deploymentName, webContext);
-    }
-
-    public String getWebContext(String deploymentName) {
-        return webContexts.get(deploymentName);
-    }
-
-    public void removeServerDeployment(String deploymentName) {
-        this.webContexts.remove(deploymentName);
-    }
-
-    public boolean isWebContextUsed(String webContext) {
-        return webContexts.containsValue(webContext);
     }
 
     public void addRealm(ModelNode operation, ModelNode model) {
@@ -196,9 +175,5 @@ public final class KeycloakAdapterConfigService {
         //log.info("********* CHECK KEYCLOAK DEPLOYMENT: deployments.size()" + deployments.size());
 
         return this.secureDeployments.containsKey(deploymentName);
-    }
-
-    public boolean isKeycloakServerDeployment(String deploymentName) {
-        return this.webContexts.containsKey(deploymentName);
     }
 }

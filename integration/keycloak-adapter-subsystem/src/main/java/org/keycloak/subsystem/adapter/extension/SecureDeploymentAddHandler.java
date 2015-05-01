@@ -21,11 +21,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
-
-import java.util.List;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -53,11 +49,8 @@ public final class SecureDeploymentAddHandler extends AbstractAddStepHandler {
         }
     }
 
-    /*
-     * TODO: Fix deprecated signature when dropping WildFly 8 support
-     */
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.getInstance();
         ckService.addSecureDeployment(operation, context.resolveExpressions(model));
     }

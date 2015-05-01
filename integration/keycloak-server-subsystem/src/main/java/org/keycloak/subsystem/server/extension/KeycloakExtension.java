@@ -70,8 +70,7 @@ public class KeycloakExtension implements Extension {
     @Override
     public void initialize(final ExtensionContext context) {
         KeycloakLogger.ROOT_LOGGER.debug("Activating Keycloak Extension");
-        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, MGMT_API_VERSION.getMajor(),
-            MGMT_API_VERSION.getMinor(), MGMT_API_VERSION.getMicro());
+        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, MGMT_API_VERSION);
 
         ManagementResourceRegistration registration = subsystem.registerSubsystemModel(KEYCLOAK_SUBSYSTEM_RESOURCE);
         registration.registerSubModel(AUTH_SERVER_DEFINITION);

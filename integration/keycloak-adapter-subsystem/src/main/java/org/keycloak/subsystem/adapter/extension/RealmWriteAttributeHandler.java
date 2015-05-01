@@ -23,18 +23,12 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 
-import java.util.List;
-
 /**
  * Update an attribute on a realm.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
 public class RealmWriteAttributeHandler extends AbstractWriteAttributeHandler<KeycloakAdapterConfigService> {
-
-    public RealmWriteAttributeHandler(List<AttributeDefinition> definitions) {
-        this(definitions.toArray(new AttributeDefinition[definitions.size()]));
-    }
 
     public RealmWriteAttributeHandler(AttributeDefinition... definitions) {
         super(definitions);

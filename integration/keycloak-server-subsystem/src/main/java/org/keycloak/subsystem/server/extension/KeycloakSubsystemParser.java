@@ -124,17 +124,4 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             writer.writeEndElement();
         }
     }
-
-    // code taken from org.jboss.as.controller.AttributeMarshaller
-    private void writeCharacters(XMLExtendedStreamWriter writer, String content) throws XMLStreamException {
-        if (content.indexOf('\n') > -1) {
-            // Multiline content. Use the overloaded variant that staxmapper will format
-            writer.writeCharacters(content);
-        } else {
-            // Staxmapper will just output the chars without adding newlines if this is used
-            char[] chars = content.toCharArray();
-            writer.writeCharacters(chars, 0, chars.length);
-        }
-    }
-
 }

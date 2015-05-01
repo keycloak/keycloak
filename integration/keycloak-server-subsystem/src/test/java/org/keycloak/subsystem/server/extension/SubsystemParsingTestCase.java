@@ -16,13 +16,11 @@
  */
 package org.keycloak.subsystem.server.extension;
 
-
 import java.io.IOException;
 
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.dmr.ModelNode;
 import org.junit.Test;
-
 
 /**
  * Tests all management expects for subsystem, parsing, marshaling, model definition and other

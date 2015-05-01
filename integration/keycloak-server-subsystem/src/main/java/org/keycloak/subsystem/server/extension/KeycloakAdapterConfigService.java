@@ -17,8 +17,6 @@
 
 package org.keycloak.subsystem.server.extension;
 
-import org.jboss.dmr.ModelNode;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,9 +35,6 @@ public final class KeycloakAdapterConfigService {
     public static KeycloakAdapterConfigService getInstance() {
         return INSTANCE;
     }
-
-    // keycloak-secured deployments
-    private final Map<String, ModelNode> secureDeployments = new HashMap<String, ModelNode>();
 
     // key=auth-server deployment name; value=web-context
     private final Map<String, String> webContexts = new HashMap<String, String>();

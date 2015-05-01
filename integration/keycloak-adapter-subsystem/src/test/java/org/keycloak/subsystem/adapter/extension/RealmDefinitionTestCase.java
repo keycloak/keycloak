@@ -16,13 +16,10 @@
  */
 package org.keycloak.subsystem.adapter.extension;
 
-
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.subsystem.adapter.extension.SharedAttributeDefinitons;
-
 
 /**
  *

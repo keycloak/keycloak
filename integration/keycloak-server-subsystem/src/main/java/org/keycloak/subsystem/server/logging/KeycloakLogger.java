@@ -36,10 +36,4 @@ public interface KeycloakLogger extends BasicLogger {
      * A logger with a category of the package name.
      */
     KeycloakLogger ROOT_LOGGER = Logger.getMessageLogger(KeycloakLogger.class, "org.jboss.keycloak");
-
-    @LogMessage(level = INFO)
-    @Message(value = "Keycloak subsystem override for deployment %s")
-    void deploymentSecured(String deployment);
-
-
 }
