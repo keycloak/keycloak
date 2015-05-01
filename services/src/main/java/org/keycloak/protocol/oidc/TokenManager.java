@@ -154,7 +154,7 @@ public class TokenManager {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
             }
             refreshToken = jws.readJsonContent(RefreshToken.class);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
         }
         if (refreshToken.isExpired()) {

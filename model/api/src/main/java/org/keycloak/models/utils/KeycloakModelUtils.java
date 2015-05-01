@@ -111,7 +111,9 @@ public final class KeycloakModelUtils {
     public static void generateRealmKeys(RealmModel realm) {
         KeyPair keyPair = null;
         try {
-            keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+            generator.initialize(2048);
+            keyPair = generator.generateKeyPair();
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
@@ -142,7 +144,9 @@ public final class KeycloakModelUtils {
         String subject = client.getClientId();
         KeyPair keyPair = null;
         try {
-            keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+            generator.initialize(2048);
+            keyPair = generator.generateKeyPair();
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
