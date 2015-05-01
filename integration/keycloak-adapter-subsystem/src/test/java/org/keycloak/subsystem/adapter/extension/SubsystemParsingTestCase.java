@@ -69,7 +69,7 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
     @Override
     protected String[] getSubsystemTemplatePaths() throws IOException {
         return new String[]{
-            "/subsystem-templates/keycloak.xml"
+            "/subsystem-templates/keycloak-adapter.xml"
         };
     }
 }

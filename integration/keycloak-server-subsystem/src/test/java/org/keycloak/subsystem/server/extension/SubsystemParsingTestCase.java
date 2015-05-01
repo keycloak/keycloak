@@ -58,4 +58,11 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
     protected String getSubsystemXsdPath() throws Exception {
         return "schema/wildfly-keycloak-server_1_1.xsd";
     }
+
+    @Override
+    protected String[] getSubsystemTemplatePaths() throws IOException {
+        return new String[]{
+            "/subsystem-templates/keycloak-server.xml"
+        };
+    }
 }
