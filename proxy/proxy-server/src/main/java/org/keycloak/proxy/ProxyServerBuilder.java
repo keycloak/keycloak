@@ -417,7 +417,9 @@ public class ProxyServerBuilder {
                 log.warn("Generating temporary SSL cert");
                 KeyPair keyPair = null;
                 try {
-                    keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+                    KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+                    generator.initialize(2048);
+                    keyPair = generator.generateKeyPair();
                 } catch (NoSuchAlgorithmException e) {
                     throw new RuntimeException(e);
                 }

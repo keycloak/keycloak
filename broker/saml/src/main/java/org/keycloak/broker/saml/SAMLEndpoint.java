@@ -42,15 +42,13 @@ import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConsta
 import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
+import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.keycloak.services.ErrorPage;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -447,7 +445,9 @@ public class SAMLEndpoint {
         }
         @Override
         protected SAMLDocumentHolder extractResponseDocument(String response) {
-            return SAMLRequestParser.parseResponsePostBinding(response);
+            byte[] samlBytes = PostBindingUtil.base64Decode(response);
+            String xml = new String(samlBytes);
+            return SAMLRequestParser.parseResponseDocument(samlBytes);
         }
 
         @Override
