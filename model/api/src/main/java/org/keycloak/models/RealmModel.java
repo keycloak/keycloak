@@ -232,7 +232,19 @@ public interface RealmModel extends RoleContainerModel {
     Set<String> getEnabledEventTypes();
 
     void setEnabledEventTypes(Set<String> enabledEventTypes);
+    
+    boolean isAdminEventsEnabled();
 
+    void setAdminEventsEnabled(boolean enabled);
+    
+    Set<String> getAdminEnabledEventOperations();
+
+    void setAdminEnabledEventOperations(Set<String> adminEnabledEventOperations);
+    
+    boolean isAdminEventsDetailsEnabled();
+
+    void setAdminEventsDetailsEnabled(boolean enabled);
+    
     ClientModel getMasterAdminClient();
 
     void setMasterAdminClient(ClientModel client);

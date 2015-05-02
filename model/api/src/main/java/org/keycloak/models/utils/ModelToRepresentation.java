@@ -14,6 +14,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -191,6 +192,14 @@ public class ModelToRepresentation {
         if(realm.getEnabledEventTypes() != null) {
             rep.setEnabledEventTypes(new LinkedList<String>(realm.getEnabledEventTypes()));
         }
+        
+        rep.setAdminEventsEnabled(realm.isAdminEventsEnabled());
+        
+        if(realm.getAdminEnabledEventOperations() != null) {
+            rep.setAdminEnabledEventOperations(new LinkedList<String>(realm.getAdminEnabledEventOperations()));
+        }
+        
+        rep.setAdminEventsDetailsEnabled(realm.isAdminEventsDetailsEnabled());
         
         return rep;
     }

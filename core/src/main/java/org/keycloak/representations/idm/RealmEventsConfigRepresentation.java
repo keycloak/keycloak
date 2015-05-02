@@ -11,6 +11,10 @@ public class RealmEventsConfigRepresentation {
     protected Long eventsExpiration;
     protected List<String> eventsListeners;
     protected List<String> enabledEventTypes;
+    
+    protected Boolean adminEventsEnabled;
+    protected List<String> adminEnabledEventOperations;
+    protected Boolean adminEventsDetailsEnabled;
 
     public boolean isEventsEnabled() {
         return eventsEnabled;
@@ -43,4 +47,29 @@ public class RealmEventsConfigRepresentation {
     public void setEnabledEventTypes(List<String> enabledEventTypes) {
         this.enabledEventTypes = enabledEventTypes;
     }
+
+    public Boolean isAdminEventsEnabled() {
+        return adminEventsEnabled;
+    }
+
+    public void setAdminEventsEnabled(Boolean adminEventsEnabled) {
+        this.adminEventsEnabled = adminEventsEnabled;
+    }
+
+    public List<String> getAdminEnabledEventOperations() {
+        return adminEnabledEventOperations;
+    }
+
+    public void setAdminEnabledEventOperations(List<String> adminEnabledEventOperations) {
+        this.adminEnabledEventOperations = adminEnabledEventOperations;
+    }
+
+    public Boolean isAdminEventsDetailsEnabled() {
+        return adminEventsDetailsEnabled;
+    }
+
+    public void setAdminEventsDetailsEnabled(Boolean adminEventsDetailsEnabled) {
+        this.adminEventsDetailsEnabled = adminEventsDetailsEnabled;
+    }
+    
 }

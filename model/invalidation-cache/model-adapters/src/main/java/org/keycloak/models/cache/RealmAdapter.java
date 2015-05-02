@@ -751,6 +751,42 @@ public class RealmAdapter implements RealmModel {
     }
     
     @Override
+    public boolean isAdminEventsEnabled() {
+        if (updated != null) return updated.isAdminEventsEnabled();
+        return cached.isAdminEventsEnabled();
+    }
+
+    @Override
+    public void setAdminEventsEnabled(boolean enabled) {
+        getDelegateForUpdate();
+        updated.setAdminEventsEnabled(enabled);
+    }
+
+    @Override
+    public Set<String> getAdminEnabledEventOperations() {
+        if (updated != null) return updated.getAdminEnabledEventOperations();
+        return cached.getAdminEnabledEventOperations();
+    }
+
+    @Override
+    public void setAdminEnabledEventOperations(Set<String> adminEnabledEventOperations) {
+        getDelegateForUpdate();
+        updated.setAdminEnabledEventOperations(adminEnabledEventOperations);
+    }
+
+    @Override
+    public boolean isAdminEventsDetailsEnabled() {
+        if (updated != null) return updated.isAdminEventsDetailsEnabled();
+        return cached.isAdminEventsDetailsEnabled();
+    }
+
+    @Override
+    public void setAdminEventsDetailsEnabled(boolean enabled) {
+        getDelegateForUpdate();
+        updated.setAdminEventsDetailsEnabled(enabled);
+    }
+    
+    @Override
     public ClientModel getMasterAdminClient() {
         return cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminClient());
     }
@@ -923,4 +959,5 @@ public class RealmAdapter implements RealmModel {
         }
         return null;
     }
+
 }

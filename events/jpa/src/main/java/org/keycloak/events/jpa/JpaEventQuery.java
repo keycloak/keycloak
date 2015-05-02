@@ -131,7 +131,7 @@ public class JpaEventQuery implements EventQuery {
 
         List<Event> events = new LinkedList<Event>();
         for (EventEntity e : query.getResultList()) {
-            events.add(JpaEventStoreProvider.convert(e));
+            events.add(JpaEventStoreProvider.convertEvent(e));
         }
 
         return events;

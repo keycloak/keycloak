@@ -5,4 +5,5 @@
     <include file="META-INF/jpa-changelog-1.1.0.Final.xml"/>
     <include file="META-INF/jpa-changelog-1.2.0.Beta1.xml"/>
     <include file="META-INF/jpa-changelog-1.2.0.RC1.xml"/>
+    <include file="META-INF/jpa-changelog-1.3.0.Beta1.xml"/>
 </databaseChangeLog>
