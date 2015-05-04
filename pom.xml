@@ -49,11 +49,10 @@
         <xml-apis.version>1.4.01</xml-apis.version>
         <mysql.version>5.1.25</mysql.version>
         <slf4j.version>1.7.7.jbossorg-1</slf4j.version>
-        <jboss.version>7.1.1.Final</jboss.version>
-        <wildfly.version>9.0.0.CR1-SNAPSHOT</wildfly.version>
-        <wildfly.core.version>1.0.0.Beta3</wildfly.core.version>
-        <wildfly9.version>9.0.0.CR1-SNAPSHOT</wildfly9.version> <!-- temporary until we are on WildFly 9 or later -->
+        <wildfly.version>9.0.0.CR1</wildfly.version>
+        <wildfly.core.version>1.0.0.CR1</wildfly.core.version>
         <wildfly.build-tools.version>1.0.0.Alpha8</wildfly.build-tools.version>
+        <jboss.version>7.1.1.Final</jboss.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <google.zxing.version>2.2</google.zxing.version>
         <google.client.version>1.14.1-beta</google.client.version>
@@ -579,13 +578,13 @@
             <dependency>
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-feature-pack</artifactId>
-                <version>${wildfly9.version}</version>
+                <version>${wildfly.version}</version>
                 <type>zip</type>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-web-feature-pack</artifactId>
-                <version>${wildfly9.version}</version>
+                <version>${wildfly.version}</version>
                 <type>zip</type>
             </dependency>
             <dependency>

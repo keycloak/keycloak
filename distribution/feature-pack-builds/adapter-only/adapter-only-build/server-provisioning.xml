@@ -18,7 +18,7 @@
 <server-provisioning xmlns="urn:wildfly:server-provisioning:1.0">
     <feature-packs>
         <!-- uncomment wildfly-feature-pack to build against wildfly full instead of wildfly web -->
-        <!--<feature-pack groupId="org.wildfly" artifactId="wildfly-feature-pack" version="${wildfly9.version}"/>-->
+        <!--<feature-pack groupId="org.wildfly" artifactId="wildfly-feature-pack" version="${wildfly.version}"/>-->
         
         <feature-pack groupId="org.keycloak" artifactId="keycloak-adapter-feature-pack" version="${project.version}"/>
     </feature-packs>
