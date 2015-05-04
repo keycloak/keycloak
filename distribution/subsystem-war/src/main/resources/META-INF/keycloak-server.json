@@ -1,4 +1,8 @@
 {
+    "providers": [
+        "classpath:${jboss.server.config.dir}/providers/*"
+    ],
+
     "admin": {
         "realm": "master"
     },
