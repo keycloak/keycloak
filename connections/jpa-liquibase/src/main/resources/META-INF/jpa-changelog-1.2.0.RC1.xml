@@ -4,7 +4,9 @@
         <delete tableName="CLIENT_SESSION_ROLE"/>
         <delete tableName="CLIENT_SESSION_NOTE"/>
         <delete tableName="CLIENT_SESSION"/>
+        <delete tableName="USER_SESSION_NOTE"/>
         <delete tableName="USER_SESSION"/>
+
         <createTable tableName="MIGRATION_MODEL">
             <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>

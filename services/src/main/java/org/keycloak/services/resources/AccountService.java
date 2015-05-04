@@ -682,7 +682,7 @@ public class AccountService {
                                                    @QueryParam("provider_id") String providerId,
                                                    @QueryParam("stateChecker") String stateChecker) {
         if (auth == null) {
-            return login("broker");
+            return login("identity");
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);
