@@ -3,22 +3,22 @@
 What is it?
 -----------
 
-This example demonstrates how to use Social Ientity Providers with KeyCloak to authenticate users. In this case,
-users are authenticated with Twitter using KeyCloak Identity Broker capabilities using the oAuth 2 protocol.
+This example demonstrates how to use Social Ientity Providers with Keycloak to authenticate users. In this case,
+users are authenticated with Twitter using Keycloak Identity Broker capabilities using the oAuth 2 protocol.
 
 From this example, you'll learn how to:
 
 * Setup a social identity provider for a specific realm
 * Store tokens from a social identity provider and use these tokens to invoke the social provider API
 
-Basically, once you try to access the application for the first time, you'll be redirected to KeyCloak's login page.
+Basically, once you try to access the application for the first time, you'll be redirected to Keycloak's login page.
 In this page you'll note that there is a "Twitter" button that allows you to authenticate with Twitter Identity Provider.
 
 After clicking the "Twitter" button, you'll be redirected to Twitter's login page from where you must authenticate
-and grant the necessary permissions to KeyCloak in order to access your personal information from Twitter.
+and grant the necessary permissions to Keycloak in order to access your personal information from Twitter.
 
-If everything is fine, Twitter will redirect you back to KeyCloak and at this point you'll be asked to provide some
-basic profile information in order to create a new user in KeyCloak based on your social account. Once you update your profile,
+If everything is fine, Twitter will redirect you back to Keycloak and at this point you'll be asked to provide some
+basic profile information in order to create a new user in Keycloak based on your social account. Once you update your profile,
 you'll be authenticated and redirected to the application.
 
 Basically, what the application does is obtain some basic information for the authenticated user and also allow users to

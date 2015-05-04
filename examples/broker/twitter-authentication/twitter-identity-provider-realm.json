@@ -43,12 +43,6 @@
             ],
             "webOrigins": [
               "http://localhost:8080"
-            ],
-            "identityProviders": [
-                {
-                    "id": "twitter",
-                    "retrieveToken": true
-                }
             ]
         },
         {
@@ -69,6 +63,7 @@
           "enabled": true,
           "updateProfileFirstLogin" : "true",
           "storeToken" : "true",
+          "addReadTokenRoleOnCreate" : true,
           "config": {
             "clientId": "CHANGE_CLIENT_ID",
             "clientSecret": "CHANGE_CLIENT_SECRET"
