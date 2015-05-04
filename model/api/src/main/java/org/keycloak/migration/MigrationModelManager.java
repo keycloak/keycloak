@@ -1,7 +1,7 @@
 package org.keycloak.migration;
 
 import org.jboss.logging.Logger;
-import org.keycloak.migration.migrators.MigrationTo1_2_0_RC1;
+import org.keycloak.migration.migrators.MigrationTo1_2_0_CR1;
 import org.keycloak.models.KeycloakSession;
 
 /**
@@ -19,9 +19,9 @@ public class MigrationModelManager {
         if (storedVersion == null) stored = new ModelVersion(0, 0, 0);
         else stored = new ModelVersion(storedVersion);
 
-        if (stored.lessThan(MigrationTo1_2_0_RC1.VERSION)) {
+        if (stored.lessThan(MigrationTo1_2_0_CR1.VERSION)) {
             logger.info("Migrating older model to 1.2.0.RC1 updates");
-            new MigrationTo1_2_0_RC1().migrate(session);
+            new MigrationTo1_2_0_CR1().migrate(session);
         }
 
         model.setStoredVersion(MigrationModel.LATEST_VERSION);

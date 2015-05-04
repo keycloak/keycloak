@@ -8,11 +8,11 @@ import org.keycloak.models.KeycloakSession;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class Update1_2_0_RC1 extends Update {
+public class Update1_2_0_CR1 extends Update {
 
     @Override
     public String getId() {
-        return "1.2.0.RC1";
+        return "1.2.0.CR1";
     }
 
     @Override
