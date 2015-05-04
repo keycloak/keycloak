@@ -3,7 +3,7 @@ How to test Keycloak cluster with Docker
 Docker+Fig allows to easily setup and test the whole environment with:
 * Apache HTTPD 2.4 + modcluster 1.3 as Load Balancer
 * MySQL 5.6.1 as database
-* Various number of Keycloak cluster nodes running on WildFly with "demo" examples deployed. (See below for EAP 6.3 and AS7)
+* Various number of Keycloak cluster nodes running on WildFly with "demo" examples deployed. (See below for EAP 6.4 and AS7)
 
 You don't need to setup Apache with modcluster + MySQL on your laptop as Docker will do it for you and all will run in Docker containers.
 
@@ -133,16 +133,16 @@ changed jars, then rebuild distribution and testsuite/docker-cluster
 (or just copy changed JAR into $KEYCLOAK_HOME/testsuite/docker-cluster/target/keycloak-docker-cluster/deployments/auth-server.war/WEB-INF/lib if it's not adapter stuff. 
 But 'fig rm' is safer to call anyway)
 
-Test with Keycloak and examples on EAP 6.3
+Test with Keycloak and examples on EAP 6.4
 ------------------------------------------
-Steps are quite similar like for WildFly but we need to pass different file "fig-eap63.yml" instead of default "fig.yml" which is used for WildFly. 
+Steps are quite similar like for WildFly but we need to pass different file "fig-eap6.yml" instead of default "fig.yml" which is used for WildFly. 
 Also name of the node is "eapnode" instead of "wfnode". 
  
 So your commands will look like
 ```shell 
-$ fig -f fig-eap63.yml build
-$ fig -f fig-eap63.yml up
-$ fig -f fig-eap63.yml scale eapnode=2
+$ fig -f fig-eap6.yml build
+$ fig -f fig-eap6.yml up
+$ fig -f fig-eap6.yml scale eapnode=2
 ```` 
 and viceversa.
  

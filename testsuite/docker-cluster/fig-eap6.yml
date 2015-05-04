@@ -16,8 +16,8 @@ mysql:
    ports:
       - "33306:3306"
 eapnode:
-   build: eap63
-   command: /keycloak-eap63-trigger.sh
+   build: eap6
+   command: /keycloak-eap6-trigger.sh
    volumes:
       - target/keycloak-docker-cluster:/keycloak-docker-cluster
    volumes_from:

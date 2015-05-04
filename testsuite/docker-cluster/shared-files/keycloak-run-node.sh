@@ -16,19 +16,6 @@ function prepareHost
 
   echo "Base prepare finished";
 
-  cd $JBOSS_HOME
-  cp -r /keycloak-docker-cluster/$JBOSS_TYPE-adapter/modules ./
-
-  # Deploy keycloak
-  cp -r /keycloak-docker-cluster/deployments/* $JBOSS_HOME/standalone/deployments/
-
-  # Enable Infinispan provider
-  sed -i "s|\"provider\".*: \"mem\"|\"provider\": \"infinispan\"|" $JBOSS_HOME/standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/keycloak-server.json
-  sed -i -e "s/\"connectionsJpa\"/\n \"connectionsInfinispan\": \{\n  \"default\" : \{\n   \"cacheContainer\" : \"java:jboss\/infinispan\/Keycloak\"\n  \}\n \},\n     &/" $JBOSS_HOME/standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/keycloak-server.json
-
-  # Deploy and configure examples
-  /keycloak-docker-cluster/shared-files/deploy-examples.sh
-
   # Deploy to volume
   rm -rf /keycloak-docker-shared/keycloak-$JBOSS_TYPE-$MYHOST
   cp -r $JBOSS_HOME /keycloak-docker-shared/keycloak-$JBOSS_TYPE-$MYHOST
