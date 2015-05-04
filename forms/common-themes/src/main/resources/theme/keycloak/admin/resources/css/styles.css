@@ -3,7 +3,10 @@ html,body {
 }
 
 .navbar-pf .navbar-brand {
-    padding: 5px 0 0px;
+    background: url('../img/brand.svg') no-repeat 0px 5px;
+    display: block;
+    height: 25px;
+    width: 200px;
 }
 
 form {
