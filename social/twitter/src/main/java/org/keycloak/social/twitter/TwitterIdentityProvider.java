@@ -135,6 +135,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 twitter4j.User twitterUser = twitter.verifyCredentials();
 
                 BrokeredIdentityContext identity = new BrokeredIdentityContext(Long.toString(twitterUser.getId()));
+                identity.setIdp(TwitterIdentityProvider.this);
 
                 identity.setUsername(twitterUser.getScreenName());
                 identity.setName(twitterUser.getName());

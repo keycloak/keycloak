@@ -1,9 +1,9 @@
-# Keycloak Broker: Brokering a KeyCloak SAML v2 Identity Provider Quickstart
+# Keycloak Broker: Brokering a Keycloak SAML v2 Identity Provider Quickstart
 
 What is it?
 -----------
 
-This example demonstrates how to broker a SAML Identity Provider in KeyCloak. In this case, the SAML Identity Provider
+This example demonstrates how to broker a SAML Identity Provider in Keycloak. In this case, the SAML Identity Provider
 belongs to a different realm than the application and we want to trust users from one realm to authenticate and access the
 applications in another realm.
 
