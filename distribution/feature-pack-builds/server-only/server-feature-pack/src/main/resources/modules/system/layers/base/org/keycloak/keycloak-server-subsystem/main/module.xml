@@ -30,7 +30,7 @@
 
     <resources>
         <resource-root path="."/>
-        <artifact name="${org.keycloak:keycloak-server-subsystem}"/>
+        <artifact name="${org.keycloak:keycloak-wildfly-server-subsystem}"/>
     </resources>
 
     <dependencies>

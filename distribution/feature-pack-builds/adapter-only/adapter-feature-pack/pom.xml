@@ -106,7 +106,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-adapter-subsystem</artifactId>
+            <artifactId>keycloak-wildfly-adapter-subsystem</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

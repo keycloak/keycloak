@@ -45,7 +45,7 @@
         </dependency>   
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-subsystem</artifactId>
+            <artifactId>keycloak-wildfly-server-subsystem</artifactId>
             <version>${project.version}</version>
         </dependency>      
         <dependency>

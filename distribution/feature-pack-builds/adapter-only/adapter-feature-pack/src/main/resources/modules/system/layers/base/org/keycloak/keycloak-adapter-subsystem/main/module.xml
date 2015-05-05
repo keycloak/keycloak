@@ -25,7 +25,7 @@
 <module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-adapter-subsystem">
 
     <resources>
-        <artifact name="${org.keycloak:keycloak-adapter-subsystem}"/>
+        <artifact name="${org.keycloak:keycloak-wildfly-adapter-subsystem}"/>
     </resources>
 
     <dependencies>
