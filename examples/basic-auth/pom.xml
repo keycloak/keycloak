@@ -6,7 +6,7 @@
     <parent>
         <artifactId>keycloak-examples-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.2.0.RC1-SNAPSHOT</version>
+        <version>1.3.0.Beta1-SNAPSHOT</version>
     </parent>
 
     <name>Keycloak Examples - Basic Auth</name>

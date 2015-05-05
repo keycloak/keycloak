@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.2.0.RC1-SNAPSHOT</version>
+        <version>1.3.0.Beta1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -14,7 +14,28 @@
     <description/>
 
     <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-overlay</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-wildfly-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-as7-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-eap6-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
     </dependencies>
+
     <build>
         <finalName>keycloak-docker-cluster</finalName>
         <plugins>
@@ -41,26 +62,30 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-war-deployment</artifactId>
+                                    <artifactId>keycloak-server-overlay</artifactId>
                                     <type>zip</type>
-                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                    <version>${project.version}</version>
+                                    <outputDirectory>${project.build.directory}/server-overlay</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-wildfly-adapter-dist</artifactId>
                                     <type>zip</type>
+                                    <version>${project.version}</version>
                                     <outputDirectory>${project.build.directory}/wildfly-adapter</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-as7-adapter-dist</artifactId>
                                     <type>zip</type>
+                                    <version>${project.version}</version>
                                     <outputDirectory>${project.build.directory}/as7-adapter</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-eap6-adapter-dist</artifactId>
                                     <type>zip</type>
+                                    <version>${project.version}</version>
                                     <outputDirectory>${project.build.directory}/eap63-adapter</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
