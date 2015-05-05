@@ -486,31 +486,38 @@ module.controller('ClientInstallationCtrl', function($scope, realm, client, Clie
     $scope.installation = null;
     $scope.download = null;
     $scope.configFormat = null;
+    $scope.filename = null;
 
     $scope.configFormats = [
-        "keycloak.json",
-        "Wildfly/JBoss Subsystem XML"
+        "Keycloak JSON",
+        "Wildfly/EAP Subsystem XML"
     ];
 
     $scope.changeFormat = function() {
-        if ($scope.configFormat == "keycloak.json") {
+        if ($scope.configFormat == "Keycloak JSON") {
+            $scope.filename = 'keycloak.json';
+
             var url = ClientInstallation.url({ realm: $routeParams.realm, client: $routeParams.client });
             $http.get(url).success(function(data) {
                 var tmp = angular.fromJson(data);
                 $scope.installation = angular.toJson(tmp, true);
                 $scope.type = 'application/json';
             })
-        } else if ($scope.configFormat == "Wildfly/JBoss Subsystem XML") {
+        } else if ($scope.configFormat == "Wildfly/EAP Subsystem XML") {
+            $scope.filename = 'keycloak.xml';
+
             var url = ClientInstallationJBoss.url({ realm: $routeParams.realm, client: $routeParams.client });
             $http.get(url).success(function(data) {
                 $scope.installation = data;
                 $scope.type = 'text/xml';
             })
         }
+
+        console.debug($scope.filename);
     };
 
     $scope.download = function() {
-        saveAs(new Blob([$scope.installation], { type: $scope.type }), 'keycloak.json');
+        saveAs(new Blob([$scope.installation], { type: $scope.type }), $scope.filename);
     }
 });
 
