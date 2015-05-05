@@ -14,7 +14,28 @@
     <description/>
 
     <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-overlay</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-wildfly-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-as7-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-eap6-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
     </dependencies>
+
     <build>
         <finalName>keycloak-docker-cluster</finalName>
         <plugins>
