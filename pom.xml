@@ -14,7 +14,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>1.2.0.RC1-SNAPSHOT</version>
+    <version>1.3.0.Beta1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
