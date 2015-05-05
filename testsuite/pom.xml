@@ -44,4 +44,15 @@
         <!--<module>docker-cluster</module>-->
     </modules>
 
+    <build>
+        <plugins>
+            <profile>
+                <id>jboss-release</id>
+                <modules>
+                    <module>docker-cluster</module>
+                </modules>
+            </profile>
+        </plugins>
+    </build>
+        
 </project>
