@@ -63,10 +63,10 @@
 <subsystem xmlns="urn:jboss:domain:infinispan:2.0">
     <cache-container name="keycloak" jndi-name="infinispan/Keycloak" start="EAGER">
         <transport lock-timeout="60000"/>
-        <invalidation-cache name="realms" mode="SYNC"/>
-        <invalidation-cache name="users" mode="SYNC"/>
-        <distributed-cache name="sessions" mode="SYNC" owners="1" />
-        <distributed-cache name="loginFailures" mode="SYNC" owners="1" />
+        <invalidation-cache name="realms" mode="SYNC" start="EAGER"/>
+        <invalidation-cache name="users" mode="SYNC" start="EAGER"/>
+        <distributed-cache name="sessions" mode="SYNC" owners="1" start="EAGER"/>
+        <distributed-cache name="loginFailures" mode="SYNC" owners="1" start="EAGER"/>
     </cache-container>
     ...
 </subsystem>
