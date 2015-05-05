@@ -123,7 +123,10 @@ public class LogoutEndpoint {
             if (redirect != null) userSession.setNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI, redirect);
             if (state != null) userSession.setNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM, state);
             userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, OIDCLoginProtocol.LOGIN_PROTOCOL);
-            return AuthenticationManager.browserLogout(session, realm, authResult.getSession(), uriInfo, clientConnection, headers);
+            logger.debug("Initiating OIDC browser logout");
+            Response response =  AuthenticationManager.browserLogout(session, realm, authResult.getSession(), uriInfo, clientConnection, headers);
+            logger.debug("finishing OIDC browser logout");
+            return response;
         } else if (userSession != null) { // non browser logout
             event.event(EventType.LOGOUT);
             authManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
