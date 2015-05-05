@@ -67,6 +67,7 @@ public class ClientsResource {
                 rep.add(ModelToRepresentation.toRepresentation(clientModel));
             } else {
                 ClientRepresentation client = new ClientRepresentation();
+                client.setId(clientModel.getId());
                 client.setClientId(clientModel.getClientId());
                 rep.add(client);
             }
