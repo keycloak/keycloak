@@ -33,6 +33,7 @@
     </build>
     <modules>
         <module>admin-client</module>
+        <module>broker</module>
         <module>cors</module>
         <module>demo-template</module>
         <module>providers</module>
@@ -42,5 +43,6 @@
         <module>fuse</module>
         <module>kerberos</module>
         <module>themes</module>
+        <module>saml</module>
     </modules>
 </project>
