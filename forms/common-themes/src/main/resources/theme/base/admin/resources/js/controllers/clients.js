@@ -521,7 +521,7 @@ module.controller('ClientInstallationCtrl', function($scope, realm, client, Clie
     }
 });
 
-module.controller('ClientDetailCtrl', function($scope, realm, client, serverInfo, Client, $location, Dialog, Notifications) {
+module.controller('ClientDetailCtrl', function($scope, realm, client, $route, serverInfo, Client, $location, Dialog, Notifications) {
     $scope.accessTypes = [
         "confidential",
         "public",
@@ -828,8 +828,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, serverInfo
     };
 
     $scope.reset = function() {
-        $scope.client = angular.copy(client);
-        $scope.changed = false;
+        $route.reload();
     };
 
     $scope.cancel = function() {
