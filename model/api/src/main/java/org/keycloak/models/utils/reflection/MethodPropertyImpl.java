@@ -1,12 +1,12 @@
 package org.keycloak.models.utils.reflection;
 
+import org.keycloak.util.reflections.Reflections;
+
 import java.beans.Introspector;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-
-import org.keycloak.util.reflections.Reflections;
 
 /**
  * A bean property based on the value represented by a getter/setter method pair

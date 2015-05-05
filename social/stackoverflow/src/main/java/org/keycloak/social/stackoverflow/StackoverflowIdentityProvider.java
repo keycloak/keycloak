@@ -26,7 +26,8 @@ import java.util.HashMap;
 import org.codehaus.jackson.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
-import org.keycloak.broker.oidc.util.SimpleHttp;
+import org.keycloak.broker.oidc.util.JsonSimpleHttp;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.social.SocialIdentityProvider;
@@ -64,7 +65,7 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 			if (log.isDebugEnabled()) {
 				log.debug("StackOverflow profile request to: " + URL);
 			}
-			JsonNode profile = SimpleHttp.doGet(URL).asJson().get("items").get(0);
+			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(URL)).get("items").get(0);
 
             BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "user_id"));
 

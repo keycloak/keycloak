@@ -144,6 +144,14 @@ module.factory('UserFederatedIdentityLoader', function(Loader, UserFederatedIden
     });
 });
 
+module.factory('UserConsentsLoader', function(Loader, UserConsents, $route, $q) {
+    return Loader.query(UserConsents, function() {
+        return {
+            realm : $route.current.params.realm,
+            user : $route.current.params.user
+        }
+    });
+});
 
 
 

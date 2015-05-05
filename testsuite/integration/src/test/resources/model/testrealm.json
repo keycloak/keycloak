@@ -74,7 +74,23 @@
             "applicationRoles": {
                 "Application": [ "app-admin" ],
                 "OtherApp": [  "otherapp-admin" ]
-            }
+            },
+            "clientConsents": [
+                {
+                    "clientId": "Application",
+                    "grantedRealmRoles": [ "admin" ],
+                    "grantedClientRoles": {
+                        "Application": [ "app-admin" ]
+                    }
+                },
+                {
+                    "clientId": "OtherApp",
+                    "grantedRealmRoles": [ "admin" ],
+                    "grantedProtocolMappers": {
+                        "openid-connect": [ "gss delegation credential" ]
+                    }
+                }
+            ]
         },
         {
             "username": "mySocialUser",
@@ -98,9 +114,10 @@
             ]
         }
     ],
-    "applications": [
+    "clients": [
         {
-            "name": "Application",
+            "clientId": "Application",
+            "name": "Applicationn",
             "enabled": true,
             "nodeReRegistrationTimeout": 50,
             "registeredNodes": {
@@ -109,7 +126,8 @@
             }
         },
         {
-            "name": "OtherApp",
+            "clientId": "OtherApp",
+            "name": "Other Application",
             "enabled": true,
             "protocolMappers" : [
                 {

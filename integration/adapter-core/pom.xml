@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.2.0.RC1-SNAPSHOT</version>
+        <version>1.3.0.Beta1-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -19,7 +19,7 @@
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             org.keycloak.*;version="${project.version}",
-            org.apache.http.*;version=${keycloak.apache.httpcomponents.version},
+            org.apache.http.*;version=${apache.httpcomponents.version},
             org.apache.karaf.jaas.boot.principal;resolution:=optional,
             org.apache.karaf.jaas.modules;resolution:=optional,
             *;resolution:=optional
@@ -41,7 +41,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
-            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -72,7 +71,6 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${keycloak.apache.httpcomponents.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

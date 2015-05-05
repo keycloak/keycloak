@@ -1,15 +1,12 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
-import org.keycloak.models.jpa.entities.ClientIdentityProviderMappingEntity;
-import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.ScopeMappingEntity;
@@ -55,6 +52,16 @@ public class ClientAdapter implements ClientModel {
     @Override
     public RealmModel getRealm() {
         return realm;
+    }
+
+    @Override
+    public String getName() {
+        return entity.getName();
+    }
+
+    @Override
+    public void setName(String name) {
+        entity.setName(name);
     }
 
     @Override
@@ -263,88 +270,6 @@ public class ClientAdapter implements ClientModel {
         return copy;
     }
 
-    @Override
-    public void updateIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
-        Collection<ClientIdentityProviderMappingEntity> entities = entity.getIdentityProviders();
-        Set<String> already = new HashSet<>();
-        List<ClientIdentityProviderMappingEntity> remove = new ArrayList<>();
-
-        for (ClientIdentityProviderMappingEntity entity : entities) {
-            IdentityProviderEntity identityProvider = entity.getIdentityProvider();
-            boolean toRemove = true;
-
-            for (ClientIdentityProviderMappingModel model : identityProviders) {
-                if (model.getIdentityProvider().equals(identityProvider.getAlias())) {
-                    toRemove = false;
-                    break;
-                }
-            }
-
-            if (toRemove) {
-                remove.add(entity);
-            } else {
-                already.add(entity.getIdentityProvider().getAlias());
-            }
-        }
-        for (ClientIdentityProviderMappingEntity entity : remove) {
-            entities.remove(entity);
-            em.remove(entity);
-        }
-        em.flush();
-        for (ClientIdentityProviderMappingModel model : identityProviders) {
-            ClientIdentityProviderMappingEntity mappingEntity = null;
-
-            if (!already.contains(model.getIdentityProvider())) {
-                mappingEntity = new ClientIdentityProviderMappingEntity();
-                entities.add(mappingEntity);
-            } else {
-                for (ClientIdentityProviderMappingEntity entity : entities) {
-                    if (entity.getIdentityProvider().getAlias().equals(model.getIdentityProvider())) {
-                        mappingEntity = entity;
-                        break;
-                    }
-                }
-            }
-
-            TypedQuery<IdentityProviderEntity> query = em.createNamedQuery("findIdentityProviderByAlias", IdentityProviderEntity.class).setParameter("alias", model.getIdentityProvider());
-            IdentityProviderEntity identityProviderEntity = query.getSingleResult();
-
-            mappingEntity.setIdentityProvider(identityProviderEntity);
-            mappingEntity.setClient(this.entity);
-            mappingEntity.setRetrieveToken(model.isRetrieveToken());
-
-            em.persist(mappingEntity);
-        }
-        em.flush();
-    }
-
-    @Override
-    public List<ClientIdentityProviderMappingModel> getIdentityProviders() {
-        List<ClientIdentityProviderMappingModel> models = new ArrayList<ClientIdentityProviderMappingModel>();
-
-        for (ClientIdentityProviderMappingEntity entity : this.entity.getIdentityProviders()) {
-            ClientIdentityProviderMappingModel model = new ClientIdentityProviderMappingModel();
-
-            model.setIdentityProvider(entity.getIdentityProvider().getAlias());
-            model.setRetrieveToken(entity.isRetrieveToken());
-
-            models.add(model);
-        }
-
-        return models;
-    }
-
-    @Override
-    public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {
-        for (ClientIdentityProviderMappingModel model : getIdentityProviders()) {
-            if (model.getIdentityProvider().equals(providerId)) {
-                return model.isRetrieveToken();
-            }
-        }
-
-        return false;
-    }
-
     public static boolean contains(String str, String[] array) {
         for (String s : array) {
             if (str.equals(s)) return true;
@@ -378,7 +303,7 @@ public class ClientAdapter implements ClientModel {
         if (getProtocolMapperByName(model.getProtocol(), model.getName()) != null) {
             throw new RuntimeException("protocol mapper name must be unique per protocol");
         }
-        String id = KeycloakModelUtils.generateId();
+        String id = model.getId() != null ? model.getId() : KeycloakModelUtils.generateId();
         ProtocolMapperEntity entity = new ProtocolMapperEntity();
         entity.setId(id);
         entity.setName(model.getName());

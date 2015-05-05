@@ -11,6 +11,7 @@ import java.util.Map;
 public class ClientEntity extends AbstractIdentifiableEntity {
 
     private String clientId;
+    private String name;
     private String realmId;
     private boolean enabled;
     private String secret;
@@ -47,6 +48,14 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public boolean isEnabled() {

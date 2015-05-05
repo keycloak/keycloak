@@ -3,7 +3,6 @@ package org.keycloak.proxy;
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
-import io.undertow.security.handlers.AuthenticationCallHandler;
 import io.undertow.security.handlers.AuthenticationMechanismsHandler;
 import io.undertow.security.handlers.SecurityInitialHandler;
 import io.undertow.security.idm.Account;
@@ -24,7 +23,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterDeploymentContext;
-import org.keycloak.adapters.FindFile;
+import org.keycloak.util.FindFile;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
@@ -35,7 +34,6 @@ import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.CertificateUtils;
-import org.keycloak.util.PemUtils;
 import org.keycloak.util.SystemPropertiesJsonParserFactory;
 import org.xnio.Option;
 
@@ -419,7 +417,9 @@ public class ProxyServerBuilder {
                 log.warn("Generating temporary SSL cert");
                 KeyPair keyPair = null;
                 try {
-                    keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+                    KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+                    generator.initialize(2048);
+                    keyPair = generator.generateKeyPair();
                 } catch (NoSuchAlgorithmException e) {
                     throw new RuntimeException(e);
                 }

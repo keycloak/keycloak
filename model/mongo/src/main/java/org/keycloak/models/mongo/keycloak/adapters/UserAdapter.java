@@ -2,10 +2,15 @@ package org.keycloak.models.mongo.keycloak.adapters;
 
 import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
+import com.mongodb.DBObject;
+import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.GrantedConsentModel;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -13,7 +18,9 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.CredentialEntity;
+import org.keycloak.models.entities.UserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
@@ -22,9 +29,9 @@ import org.keycloak.util.Time;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -360,30 +367,18 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
     @Override
     public Set<RoleModel> getRoleMappings() {
-        Set<RoleModel> result = new HashSet<RoleModel>();
-        List<MongoRoleEntity> roles = MongoModelUtils.getAllRolesOfUser(this, invocationContext);
-
-        for (MongoRoleEntity role : roles) {
-            if (realm.getId().equals(role.getRealmId())) {
-                result.add(new RoleAdapter(session, realm, role, realm, invocationContext));
-            } else {
-                // Likely applicationRole, but we don't have this application yet
-                result.add(new RoleAdapter(session, realm, role, invocationContext));
-            }
-        }
-        return result;
+        List<RoleModel> roles = MongoModelUtils.getAllRolesOfUser(realm, this);
+        return new HashSet<RoleModel>(roles);
     }
 
     @Override
     public Set<RoleModel> getRealmRoleMappings() {
         Set<RoleModel> allRoles = getRoleMappings();
 
-        // Filter to retrieve just realm roles TODO: Maybe improve to avoid filter programmatically... Maybe have separate fields for realmRoles and appRoles on user?
+        // Filter to retrieve just realm roles
         Set<RoleModel> realmRoles = new HashSet<RoleModel>();
         for (RoleModel role : allRoles) {
-            MongoRoleEntity roleEntity = ((RoleAdapter) role).getRole();
-
-            if (realm.getId().equals(roleEntity.getRealmId())) {
+            if (role.getContainer() instanceof RealmModel) {
                 realmRoles.add(role);
             }
         }
@@ -400,11 +395,11 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     @Override
     public Set<RoleModel> getClientRoleMappings(ClientModel app) {
         Set<RoleModel> result = new HashSet<RoleModel>();
-        List<MongoRoleEntity> roles = MongoModelUtils.getAllRolesOfUser(this, invocationContext);
+        List<RoleModel> roles = MongoModelUtils.getAllRolesOfUser(realm, this);
 
-        for (MongoRoleEntity role : roles) {
-            if (app.getId().equals(role.getClientId())) {
-                result.add(new RoleAdapter(session, realm, role, app, invocationContext));
+        for (RoleModel role : roles) {
+            if (app.equals(role.getContainer())) {
+                result.add(role);
             }
         }
         return result;
@@ -422,32 +417,106 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
-    public GrantedConsentModel addGrantedConsent(GrantedConsentModel consent) {
-        // TODO
-        return null;
+    public void addConsent(UserConsentModel consent) {
+        String clientId = consent.getClient().getId();
+        if (getConsentEntityByClientId(clientId) != null) {
+            throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + user.getId() + "]");
+        }
+
+        MongoUserConsentEntity consentEntity = new MongoUserConsentEntity();
+        consentEntity.setUserId(getId());
+        consentEntity.setClientId(clientId);
+        fillEntityFromModel(consent, consentEntity);
+        getMongoStore().insertEntity(consentEntity, invocationContext);
     }
 
     @Override
-    public GrantedConsentModel getGrantedConsentByClient(String clientId) {
-        // TODO
-        return null;
+    public UserConsentModel getConsentByClient(String clientId) {
+        UserConsentEntity consentEntity = getConsentEntityByClientId(clientId);
+        return consentEntity!=null ? toConsentModel(consentEntity) : null;
     }
 
     @Override
-    public List<GrantedConsentModel> getGrantedConsents() {
-        // TODO
-        return null;
+    public List<UserConsentModel> getConsents() {
+        List<UserConsentModel> result = new ArrayList<UserConsentModel>();
+
+        DBObject query = new QueryBuilder()
+                .and("userId").is(getId())
+                .get();
+        List<MongoUserConsentEntity> grantedConsents = getMongoStore().loadEntities(MongoUserConsentEntity.class, query, invocationContext);
+
+        for (UserConsentEntity consentEntity : grantedConsents) {
+            UserConsentModel model = toConsentModel(consentEntity);
+            result.add(model);
+        }
+
+        return result;
+    }
+
+    private MongoUserConsentEntity getConsentEntityByClientId(String clientId) {
+        DBObject query = new QueryBuilder()
+                .and("userId").is(getId())
+                .and("clientId").is(clientId)
+                .get();
+        return getMongoStore().loadSingleEntity(MongoUserConsentEntity.class, query, invocationContext);
+    }
+
+    private UserConsentModel toConsentModel(UserConsentEntity entity) {
+        ClientModel client = realm.getClientById(entity.getClientId());
+        if (client == null) {
+            throw new ModelException("Client with id " + entity.getClientId() + " is not available");
+        }
+        UserConsentModel model = new UserConsentModel(client);
+
+        for (String roleId : entity.getGrantedRoles()) {
+            RoleModel roleModel = realm.getRoleById(roleId);
+            if (roleModel != null) {
+                model.addGrantedRole(roleModel);
+            }
+        }
+
+        for (String protMapperId : entity.getGrantedProtocolMappers()) {
+            ProtocolMapperModel protocolMapper = client.getProtocolMapperById(protMapperId);
+            model.addGrantedProtocolMapper(protocolMapper);
+        }
+        return model;
+    }
+
+    // Fill roles and protocolMappers to entity
+    private void fillEntityFromModel(UserConsentModel consent, MongoUserConsentEntity consentEntity) {
+        List<String> roleIds = new LinkedList<String>();
+        for (RoleModel role : consent.getGrantedRoles()) {
+            roleIds.add(role.getId());
+        }
+        consentEntity.setGrantedRoles(roleIds);
+
+        List<String> protMapperIds = new LinkedList<String>();
+        for (ProtocolMapperModel protMapperModel : consent.getGrantedProtocolMappers()) {
+            protMapperIds.add(protMapperModel.getId());
+        }
+        consentEntity.setGrantedProtocolMappers(protMapperIds);
     }
 
     @Override
-    public void updateGrantedConsent(GrantedConsentModel consent) {
-        // TODO
+    public void updateConsent(UserConsentModel consent) {
+        String clientId = consent.getClient().getId();
+        MongoUserConsentEntity consentEntity = getConsentEntityByClientId(clientId);
+        if (consentEntity == null) {
+            throw new ModelException("Consent not found for client [" + clientId + "] and user [" + user.getId() + "]");
+        } else {
+            fillEntityFromModel(consent, consentEntity);
+            getMongoStore().updateEntity(consentEntity, invocationContext);
+        }
     }
 
     @Override
-    public boolean revokeGrantedConsentForClient(String clientId) {
-        // TODO
-        return false;
+    public boolean revokeConsentForClient(String clientId) {
+        MongoUserConsentEntity entity = getConsentEntityByClientId(clientId);
+        if (entity == null) {
+            return false;
+        }
+
+        return getMongoStore().removeEntity(entity, invocationContext);
     }
 
     @Override

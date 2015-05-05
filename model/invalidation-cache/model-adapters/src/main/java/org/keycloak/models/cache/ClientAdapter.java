@@ -1,7 +1,6 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -250,24 +249,6 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public void updateIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
-        getDelegateForUpdate();
-        updated.updateIdentityProviders(identityProviders);
-    }
-
-    @Override
-    public List<ClientIdentityProviderMappingModel> getIdentityProviders() {
-        if (updated != null) return updated.getIdentityProviders();
-        return cached.getIdentityProviders();
-    }
-
-    @Override
-    public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {
-        if (updated != null) return updated.isAllowedRetrieveTokenFromIdentityProvider(providerId);
-        return cached.isAllowedRetrieveTokenFromIdentityProvider(providerId);
-    }
-
-    @Override
     public Set<ProtocolMapperModel> getProtocolMappers() {
         if (updated != null) return updated.getProtocolMappers();
         return cached.getProtocolMappers();
@@ -312,7 +293,7 @@ public class ClientAdapter implements ClientModel {
     @Override
     public String getClientId() {
         if (updated != null) return updated.getClientId();
-        return cached.getName();
+        return cached.getClientId();
     }
 
     @Override
@@ -320,6 +301,18 @@ public class ClientAdapter implements ClientModel {
         getDelegateForUpdate();
         updated.setClientId(clientId);
         cacheSession.registerRealmInvalidation(cachedRealm.getId());
+    }
+
+    @Override
+    public String getName() {
+        if (updated != null) return updated.getName();
+        return cached.getName();
+    }
+
+    @Override
+    public void setName(String name) {
+        getDelegateForUpdate();
+        updated.setName(name);
     }
 
     @Override

@@ -135,6 +135,24 @@ module.controller('UserFederatedIdentityCtrl', function($scope, realm, user, fed
     $scope.federatedIdentities = federatedIdentities;
 });
 
+module.controller('UserConsentsCtrl', function($scope, realm, user, userConsents, UserConsents, Notifications) {
+    $scope.realm = realm;
+    $scope.user = user;
+    $scope.userConsents = userConsents;
+
+    $scope.revokeConsent = function(clientId) {
+        UserConsents.delete({realm : realm.realm, user: user.username, client: clientId }, function () {
+            UserConsents.query({realm: realm.realm, user: user.username}, function(updated) {
+                $scope.userConsents = updated;
+            })
+            Notifications.success('Consent revoked successfully');
+        }, function() {
+            Notifications.error("Consent couldn't be revoked");
+        });
+        console.log("Revoke consent " + clientId);
+    }
+});
+
 
 module.controller('UserListCtrl', function($scope, realm, User) {
     $scope.realm = realm;
@@ -366,7 +384,7 @@ module.controller('UserFederationCtrl', function($scope, $location, realm, UserF
 
 });
 
-module.controller('GenericUserFederationCtrl', function($scope, $location, Notifications, Dialog, realm, instance, providerFactory, UserFederationInstances, UserFederationSync) {
+module.controller('GenericUserFederationCtrl', function($scope, $location, Notifications, $route, Dialog, realm, instance, providerFactory, UserFederationInstances, UserFederationSync) {
     console.log('GenericUserFederationCtrl');
 
     $scope.create = !instance.providerName;
@@ -435,9 +453,11 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
     $scope.save = function() {
         $scope.changed = false;
         if ($scope.create) {
-            UserFederationInstances.save({realm: realm.realm}, $scope.instance,  function () {
-                $scope.changed = false;
-                $location.url("/realms/" + realm.realm + "/user-federation");
+            UserFederationInstances.save({realm: realm.realm}, $scope.instance,  function (data, headers) {
+                var l = headers().location;
+                var id = l.substring(l.lastIndexOf("/") + 1);
+
+                $location.url("/realms/" + realm.realm + "/user-federation/providers/" + $scope.instance.providerName + "/" + id);
                 Notifications.success("The provider has been created.");
             });
         } else {
@@ -445,11 +465,9 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
                     instance: instance.id
                 },
                 $scope.instance,  function () {
-                    $scope.changed = false;
-                    $location.url("/realms/" + realm.realm + "/user-federation");
+                    $route.reload();
                     Notifications.success("The provider has been updated.");
                 });
-
         }
     };
 
@@ -459,7 +477,11 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
     };
 
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/user-federation");
+        if ($scope.create) {
+            $location.url("/realms/" + realm.realm + "/user-federation");
+        } else {
+            $route.reload();
+        }
     };
 
     $scope.remove = function() {
@@ -494,7 +516,7 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
 });
 
 
-module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog, realm, instance, UserFederationInstances, UserFederationSync, RealmLDAPConnectionTester) {
+module.controller('LDAPCtrl', function($scope, $location, $route, Notifications, Dialog, realm, instance, UserFederationInstances, UserFederationSync, RealmLDAPConnectionTester) {
     console.log('LDAPCtrl');
     var DEFAULT_BATCH_SIZE = "1000";
 
@@ -600,9 +622,11 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
         }
 
         if ($scope.create) {
-            UserFederationInstances.save({realm: realm.realm}, $scope.instance,  function () {
-                $scope.changed = false;
-                $location.url("/realms/" + realm.realm + "/user-federation");
+            UserFederationInstances.save({realm: realm.realm}, $scope.instance,  function (data, headers) {
+                var l = headers().location;
+                var id = l.substring(l.lastIndexOf("/") + 1);
+
+                $location.url("/realms/" + realm.realm + "/user-federation/providers/" + $scope.instance.providerName + "/" + id);
                 Notifications.success("The provider has been created.");
             });
         } else {
@@ -610,8 +634,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
                                           instance: instance.id
                 },
                 $scope.instance,  function () {
-                $scope.changed = false;
-                $location.url("/realms/" + realm.realm + "/user-federation");
+                $route.reload();
                 Notifications.success("The provider has been updated.");
             });
 
@@ -619,8 +642,7 @@ module.controller('LDAPCtrl', function($scope, $location, Notifications, Dialog,
     };
 
     $scope.reset = function() {
-        initFederationSettings();
-        $scope.instance = angular.copy(instance);
+        $route.reload();
     };
 
     $scope.cancel = function() {

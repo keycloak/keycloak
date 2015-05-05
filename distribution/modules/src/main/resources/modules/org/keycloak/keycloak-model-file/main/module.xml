@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-
-
 <module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-model-file">
     <resources>
-        <resource-root path="keycloak-model-file-1.2.0.RC1-SNAPSHOT.jar"/>
         <!-- Insert resources here -->
     </resources>
     <dependencies>

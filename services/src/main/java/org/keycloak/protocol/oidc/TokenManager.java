@@ -27,6 +27,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -85,7 +86,7 @@ public class TokenManager {
 
         UserSessionModel userSession = session.sessions().getUserSession(realm, oldToken.getSessionState());
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers);
+            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
         }
         ClientSessionModel clientSession = null;
@@ -153,7 +154,7 @@ public class TokenManager {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
             }
             refreshToken = jws.readJsonContent(RefreshToken.class);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
         }
         if (refreshToken.isExpired()) {
@@ -208,6 +209,14 @@ public class TokenManager {
             requestedRoles.add(r.getId());
         }
         clientSession.setRoles(requestedRoles);
+
+        Set<String> requestedProtocolMappers = new HashSet<String>();
+        for (ProtocolMapperModel protocolMapper : clientSession.getClient().getProtocolMappers()) {
+            if (protocolMapper.getProtocol().equals(clientSession.getAuthMethod())) {
+                requestedProtocolMappers.add(protocolMapper.getId());
+            }
+        }
+        clientSession.setProtocolMappers(requestedProtocolMappers);
     }
 
     public static void dettachClientSession(UserSessionProvider sessions, RealmModel realm, ClientSessionModel clientSession) {
@@ -218,6 +227,7 @@ public class TokenManager {
 
         clientSession.setUserSession(null);
         clientSession.setRoles(null);
+        clientSession.setProtocolMappers(null);
 
         if (userSession.getClientSessions().isEmpty()) {
             sessions.removeUserSession(realm, userSession);
@@ -274,23 +284,20 @@ public class TokenManager {
 
     public AccessToken transformAccessToken(KeycloakSession session, AccessToken token, RealmModel realm, ClientModel client, UserModel user,
                                             UserSessionModel userSession, ClientSessionModel clientSession) {
-        Set<ProtocolMapperModel> mappings = client.getProtocolMappers();
+        Set<ProtocolMapperModel> mappings = new ClientSessionCode(realm, clientSession).getRequestedProtocolMappers();
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         for (ProtocolMapperModel mapping : mappings) {
-            if (!mapping.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) continue;
 
             ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
             if (mapper == null || !(mapper instanceof OIDCAccessTokenMapper)) continue;
             token = ((OIDCAccessTokenMapper)mapper).transformAccessToken(token, mapping, session, userSession, clientSession);
-
-
 
         }
         return token;
     }
     public void transformIDToken(KeycloakSession session, IDToken token, RealmModel realm, ClientModel client, UserModel user,
                                       UserSessionModel userSession, ClientSessionModel clientSession) {
-        Set<ProtocolMapperModel> mappings = client.getProtocolMappers();
+        Set<ProtocolMapperModel> mappings = new ClientSessionCode(realm, clientSession).getRequestedProtocolMappers();
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         for (ProtocolMapperModel mapping : mappings) {
             if (!mapping.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) continue;

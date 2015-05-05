@@ -9,6 +9,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.managers.ClientManager;
 
 import java.util.Iterator;
@@ -30,6 +31,7 @@ public class ClientModelTest extends AbstractModelTest {
 
         realm = realmManager.createRealm("original");
         client = realm.addClient("application");
+        client.setName("Application");
         client.setBaseUrl("http://base");
         client.setManagementUrl("http://management");
         client.setClientId("app-name");
@@ -63,6 +65,9 @@ public class ClientModelTest extends AbstractModelTest {
     public void json() {
         ClientRepresentation representation = ModelToRepresentation.toRepresentation(client);
         representation.setId(null);
+        for (ProtocolMapperRepresentation protocolMapper : representation.getProtocolMappers()) {
+            protocolMapper.setId(null);
+        }
 
         RealmModel realm = realmManager.createRealm("copy");
         ClientModel copy = RepresentationToModel.createClient(session, realm, representation, true);
@@ -81,6 +86,7 @@ public class ClientModelTest extends AbstractModelTest {
 
     public static void assertEquals(ClientModel expected, ClientModel actual) {
         Assert.assertEquals(expected.getClientId(), actual.getClientId());
+        Assert.assertEquals(expected.getName(), actual.getName());
         Assert.assertEquals(expected.getBaseUrl(), actual.getBaseUrl());
         Assert.assertEquals(expected.getManagementUrl(), actual.getManagementUrl());
         Assert.assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());

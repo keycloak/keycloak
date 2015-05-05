@@ -75,11 +75,11 @@ public interface UserModel {
     String getFederationLink();
     void setFederationLink(String link);
 
-    GrantedConsentModel addGrantedConsent(GrantedConsentModel consent);
-    GrantedConsentModel getGrantedConsentByClient(String clientId);
-    List<GrantedConsentModel> getGrantedConsents();
-    void updateGrantedConsent(GrantedConsentModel consent);
-    boolean revokeGrantedConsentForClient(String clientId);
+    void addConsent(UserConsentModel consent);
+    UserConsentModel getConsentByClient(String clientInternalId);
+    List<UserConsentModel> getConsents();
+    void updateConsent(UserConsentModel consent);
+    boolean revokeConsentForClient(String clientInternalId);
 
     public static enum RequiredAction {
         VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD

@@ -47,9 +47,12 @@ public class SAMLRequestParser {
     }
 
     public static SAMLDocumentHolder parseResponsePostBinding(String samlMessage) {
-        InputStream is;
         byte[] samlBytes = PostBindingUtil.base64Decode(samlMessage);
-        is = new ByteArrayInputStream(samlBytes);
+        return parseResponseDocument(samlBytes);
+    }
+
+    public static SAMLDocumentHolder parseResponseDocument(byte[] samlBytes) {
+        InputStream is = new ByteArrayInputStream(samlBytes);
         SAML2Response response = new SAML2Response();
         try {
             response.getSAML2ObjectFromStream(is);
@@ -61,8 +64,7 @@ public class SAMLRequestParser {
     }
 
     public static SAMLDocumentHolder parseResponseRedirectBinding(String samlMessage) {
-        InputStream is;
-        is = RedirectBindingUtil.base64DeflateDecode(samlMessage);
+        InputStream is = RedirectBindingUtil.base64DeflateDecode(samlMessage);
         SAML2Response response = new SAML2Response();
         try {
             response.getSAML2ObjectFromStream(is);

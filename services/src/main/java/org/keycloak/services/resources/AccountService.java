@@ -76,7 +76,6 @@ import javax.ws.rs.core.Variant;
 
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -350,10 +349,10 @@ public class AccountService {
         return forwardToPage("sessions", AccountPages.SESSIONS);
     }
 
-    @Path("access")
+    @Path("applications")
     @GET
-    public Response accessPage() {
-        return forwardToPage("access", AccountPages.ACCESS);
+    public Response applicationsPage() {
+        return forwardToPage("applications", AccountPages.APPLICATIONS);
     }
 
     /**
@@ -479,7 +478,10 @@ public class AccountService {
         csrfCheck(stateChecker);
 
         UserModel user = auth.getUser();
-        session.sessions().removeUserSessions(realm, user);
+        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
+        for (UserSessionModel userSession : userSessions) {
+            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
+        }
 
         UriBuilder builder = Urls.accountBase(uriInfo.getBaseUri()).path(AccountService.class, "sessionsPage");
         String referrer = uriInfo.getQueryParameters().getFirst("referrer");
@@ -495,7 +497,7 @@ public class AccountService {
     @POST
     public Response processRevokeGrant(final MultivaluedMap<String, String> formData) {
         if (auth == null) {
-            return login("access");
+            return login("applications");
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);
@@ -503,32 +505,31 @@ public class AccountService {
 
         String clientId = formData.getFirst("clientId");
         if (clientId == null) {
-            return account.setError(Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.ACCESS);
+            return account.setError(Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.APPLICATIONS);
         }
         ClientModel client = realm.getClientById(clientId);
         if (client == null) {
-            return account.setError(Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.ACCESS);
+            return account.setError(Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.APPLICATIONS);
         }
 
         // Revoke grant in UserModel
         UserModel user = auth.getUser();
-        user.revokeGrantedConsentForClient(client.getId());
+        user.revokeConsentForClient(client.getId());
 
         // Logout clientSessions for this user and client
-        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-        for (UserSessionModel userSession : userSessions) {
-            List<ClientSessionModel> clientSessions = userSession.getClientSessions();
-            for (ClientSessionModel clientSession : clientSessions) {
-                if (clientSession.getClient().getId().equals(clientId)) {
-                    TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
-                }
-            }
-        }
+        AuthenticationManager.backchannelUserFromClient(session, realm, user, client, uriInfo, headers);
 
         event.event(EventType.REVOKE_GRANT).client(auth.getClient()).user(auth.getUser()).detail(Details.REVOKED_CLIENT, client.getClientId()).success();
         setReferrerOnPage();
 
-        return account.setSuccess(Messages.SUCCESS_GRANT_REVOKED).createResponse(AccountPages.ACCESS);
+        UriBuilder builder = Urls.accountBase(uriInfo.getBaseUri()).path(AccountService.class, "applicationsPage");
+        String referrer = uriInfo.getQueryParameters().getFirst("referrer");
+        if (referrer != null) {
+            builder.queryParam("referrer", referrer);
+
+        }
+        URI location = builder.build(realm.getName());
+        return Response.seeOther(location).build();
     }
 
     /**
@@ -665,7 +666,7 @@ public class AccountService {
         List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel s : sessions) {
             if (!s.getId().equals(auth.getSession().getId())) {
-                AuthenticationManager.backchannelLogout(session, realm, s, uriInfo, clientConnection, headers);
+                AuthenticationManager.backchannelLogout(session, realm, s, uriInfo, clientConnection, headers, true);
             }
         }
 
@@ -681,7 +682,7 @@ public class AccountService {
                                                    @QueryParam("provider_id") String providerId,
                                                    @QueryParam("stateChecker") String stateChecker) {
         if (auth == null) {
-            return login("broker");
+            return login("identity");
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);

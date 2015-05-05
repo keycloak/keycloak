@@ -10,6 +10,7 @@ import java.util.Map;
 public class ClientRepresentation {
     protected String id;
     protected String clientId;
+    protected String name;
     protected String adminUrl;
     protected String baseUrl;
     protected Boolean surrogateAuthRequired;
@@ -29,7 +30,6 @@ public class ClientRepresentation {
     protected Boolean fullScopeAllowed;
     protected Integer nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
-    protected List<ClientIdentityProviderMappingRepresentation> identityProviders;
     protected List<ProtocolMapperRepresentation> protocolMappers;
 
     public String getId() {
@@ -38,6 +38,14 @@ public class ClientRepresentation {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getClientId() {
@@ -136,7 +144,7 @@ public class ClientRepresentation {
         this.consentRequired = consentRequired;
     }
 
-    public Boolean getDirectGrantsOnly() {
+    public Boolean isDirectGrantsOnly() {
         return directGrantsOnly;
     }
 
@@ -198,14 +206,6 @@ public class ClientRepresentation {
 
     public void setFrontchannelLogout(Boolean frontchannelLogout) {
         this.frontchannelLogout = frontchannelLogout;
-    }
-
-    public List<ClientIdentityProviderMappingRepresentation> getIdentityProviders() {
-        return this.identityProviders;
-    }
-
-    public void setIdentityProviders(List<ClientIdentityProviderMappingRepresentation> identityProviders) {
-        this.identityProviders = identityProviders;
     }
 
     public List<ProtocolMapperRepresentation> getProtocolMappers() {

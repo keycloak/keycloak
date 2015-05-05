@@ -41,7 +41,6 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.testutils.KeycloakServer;
 import org.openqa.selenium.WebDriver;
 
 import javax.servlet.ServletException;

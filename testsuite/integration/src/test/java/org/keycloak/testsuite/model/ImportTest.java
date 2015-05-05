@@ -14,6 +14,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
@@ -81,7 +82,7 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals(0,  session.users().getFederatedIdentities(user, realm).size());
 
         List<ClientModel> resources = realm.getClients();
-        Assert.assertEquals(6, resources.size());
+        Assert.assertEquals(7, resources.size());
 
         // Test applications imported
         ClientModel application = realm.getClientByClientId("Application");
@@ -92,12 +93,13 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertNotNull(otherApp);
         Assert.assertNull(nonExisting);
         Map<String, ClientModel> clients = realm.getClientNameMap();
-        Assert.assertEquals(6, clients.size());
+        Assert.assertEquals(7, clients.size());
         Assert.assertTrue(clients.values().contains(application));
         Assert.assertTrue(clients.values().contains(otherApp));
         Assert.assertTrue(clients.values().contains(accountApp));
         realm.getClients().containsAll(clients.values());
 
+        Assert.assertEquals("Applicationn", application.getName());
         Assert.assertEquals(50, application.getNodeReRegistrationTimeout());
         Map<String, Integer> appRegisteredNodes = application.getRegisteredNodes();
         Assert.assertEquals(2, appRegisteredNodes.size());
@@ -238,6 +240,23 @@ public class ImportTest extends AbstractModelTest {
         String includeInIdToken = gssCredentialMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN);
         Assert.assertTrue(includeInAccessToken.equalsIgnoreCase("true"));
         Assert.assertTrue(includeInIdToken == null || Boolean.parseBoolean(includeInIdToken) == false);
+
+        // Test user consents
+        admin =  session.users().getUserByUsername("admin", realm);
+        Assert.assertEquals(2, admin.getConsents().size());
+
+        UserConsentModel appAdminConsent = admin.getConsentByClient(application.getId());
+        Assert.assertEquals(2, appAdminConsent.getGrantedRoles().size());
+        Assert.assertTrue(appAdminConsent.getGrantedProtocolMappers() == null || appAdminConsent.getGrantedProtocolMappers().isEmpty());
+        Assert.assertTrue(appAdminConsent.isRoleGranted(realm.getRole("admin")));
+        Assert.assertTrue(appAdminConsent.isRoleGranted(application.getRole("app-admin")));
+
+        UserConsentModel otherAppAdminConsent = admin.getConsentByClient(otherApp.getId());
+        Assert.assertEquals(1, otherAppAdminConsent.getGrantedRoles().size());
+        Assert.assertEquals(1, otherAppAdminConsent.getGrantedProtocolMappers().size());
+        Assert.assertTrue(otherAppAdminConsent.isRoleGranted(realm.getRole("admin")));
+        Assert.assertFalse(otherAppAdminConsent.isRoleGranted(application.getRole("app-admin")));
+        Assert.assertTrue(otherAppAdminConsent.isProtocolMapperGranted(gssCredentialMapper));
     }
 
     @Test

@@ -254,7 +254,7 @@ public class RealmAdminResource {
     @POST
     public GlobalRequestResult pushRevocation() {
         auth.requireManage();
-        return new ResourceAdminManager().pushRealmRevocationPolicy(uriInfo.getRequestUri(), realm);
+        return new ResourceAdminManager(session).pushRealmRevocationPolicy(uriInfo.getRequestUri(), realm);
     }
 
     /**
@@ -266,7 +266,7 @@ public class RealmAdminResource {
     @POST
     public GlobalRequestResult logoutAll() {
         session.sessions().removeUserSessions(realm);
-        return new ResourceAdminManager().logoutAll(uriInfo.getRequestUri(), realm);
+        return new ResourceAdminManager(session).logoutAll(uriInfo.getRequestUri(), realm);
     }
 
     /**
@@ -280,7 +280,7 @@ public class RealmAdminResource {
     public void deleteSession(@PathParam("session") String sessionId) {
         UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
         if (userSession == null) throw new NotFoundException("Sesssion not found");
-        AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers);
+        AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
     }
 
     /**
@@ -364,7 +364,6 @@ public class RealmAdminResource {
      * Query events.  Returns all events, or will query based on URL query parameters listed here
      *
      * @param client app or oauth client name
-     * @param types type type
      * @param user user id
      * @param ipAddress
      * @param firstResult

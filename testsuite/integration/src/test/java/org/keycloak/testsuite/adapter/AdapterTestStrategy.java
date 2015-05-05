@@ -44,12 +44,13 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.AccountSessionsPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.testutils.KeycloakServer;
+import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.Time;
 import org.openqa.selenium.WebDriver;
@@ -93,6 +94,9 @@ public class AdapterTestStrategy extends ExternalResource {
 
     @WebResource
     protected InputPage inputPage;
+
+    @WebResource
+    protected AccountSessionsPage accountSessionsPage;
 
     protected String LOGIN_URL = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(AUTH_SERVER_URL)).build("demo").toString();
 
@@ -355,7 +359,7 @@ public class AdapterTestStrategy extends ExternalResource {
         realm = session.realms().getRealmByName("demo");
         // need to cleanup so other tests don't fail, so invalidate http sessions on remote clients.
         UserModel user = session.users().getUserByUsername("bburke@redhat.com", realm);
-        new ResourceAdminManager().logoutUser(null, realm, user, session);
+        new ResourceAdminManager(session).logoutUser(null, realm, user, session);
         realm.setSsoSessionIdleTimeout(originalIdle);
         session.getTransaction().commit();
         session.close();
@@ -590,6 +594,22 @@ public class AdapterTestStrategy extends ExternalResource {
         Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/session-portal" + slash);
         String pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains("Counter=3"));
+    }
+
+    /**
+     * KEYCLOAK-1216
+     */
+    public void testAccountManagementSessionsLogout() throws Throwable {
+        // login as bburke
+        loginAndCheckSession(driver, loginPage);
+
+        // logout sessions in account management
+        accountSessionsPage.realm("demo");
+        accountSessionsPage.open();
+        accountSessionsPage.logoutAll();
+
+        // Assert I need to login again (logout was propagated to the app)
+        loginAndCheckSession(driver, loginPage);
     }
 
     protected void loginAndCheckSession(WebDriver driver, LoginPage loginPage) {

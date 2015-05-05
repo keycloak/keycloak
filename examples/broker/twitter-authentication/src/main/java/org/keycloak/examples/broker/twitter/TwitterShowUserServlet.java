@@ -49,7 +49,7 @@ import java.io.PrintWriter;
 /**
  * <p>A simple servlet to proxy Twitter API using the Twitter4j library.</p>
  *
- * <p>It provides some additional code to properly handle token retrieval from the Twitter identity provider in KeyCloak
+ * <p>It provides some additional code to properly handle token retrieval from the Twitter identity provider in Keycloak
  * and use that token to invoke Twitter's API.</p>
  *
  * @author pedroigor
@@ -64,7 +64,7 @@ public class TwitterShowUserServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        initKeyCloakClient(config);
+        initKeycloakClient(config);
     }
 
     @Override
@@ -122,7 +122,7 @@ public class TwitterShowUserServlet extends HttpServlet {
         return this.authServer + "/realms/" + this.realmName + "/broker/" + this.identityProvider.getAlias() + "/token";
     }
 
-    private void initKeyCloakClient(ServletConfig config) {
+    private void initKeycloakClient(ServletConfig config) {
         ServletContext servletContext = config.getServletContext();
         JsonNode keycloakConfig;
 

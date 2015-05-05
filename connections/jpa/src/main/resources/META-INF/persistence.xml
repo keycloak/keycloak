@@ -11,6 +11,7 @@
         <class>org.keycloak.models.jpa.entities.UserFederationProviderEntity</class>
         <class>org.keycloak.models.jpa.entities.RoleEntity</class>
         <class>org.keycloak.models.jpa.entities.FederatedIdentityEntity</class>
+        <class>org.keycloak.models.jpa.entities.MigrationModelEntity</class>
         <class>org.keycloak.models.jpa.entities.UserEntity</class>
         <class>org.keycloak.models.jpa.entities.UserRequiredActionEntity</class>
         <class>org.keycloak.models.jpa.entities.UserAttributeEntity</class>
@@ -20,13 +21,14 @@
         <class>org.keycloak.models.jpa.entities.IdentityProviderMapperEntity</class>
         <class>org.keycloak.models.jpa.entities.ClientIdentityProviderMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.ProtocolMapperEntity</class>
-        <class>org.keycloak.models.jpa.entities.GrantedConsentEntity</class>
-        <class>org.keycloak.models.jpa.entities.GrantedConsentRoleEntity</class>
-        <class>org.keycloak.models.jpa.entities.GrantedConsentProtocolMapperEntity</class>
+        <class>org.keycloak.models.jpa.entities.UserConsentEntity</class>
+        <class>org.keycloak.models.jpa.entities.UserConsentRoleEntity</class>
+        <class>org.keycloak.models.jpa.entities.UserConsentProtocolMapperEntity</class>
 
         <!-- JpaUserSessionProvider -->
         <class>org.keycloak.models.sessions.jpa.entities.ClientSessionEntity</class>
         <class>org.keycloak.models.sessions.jpa.entities.ClientSessionRoleEntity</class>
+        <class>org.keycloak.models.sessions.jpa.entities.ClientSessionProtocolMapperEntity</class>
         <class>org.keycloak.models.sessions.jpa.entities.ClientSessionNoteEntity</class>
         <class>org.keycloak.models.sessions.jpa.entities.UserSessionNoteEntity</class>
         <class>org.keycloak.models.sessions.jpa.entities.UserSessionEntity</class>

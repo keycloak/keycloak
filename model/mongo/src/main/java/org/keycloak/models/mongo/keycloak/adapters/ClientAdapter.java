@@ -4,12 +4,10 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.entities.ClientIdentityProviderMappingEntity;
 import org.keycloak.models.entities.ProtocolMapperEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
@@ -29,20 +27,20 @@ import java.util.Set;
  */
 public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> implements ClientModel {
 
-    protected final MongoClientEntity applicationEntity;
+    protected final MongoClientEntity clientEntity;
     private final RealmModel realm;
     protected  KeycloakSession session;
 
-    public ClientAdapter(KeycloakSession session, RealmModel realm, MongoClientEntity applicationEntity, MongoStoreInvocationContext invContext) {
+    public ClientAdapter(KeycloakSession session, RealmModel realm, MongoClientEntity clientEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.session = session;
         this.realm = realm;
-        this.applicationEntity = applicationEntity;
+        this.clientEntity = clientEntity;
     }
 
     @Override
     public MongoClientEntity getMongoEntity() {
-        return applicationEntity;
+        return clientEntity;
     }
 
     @Override
@@ -59,6 +57,17 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     @Override
     public String getClientId() {
         return getMongoEntity().getClientId();
+    }
+
+    @Override
+    public String getName() {
+        return getMongoEntity().getName();
+    }
+
+    @Override
+    public void setName(String name) {
+        getMongoEntity().setName(name);
+        updateMongoEntity();
     }
 
     @Override
@@ -86,12 +95,12 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
 
     @Override
     public void addWebOrigin(String webOrigin) {
-        getMongoStore().pushItemToList(applicationEntity, "webOrigins", webOrigin, true, invocationContext);
+        getMongoStore().pushItemToList(clientEntity, "webOrigins", webOrigin, true, invocationContext);
     }
 
     @Override
     public void removeWebOrigin(String webOrigin) {
-        getMongoStore().pullItemFromList(applicationEntity, "webOrigins", webOrigin, invocationContext);
+        getMongoStore().pullItemFromList(clientEntity, "webOrigins", webOrigin, invocationContext);
     }
 
     @Override
@@ -113,12 +122,12 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
 
     @Override
     public void addRedirectUri(String redirectUri) {
-        getMongoStore().pushItemToList(applicationEntity, "redirectUris", redirectUri, true, invocationContext);
+        getMongoStore().pushItemToList(clientEntity, "redirectUris", redirectUri, true, invocationContext);
     }
 
     @Override
     public void removeRedirectUri(String redirectUri) {
-        getMongoStore().pullItemFromList(applicationEntity, "redirectUris", redirectUri, invocationContext);
+        getMongoStore().pullItemFromList(clientEntity, "redirectUris", redirectUri, invocationContext);
     }
 
     @Override
@@ -305,7 +314,8 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
             throw new RuntimeException("protocol mapper name must be unique per protocol");
         }
         ProtocolMapperEntity entity = new ProtocolMapperEntity();
-        entity.setId(KeycloakModelUtils.generateId());
+        String id = model.getId() != null ? model.getId() : KeycloakModelUtils.generateId();
+        entity.setId(id);
         entity.setProtocol(model.getProtocol());
         entity.setName(model.getName());
         entity.setProtocolMapper(model.getProtocolMapper());
@@ -395,49 +405,6 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
         return mapping;
     }
 
-
-    @Override
-    public void updateIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
-        List<ClientIdentityProviderMappingEntity> stored = new ArrayList<ClientIdentityProviderMappingEntity>();
-
-        for (ClientIdentityProviderMappingModel model : identityProviders) {
-            ClientIdentityProviderMappingEntity entity = new ClientIdentityProviderMappingEntity();
-
-            entity.setId(model.getIdentityProvider());
-            entity.setRetrieveToken(model.isRetrieveToken());
-            stored.add(entity);
-        }
-
-        getMongoEntity().setIdentityProviders(stored);
-        updateMongoEntity();
-    }
-
-    @Override
-    public List<ClientIdentityProviderMappingModel> getIdentityProviders() {
-        List<ClientIdentityProviderMappingModel> models = new ArrayList<ClientIdentityProviderMappingModel>();
-
-        for (ClientIdentityProviderMappingEntity entity : getMongoEntity().getIdentityProviders()) {
-            ClientIdentityProviderMappingModel model = new ClientIdentityProviderMappingModel();
-
-            model.setIdentityProvider(entity.getId());
-            model.setRetrieveToken(entity.isRetrieveToken());
-
-            models.add(model);
-        }
-
-        return models;
-    }
-
-    @Override
-    public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {
-        for (ClientIdentityProviderMappingEntity identityProviderMappingModel : getMongoEntity().getIdentityProviders()) {
-            if (identityProviderMappingModel.getId().equals(providerId)) {
-                return identityProviderMappingModel.isRetrieveToken();
-            }
-        }
-
-        return false;
-    }
 
     @Override
     public boolean isSurrogateAuthRequired() {

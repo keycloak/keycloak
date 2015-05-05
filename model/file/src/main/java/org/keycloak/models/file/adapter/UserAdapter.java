@@ -16,11 +16,13 @@
  */
 package org.keycloak.models.file.adapter;
 
+import org.keycloak.connections.file.InMemoryModel;
 import org.keycloak.models.ClientModel;
 
 import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
-import org.keycloak.models.GrantedConsentModel;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -28,7 +30,11 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.CredentialEntity;
+import org.keycloak.models.entities.FederatedIdentityEntity;
+import org.keycloak.models.entities.RoleEntity;
+import org.keycloak.models.entities.UserEntity;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
+import org.keycloak.util.Time;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,12 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.keycloak.connections.file.InMemoryModel;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.entities.FederatedIdentityEntity;
-import org.keycloak.models.entities.RoleEntity;
-import org.keycloak.models.entities.UserEntity;
-import org.keycloak.util.Time;
+import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
 /**
  * UserModel for JSON persistence.
@@ -432,30 +433,29 @@ public class UserAdapter implements UserModel, Comparable {
     }
 
     @Override
-    public GrantedConsentModel addGrantedConsent(GrantedConsentModel consent) {
+    public void addConsent(UserConsentModel consent) {
+        // TODO
+    }
+
+    @Override
+    public UserConsentModel getConsentByClient(String clientId) {
         // TODO
         return null;
     }
 
     @Override
-    public GrantedConsentModel getGrantedConsentByClient(String clientId) {
+    public List<UserConsentModel> getConsents() {
         // TODO
         return null;
     }
 
     @Override
-    public List<GrantedConsentModel> getGrantedConsents() {
-        // TODO
-        return null;
-    }
-
-    @Override
-    public void updateGrantedConsent(GrantedConsentModel consent) {
+    public void updateConsent(UserConsentModel consent) {
         // TODO
     }
 
     @Override
-    public boolean revokeGrantedConsentForClient(String clientId) {
+    public boolean revokeConsentForClient(String clientId) {
         // TODO
         return false;
     }

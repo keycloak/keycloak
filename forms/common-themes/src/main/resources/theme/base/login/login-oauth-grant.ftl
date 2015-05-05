@@ -3,7 +3,7 @@
     <#if section = "title">
         ${msg("oauthGrantTitle")}
     <#elseif section = "header">
-        ${msg("oauthGrantTitleHtml",(realm.name!''), (client.clientId!''))}
+        ${msg("oauthGrantTitleHtml",(realm.name!''))} <strong><#if client.name??>${advancedMsg(client.name)}<#else>${client.clientId}</#if></strong>.
     <#elseif section = "form">
         <div id="kc-oauth" class="content-area">
             <h3>${msg("oauthGrantRequest")}</h3>
@@ -34,10 +34,10 @@
                 </#if>
                 <#if oauth.resourceRolesRequested??>
                     <#list oauth.resourceRolesRequested?keys as resource>
-                        <#list oauth.resourceRolesRequested[resource] as role>
+                        <#list oauth.resourceRolesRequested[resource] as clientRole>
                             <li>
-                                <span class="kc-role"><#if role.description??>${advancedMsg(role.description)}<#else>${advancedMsg(role.name)}</#if></span>
-                                <span class="kc-resource">${msg("inResource", resource)}</span>
+                                <span class="kc-role"><#if clientRole.roleDescription??>${advancedMsg(clientRole.roleDescription)}<#else>${advancedMsg(clientRole.roleName)}</#if></span>
+                                <span class="kc-resource">${msg("inResource")} <strong><#if clientRole.clientName??>${advancedMsg(clientRole.clientName)}<#else>${clientRole.clientId}</#if></strong> </span>
                             </li>
                         </#list>
                     </#list>

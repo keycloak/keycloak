@@ -39,6 +39,7 @@ import static org.keycloak.saml.common.util.StringUtil.isNotNull;
  */
 public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
     protected static final Logger logger = Logger.getLogger(SAML2BindingBuilder.class);
+    public static final String RELAY_STATE = "RelayState";
 
     protected KeyPair signingKeyPair;
     protected X509Certificate signingCertificate;
@@ -328,7 +329,7 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"" + key + "\"" + " VALUE=\"" + samlResponse + "\"/>");
 
         if (isNotNull(relayState)) {
-            builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"RelayState\" " + "VALUE=\"" + escapeAttribute(relayState) + "\"/>");
+            builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"" + RELAY_STATE + "\" " + "VALUE=\"" + escapeAttribute(relayState) + "\"/>");
         }
 
         builder.append("<NOSCRIPT>");
@@ -355,7 +356,7 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
                 .replaceQuery(null)
                 .queryParam(samlParameterName, base64Encoded(document));
         if (relayState != null) {
-            builder.queryParam("RelayState", relayState);
+            builder.queryParam(RELAY_STATE, relayState);
         }
 
         if (sign) {

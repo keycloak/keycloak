@@ -35,6 +35,13 @@
             <outputDirectory>eap63-adapter</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>target/server-overlay</directory>
+            <outputDirectory>server-overlay</outputDirectory>
+            <excludes>
+                <exclude>**/standalone-keycloak.xml</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
             <directory>shared-files</directory>
             <outputDirectory>shared-files</outputDirectory>
         </fileSet>

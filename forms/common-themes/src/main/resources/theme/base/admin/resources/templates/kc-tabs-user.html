@@ -1,0 +1,8 @@
+<ul class="nav nav-tabs" data-ng-show="!create">
+    <li ng-class="{active: !path[4]}"><a href="#/realms/{{realm.realm}}/users/{{user.username}}">Attributes</a></li>
+    <li ng-class="{active: path[4] == 'user-credentials'}" data-ng-show="access.manageUsers"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/user-credentials">Credentials</a></li>
+    <li ng-class="{active: path[4] == 'role-mappings'}" ><a href="#/realms/{{realm.realm}}/users/{{user.username}}/role-mappings">Role Mappings</a></li>
+    <li ng-class="{active: path[4] == 'consents'}"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/consents">Consents</a></li>
+    <li ng-class="{active: path[4] == 'sessions'}" ><a href="#/realms/{{realm.realm}}/users/{{user.username}}/sessions">Sessions</a></li>
+    <li ng-class="{active: path[4] == 'federated-identity'}" data-ng-show="user.federatedIdentities && user.federatedIdentities.length > 0"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/federated-identity">Identity Provider Links</a></li>
+</ul>

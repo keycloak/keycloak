@@ -88,9 +88,9 @@ public class JpaUserProvider implements UserProvider {
     private void removeUser(UserEntity user) {
         em.createNamedQuery("deleteUserRoleMappingsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteFederatedIdentityByUser").setParameter("user", user).executeUpdate();
-        em.createNamedQuery("deleteGrantedConsentRolesByUser").setParameter("user", user).executeUpdate();
-        em.createNamedQuery("deleteGrantedConsentProtMappersByUser").setParameter("user", user).executeUpdate();
-        em.createNamedQuery("deleteGrantedConsentsByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteUserConsentRolesByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteUserConsentProtMappersByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteUserConsentsByUser").setParameter("user", user).executeUpdate();
         em.remove(user);
     }
 
@@ -134,11 +134,11 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public void preRemove(RealmModel realm) {
-        int num = em.createNamedQuery("deleteGrantedConsentRolesByRealm")
+        int num = em.createNamedQuery("deleteUserConsentRolesByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
-        num = em.createNamedQuery("deleteGrantedConsentProtMappersByRealm")
+        num = em.createNamedQuery("deleteUserConsentProtMappersByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
-        num = em.createNamedQuery("deleteGrantedConsentsByRealm")
+        num = em.createNamedQuery("deleteUserConsentsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUserRoleMappingsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
@@ -184,20 +184,20 @@ public class JpaUserProvider implements UserProvider {
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
-        em.createNamedQuery("deleteGrantedConsentRolesByRole").setParameter("roleId", role.getId()).executeUpdate();
+        em.createNamedQuery("deleteUserConsentRolesByRole").setParameter("roleId", role.getId()).executeUpdate();
         em.createNamedQuery("deleteUserRoleMappingsByRole").setParameter("roleId", role.getId()).executeUpdate();
     }
 
     @Override
     public void preRemove(RealmModel realm, ClientModel client) {
-        em.createNamedQuery("deleteGrantedConsentProtMappersByClient").setParameter("clientId", client.getId()).executeUpdate();
-        em.createNamedQuery("deleteGrantedConsentRolesByClient").setParameter("clientId", client.getId()).executeUpdate();
-        em.createNamedQuery("deleteGrantedConsentsByClient").setParameter("clientId", client.getId()).executeUpdate();
+        em.createNamedQuery("deleteUserConsentProtMappersByClient").setParameter("clientId", client.getId()).executeUpdate();
+        em.createNamedQuery("deleteUserConsentRolesByClient").setParameter("clientId", client.getId()).executeUpdate();
+        em.createNamedQuery("deleteUserConsentsByClient").setParameter("clientId", client.getId()).executeUpdate();
     }
 
     @Override
     public void preRemove(ClientModel client, ProtocolMapperModel protocolMapper) {
-        em.createNamedQuery("deleteGrantedConsentProtMappersByProtocolMapper")
+        em.createNamedQuery("deleteUserConsentProtMappersByProtocolMapper")
                 .setParameter("protocolMapperId", protocolMapper.getId())
                 .executeUpdate();
     }

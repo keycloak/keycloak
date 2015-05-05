@@ -12,6 +12,7 @@
     <para>
         There are a number of examples that come with the keycloak distribution that show you how to invoke on this REST API.
         <literal>examples/preconfigured-demo/admin-access-app</literal> shows you how to access this api from java.
-        <literal>examples/cors/angular-product-app</literal> shows you how to invoke on it from Javascript.
+        <literal>examples/cors/angular-product-app</literal> shows you how to invoke on it from Javascript. Finally there is example in
+        <literal>example/admin-client</literal>, which contains example for Admin client, that can be used to invoke REST endpoints easily as Java methods.
     </para>
 </chapter>

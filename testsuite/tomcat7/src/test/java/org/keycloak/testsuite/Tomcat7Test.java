@@ -22,6 +22,7 @@
 package org.keycloak.testsuite;
 
 import org.apache.catalina.startup.Tomcat;
+import org.apache.tomcat.util.http.mapper.Mapper;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -163,6 +164,14 @@ public class Tomcat7Test {
     @Test
     public void testAdminApplicationLogout() throws Throwable {
         testStrategy.testAdminApplicationLogout();
+    }
+
+    /**
+     * KEYCLOAK-1216
+     */
+    @Test
+    public void testAccountManagementSessionsLogout() throws Throwable {
+        testStrategy.testAccountManagementSessionsLogout();
     }
 
 

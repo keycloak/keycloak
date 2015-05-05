@@ -14,7 +14,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.GrantedConsentModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -104,7 +104,20 @@ public class AuthenticationManager {
 
     }
 
-    public static void backchannelLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
+    /**
+     * Do not logout broker
+     *
+     * @param session
+     * @param realm
+     * @param userSession
+     * @param uriInfo
+     * @param connection
+     * @param headers
+     */
+    public static void backchannelLogout(KeycloakSession session, RealmModel realm,
+                                         UserSessionModel userSession, UriInfo uriInfo,
+                                         ClientConnection connection, HttpHeaders headers,
+                                         boolean logoutBroker) {
         if (userSession == null) return;
         UserModel user = userSession.getUser();
         userSession.setState(UserSessionModel.State.LOGGING_OUT);
@@ -113,22 +126,52 @@ public class AuthenticationManager {
         expireUserSessionCookie(session, userSession, realm, uriInfo, headers, connection);
 
         for (ClientSessionModel clientSession : userSession.getClientSessions()) {
-            ClientModel client = clientSession.getClient();
-            if (client instanceof ClientModel && !client.isFrontchannelLogout() && clientSession.getAction() != ClientSessionModel.Action.LOGGED_OUT) {
-                String authMethod = clientSession.getAuthMethod();
-                if (authMethod == null) continue; // must be a keycloak service like account
-                LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
-                protocol.setRealm(realm)
-                        .setHttpHeaders(headers)
-                        .setUriInfo(uriInfo);
-                protocol.backchannelLogout(userSession, clientSession);
-                clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
+            backchannelLogoutClientSession(session, realm, clientSession, userSession, uriInfo, headers);
+        }
+        if (logoutBroker) {
+            String brokerId = userSession.getNote(IdentityBrokerService.BROKER_PROVIDER_ID);
+            if (brokerId != null) {
+                IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
+                try {
+                    identityProvider.backchannelLogout(userSession, uriInfo, realm);
+                } catch (Exception e) {
+                }
             }
         }
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
         session.sessions().removeUserSession(realm, userSession);
     }
 
+    public static void backchannelLogoutClientSession(KeycloakSession session, RealmModel realm, ClientSessionModel clientSession, UserSessionModel userSession, UriInfo uriInfo, HttpHeaders headers) {
+        ClientModel client = clientSession.getClient();
+        if (client instanceof ClientModel && !client.isFrontchannelLogout() && clientSession.getAction() != ClientSessionModel.Action.LOGGED_OUT) {
+            String authMethod = clientSession.getAuthMethod();
+            if (authMethod == null) return; // must be a keycloak service like account
+            LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
+            protocol.setRealm(realm)
+                    .setHttpHeaders(headers)
+                    .setUriInfo(uriInfo);
+            protocol.backchannelLogout(userSession, clientSession);
+            clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
+        }
+
+    }
+
+    // Logout all clientSessions of this user and client
+    public static void backchannelUserFromClient(KeycloakSession session, RealmModel realm, UserModel user, ClientModel client, UriInfo uriInfo, HttpHeaders headers) {
+        String clientId = client.getId();
+
+        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
+        for (UserSessionModel userSession : userSessions) {
+            List<ClientSessionModel> clientSessions = userSession.getClientSessions();
+            for (ClientSessionModel clientSession : clientSessions) {
+                if (clientSession.getClient().getId().equals(clientId)) {
+                    AuthenticationManager.backchannelLogoutClientSession(session, realm, clientSession, userSession, uriInfo, headers);
+                    TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
+                }
+            }
+        }
+    }
 
     public static Response browserLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
         if (userSession == null) return null;
@@ -420,14 +463,14 @@ public class AuthenticationManager {
         if (client.isConsentRequired()) {
             accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT);
 
-            GrantedConsentModel grantedConsent = user.getGrantedConsentByClient(client.getId());
+            UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
 
             List<RoleModel> realmRoles = new LinkedList<RoleModel>();
             MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<String, RoleModel>();
             for (RoleModel r : accessCode.getRequestedRoles()) {
 
                 // Consent already granted by user
-                if (grantedConsent != null && grantedConsent.getGrantedRoles().contains(r.getId())) {
+                if (grantedConsent != null && grantedConsent.isRoleGranted(r)) {
                     continue;
                 }
 
@@ -439,10 +482,10 @@ public class AuthenticationManager {
             }
 
             List<ProtocolMapperModel> protocolMappers = new LinkedList<ProtocolMapperModel>();
-            for (ProtocolMapperModel model : client.getProtocolMappers()) {
-                if (model.isConsentRequired() && model.getProtocol().equals(clientSession.getAuthMethod()) && model.getConsentText() != null) {
-                    if (grantedConsent == null || !grantedConsent.getGrantedProtocolMappers().contains(model.getId())) {
-                        protocolMappers.add(model);
+            for (ProtocolMapperModel protocolMapper : accessCode.getRequestedProtocolMappers()) {
+                if (protocolMapper.isConsentRequired() && protocolMapper.getConsentText() != null) {
+                    if (grantedConsent == null || !grantedConsent.isProtocolMapperGranted(protocolMapper)) {
+                        protocolMappers.add(protocolMapper);
                     }
                 }
             }
@@ -521,7 +564,7 @@ public class AuthenticationManager {
 
             UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
             if (!isSessionValid(realm, userSession)) {
-                if (userSession != null) backchannelLogout(session, realm, userSession, uriInfo, connection, headers);
+                if (userSession != null) backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
                 logger.debug("User session not active");
                 return null;
             }

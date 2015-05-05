@@ -120,20 +120,6 @@ public class KeyStoreUtil {
     }
 
     /**
-     * Generate a Key Pair
-     *
-     * @param algo (RSA, DSA etc)
-     *
-     * @return
-     *
-     * @throws GeneralSecurityException
-     */
-    public static KeyPair generateKeyPair(String algo) throws GeneralSecurityException {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(algo);
-        return kpg.genKeyPair();
-    }
-
-    /**
      * Get the Public Key from the keystore
      *
      * @param ks

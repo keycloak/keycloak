@@ -3,14 +3,14 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.2.0.RC1-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>1.3.0.Beta1-SNAPSHOT</version>
     </parent>
+
     <name>Examples</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>examples-pom</artifactId>
+    <artifactId>keycloak-examples-parent</artifactId>
     <packaging>pom</packaging>
 
     <build>
@@ -22,10 +22,18 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <modules>
         <module>admin-client</module>
+        <module>broker</module>
         <module>cors</module>
         <module>demo-template</module>
         <module>providers</module>
@@ -35,5 +43,6 @@
         <module>fuse</module>
         <module>kerberos</module>
         <module>themes</module>
+        <module>saml</module>
     </modules>
 </project>

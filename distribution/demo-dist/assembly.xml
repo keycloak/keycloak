@@ -1,0 +1,46 @@
+<assembly>
+    <id>demo-dist</id>
+
+    <formats>
+        <format>zip</format>
+        <format>tar.gz</format>
+    </formats>
+
+    <includeBaseDirectory>true</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>
+            <outputDirectory>keycloak</outputDirectory>
+            <excludes>
+                <exclude>**/*.sh</exclude>
+                <exclude>standalone/configuration/standalone.xml</exclude>
+                <exclude>standalone/configuration/standalone-keycloak.xml</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>
+            <outputDirectory>keycloak</outputDirectory>
+            <includes>
+                <include>**/*.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-docs-${project.version}</directory>
+            <outputDirectory>docs</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-examples-${project.version}</directory>
+            <outputDirectory>examples</outputDirectory>
+        </fileSet>
+    </fileSets>
+
+    <files>
+        <file>
+            <source>${project.build.directory}/unpacked/wildfly-${wildfly.version}/standalone/configuration/standalone-keycloak.xml</source>
+            <outputDirectory>keycloak/standalone/configuration</outputDirectory>
+            <destName>standalone.xml</destName>
+        </file>
+    </files>
+</assembly>

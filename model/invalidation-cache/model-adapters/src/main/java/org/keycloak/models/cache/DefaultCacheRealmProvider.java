@@ -1,5 +1,6 @@
 package org.keycloak.models.cache;
 
+import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
@@ -14,6 +15,7 @@ import org.keycloak.models.cache.entities.CachedRole;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +46,12 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
 
         session.getTransaction().enlistAfterCompletion(getTransaction());
     }
+
+    @Override
+    public MigrationModel getMigrationModel() {
+        return getDelegate().getMigrationModel();
+    }
+
 
     @Override
     public boolean isEnabled() {
@@ -189,8 +197,16 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public List<RealmModel> getRealms() {
-        // we don't cache this for now
-        return getDelegate().getRealms();
+        // Retrieve realms from backend
+        List<RealmModel> backendRealms = getDelegate().getRealms();
+
+        // Return cache delegates to ensure cache invalidated during write operations
+        List<RealmModel> cachedRealms = new LinkedList<RealmModel>();
+        for (RealmModel realm : backendRealms) {
+            RealmModel cached = session.realms().getRealm(realm.getId());
+            cachedRealms.add(cached);
+        }
+        return cachedRealms;
     }
 
     @Override

@@ -1,2 +1,3 @@
-org.keycloak.broker.oidc.mappers.RoleMapper
+org.keycloak.broker.oidc.mappers.ClaimToRoleMapper
+org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper
 org.keycloak.broker.oidc.mappers.UserAttributeMapper

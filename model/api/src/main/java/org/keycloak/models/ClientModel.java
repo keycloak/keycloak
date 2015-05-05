@@ -24,6 +24,10 @@ public interface ClientModel extends RoleContainerModel {
 
     void setClientId(String clientId);
 
+    String getName();
+
+    void setName(String name);
+
     boolean isEnabled();
 
     void setEnabled(boolean enabled);
@@ -115,10 +119,6 @@ public interface ClientModel extends RoleContainerModel {
     int getNotBefore();
 
     void setNotBefore(int notBefore);
-
-    void updateIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders);
-    List<ClientIdentityProviderMappingModel> getIdentityProviders();
-    boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId);
 
     Set<ProtocolMapperModel> getProtocolMappers();
     ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model);

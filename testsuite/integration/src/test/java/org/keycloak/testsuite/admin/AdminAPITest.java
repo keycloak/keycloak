@@ -41,7 +41,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
-import org.keycloak.testutils.KeycloakServer;
+import org.keycloak.testsuite.KeycloakServer;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -167,6 +167,7 @@ public class AdminAPITest {
 
     protected void checkAppUpdate(ClientRepresentation appRep, ClientRepresentation storedApp) {
         if (appRep.getClientId() != null) Assert.assertEquals(appRep.getClientId(), storedApp.getClientId());
+        if (appRep.getName() != null) Assert.assertEquals(appRep.getName(), storedApp.getName());
         if (appRep.isEnabled() != null) Assert.assertEquals(appRep.isEnabled(), storedApp.isEnabled());
         if (appRep.isBearerOnly() != null) Assert.assertEquals(appRep.isBearerOnly(), storedApp.isBearerOnly());
         if (appRep.isPublicClient() != null) Assert.assertEquals(appRep.isPublicClient(), storedApp.isPublicClient());

@@ -84,6 +84,7 @@ public class RealmManager {
         setupMasterAdminManagement(realm);
         setupRealmAdminManagement(realm);
         setupAccountManagement(realm);
+        setupBrokerService(realm);
         setupAdminConsole(realm);
 
         return realm;
@@ -92,6 +93,7 @@ public class RealmManager {
     protected void setupAdminConsole(RealmModel realm) {
         ClientModel adminConsole = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
         if (adminConsole == null) adminConsole = new ClientManager(this).createClient(realm, Constants.ADMIN_CONSOLE_CLIENT_ID);
+        adminConsole.setName("${client_" + Constants.ADMIN_CONSOLE_CLIENT_ID + "}");
         String baseUrl = contextPath + "/admin/" + realm.getName() + "/console";
         adminConsole.setBaseUrl(baseUrl + "/index.html");
         adminConsole.setEnabled(true);
@@ -111,11 +113,11 @@ public class RealmManager {
     }
 
     public String getRealmAdminClientId(RealmModel realm) {
-        return "realm-management";
+        return Constants.REALM_MANAGEMENT_CLIENT_ID;
     }
 
     public String getRealmAdminClientId(RealmRepresentation realm) {
-        return "realm-management";
+        return Constants.REALM_MANAGEMENT_CLIENT_ID;
     }
 
 
@@ -182,6 +184,7 @@ public class RealmManager {
         ClientModel realmAdminClient = realm.getClientByClientId(realmAdminClientId);
         if (realmAdminClient == null) {
             realmAdminClient = clientManager.createClient(realm, realmAdminClientId);
+            realmAdminClient.setName("${client_" + realmAdminClientId + "}");
         }
         RoleModel adminRole = realmAdminClient.addRole(AdminRoles.REALM_ADMIN);
         adminRole.setDescription("${role_" + AdminRoles.REALM_ADMIN + "}");
@@ -200,6 +203,7 @@ public class RealmManager {
         ClientModel client = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         if (client == null) {
             client = new ClientManager(this).createClient(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            client.setName("${client_" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "}");
             client.setEnabled(true);
             client.setFullScopeAllowed(false);
             String base = contextPath + "/realms/" + realm.getName() + "/account";
@@ -210,6 +214,20 @@ public class RealmManager {
             for (String role : AccountRoles.ALL) {
                 client.addDefaultRole(role);
                 client.getRole(role).setDescription("${role_"+role+"}");
+            }
+        }
+    }
+
+    public void setupBrokerService(RealmModel realm) {
+        ClientModel client = realm.getClientNameMap().get(Constants.BROKER_SERVICE_CLIENT_ID);
+        if (client == null) {
+            client = new ClientManager(this).createClient(realm, Constants.BROKER_SERVICE_CLIENT_ID);
+            client.setEnabled(true);
+            client.setName("${client_" + Constants.BROKER_SERVICE_CLIENT_ID + "}");
+            client.setFullScopeAllowed(false);
+
+            for (String role : Constants.BROKER_SERVICE_ROLES) {
+                client.addRole(role).setDescription("${role_"+ role.toLowerCase().replaceAll("_", "-") +"}");
             }
         }
     }
@@ -228,6 +246,7 @@ public class RealmManager {
         setupMasterAdminManagement(realm);
         if (!hasRealmAdminManagementClient(rep)) setupRealmAdminManagement(realm);
         if (!hasAccountManagementClient(rep)) setupAccountManagement(realm);
+        if (!hasBrokerClient(rep)) setupBrokerService(realm);
         if (!hasAdminConsoleClient(rep)) setupAdminConsole(realm);
 
         RepresentationToModel.importRealm(session, rep, realm);
@@ -255,6 +274,15 @@ public class RealmManager {
         if (rep.getClients() == null) return false;
         for (ClientRepresentation clientRep : rep.getClients()) {
             if (clientRep.getClientId().equals(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    private boolean hasBrokerClient(RealmRepresentation rep) {
+        if (rep.getClients() == null) return false;
+        for (ClientRepresentation clientRep : rep.getClients()) {
+            if (clientRep.getClientId().equals(Constants.BROKER_SERVICE_CLIENT_ID)) {
                 return true;
             }
         }

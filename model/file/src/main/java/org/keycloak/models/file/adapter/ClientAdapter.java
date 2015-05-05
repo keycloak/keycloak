@@ -16,12 +16,18 @@
  */
 package org.keycloak.models.file.adapter;
 
+import org.keycloak.connections.file.InMemoryModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.entities.ClientEntity;
+import org.keycloak.models.entities.ProtocolMapperEntity;
+import org.keycloak.models.entities.RoleEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,14 +36,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.keycloak.connections.file.InMemoryModel;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.entities.ClientEntity;
-import org.keycloak.models.entities.ClientIdentityProviderMappingEntity;
-import org.keycloak.models.entities.ProtocolMapperEntity;
-import org.keycloak.models.entities.RoleEntity;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * ApplicationModel used for JSON persistence.
@@ -68,6 +66,16 @@ public class ClientAdapter implements ClientModel {
     @Override
     public String getId() {
         return entity.getId();
+    }
+
+    @Override
+    public String getName() {
+        return entity.getName();
+    }
+
+    @Override
+    public void setName(String name) {
+       entity.setName(name);
     }
 
     @Override
@@ -277,7 +285,8 @@ public class ClientAdapter implements ClientModel {
             throw new RuntimeException("protocol mapper name must be unique per protocol");
         }
         ProtocolMapperEntity entity = new ProtocolMapperEntity();
-        entity.setId(KeycloakModelUtils.generateId());
+        String id = model.getId() != null ? model.getId() : KeycloakModelUtils.generateId();
+        entity.setId(id);
         entity.setProtocol(model.getProtocol());
         entity.setName(model.getName());
         entity.setProtocolMapper(model.getProtocolMapper());
@@ -360,48 +369,6 @@ public class ClientAdapter implements ClientModel {
         if (entity.getConfig() != null) config.putAll(entity.getConfig());
         mapping.setConfig(config);
         return mapping;
-    }
-
-    @Override
-    public void updateIdentityProviders(List<ClientIdentityProviderMappingModel> identityProviders) {
-        List<ClientIdentityProviderMappingEntity> stored = new ArrayList<ClientIdentityProviderMappingEntity>();
-
-        for (ClientIdentityProviderMappingModel model : identityProviders) {
-            ClientIdentityProviderMappingEntity entity = new ClientIdentityProviderMappingEntity();
-
-            entity.setId(model.getIdentityProvider());
-            entity.setRetrieveToken(model.isRetrieveToken());
-            stored.add(entity);
-        }
-
-        entity.setIdentityProviders(stored);
-    }
-
-    @Override
-    public List<ClientIdentityProviderMappingModel> getIdentityProviders() {
-        List<ClientIdentityProviderMappingModel> models = new ArrayList<>();
-
-        for (ClientIdentityProviderMappingEntity e : entity.getIdentityProviders()) {
-            ClientIdentityProviderMappingModel model = new ClientIdentityProviderMappingModel();
-
-            model.setIdentityProvider(e.getId());
-            model.setRetrieveToken(e.isRetrieveToken());
-
-            models.add(model);
-        }
-
-        return models;
-    }
-
-    @Override
-    public boolean isAllowedRetrieveTokenFromIdentityProvider(String providerId) {
-        for (ClientIdentityProviderMappingEntity identityProviderMappingModel : entity.getIdentityProviders()) {
-            if (identityProviderMappingModel.getId().equals(providerId)) {
-                return identityProviderMappingModel.isRetrieveToken();
-            }
-        }
-
-        return false;
     }
 
     @Override

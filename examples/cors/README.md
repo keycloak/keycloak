@@ -52,7 +52,7 @@ next you must build and deploy
 
 ```
 cd cors
-mvn clean install jboss-as:deploy
+mvn clean install wildfly:deploy
 ```
 
 Step 5: Login and Observe Apps

@@ -52,7 +52,7 @@ public class ApplicationServlet extends HttpServlet {
         PrintWriter pw = resp.getWriter();
         pw.printf("<html><head><title>%s</title></head><body>", title);
         UriBuilder base = UriBuilder.fromUri("http://localhost:8081/auth");
-        pw.printf(LINK, RealmsResource.accountUrl(base), "account", "account");
+        pw.printf(LINK, RealmsResource.accountUrl(base).build("test"), "account", "account");
 
         pw.print("</body></html>");
         pw.flush();

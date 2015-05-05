@@ -1,113 +1,91 @@
-<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
-<div id="content-area" class="col-md-9" role="main">
-    <ul class="nav nav-tabs nav-tabs-pf"  data-ng-show="!create">
-        <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}">Attributes</a></li>
-        <li data-ng-show="access.manageUsers"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/user-credentials">Credentials</a></li>
-        <li class="active"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/role-mappings">Role Mappings</a></li>
-        <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/sessions">Sessions</a></li>
-        <li data-ng-show="realm.identityFederationEnabled"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/social-links">Federated Identities</a></li>
-    </ul>
-    <div id="content">
-        <ol class="breadcrumb">
-            <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
-            <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></li>
-            <li class="active">Role Mappings</li>
-        </ol>
-        <h2>User <span>{{user.username}}'s</span> Role Mappings</h2>
-        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageUsers">
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
+        <li>{{user.username}}</li>
+    </ol>
 
-            <fieldset>
-                <legend><span class="text">Realm Roles</span> <span tooltip-placement="right" tooltip="Realm level roles mapped to user." class="fa fa-info-circle"></span>
-                </legend>
-                <div class="form-group col-sm-10">
-                    <div class="controls changing-selectors">
-                        <div class="select-title">
-                            <label class="control-label" for="available">Available Roles <span tooltip-placement="right" tooltip="Realm roles that can be assigned to the user." class="fa fa-info-circle"></span>
-                            </label>
-                            <select id="available" class="form-control" multiple size="5"
-                                    ng-multiple="true"
-                                    ng-model="selectedRealmRoles"
-                                    ng-options="r.name for r in realmRoles">
-                            </select>
-                        </div>
-                        <div class="middle-buttons">
-                            <button class="btn btn-default" type="submit" ng-click="addRealmRole()" tooltip="Assign role" tooltip-placement="right">
-                                <span class="kc-icon-arrow-right">Move right</span>
-                            </button>
-                            <button class="btn btn-default" type="submit" ng-click="deleteRealmRole()" tooltip="Unassign role" tooltip-placement="left">
-                                <span class="kc-icon-arrow-left">Move left</span>
-                            </button>
-                        </div>
-                        <div class="select-title">
-                            <label class="control-label" for="assigned">Assigned Roles <span tooltip-placement="right" tooltip="Realm roles mapped to the user" class="fa fa-info-circle"></span>
-                            </label>
-                            <select id="assigned" class="form-control" multiple size=5
-                                    ng-multiple="true"
-                                    ng-model="selectedRealmMappings"
-                                    ng-options="r.name for r in realmMappings">
-                            </select>
-                        </div>
-                        <div class="middle-buttons">
-                            -
-                        </div>
-                        <div class="select-title">
-                            <label class="control-label" for="realm-composite">Effective Roles <span tooltip-placement="right" tooltip="All realm role mappings.  Some roles here might be inherited from a mapped composite role." class="fa fa-info-circle"></span>
-                            </label>
-                            <select id="realm-composite" class="form-control" multiple size=5
-                                    ng-disabled="true"
-                                    ng-model="dummymodel"
-                                    ng-options="r.name for r in realmComposite">
-                            </select>
-                        </div>
+    <h1><strong>User</strong> {{user.username|capitalize}}</h1>
+
+    <kc-tabs-user></kc-tabs-user>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageUsers">
+        <div class="form-group">
+            <label class="col-md-2 control-label" class="control-label">Realm Roles</label>
+
+            <div class="col-md-10">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="control-label" for="available">Available Roles</label>
+                        <select id="available" class="form-control" multiple size="5"
+                                ng-multiple="true"
+                                ng-model="selectedRealmRoles"
+                                ng-options="r.name for r in realmRoles">
+                        </select>
+                        <button class="btn btn-default" type="submit" ng-click="addRealmRole()" tooltip="Assign role" tooltip-placement="right">
+                            Add selected <i class="fa fa-angle-right"></i>
+                        </button>
+                        <kc-tooltip>Realm roles that can be assigned to the user.</kc-tooltip>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="control-label" for="assigned">Assigned Roles</label>
+                        <kc-tooltip>Realm roles mapped to the user</kc-tooltip>
+                        <select id="assigned" class="form-control" multiple size=5
+                                ng-multiple="true"
+                                ng-model="selectedRealmMappings"
+                                ng-options="r.name for r in realmMappings">
+                        </select>
+                        <button class="btn btn-default" type="submit" ng-click="deleteRealmRole()" tooltip="Unassign role" tooltip-placement="left">
+                            <i class="fa fa-angle-double-left"></i> Remove selected
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="control-label" for="realm-composite">Effective Roles</label>
+                        <kc-tooltip>All realm role mappings.  Some roles here might be inherited from a mapped composite role.</kc-tooltip>
+                        <select id="realm-composite" class="form-control" multiple size=5
+                                ng-disabled="true"
+                                ng-model="dummymodel"
+                                ng-options="r.name for r in realmComposite">
+                        </select>
                     </div>
                 </div>
-            </fieldset>
+            </div>
+        </div>
 
-            <fieldset ng-show="clients.length > 0">
-                <legend><span class="text">Client Roles</span> </legend>
-                <div class="form-group input-select">
-                    <label class="col-sm-2 control-label" for="clients">Client <span tooltip-placement="right" tooltip="Select a client to view or modify additional roles to map." class="fa fa-info-circle"></span></label>
-                    <div class="col-sm-4">
-                        <div class="input-group">
-                            <div class="select-kc">
-                                <select id="clients" name="clients" ng-change="changeClient()" ng-model="client" ng-options="a.clientId for a in clients" ng-disabled="false">
-                                    <option value="" selected> Select a Client...</option>
-                                </select>
-                            </div>
-                        </div>
+        <div class="form-group">
+                <label class="col-md-2 control-label" class="control-label">
+                    <span>Client Roles</span>
+                    <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="client" ng-options="a.clientId for a in clients" ng-disabled="false"></select>
+                </label>
+                <div class="col-md-10">
+                    <div class="row" data-ng-hide="client">
+                        <div class="col-md-4"><span class="text-muted">Select client to view roles for client</span></div>
                     </div>
-
-                </div>
-                <div class="form-group" ng-show="client">
-                    <div class="controls changing-selectors col-sm-10">
-                        <div class="select-title">
-                            <label class="control-label" for="available-client">Available Roles <span tooltip-placement="right" tooltip="Assignable roles from this client." class="fa fa-info-circle"></span></label>
+                    <div class="row" data-ng-show="client">
+                        <div class="col-md-3">
+                            <label class="control-label" for="available-client">Available Roles</label>
+                            <kc-tooltip>Assignable roles from this client.</kc-tooltip>
                             <select id="available-client" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedClientRoles"
                                     ng-options="r.name for r in clientRoles">
                             </select>
-                        </div>
-                        <div class="middle-buttons">
                             <button class="btn btn-default" type="submit" ng-click="addClientRole()" tooltip="Assign role" tooltip-placement="right">
-                                <span class="kc-icon-arrow-right">Move right</span>
-                            </button>
-                            <button class="btn btn-default" type="submit" ng-click="deleteClientRole()" tooltip="Unassign role" tooltip-placement="left">
-                                <span class="kc-icon-arrow-left">Move left</span>
+                                Add selected <i class="fa fa-angle-double-right"></i>
                             </button>
                         </div>
-                        <div class="select-title">
-                            <label class="control-label" for="assigned-client">Assigned Roles <span tooltip-placement="right" tooltip="Role mappings for this client." class="fa fa-info-circle"></span></label>
+                        <div class="col-md-3">
+                            <label class="control-label" for="assigned-client">Assigned Roles</label>
+                            <kc-tooltip>Role mappings for this client.</kc-tooltip>
                             <select id="assigned-client" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedClientMappings"
                                     ng-options="r.name for r in clientMappings">
                             </select>
+                            <button class="btn btn-default" type="submit" ng-click="deleteClientRole()" tooltip="Unassign role" tooltip-placement="left">
+                                <i class="fa fa-angle-double-left"></i> Remove selected
+                            </button>
                         </div>
-                        <div class="middle-buttons">
-                            -
-                        </div>
-                        <div class="select-title">
+                        <div class="col-md-3">
                             <label class="control-label" for="client-composite">Effective Roles <span tooltip-placement="right" tooltip="Role mappings for this client.  Some roles here might be inherited from a mapped composite role." class="fa fa-info-circle"></span></label>
                             <select id="client-composite" class="form-control" multiple size=5
                                     ng-disabled="true"
@@ -117,7 +95,9 @@
                         </div>
                     </div>
                 </div>
-            </fieldset>
-        </form>
-    </div>
+            </div>
+        </div>
+    </form>
 </div>
+
+<kc-menu></kc-menu>

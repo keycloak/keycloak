@@ -7,7 +7,6 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -84,8 +83,6 @@ public class IdentityProviderResource {
     public Response delete() {
         this.auth.requireManage();
 
-        removeClientIdentityProviders(this.realm.getClients(), this.identityProviderModel);
-
         this.realm.removeIdentityProviderByAlias(this.identityProviderModel.getAlias());
 
         return Response.noContent().build();
@@ -109,7 +106,6 @@ public class IdentityProviderResource {
                 // Admin changed the ID (alias) of identity provider. We must update all clients and users
                 logger.debug("Changing providerId in all clients and linked users. oldProviderId=" + oldProviderId + ", newProviderId=" + newProviderId);
 
-                updateClientsAfterProviderAliasChange(this.realm.getClients(), oldProviderId, newProviderId);
                 updateUsersAfterProviderAliasChange(this.session.users().getUsers(this.realm), oldProviderId, newProviderId);
             }
 
@@ -129,25 +125,6 @@ public class IdentityProviderResource {
         }
 
         return null;
-    }
-
-    private void updateClientsAfterProviderAliasChange(List<ClientModel> clients, String oldProviderId, String newProviderId) {
-        for (ClientModel client : clients) {
-            List<ClientIdentityProviderMappingModel> clientIdentityProviders = client.getIdentityProviders();
-            boolean found = true;
-
-            for (ClientIdentityProviderMappingModel mappingModel : clientIdentityProviders) {
-                if (mappingModel.getIdentityProvider().equals(oldProviderId)) {
-                    mappingModel.setIdentityProvider(newProviderId);
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found) {
-                client.updateIdentityProviders(clientIdentityProviders);
-            }
-        }
     }
 
     private void updateUsersAfterProviderAliasChange(List<UserModel> users, String oldProviderId, String newProviderId) {
@@ -204,7 +181,7 @@ public class IdentityProviderResource {
         for (ProviderFactory factory : factories) {
             IdentityProviderMapper mapper = (IdentityProviderMapper)factory;
             for (String type : mapper.getCompatibleProviders()) {
-                if (type.equals(identityProviderModel.getProviderId())) {
+                if (IdentityProviderMapper.ANY_PROVIDER.equals(type) || type.equals(identityProviderModel.getProviderId())) {
                     IdentityProviderMapperTypeRepresentation rep = new IdentityProviderMapperTypeRepresentation();
                     rep.setId(mapper.getId());
                     rep.setCategory(mapper.getDisplayCategory());
@@ -221,7 +198,7 @@ public class IdentityProviderResource {
                         rep.getProperties().add(propRep);
                     }
                     types.put(rep.getId(), rep);
-
+                    break;
                 }
             }
         }
@@ -285,18 +262,5 @@ public class IdentityProviderResource {
         realm.removeIdentityProviderMapper(model);
     }
 
-    private void removeClientIdentityProviders(List<ClientModel> clients, IdentityProviderModel identityProvider) {
-        for (ClientModel clientModel : clients) {
-            List<ClientIdentityProviderMappingModel> identityProviders = clientModel.getIdentityProviders();
-
-            for (ClientIdentityProviderMappingModel providerMappingModel : new ArrayList<>(identityProviders)) {
-                if (providerMappingModel.getIdentityProvider().equals(identityProvider.getAlias())) {
-                    identityProviders.remove(providerMappingModel);
-                    clientModel.updateIdentityProviders(identityProviders);
-                    break;
-                }
-            }
-        }
-    }
 
 }

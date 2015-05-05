@@ -55,8 +55,8 @@
             <module name="org.bouncycastle"/>
 
             <module name="org.jboss.resteasy.resteasy-jackson-provider" services="import"/>
-            <module name="org.codehaus.jackson.jackson-core-asl"/>
-            <module name="org.codehaus.jackson.jackson-mapper-asl"/>
+            <module name="org.jboss.resteasy.resteasy-multipart-provider" services="import"/>
+            <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         </dependencies>
         <exclusions>
             <module name="org.jboss.resteasy.resteasy-jackson2-provider"/>
@@ -69,6 +69,7 @@
         </exclusions>
         <exclude-subsystems>
             <subsystem name="webservices"/>
+            <subsystem name="weld"/>
         </exclude-subsystems>
     </deployment>
 </jboss-deployment-structure>

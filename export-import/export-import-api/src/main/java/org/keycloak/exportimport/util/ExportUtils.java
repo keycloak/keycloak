@@ -8,14 +8,15 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -23,6 +24,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.IOException;
@@ -282,6 +284,17 @@ public class ExportUtils {
         }
         userRep.setCredentials(credReps);
         userRep.setFederationLink(user.getFederationLink());
+
+        // Grants
+        List<UserConsentModel> consents = user.getConsents();
+        LinkedList<UserConsentRepresentation> consentReps = new LinkedList<UserConsentRepresentation>();
+        for (UserConsentModel consent : consents) {
+            UserConsentRepresentation consentRep = ModelToRepresentation.toRepresentation(consent);
+            consentReps.add(consentRep);
+        }
+        if (consentReps.size() > 0) {
+            userRep.setClientConsents(consentReps);
+        }
 
         return userRep;
     }

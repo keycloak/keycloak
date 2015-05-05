@@ -1,7 +1,6 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -10,12 +9,11 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.representations.idm.ClientIdentityProviderMappingRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -25,6 +23,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -229,6 +228,7 @@ public class ModelToRepresentation {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setId(clientModel.getId());
         rep.setClientId(clientModel.getClientId());
+        rep.setName(clientModel.getName());
         rep.setEnabled(clientModel.isEnabled());
         rep.setAdminUrl(clientModel.getManagementUrl());
         rep.setPublicClient(clientModel.isPublicClient());
@@ -238,6 +238,7 @@ public class ModelToRepresentation {
         rep.setFullScopeAllowed(clientModel.isFullScopeAllowed());
         rep.setBearerOnly(clientModel.isBearerOnly());
         rep.setConsentRequired(clientModel.isConsentRequired());
+        rep.setDirectGrantsOnly(clientModel.isDirectGrantsOnly());
         rep.setSurrogateAuthRequired(clientModel.isSurrogateAuthRequired());
         rep.setBaseUrl(clientModel.getBaseUrl());
         rep.setNotBefore(clientModel.getNotBefore());
@@ -261,10 +262,6 @@ public class ModelToRepresentation {
             rep.setRegisteredNodes(new HashMap<>(clientModel.getRegisteredNodes()));
         }
 
-        if (!clientModel.getIdentityProviders().isEmpty()) {
-            rep.setIdentityProviders(toRepresentation(clientModel.getIdentityProviders()));
-        }
-
         if (!clientModel.getProtocolMappers().isEmpty()) {
             List<ProtocolMapperRepresentation> mappings = new LinkedList<>();
             for (ProtocolMapperModel model : clientModel.getProtocolMappers()) {
@@ -274,21 +271,6 @@ public class ModelToRepresentation {
         }
 
         return rep;
-    }
-
-    private static List<ClientIdentityProviderMappingRepresentation> toRepresentation(List<ClientIdentityProviderMappingModel> identityProviders) {
-        ArrayList<ClientIdentityProviderMappingRepresentation> representations = new ArrayList<ClientIdentityProviderMappingRepresentation>();
-
-        for (ClientIdentityProviderMappingModel model : identityProviders) {
-            ClientIdentityProviderMappingRepresentation representation = new ClientIdentityProviderMappingRepresentation();
-
-            representation.setId(model.getIdentityProvider());
-            representation.setRetrieveToken(model.isRetrieveToken());
-
-            representations.add(representation);
-        }
-
-        return representations;
     }
 
     public static UserFederationProviderRepresentation toRepresentation(UserFederationProviderModel model) {
@@ -315,6 +297,7 @@ public class ModelToRepresentation {
         providerRep.setUpdateProfileFirstLogin(identityProviderModel.isUpdateProfileFirstLogin());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
         providerRep.setConfig(identityProviderModel.getConfig());
+        providerRep.setAddReadTokenRoleOnCreate(identityProviderModel.isAddReadTokenRoleOnCreate());
 
         return providerRep;
     }
@@ -343,6 +326,47 @@ public class ModelToRepresentation {
         rep.setConfig(config);
         rep.setName(model.getName());
         return rep;
+    }
+
+    public static UserConsentRepresentation toRepresentation(UserConsentModel model) {
+        String clientId = model.getClient().getClientId();
+
+        Map<String, List<String>> grantedProtocolMappers = new HashMap<String, List<String>>();
+        for (ProtocolMapperModel protocolMapper : model.getGrantedProtocolMappers()) {
+            String protocol = protocolMapper.getProtocol();
+            List<String> currentProtocolMappers = grantedProtocolMappers.get(protocol);
+            if (currentProtocolMappers == null) {
+                currentProtocolMappers = new LinkedList<String>();
+                grantedProtocolMappers.put(protocol, currentProtocolMappers);
+            }
+            currentProtocolMappers.add(protocolMapper.getName());
+        }
+
+        List<String> grantedRealmRoles = new LinkedList<String>();
+        Map<String, List<String>> grantedClientRoles = new HashMap<String, List<String>>();
+        for (RoleModel role : model.getGrantedRoles()) {
+            if (role.getContainer() instanceof RealmModel) {
+                grantedRealmRoles.add(role.getName());
+            } else {
+                ClientModel client2 = (ClientModel) role.getContainer();
+
+                String clientId2 = client2.getClientId();
+                List<String> currentClientRoles = grantedClientRoles.get(clientId2);
+                if (currentClientRoles == null) {
+                    currentClientRoles = new LinkedList<String>();
+                    grantedClientRoles.put(clientId2, currentClientRoles);
+                }
+                currentClientRoles.add(role.getName());
+            }
+        }
+
+
+        UserConsentRepresentation consentRep = new UserConsentRepresentation();
+        consentRep.setClientId(clientId);
+        consentRep.setGrantedProtocolMappers(grantedProtocolMappers);
+        consentRep.setGrantedRealmRoles(grantedRealmRoles);
+        consentRep.setGrantedClientRoles(grantedClientRoles);
+        return consentRep;
     }
 
 }

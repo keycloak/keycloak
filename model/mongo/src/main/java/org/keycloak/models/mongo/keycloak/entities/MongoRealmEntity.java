@@ -19,13 +19,10 @@ public class MongoRealmEntity extends RealmEntity implements MongoIdentifiableEn
                 .and("realmId").is(getId())
                 .get();
 
-        // Remove all users of this realm
-        context.getMongoStore().removeEntities(MongoUserEntity.class, query, context);
-
         // Remove all roles of this realm
-        context.getMongoStore().removeEntities(MongoRoleEntity.class, query, context);
+        context.getMongoStore().removeEntities(MongoRoleEntity.class, query, true, context);
 
-        // Remove all applications of this realm
-        context.getMongoStore().removeEntities(MongoClientEntity.class, query, context);
+        // Remove all clients of this realm
+        context.getMongoStore().removeEntities(MongoClientEntity.class, query, true, context);
     }
 }

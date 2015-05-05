@@ -20,7 +20,7 @@
             When a composite role is mapped to the user, the user gains the permission of that role, plus any other role the
             composite is associated with.  This association is dynamic.  So, if you add  or remove an associated role from
             the composite, then all users that are mapped to the composite role will automatically have those permissions
-            added or removed.  Composites can also be used to define Application or OAuth Client scopes.
+            added or removed.  Composites can also be used to define Client scopes.
         </para>
         <para>
             Composite roles can be associated with any type of role Realm or Application.  In the admin console simple

@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.2.0.RC1-SNAPSHOT</version>
+        <version>1.3.0.Beta1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -20,86 +20,82 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
-            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core-jaxrs</artifactId>
-            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-connections-http-client</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-forms-common-freemarker</artifactId>
-            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-events-api</artifactId>
-            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-account-api</artifactId>
-            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-email-api</artifactId>
-            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-login-api</artifactId>
-            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-api</artifactId>
-            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-invalidation-cache-model</artifactId>
-            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-social-core</artifactId>
-            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-broker-core</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-timer-api</artifactId>
-            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-timer-basic</artifactId>
-            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-export-import-api</artifactId>
-            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -135,11 +131,6 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>jaxrs-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-crypto</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -197,36 +188,26 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.9.1</version>
-                <executions>
-                    <execution>
-                        <id>generate-service-docs</id>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <subpackages>org.keycloak.services.resources.admin:org.keycloak.protocol.oidc</subpackages>
-                            <doclet>com.lunatech.doclets.jax.jaxrs.JAXRSDoclet</doclet>
-                            <docletArtifacts>
-                                <docletArtifact>
-                                    <groupId>com.lunatech.jax-doclets</groupId>
-                                    <artifactId>doclets</artifactId>
-                                    <version>0.10.2</version>
-                                </docletArtifact>
-                            </docletArtifacts>
-                            <detectOfflineLinks>false</detectOfflineLinks>
-                            <offlineLinks>
-                                <offlineLink>
-                                    <url>../javadocs</url>
-                                    <location>${project.basedir}/../target/site/apidocs</location>
-                                </offlineLink>
-                            </offlineLinks>
-                            <additionalparam>-disablejavascriptexample</additionalparam>
-                            <additionalparam>-pathexcludefilter '/admin/.*index.*' -pathexcludefilter '/admin' -pathexcludefilter '/admin/\\{realm\\}/console.*'</additionalparam>
-                        </configuration>
-                        <goals>
-                            <goal>javadoc</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <configuration>
+                    <subpackages>org.keycloak.services.resources.admin:org.keycloak.protocol.oidc</subpackages>
+                    <doclet>com.lunatech.doclets.jax.jaxrs.JAXRSDoclet</doclet>
+                    <docletArtifacts>
+                        <docletArtifact>
+                            <groupId>com.lunatech.jax-doclets</groupId>
+                            <artifactId>doclets</artifactId>
+                            <version>0.10.2</version>
+                        </docletArtifact>
+                    </docletArtifacts>
+                    <detectOfflineLinks>false</detectOfflineLinks>
+                    <offlineLinks>
+                        <offlineLink>
+                            <url>../javadocs</url>
+                            <location>${project.basedir}/../target/site/apidocs</location>
+                        </offlineLink>
+                    </offlineLinks>
+                    <additionalparam>-disablejavascriptexample</additionalparam>
+                    <additionalparam>-pathexcludefilter '/admin/.*index.*' -pathexcludefilter '/admin' -pathexcludefilter '/admin/\\{realm\\}/console.*'</additionalparam>
+                </configuration>
             </plugin>
         </plugins>
     </build>

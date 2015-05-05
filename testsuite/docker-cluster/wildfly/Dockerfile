@@ -1,4 +1,4 @@
-FROM jboss/wildfly
+FROM jboss/wildfly:8.2.0.Final
 
 USER root
 
@@ -14,7 +14,7 @@ RUN mv *.jar /mysql-connector-java-5.1.32.jar
 ADD keycloak-wildfly-trigger.sh /keycloak-wildfly-trigger.sh
 RUN chmod u+x /keycloak-wildfly-trigger.sh
 
-ENV JBOSS_HOME /opt/wildfly-8.1.0.Final
+ENV JBOSS_HOME /opt/jboss/wildfly
 ENV JBOSS_MODULES_HOME $JBOSS_HOME/modules/system/layers/base
 ENV JBOSS_TYPE wildfly
 ENV NODE_PREFIX wf

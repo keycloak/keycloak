@@ -486,35 +486,42 @@ module.controller('ClientInstallationCtrl', function($scope, realm, client, Clie
     $scope.installation = null;
     $scope.download = null;
     $scope.configFormat = null;
+    $scope.filename = null;
 
     $scope.configFormats = [
-        "keycloak.json",
-        "Wildfly/JBoss Subsystem XML"
+        "Keycloak JSON",
+        "Wildfly/EAP Subsystem XML"
     ];
 
     $scope.changeFormat = function() {
-        if ($scope.configFormat == "keycloak.json") {
+        if ($scope.configFormat == "Keycloak JSON") {
+            $scope.filename = 'keycloak.json';
+
             var url = ClientInstallation.url({ realm: $routeParams.realm, client: $routeParams.client });
             $http.get(url).success(function(data) {
                 var tmp = angular.fromJson(data);
                 $scope.installation = angular.toJson(tmp, true);
                 $scope.type = 'application/json';
             })
-        } else if ($scope.configFormat == "Wildfly/JBoss Subsystem XML") {
+        } else if ($scope.configFormat == "Wildfly/EAP Subsystem XML") {
+            $scope.filename = 'keycloak.xml';
+
             var url = ClientInstallationJBoss.url({ realm: $routeParams.realm, client: $routeParams.client });
             $http.get(url).success(function(data) {
                 $scope.installation = data;
                 $scope.type = 'text/xml';
             })
         }
+
+        console.debug($scope.filename);
     };
 
     $scope.download = function() {
-        saveAs(new Blob([$scope.installation], { type: $scope.type }), 'keycloak.json');
+        saveAs(new Blob([$scope.installation], { type: $scope.type }), $scope.filename);
     }
 });
 
-module.controller('ClientDetailCtrl', function($scope, realm, client, serverInfo, Client, $location, Dialog, Notifications) {
+module.controller('ClientDetailCtrl', function($scope, realm, client, $route, serverInfo, Client, $location, Dialog, Notifications) {
     $scope.accessTypes = [
         "confidential",
         "public",
@@ -670,7 +677,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, serverInfo
     $scope.changeProtocol = function() {
         if ($scope.protocol == "openid-connect") {
             $scope.client.protocol = "openid-connect";
-        } else if ($scope.accessType == "saml") {
+        } else if ($scope.protocol == "saml") {
             $scope.client.protocol = "saml";
         }
     };
@@ -689,10 +696,30 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, serverInfo
         $scope.path = $location.path().substring(1).split("/");
     });
 
-    $scope.$watch('client', function() {
+    function isChanged() {
         if (!angular.equals($scope.client, client)) {
-            $scope.changed = true;
+            return true;
         }
+        if ($scope.newRedirectUri && $scope.newRedirectUri.length > 0) {
+            return true;
+        }
+        if ($scope.newWebOrigin && $scope.newWebOrigin.length > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    $scope.$watch('client', function() {
+        $scope.changed = isChanged();
+    }, true);
+
+    $scope.$watch('newRedirectUri', function() {
+        $scope.changed = isChanged();
+    }, true);
+
+
+    $scope.$watch('newWebOrigin', function() {
+        $scope.changed = isChanged();
     }, true);
 
     $scope.deleteWebOrigin = function(index) {
@@ -705,12 +732,21 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, serverInfo
     $scope.deleteRedirectUri = function(index) {
         $scope.client.redirectUris.splice(index, 1);
     }
+
     $scope.addRedirectUri = function() {
         $scope.client.redirectUris.push($scope.newRedirectUri);
         $scope.newRedirectUri = "";
     }
 
     $scope.save = function() {
+        if ($scope.newRedirectUri && $scope.newRedirectUri.length > 0) {
+            $scope.addRedirectUri();
+        }
+
+        if ($scope.newWebOrigin && $scope.newWebOrigin.length > 0) {
+            $scope.addWebOrigin();
+        }
+
         if ($scope.samlServerSignature == true) {
             $scope.client.attributes["saml.server.signature"] = "true";
         } else {
@@ -763,7 +799,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, serverInfo
         $scope.client.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;
         $scope.client.attributes['saml_name_id_format'] = $scope.nameIdFormat;
 
-        if ($scope.client.protocol != 'saml' && !$scope.client.bearerOnly && (!$scope.client.redirectUris || $scope.client.redirectUris.length == 0)) {
+        if ($scope.client.protocol != 'saml' && !$scope.client.bearerOnly && !$scope.client.directGrantsOnly && (!$scope.client.redirectUris || $scope.client.redirectUris.length == 0)) {
             Notifications.error("You must specify at least one redirect uri");
         } else {
             if ($scope.create) {
@@ -792,8 +828,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, serverInfo
     };
 
     $scope.reset = function() {
-        $scope.client = angular.copy(client);
-        $scope.changed = false;
+        $route.reload();
     };
 
     $scope.cancel = function() {

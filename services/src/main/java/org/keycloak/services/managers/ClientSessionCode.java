@@ -2,6 +2,7 @@ package org.keycloak.services.managers;
 
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel.RequiredAction;
@@ -112,10 +113,23 @@ public class ClientSessionCode {
         for (String roleId : clientSession.getRoles()) {
             RoleModel role = realm.getRoleById(roleId);
             if (role != null) {
-                requestedRoles.add(realm.getRoleById(roleId));
+                requestedRoles.add(role);
             }
         }
         return requestedRoles;
+    }
+
+    public Set<ProtocolMapperModel> getRequestedProtocolMappers() {
+        Set<ProtocolMapperModel> requestedProtocolMappers = new HashSet<ProtocolMapperModel>();
+        if (clientSession.getProtocolMappers() != null) {
+            for (String protocolMapperId : clientSession.getProtocolMappers()) {
+                ProtocolMapperModel protocolMapper = clientSession.getClient().getProtocolMapperById(protocolMapperId);
+                if (protocolMapper != null) {
+                    requestedProtocolMappers.add(protocolMapper);
+                }
+            }
+        }
+        return requestedProtocolMappers;
     }
 
     public void setAction(ClientSessionModel.Action action) {

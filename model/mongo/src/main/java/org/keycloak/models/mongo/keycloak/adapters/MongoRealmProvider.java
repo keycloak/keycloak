@@ -5,12 +5,14 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoMigrationModelEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -34,6 +36,16 @@ public class MongoRealmProvider implements RealmProvider {
     @Override
     public void close() {
         // TODO
+    }
+
+    @Override
+    public MigrationModel getMigrationModel() {
+        MongoMigrationModelEntity entity = getMongoStore().loadEntity(MongoMigrationModelEntity.class, MongoMigrationModelEntity.MIGRATION_MODEL_ID, invocationContext);
+        if (entity == null) {
+            entity = new MongoMigrationModelEntity();
+            getMongoStore().insertEntity(entity, invocationContext);
+        }
+        return new MigrationModelAdapter(session, entity, invocationContext);
     }
 
     @Override

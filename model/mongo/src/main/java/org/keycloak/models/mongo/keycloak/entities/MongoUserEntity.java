@@ -1,5 +1,7 @@
 package org.keycloak.models.mongo.keycloak.entities;
 
+import com.mongodb.DBObject;
+import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
@@ -19,6 +21,12 @@ public class MongoUserEntity extends UserEntity implements MongoIdentifiableEnti
     }
 
     @Override
-    public void afterRemove(MongoStoreInvocationContext invocationContext) {
+    public void afterRemove(MongoStoreInvocationContext context) {
+        // Remove all consents of this user
+        DBObject query = new QueryBuilder()
+                .and("userId").is(getId())
+                .get();
+
+        context.getMongoStore().removeEntities(MongoUserConsentEntity.class, query, true, context);
     }
 }

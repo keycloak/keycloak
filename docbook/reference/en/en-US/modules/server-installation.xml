@@ -1,119 +1,130 @@
 <chapter id="server-installation">
     <title>Installation and Configuration of Keycloak Server</title>
 
-    <para>
-        The Keycloak Server has two downloadable distributions.
-    </para>
-    <para>
-        <itemizedlist>
-
-            <listitem>
-                keycloak-appliance-dist-all-&project.version;.zip
-            </listitem>
-
-            <listitem>
-                keycloak-war-dist-all-&project.version;.zip
-            </listitem>
-
-        </itemizedlist>
-
-    </para>
-    <section id="Appliance_install">
-        <title>Appliance Install</title>
+    <section>
+        <title>Installation</title>
         <para>
-            The
-            <literal>keycloak-appliance-dist-all-&project.version;.zip</literal>
-            is quite large, but contains a complete server (backed by Wildfly)
-            that runs out of the box. The only thing you'll have to enable and configure is SSL. Unzipping it, the
-            directory layout looks
-            something like this:
-        </para>
-
-        <para>
-<programlisting>
-keycloak-appliance-dist-all-&project.version;/
-    keycloak/
-        bin/
-            standalone.sh
-            standalone.bat
-            standalone/configuration/
-                keycloak-server.json
-                themes/
-    examples/
-    docs/
-</programlisting>
+            Keycloak Server has three downloadable distributions.
         </para>
         <para>
-            The
-            <literal>standalone.sh</literal>
-            or
-            <literal>standalone.bat</literal>
-            script is used to start the server.
-            After executing that, log into the admin console at<ulink
-                url="http://localhost:8080/auth/admin/index.html">
-            http://localhost:8080/auth/admin/index.html</ulink>.
-            Username: <emphasis>admin</emphasis>
-            Password: <emphasis>admin</emphasis>. Keycloak will then prompt you to
-            enter in a new password.
+            <itemizedlist>
+                <listitem>
+                    <literal>keycloak-&project.version;.[zip|tar.gz]</literal> - Standalone server
+                </listitem>
+                <listitem>
+                    <literal>keycloak-overlay-&project.version;.[zip|tar.gz]</literal> - Installer for WildFly or JBoss EAP
+                </listitem>
+                <listitem>
+                    <literal>keycloak-demo-&project.version;.[zip|tar.gz]</literal> - Development bundle including WildFly, Keycloak, examples and documentation
+                </listitem>
+            </itemizedlist>
         </para>
+        <section id="server_install">
+            <title>Install Standalone Server</title>
+            <para>
+                For production and for non-JavaEE developers we recommend using the standalone Keycloak server. All you need to
+                do is to download <literal>keycloak-&project.version;.zip</literal> or  <literal>keycloak-&project.version;.tar.gz</literal>,
+                unpackage and start to have a Keycloak server up and running.
+            </para>
+
+            <para>
+                To install first download either the zip or tar.gz and extract. Then start by running either:
+                <programlisting>keycloak-&project.version;/bin/standalone.sh</programlisting>
+                or:
+                <programlisting>keycloak-&project.version;/bin/standalone.bat</programlisting>
+            </para>
+            <para>
+                Once the server is started log into the admin console at
+                <ulink url="http://localhost:8080/auth/admin/index.html">http://localhost:8080/auth/admin/index.html</ulink>
+                (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
+                enter in a new password.
+            </para>
+        </section>
+
+
+        <section id="overlay_install">
+            <title>Install on existing WildFly 8.2.0.Final</title>
+            <para>
+                Keycloak can be installed into an existing WildFly 8.2.0.Final server. To do this download
+                <literal>keycloak-overlay-&project.version;.zip</literal> or  <literal>keycloak-overlay-&project.version;.tar.gz</literal>.
+                Once downloaded extract into the root directory of your WildFly installation. To start WildFly with Keycloak
+                run:
+                <programlisting>keycloak-&project.version;/bin/standalone.sh --server-config=standalone-keycloak.xml</programlisting>
+                or:
+                <programlisting>keycloak-&project.version;/bin/standalone.bat --server-config=standalone-keycloak.xml</programlisting>
+            </para>
+            <para>
+                Once the server is started log into the admin console at
+                <ulink url="http://localhost:8080/auth/admin/index.html">http://localhost:8080/auth/admin/index.html</ulink>
+                (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
+                enter in a new password.
+            </para>
+            <para>
+                To add Keycloak to other sever configurations (standalone.xml, standalone-ha.xml, etc.) open
+                <literal>standalone/configuration/standalone-keycloak.xml</literal> and the configuration you want to add it
+                to, for example <literal>standalone/configuration/standalone.xml</literal>. From <literal>standalone-keycloak.xml</literal>
+                you need to copy 3 elements:
+                <itemizedlist>
+                    <listitem><literal>&lt;extension module="org.keycloak.keycloak-subsystem"/&gt;</literal></listitem>
+                    <listitem><literal>&lt;datasource jndi-name="java:jboss/datasources/KeycloakDS" ...&gt;</literal></listitem>
+                    <listitem><literal>&lt;subsystem xmlns="urn:jboss:domain:security:1.2" ...&gt;</literal></listitem>
+                </itemizedlist>
+            </para>
+        </section>
+        <section>
+            <title>Install on existing EAP 6.4.0.GA</title>
+            <para>
+                Keycloak can be installed into an existing EAP 6.4.0.GA server. To do this download
+                <literal>keycloak-overlay-&project.version;.zip</literal> or  <literal>keycloak-overlay-&project.version;.tar.gz</literal>.
+                Once downloaded extract into the root directory of your EAP installation.
+            </para>
+            <para>
+                To add Keycloak to the a EAP sever configurations (standalone.xml, standalone-ha.xml, etc.) open
+                <literal>standalone/configuration/standalone-keycloak.xml</literal> and the configuration you want to add it
+                to, for example <literal>standalone/configuration/standalone.xml</literal>. From <literal>standalone-keycloak.xml</literal>
+                you need to copy 3 elements:
+                <itemizedlist>
+                    <listitem><literal>&lt;extension module="org.keycloak.keycloak-subsystem"/&gt;</literal></listitem>
+                    <listitem><literal>&lt;datasource jndi-name="java:jboss/datasources/KeycloakDS" ...&gt;</literal></listitem>
+                    <listitem><literal>&lt;subsystem xmlns="urn:jboss:domain:security:1.2" ...&gt;</literal></listitem>
+                </itemizedlist>
+                <note>
+                    <literal>standalone-keycloak.xml</literal> is aimed at WildFly and won't work with EAP so you need to
+                    copy the required configuration
+                </note>
+            </para>
+            <para>
+                Once the server is started log into the admin console at
+                <ulink url="http://localhost:8080/auth/admin/index.html">http://localhost:8080/auth/admin/index.html</ulink>
+                (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
+                enter in a new password.
+            </para>
+        </section>
+        <section>
+            <title id="demo_install">Install Development Bundle</title>
+            <para>
+                The demo bundle contains everything you need to get started with Keycloak including documentation and examples.
+                To install it first download <literal>keycloak-demo-&project.version;.zip</literal> or
+                <literal>keycloak-demo-&project.version;.tar.gz</literal>. Once downloaded extract it inside
+                <literal>keycloak-demo-&project.version;</literal> you'll find <literal>keycloak</literal> which contains
+                a full WildFly 8.2.0.Final server with Keycloak Server and Adapters included. You'll also find <literal>docs</literal>
+                and <literal>examples</literal> which contains everything you need to get started developing applications that use Keycloak.
+            </para>
+            <para>
+                To start WildFly with Keycloak run:
+                <programlisting>keycloak-&project.version;/bin/standalone.sh</programlisting>
+                or:
+                <programlisting>keycloak-&project.version;/bin/standalone.bat</programlisting>
+            </para>
+            <para>
+                Once the server is started log into the admin console at
+                <ulink url="http://localhost:8080/auth/admin/index.html">http://localhost:8080/auth/admin/index.html</ulink>
+                (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
+                enter in a new password.
+            </para>
+        </section>
     </section>
-    <section id="WAR_distribution_installation">
-        <title>WAR Distribution Installation</title>
-        <para>
-            The
-            <literal>keycloak-war-dist-all-&project.version;.zip</literal>
-            contains
-            just the bits you need to install keycloak on your favorite web container. We currently only support
-            installing it on top of an existing Wildfly 8 or JBoss EAP 6.x distribution. We may in the
-            future provide directions on how to install it on another web container like Tomcat or Jetty. If anybody
-            in the community is interested in pulling this together, please contact us. Its mostly Maven pom work.
-        </para>
-        <para>
-            The directory structure of this distro looks like this:
-        </para>
-        <para>
-<programlisting>
-keycloak-war-dist-all-&project.version;/
-    deployments/
-        auth-server.war/
-        keycloak-ds.xml
-    configuration/
-        keycloak-server.json
-        themes/
-    examples/
-    docs/
-</programlisting>
-        </para>
-        <para>
-            After unzipping this file, copy everything in <literal>deployments</literal> directory into the
-            <literal>standalone/deployments</literal> of your JBoss or Wildfly distro. Also, copy everything in
-            <literal>configuration</literal> directory into the <literal>standalone/configuration</literal> directory.
-        </para>
-        <para>
-<programlisting>
-    $ cd keycloak-war-dist-all-&project.version;
-    $ cp -r deployments $JBOSS_HOME/standalone/deployments
-    $ cp -r configuration $JBOSS_HOME/standalone/configuration
-</programlisting>
-        </para>
-        <para>
-            After these steps you MUST then <link linkend='jboss-adapter-installation'>download and install the client adapter</link>
-            as this may contain modules the server needs (like Bouncycastle).  You will also need to install the adapter
-            to run the examples on the same server.
-        </para>
-        <para>
-            After booting up the JBoss or Wildfly distro, you can then make sure it is installed properly
-            by logging into the admin console at<ulink
-                url="http://localhost:8080/auth/admin/index.html">
-            http://localhost:8080/auth/admin/index.html</ulink>.
-            Username: <emphasis>admin</emphasis>
-            Password: <emphasis>admin</emphasis>. Keycloak will then prompt you to
-            enter in a new password.
-        </para>
-        <para>
-            You can no longer run Keycloak on JBoss AS 7.1.1.  You must run on EAP 6.x or Wildfly.
-        </para>
-    </section>
+
     <section>
         <title id="configure-server">Configuring the Server</title>
         <para>
@@ -137,56 +148,12 @@ keycloak-war-dist-all-&project.version;/
         <section>
             <title>Relational Database Configuration</title>
             <para>
-                By default, Keycloak uses a relational database to store Keycloak data.  This datasource is the <literal>standalone/deployments/keycloak-ds.xml</literal>
-                file of your Keycloak Server installation if you used <xref linkend="WAR_distribution_installation" /> or in <literal>standalone/configuration/standalone.xml</literal>
-                if you used <xref linkend="Appliance_install" />. File <literal>keycloak-ds.xml</literal> is used in WAR
-                distribution, so that you have datasource available out of the box and you don't need to edit <literal>standalone.xml</literal> file.
-                However a good thing is to always delete the file  <literal>keycloak-ds.xml</literal> and move its configuration text
-                into the centrally managed <literal>standalone.xml</literal> file.
-                This will allow you to manage the database connection pool from the Wildfly/JBoss administration console.  Here's what
-                <literal>standalone/configuration/standalone.xml</literal> should look like after you've done this:
+                You might want to use a better relational database for Keycloak like PostgreSQL or MySQL.  You might also
+                want to tweak the configuration settings of the datasource.  Please see the <ulink url="https://docs.jboss.org/author/display/WFLY8/DataSource+configuration">Wildfly</ulink>
+                documentation on how to do this.
             </para>
             <para>
-<programlisting><![CDATA[
-<subsystem xmlns="urn:jboss:domain:datasources:2.0">
-   <datasources>
-      <datasource jndi-name="java:jboss/datasources/ExampleDS"
-                  pool-name="ExampleDS" enabled="true" use-java-context="true">
-         <connection-url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</connection-url>
-         <driver>h2</driver>
-         <security>
-            <user-name>sa</user-name>
-            <password>sa</password>
-         </security>
-      </datasource>
-      <datasource jndi-name="java:jboss/datasources/KeycloakDS"
-                  pool-name="KeycloakDS" enabled="true" use-java-context="true">
-         <connection-url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</connection-url>
-         <driver>h2</driver>
-         <security>
-            <user-name>sa</user-name>
-            <password>sa</password>
-        </security>
-      </datasource>
-      <drivers>
-         <driver name="h2" module="com.h2database.h2">
-            <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
-         </driver>
-      </drivers>
-   </datasources>
-</subsystem>
-]]>
-</programlisting>
-            </para>
-            <para>
-                Besides moving the database config into the central <literal>standalone.xml</literal> configuration file
-                you might want to use a better relational database for Keycloak like PostgreSQL or MySQL.  You might also
-                want to tweak the configuration settings of the datasource.  Please see the <ulink url="https://docs.jboss.org/author/display/WFLY8/DataSource+configuration">Wildfly</ulink>,
-                <ulink url="https://docs.jboss.org/author/display/AS71/DataSource+configuration">JBoss AS7</ulink>,
-                or <ulink url="https://docs.jboss.org/author/display/AS71/DataSource+configuration">JBoss EAP 6.x</ulink> documentation on how to do this.
-            </para>
-            <para>
-                Keycloak also runs on a Hibernate/JPA backend which is configured in the
+                Keycloak runs on a Hibernate/JPA backend which is configured in the
                 <literal>standalone/configuration/keycloak-server.json</literal>.
                 By default the setting is like this:
                 <programlisting><![CDATA[
@@ -464,28 +431,149 @@ All configuration options are optional. Default value for directory is <literal>
         </section>
 
         <section>
-                <title>EAP6.x Logging</title>
-                <para>
-                    Accessing the admin console will get these annoying log messages:
-                </para>
-<programlisting>
-    WARN  [org.jboss.resteasy.core.ResourceLocator] (http-/127.0.0.1:8080-3)
-                Field providers of subresource xxx will not be injected according to spec
-
-</programlisting>
-
-                <para>
-                    These can be ignored by editing standalone.xml of your jboss installation:
-                </para>
-<programlisting>
-<![CDATA[
-    <logger category="org.jboss.resteasy.core.ResourceLocator">
-        <level name="ERROR"/>
-    </logger>
-]]>
-</programlisting>
+            <title>Outgoing Server HTTP Requests</title>
+            <para>
+                Keycloak server needs to invoke on remote HTTP endpoints to do things like backchannel logouts and other
+                management functions.  Keycloak maintains a HTTP client connection pool which has various configuration
+                settings you can specify before boot time.  This is configured in the
+                <literal>standalone/configuration/keycloak-server.json</literal>.
+                By default the setting is like this:
+                <programlisting><![CDATA[
+    "connectionsHttpClient": {
+        "default": {
+            "disable-trust-manager": true
+        }
+    },
+]]></programlisting>
+                Possible configuration options are:
+                <variablelist>
+                    <varlistentry>
+                        <term>establish-connection-timeout-millis</term>
+                        <listitem>
+                            <para>
+                                Timeout for establishing a socket connection.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>socket-timeout-millis</term>
+                        <listitem>
+                            <para>
+                                If an outgoing request does not receive data for this amount of time, timeout the connection.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>connection-pool-size</term>
+                        <listitem>
+                            <para>
+                                How many connections can be in the pool.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>max-pooled-per-route</term>
+                        <listitem>
+                            <para>
+                                How many connections can be pooled per host.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>disable-trust-manager</term>
+                        <listitem>
+                            <para>
+                                If true, HTTPS server certificates are not verified.  If you set this to false, you must
+                                configure a truststore.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>disable-cookies</term>
+                        <listitem>
+                            <para>
+                                <literal>true</literal> by default.  When set to true, this will disable any cookie
+                                caching.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>hostname-verification-policy</term>
+                        <listitem>
+                            <para>
+                                <literal>WILDCARD</literal> by default.  For HTTPS requests, this verifies the hostname
+                                of the server's certificate.  <literal>ANY</literal> means that the hostname is not verified.
+                                <literal>WILDCARD</literal> Allows wildcards in subdomain names i.e. *.foo.com.
+                                <literal>STRICT</literal> CN must match hostname exactly.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>truststore</term>
+                        <listitem>
+                            <para>
+                                The value is the file path to a Java keystore file.  If
+                                you prefix the path with <literal>classpath:</literal>, then the truststore will be obtained
+                                from the deployment's classpath instead.
+                                HTTPS
+                                requests need a way to verify the host of the server they are talking to. This is
+                                what the trustore does. The keystore contains one or more trusted
+                                host certificates or certificate authorities.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>truststore-password</term>
+                        <listitem>
+                            <para>
+                                Password for the truststore keystore.
+                                This is
+                                <emphasis>REQUIRED</emphasis>
+                                if
+                                <literal>truststore</literal>
+                                is set.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>client-keystore</term>
+                        <listitem>
+                            <para>
+                                This is the file path to a Java keystore file.
+                                This keystore contains client certificate for two-way SSL.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>client-keystore-password</term>
+                        <listitem>
+                            <para>
+                                Password for the client keystore.
+                                This is
+                                <emphasis>REQUIRED</emphasis>
+                                if
+                                <literal>client-keystore</literal>
+                                is set.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>client-key-password</term>
+                        <listitem>
+                            <para>
+                                <emphasis>Not supported yet, but we will support in future versions.</emphasis>
+                                Password for the client's key.
+                                This is
+                                <emphasis>REQUIRED</emphasis>
+                                if
+                                <literal>client-keystore</literal>
+                                is set.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
+            </para>
         </section>
-
         <section id="ssl_modes">
             <title>SSL/HTTPS Requirement/Modes</title>
             <warning>
@@ -553,7 +641,7 @@ All configuration options are optional. Default value for directory is <literal>
                         </listitem>
 
                         <listitem>
-                            Enable JBoss or Wildfly to use this certificate and turn on SSL/HTTPS.
+                            Enable Wildfly to use this certificate and turn on SSL/HTTPS.
                         </listitem>
                     </itemizedlist>
                 </para>
@@ -674,29 +762,6 @@ All configuration options are optional. Default value for directory is <literal>
                         Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/Undertow+(web)+subsystem+configuration">Wildfly Undertow</ulink> documentation for more information on fine tuning the socket connections.
                     </para>
                 </section>
-                <section>
-                    <title>Installing the keystore to JBoss EAP6</title>
-                    <para>
-                        Now that you have a Java keystore with the appropriate certificates, you need to configure your
-                        JBoss EAP6 installation to use it.  First step is to move the keystore file to a directory
-                        you can reference in configuration.  I like to put it in <literal>standalone/configuration</literal>.
-                        Then you need to edit <literal>standalone/configuration/standalone.xml</literal> to enable SSL/HTTPS.
-                    </para>
-                    <para>
-<programlisting><![CDATA[<subsystem xmlns="urn:jboss:domain:web:1.1" default-virtual-server="default-host" native="false">
-   <connector name="http" protocol="HTTP/1.1" scheme="http" socket-binding="http"  redirect-port="443" />
-   <connector name="https" scheme="https" protocol="HTTP/1.1" socket-binding="https"
-              enable-lookups="false" secure="true">
-       <ssl name="localhost-ssl" password="secret" protocol="TLSv1"
-            key-alias="localhost" certificate-key-file="${jboss.server.config.dir}/keycloak.jks" />
-   </connector>
-        ...
-</subsystem>]]></programlisting>
-                    </para>
-                    <para>
-                        Check the <ulink url="https://docs.jboss.org/author/display/AS71/SSL+setup+guide">JBoss</ulink> documentation for more information on fine tuning the socket connections.
-                    </para>
-                </section>
             </section>
 
             <section>
@@ -710,7 +775,7 @@ All configuration options are optional. Default value for directory is <literal>
                 </para>
 
                 <section>
-                    <title>WildFly</title>
+                    <title>Configure WildFly</title>
 
                     <para>
                         Open <literal>standalone/configuration/standalone.xml</literal> in your favorite editor.
@@ -742,39 +807,6 @@ All configuration options are optional. Default value for directory is <literal>
                         Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/Undertow+(web)+subsystem+configuration">WildFly</ulink> documentation for more information.
                     </para>
                 </section>
-
-                <section>
-                    <title>EAP</title>
-
-                    <para>
-                        Open <literal>standalone/configuration/standalone.xml</literal> in your favorite editor.
-                    </para>
-
-                    <para>
-                        You need to add <literal>redirect-port</literal> to http <literal>connector</literal> element and
-                        add the <literal>RemoteIpValve</literal> valve:
-<programlisting><![CDATA[
-<subsystem xmlns="urn:jboss:domain:web:1.5"
-    default-virtual-server="default-host" native="false">
-    <connector name="http" protocol="HTTP/1.1" scheme="http"
-        socket-binding="http"
-        redirect-port="443"/>
-    <virtual-server name="default-host" enable-welcome-root="true">
-        <alias name="localhost"/>
-        <alias name="example.com"/>
-    </virtual-server>
-    <valve name="remoteipvalve" module="org.jboss.as.web"
-        class-name="org.apache.catalina.valves.RemoteIpValve">
-        <param param-name="protocolHeader" param-value="x-forwarded-proto"/>
-    </valve>
-</subsystem>
-]]></programlisting>
-                    </para>
-
-
-
-                </section>
-
             </section>
 
         </section>

@@ -17,6 +17,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -30,6 +31,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -57,6 +59,7 @@ import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,8 +77,6 @@ public class UsersResource {
     protected RealmModel realm;
 
     private RealmAuth auth;
-
-    private TokenManager tokenManager;
     
     @Context
     protected ClientConnection clientConnection;
@@ -92,7 +93,6 @@ public class UsersResource {
     public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager) {
         this.auth = auth;
         this.realm = realm;
-        this.tokenManager = tokenManager;
 
         auth.init(RealmAuth.Resource.USER);
     }
@@ -218,7 +218,20 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
 
-        return ModelToRepresentation.toRepresentation(user);
+        UserRepresentation rep = ModelToRepresentation.toRepresentation(user);
+
+        if (realm.isIdentityFederationEnabled()) {
+            Set<FederatedIdentityModel> identities = session.users().getFederatedIdentities(user, realm);
+            if (!identities.isEmpty()) {
+                List<FederatedIdentityRepresentation> reps = new LinkedList<>();
+                for (FederatedIdentityModel m : identities) {
+                    reps.add(ModelToRepresentation.toRepresentation(m));
+                }
+                rep.setFederatedIdentities(reps);
+            }
+        }
+
+        return rep;
     }
 
     /**
@@ -311,6 +324,59 @@ public class UsersResource {
     }
 
     /**
+     * List set of consents granted by this user.
+     *
+     * @param username
+     * @return
+     */
+    @Path("{username}/consents")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<UserConsentRepresentation> getConsents(final @PathParam("username") String username) {
+        auth.requireView();
+        UserModel user = session.users().getUserByUsername(username, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+
+        List<UserConsentModel> consents = user.getConsents();
+        List<UserConsentRepresentation> result = new ArrayList<UserConsentRepresentation>();
+
+        for (UserConsentModel consent : consents) {
+            UserConsentRepresentation rep = ModelToRepresentation.toRepresentation(consent);
+            result.add(rep);
+        }
+        return result;
+    }
+
+    /**
+     * Revoke consent for particular client
+     *
+     * @param username
+     * @param clientId
+     */
+    @Path("{username}/consents/{client}")
+    @DELETE
+    @NoCache
+    public void revokeConsent(final @PathParam("username") String username, final @PathParam("client") String clientId) {
+        auth.requireManage();
+        UserModel user = session.users().getUserByUsername(username, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        boolean revoked = user.revokeConsentForClient(client.getId());
+        if (revoked) {
+            // Logout clientSessions for this user and client
+            AuthenticationManager.backchannelUserFromClient(session, realm, user, client, uriInfo, headers);
+        } else {
+            throw new NotFoundException("Consent not found for user " + username + " and client " + clientId);
+        }
+    }
+
+    /**
      * Remove all user sessions associated with this user.  And, for all client that have an admin URL, tell
      * them to invalidate the sessions for this particular user.
      *
@@ -327,7 +393,7 @@ public class UsersResource {
 
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel userSession : userSessions) {
-            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers);
+            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
         }
     }
 

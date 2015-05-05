@@ -17,11 +17,6 @@
  */
 package org.keycloak.testsuite.broker;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
 import org.junit.Assert;
@@ -29,19 +24,18 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.models.ClientIdentityProviderMappingModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.IDToken;
 import org.keycloak.services.Urls;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet.UserSessionStatus;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -66,7 +60,6 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -243,6 +236,7 @@ public abstract class AbstractIdentityProviderTest {
             FederatedIdentityModel federatedIdentityModel = federatedIdentities.iterator().next();
 
             assertEquals(getProviderId(), federatedIdentityModel.getIdentityProvider());
+            revokeGrant();
 
             driver.navigate().to("http://localhost:8081/test-app/logout");
             driver.navigate().to("http://localhost:8081/test-app");
@@ -285,27 +279,12 @@ public abstract class AbstractIdentityProviderTest {
         RealmModel realm = getRealm();
         ClientModel clientModel = realm.getClientByClientId("test-app");
 
-        // This client doesn't have any specific identity providers settings
-        ClientModel client2 = realm.getClientByClientId("test-app");
-        assertEquals(0, client2.getIdentityProviders().size());
-
         // Provider button is available on login page
         this.driver.navigate().to("http://localhost:8081/test-app/");
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
         loginPage.findSocialButton(getProviderId());
 
-        // Add identityProvider to client model
-        List<ClientIdentityProviderMappingModel> appIdentityProviders = new ArrayList<ClientIdentityProviderMappingModel>();
-        ClientIdentityProviderMappingModel mapping = new ClientIdentityProviderMappingModel();
-        mapping.setIdentityProvider(getProviderId());
-        mapping.setRetrieveToken(true);
-        appIdentityProviders.add(mapping);
-        clientModel.updateIdentityProviders(appIdentityProviders);
-
-        // Provider button still available on login page
-        this.driver.navigate().to("http://localhost:8081/test-app/");
-        loginPage.findSocialButton(getProviderId());
-    }
+     }
 
     @Test
     public void testUserAlreadyExistsWhenUpdatingProfile() {
@@ -411,12 +390,16 @@ public abstract class AbstractIdentityProviderTest {
         revokeGrant();
 
         // Logout from account management
+        String pageSource = driver.getPageSource();
         accountFederatedIdentityPage.logout();
         assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
         // Try to login. Previous link is not valid anymore, so now it should try to register new user
         this.loginPage.clickSocial(identityProviderModel.getAlias());
+        this.loginPage.login("test-user", "password");
         doAfterProviderAuthentication();
+        String current = driver.getCurrentUrl();
         this.updateProfilePage.assertCurrent();
     }
 
@@ -427,6 +410,52 @@ public abstract class AbstractIdentityProviderTest {
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
         driver.findElement(By.className("model-oidc-idp"));
+    }
+
+    protected void configureClientRetrieveToken(String clientId) {
+        RealmModel realm = getRealm();
+        RoleModel readTokenRole = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(Constants.READ_TOKEN_ROLE);
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (!client.hasScope(readTokenRole)) client.addScopeMapping(readTokenRole);
+
+        brokerServerRule.stopSession(session, true);
+        session = brokerServerRule.startSession();
+
+    }
+
+    protected void configureUserRetrieveToken(String username) {
+        RealmModel realm = getRealm();
+        UserModel user = session.users().getUserByUsername(username, realm);
+        RoleModel readTokenRole = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(Constants.READ_TOKEN_ROLE);
+        if (user != null && !user.hasRole(readTokenRole)) {
+            user.grantRole(readTokenRole);
+        }
+        brokerServerRule.stopSession(session, true);
+        session = brokerServerRule.startSession();
+
+    }
+
+    protected void unconfigureClientRetrieveToken(String clientId) {
+        RealmModel realm = getRealm();
+        RoleModel readTokenRole = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(Constants.READ_TOKEN_ROLE);
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client.hasScope(readTokenRole)) client.deleteScopeMapping(readTokenRole);
+
+        brokerServerRule.stopSession(session, true);
+        session = brokerServerRule.startSession();
+
+    }
+
+    protected void unconfigureUserRetrieveToken(String username) {
+        RealmModel realm = getRealm();
+        UserModel user = session.users().getUserByUsername(username, realm);
+        RoleModel readTokenRole = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(Constants.READ_TOKEN_ROLE);
+        if (user != null && user.hasRole(readTokenRole)) {
+            user.deleteRoleMapping(readTokenRole);
+        }
+        brokerServerRule.stopSession(session, true);
+        session = brokerServerRule.startSession();
+
     }
 
     @Test
@@ -448,8 +477,6 @@ public abstract class AbstractIdentityProviderTest {
 
         assertNotNull(identityModel.getToken());
 
-        configureRetrieveToken(realm.getClientByClientId("test-app"), getProviderId(), false);
-
         UserSessionStatus userSessionStatus = retrieveSessionStatus();
         String accessToken = userSessionStatus.getAccessTokenString();
         URI tokenEndpointUrl = Urls.identityProviderRetrieveToken(BASE_URI, getProviderId(), realm.getName());
@@ -463,110 +490,41 @@ public abstract class AbstractIdentityProviderTest {
         Client client = ClientBuilder.newBuilder().register(authFilter).build();
         WebTarget tokenEndpoint = client.target(tokenEndpointUrl);
         Response response = tokenEndpoint.request().get();
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        assertNotNull(response.readEntity(String.class));
+        revokeGrant();
 
-        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
 
-        configureRetrieveToken(getRealm().getClientByClientId("test-app"), getProviderId(), true);
+        driver.navigate().to("http://localhost:8081/test-app/logout");
+        String currentUrl = this.driver.getCurrentUrl();
+        System.out.println("after logout currentUrl: " + currentUrl);
+        assertTrue(currentUrl.startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
-        client = ClientBuilder.newBuilder().register(authFilter).build();
+        unconfigureUserRetrieveToken(getProviderId() + ".test-user");
+        loginIDP("test-user");
+        //authenticateWithIdentityProvider(identityProviderModel, "test-user");
+        assertEquals("http://localhost:8081/test-app", driver.getCurrentUrl());
+
+        userSessionStatus = retrieveSessionStatus();
+        accessToken = userSessionStatus.getAccessTokenString();
+        final String authHeader2 = "Bearer " + accessToken;
+        ClientRequestFilter authFilter2 = new ClientRequestFilter() {
+            @Override
+            public void filter(ClientRequestContext requestContext) throws IOException {
+                requestContext.getHeaders().add(HttpHeaders.AUTHORIZATION, authHeader2);
+            }
+        };
+        client = ClientBuilder.newBuilder().register(authFilter2).build();
         tokenEndpoint = client.target(tokenEndpointUrl);
         response = tokenEndpoint.request().get();
 
-        assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        assertNotNull(response.readEntity(String.class));
+        assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
 
+        revokeGrant();
         driver.navigate().to("http://localhost:8081/test-app/logout");
         driver.navigate().to("http://localhost:8081/test-app");
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
-    }
-
-    @Test
-    public void testTokenStorageAndRetrievalByOAuthClient() {
-        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-
-        identityProviderModel.setStoreToken(true);
-        identityProviderModel.setUpdateProfileFirstLogin(false);
-
-        driver.navigate().to("http://localhost:8081/test-app");
-
-        // choose the identity provider
-        this.loginPage.clickSocial(getProviderId());
-
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
-
-        // log in to identity provider
-        this.loginPage.login("test-user", "password");
-
-        doAfterProviderAuthentication();
-
-        changePasswordPage.realm("realm-with-broker");
-        changePasswordPage.open();
-        changePasswordPage.changePassword("password", "password");
-
-        driver.navigate().to("http://localhost:8081/test-app/logout");
-
-        oauth.realm("realm-with-broker");
-        oauth.redirectUri("http://localhost:8081/third-party");
-        oauth.clientId("third-party");
-        oauth.doLoginGrant("test-user@localhost", "password");
-
-        grantPage.assertCurrent();
-        grantPage.accept();
-
-        assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
-
-        ClientModel clientModel = getRealm().getClientByClientId("third-party");
-        assertEquals(0, clientModel.getIdentityProviders().size());
-
-        configureRetrieveToken(clientModel, getProviderId(), true);
-
-        AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
-
-        doTokenRequest(accessToken.getAccessToken());
-    }
-
-    public void doTokenRequest(String token) {
-        try {
-            HttpClient client = new DefaultHttpClient();
-            HttpGet get = new HttpGet(Urls.identityProviderRetrieveToken(BASE_URI, getProviderId(), getRealm().getName()));
-
-            get.setHeader("Authorization", "Bearer " + token);
-
-            HttpResponse response = client.execute(get);
-            assertEquals(200, response.getStatusLine().getStatusCode());
-
-            assertNotNull(IOUtils.toString(response.getEntity().getContent()));
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
-    }
-
-    private void configureRetrieveToken(ClientModel clientModel, String providerId, boolean retrieveToken) {
-        List<ClientIdentityProviderMappingModel> providerMappingModels = clientModel.getIdentityProviders();
-        ClientIdentityProviderMappingModel providerMappingModel = null;
-
-        // Check if provider is already linked with this client
-        for (ClientIdentityProviderMappingModel current : providerMappingModels) {
-            if (current.getIdentityProvider().equals(providerId)) {
-                providerMappingModel = current;
-                break;
-            }
-        }
-
-        // Link provider with client if not linked yet
-        if (providerMappingModel == null) {
-            providerMappingModel = new ClientIdentityProviderMappingModel();
-            providerMappingModel.setIdentityProvider(providerId);
-            providerMappingModels.add(providerMappingModel);
-        }
-
-        providerMappingModel.setRetrieveToken(retrieveToken);
-
-        clientModel.updateIdentityProviders(providerMappingModels);
-
-        brokerServerRule.stopSession(session, true);
-        session = brokerServerRule.startSession();
     }
 
     protected abstract void doAssertTokenRetrieval(String pageSource);
@@ -605,19 +563,8 @@ public abstract class AbstractIdentityProviderTest {
     }
 
     private void authenticateWithIdentityProvider(IdentityProviderModel identityProviderModel, String username) {
-        driver.navigate().to("http://localhost:8081/test-app");
+        loginIDP(username);
 
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
-
-        // choose the identity provider
-        this.loginPage.clickSocial(getProviderId());
-
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
-        System.out.println(this.driver.getCurrentUrl());
-        // log in to identity provider
-        this.loginPage.login(username, "password");
-
-        doAfterProviderAuthentication();
 
         if (identityProviderModel.isUpdateProfileFirstLogin()) {
             String userEmail = "new@email.com";
@@ -628,6 +575,22 @@ public abstract class AbstractIdentityProviderTest {
             this.updateProfilePage.assertCurrent();
             this.updateProfilePage.update(userFirstName, userLastName, userEmail);
         }
+    }
+
+    private void loginIDP(String username) {
+        driver.navigate().to("http://localhost:8081/test-app");
+
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
+
+        // choose the identity provider
+        this.loginPage.clickSocial(getProviderId());
+
+        String currentUrl = this.driver.getCurrentUrl();
+        assertTrue(currentUrl.startsWith("http://localhost:8082/auth/"));
+        System.out.println(this.driver.getCurrentUrl());
+        // log in to identity provider
+        this.loginPage.login(username, "password");
+        doAfterProviderAuthentication();
     }
 
     protected UserModel getFederatedUser() {

@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.2.0.RC1-SNAPSHOT</version>
+        <version>1.3.0.Beta1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -13,21 +13,34 @@
     <name>Keycloak Tomcat 7 Integration TestSuite</name>
     <properties>
         <!--<tomcat.version>8.0.14</tomcat.version>-->
-        <tomcat.version>7.0.54</tomcat.version>
+        <tomcat.version>7.0.59</tomcat.version>
     </properties>
     <description />
 
    <dependencies>
+       <dependency>
+           <groupId>org.apache.tomcat</groupId>
+           <artifactId>tomcat-catalina</artifactId>
+           <version>7.0.59</version>
+       </dependency>
+       <dependency>
+           <groupId>org.apache.tomcat</groupId>
+           <artifactId>tomcat-util</artifactId>
+           <version>7.0.59</version>
+       </dependency>
+       <dependency>
+           <groupId>org.apache.tomcat.embed</groupId>
+           <artifactId>tomcat-embed-core</artifactId>
+           <version>7.0.59</version>
+       </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-dependencies-server-all</artifactId>
-            <version>${project.version}</version>
             <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>
@@ -49,12 +62,10 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>jaxrs-api</artifactId>
-            <version>${resteasy.version.latest}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>
-            <version>${resteasy.version.latest}</version>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -73,27 +84,18 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-client</artifactId>
-            <version>${resteasy.version.latest}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-crypto</artifactId>
-            <version>${resteasy.version.latest}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-multipart-provider</artifactId>
-            <version>${resteasy.version.latest}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jackson-provider</artifactId>
-            <version>${resteasy.version.latest}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-undertow</artifactId>
-            <version>${resteasy.version.latest}</version>
         </dependency>
         <dependency>
             <groupId>com.google.zxing</groupId>
@@ -106,27 +108,22 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${keycloak.apache.httpcomponents.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-ldap-federation</artifactId>
-            <version>${project.version}</version>
         </dependency>
        <dependency>
            <groupId>org.keycloak</groupId>
            <artifactId>keycloak-kerberos-federation</artifactId>
-           <version>${project.version}</version>
        </dependency>
        <dependency>
            <groupId>org.keycloak</groupId>
            <artifactId>keycloak-undertow-adapter</artifactId>
-           <version>${project.version}</version>
        </dependency>
        <dependency>
            <groupId>org.keycloak</groupId>
            <artifactId>keycloak-tomcat7-adapter</artifactId>
-           <version>${project.version}</version>
        </dependency>
        <dependency>
             <groupId>org.jboss.logging</groupId>
@@ -207,32 +204,15 @@
        <dependency>
            <groupId>org.keycloak</groupId>
            <artifactId>keycloak-testsuite-integration</artifactId>
-           <version>${project.version}</version>
            <scope>test</scope>
        </dependency>
        <dependency>
            <groupId>org.keycloak</groupId>
            <artifactId>keycloak-testsuite-integration</artifactId>
-           <version>${project.version}</version>
            <type>test-jar</type>
            <scope>test</scope>
        </dependency>
 
-       <dependency>
-           <groupId>org.apache.tomcat</groupId>
-           <artifactId>tomcat-catalina</artifactId>
-           <version>${tomcat.version}</version>
-       </dependency>
-       <dependency>
-           <groupId>org.apache.tomcat</groupId>
-           <artifactId>tomcat-util</artifactId>
-           <version>${tomcat.version}</version>
-       </dependency>
-       <dependency>
-           <groupId>org.apache.tomcat.embed</groupId>
-           <artifactId>tomcat-embed-core</artifactId>
-           <version>${tomcat.version}</version>
-       </dependency>
 
     </dependencies>
     <build>
@@ -283,7 +263,7 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>org.keycloak.testutils.KeycloakServer</mainClass>
+                            <mainClass>org.keycloak.testsuite.KeycloakServer</mainClass>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -297,7 +277,7 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>org.keycloak.testutils.MailServer</mainClass>
+                            <mainClass>org.keycloak.testsuite.MailServer</mainClass>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -311,7 +291,7 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>org.keycloak.testutils.TotpGenerator</mainClass>
+                            <mainClass>org.keycloak.testsuite.TotpGenerator</mainClass>
                         </configuration>
                     </plugin>
                 </plugins>

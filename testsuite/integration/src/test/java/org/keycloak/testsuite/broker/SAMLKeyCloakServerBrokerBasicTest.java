@@ -8,7 +8,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
-import org.keycloak.testutils.KeycloakServer;
+import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
@@ -67,8 +67,8 @@ public class SAMLKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
 
     @Override
     protected void doAssertFederatedUserNoEmail(UserModel federatedUser) {
-        assertEquals("kc-saml-idp-basic.", federatedUser.getUsername());
-        assertEquals("", federatedUser.getEmail());
+        assertEquals("kc-saml-idp-basic.test-user-noemail", federatedUser.getUsername());
+        //assertEquals("", federatedUser.getEmail());
         assertEquals(null, federatedUser.getFirstName());
         assertEquals(null, federatedUser.getLastName());
     }
@@ -96,13 +96,22 @@ public class SAMLKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderT
 
     @Override
     @Test
-    public void testTokenStorageAndRetrievalByOAuthClient() {
-        super.testTokenStorageAndRetrievalByOAuthClient();
-    }
-
-    @Override
-    @Test
     public void testSuccessfulAuthentication() {
         super.testSuccessfulAuthentication();
+    }
+
+    @Test
+    public void testAccountManagementLinkIdentity() {
+        super.testAccountManagementLinkIdentity();
+    }
+
+    @Test
+    public void testTokenStorageAndRetrievalByApplication() {
+        super.testTokenStorageAndRetrievalByApplication();
+    }
+
+    @Test
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername() {
+        super.testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername();
     }
 }

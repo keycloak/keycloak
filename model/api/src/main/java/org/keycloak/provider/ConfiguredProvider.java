@@ -1,7 +1,5 @@
 package org.keycloak.provider;
 
-import org.keycloak.provider.ProviderConfigProperty;
-
 import java.util.List;
 
 /**

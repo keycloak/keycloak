@@ -1,108 +1,107 @@
-<div class="bs-sidebar col-sm-3 " data-ng-include data-src="resourceUrl + '/partials/realm-menu.html'"></div>
-<div id="content-area" class="col-sm-9" role="main">
-    <kc-navigation-client></kc-navigation-client>
-    <div id="content">
-        <ol class="breadcrumb" data-ng-show="create">
-            <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
-            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/mappers">Protocol Mappers</a></li>
-            <li class="active">Create Protocol Mapper</li>
-        </ol>
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
-        <ol class="breadcrumb" data-ng-hide="create">
-            <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
-            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/mappers">Protocol Mappers</a></li>
-            <li class="active">{{mapper.name}}</li>
-        </ol>
-        <h2 class="pull-left" data-ng-hide="create">{{mapper.name}} Protocol Mapper</h2>
-        <h2 class="pull-left" data-ng-show="create">Create Protocol Mapper</h2>
-        <p class="subtitle"><span class="required">*</span> Required fields</p>
-        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/mappers">Mappers</a></li>
+        <li class="active" data-ng-show="create">Create Protocol Mappers</li>
+        <li class="active" data-ng-hide="create">{{mapper.name}}</li>
+    </ol>
 
-            <fieldset>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="protocol">Protocol</label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="protocol" type="text" ng-model="protocol" readonly>
-                    </div>
-                    <span tooltip-placement="right" tooltip="Protocol." class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix" data-ng-show="!create">
-                    <label class="col-sm-2 control-label" for="mapperId">ID </label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="mapperId" type="text" ng-model="mapper.id" readonly>
-                    </div>
-                </div>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="name">Name</label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="name" type="text" ng-model="mapper.name" data-ng-readonly="!create">
-                    </div>
-                    <span tooltip-placement="right" tooltip="Name of the mapper." class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group">
-                    <label for="consentRequired" class="col-sm-2 control-label">Consent required</label>
-                    <div class="col-sm-4">
-                        <input ng-model="mapper.consentRequired" name="consentRequired" id="consentRequired" onoffswitch />
-                    </div>
-                    <span tooltip-placement="right" tooltip="When granting temporary access, must the user consent to providing this data to the client?" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group" data-ng-show="mapper.consentRequired">
-                    <label class="col-sm-2 control-label" for="consentText">Consent Text </label>
+    <h1 data-ng-show="create"><strong>Create Protocol Mapper</strong></h1>
+    <h1 data-ng-hide="create"><strong>Protocol Mapper</strong> {{mapper.name}}</h1>
 
-                    <div class="col-sm-4">
-                        <textarea class="form-control" rows="5" cols="50" id="consentText" name="consentText" data-ng-model="mapper.consentText"></textarea>
-                    </div>
-                    <span tooltip-placement="right" tooltip="Text to display on consent page" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group" data-ng-show="create">
-                    <label class="col-sm-2 control-label" for="mapperTypeCreate">Mapper Type</label>
-                    <div class="col-sm-6">
-                        <div class="select-kc">
-                            <select id="mapperTypeCreate"
-                                    ng-model="mapperType"
-                                    ng-options="mapperType.name for mapperType in mapperTypes">
-                            </select>
-                        </div>
-                    </div>
-                    <span tooltip-placement="right" tooltip="{{mapperType.helpText}}" class="fa fa-info-circle"></span>
-                </div>
-                <div class="form-group clearfix" data-ng-hide="create">
-                    <label class="col-sm-2 control-label" for="mapperType">Mapper Type</label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="mapperType" type="text" ng-model="mapperType.name" data-ng-readonly="true">
-                    </div>
-                    <span tooltip-placement="right" tooltip="{{mapperType.helpText}}" class="fa fa-info-circle"></span>
-                </div>
-                <div data-ng-repeat="option in mapperType.properties" class="form-group">
-                    <label class="col-sm-2 control-label">{{option.label}}</label>
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
 
-                    <div class="col-sm-4" data-ng-hide="option.type == 'boolean' || option.type == 'List'">
-                        <input class="form-control" type="text" data-ng-model="mapper.config[ option.name ]" >
-                    </div>
-                    <div class="col-sm-4" data-ng-show="option.type == 'boolean'">
-                        <input ng-model="mapper.config[ option.name ]" value="'true'" name="option.name" id="option.name" onoffswitchmodel />
-                    </div>
-                    <div class="col-sm-4" data-ng-show="option.type == 'List'">
-                        <select ng-model="mapper.config[ option.name ]" ng-options="data for data in option.defaultValue">
-                            <option value="" selected> Select one... </option>
+        <fieldset>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="protocol">Protocol</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="protocol" type="text" ng-model="protocol" readonly>
+                </div>
+                <kc-tooltip>Protocol.</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="!create">
+                <label class="col-md-2 control-label" for="mapperId">ID </label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mapperId" type="text" ng-model="mapper.id" readonly>
+                </div>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="name">Name</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="name" type="text" ng-model="mapper.name" data-ng-readonly="!create">
+                </div>
+                <kc-tooltip>Name of the mapper.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label for="consentRequired" class="col-sm-2 control-label">Consent required</label>
+                <div class="col-md-6">
+                    <input ng-model="mapper.consentRequired" name="consentRequired" id="consentRequired" onoffswitch />
+                </div>
+                <kc-tooltip>When granting temporary access, must the user consent to providing this data to the client?</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="mapper.consentRequired">
+                <label class="col-md-2 control-label" for="consentText">Consent Text </label>
+
+                <div class="col-md-6">
+                    <textarea class="form-control" rows="5" cols="50" id="consentText" name="consentText" data-ng-model="mapper.consentText"></textarea>
+                </div>
+                <kc-tooltip>Text to display on consent page</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="create">
+                <label class="col-md-2 control-label" for="mapperTypeCreate">Mapper Type</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="mapperTypeCreate"
+                                ng-model="mapperType"
+                                ng-options="mapperType.name for mapperType in mapperTypes">
                         </select>
                     </div>
-                    <span tooltip-placement="right" tooltip="{{option.helpText}}" class="fa fa-info-circle"></span>
                 </div>
+                <kc-tooltip>{{mapperType.helpText}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-hide="create">
+                <label class="col-md-2 control-label" for="mapperType">Mapper Type</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mapperType" type="text" ng-model="mapperType.name" data-ng-readonly="true">
+                </div>
+                <kc-tooltip>{{mapperType.helpText}}</kc-tooltip>
+            </div>
+            <div data-ng-repeat="option in mapperType.properties" class="form-group">
+                <label class="col-md-2 control-label">{{option.label}}</label>
 
-            </fieldset>
-            <div class="pull-right form-actions" data-ng-show="create && access.manageRealm">
-                <button kc-cancel data-ng-click="cancel()">Cancel</button>
-                <button kc-save>Save</button>
+                <div class="col-sm-4" data-ng-hide="option.type == 'boolean' || option.type == 'List'">
+                    <input class="form-control" type="text" data-ng-model="mapper.config[ option.name ]" >
+                </div>
+                <div class="col-sm-4" data-ng-show="option.type == 'boolean'">
+                    <input ng-model="mapper.config[ option.name ]" value="'true'" name="option.name" id="option.name" onoffswitchmodel />
+                </div>
+                <div class="col-sm-4" data-ng-show="option.type == 'List'">
+                    <select ng-model="mapper.config[ option.name ]" ng-options="data for data in option.defaultValue">
+                        <option value="" selected> Select one... </option>
+                    </select>
+                </div>
+                <kc-tooltip>{{option.helpText}}</kc-tooltip>
             </div>
 
-            <div class="pull-right form-actions" data-ng-show="!create && access.manageRealm">
-                <button kc-reset data-ng-show="changed">Clear changes</button>
+        </fieldset>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageRealm">
+                <button kc-save>Save</button>
+                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageRealm">
                 <button kc-save  data-ng-show="changed">Save</button>
+                <button kc-reset data-ng-show="changed">Cancel</button>
                 <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
 </div>
+
+<kc-menu></kc-menu>

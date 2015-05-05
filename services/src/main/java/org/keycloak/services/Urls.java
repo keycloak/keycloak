@@ -39,8 +39,8 @@ import java.net.URI;
  */
 public class Urls {
 
-    public static URI accountAccessPage(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "accessPage").build(realmId);
+    public static URI accountApplicationsPage(URI baseUri, String realmId) {
+        return accountBase(baseUri).path(AccountService.class, "applicationsPage").build(realmId);
     }
 
     public static UriBuilder accountBase(URI baseUri) {

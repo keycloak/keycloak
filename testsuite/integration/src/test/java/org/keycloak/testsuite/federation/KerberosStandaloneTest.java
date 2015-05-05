@@ -17,17 +17,12 @@ import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
 import org.keycloak.constants.KerberosConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.adapter.CustomerServlet;
-import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.KerberosRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.testutils.KeycloakServer;
 
 /**
  * Test of KerberosFederationProvider (Kerberos not backed by LDAP)
