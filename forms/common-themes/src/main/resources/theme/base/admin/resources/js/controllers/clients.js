@@ -677,7 +677,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
     $scope.changeProtocol = function() {
         if ($scope.protocol == "openid-connect") {
             $scope.client.protocol = "openid-connect";
-        } else if ($scope.accessType == "saml") {
+        } else if ($scope.protocol == "saml") {
             $scope.client.protocol = "saml";
         }
     };
