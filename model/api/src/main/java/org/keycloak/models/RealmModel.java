@@ -181,7 +181,7 @@ public interface RealmModel extends RoleContainerModel {
     public IdentityProviderMapperModel getIdentityProviderMapperById(String id);
     public IdentityProviderMapperModel getIdentityProviderMapperByName(String brokerAlias, String name);
 
-
+    // Should return list sorted by UserFederationProviderModel.priority
     List<UserFederationProviderModel> getUserFederationProviders();
 
     UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync);

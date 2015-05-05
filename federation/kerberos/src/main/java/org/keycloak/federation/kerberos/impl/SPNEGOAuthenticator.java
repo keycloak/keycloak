@@ -108,7 +108,6 @@ public class SPNEGOAuthenticator {
                 if (gssContext.isEstablished()) {
                     authenticatedKerberosPrincipal = gssContext.getSrcName().toString();
 
-                    // What should be done with delegation credential? Figure out if there are use-cases for storing it as claims in FederatedIdentity
                     if (gssContext.getCredDelegState()) {
                         delegationCredential = gssContext.getDelegCred();
                     }

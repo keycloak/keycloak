@@ -203,7 +203,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
         // Return cache delegates to ensure cache invalidated during write operations
         List<RealmModel> cachedRealms = new LinkedList<RealmModel>();
         for (RealmModel realm : backendRealms) {
-            RealmModel cached = session.realms().getRealm(realm.getId());
+            RealmModel cached = getRealm(realm.getId());
             cachedRealms.add(cached);
         }
         return cachedRealms;
