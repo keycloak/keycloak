@@ -67,7 +67,17 @@ public class UserFederationManager implements UserProvider {
     public boolean removeUser(RealmModel realm, UserModel user) {
         UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
-            return link.removeUser(realm, user);
+            boolean fedRemoved = link.removeUser(realm, user);
+            if (fedRemoved) {
+                boolean localRemoved = session.userStorage().removeUser(realm, user);
+                if (!localRemoved) {
+                    logger.warn("User removed from federation provider, but failed to remove him from keycloak model");
+                }
+                return localRemoved;
+            } else {
+                logger.warn("Failed to remove user from federation provider");
+                return false;
+            }
         }
         return session.userStorage().removeUser(realm, user);
 

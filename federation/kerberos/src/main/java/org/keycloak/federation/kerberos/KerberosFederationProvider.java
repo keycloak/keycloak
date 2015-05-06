@@ -63,8 +63,7 @@ public class KerberosFederationProvider implements UserFederationProvider {
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        // TODO: Not sure if federation provider is expected to delete user in localStorage. Looks rather like a bug in UserFederationManager.removeUser .
-        return session.userStorage().removeUser(realm, user);
+        return true;
     }
 
     @Override
