@@ -36,10 +36,35 @@ public class KeycloakClientRequestFactory extends HttpComponentsClientHttpReques
 
     @Override
     protected void postProcessHttpRequest(HttpUriRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        KeycloakAuthenticationToken token = (KeycloakAuthenticationToken) authentication;
-        KeycloakSecurityContext context = token.getAccount().getKeycloakSecurityContext();
-
+        KeycloakSecurityContext context = this.getKeycloakSecurityContext();
         request.setHeader(AUTHORIZATION_HEADER, "Bearer " + context.getTokenString());
+    }
+
+    /**
+     * Returns the {@link KeycloakSecurityContext} from the Spring {@link SecurityContextHolder}'s {@link Authentication}.
+     *
+     * @return the current <code>KeycloakSecurityContext</code>
+     */
+    protected KeycloakSecurityContext getKeycloakSecurityContext() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        KeycloakAuthenticationToken token;
+        KeycloakSecurityContext context;
+
+        if (authentication == null) {
+            throw new IllegalStateException("Cannot set authorization header because there is no authenticated principal");
+        }
+
+        if (!KeycloakAuthenticationToken.class.isAssignableFrom(authentication.getClass())) {
+            throw new IllegalStateException(
+                    String.format(
+                            "Cannot set authorization header because Authentication is of type %s but %s is required",
+                            authentication.getClass(), KeycloakAuthenticationToken.class)
+            );
+        }
+
+        token = (KeycloakAuthenticationToken) authentication;
+        context = token.getAccount().getKeycloakSecurityContext();
+
+        return context;
     }
 }

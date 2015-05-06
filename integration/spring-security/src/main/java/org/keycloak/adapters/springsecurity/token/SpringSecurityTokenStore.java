@@ -53,7 +53,7 @@ public class SpringSecurityTokenStore implements AdapterTokenStore {
             return false;
         }
 
-        if (KeycloakAuthenticationToken.class.isAssignableFrom(context.getAuthentication().getClass())) {
+        if (!KeycloakAuthenticationToken.class.isAssignableFrom(context.getAuthentication().getClass())) {
             logger.warn("Expected a KeycloakAuthenticationToken, but found {}", context.getAuthentication());
             return false;
         }
@@ -84,7 +84,7 @@ public class SpringSecurityTokenStore implements AdapterTokenStore {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication != null) {
-            throw new IllegalStateException("Went to save Keycloak account {}, but already have {}");
+            throw new IllegalStateException(String.format("Went to save Keycloak account %s, but already have %s", account, authentication));
         }
 
         logger.debug("Saving account info {}", account);
@@ -99,6 +99,7 @@ public class SpringSecurityTokenStore implements AdapterTokenStore {
 
         if (session != null) {
             session.setAttribute(KeycloakSecurityContext.class.getName(), null);
+            session.invalidate();
         }
 
         SecurityContextHolder.clearContext();
