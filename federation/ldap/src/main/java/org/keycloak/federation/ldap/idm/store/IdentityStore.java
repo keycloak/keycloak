@@ -5,7 +5,7 @@ import java.util.List;
 import org.keycloak.federation.ldap.idm.model.AttributedType;
 import org.keycloak.federation.ldap.idm.model.IdentityType;
 import org.keycloak.federation.ldap.idm.model.LDAPUser;
-import org.keycloak.federation.ldap.idm.query.IdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.IdentityQuery;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStoreConfiguration;
 
 /**

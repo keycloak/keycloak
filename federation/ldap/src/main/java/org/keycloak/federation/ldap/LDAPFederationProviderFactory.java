@@ -9,8 +9,8 @@ import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.federation.ldap.idm.model.IdentityType;
 import org.keycloak.federation.ldap.idm.model.LDAPUser;
 import org.keycloak.federation.ldap.idm.query.Condition;
-import org.keycloak.federation.ldap.idm.query.IdentityQuery;
-import org.keycloak.federation.ldap.idm.query.IdentityQueryBuilder;
+import org.keycloak.federation.ldap.idm.query.internal.IdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.IdentityQueryBuilder;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -20,6 +20,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Collections;
@@ -75,40 +76,47 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
     }
 
     @Override
-    public void syncAllUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model) {
-        logger.infof("Sync all users from LDAP to local store: realm: %s, federation provider: %s, current time: " + new Date(), realmId, model.getDisplayName());
+    public UserFederationSyncResult syncAllUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model) {
+        logger.infof("Sync all users from LDAP to local store: realm: %s, federation provider: %s", realmId, model.getDisplayName());
 
         LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(model);
         IdentityQuery<LDAPUser> userQuery = ldapIdentityStore.createQueryBuilder().createIdentityQuery(LDAPUser.class);
-        syncImpl(sessionFactory, userQuery, realmId, model);
+        UserFederationSyncResult syncResult = syncImpl(sessionFactory, userQuery, realmId, model);
 
         // TODO: Remove all existing keycloak users, which have federation links, but are not in LDAP. Perhaps don't check users, which were just added or updated during this sync?
+
+        logger.infof("Sync all users finished: %s", syncResult.getStatus());
+        return syncResult;
     }
 
     @Override
-    public void syncChangedUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model, Date lastSync) {
-        logger.infof("Sync changed users from LDAP to local store: realm: %s, federation provider: %s, current time: %s, last sync time: " + lastSync, realmId, model.getDisplayName(), new Date().toString());
+    public UserFederationSyncResult syncChangedUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model, Date lastSync) {
+        logger.infof("Sync changed users from LDAP to local store: realm: %s, federation provider: %s, last sync time: " + lastSync, realmId, model.getDisplayName());
 
         LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(model);
 
-        // Sync newly created users
+        // Sync newly created and updated users
         IdentityQueryBuilder queryBuilder = ldapIdentityStore.createQueryBuilder();
-        Condition condition = queryBuilder.greaterThanOrEqualTo(IdentityType.CREATED_DATE, lastSync);
-        IdentityQuery<LDAPUser> userQuery = queryBuilder.createIdentityQuery(LDAPUser.class).where(condition);
-        syncImpl(sessionFactory, userQuery, realmId, model);
+        Condition createCondition = queryBuilder.greaterThanOrEqualTo(IdentityType.CREATED_DATE, lastSync);
+        Condition modifyCondition = queryBuilder.greaterThanOrEqualTo(LDAPUtils.MODIFY_DATE, lastSync);
+        Condition orCondition = queryBuilder.orCondition(createCondition, modifyCondition);
+        IdentityQuery<LDAPUser> userQuery = queryBuilder.createIdentityQuery(LDAPUser.class).where(orCondition);
+        UserFederationSyncResult result = syncImpl(sessionFactory, userQuery, realmId, model);
 
-        // Sync updated users
-        condition = queryBuilder.greaterThanOrEqualTo(LDAPUtils.MODIFY_DATE, lastSync);
-        userQuery = queryBuilder.createIdentityQuery(LDAPUser.class).where(condition);
-        syncImpl(sessionFactory, userQuery, realmId, model);
+        logger.infof("Sync changed users finished: %s", result.getStatus());
+        return result;
     }
 
-    protected void syncImpl(KeycloakSessionFactory sessionFactory, IdentityQuery<LDAPUser> userQuery, final String realmId, final UserFederationProviderModel fedModel) {
-        boolean pagination = Boolean.parseBoolean(fedModel.getConfig().get(LDAPConstants.PAGINATION));
+    protected UserFederationSyncResult syncImpl(KeycloakSessionFactory sessionFactory, IdentityQuery<LDAPUser> userQuery, final String realmId, final UserFederationProviderModel fedModel) {
 
+        final UserFederationSyncResult syncResult = new UserFederationSyncResult();
+
+        boolean pagination = Boolean.parseBoolean(fedModel.getConfig().get(LDAPConstants.PAGINATION));
         if (pagination) {
+
             String pageSizeConfig = fedModel.getConfig().get(LDAPConstants.BATCH_SIZE_FOR_SYNC);
             int pageSize = pageSizeConfig!=null ? Integer.parseInt(pageSizeConfig) : LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC;
+
             boolean nextPage = true;
             while (nextPage) {
                 userQuery.setLimit(pageSize);
@@ -119,7 +127,8 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
 
                     @Override
                     public void run(KeycloakSession session) {
-                        importLdapUsers(session, realmId, fedModel, users);
+                        UserFederationSyncResult currentPageSync = importLdapUsers(session, realmId, fedModel, users);
+                        syncResult.add(currentPageSync);
                     }
 
                 });
@@ -131,17 +140,20 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
 
                 @Override
                 public void run(KeycloakSession session) {
-                    importLdapUsers(session, realmId, fedModel, users);
+                    UserFederationSyncResult currentSync = importLdapUsers(session, realmId, fedModel, users);
+                    syncResult.add(currentSync);
                 }
 
             });
         }
+
+        return syncResult;
     }
 
-    protected void importLdapUsers(KeycloakSession session, String realmId, UserFederationProviderModel fedModel, List<LDAPUser> ldapUsers) {
+    protected UserFederationSyncResult importLdapUsers(KeycloakSession session, String realmId, UserFederationProviderModel fedModel, List<LDAPUser> ldapUsers) {
         RealmModel realm = session.realms().getRealm(realmId);
         LDAPFederationProvider ldapFedProvider = getInstance(session, fedModel);
-        ldapFedProvider.importLDAPUsers(realm, ldapUsers, fedModel);
+        return ldapFedProvider.importLDAPUsers(realm, ldapUsers, fedModel);
     }
 
     protected SPNEGOAuthenticator createSPNEGOAuthenticator(String spnegoToken, CommonKerberosConfig kerberosConfig) {

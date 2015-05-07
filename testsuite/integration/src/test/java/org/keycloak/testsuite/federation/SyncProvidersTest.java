@@ -17,6 +17,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.services.managers.RealmManager;
@@ -59,7 +60,7 @@ public class SyncProvidersTest {
             LDAPIdentityStore ldapStore = FederationProvidersIntegrationTest.getLdapIdentityStore(manager.getSession(), ldapModel);
             LDAPUtils.removeAllUsers(ldapStore);
 
-            for (int i=1 ; i<6 ; i++) {
+            for (int i=1 ; i<=5 ; i++) {
                 LDAPUser user = LDAPUtils.addUser(ldapStore, "user" + i, "User" + i + "FN", "User" + i + "LN", "user" + i + "@email.org");
                 LDAPUtils.updatePassword(ldapStore, user, "Password1");
             }
@@ -84,7 +85,8 @@ public class SyncProvidersTest {
         KeycloakSession session = keycloakRule.startSession();
         try {
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-            usersSyncManager.syncAllUsers(sessionFactory, "test", ldapModel);
+            UserFederationSyncResult syncResult = usersSyncManager.syncAllUsers(sessionFactory, "test", ldapModel);
+            assertSyncEquals(syncResult, 5, 0, 0);
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -125,7 +127,8 @@ public class SyncProvidersTest {
 
             // Trigger partial sync
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-            usersSyncManager.syncChangedUsers(sessionFactory, "test", ldapModel);
+            UserFederationSyncResult syncResult = usersSyncManager.syncChangedUsers(sessionFactory, "test", ldapModel);
+            assertSyncEquals(syncResult, 1, 1, 0);
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -179,6 +182,12 @@ public class SyncProvidersTest {
         } catch (InterruptedException ie) {
             throw new RuntimeException(ie);
         }
+    }
+
+    private void assertSyncEquals(UserFederationSyncResult syncResult, int expectedAdded, int expectedUpdated, int expectedRemoved) {
+        Assert.assertEquals(syncResult.getAdded(), expectedAdded);
+        Assert.assertEquals(syncResult.getUpdated(), expectedUpdated);
+        Assert.assertEquals(syncResult.getRemoved(), expectedRemoved);
     }
 
     public static void assertUserImported(UserProvider userProvider, RealmModel realm, String username, String expectedFirstName, String expectedLastName, String expectedEmail) {

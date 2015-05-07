@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.naming.Binding;
 import javax.naming.Context;
@@ -28,7 +30,7 @@ import javax.naming.ldap.PagedResultsResponseControl;
 
 import org.jboss.logging.Logger;
 import org.keycloak.federation.ldap.idm.model.IdentityType;
-import org.keycloak.federation.ldap.idm.query.IdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.IdentityQuery;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 
@@ -242,7 +244,7 @@ public class LDAPOperationManager {
         cons.setSearchScope(SUBTREE_SCOPE);
         cons.setReturningObjFlag(false);
 
-        List<String> returningAttributes = getReturningAttributes(mappingConfiguration);
+        Set<String> returningAttributes = getReturningAttributes(mappingConfiguration);
 
         cons.setReturningAttributes(returningAttributes.toArray(new String[returningAttributes.size()]));
         return cons;
@@ -448,35 +450,6 @@ public class LDAPOperationManager {
         return this.config.getUniqueIdentifierAttributeName();
     }
 
-    private NamingEnumeration<SearchResult> createEmptyEnumeration() {
-        return new NamingEnumeration<SearchResult>() {
-            @Override
-            public SearchResult next() throws NamingException {
-                return null;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public boolean hasMore() throws NamingException {
-                return false;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public void close() throws NamingException {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public boolean hasMoreElements() {
-                return false;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public SearchResult nextElement() {
-                return null;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-        };
-    }
-
     public Attributes getAttributes(final String entryUUID, final String baseDN, LDAPMappingConfiguration mappingConfiguration) {
         SearchResult search = lookupById(baseDN, entryUUID, mappingConfiguration);
 
@@ -560,6 +533,8 @@ public class LDAPOperationManager {
         LdapContext context = null;
 
         try {
+            // TODO: Remove this
+            logger.info("Executing operation: " + operation);
             context = createLdapContext();
             return operation.execute(context);
         } catch (NamingException ne) {
@@ -580,8 +555,8 @@ public class LDAPOperationManager {
         R execute(LdapContext context) throws NamingException;
     }
 
-    private List<String> getReturningAttributes(final LDAPMappingConfiguration mappingConfiguration) {
-        List<String> returningAttributes = new ArrayList<String>();
+    private Set<String> getReturningAttributes(final LDAPMappingConfiguration mappingConfiguration) {
+        Set<String> returningAttributes = new HashSet<String>();
 
         if (mappingConfiguration != null) {
             returningAttributes.addAll(mappingConfiguration.getMappedProperties().values());

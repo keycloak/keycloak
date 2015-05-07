@@ -705,8 +705,8 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
     }
 
     function triggerSync(action) {
-        UserFederationSync.get({ action: action, realm: $scope.realm.realm, provider: $scope.instance.id }, function() {
-            Notifications.success("Sync of users finished successfully");
+        UserFederationSync.save({ action: action, realm: $scope.realm.realm, provider: $scope.instance.id }, {}, function(syncResult) {
+            Notifications.success("Sync of users finished successfully. " + syncResult.status);
         }, function() {
             Notifications.error("Error during sync of users");
         });

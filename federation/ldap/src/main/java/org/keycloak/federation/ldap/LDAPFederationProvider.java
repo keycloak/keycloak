@@ -4,8 +4,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.federation.ldap.idm.model.LDAPUser;
-import org.keycloak.federation.ldap.idm.query.IdentityQuery;
-import org.keycloak.federation.ldap.idm.query.IdentityQueryBuilder;
+import org.keycloak.federation.ldap.idm.query.internal.IdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.IdentityQueryBuilder;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.models.CredentialValidationOutput;
@@ -18,6 +18,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
 import org.keycloak.constants.KerberosConstants;
 
@@ -334,7 +335,9 @@ public class LDAPFederationProvider implements UserFederationProvider {
     public void close() {
     }
 
-    protected void importLDAPUsers(RealmModel realm, List<LDAPUser> ldapUsers, UserFederationProviderModel fedModel) {
+    protected UserFederationSyncResult importLDAPUsers(RealmModel realm, List<LDAPUser> ldapUsers, UserFederationProviderModel fedModel) {
+        UserFederationSyncResult syncResult = new UserFederationSyncResult();
+
         for (LDAPUser ldapUser : ldapUsers) {
             String username = ldapUser.getLoginName();
             UserModel currentUser = session.userStorage().getUserByUsername(username, realm);
@@ -342,6 +345,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
             if (currentUser == null) {
                 // Add new user to Keycloak
                 importUserFromLDAP(realm, ldapUser);
+                syncResult.increaseAdded();
             } else {
                 if ((fedModel.getId().equals(currentUser.getFederationLink())) && (ldapUser.getId().equals(currentUser.getAttribute(LDAPConstants.LDAP_ID)))) {
                     // Update keycloak user
@@ -350,11 +354,14 @@ public class LDAPFederationProvider implements UserFederationProvider {
                     currentUser.setFirstName(ldapUser.getFirstName());
                     currentUser.setLastName(ldapUser.getLastName());
                     logger.debugf("Updated user from LDAP: %s", currentUser.getUsername());
+                    syncResult.increaseUpdated();
                 } else {
                     logger.warnf("User '%s' is not updated during sync as he is not linked to federation provider '%s'", username, fedModel.getDisplayName());
                 }
             }
         }
+
+        return syncResult;
     }
 
     /**

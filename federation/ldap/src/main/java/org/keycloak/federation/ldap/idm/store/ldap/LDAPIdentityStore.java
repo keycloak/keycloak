@@ -23,16 +23,16 @@ import org.keycloak.federation.ldap.idm.model.IdentityType;
 import org.keycloak.federation.ldap.idm.model.LDAPUser;
 import org.keycloak.federation.ldap.idm.query.AttributeParameter;
 import org.keycloak.federation.ldap.idm.query.Condition;
-import org.keycloak.federation.ldap.idm.query.IdentityQuery;
-import org.keycloak.federation.ldap.idm.query.IdentityQueryBuilder;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.internal.BetweenCondition;
-import org.keycloak.federation.ldap.idm.query.internal.DefaultQueryBuilder;
+import org.keycloak.federation.ldap.idm.query.internal.IdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.IdentityQueryBuilder;
 import org.keycloak.federation.ldap.idm.query.internal.EqualCondition;
 import org.keycloak.federation.ldap.idm.query.internal.GreaterThanCondition;
 import org.keycloak.federation.ldap.idm.query.internal.InCondition;
 import org.keycloak.federation.ldap.idm.query.internal.LessThanCondition;
 import org.keycloak.federation.ldap.idm.query.internal.LikeCondition;
+import org.keycloak.federation.ldap.idm.query.internal.OrCondition;
 import org.keycloak.federation.ldap.idm.store.IdentityStore;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelDuplicateException;
@@ -183,7 +183,7 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
     public IdentityQueryBuilder createQueryBuilder() {
-        return new DefaultQueryBuilder(this);
+        return new IdentityQueryBuilder(this);
     }
 
     // *************** CREDENTIALS AND USER SPECIFIC STUFF
@@ -310,94 +310,111 @@ public class LDAPIdentityStore implements IdentityStore {
         StringBuilder filter = new StringBuilder();
 
         for (Condition condition : identityQuery.getConditions()) {
-            QueryParameter queryParameter = condition.getParameter();
+            applyCondition(filter, condition, ldapEntryConfig);
+        }
 
-            if (!IdentityType.ID.equals(queryParameter)) {
-                if (AttributeParameter.class.isInstance(queryParameter)) {
-                    AttributeParameter attributeParameter = (AttributeParameter) queryParameter;
-                    String attributeName = ldapEntryConfig.getMappedProperties().get(attributeParameter.getName());
 
-                    if (attributeName != null) {
-                        if (EqualCondition.class.isInstance(condition)) {
-                            EqualCondition equalCondition = (EqualCondition) condition;
-                            Object parameterValue = equalCondition.getValue();
+        filter.insert(0, "(&");
+        filter.append(getObjectClassesFilter(ldapEntryConfig));
+        filter.append(")");
 
-                            if (Date.class.isInstance(parameterValue)) {
-                                parameterValue = LDAPUtil.formatDate((Date) parameterValue);
-                            }
+        logger.infof("Using filter for LDAP search: %s", filter);
+        return filter;
+    }
 
-                            filter.append("(").append(attributeName).append(LDAPConstants.EQUAL).append(parameterValue).append(")");
-                        } else if (LikeCondition.class.isInstance(condition)) {
-                            LikeCondition likeCondition = (LikeCondition) condition;
-                            String parameterValue = (String) likeCondition.getValue();
+    protected void applyCondition(StringBuilder filter, Condition condition, LDAPMappingConfiguration ldapEntryConfig) {
+        if (OrCondition.class.isInstance(condition)) {
+            OrCondition orCondition = (OrCondition) condition;
+            filter.append("(|");
 
-                        } else if (GreaterThanCondition.class.isInstance(condition)) {
-                            GreaterThanCondition greaterThanCondition = (GreaterThanCondition) condition;
-                            Comparable parameterValue = (Comparable) greaterThanCondition.getValue();
+            for (Condition innerCondition : orCondition.getInnerConditions()) {
+                applyCondition(filter, innerCondition, ldapEntryConfig);
+            }
 
-                            if (Date.class.isInstance(parameterValue)) {
-                                parameterValue = LDAPUtil.formatDate((Date) parameterValue);
-                            }
+            filter.append(")");
+            return;
+        }
 
-                            if (greaterThanCondition.isOrEqual()) {
-                                filter.append("(").append(attributeName).append(">=").append(parameterValue).append(")");
-                            } else {
-                                filter.append("(").append(attributeName).append(">").append(parameterValue).append(")");
-                            }
-                        } else if (LessThanCondition.class.isInstance(condition)) {
-                            LessThanCondition lessThanCondition = (LessThanCondition) condition;
-                            Comparable parameterValue = (Comparable) lessThanCondition.getValue();
+        QueryParameter queryParameter = condition.getParameter();
 
-                            if (Date.class.isInstance(parameterValue)) {
-                                parameterValue = LDAPUtil.formatDate((Date) parameterValue);
-                            }
+        if (!IdentityType.ID.equals(queryParameter)) {
+            if (AttributeParameter.class.isInstance(queryParameter)) {
+                AttributeParameter attributeParameter = (AttributeParameter) queryParameter;
+                String attributeName = ldapEntryConfig.getMappedProperties().get(attributeParameter.getName());
 
-                            if (lessThanCondition.isOrEqual()) {
-                                filter.append("(").append(attributeName).append("<=").append(parameterValue).append(")");
-                            } else {
-                                filter.append("(").append(attributeName).append("<").append(parameterValue).append(")");
-                            }
-                        } else if (BetweenCondition.class.isInstance(condition)) {
-                            BetweenCondition betweenCondition = (BetweenCondition) condition;
-                            Comparable x = betweenCondition.getX();
-                            Comparable y = betweenCondition.getY();
+                if (attributeName != null) {
+                    if (EqualCondition.class.isInstance(condition)) {
+                        EqualCondition equalCondition = (EqualCondition) condition;
+                        Object parameterValue = equalCondition.getValue();
 
-                            if (Date.class.isInstance(x)) {
-                                x = LDAPUtil.formatDate((Date) x);
-                            }
-
-                            if (Date.class.isInstance(y)) {
-                                y = LDAPUtil.formatDate((Date) y);
-                            }
-
-                            filter.append("(").append(x).append("<=").append(attributeName).append("<=").append(y).append(")");
-                        } else if (InCondition.class.isInstance(condition)) {
-                            InCondition inCondition = (InCondition) condition;
-                            Object[] valuesToCompare = inCondition.getValue();
-
-                            filter.append("(&(");
-
-                            for (int i = 0; i< valuesToCompare.length; i++) {
-                                Object value = valuesToCompare[i];
-
-                                filter.append("(").append(attributeName).append(LDAPConstants.EQUAL).append(value).append(")");
-                            }
-
-                            filter.append("))");
-                        } else {
-                            throw new ModelException("Unsupported query condition [" + condition + "].");
+                        if (Date.class.isInstance(parameterValue)) {
+                            parameterValue = LDAPUtil.formatDate((Date) parameterValue);
                         }
+
+                        filter.append("(").append(attributeName).append(LDAPConstants.EQUAL).append(parameterValue).append(")");
+                    } else if (LikeCondition.class.isInstance(condition)) {
+                        LikeCondition likeCondition = (LikeCondition) condition;
+                        String parameterValue = (String) likeCondition.getValue();
+
+                    } else if (GreaterThanCondition.class.isInstance(condition)) {
+                        GreaterThanCondition greaterThanCondition = (GreaterThanCondition) condition;
+                        Comparable parameterValue = (Comparable) greaterThanCondition.getValue();
+
+                        if (Date.class.isInstance(parameterValue)) {
+                            parameterValue = LDAPUtil.formatDate((Date) parameterValue);
+                        }
+
+                        if (greaterThanCondition.isOrEqual()) {
+                            filter.append("(").append(attributeName).append(">=").append(parameterValue).append(")");
+                        } else {
+                            filter.append("(").append(attributeName).append(">").append(parameterValue).append(")");
+                        }
+                    } else if (LessThanCondition.class.isInstance(condition)) {
+                        LessThanCondition lessThanCondition = (LessThanCondition) condition;
+                        Comparable parameterValue = (Comparable) lessThanCondition.getValue();
+
+                        if (Date.class.isInstance(parameterValue)) {
+                            parameterValue = LDAPUtil.formatDate((Date) parameterValue);
+                        }
+
+                        if (lessThanCondition.isOrEqual()) {
+                            filter.append("(").append(attributeName).append("<=").append(parameterValue).append(")");
+                        } else {
+                            filter.append("(").append(attributeName).append("<").append(parameterValue).append(")");
+                        }
+                    } else if (BetweenCondition.class.isInstance(condition)) {
+                        BetweenCondition betweenCondition = (BetweenCondition) condition;
+                        Comparable x = betweenCondition.getX();
+                        Comparable y = betweenCondition.getY();
+
+                        if (Date.class.isInstance(x)) {
+                            x = LDAPUtil.formatDate((Date) x);
+                        }
+
+                        if (Date.class.isInstance(y)) {
+                            y = LDAPUtil.formatDate((Date) y);
+                        }
+
+                        filter.append("(").append(x).append("<=").append(attributeName).append("<=").append(y).append(")");
+                    } else if (InCondition.class.isInstance(condition)) {
+                        InCondition inCondition = (InCondition) condition;
+                        Object[] valuesToCompare = inCondition.getValue();
+
+                        filter.append("(&(");
+
+                        for (int i = 0; i< valuesToCompare.length; i++) {
+                            Object value = valuesToCompare[i];
+
+                            filter.append("(").append(attributeName).append(LDAPConstants.EQUAL).append(value).append(")");
+                        }
+
+                        filter.append("))");
+                    } else {
+                        throw new ModelException("Unsupported query condition [" + condition + "].");
                     }
                 }
             }
         }
-
-
-        filter.insert(0, "(&(");
-        filter.append(getObjectClassesFilter(ldapEntryConfig));
-        filter.append("))");
-
-        return filter;
     }
 
     private StringBuilder getObjectClassesFilter(final LDAPMappingConfiguration ldapEntryConfig) {
