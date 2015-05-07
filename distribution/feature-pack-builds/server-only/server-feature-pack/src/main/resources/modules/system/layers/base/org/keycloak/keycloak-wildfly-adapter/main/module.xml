@@ -4,7 +4,7 @@
 
 <module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-wildfly-adapter">
     <resources>
-        <artifact name="${org.keycloak:keycloak-undertow-adapter}"/>
+        <artifact name="${org.keycloak:keycloak-wildfly-adapter}"/>
     </resources>
     <dependencies>
         <module name="javax.api"/>
