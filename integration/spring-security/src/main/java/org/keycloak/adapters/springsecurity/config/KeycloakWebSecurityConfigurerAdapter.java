@@ -5,6 +5,7 @@ import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticatio
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakLogoutHandler;
 import org.keycloak.adapters.springsecurity.filter.KeycloakAuthenticationProcessingFilter;
+import org.keycloak.adapters.springsecurity.filter.KeycloakCsrfRequestMatcher;
 import org.keycloak.adapters.springsecurity.filter.KeycloakPreAuthActionsFilter;
 import org.keycloak.adapters.springsecurity.management.HttpSessionManager;
 import org.springframework.context.annotation.Bean;
@@ -57,6 +58,10 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
     @Bean
     protected KeycloakPreAuthActionsFilter keycloakPreAuthActionsFilter() {
         return new KeycloakPreAuthActionsFilter(httpSessionManager());
+    }
+
+    protected KeycloakCsrfRequestMatcher keycloakCsrfRequestMatcher() {
+        return new KeycloakCsrfRequestMatcher();
     }
 
     @Bean
