@@ -300,13 +300,10 @@ public class TokenManager {
         Set<ProtocolMapperModel> mappings = new ClientSessionCode(realm, clientSession).getRequestedProtocolMappers();
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         for (ProtocolMapperModel mapping : mappings) {
-            if (!mapping.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) continue;
 
             ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
             if (mapper == null || !(mapper instanceof OIDCIDTokenMapper)) continue;
             token = ((OIDCIDTokenMapper)mapper).transformIDToken(token, mapping, session, userSession, clientSession);
-
-
 
         }
     }

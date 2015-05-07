@@ -16,6 +16,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 
 import javax.net.ssl.SSLSocketFactory;
 import java.lang.reflect.Method;
+import java.net.UnknownHostException;
 import java.util.Collections;
 
 /**
@@ -50,7 +51,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
 
     private MongoStore mongoStore;
     private DB db;
-    private Config.Scope config;
+    protected Config.Scope config;
 
     @Override
     public MongoConnectionProvider create(KeycloakSession session) {
@@ -77,21 +78,9 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             synchronized (this) {
                 if (client == null) {
                     try {
-                        String host = config.get("host", ServerAddress.defaultHost());
-                        int port = config.getInt("port", ServerAddress.defaultPort());
+                        this.client = createMongoClient();
+
                         String dbName = config.get("db", "keycloak");
-
-                        String user = config.get("user");
-                        String password = config.get("password");
-
-                        MongoClientOptions clientOptions = getClientOptions();
-                        if (user != null && password != null) {
-                            MongoCredential credential = MongoCredential.createMongoCRCredential(user, dbName, password.toCharArray());
-                            client = new MongoClient(new ServerAddress(host, port), Collections.singletonList(credential), clientOptions);
-                        } else {
-                            client = new MongoClient(new ServerAddress(host, port), clientOptions);
-                        }
-
                         this.db = client.getDB(dbName);
 
                         String databaseSchema = config.get("databaseSchema");
@@ -110,8 +99,6 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
                         }
 
                         this.mongoStore = new MongoStoreImpl(db, getManagedEntities());
-
-                        logger.debugv("Initialized mongo model. host: %s, port: %d, db: %s", host, port, dbName);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -138,6 +125,38 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
     @Override
     public String getId() {
         return "default";
+    }
+
+    /**
+     * Override this method if you want more possibility to configure Mongo client. It can be also used to inject mongo client
+     * from different source.
+     *
+     * This method can assume that "config" is already set and can use it.
+     *
+     * @return mongoClient instance, which will be shared for whole Keycloak
+     *
+     * @throws UnknownHostException
+     */
+    protected MongoClient createMongoClient() throws UnknownHostException {
+        String host = config.get("host", ServerAddress.defaultHost());
+        int port = config.getInt("port", ServerAddress.defaultPort());
+        String dbName = config.get("db", "keycloak");
+
+        String user = config.get("user");
+        String password = config.get("password");
+
+        MongoClientOptions clientOptions = getClientOptions();
+
+        MongoClient client;
+        if (user != null && password != null) {
+            MongoCredential credential = MongoCredential.createMongoCRCredential(user, dbName, password.toCharArray());
+            client = new MongoClient(new ServerAddress(host, port), Collections.singletonList(credential), clientOptions);
+        } else {
+            client = new MongoClient(new ServerAddress(host, port), clientOptions);
+        }
+
+        logger.debugv("Initialized mongo model. host: %s, port: %d, db: %s", host, port, dbName);
+        return client;
     }
 
     protected MongoClientOptions getClientOptions() {
