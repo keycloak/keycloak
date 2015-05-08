@@ -4,6 +4,7 @@ import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
+import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.UserSessionManagement;
 import org.keycloak.adapters.springsecurity.AdapterDeploymentContextBean;
@@ -24,6 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 
 /**
  * Exposes a Keycloak adapter {@link PreAuthActionsHandler} as a Spring Security filter.
@@ -35,6 +37,7 @@ public class KeycloakPreAuthActionsFilter extends GenericFilterBean implements A
 
     private static final Logger log = LoggerFactory.getLogger(KeycloakPreAuthActionsFilter.class);
 
+    private final NodesRegistrationManagement management = new NodesRegistrationManagement();
     private ApplicationContext applicationContext;
     private AdapterDeploymentContext deploymentContext;
     private UserSessionManagement userSessionManagement;
@@ -51,6 +54,13 @@ public class KeycloakPreAuthActionsFilter extends GenericFilterBean implements A
     protected void initFilterBean() throws ServletException {
         AdapterDeploymentContextBean contextBean = applicationContext.getBean(AdapterDeploymentContextBean.class);
         deploymentContext = contextBean.getDeploymentContext();
+        management.tryRegister(contextBean.getDeployment());
+    }
+
+    @Override
+    public void destroy() {
+        log.debug("Unregistering deployment");
+        management.stop();
     }
 
     @Override
