@@ -17,6 +17,7 @@
                 <!ENTITY Jetty8Adapter SYSTEM "modules/jetty8-adapter.xml">
                 <!ENTITY FuseAdapter SYSTEM "modules/fuse-adapter.xml">
                 <!ENTITY SpringBootAdapter SYSTEM "modules/spring-boot-adapter.xml">
+                <!ENTITY SpringSecurityAdapter SYSTEM "modules/spring-security-adapter.xml">
                 <!ENTITY InstalledApplications SYSTEM "modules/installed-applications.xml">
                 <!ENTITY Logout SYSTEM "modules/logout.xml">
                 <!ENTITY SAML SYSTEM "modules/saml.xml">
@@ -97,6 +98,7 @@ This one is short
         &FuseAdapter;
         &JavascriptAdapter;
         &SpringBootAdapter;
+        &SpringSecurityAdapter;
         &InstalledApplications;
         &Logout;
         &MultiTenancy;
