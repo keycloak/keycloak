@@ -17,8 +17,8 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.annotation.web.servlet.configuration.EnableWebMvcSecurity;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
-import org.springframework.security.web.authentication.preauth.x509.X509AuthenticationFilter;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 /**
  * Provides a convenient base class for creating a {@link WebSecurityConfigurer}
@@ -37,13 +37,11 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
         return new AdapterDeploymentContextBean();
     }
 
-    @Bean
     protected AuthenticationEntryPoint authenticationEntryPoint()
     {
         return new KeycloakAuthenticationEntryPoint();
     }
 
-    @Bean
     protected KeycloakAuthenticationProvider keycloakAuthenticationProvider() {
         return new KeycloakAuthenticationProvider();
     }
@@ -69,7 +67,6 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
         return  new HttpSessionManager();
     }
 
-    @Bean
     protected KeycloakLogoutHandler keycloakLogoutHandler() {
         return new KeycloakLogoutHandler(adapterDeploymentContextBean());
     }
@@ -78,12 +75,20 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+
         http
+                .csrf().requireCsrfProtectionMatcher(keycloakCsrfRequestMatcher())
+                .and()
                 .sessionManagement()
                 .sessionAuthenticationStrategy(sessionAuthenticationStrategy())
                 .and()
                 .addFilterBefore(keycloakPreAuthActionsFilter(), LogoutFilter.class)
-                .addFilterBefore(keycloakAuthenticationProcessingFilter(), X509AuthenticationFilter.class)
-                .exceptionHandling().authenticationEntryPoint(authenticationEntryPoint());
+                .addFilterBefore(keycloakAuthenticationProcessingFilter(), BasicAuthenticationFilter.class)
+                .exceptionHandling().authenticationEntryPoint(authenticationEntryPoint())
+                .and()
+                .logout()
+                .addLogoutHandler(keycloakLogoutHandler())
+                .logoutUrl("/sso/logout").permitAll()
+                .logoutSuccessUrl("/");
     }
 }
