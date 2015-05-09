@@ -10,6 +10,7 @@
         <module name="org.keycloak.keycloak-account-api" services="import"/>
         <module name="org.keycloak.keycloak-account-freemarker" services="import"/>
         <module name="org.keycloak.keycloak-adapter-core" services="import"/>
+        <module name="org.keycloak.keycloak-adapter-subsystem" services="import"/>
         <module name="org.keycloak.keycloak-as7-adapter" services="import"/>
         <module name="org.keycloak.keycloak-as7-subsystem" services="import"/>
         <module name="org.keycloak.keycloak-connections-infinispan" services="import"/>
@@ -57,7 +58,7 @@
         <module name="org.keycloak.keycloak-social-twitter" services="import"/>
         <module name="org.keycloak.keycloak-social-linkedin" services="import"/>
         <module name="org.keycloak.keycloak-social-stackoverflow" services="import"/>
-        <module name="org.keycloak.keycloak-subsystem" services="import"/>
+        <module name="org.keycloak.keycloak-server-subsystem" services="import"/>
         <module name="org.keycloak.keycloak-timer-api" services="import"/>
         <module name="org.keycloak.keycloak-timer-basic" services="import"/>
         <module name="org.keycloak.keycloak-undertow-adapter" services="import"/>

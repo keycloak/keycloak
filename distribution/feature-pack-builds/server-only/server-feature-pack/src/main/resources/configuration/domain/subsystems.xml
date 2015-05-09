@@ -1,0 +1,138 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--  See src/resources/configuration/ReadMe.txt for how the configuration assembly works -->
+<config>
+   <subsystems name="default">
+      <!-- Each subsystem to be included relative to the src/main/resources directory -->
+      <subsystem>logging.xml</subsystem>
+      <subsystem>batch.xml</subsystem>
+      <subsystem>bean-validation.xml</subsystem>
+      <subsystem>keycloak-datasources.xml</subsystem>
+      <subsystem>ee.xml</subsystem>
+      <subsystem>ejb3.xml</subsystem>
+      <subsystem>io.xml</subsystem>
+      <subsystem>infinispan.xml</subsystem>
+      <subsystem>jaxrs.xml</subsystem>
+      <subsystem>jca.xml</subsystem>
+      <subsystem>jdr.xml</subsystem>
+      <subsystem supplement="domain">jmx.xml</subsystem>
+      <subsystem>jpa.xml</subsystem>
+      <subsystem>jsf.xml</subsystem>
+      <subsystem>mail.xml</subsystem>
+      <subsystem>naming.xml</subsystem>
+      <subsystem>pojo.xml</subsystem>
+      <subsystem>remoting.xml</subsystem>
+      <subsystem>resource-adapters.xml</subsystem>
+      <subsystem>request-controller.xml</subsystem>
+      <subsystem>sar.xml</subsystem>
+      <subsystem>security.xml</subsystem>
+      <subsystem>security-manager.xml</subsystem>
+      <subsystem>transactions.xml</subsystem>
+      <subsystem>undertow.xml</subsystem>
+      <subsystem>webservices.xml</subsystem>
+      <subsystem>weld.xml</subsystem>
+      <subsystem>keycloak-server.xml</subsystem>
+   </subsystems>
+   <subsystems name="ha">
+      <!-- Each subsystem to be included relative to the src/main/resources directory -->
+      <subsystem>logging.xml</subsystem>
+      <subsystem>batch.xml</subsystem>
+      <subsystem>bean-validation.xml</subsystem>
+      <subsystem>keycloak-datasources.xml</subsystem>
+      <subsystem>ee.xml</subsystem>
+      <subsystem supplement="ha">ejb3.xml</subsystem>
+      <subsystem>io.xml</subsystem>
+      <subsystem supplement="ha">infinispan.xml</subsystem>
+      <subsystem>jaxrs.xml</subsystem>
+      <subsystem>jca.xml</subsystem>
+      <subsystem>jdr.xml</subsystem>
+      <subsystem>jgroups.xml</subsystem>
+      <subsystem supplement="domain">jmx.xml</subsystem>
+      <subsystem>jpa.xml</subsystem>
+      <subsystem>jsf.xml</subsystem>
+      <subsystem>mail.xml</subsystem>
+      <subsystem>mod_cluster.xml</subsystem>
+      <subsystem>naming.xml</subsystem>
+      <subsystem>pojo.xml</subsystem>
+      <subsystem>remoting.xml</subsystem>
+      <subsystem>resource-adapters.xml</subsystem>
+      <subsystem>request-controller.xml</subsystem>
+      <subsystem>sar.xml</subsystem>
+      <subsystem>security.xml</subsystem>
+      <subsystem>security-manager.xml</subsystem>
+      <subsystem>transactions.xml</subsystem>
+      <subsystem supplement="ha">undertow.xml</subsystem>
+      <subsystem>webservices.xml</subsystem>
+      <subsystem>weld.xml</subsystem>
+      <subsystem>keycloak-server.xml</subsystem>
+   </subsystems>
+   <subsystems name="full">
+      <!-- Each subsystem to be included relative to the src/main/resources directory -->
+      <subsystem>logging.xml</subsystem>
+      <subsystem>batch.xml</subsystem>
+      <subsystem>bean-validation.xml</subsystem>
+      <subsystem>keycloak-datasources.xml</subsystem>
+      <subsystem supplement="full">ee.xml</subsystem>
+      <subsystem supplement="full">ejb3.xml</subsystem>
+      <subsystem>io.xml</subsystem>
+      <subsystem>infinispan.xml</subsystem>
+      <subsystem>iiop-openjdk.xml</subsystem>
+      <subsystem>jaxrs.xml</subsystem>
+      <subsystem>jca.xml</subsystem>
+      <subsystem>jdr.xml</subsystem>
+      <subsystem supplement="domain">jmx.xml</subsystem>
+      <subsystem>jpa.xml</subsystem>
+      <subsystem>jsf.xml</subsystem>
+      <subsystem>jsr77.xml</subsystem>
+      <subsystem>mail.xml</subsystem>
+      <subsystem>messaging.xml</subsystem>
+      <subsystem>naming.xml</subsystem>
+      <subsystem>pojo.xml</subsystem>
+      <subsystem>remoting.xml</subsystem>
+      <subsystem>resource-adapters.xml</subsystem>
+      <subsystem>request-controller.xml</subsystem>
+      <subsystem>sar.xml</subsystem>
+      <subsystem>security.xml</subsystem>
+      <subsystem>security-manager.xml</subsystem>
+      <subsystem>transactions.xml</subsystem>
+      <subsystem>undertow.xml</subsystem>
+      <subsystem>webservices.xml</subsystem>
+      <subsystem>weld.xml</subsystem>
+      <subsystem>keycloak-server.xml</subsystem>
+   </subsystems>
+   <subsystems name="full-ha">
+      <!-- Each subsystem to be included relative to the src/main/resources directory -->
+      <subsystem>logging.xml</subsystem>
+      <subsystem>batch.xml</subsystem>
+      <subsystem>bean-validation.xml</subsystem>
+      <subsystem>keycloak-datasources.xml</subsystem>
+      <subsystem supplement="full">ee.xml</subsystem>
+      <subsystem supplement="full-ha">ejb3.xml</subsystem>
+      <subsystem>io.xml</subsystem>
+      <subsystem supplement="ha">infinispan.xml</subsystem>
+      <subsystem>iiop-openjdk.xml</subsystem>
+      <subsystem>jaxrs.xml</subsystem>
+      <subsystem>jca.xml</subsystem>
+      <subsystem>jdr.xml</subsystem>
+      <subsystem>jgroups.xml</subsystem>
+      <subsystem supplement="domain">jmx.xml</subsystem>
+      <subsystem>jpa.xml</subsystem>
+      <subsystem>jsf.xml</subsystem>
+      <subsystem>jsr77.xml</subsystem>
+      <subsystem>mail.xml</subsystem>
+      <subsystem supplement="ha">messaging.xml</subsystem>
+      <subsystem>mod_cluster.xml</subsystem>
+      <subsystem>naming.xml</subsystem>
+      <subsystem>pojo.xml</subsystem>
+      <subsystem>remoting.xml</subsystem>
+      <subsystem>resource-adapters.xml</subsystem>
+      <subsystem>request-controller.xml</subsystem>
+      <subsystem>sar.xml</subsystem>
+      <subsystem>security.xml</subsystem>
+      <subsystem>security-manager.xml</subsystem>
+      <subsystem>transactions.xml</subsystem>
+      <subsystem supplement="ha">undertow.xml</subsystem>
+      <subsystem>webservices.xml</subsystem>
+      <subsystem>weld.xml</subsystem>
+      <subsystem>keycloak-server.xml</subsystem>
+   </subsystems>
+</config>

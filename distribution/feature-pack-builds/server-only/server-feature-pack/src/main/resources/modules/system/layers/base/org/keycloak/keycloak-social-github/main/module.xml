@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-social-github">
+    <resources>
+        <artifact name="${org.keycloak:keycloak-social-github}"/>
+    </resources>
+    <dependencies>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-social-core"/>
+        <module name="org.keycloak.keycloak-broker-core"/>
+        <module name="org.keycloak.keycloak-broker-oidc"/>
+        <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.jboss.logging"/>
+        <module name="javax.api"/>
+        <module name="org.codehaus.jackson.jackson-core-asl"/>
+        <module name="org.codehaus.jackson.jackson-mapper-asl"/>
+        <module name="org.codehaus.jackson.jackson-xc"/>
+    </dependencies>
+
+</module>

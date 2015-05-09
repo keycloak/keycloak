@@ -1,0 +1,6 @@
+<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
+    <auth-server name="main-auth-server">
+        <enabled>true</enabled>
+        <web-context>auth</web-context>
+    </auth-server>
+</subsystem>

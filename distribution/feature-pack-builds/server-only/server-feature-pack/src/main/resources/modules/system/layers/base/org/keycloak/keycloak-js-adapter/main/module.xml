@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-js-adapter">
+    <resources>
+        <artifact name="${org.keycloak:keycloak-js-adapter}"/>
+    </resources>
+    <dependencies>
+    </dependencies>
+
+</module>
