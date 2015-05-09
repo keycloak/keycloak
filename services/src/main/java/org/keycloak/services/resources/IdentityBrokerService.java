@@ -44,6 +44,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
@@ -249,6 +250,16 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         ClientSessionModel clientSession = clientCode.getClientSession();
+        context.getIdp().preprocessFederatedIdentity(session, realmModel, context);
+        Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(context.getIdpConfig().getAlias());
+        if (mappers != null) {
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            for (IdentityProviderMapperModel mapper : mappers) {
+                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                target.preprocessFederatedIdentity(session, realmModel, mapper, context);
+            }
+        }
+
         FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
                 context.getUsername(), context.getToken());
 
@@ -492,18 +503,24 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             fireErrorEvent(Errors.FEDERATED_IDENTITY_EMAIL_EXISTS);
             throw new IdentityBrokerException(Messages.FEDERATED_IDENTITY_EMAIL_EXISTS);
         }
+        String username = context.getModelUsername();
+        if (username == null) {
+            username = context.getUsername();
+            if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isEmpty(context.getEmail())) {
+                username = context.getEmail();
+            } else if (username == null) {
+                username = context.getIdpConfig().getAlias() + "." + context.getId();
+            } else {
+                username = context.getIdpConfig().getAlias() + "." + context.getUsername();
+            }
+        }
+        if (username == null) {
+            LOGGER.warn("Unknown username");
+            fireErrorEvent(Errors.FEDERATED_IDENTITY_USERNAME_EXISTS);
+            throw new IdentityBrokerException(Messages.FEDERATED_IDENTITY_USERNAME_EXISTS);
 
-        String username = context.getUsername();
-        if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isEmpty(context.getEmail())) {
-            username = context.getEmail();
-        } else if (username == null) {
-            username = context.getIdpConfig().getAlias() + "." + context.getId();
-        } else {
-            username = context.getIdpConfig().getAlias() + "." + context.getUsername();
         }
-        if (username != null) {
-            username = username.trim();
-        }
+        username = username.trim();
 
         existingUser = this.session.users().getUserByUsername(username, this.realmModel);
 

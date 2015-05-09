@@ -33,7 +33,8 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 
             BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
 
-            user.setUsername(getJsonProperty(profile, "login"));
+            String username = getJsonProperty(profile, "login");
+            user.setUsername(username);
             user.setName(getJsonProperty(profile, "name"));
             user.setEmail(getJsonProperty(profile, "email"));
             user.setIdpConfig(getConfig());

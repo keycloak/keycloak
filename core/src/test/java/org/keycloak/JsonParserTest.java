@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.codehaus.jackson.annotate.JsonAnyGetter;
@@ -90,4 +91,21 @@ public class JsonParserTest {
         Assert.assertEquals(100, config.getCorsMaxAge());
         Assert.assertEquals(200, config.getConnectionPoolSize());
     }
+
+    static Pattern substitution = Pattern.compile("\\$\\{([^}]+)\\}");
+
+    @Test
+    public void testSub() {
+        String pattern = "${ALIAS}.${CRAP}";
+        Matcher m = substitution.matcher(pattern);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            System.out.println("GROUP: " + m.group(1));
+            m.appendReplacement(sb, m.group(1));
+
+        }
+        m.appendTail(sb);
+        System.out.println(sb.toString());
+    }
+
 }

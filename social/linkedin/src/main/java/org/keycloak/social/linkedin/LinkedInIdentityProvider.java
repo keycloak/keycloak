@@ -60,7 +60,8 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider imp
 
             BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
 
-			user.setUsername(extractUsernameFromProfileURL(getJsonProperty(profile, "publicProfileUrl")));
+            String username = extractUsernameFromProfileURL(getJsonProperty(profile, "publicProfileUrl"));
+            user.setUsername(username);
 			user.setName(getJsonProperty(profile, "formattedName"));
 			user.setEmail(getJsonProperty(profile, "emailAddress"));
             user.setIdpConfig(getConfig());

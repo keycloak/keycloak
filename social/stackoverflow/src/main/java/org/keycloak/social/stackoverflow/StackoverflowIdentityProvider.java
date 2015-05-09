@@ -69,7 +69,8 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 
             BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "user_id"));
 
-			user.setUsername(extractUsernameFromProfileURL(getJsonProperty(profile, "link")));
+            String username = extractUsernameFromProfileURL(getJsonProperty(profile, "link"));
+            user.setUsername(username);
 			user.setName(unescapeHtml3(getJsonProperty(profile, "display_name")));
 			// email is not provided
 			// user.setEmail(getJsonProperty(profile, "email"));

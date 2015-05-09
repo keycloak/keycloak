@@ -129,7 +129,8 @@ public class IdentityProvidersResource {
         this.auth.requireManage();
 
         try {
-            this.realm.addIdentityProvider(RepresentationToModel.toModel(representation));
+            IdentityProviderModel identityProvider = RepresentationToModel.toModel(representation);
+            this.realm.addIdentityProvider(identityProvider);
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getProviderId()).build()).build();
         } catch (ModelDuplicateException e) {

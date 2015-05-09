@@ -17,11 +17,11 @@ public class UserManager {
     }
 
     public boolean removeUser(RealmModel realm, UserModel user) {
+        UserSessionProvider sessions = session.sessions();
+        if (sessions != null) {
+            sessions.onUserRemoved(realm, user);
+        }
         if (session.users().removeUser(realm, user)) {
-            UserSessionProvider sessions = session.sessions();
-            if (sessions != null) {
-                sessions.onUserRemoved(realm, user);
-            }
             return true;
         }
         return false;
