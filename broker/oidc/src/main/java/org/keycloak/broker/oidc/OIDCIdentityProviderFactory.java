@@ -17,11 +17,15 @@
  */
 package org.keycloak.broker.oidc;
 
+import org.keycloak.broker.oidc.mappers.UsernameTemplateMapper;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
+import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -30,6 +34,7 @@ import org.keycloak.util.JsonSerialization;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.PublicKey;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -89,7 +94,7 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
 
                 }
             } catch (IOException e) {
-                throw new RuntimeException("F   ailed to query JWKSet from: " + uri, e);
+                throw new RuntimeException("Failed to query JWKSet from: " + uri, e);
             }
 
         }
@@ -99,4 +104,5 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
     protected static boolean keyTypeSupported(String type) {
         return type != null && type.equals("RSA");
     }
+
 }

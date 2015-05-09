@@ -86,12 +86,21 @@ public class JpaUserProvider implements UserProvider {
     }
 
     private void removeUser(UserEntity user) {
+        String id = user.getId();
         em.createNamedQuery("deleteUserRoleMappingsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteFederatedIdentityByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentRolesByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentProtMappersByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentsByUser").setParameter("user", user).executeUpdate();
-        em.remove(user);
+        em.flush();
+        // not sure why i have to do a clear() here.  I was getting some messed up errors that Hibernate couldn't
+        // un-delete the UserEntity.
+        em.clear();
+        user = em.find(UserEntity.class, id);
+        if (user != null) {
+            em.remove(user);
+        }
+        em.flush();
     }
 
     @Override

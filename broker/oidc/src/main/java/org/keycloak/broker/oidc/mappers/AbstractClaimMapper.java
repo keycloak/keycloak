@@ -33,8 +33,12 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
         return null;
     }
 
-    protected Object getClaimValue(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+    public static Object getClaimValue(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String claim = mapperModel.getConfig().get(CLAIM);
+        return getClaimValue(context, claim);
+    }
+
+    public static Object getClaimValue(BrokeredIdentityContext context, String claim) {
         {  // search access token
             JsonWebToken token = (JsonWebToken)context.getContextData().get(KeycloakOIDCIdentityProvider.VALIDATED_ACCESS_TOKEN);
             if (token != null) {
