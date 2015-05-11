@@ -1,11 +1,15 @@
 package org.keycloak.adapters.springsecurity.facade;
 
 import org.keycloak.adapters.HttpFacade.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * Concrete Keycloak {@link Response response} implementation wrapping an {@link HttpServletResponse}.
@@ -15,6 +19,7 @@ import java.io.OutputStream;
  */
 class WrappedHttpServletResponse implements Response {
 
+    private static final Logger log = LoggerFactory.getLogger(WrappedHttpServletResponse.class);
     private final HttpServletResponse response;
 
     /**
@@ -50,9 +55,21 @@ class WrappedHttpServletResponse implements Response {
 
         cookie.setMaxAge(maxAge);
         cookie.setSecure(secure);
-        cookie.setHttpOnly(httpOnly);
+        this.setHttpOnly(cookie, httpOnly);
 
         response.addCookie(cookie);
+    }
+
+    private void setHttpOnly(Cookie cookie, boolean httpOnly) {
+        Method method;
+        try {
+            method = Cookie.class.getMethod("setHttpOnly", boolean.class);
+            method.invoke(cookie, httpOnly);
+        } catch (NoSuchMethodException e) {
+            log.warn("Unable to set httpOnly on cookie [{}]; no such method on javax.servlet.http.Cookie", cookie.getName());
+        } catch (ReflectiveOperationException e) {
+            log.error("Unable to set httpOnly on cookie [{}]", cookie.getName(), e);
+        }
     }
 
     @Override
