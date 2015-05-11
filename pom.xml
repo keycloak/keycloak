@@ -89,14 +89,6 @@
         <url>http://github.com/keycloak/keycloak/tree/master/</url>
     </scm>
 
-    <distributionManagement>
-        <repository>
-            <id>jboss-releases-repository</id>
-            <name>JBoss Releases Repository</name>
-            <url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
-
     <issueManagement>
         <system>JIRA</system>
         <url>http://jira.jboss.com/jira/browse/KEYCLOAK</url>
