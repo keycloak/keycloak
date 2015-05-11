@@ -14,18 +14,6 @@
     <artifactId>keycloak-adapters-distribution-parent</artifactId>
     <packaging>pom</packaging>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
     <modules>
         <!--<module>as7-adapter-zip</module>-->
         <module>eap6-adapter-zip</module>

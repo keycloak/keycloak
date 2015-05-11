@@ -13,17 +13,6 @@
     <artifactId>keycloak-proxy-pom</artifactId>
     <packaging>pom</packaging>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
     <modules>
         <module>launcher</module>
         <module>proxy-server</module>
