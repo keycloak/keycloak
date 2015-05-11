@@ -1032,14 +1032,6 @@
         </dependencies>
     </dependencyManagement>
 
-    <repositories>
-        <!-- for org.jboss.web:jbossweb -->
-        <repository>
-            <id>jboss</id>
-            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
-        </repository>
-    </repositories>
-
     <build>
         <pluginManagement>
             <plugins>
