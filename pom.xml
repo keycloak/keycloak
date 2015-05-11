@@ -1032,18 +1032,6 @@
         </dependencies>
     </dependencyManagement>
 
-    <repositories>
-        <!-- for org.jboss.web:jbossweb -->
-        <repository>
-            <id>jboss</id>
-            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
-        </repository>
-        <repository>
-            <id>eap</id>
-            <url>file:///home/st/tmp/jboss-eap-6.4.0.GA-maven-repository</url>
-        </repository>
-    </repositories>
-
     <build>
         <pluginManagement>
             <plugins>
