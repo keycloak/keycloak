@@ -14,7 +14,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>1.2.0.CR1-redhat-SNAPSHOT</version>
+    <version>1.2.0.CR1-redhat-1</version>
     <packaging>pom</packaging>
 
     <properties>
