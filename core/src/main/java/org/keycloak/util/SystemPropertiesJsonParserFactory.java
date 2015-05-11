@@ -3,6 +3,8 @@ package org.keycloak.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.util.Map;
+import java.util.Properties;
 
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.io.IOContext;
@@ -15,6 +17,8 @@ import org.codehaus.jackson.util.JsonParserDelegate;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class SystemPropertiesJsonParserFactory extends MappingJsonFactory {
+
+    private static final Properties properties = new SystemEnvProperties();
 
     @Override
     protected JsonParser _createJsonParser(byte[] data, int offset, int len, IOContext ctxt) throws IOException {
@@ -34,8 +38,6 @@ public class SystemPropertiesJsonParserFactory extends MappingJsonFactory {
         return new SystemPropertiesAwareJsonParser(delegate);
     }
 
-
-
     public static class SystemPropertiesAwareJsonParser extends JsonParserDelegate {
 
         public SystemPropertiesAwareJsonParser(JsonParser d) {
@@ -45,7 +47,7 @@ public class SystemPropertiesJsonParserFactory extends MappingJsonFactory {
         @Override
         public String getText() throws IOException {
             String orig = super.getText();
-            return StringPropertyReplacer.replaceProperties(orig);
+            return StringPropertyReplacer.replaceProperties(orig, properties);
         }
     }
 }
