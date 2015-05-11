@@ -118,7 +118,7 @@ public class MongoEventQuery implements EventQuery {
 
         List<Event> events = new LinkedList<Event>();
         while (cur.hasNext()) {
-            events.add(MongoEventStoreProvider.convert((BasicDBObject) cur.next()));
+            events.add(MongoEventStoreProvider.convertEvent((BasicDBObject) cur.next()));
         }
 
         return events;

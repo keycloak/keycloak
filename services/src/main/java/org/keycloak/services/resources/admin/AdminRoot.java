@@ -8,6 +8,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.ClientConnection;
+import org.keycloak.events.AdminEventBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -29,6 +30,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+
 import java.io.IOException;
 
 /**
@@ -185,8 +187,11 @@ public class AdminRoot {
         }
 
         Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
-
-        RealmsAdminResource adminResource = new RealmsAdminResource(auth, tokenManager);
+        
+        AdminEventBuilder adminEvent = new AdminEventBuilder(auth.getRealm(), session, clientConnection);
+        adminEvent.user(auth.getUser()).client(auth.getClient());
+        
+        RealmsAdminResource adminResource = new RealmsAdminResource(auth, tokenManager, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         return adminResource;
     }

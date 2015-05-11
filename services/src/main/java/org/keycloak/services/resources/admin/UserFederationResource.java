@@ -4,6 +4,8 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.constants.KerberosConstants;
+import org.keycloak.events.AdminEventBuilder;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -31,6 +33,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -46,6 +49,8 @@ public class UserFederationResource {
     protected RealmModel realm;
 
     protected  RealmAuth auth;
+    
+    protected AdminEventBuilder adminEvent;
 
     @Context
     protected UriInfo uriInfo;
@@ -53,10 +58,11 @@ public class UserFederationResource {
     @Context
     protected KeycloakSession session;
 
-    public UserFederationResource(RealmModel realm, RealmAuth auth) {
+    public UserFederationResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
-
+        this.adminEvent = adminEvent;
+        
         auth.init(RealmAuth.Resource.USER);
     }
 
@@ -78,6 +84,7 @@ public class UserFederationResource {
             rep.setOptions(((UserFederationProviderFactory)factory).getConfigurationOptions());
             providers.add(rep);
         }
+        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return providers;
     }
 
@@ -99,6 +106,9 @@ public class UserFederationResource {
             UserFederationProviderFactoryRepresentation rep = new UserFederationProviderFactoryRepresentation();
             rep.setId(factory.getId());
             rep.setOptions(((UserFederationProviderFactory)factory).getConfigurationOptions());
+
+            adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
+
             return rep;
         }
         throw new NotFoundException("Could not find provider");
@@ -123,6 +133,11 @@ public class UserFederationResource {
                 rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
         checkKerberosCredential(model);
+        
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo.getAbsolutePathBuilder()
+                .path(model.getId()).build().toString().substring(uriInfo.getBaseUri().toString().length()))
+                .representation(rep).success();
+
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
 
@@ -146,6 +161,9 @@ public class UserFederationResource {
         realm.updateUserFederationProvider(model);
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
         checkKerberosCredential(model);
+        
+        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo.getPath()).representation(rep).success();
+
     }
 
     /**
@@ -161,10 +179,10 @@ public class UserFederationResource {
         auth.requireView();
         for (UserFederationProviderModel model : realm.getUserFederationProviders()) {
             if (model.getId().equals(id)) {
+                adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
                 return ModelToRepresentation.toRepresentation(model);
             }
         }
-        
         throw new NotFoundException("could not find provider");
     }
 
@@ -182,6 +200,9 @@ public class UserFederationResource {
         UserFederationProviderModel model = new UserFederationProviderModel(id, null, null, -1, null, -1, -1, 0);
         realm.removeUserFederationProvider(model);
         new UsersSyncManager().removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), model);
+        
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo.getPath()).success();
+
     }
 
 
@@ -201,6 +222,7 @@ public class UserFederationResource {
             UserFederationProviderRepresentation rep = ModelToRepresentation.toRepresentation(model);
             reps.add(rep);
         }
+        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return reps;
     }
 
@@ -224,6 +246,7 @@ public class UserFederationResource {
                 } else if ("triggerChangedUsersSync".equals(action)) {
                     syncManager.syncChangedUsers(session.getKeycloakSessionFactory(), realm.getId(), model);
                 }
+                adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).success();
                 return Response.noContent().build();
             }
         }

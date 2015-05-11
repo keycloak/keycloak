@@ -134,7 +134,18 @@ public class RealmEntity {
     @Column(name="VALUE")
     @CollectionTable(name="REALM_ENABLED_EVENT_TYPES", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Set<String> enabledEventTypes = new HashSet<String>();
-
+    
+    @Column(name="ADMIN_EVENTS_ENABLED")
+    protected boolean adminEventsEnabled;
+    
+    @ElementCollection
+    @Column(name="VALUE")
+    @CollectionTable(name="REALM_ENABLED_ADMIN_EVENT_OPERATIONS", joinColumns={ @JoinColumn(name="REALM_ID") })
+    protected Set<String> adminEnabledEventOperations = new HashSet<String>();
+    
+    @Column(name="ADMIN_EVENTS_DETAILS_ENABLED")
+    protected boolean adminEventsDetailsEnabled;
+    
     @OneToOne
     @JoinColumn(name="MASTER_ADMIN_CLIENT")
     protected ClientEntity masterAdminClient;
@@ -437,6 +448,30 @@ public class RealmEntity {
         this.enabledEventTypes = enabledEventTypes;
     }
     
+    public boolean isAdminEventsEnabled() {
+        return adminEventsEnabled;
+    }
+
+    public void setAdminEventsEnabled(boolean adminEventsEnabled) {
+        this.adminEventsEnabled = adminEventsEnabled;
+    }
+
+    public Set<String> getAdminEnabledEventOperations() {
+        return adminEnabledEventOperations;
+    }
+
+    public void setAdminEnabledEventOperations(Set<String> adminEnabledEventOperations) {
+        this.adminEnabledEventOperations = adminEnabledEventOperations;
+    }
+
+    public boolean isAdminEventsDetailsEnabled() {
+        return adminEventsDetailsEnabled;
+    }
+
+    public void setAdminEventsDetailsEnabled(boolean adminEventsDetailsEnabled) {
+        this.adminEventsDetailsEnabled = adminEventsDetailsEnabled;
+    }
+
     public ClientEntity getMasterAdminClient() {
         return masterAdminClient;
     }

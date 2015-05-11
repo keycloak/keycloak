@@ -1,6 +1,7 @@
 package org.keycloak.events.log;
 
 import org.jboss.logging.Logger;
+import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.models.KeycloakContext;
@@ -9,8 +10,8 @@ import org.keycloak.models.KeycloakSession;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
+
 import java.util.Map;
-import java.util.logging.Level;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -66,29 +67,42 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
                     }
                 }
             }
+            
+            if(logger.isTraceEnabled()) {
+                setKeycloakContext(sb);
+            }
 
-            if (logger.isTraceEnabled()) {
-                KeycloakContext context = session.getContext();
-                UriInfo uriInfo = context.getUri();
-                HttpHeaders headers = context.getRequestHeaders();
-                if (uriInfo != null) {
-                    sb.append(", requestUri=");
-                    sb.append(uriInfo.getRequestUri().toString());
-                }
+            logger.log(logger.isTraceEnabled() ? Logger.Level.TRACE : level, sb.toString());
+        }
+    }
 
-                if (headers != null) {
-                    sb.append(", cookies=[");
-                    boolean f = true;
-                    for (Map.Entry<String, Cookie> e : headers.getCookies().entrySet()) {
-                        if (f) {
-                            f = false;
-                        } else {
-                            sb.append(", ");
-                        }
-                        sb.append(e.getValue().toString());
-                    }
-                    sb.append("]");
-                }
+    @Override
+    public void onEvent(AdminEvent adminEvent, boolean includeRepresentation) {
+        Logger.Level level = adminEvent.getError() != null ? errorLevel : successLevel;
+
+        if (logger.isEnabled(level)) {
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("operationType=");
+            sb.append(adminEvent.getOperationType());
+            sb.append(", realmId=");
+            sb.append(adminEvent.getAuthDetails().getRealmId());
+            sb.append(", clientId=");
+            sb.append(adminEvent.getAuthDetails().getClientId());
+            sb.append(", userId=");
+            sb.append(adminEvent.getAuthDetails().getUserId());
+            sb.append(", ipAddress=");
+            sb.append(adminEvent.getAuthDetails().getIpAddress());
+            sb.append(", resourcePath=");
+            sb.append(adminEvent.getResourcePath());
+
+            if (adminEvent.getError() != null) {
+                sb.append(", error=");
+                sb.append(adminEvent.getError());
+            }
+            
+            if(logger.isTraceEnabled()) {
+                setKeycloakContext(sb);
             }
 
             logger.log(logger.isTraceEnabled() ? Logger.Level.TRACE : level, sb.toString());
@@ -97,6 +111,31 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
 
     @Override
     public void close() {
+    }
+    
+    private void setKeycloakContext(StringBuilder sb) {
+        KeycloakContext context = session.getContext();
+        UriInfo uriInfo = context.getUri();
+        HttpHeaders headers = context.getRequestHeaders();
+        if (uriInfo != null) {
+            sb.append(", requestUri=");
+            sb.append(uriInfo.getRequestUri().toString());
+        }
+
+        if (headers != null) {
+            sb.append(", cookies=[");
+            boolean f = true;
+            for (Map.Entry<String, Cookie> e : headers.getCookies().entrySet()) {
+                if (f) {
+                    f = false;
+                } else {
+                    sb.append(", ");
+                }
+                sb.append(e.getValue().toString());
+            }
+            sb.append("]");
+        }
+        
     }
 
 }

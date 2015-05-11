@@ -24,9 +24,12 @@ public class MongoEventStoreProviderFactory implements EventStoreProviderFactory
         MongoConnectionProvider connection = session.getProvider(MongoConnectionProvider.class);
 
         DBCollection collection = connection.getDB().getCollection("events");
+        DBCollection adminCollection = connection.getDB().getCollection("adminEvents");
+        
         collection.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
+        adminCollection.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
 
-        return new MongoEventStoreProvider(collection);
+        return new MongoEventStoreProvider(collection, adminCollection);
     }
 
     @Override

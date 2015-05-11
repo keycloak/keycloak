@@ -5,6 +5,8 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventStoreProviderFactory;
 import org.keycloak.events.EventType;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -20,12 +22,13 @@ import java.util.Set;
 public class MemEventStoreProviderFactory implements EventStoreProviderFactory {
 
     private List<Event> events;
-
     private Set<EventType> excludedEvents;
+    private List<AdminEvent> adminEvents;
+    private Set<OperationType> excludedOperations;
 
     @Override
     public EventStoreProvider create(KeycloakSession session) {
-        return new MemEventStoreProvider(events, excludedEvents);
+        return new MemEventStoreProvider(events, excludedEvents, adminEvents, excludedOperations);
     }
 
     @Override
@@ -39,6 +42,14 @@ public class MemEventStoreProviderFactory implements EventStoreProviderFactory {
                 excludedEvents.add(EventType.valueOf(e));
             }
         }
+        
+        String excludesOperations = config.get("excludesOperations");
+        if (excludesOperations != null) {
+            excludedOperations = new HashSet<>();
+            for (String e : excludesOperations.split(",")) {
+                excludedOperations.add(OperationType.valueOf(e));
+            }
+        }
     }
 
     @Override
@@ -49,6 +60,8 @@ public class MemEventStoreProviderFactory implements EventStoreProviderFactory {
     public void close() {
         events = null;
         excludedEvents = null;
+        adminEvents = null;
+        excludedOperations = null;
     }
 
     @Override
