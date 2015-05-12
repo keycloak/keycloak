@@ -11,6 +11,11 @@ import org.keycloak.provider.Spi;
 public class CacheUserProviderSpi implements Spi {
 
     @Override
+    public boolean isPrivate() {
+        return true;
+    }
+
+    @Override
     public String getName() {
         return "userCache";
     }
