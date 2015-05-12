@@ -391,6 +391,7 @@ public abstract class AbstractIdentityProviderTest {
 
         // Logout from account management
         String pageSource = driver.getPageSource();
+        System.out.println("*** logout from account management");
         accountFederatedIdentityPage.logout();
         assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));

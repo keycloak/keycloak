@@ -22,9 +22,7 @@
         <module>as7-eap6/adapter</module>
         <module>jetty</module>
         <module>undertow</module>
-        <module>wildfly-adapter</module>
-        <module>wildfly-extensions</module>
-        <module>keycloak-subsystem</module>
+        <module>wildfly</module>
         <module>keycloak-as7-subsystem</module>
         <module>js</module>
         <module>installed</module>

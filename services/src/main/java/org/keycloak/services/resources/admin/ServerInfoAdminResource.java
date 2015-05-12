@@ -5,6 +5,7 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.exportimport.ClientImporter;
 import org.keycloak.exportimport.ClientImporterFactory;
 import org.keycloak.freemarker.Theme;
@@ -39,6 +40,8 @@ import java.util.Set;
  */
 public class ServerInfoAdminResource {
 
+    private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class);
+
     @Context
     private KeycloakSession session;
 
@@ -61,7 +64,7 @@ public class ServerInfoAdminResource {
         setProviders(info);
         setProtocolMapperTypes(info);
         setBuiltinProtocolMappers(info);
-        setEventTypes(info);
+        info.setEnums(ENUMS);
         return info;
     }
 
@@ -181,15 +184,6 @@ public class ServerInfoAdminResource {
         }
     }
 
-    private void setEventTypes(ServerInfoRepresentation info) {
-        List<String> eventTypes = new LinkedList<>();
-        for (EventType t : EventType.values()) {
-            eventTypes.add(t.name());
-        }
-        Collections.sort(eventTypes);
-        info.setEventTypes(eventTypes);
-    }
-
     public static class ServerInfoRepresentation {
 
         private String version;
@@ -209,7 +203,7 @@ public class ServerInfoAdminResource {
         private Map<String, List<ProtocolMapperTypeRepresentation>> protocolMapperTypes;
         private Map<String, List<ProtocolMapperRepresentation>> builtinProtocolMappers;
 
-        private List<String> eventTypes;
+        private Map<String, List<String>> enums;
 
         public ServerInfoRepresentation() {
         }
@@ -262,13 +256,30 @@ public class ServerInfoAdminResource {
             this.builtinProtocolMappers = builtinProtocolMappers;
         }
 
-        public List<String> getEventTypes() {
-            return eventTypes;
+        public Map<String, List<String>> getEnums() {
+            return enums;
         }
 
-        public void setEventTypes(List<String> eventTypes) {
-            this.eventTypes = eventTypes;
+        public void setEnums(Map<String, List<String>> enums) {
+            this.enums = enums;
         }
+    }
+
+    private static Map<String, List<String>> createEnumsMap(Class... enums) {
+        Map<String, List<String>> m = new HashMap<>();
+        for (Class e : enums) {
+            String n = e.getSimpleName();
+            n = Character.toLowerCase(n.charAt(0)) + n.substring(1);
+
+            List<String> l = new LinkedList<>();
+            for (Object c :  e.getEnumConstants()) {
+                l.add(c.toString());
+            }
+            Collections.sort(l);
+
+            m.put(n, l);
+        }
+        return m;
     }
 
 }

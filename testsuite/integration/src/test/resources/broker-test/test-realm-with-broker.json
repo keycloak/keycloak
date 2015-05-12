@@ -121,7 +121,7 @@
                 "validateSignature": true,
                 "postBindingResponse": true,
                 "postBindingAuthnRequest": true,
-                "backchannelSupported": false
+                "backchannelSupported": true
             }
         },
         {

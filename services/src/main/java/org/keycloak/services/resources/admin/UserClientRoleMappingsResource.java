@@ -2,8 +2,11 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.NotFoundException;
+import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.events.AdminEventBuilder;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -16,7 +19,10 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -33,12 +39,18 @@ public class UserClientRoleMappingsResource {
     protected RealmAuth auth;
     protected UserModel user;
     protected ClientModel client;
+    protected AdminEventBuilder adminEvent;
+    
+    @Context
+    protected KeycloakSession session;
+    
 
-    public UserClientRoleMappingsResource(RealmModel realm, RealmAuth auth, UserModel user, ClientModel client) {
+    public UserClientRoleMappingsResource(RealmModel realm, RealmAuth auth, UserModel user, ClientModel client, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
         this.user = user;
         this.client = client;
+        this.adminEvent = adminEvent;
     }
 
     /**
@@ -57,6 +69,7 @@ public class UserClientRoleMappingsResource {
         for (RoleModel roleModel : mappings) {
             mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
+        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return mapRep;
     }
 
@@ -77,6 +90,7 @@ public class UserClientRoleMappingsResource {
         for (RoleModel roleModel : roles) {
             if (user.hasRole(roleModel)) mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
+        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return mapRep;
     }
 
@@ -93,6 +107,7 @@ public class UserClientRoleMappingsResource {
         auth.requireView();
 
         Set<RoleModel> available = client.getRoles();
+        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return getAvailableRoles(user, available);
     }
 
@@ -127,6 +142,7 @@ public class UserClientRoleMappingsResource {
             }
             user.grantRole(roleModel);
         }
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri().getPath()).representation(roles).success();
 
     }
 
@@ -159,5 +175,6 @@ public class UserClientRoleMappingsResource {
                 user.deleteRoleMapping(roleModel);
             }
         }
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri().getPath()).success();
     }
 }

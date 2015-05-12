@@ -16,7 +16,8 @@
     <xsl:template match="//j:extensions">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
-            <extension module="org.keycloak.keycloak-subsystem"/>
+            <extension module="org.keycloak.keycloak-server-subsystem"/>
+            <extension module="org.keycloak.keycloak-adapter-subsystem"/>
         </xsl:copy>
     </xsl:template>
 
@@ -38,7 +39,7 @@
     <xsl:template match="//j:profile">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
-            <subsystem xmlns="urn:jboss:domain:keycloak:1.0">
+            <subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
                 <auth-server name="main-auth-server">
                     <enabled>true</enabled>
                     <web-context>auth</web-context>

@@ -32,6 +32,7 @@ public class BrokeredIdentityContext {
 
     private String id;
     private String username;
+    private String modelUsername;
     private String email;
     private String firstName;
     private String lastName;
@@ -59,12 +60,30 @@ public class BrokeredIdentityContext {
         this.id = id;
     }
 
+    /**
+     * Username in remote idp
+     *
+     * @return
+     */
     public String getUsername() {
         return username;
     }
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    /**
+     * username to store in UserModel
+     *
+     * @return
+     */
+    public String getModelUsername() {
+        return modelUsername;
+    }
+
+    public void setModelUsername(String modelUsername) {
+        this.modelUsername = modelUsername;
     }
 
     public String getEmail() {

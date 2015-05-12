@@ -104,6 +104,7 @@ public class UserSessionAdapter implements UserSessionModel {
         attr.setUserSession(entity);
         em.persist(attr);
         entity.getNotes().add(attr);
+        em.flush();
     }
 
     @Override
@@ -116,6 +117,7 @@ public class UserSessionAdapter implements UserSessionModel {
                 em.remove(attr);
             }
         }
+        em.flush();
     }
 
     @Override

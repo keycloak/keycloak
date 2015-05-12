@@ -336,8 +336,11 @@
             <maven-resource group="org.keycloak" artifact="keycloak-wildfly-adapter"/>
         </module-def>
 
-        <module-def name="org.keycloak.keycloak-subsystem">
-            <maven-resource group="org.keycloak" artifact="keycloak-subsystem"/>
+        <module-def name="org.keycloak.keycloak-server-subsystem">
+            <maven-resource group="org.keycloak" artifact="keycloak-wildfly-server-subsystem"/>
+        </module-def>
+        <module-def name="org.keycloak.keycloak-adapter-subsystem">
+            <maven-resource group="org.keycloak" artifact="keycloak-wildfly-adapter-subsystem"/>
         </module-def>
         <module-def name="org.keycloak.keycloak-as7-subsystem">
             <maven-resource group="org.keycloak" artifact="keycloak-as7-subsystem"/>

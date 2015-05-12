@@ -71,25 +71,25 @@
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-naming</artifactId>
-            <version>7.1.1.Final</version>
+            <version>${jboss.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-server</artifactId>
-            <version>7.1.1.Final</version>
+            <version>${jboss.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-ee</artifactId>
-            <version>7.1.1.Final</version>
+            <version>${jboss.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-web</artifactId>
-            <version>7.1.1.Final</version>
+            <version>${jboss.version}</version>
         </dependency>
 
         <dependency>

@@ -1,7 +1,11 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.events.AdminEventBuilder;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -23,6 +27,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -35,12 +40,14 @@ public class RoleContainerResource extends RoleResource {
     private final RealmModel realm;
     private final RealmAuth auth;
     protected RoleContainerModel roleContainer;
+    private AdminEventBuilder adminEvent;
 
-    public RoleContainerResource(RealmModel realm, RealmAuth auth, RoleContainerModel roleContainer) {
+    public RoleContainerResource(RealmModel realm, RealmAuth auth, RoleContainerModel roleContainer, AdminEventBuilder adminEvent) {
         super(realm);
         this.realm = realm;
         this.auth = auth;
         this.roleContainer = roleContainer;
+        this.adminEvent = adminEvent;
     }
 
     /**
@@ -51,7 +58,7 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<RoleRepresentation> getRoles() {
+    public List<RoleRepresentation> getRoles(@Context final UriInfo uriInfo) {
         auth.requireAny();
 
         Set<RoleModel> roleModels = roleContainer.getRoles();
@@ -59,6 +66,7 @@ public class RoleContainerResource extends RoleResource {
         for (RoleModel roleModel : roleModels) {
             roles.add(ModelToRepresentation.toRepresentation(roleModel));
         }
+        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return roles;
     }
 
@@ -77,6 +85,11 @@ public class RoleContainerResource extends RoleResource {
         try {
             RoleModel role = roleContainer.addRole(rep.getName());
             role.setDescription(rep.getDescription());
+
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo.getAbsolutePathBuilder()
+                    .path(role.getName()).build().toString().substring(uriInfo.getBaseUri().toString().length()))
+                    .representation(rep).success();
+
             return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
@@ -93,13 +106,15 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public RoleRepresentation getRole(final @PathParam("role-name") String roleName) {
+    public RoleRepresentation getRole(@Context final UriInfo uriInfo, final @PathParam("role-name") String roleName) {
         auth.requireView();
 
         RoleModel roleModel = roleContainer.getRole(roleName);
         if (roleModel == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
+
+        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
 
         return getRole(roleModel);
     }
@@ -112,15 +127,18 @@ public class RoleContainerResource extends RoleResource {
     @Path("{role-name}")
     @DELETE
     @NoCache
-    public void deleteRole(final @PathParam("role-name") String roleName) {
+    public void deleteRole(@Context final UriInfo uriInfo, final @PathParam("role-name") String roleName) {
         auth.requireManage();
 
-        RoleRepresentation rep = getRole(roleName);
+        RoleRepresentation rep = getRole(uriInfo, roleName);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
         deleteRole(role);
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo.getPath()).success();
+
     }
 
     /**
@@ -133,7 +151,7 @@ public class RoleContainerResource extends RoleResource {
     @Path("{role-name}")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateRole(final @PathParam("role-name") String roleName, final RoleRepresentation rep) {
+    public Response updateRole(@Context final UriInfo uriInfo, final @PathParam("role-name") String roleName, final RoleRepresentation rep) {
         auth.requireManage();
 
         RoleModel role = roleContainer.getRole(roleName);
@@ -142,6 +160,9 @@ public class RoleContainerResource extends RoleResource {
         }
         try {
             updateRole(rep, role);
+
+            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo.getPath()).representation(rep).success();
+
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
@@ -157,7 +178,7 @@ public class RoleContainerResource extends RoleResource {
     @Path("{role-name}/composites")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public void addComposites(final @PathParam("role-name") String roleName, List<RoleRepresentation> roles) {
+    public void addComposites(@Context final UriInfo uriInfo, final @PathParam("role-name") String roleName, List<RoleRepresentation> roles) {
         auth.requireManage();
 
         RoleModel role = roleContainer.getRole(roleName);
@@ -165,6 +186,8 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find role: " + roleName);
         }
         addComposites(roles, role);
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).representation(roles).success();
+
     }
 
     /**
@@ -177,13 +200,14 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<RoleRepresentation> getRoleComposites(final @PathParam("role-name") String roleName) {
+    public Set<RoleRepresentation> getRoleComposites(@Context final UriInfo uriInfo, final @PathParam("role-name") String roleName) {
         auth.requireManage();
 
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
+        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return getRoleComposites(role);
     }
 
@@ -197,13 +221,14 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-name") String roleName) {
+    public Set<RoleRepresentation> getRealmRoleComposites(@Context final UriInfo uriInfo, final @PathParam("role-name") String roleName) {
         auth.requireManage();
 
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
+        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return getRealmRoleComposites(role);
     }
 
@@ -218,7 +243,8 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<RoleRepresentation> getClientRoleComposites(final @PathParam("role-name") String roleName,
+    public Set<RoleRepresentation> getClientRoleComposites(@Context final UriInfo uriInfo, 
+                                                           final @PathParam("role-name") String roleName,
                                                            final @PathParam("clientId") String clientId) {
         auth.requireManage();
 
@@ -231,6 +257,7 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find client: " + clientId);
 
         }
+        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return getClientRoleComposites(app, role);
     }
 
@@ -246,7 +273,8 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<RoleRepresentation> getClientByIdRoleComposites(final @PathParam("role-name") String roleName,
+    public Set<RoleRepresentation> getClientByIdRoleComposites(@Context final UriInfo uriInfo,
+                                                                final @PathParam("role-name") String roleName,
                                                                 final @PathParam("id") String id) {
         auth.requireManage();
 
@@ -259,6 +287,7 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find client: " + id);
 
         }
+        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return getClientRoleComposites(client, role);
     }
 
@@ -272,7 +301,9 @@ public class RoleContainerResource extends RoleResource {
     @Path("{role-name}/composites")
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
-    public void deleteComposites(final @PathParam("role-name") String roleName, List<RoleRepresentation> roles) {
+    public void deleteComposites(@Context final UriInfo uriInfo, 
+                                   final @PathParam("role-name") String roleName,
+                                   List<RoleRepresentation> roles) {
         auth.requireManage();
 
         RoleModel role = roleContainer.getRole(roleName);
@@ -280,6 +311,7 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find role: " + roleName);
         }
         deleteComposites(roles, role);
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo.getPath()).success();
     }
 
 

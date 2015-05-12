@@ -12,7 +12,7 @@ public interface JpaUpdaterProvider extends Provider {
 
     public String FIRST_VERSION = "1.0.0.Final";
 
-    public String LAST_VERSION = "1.2.0.RC1";
+    public String LAST_VERSION = "1.3.0.Beta1";
 
     public String getCurrentVersionSql();
 

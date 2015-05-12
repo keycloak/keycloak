@@ -48,6 +48,7 @@ public class WrappedHttpServletResponseTest {
         assertEquals(COOKIE_DOMAIN, mockResponse.getCookie(COOKIE_NAME).getDomain());
         assertEquals(maxAge, mockResponse.getCookie(COOKIE_NAME).getMaxAge());
         assertEquals(COOKIE_VALUE, mockResponse.getCookie(COOKIE_NAME).getValue());
+        assertEquals(true, mockResponse.getCookie(COOKIE_NAME).isHttpOnly());
     }
 
     @Test

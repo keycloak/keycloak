@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-core">
+    <resources>
+        <artifact name="${org.keycloak:keycloak-core}"/>
+    </resources>
+    <dependencies>
+        <module name="org.codehaus.jackson.jackson-core-asl"/>
+        <module name="org.codehaus.jackson.jackson-mapper-asl"/>
+        <module name="org.codehaus.jackson.jackson-xc"/>
+        <module name="org.bouncycastle" />
+        <module name="net.iharder.base64"/>
+        <module name="javax.api"/>
+        <module name="javax.activation.api"/>
+        <module name="sun.jdk" optional="true" />
+        <module name="sun.jdk.jgss" optional="true" />
+    </dependencies>
+
+</module>

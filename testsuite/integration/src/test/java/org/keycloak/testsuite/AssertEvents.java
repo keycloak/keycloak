@@ -8,6 +8,7 @@ import org.junit.Assert;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 import org.keycloak.Config;
+import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -194,6 +195,12 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
 
             @Override
             public void close() {
+            }
+
+            @Override
+            public void onEvent(AdminEvent event, boolean includeRepresentation) {
+                // TODO Auto-generated method stub
+                
             }
         };
     }

@@ -3,6 +3,11 @@ package org.keycloak.events.mongo;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
+
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.AdminEventQuery;
+import org.keycloak.events.admin.AuthDetails;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
@@ -15,11 +20,13 @@ import java.util.Map;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class MongoEventStoreProvider implements EventStoreProvider {
-
+    
     private DBCollection events;
+    private DBCollection adminEvents;
 
-    public MongoEventStoreProvider(DBCollection events) {
+    public MongoEventStoreProvider(DBCollection events, DBCollection adminEvents) {
         this.events = events;
+        this.adminEvents = adminEvents;
     }
 
     @Override
@@ -47,27 +54,55 @@ public class MongoEventStoreProvider implements EventStoreProvider {
 
     @Override
     public void onEvent(Event event) {
-        events.insert(convert(event));
+        events.insert(convertEvent(event));
+    }
+
+    @Override
+    public AdminEventQuery createAdminQuery() {
+        return new MongoAdminEventQuery(adminEvents);
+    }
+
+    @Override
+    public void clearAdmin() {
+        adminEvents.remove(new BasicDBObject());
+    }
+
+    @Override
+    public void clearAdmin(String realmId) {
+        adminEvents.remove(new BasicDBObject("realmId", realmId));
+    }
+
+    @Override
+    public void clearAdmin(String realmId, long olderThan) {
+        BasicDBObject q = new BasicDBObject();
+        q.put("realmId", realmId);
+        q.put("time", new BasicDBObject("$lt", olderThan));
+        adminEvents.remove(q);
+    }
+
+    @Override
+    public void onEvent(AdminEvent adminEvent, boolean includeRepresentation) {
+        adminEvents.insert(convertAdminEvent(adminEvent, includeRepresentation));
     }
 
     @Override
     public void close() {
     }
 
-    static DBObject convert(Event o) {
+    static DBObject convertEvent(Event event) {
         BasicDBObject e = new BasicDBObject();
-        e.put("time", o.getTime());
-        e.put("type", o.getType().toString());
-        e.put("realmId", o.getRealmId());
-        e.put("clientId", o.getClientId());
-        e.put("userId", o.getUserId());
-        e.put("sessionId", o.getSessionId());
-        e.put("ipAddress", o.getIpAddress());
-        e.put("error", o.getError());
+        e.put("time", event.getTime());
+        e.put("type", event.getType().toString());
+        e.put("realmId", event.getRealmId());
+        e.put("clientId", event.getClientId());
+        e.put("userId", event.getUserId());
+        e.put("sessionId", event.getSessionId());
+        e.put("ipAddress", event.getIpAddress());
+        e.put("error", event.getError());
 
         BasicDBObject details = new BasicDBObject();
-        if (o.getDetails() != null) {
-            for (Map.Entry<String, String> entry : o.getDetails().entrySet()) {
+        if (event.getDetails() != null) {
+            for (Map.Entry<String, String> entry : event.getDetails().entrySet()) {
                 details.put(entry.getKey(), entry.getValue());
             }
         }
@@ -76,16 +111,16 @@ public class MongoEventStoreProvider implements EventStoreProvider {
         return e;
     }
 
-    static Event convert(BasicDBObject o) {
-        Event e = new Event();
-        e.setTime(o.getLong("time"));
-        e.setType(EventType.valueOf(o.getString("type")));
-        e.setRealmId(o.getString("realmId"));
-        e.setClientId(o.getString("clientId"));
-        e.setUserId(o.getString("userId"));
-        e.setSessionId(o.getString("sessionId"));
-        e.setIpAddress(o.getString("ipAddress"));
-        e.setError(o.getString("error"));
+    static Event convertEvent(BasicDBObject o) {
+        Event event = new Event();
+        event.setTime(o.getLong("time"));
+        event.setType(EventType.valueOf(o.getString("type")));
+        event.setRealmId(o.getString("realmId"));
+        event.setClientId(o.getString("clientId"));
+        event.setUserId(o.getString("userId"));
+        event.setSessionId(o.getString("sessionId"));
+        event.setIpAddress(o.getString("ipAddress"));
+        event.setError(o.getString("error"));
 
         BasicDBObject d = (BasicDBObject) o.get("details");
         if (d != null) {
@@ -93,10 +128,55 @@ public class MongoEventStoreProvider implements EventStoreProvider {
             for (Object k : d.keySet()) {
                 details.put((String) k, d.getString((String) k));
             }
-            e.setDetails(details);
+            event.setDetails(details);
+        }
+
+        return event;
+    }
+    
+    private static DBObject convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
+        BasicDBObject e = new BasicDBObject();
+        e.put("time", adminEvent.getTime());
+        e.put("operationType", adminEvent.getOperationType().toString());
+        setAuthDetails(e, adminEvent.getAuthDetails());
+        e.put("resourcePath", adminEvent.getResourcePath());
+        e.put("error", adminEvent.getError());
+        
+        if(includeRepresentation) {
+            e.put("representation", adminEvent.getRepresentation());
         }
 
         return e;
+    }
+    
+    static AdminEvent convertAdminEvent(BasicDBObject o) {
+        AdminEvent adminEvent = new AdminEvent();
+        adminEvent.setTime(o.getLong("time"));
+        adminEvent.setOperationType(OperationType.valueOf(o.getString("operationType")));
+        setAuthDetails(adminEvent, o);
+        adminEvent.setResourcePath(o.getString("resourcePath"));
+        adminEvent.setError(o.getString("error"));
+        
+        if(o.getString("representation") != null) {
+            adminEvent.setRepresentation(o.getString("representation"));
+        }
+        return adminEvent;
+    }
+
+    private static void setAuthDetails(BasicDBObject e, AuthDetails authDetails) {
+        e.put("realmId", authDetails.getRealmId());
+        e.put("clientId", authDetails.getClientId());
+        e.put("userId", authDetails.getUserId());
+        e.put("ipAddress", authDetails.getIpAddress());
+    }
+    
+    private static void setAuthDetails(AdminEvent adminEvent, BasicDBObject o) {
+        AuthDetails authDetails = new AuthDetails();
+        authDetails.setRealmId(o.getString("realmId"));
+        authDetails.setClientId(o.getString("clientId"));
+        authDetails.setUserId(o.getString("userId"));
+        authDetails.setIpAddress(o.getString("ipAddress"));
+        adminEvent.setAuthDetails(authDetails);
     }
 
 }

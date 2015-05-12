@@ -34,6 +34,8 @@ public class KeycloakAuthenticationToken extends AbstractAuthenticationToken imp
 
     public KeycloakAuthenticationToken(KeycloakAccount account, Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
+        Assert.notNull(account, "KeycloakAccount cannot be null");
+        Assert.notNull(account.getPrincipal(), "KeycloakAccount.getPrincipal() cannot be null");
         this.principal = account.getPrincipal();
         this.setDetails(account);
         setAuthenticated(true);

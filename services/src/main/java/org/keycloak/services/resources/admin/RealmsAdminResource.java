@@ -6,6 +6,8 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.events.AdminEventBuilder;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -33,6 +35,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -49,16 +52,18 @@ public class RealmsAdminResource {
     protected static final Logger logger = Logger.getLogger(RealmsAdminResource.class);
     protected AdminAuth auth;
     protected TokenManager tokenManager;
+    protected AdminEventBuilder adminEvent;
 
     @Context
     protected KeycloakSession session;
-
+    
     @Context
     protected KeycloakApplication keycloak;
 
-    public RealmsAdminResource(AdminAuth auth, TokenManager tokenManager) {
+    public RealmsAdminResource(AdminAuth auth, TokenManager tokenManager, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.tokenManager = tokenManager;
+        this.adminEvent = adminEvent;
     }
 
     public static final CacheControl noCache = new CacheControl();
@@ -87,6 +92,7 @@ public class RealmsAdminResource {
             ClientModel adminApp = auth.getRealm().getClientByClientId(realmManager.getRealmAdminClientId(auth.getRealm()));
             addRealmRep(reps, auth.getRealm(), adminApp);
         }
+        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         logger.debug(("getRealms()"));
         return reps;
     }
@@ -128,6 +134,8 @@ public class RealmsAdminResource {
 
             URI location = AdminRoot.realmsUrl(uriInfo).path(realm.getName()).build();
             logger.debugv("imported realm success, sending back: {0}", location.toString());
+            
+            adminEvent.operation(OperationType.CREATE).resourcePath(location.toString()).representation(rep).success();
 
             return Response.created(location).build();
         } catch (ModelDuplicateException e) {
@@ -158,10 +166,11 @@ public class RealmsAdminResource {
 
         Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
         List<InputPart> inputParts = uploadForm.get("file");
-
+        RealmRepresentation rep = null;
+        
         for (InputPart inputPart : inputParts) {
             // inputPart.getBody doesn't work as content-type is wrong, and inputPart.setMediaType is not supported on AS7 (RestEasy 2.3.2.Final)
-            RealmRepresentation rep = JsonSerialization.readValue(inputPart.getBodyAsString(), RealmRepresentation.class);
+            rep = JsonSerialization.readValue(inputPart.getBodyAsString(), RealmRepresentation.class);
             RealmModel realm;
             try {
                 realm = realmManager.importRealm(rep);
@@ -170,13 +179,15 @@ public class RealmsAdminResource {
             }
 
             grantPermissionsToRealmCreator(realm);
-
+            
+            URI location = null;
             if (inputParts.size() == 1) {
-                URI location = AdminRoot.realmsUrl(uriInfo).path(realm.getName()).build();
+                location = AdminRoot.realmsUrl(uriInfo).path(realm.getName()).build();
+                adminEvent.operation(OperationType.CREATE).resourcePath(location.toString()).representation(rep).success();
                 return Response.created(location).build();
             }
         }
-
+        
         return Response.noContent().build();
     }
 
@@ -220,7 +231,7 @@ public class RealmsAdminResource {
             realmAuth = new RealmAuth(auth, realm.getClientByClientId(realmManager.getRealmAdminClientId(auth.getRealm())));
         }
 
-        RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager);
+        RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         //resourceContext.initResource(adminResource);
         return adminResource;

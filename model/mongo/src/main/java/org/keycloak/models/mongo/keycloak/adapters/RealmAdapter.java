@@ -2,6 +2,7 @@ package org.keycloak.models.mongo.keycloak.adapters;
 
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ClientModel;
@@ -985,7 +986,45 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         }
         updateRealm();
     }
+    
+    @Override
+    public boolean isAdminEventsEnabled() {
+        return realm.isAdminEventsEnabled();
+    }
 
+    @Override
+    public void setAdminEventsEnabled(boolean enabled) {
+        realm.setAdminEventsEnabled(enabled);
+        updateRealm();
+        
+    }
+
+    @Override
+    public Set<String> getAdminEnabledEventOperations() {
+        return new HashSet<String>(realm.getAdminEnabledEventOperations());
+    }
+
+    @Override
+    public void setAdminEnabledEventOperations(Set<String> adminEnabledEventOperations) {
+        if (adminEnabledEventOperations != null) {
+            realm.setAdminEnabledEventOperations(new ArrayList<String>(adminEnabledEventOperations));
+        } else {
+            realm.setAdminEnabledEventOperations(Collections.EMPTY_LIST);
+        }
+        updateRealm();
+    }
+
+    @Override
+    public boolean isAdminEventsDetailsEnabled() {
+        return realm.isAdminEventsDetailsEnabled();
+    }
+
+    @Override
+    public void setAdminEventsDetailsEnabled(boolean enabled) {
+        realm.setAdminEventsDetailsEnabled(enabled);
+        updateRealm();
+    }
+    
     @Override
     public ClientModel getMasterAdminClient() {
         MongoClientEntity appData = getMongoStore().loadEntity(MongoClientEntity.class, realm.getMasterAdminClient(), invocationContext);

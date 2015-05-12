@@ -37,7 +37,7 @@ You can also have Liquibase and Hibernate create one for you. To do this follow 
 3. Make a copy of the database:  
    `cp keycloak.h2.db keycloak-old.h2.db`    
 3. Run KeycloakServer to make Hibernate update the schema:  
-   `mvn -f testsuite/integration exec:java -Pkeycloak-server -Dkeycloak.connectionsJpa.url='jdbc:h2:keycloak' -Dkeycloak.connectionsJpa.databaseSchema='development-update'`
+   `mvn -f testsuite/integration/pom.xml exec:java -Pkeycloak-server -Dkeycloak.connectionsJpa.url='jdbc:h2:keycloak' -Dkeycloak.connectionsJpa.databaseSchema='development-update'`
 4. Wait until server is completely started, then stop it
 5. View the difference:                                       
    `mvn -f connections/jpa-liquibase/pom.xml liquibase:diff -Durl=jdbc:h2:keycloak-old -DreferenceUrl=jdbc:h2:keycloak`

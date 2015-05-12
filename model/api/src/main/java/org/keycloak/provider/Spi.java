@@ -5,6 +5,7 @@ package org.keycloak.provider;
  */
 public interface Spi {
 
+    public boolean isPrivate();
     public String getName();
     public Class<? extends Provider> getProviderClass();
     public Class<? extends ProviderFactory> getProviderFactoryClass();

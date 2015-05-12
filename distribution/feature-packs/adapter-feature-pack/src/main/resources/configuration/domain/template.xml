@@ -1,0 +1,85 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!--
+  ~
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2014, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  ~
+  -->
+
+<domain xmlns="urn:jboss:domain:2.1">
+
+    <extensions>
+        <?EXTENSIONS?>
+    </extensions>
+
+    <system-properties>
+        <!-- IPv4 is not required, but setting this helps avoid unintended use of IPv6 -->
+        <property name="java.net.preferIPv4Stack" value="true"/>
+    </system-properties>
+
+    <management>
+        <access-control provider="simple">
+            <role-mapping>
+                <role name="SuperUser">
+                    <include>
+                        <user name="$local"/>
+                    </include>
+                </role>
+            </role-mapping>
+        </access-control>
+    </management>
+
+    <profiles>
+       <profile name="default">
+           <?SUBSYSTEMS socket-binding-group="standard-sockets"?>
+       </profile>
+    </profiles>
+
+    <!--
+         Named interfaces that can be referenced elsewhere in the configuration. The configuration
+         for how to associate these logical names with an actual network interface can either
+         be specified here or can be declared on a per-host basis in the equivalent element in host.xml.
+
+         These default configurations require the binding specification to be done in host.xml.
+    -->
+    <interfaces>
+        <interface name="management"/>
+        <interface name="public"/>
+        <interface name="unsecure"/>
+    </interfaces>
+
+    <socket-binding-groups>
+        <socket-binding-group name="standard-sockets" default-interface="public">
+            <!-- Needed for server groups using the 'default' profile  -->
+            <?SOCKET-BINDINGS?>
+        </socket-binding-group>
+    </socket-binding-groups>
+
+    <server-groups>
+        <server-group name="main-server-group" profile="default">
+            <jvm name="default">
+                <heap size="64m" max-size="512m"/>
+            </jvm>
+            <socket-binding-group ref="standard-sockets"/>
+        </server-group>
+    </server-groups>
+
+</domain>

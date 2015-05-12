@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-ldap-federation">
+    <resources>
+        <artifact name="${org.keycloak:keycloak-ldap-federation}"/>
+    </resources>
+    <dependencies>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-kerberos-federation"/>
+        <module name="javax.ws.rs.api"/>
+        <module name="org.jboss.resteasy.resteasy-jaxrs"/>
+        <module name="org.jboss.logging"/>
+        <module name="javax.api"/>
+    </dependencies>
+
+</module>

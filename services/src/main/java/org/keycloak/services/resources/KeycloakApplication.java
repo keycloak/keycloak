@@ -25,6 +25,7 @@ import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.services.util.JsonConfigProvider;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.SystemEnvProperties;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
@@ -143,14 +144,8 @@ public class KeycloakApplication extends Application {
             }
 
             if (node != null) {
-                Properties properties = new Properties();
-                properties.putAll(System.getProperties());
-                for(Map.Entry<String, String> e : System.getenv().entrySet()) {
-                    properties.put("env." + e.getKey(), e.getValue());
-                }
-
+                Properties properties = new SystemEnvProperties();
                 Config.init(new JsonConfigProvider(node, properties));
-
                 return;
             } else {
                 log.warn("Config 'keycloak-server.json' not found");

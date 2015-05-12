@@ -181,7 +181,7 @@ public interface RealmModel extends RoleContainerModel {
     public IdentityProviderMapperModel getIdentityProviderMapperById(String id);
     public IdentityProviderMapperModel getIdentityProviderMapperByName(String brokerAlias, String name);
 
-
+    // Should return list sorted by UserFederationProviderModel.priority
     List<UserFederationProviderModel> getUserFederationProviders();
 
     UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync);
@@ -232,7 +232,19 @@ public interface RealmModel extends RoleContainerModel {
     Set<String> getEnabledEventTypes();
 
     void setEnabledEventTypes(Set<String> enabledEventTypes);
+    
+    boolean isAdminEventsEnabled();
 
+    void setAdminEventsEnabled(boolean enabled);
+    
+    Set<String> getAdminEnabledEventOperations();
+
+    void setAdminEnabledEventOperations(Set<String> adminEnabledEventOperations);
+    
+    boolean isAdminEventsDetailsEnabled();
+
+    void setAdminEventsDetailsEnabled(boolean enabled);
+    
     ClientModel getMasterAdminClient();
 
     void setMasterAdminClient(ClientModel client);

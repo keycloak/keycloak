@@ -63,7 +63,11 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private long eventsExpiration;
     private List<String> eventsListeners = new ArrayList<String>();
     private List<String> enabledEventTypes = new ArrayList<String>();
-
+    
+    protected boolean adminEventsEnabled;
+    protected List<String> adminEnabledEventOperations = new ArrayList<String>();;
+    protected boolean adminEventsDetailsEnabled;
+    
     private String masterAdminClient;
 
     private boolean internationalizationEnabled;
@@ -391,6 +395,30 @@ public class RealmEntity extends AbstractIdentifiableEntity {
         this.enabledEventTypes = enabledEventTypes;
     }
     
+    public boolean isAdminEventsEnabled() {
+        return adminEventsEnabled;
+    }
+
+    public void setAdminEventsEnabled(boolean adminEventsEnabled) {
+        this.adminEventsEnabled = adminEventsEnabled;
+    }
+
+    public List<String> getAdminEnabledEventOperations() {
+        return adminEnabledEventOperations;
+    }
+
+    public void setAdminEnabledEventOperations(List<String> adminEnabledEventOperations) {
+        this.adminEnabledEventOperations = adminEnabledEventOperations;
+    }
+
+    public boolean isAdminEventsDetailsEnabled() {
+        return adminEventsDetailsEnabled;
+    }
+
+    public void setAdminEventsDetailsEnabled(boolean adminEventsDetailsEnabled) {
+        this.adminEventsDetailsEnabled = adminEventsDetailsEnabled;
+    }
+
     public String getMasterAdminClient() {
         return masterAdminClient;
     }

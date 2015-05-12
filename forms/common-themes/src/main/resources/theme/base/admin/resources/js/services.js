@@ -180,6 +180,12 @@ module.factory('RealmEvents', function($resource) {
     });
 });
 
+module.factory('RealmAdminEvents', function($resource) {
+    return $resource(authUrl + '/admin/realms/:id/admin-events', {
+        id : '@realm'
+    });
+});
+
 module.factory('RealmLDAPConnectionTester', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/testLDAPConnection');
 });

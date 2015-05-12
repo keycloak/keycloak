@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-model-sessions-jpa">
+    <resources>
+        <artifact name="${org.keycloak:keycloak-model-sessions-jpa}"/>
+    </resources>
+    <dependencies>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-connections-jpa"/>
+        <module name="javax.persistence.api"/>
+        <module name="org.jboss.logging"/>
+        <module name="javax.api"/>
+        <module name="org.javassist"/>
+        <module name="org.hibernate" services="import"/>
+    </dependencies>
+
+</module>

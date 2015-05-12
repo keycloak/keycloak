@@ -29,6 +29,11 @@ public class SocialProviderSpi implements Spi {
     public static final String SOCIAL_SPI_NAME = "social";
 
     @Override
+    public boolean isPrivate() {
+        return false;
+    }
+
+    @Override
     public String getName() {
         return SOCIAL_SPI_NAME;
     }

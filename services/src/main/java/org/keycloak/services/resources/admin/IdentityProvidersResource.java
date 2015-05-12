@@ -3,11 +3,13 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import javax.ws.rs.NotFoundException;
+import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.events.AdminEventBuilder;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -29,6 +31,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -45,12 +48,14 @@ public class IdentityProvidersResource {
     private final RealmModel realm;
     private final KeycloakSession session;
     private RealmAuth auth;
+    private AdminEventBuilder adminEvent;
 
-    public IdentityProvidersResource(RealmModel realm, KeycloakSession session, RealmAuth auth) {
+    public IdentityProvidersResource(RealmModel realm, KeycloakSession session, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.session = session;
         this.auth = auth;
         this.auth.init(RealmAuth.Resource.IDENTITY_PROVIDER);
+        this.adminEvent = adminEvent;
     }
 
     @Path("/providers/{provider_id}")
@@ -62,6 +67,7 @@ public class IdentityProvidersResource {
         IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
 
         if (providerFactory != null) {
+            adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
             return Response.ok(providerFactory).build();
         }
 
@@ -80,6 +86,9 @@ public class IdentityProvidersResource {
         InputStream inputStream = file.getBody(InputStream.class, null);
         IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
         Map<String, String> config = providerFactory.parseConfig(inputStream);
+        
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).representation(config).success();
+
         return config;
     }
 
@@ -97,6 +106,7 @@ public class IdentityProvidersResource {
             IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
             Map<String, String> config;
             config = providerFactory.parseConfig(inputStream);
+            adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).representation(config).success();
             return config;
         } finally {
             try {
@@ -118,7 +128,7 @@ public class IdentityProvidersResource {
         for (IdentityProviderModel identityProviderModel : realm.getIdentityProviders()) {
             representations.add(ModelToRepresentation.toRepresentation(identityProviderModel));
         }
-
+        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return representations;
     }
 
@@ -129,8 +139,13 @@ public class IdentityProvidersResource {
         this.auth.requireManage();
 
         try {
-            this.realm.addIdentityProvider(RepresentationToModel.toModel(representation));
+            IdentityProviderModel identityProvider = RepresentationToModel.toModel(representation);
+            this.realm.addIdentityProvider(identityProvider);
 
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo.getAbsolutePathBuilder()
+                    .path(representation.getProviderId()).build().toString().substring(uriInfo.getBaseUri().toString().length()))
+                    .representation(representation).success();
+            
             return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getProviderId()).build()).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
@@ -153,9 +168,10 @@ public class IdentityProvidersResource {
             throw new NotFoundException("Could not find identity provider: " + alias);
         }
 
-        IdentityProviderResource identityProviderResource = new IdentityProviderResource(this.auth, realm, session, identityProviderModel);
+        IdentityProviderResource identityProviderResource = new IdentityProviderResource(this.auth, realm, session, identityProviderModel, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(identityProviderResource);
-
+        
+        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return identityProviderResource;
     }
 

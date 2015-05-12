@@ -97,4 +97,9 @@ public class SAMLKeyCloakServerBrokerWithSignatureTest extends AbstractIdentityP
     public void testTokenStorageAndRetrievalByApplication() {
         super.testTokenStorageAndRetrievalByApplication();
     }
+
+    @Test
+    public void testAccountManagementLinkIdentity() {
+        super.testAccountManagementLinkIdentity();
+    }
 }

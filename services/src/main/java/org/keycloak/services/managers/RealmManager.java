@@ -168,6 +168,12 @@ public class RealmManager {
         if(rep.getEnabledEventTypes() != null) {
             realm.setEnabledEventTypes(new HashSet<String>(rep.getEnabledEventTypes()));
         }
+        
+        realm.setAdminEventsEnabled(rep.isAdminEventsEnabled());
+        if(rep.getAdminEnabledEventOperations() != null) {
+            realm.setAdminEnabledEventOperations(new HashSet<String>(rep.getAdminEnabledEventOperations()));
+        }
+        realm.setAdminEventsDetailsEnabled(rep.isAdminEventsDetailsEnabled());
     }
 
     // Should be RealmManager moved to model/api instead of referencing methods this way?
