@@ -1,5 +1,6 @@
 package org.keycloak.services.resources;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
@@ -26,7 +27,10 @@ public class KeycloakExceptionMapper implements ExceptionMapper<Exception> {
 
     @Override
     public Response toResponse(Exception ex) {
-        if (ex instanceof ModelException) {
+        if (ex instanceof WebApplicationException) {
+            WebApplicationException wex = (WebApplicationException) ex;
+            return wex.getResponse();
+        } else if (ex instanceof ModelException) {
             ModelException mex = (ModelException) ex;
             String message = messageProvider.getMessage(session, mex.getMessage(), mex.getParameters());
             return ErrorResponse.error(message, Response.Status.BAD_REQUEST);
