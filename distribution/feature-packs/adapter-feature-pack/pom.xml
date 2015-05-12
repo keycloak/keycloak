@@ -19,7 +19,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <groupId>org.keycloak</groupId>
-        <artifactId>adapter-only-builds</artifactId>
+        <artifactId>feature-packs-parent</artifactId>
         <version>1.3.0.Beta1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
