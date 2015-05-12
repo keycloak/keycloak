@@ -12,6 +12,11 @@ public class UserSessionSpi implements Spi {
     public static final String NAME = "userSessions";
 
     @Override
+    public boolean isPrivate() {
+        return true;
+    }
+
+    @Override
     public String getName() {
         return NAME;
     }

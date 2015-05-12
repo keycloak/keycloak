@@ -10,6 +10,11 @@ import org.keycloak.provider.Spi;
 public class FileConnectionSpi implements Spi {
 
     @Override
+    public boolean isPrivate() {
+        return true;
+    }
+
+    @Override
     public String getName() {
         return "connectionsFile";
     }

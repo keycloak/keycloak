@@ -10,6 +10,11 @@ import org.keycloak.provider.Spi;
 public class ProtocolMapperSpi implements Spi {
 
     @Override
+    public boolean isPrivate() {
+        return false;
+    }
+
+    @Override
     public String getName() {
         return "protocol-mapper";
     }
