@@ -190,11 +190,11 @@ public class RealmAdminResource {
             }
 
             return Response.noContent().build();
-        } catch (PatternSyntaxException e) {
+        } catch (PatternSyntaxException ex) {
             return ErrorResponse.error("Specified regex pattern(s) is invalid.", Response.Status.BAD_REQUEST);
-        } catch (ModelDuplicateException e) {
+        } catch (ModelDuplicateException ex) {
             return ErrorResponse.exists("Realm " + rep.getRealm() + " already exists.");
-        }  catch (Exception e) {
+        } catch (Exception ex) {
             return ErrorResponse.error("Failed to update " + rep.getRealm() + " Realm.", Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
