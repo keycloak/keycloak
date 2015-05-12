@@ -13,6 +13,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import org.keycloak.services.messages.MessageProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -28,6 +29,9 @@ public class KeycloakSessionServletFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest)servletRequest;
 
+        MessageProvider messageProvider = (MessageProvider) servletRequest.getServletContext().getAttribute(MessageProvider.class.getName());
+        ResteasyProviderFactory.pushContext(MessageProvider.class, messageProvider);
+        
         KeycloakSessionFactory sessionFactory = (KeycloakSessionFactory) servletRequest.getServletContext().getAttribute(KeycloakSessionFactory.class.getName());
         KeycloakSession session = sessionFactory.create();
         ResteasyProviderFactory.pushContext(KeycloakSession.class, session);

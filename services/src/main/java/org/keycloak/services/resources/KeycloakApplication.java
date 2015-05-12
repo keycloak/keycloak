@@ -42,6 +42,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
+import org.keycloak.services.messages.ThemeMessageProvider;
+import org.keycloak.services.messages.MessageProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -70,10 +72,12 @@ public class KeycloakApplication extends Application {
         protector.start();
         context.setAttribute(BruteForceProtector.class.getName(), protector);
         context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
+        context.setAttribute(MessageProvider.class.getName(), new ThemeMessageProvider());
 
         singletons.add(new ServerVersionResource());
         singletons.add(new RealmsResource());
         singletons.add(new AdminRoot());
+        singletons.add(new ModelExceptionMapper());
         classes.add(SkeletonKeyContextResolver.class);
         classes.add(QRCodeResource.class);
         classes.add(ThemeResource.class);
