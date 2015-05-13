@@ -1,7 +1,7 @@
 package org.keycloak.protocol.oidc.endpoints;
 
-import org.jboss.resteasy.spi.BadRequestException;
-import org.jboss.resteasy.spi.NotFoundException;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
 import org.keycloak.Config;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;

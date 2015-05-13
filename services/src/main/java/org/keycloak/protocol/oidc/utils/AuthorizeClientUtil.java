@@ -1,7 +1,7 @@
 package org.keycloak.protocol.oidc.utils;
 
-import org.jboss.resteasy.spi.BadRequestException;
-import org.jboss.resteasy.spi.UnauthorizedException;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotAuthorizedException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -27,7 +27,7 @@ public class AuthorizeClientUtil {
         if (authorizationHeader != null) {
             String[] usernameSecret = BasicAuthHelper.parseHeader(authorizationHeader);
             if (usernameSecret == null) {
-                throw new UnauthorizedException("Bad Authorization header", Response.status(401).header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"" + realm.getName() + "\"").build());
+                throw new NotAuthorizedException("Bad Authorization header", Response.status(401).header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"" + realm.getName() + "\"").build());
             }
             client_id = usernameSecret[0];
             clientSecret = usernameSecret[1];
