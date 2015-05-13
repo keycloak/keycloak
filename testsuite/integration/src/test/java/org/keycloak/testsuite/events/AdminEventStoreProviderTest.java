@@ -42,7 +42,7 @@ public class AdminEventStoreProviderTest {
 
     @Test
     public void save() {
-        eventStore.onEvent(create(OperationType.VIEW, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create("realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
     }
 
     @Test
@@ -50,19 +50,19 @@ public class AdminEventStoreProviderTest {
         long oldest = System.currentTimeMillis() - 30000;
         long newest = System.currentTimeMillis() + 30000;
 
-        eventStore.onEvent(create(OperationType.VIEW, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(newest, OperationType.ACTION, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(newest, OperationType.ACTION, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(OperationType.VIEW, "realmId2", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(oldest, OperationType.VIEW, "realmId", "clientId2", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(OperationType.VIEW, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create("realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(newest, "realmId", OperationType.ACTION, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(newest, "realmId", OperationType.ACTION, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create("realmId2", OperationType.CREATE, "realmId2", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(oldest, "realmId", OperationType.CREATE, "realmId", "clientId2", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create("realmId", OperationType.CREATE, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
 
         resetSession();
 
         Assert.assertEquals(5, eventStore.createAdminQuery().authClient("clientId").getResultList().size());
         Assert.assertEquals(5, eventStore.createAdminQuery().authRealm("realmId").getResultList().size());
-        Assert.assertEquals(4, eventStore.createAdminQuery().operation(OperationType.VIEW).getResultList().size());
-        Assert.assertEquals(6, eventStore.createAdminQuery().operation(OperationType.VIEW, OperationType.ACTION).getResultList().size());
+        Assert.assertEquals(4, eventStore.createAdminQuery().operation(OperationType.CREATE).getResultList().size());
+        Assert.assertEquals(6, eventStore.createAdminQuery().operation(OperationType.CREATE, OperationType.ACTION).getResultList().size());
         Assert.assertEquals(4, eventStore.createAdminQuery().authUser("userId").getResultList().size());
 
         Assert.assertEquals(1, eventStore.createAdminQuery().authUser("userId").operation(OperationType.ACTION).getResultList().size());
@@ -95,14 +95,14 @@ public class AdminEventStoreProviderTest {
             e.printStackTrace();
         }
         
-        eventStore.onEvent(create(date1, OperationType.VIEW, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(date1, OperationType.VIEW, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(date2, OperationType.ACTION, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(date2, OperationType.ACTION, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(date3, OperationType.UPDATE, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(date3, OperationType.DELETE, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(date4, OperationType.CREATE, "realmId2", "clientId2", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(date4, OperationType.CREATE, "realmId2", "clientId2", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(date1, "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(date1, "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(date2, "realmId", OperationType.ACTION, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(date2, "realmId", OperationType.ACTION, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(date3, "realmId", OperationType.UPDATE, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(date3, "realmId", OperationType.DELETE, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(date4, "realmId2", OperationType.CREATE, "realmId2", "clientId2", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(date4, "realmId2", OperationType.CREATE, "realmId2", "clientId2", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
         
         resetSession();
         
@@ -115,12 +115,11 @@ public class AdminEventStoreProviderTest {
         Assert.assertEquals(4, eventStore.createAdminQuery().authUser("userId").getResultList().size());
         Assert.assertEquals(4, eventStore.createAdminQuery().authUser("userId2").getResultList().size());
         
-        Assert.assertEquals(2, eventStore.createAdminQuery().operation(OperationType.VIEW).getResultList().size());
         Assert.assertEquals(2, eventStore.createAdminQuery().operation(OperationType.ACTION).getResultList().size());
-        Assert.assertEquals(4, eventStore.createAdminQuery().operation(OperationType.VIEW, OperationType.ACTION).getResultList().size());
+        Assert.assertEquals(6, eventStore.createAdminQuery().operation(OperationType.CREATE, OperationType.ACTION).getResultList().size());
         Assert.assertEquals(1, eventStore.createAdminQuery().operation(OperationType.UPDATE).getResultList().size());
         Assert.assertEquals(1, eventStore.createAdminQuery().operation(OperationType.DELETE).getResultList().size());
-        Assert.assertEquals(2, eventStore.createAdminQuery().operation(OperationType.CREATE).getResultList().size());
+        Assert.assertEquals(4, eventStore.createAdminQuery().operation(OperationType.CREATE).getResultList().size());
         
         Assert.assertEquals(8, eventStore.createAdminQuery().fromTime("2015-03-04").getResultList().size());
         Assert.assertEquals(8, eventStore.createAdminQuery().toTime("2015-03-07").getResultList().size());
@@ -146,12 +145,12 @@ public class AdminEventStoreProviderTest {
         long oldest = System.currentTimeMillis() - 30000;
         long newest = System.currentTimeMillis() + 30000;
 
-        eventStore.onEvent(create(OperationType.VIEW, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(newest, OperationType.ACTION, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(newest, OperationType.ACTION, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(OperationType.VIEW, "realmId2", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(oldest, OperationType.VIEW, "realmId", "clientId2", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(OperationType.VIEW, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create("realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(newest, "realmId", OperationType.ACTION, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(newest, "realmId", OperationType.ACTION, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create("realmId2", OperationType.CREATE, "realmId2", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(oldest, "realmId", OperationType.CREATE, "realmId", "clientId2", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create("realmId", OperationType.CREATE, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
 
         resetSession();
 
@@ -165,11 +164,11 @@ public class AdminEventStoreProviderTest {
     
     @Test
     public void clear() {
-        eventStore.onEvent(create(System.currentTimeMillis() - 30000, OperationType.VIEW, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(System.currentTimeMillis() - 20000, OperationType.VIEW, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(System.currentTimeMillis(), OperationType.VIEW, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(System.currentTimeMillis(), OperationType.VIEW, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(System.currentTimeMillis() - 30000, OperationType.VIEW, "realmId2", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(System.currentTimeMillis() - 30000, "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(System.currentTimeMillis() - 20000, "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(System.currentTimeMillis(), "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(System.currentTimeMillis(), "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(System.currentTimeMillis() - 30000, "realmId2", OperationType.CREATE, "realmId2", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
 
         resetSession();
 
@@ -180,36 +179,37 @@ public class AdminEventStoreProviderTest {
 
     @Test
     public void clearOld() {
-        eventStore.onEvent(create(System.currentTimeMillis() - 30000, OperationType.VIEW, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(System.currentTimeMillis() - 20000, OperationType.VIEW, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(System.currentTimeMillis(), OperationType.VIEW, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(System.currentTimeMillis(), OperationType.VIEW, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
-        eventStore.onEvent(create(System.currentTimeMillis() - 30000, OperationType.VIEW, "realmId2", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(System.currentTimeMillis() - 30000, "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(System.currentTimeMillis() - 20000, "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(System.currentTimeMillis(), "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(System.currentTimeMillis(), "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        eventStore.onEvent(create(System.currentTimeMillis() - 30000, "realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
 
         resetSession();
 
         eventStore.clearAdmin("realmId", System.currentTimeMillis() - 10000);
 
-        Assert.assertEquals(3, eventStore.createAdminQuery().getResultList().size());
+        Assert.assertEquals(2, eventStore.createAdminQuery().getResultList().size());
     }
 
-    private AdminEvent create(OperationType operation, String realmId, String clientId, String userId, String ipAddress, String resourcePath, String error) {
-        return create(System.currentTimeMillis(), operation, realmId, clientId, userId, ipAddress, resourcePath, error);
+    private AdminEvent create(String realmId, OperationType operation, String authRealmId, String authClientId, String authUserId, String authIpAddress, String resourcePath, String error) {
+        return create(System.currentTimeMillis(), realmId, operation, authRealmId, authClientId, authUserId, authIpAddress, resourcePath, error);
     }
     
-    private AdminEvent create(Date date, OperationType operation, String realmId, String clientId, String userId, String ipAddress, String resourcePath, String error) {
-        return create(date.getTime(), operation, realmId, clientId, userId, ipAddress, resourcePath, error);
+    private AdminEvent create(Date date, String realmId, OperationType operation, String authRealmId, String authClientId, String authUserId, String authIpAddress, String resourcePath, String error) {
+        return create(date.getTime(), realmId, operation, authRealmId, authClientId, authUserId, authIpAddress, resourcePath, error);
     }
 
-    private AdminEvent create(long time, OperationType operation, String realmId, String clientId, String userId, String ipAddress, String resourcePath, String error) {
+    private AdminEvent create(long time, String realmId, OperationType operation, String authRealmId, String authClientId, String authUserId, String authIpAddress, String resourcePath, String error) {
         AdminEvent e = new AdminEvent();
         e.setTime(time);
+        e.setRealmId(realmId);
         e.setOperationType(operation);
         AuthDetails authDetails = new AuthDetails();
-        authDetails.setRealmId(realmId);
-        authDetails.setClientId(clientId);
-        authDetails.setUserId(userId);
-        authDetails.setIpAddress(ipAddress);
+        authDetails.setRealmId(authRealmId);
+        authDetails.setClientId(authClientId);
+        authDetails.setUserId(authUserId);
+        authDetails.setIpAddress(authIpAddress);
         e.setAuthDetails(authDetails);
         e.setResourcePath(resourcePath);
         e.setError(error);

@@ -6,20 +6,15 @@
                 <constraints nullable="false"/>
             </column>
             <column name="ADMIN_EVENT_TIME" type="BIGINT"/>
-            <column name="OPERATION_TYPE" type="VARCHAR(255)"/>
             <column name="REALM_ID" type="VARCHAR(255)"/>
-            <column name="CLIENT_ID" type="VARCHAR(255)"/>
-            <column name="USER_ID" type="VARCHAR(255)"/>
+            <column name="OPERATION_TYPE" type="VARCHAR(255)"/>
+            <column name="AUTH_REALM_ID" type="VARCHAR(255)"/>
+            <column name="AUTH_CLIENT_ID" type="VARCHAR(255)"/>
+            <column name="AUTH_USER_ID" type="VARCHAR(255)"/>
             <column name="IP_ADDRESS" type="VARCHAR(255)"/>
-            <column name="RESOURCE_PATH" type="VARCHAR(255)"/>
+            <column name="RESOURCE_PATH" type="VARCHAR(2550)"/>
             <column name="REPRESENTATION" type="VARCHAR(25500)"/>
             <column name="ERROR" type="VARCHAR(255)"/>
-        </createTable>
-        <createTable tableName="REALM_ENABLED_ADMIN_EVENT_OPERATIONS">
-            <column name="REALM_ID" type="VARCHAR(36)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="VALUE" type="VARCHAR(255)"/>
         </createTable>
         <addColumn tableName="REALM">
             <column name="ADMIN_EVENTS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
@@ -29,6 +24,5 @@
                 <constraints nullable="false"/>
             </column>
         </addColumn>
-        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_ENABLED_ADMIN_EVENT_OPERATIONS" constraintName="FKF8459C8FAE5C3B34" referencedColumnNames="ID" referencedTableName="REALM"/>        
     </changeSet>
 </databaseChangeLog>

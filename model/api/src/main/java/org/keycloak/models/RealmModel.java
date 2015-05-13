@@ -237,10 +237,6 @@ public interface RealmModel extends RoleContainerModel {
 
     void setAdminEventsEnabled(boolean enabled);
     
-    Set<String> getAdminEnabledEventOperations();
-
-    void setAdminEnabledEventOperations(Set<String> adminEnabledEventOperations);
-    
     boolean isAdminEventsDetailsEnabled();
 
     void setAdminEventsDetailsEnabled(boolean enabled);

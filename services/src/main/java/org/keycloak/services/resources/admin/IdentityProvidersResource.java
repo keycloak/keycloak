@@ -8,7 +8,6 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.connections.httpclient.HttpClientProvider;
-import org.keycloak.events.AdminEventBuilder;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -65,12 +64,9 @@ public class IdentityProvidersResource {
     public Response getIdentityProviders(@PathParam("provider_id") String providerId) {
         this.auth.requireView();
         IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
-
         if (providerFactory != null) {
-            adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
             return Response.ok(providerFactory).build();
         }
-
         return Response.status(BAD_REQUEST).build();
     }
 
@@ -87,7 +83,7 @@ public class IdentityProvidersResource {
         IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
         Map<String, String> config = providerFactory.parseConfig(inputStream);
         
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).representation(config).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(providerFactory, uriInfo.getPath()).representation(config).success();
 
         return config;
     }
@@ -106,7 +102,7 @@ public class IdentityProvidersResource {
             IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
             Map<String, String> config;
             config = providerFactory.parseConfig(inputStream);
-            adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).representation(config).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(providerFactory, uriInfo.getPath()).representation(config).success();
             return config;
         } finally {
             try {
@@ -128,7 +124,6 @@ public class IdentityProvidersResource {
         for (IdentityProviderModel identityProviderModel : realm.getIdentityProviders()) {
             representations.add(ModelToRepresentation.toRepresentation(identityProviderModel));
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return representations;
     }
 
@@ -142,8 +137,7 @@ public class IdentityProvidersResource {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(representation);
             this.realm.addIdentityProvider(identityProvider);
 
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo.getAbsolutePathBuilder()
-                    .path(representation.getProviderId()).build().toString().substring(uriInfo.getBaseUri().toString().length()))
+            adminEvent.operation(OperationType.CREATE).resourcePath(identityProvider)
                     .representation(representation).success();
             
             return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getProviderId()).build()).build();
@@ -171,7 +165,6 @@ public class IdentityProvidersResource {
         IdentityProviderResource identityProviderResource = new IdentityProviderResource(this.auth, realm, session, identityProviderModel, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(identityProviderResource);
         
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return identityProviderResource;
     }
 

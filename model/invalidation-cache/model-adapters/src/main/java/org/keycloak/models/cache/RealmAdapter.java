@@ -763,18 +763,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public Set<String> getAdminEnabledEventOperations() {
-        if (updated != null) return updated.getAdminEnabledEventOperations();
-        return cached.getAdminEnabledEventOperations();
-    }
-
-    @Override
-    public void setAdminEnabledEventOperations(Set<String> adminEnabledEventOperations) {
-        getDelegateForUpdate();
-        updated.setAdminEnabledEventOperations(adminEnabledEventOperations);
-    }
-
-    @Override
     public boolean isAdminEventsDetailsEnabled() {
         if (updated != null) return updated.isAdminEventsDetailsEnabled();
         return cached.isAdminEventsDetailsEnabled();

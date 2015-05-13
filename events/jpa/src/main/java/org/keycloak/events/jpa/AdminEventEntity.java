@@ -19,16 +19,19 @@ public class AdminEventEntity {
     @Column(name="ADMIN_EVENT_TIME")
     private long time;
     
+    @Column(name="REALM_ID")
+    private String realmId;
+    
     @Column(name="OPERATION_TYPE")
     private String operationType;
     
-    @Column(name="REALM_ID")
+    @Column(name="AUTH_REALM_ID")
     private String authRealmId;
     
-    @Column(name="CLIENT_ID")
+    @Column(name="AUTH_CLIENT_ID")
     private String authClientId;
 
-    @Column(name="USER_ID")
+    @Column(name="AUTH_USER_ID")
     private String authUserId;
     
     @Column(name="IP_ADDRESS")
@@ -57,6 +60,14 @@ public class AdminEventEntity {
 
     public void setTime(long time) {
         this.time = time;
+    }
+
+    public String getRealmId() {
+        return realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
     }
 
     public String getOperationType() {

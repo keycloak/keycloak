@@ -25,6 +25,18 @@ public class MemAdminEventQuery implements AdminEventQuery {
         this.adminEvents = events;
     }
 
+
+    @Override
+    public AdminEventQuery realm(String realmId) {
+        Iterator<AdminEvent> itr = adminEvents.iterator();
+        while (itr.hasNext()) {
+            if (!itr.next().getRealmId().equals(realmId)) {
+                itr.remove();
+            }
+        }
+        return this;
+    }
+
     @Override
     public AdminEventQuery operation(OperationType... operations) {
         Iterator<AdminEvent> itr = this.adminEvents.iterator();
@@ -45,10 +57,10 @@ public class MemAdminEventQuery implements AdminEventQuery {
     }
     
     @Override
-    public AdminEventQuery authRealm(String realmId) {
+    public AdminEventQuery authRealm(String authRealmId) {
         Iterator<AdminEvent> itr = adminEvents.iterator();
         while (itr.hasNext()) {
-            if (!itr.next().getAuthDetails().getRealmId().equals(realmId)) {
+            if (!itr.next().getAuthDetails().getRealmId().equals(authRealmId)) {
                 itr.remove();
             }
         }
@@ -56,10 +68,10 @@ public class MemAdminEventQuery implements AdminEventQuery {
     }
 
     @Override
-    public AdminEventQuery authClient(String clientId) {
+    public AdminEventQuery authClient(String authClientId) {
         Iterator<AdminEvent> itr = adminEvents.iterator();
         while (itr.hasNext()) {
-            if (!itr.next().getAuthDetails().getClientId().equals(clientId)) {
+            if (!itr.next().getAuthDetails().getClientId().equals(authClientId)) {
                 itr.remove();
             }
         }
@@ -67,10 +79,10 @@ public class MemAdminEventQuery implements AdminEventQuery {
     }
 
     @Override
-    public AdminEventQuery authUser(String userId) {
+    public AdminEventQuery authUser(String authUserId) {
         Iterator<AdminEvent> itr = adminEvents.iterator();
         while (itr.hasNext()) {
-            if (!itr.next().getAuthDetails().getUserId().equals(userId)) {
+            if (!itr.next().getAuthDetails().getUserId().equals(authUserId)) {
                 itr.remove();
             }
         }

@@ -158,7 +158,6 @@ public class CachedRealm {
         enabledEventTypes.addAll(model.getEnabledEventTypes());
         
         adminEventsEnabled = model.isAdminEventsEnabled();
-        adminEnabledEventOperations.addAll(model.getAdminEnabledEventOperations());
         adminEventsDetailsEnabled = model.isAdminEventsDetailsEnabled();
         
         defaultRoles.addAll(model.getDefaultRoles());

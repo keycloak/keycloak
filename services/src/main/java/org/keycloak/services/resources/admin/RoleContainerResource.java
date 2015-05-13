@@ -2,7 +2,6 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.events.AdminEventBuilder;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -65,7 +64,6 @@ public class RoleContainerResource extends RoleResource {
         for (RoleModel roleModel : roleModels) {
             roles.add(ModelToRepresentation.toRepresentation(roleModel));
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return roles;
     }
 
@@ -85,9 +83,7 @@ public class RoleContainerResource extends RoleResource {
             RoleModel role = roleContainer.addRole(rep.getName());
             role.setDescription(rep.getDescription());
 
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo.getAbsolutePathBuilder()
-                    .path(role.getName()).build().toString().substring(uriInfo.getBaseUri().toString().length()))
-                    .representation(rep).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(role).representation(rep).success();
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
         } catch (ModelDuplicateException e) {
@@ -113,8 +109,6 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find role: " + roleName);
         }
 
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
-
         return getRole(roleModel);
     }
 
@@ -136,7 +130,7 @@ public class RoleContainerResource extends RoleResource {
         }
         deleteRole(role);
 
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(role).success();
 
     }
 
@@ -160,7 +154,7 @@ public class RoleContainerResource extends RoleResource {
         try {
             updateRole(rep, role);
 
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo.getPath()).representation(rep).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(role).representation(rep).success();
 
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
@@ -185,7 +179,7 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find role: " + roleName);
         }
         addComposites(roles, role);
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).representation(roles).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(role, uriInfo.getPath()).representation(roles).success();
 
     }
 
@@ -206,7 +200,6 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return getRoleComposites(role);
     }
 
@@ -227,7 +220,6 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return getRealmRoleComposites(role);
     }
 
@@ -256,7 +248,6 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find client: " + clientId);
 
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return getClientRoleComposites(app, role);
     }
 
@@ -286,7 +277,6 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find client: " + id);
 
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return getClientRoleComposites(client, role);
     }
 
@@ -310,8 +300,7 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find role: " + roleName);
         }
         deleteComposites(roles, role);
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(role, uriInfo.getPath()).success();
     }
-
 
 }

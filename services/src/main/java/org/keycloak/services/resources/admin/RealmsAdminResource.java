@@ -6,8 +6,7 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.events.AdminEventBuilder;
-import org.keycloak.events.admin.OperationType;
+import org.keycloak.ClientConnection;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -52,18 +51,19 @@ public class RealmsAdminResource {
     protected static final Logger logger = Logger.getLogger(RealmsAdminResource.class);
     protected AdminAuth auth;
     protected TokenManager tokenManager;
-    protected AdminEventBuilder adminEvent;
 
     @Context
     protected KeycloakSession session;
     
     @Context
     protected KeycloakApplication keycloak;
+    
+    @Context
+    protected ClientConnection clientConnection;
 
-    public RealmsAdminResource(AdminAuth auth, TokenManager tokenManager, AdminEventBuilder adminEvent) {
+    public RealmsAdminResource(AdminAuth auth, TokenManager tokenManager) {
         this.auth = auth;
         this.tokenManager = tokenManager;
-        this.adminEvent = adminEvent;
     }
 
     public static final CacheControl noCache = new CacheControl();
@@ -92,7 +92,6 @@ public class RealmsAdminResource {
             ClientModel adminApp = auth.getRealm().getClientByClientId(realmManager.getRealmAdminClientId(auth.getRealm()));
             addRealmRep(reps, auth.getRealm(), adminApp);
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         logger.debug(("getRealms()"));
         return reps;
     }
@@ -135,8 +134,6 @@ public class RealmsAdminResource {
             URI location = AdminRoot.realmsUrl(uriInfo).path(realm.getName()).build();
             logger.debugv("imported realm success, sending back: {0}", location.toString());
             
-            adminEvent.operation(OperationType.CREATE).resourcePath(location.toString()).representation(rep).success();
-
             return Response.created(location).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Realm " + rep.getRealm() + " already exists");
@@ -183,7 +180,6 @@ public class RealmsAdminResource {
             URI location = null;
             if (inputParts.size() == 1) {
                 location = AdminRoot.realmsUrl(uriInfo).path(realm.getName()).build();
-                adminEvent.operation(OperationType.CREATE).resourcePath(location.toString()).representation(rep).success();
                 return Response.created(location).build();
             }
         }
@@ -229,7 +225,9 @@ public class RealmsAdminResource {
         } else {
             realmAuth = new RealmAuth(auth, realm.getClientByClientId(realmManager.getRealmAdminClientId(auth.getRealm())));
         }
-
+        
+        AdminEventBuilder adminEvent = new AdminEventBuilder(realm, auth, session, clientConnection);
+        
         RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         //resourceContext.initResource(adminResource);

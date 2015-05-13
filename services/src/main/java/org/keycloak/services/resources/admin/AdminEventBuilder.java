@@ -1,4 +1,4 @@
-package org.keycloak.events;
+package org.keycloak.services.resources.admin;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -6,13 +6,22 @@ import java.util.List;
 
 import org.jboss.logging.Logger;
 import org.keycloak.ClientConnection;
+import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.Time;
 
@@ -25,9 +34,8 @@ public class AdminEventBuilder {
     private RealmModel realm;
     private AdminEvent adminEvent;
 
-    public AdminEventBuilder(RealmModel realm, KeycloakSession session, ClientConnection clientConnection) {
+    public AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, ClientConnection clientConnection) {
         this.realm = realm;
-
         adminEvent = new AdminEvent();
 
         if (realm.isAdminEventsEnabled()) {
@@ -51,8 +59,20 @@ public class AdminEventBuilder {
             }
         }
 
-        realm(realm);
-        ipAddress(clientConnection.getRemoteAddr());
+        authRealm(auth.getRealm());
+        authClient(auth.getClient());
+        authUser(auth.getUser());
+        authIpAddress(clientConnection.getRemoteAddr());
+    }
+    
+    public AdminEventBuilder realm(RealmModel realm) {
+        adminEvent.setRealmId(realm.getId());
+        return this;
+    }
+    
+    public AdminEventBuilder realm(String realmId) {
+        adminEvent.setRealmId(realmId);
+        return this;
     }
     
     public AdminEventBuilder operation(OperationType e) {
@@ -60,7 +80,7 @@ public class AdminEventBuilder {
         return this;
     }
 
-    public AdminEventBuilder realm(RealmModel realm) {
+    public AdminEventBuilder authRealm(RealmModel realm) {
         AuthDetails authDetails = adminEvent.getAuthDetails();
         if(authDetails == null) {
             authDetails =  new AuthDetails();
@@ -72,7 +92,7 @@ public class AdminEventBuilder {
         return this;
     }
 
-    public AdminEventBuilder realm(String realmId) {
+    public AdminEventBuilder authRealm(String realmId) {
         AuthDetails authDetails = adminEvent.getAuthDetails();
         if(authDetails == null) {
             authDetails =  new AuthDetails();
@@ -84,7 +104,7 @@ public class AdminEventBuilder {
         return this;
     }
 
-    public AdminEventBuilder client(ClientModel client) {
+    public AdminEventBuilder authClient(ClientModel client) {
         AuthDetails authDetails = adminEvent.getAuthDetails();
         if(authDetails == null) {
             authDetails =  new AuthDetails();
@@ -96,7 +116,7 @@ public class AdminEventBuilder {
         return this;
     }
 
-    public AdminEventBuilder client(String clientId) {
+    public AdminEventBuilder authClient(String clientId) {
         AuthDetails authDetails = adminEvent.getAuthDetails();
         if(authDetails == null) {
             authDetails =  new AuthDetails();
@@ -108,7 +128,7 @@ public class AdminEventBuilder {
         return this;
     }
 
-    public AdminEventBuilder user(UserModel user) {
+    public AdminEventBuilder authUser(UserModel user) {
         AuthDetails authDetails = adminEvent.getAuthDetails();
         if(authDetails == null) {
             authDetails =  new AuthDetails();
@@ -120,7 +140,7 @@ public class AdminEventBuilder {
         return this;
     }
 
-    public AdminEventBuilder user(String userId) {
+    public AdminEventBuilder authUser(String userId) {
         AuthDetails authDetails = adminEvent.getAuthDetails();
         if(authDetails == null) {
             authDetails =  new AuthDetails();
@@ -132,7 +152,7 @@ public class AdminEventBuilder {
         return this;
     }
 
-    public AdminEventBuilder ipAddress(String ipAddress) {
+    public AdminEventBuilder authIpAddress(String ipAddress) {
         AuthDetails authDetails = adminEvent.getAuthDetails();
         if(authDetails == null) {
             authDetails =  new AuthDetails();
@@ -148,6 +168,54 @@ public class AdminEventBuilder {
         adminEvent.setResourcePath(resourcePath);
         return this;
     }
+    
+    public AdminEventBuilder resourcePath(String resourcePath, boolean segment) {
+        if(segment) {
+            int index = resourcePath.lastIndexOf('/');
+            int subIndex = resourcePath.lastIndexOf('/', index - 1);
+            adminEvent.setResourcePath(resourcePath.substring(subIndex));
+        } else {
+            adminEvent.setResourcePath(resourcePath.substring(resourcePath.lastIndexOf('/')));
+        }
+        return this;
+    }
+    
+    public AdminEventBuilder resourcePath(Object model) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getResourcePath(model));
+        adminEvent.setResourcePath(sb.toString());
+        return this;
+    }
+    
+    public AdminEventBuilder resourcePath(Object model, String resourcePath) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getResourcePath(model));
+        sb.append(resourcePath.substring(resourcePath.lastIndexOf('/')));
+        adminEvent.setResourcePath(sb.toString());
+        return this;
+    }
+    
+    public AdminEventBuilder resourcePath(Object model, String resourcePath, boolean segment) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getResourcePath(model));
+        int index = resourcePath.lastIndexOf('/');
+        int subIndex = resourcePath.lastIndexOf('/', index - 1);
+        sb.append(resourcePath.substring(subIndex));
+        adminEvent.setResourcePath(sb.toString());
+        return this;
+    }
+    
+    public AdminEventBuilder resourcePath(Object model, Object subModel, String resourcePath) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getResourcePath(model));
+        int index = resourcePath.lastIndexOf('/');
+        int subIndex = resourcePath.lastIndexOf('/', index - 1);
+        sb.append(resourcePath.substring(subIndex, index+1));
+        sb.append(getResourcePath(subModel));
+        adminEvent.setResourcePath(sb.toString());
+        return this;
+    }
+    
 
     public void error(String error) {
         adminEvent.setOperationType(OperationType.valueOf(adminEvent.getOperationType().name() + "_ERROR"));
@@ -183,12 +251,10 @@ public class AdminEventBuilder {
         adminEvent.setTime(Time.toMillis(Time.currentTime()));
 
         if (store != null) {
-            if (realm.getAdminEnabledEventOperations() != null && !realm.getAdminEnabledEventOperations().isEmpty() ? realm.getAdminEnabledEventOperations().contains(adminEvent.getOperationType().name()) : adminEvent.getOperationType().isSaveByDefault()) {
-                try {
-                    store.onEvent(adminEvent, includeRepresentation);
-                } catch (Throwable t) {
-                    log.error("Failed to save event", t);
-                }
+            try {
+                store.onEvent(adminEvent, includeRepresentation);
+            } catch (Throwable t) {
+                log.error("Failed to save event", t);
             }
         }
         
@@ -201,5 +267,48 @@ public class AdminEventBuilder {
                 }
             }
         }
+    }
+    
+    private String getResourcePath(Object model) {
+
+        StringBuilder sb = new StringBuilder();
+
+        if (model instanceof RealmModel) {
+            RealmModel realm = (RealmModel) model;
+            sb.append("realms/" + realm.getId());
+        } else if (model instanceof ClientModel) {
+            ClientModel client = (ClientModel) model;
+            sb.append("clients/" + client.getId());
+        } else if (model instanceof UserModel) {
+            UserModel user = (UserModel) model;
+            sb.append("users/" + user.getId());
+
+        } else if (model instanceof IdentityProviderModel) {
+            IdentityProviderModel provider = (IdentityProviderModel) model;
+            sb.append("identity-Providers/" + provider.getProviderId());
+        } else if (model instanceof IdentityProviderRepresentation) {
+            IdentityProviderRepresentation provider = (IdentityProviderRepresentation) model;
+            sb.append("identity-Providers/" + provider.getProviderId());
+        } else if (model instanceof IdentityProviderMapperModel) {
+            IdentityProviderMapperModel provider = (IdentityProviderMapperModel) model;
+            sb.append("identity-Provider-Mappers/" + provider.getId());
+        } else if (model instanceof IdentityProviderFactory) {
+            IdentityProviderFactory provider = (IdentityProviderFactory) model;
+            sb.append("identity-Provider-Factory/" + provider.getId());
+
+        } else if (model instanceof ProtocolMapperModel) {
+            ProtocolMapperModel mapper = (ProtocolMapperModel) model;
+            sb.append("protocol-Mappers/" + mapper.getId());
+
+        } else if (model instanceof UserFederationProviderModel) {
+            UserFederationProviderModel provider = (UserFederationProviderModel) model;
+            sb.append("user-Federation-Providers/" + provider.getId());
+        
+        } else if (model instanceof RoleModel) {
+            RoleModel role = (RoleModel) model;
+            sb.append("roles/" + role.getId());
+        }
+
+        return sb.toString();
     }
 }

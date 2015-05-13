@@ -70,13 +70,13 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     }
 
     @Override
-    public void clearAdmin(String authRealmId) {
-        em.createQuery("delete from AdminEventEntity where authRealmId = :authRealmId").setParameter("authRealmId", authRealmId).executeUpdate();
+    public void clearAdmin(String realmId) {
+        em.createQuery("delete from AdminEventEntity where realmId = :realmId").setParameter("realmId", realmId).executeUpdate();
     }
 
     @Override
-    public void clearAdmin(String authRealmId, long olderThan) {
-        em.createQuery("delete from AdminEventEntity where authRealmId = :authRealmId and time < :time").setParameter("authRealmId", authRealmId).setParameter("time", olderThan).executeUpdate();
+    public void clearAdmin(String realmId, long olderThan) {
+        em.createQuery("delete from AdminEventEntity where realmId = :realmId and time < :time").setParameter("realmId", realmId).setParameter("time", olderThan).executeUpdate();
     }
 
     @Override
@@ -130,6 +130,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         AdminEventEntity adminEventEntity = new AdminEventEntity();
         adminEventEntity.setId(UUID.randomUUID().toString());
         adminEventEntity.setTime(adminEvent.getTime());
+        adminEventEntity.setRealmId(adminEvent.getRealmId());
         setAuthDetails(adminEventEntity, adminEvent.getAuthDetails());
         adminEventEntity.setOperationType(adminEvent.getOperationType().toString());
         adminEventEntity.setResourcePath(adminEvent.getResourcePath());
@@ -144,6 +145,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     static AdminEvent convertAdminEvent(AdminEventEntity adminEventEntity) {
         AdminEvent adminEvent = new AdminEvent();
         adminEvent.setTime(adminEventEntity.getTime());
+        adminEvent.setRealmId(adminEventEntity.getRealmId());
         setAuthDetails(adminEvent, adminEventEntity);
         adminEvent.setOperationType(OperationType.valueOf(adminEventEntity.getOperationType()));
         adminEvent.setResourcePath(adminEventEntity.getResourcePath());

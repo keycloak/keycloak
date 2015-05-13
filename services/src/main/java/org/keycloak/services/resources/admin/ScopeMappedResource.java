@@ -2,7 +2,6 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.events.AdminEventBuilder;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -91,7 +90,6 @@ public class ScopeMappedResource {
                 }
             }
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return all;
     }
 
@@ -112,7 +110,6 @@ public class ScopeMappedResource {
         for (RoleModel roleModel : realmMappings) {
             realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return realmMappingsRep;
     }
 
@@ -129,7 +126,6 @@ public class ScopeMappedResource {
         auth.requireView();
 
         Set<RoleModel> roles = realm.getRoles();
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return getAvailable(client, roles);
     }
 
@@ -157,7 +153,6 @@ public class ScopeMappedResource {
         auth.requireView();
 
         Set<RoleModel> roles = realm.getRoles();
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return getComposite(client, roles);
     }
 
@@ -187,7 +182,7 @@ public class ScopeMappedResource {
             }
             client.addScopeMapping(roleModel);
         }
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri().getPath()).representation(roles).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(client, "/roles").representation(roles).success();
 
     }
 
@@ -217,7 +212,7 @@ public class ScopeMappedResource {
                 client.deleteScopeMapping(roleModel);
             }
         }
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri().getPath()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(client, "/roles").representation(roles).success();
 
     }
 
@@ -228,7 +223,6 @@ public class ScopeMappedResource {
         if (app == null) {
             throw new NotFoundException("Role not found");
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return new ScopeMappedClientResource(realm, auth, client, session, app, adminEvent);
     }
 
@@ -239,7 +233,6 @@ public class ScopeMappedResource {
         if (app == null) {
             throw new NotFoundException("Client not found");
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return new ScopeMappedClientResource(realm, auth, client, session, app, adminEvent);
     }
 }

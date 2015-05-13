@@ -26,6 +26,12 @@ public class MongoAdminEventQuery implements AdminEventQuery{
         this.audit = audit;
         query = new BasicDBObject();
     }
+    
+    @Override
+    public AdminEventQuery realm(String realmId) {
+        query.put("realmId", realmId);
+        return this;
+    }
 
     @Override
     public AdminEventQuery operation(OperationType... operations) {
@@ -38,26 +44,26 @@ public class MongoAdminEventQuery implements AdminEventQuery{
     }
     
     @Override
-    public AdminEventQuery authRealm(String realmId) {
-        query.put("realmId", realmId);
+    public AdminEventQuery authRealm(String authRealmId) {
+        query.put("authRealmId", authRealmId);
         return this;
     }
 
     @Override
-    public AdminEventQuery authClient(String clientId) {
-        query.put("clientId", clientId);
+    public AdminEventQuery authClient(String authClientId) {
+        query.put("authClientId", authClientId);
         return this;
     }
 
     @Override
-    public AdminEventQuery authUser(String userId) {
-        query.put("userId", userId);
+    public AdminEventQuery authUser(String authUserId) {
+        query.put("authUserId", authUserId);
         return this;
     }
 
     @Override
     public AdminEventQuery authIpAddress(String ipAddress) {
-        query.put("ipAddress", ipAddress);
+        query.put("authIpAddress", ipAddress);
         return this;
     }
     
@@ -122,5 +128,5 @@ public class MongoAdminEventQuery implements AdminEventQuery{
 
         return events;
     }
-        
+
 }

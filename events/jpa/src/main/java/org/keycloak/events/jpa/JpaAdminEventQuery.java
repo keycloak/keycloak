@@ -39,6 +39,12 @@ public class JpaAdminEventQuery implements AdminEventQuery {
         root = cq.from(AdminEventEntity.class);
         predicates = new ArrayList<Predicate>();
     }
+    
+    @Override
+    public AdminEventQuery realm(String realmId) {
+        predicates.add(cb.equal(root.get("realmId"), realmId));
+        return this;
+    }
 
     @Override
     public AdminEventQuery operation(OperationType... operations) {
@@ -51,20 +57,20 @@ public class JpaAdminEventQuery implements AdminEventQuery {
     }
     
     @Override
-    public AdminEventQuery authRealm(String realmId) {
-        predicates.add(cb.equal(root.get("authRealmId"), realmId));
+    public AdminEventQuery authRealm(String authRealmId) {
+        predicates.add(cb.equal(root.get("authRealmId"), authRealmId));
         return this;
     }
 
     @Override
-    public AdminEventQuery authClient(String clientId) {
-        predicates.add(cb.equal(root.get("authClientId"), clientId));
+    public AdminEventQuery authClient(String authClientId) {
+        predicates.add(cb.equal(root.get("authClientId"), authClientId));
         return this;
     }
 
     @Override
-    public AdminEventQuery authUser(String userId) {
-        predicates.add(cb.equal(root.get("authUserId"), userId));
+    public AdminEventQuery authUser(String authUserId) {
+        predicates.add(cb.equal(root.get("authUserId"), authUserId));
         return this;
     }
 
@@ -144,5 +150,5 @@ public class JpaAdminEventQuery implements AdminEventQuery {
 
         return events;
     }
-        
+    
 }
