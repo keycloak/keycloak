@@ -2,7 +2,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.NotFoundException;
+import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
 import org.keycloak.Config;
@@ -201,12 +201,12 @@ public class RealmAdminResource {
             
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo.getPath()).representation(rep).success();
             return Response.noContent().build();
-        } catch (PatternSyntaxException e) {
-            return ErrorResponse.exists("Specified regex pattern(s) is invalid.");
-        } catch (ModelDuplicateException e) {
+        } catch (PatternSyntaxException ex) {
+            return ErrorResponse.error("Specified regex pattern(s) is invalid.", Response.Status.BAD_REQUEST);
+        } catch (ModelDuplicateException ex) {
             return ErrorResponse.exists("Realm " + rep.getRealm() + " already exists.");
-        }  catch (Exception e) {
-            return ErrorResponse.exists("Failed to update " + rep.getRealm() + " Realm.");
+        } catch (Exception ex) {
+            return ErrorResponse.error("Failed to update " + rep.getRealm() + " Realm.", Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 

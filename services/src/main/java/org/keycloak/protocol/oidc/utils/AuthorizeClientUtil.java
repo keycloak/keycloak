@@ -1,6 +1,6 @@
 package org.keycloak.protocol.oidc.utils;
 
-import org.jboss.resteasy.spi.BadRequestException;
+import javax.ws.rs.BadRequestException;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Errors;

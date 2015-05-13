@@ -1,7 +1,5 @@
 package org.keycloak.protocol.oidc.endpoints;
 
-import org.jboss.resteasy.spi.BadRequestException;
-import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.Config;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
@@ -9,6 +7,8 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.util.StreamUtil;
 import org.keycloak.util.UriUtils;
 
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
