@@ -336,6 +336,16 @@
             return promise.promise;
         }
 
+        kc.clearToken = function() {
+            if (kc.token) {
+                setToken(null, null, null);
+                kc.onAuthLogout && kc.onAuthLogout();
+                if (kc.loginRequired) {
+                    kc.login();
+                }
+            }
+        }
+
         function getRealmUrl() {
             if (kc.authServerUrl.charAt(kc.authServerUrl.length - 1) == '/') {
                 return kc.authServerUrl + 'realms/' + encodeURIComponent(kc.realm);
@@ -461,16 +471,6 @@
             }
 
             return promise.promise;
-        }
-
-        function clearToken() {
-            if (kc.token) {
-                setToken(null, null, null);
-                kc.onAuthLogout && kc.onAuthLogout();
-                if (kc.loginRequired) {
-                    kc.login();
-                }
-            }
         }
 
         function setToken(token, refreshToken, idToken) {
@@ -697,7 +697,7 @@
                 if ((!kc.sessionId || kc.sessionId == data.session) && data.loggedIn) {
                     promise.setSuccess();
                 } else {
-                    clearToken();
+                    kc.clearToken();
                     promise.setError();
                 }
             };
@@ -832,7 +832,7 @@
                             if (error) {
                                 promise.setError();
                             } else {
-                                clearToken();
+                                kc.clearToken();
                                 promise.setSuccess();
                             }
                         });

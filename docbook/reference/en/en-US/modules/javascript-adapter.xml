@@ -305,6 +305,23 @@ keycloak.updateToken(5).success(function(refreshed) {
 ]]></programlisting>
 
             </simplesect>
+
+            <simplesect>
+                <title>clearToken()</title>
+
+                <para>
+                    Clear authentication state, including tokens. This can be useful if application has detected the session
+                    has expired, for example if updating token fails. Invoking this results in onAuthLogout callback listener
+                    being invoked.
+                </para>
+
+                <programlisting><![CDATA[
+keycloak.updateToken(5).error(function() {
+    keycloak.clearToken();
+});
+]]></programlisting>
+
+            </simplesect>
         </section>
 
         <section>
