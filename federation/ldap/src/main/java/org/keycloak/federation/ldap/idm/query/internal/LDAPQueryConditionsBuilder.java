@@ -1,22 +1,14 @@
 package org.keycloak.federation.ldap.idm.query.internal;
 
-import org.keycloak.federation.ldap.idm.model.IdentityType;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.Sort;
-import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.models.ModelException;
 
 /**
  * @author Pedro Igor
  */
-public class IdentityQueryBuilder {
-
-    private final LDAPIdentityStore identityStore;
-
-    public IdentityQueryBuilder(LDAPIdentityStore identityStore) {
-        this.identityStore = identityStore;
-    }
+public class LDAPQueryConditionsBuilder {
 
     public Condition like(QueryParameter parameter, String pattern) {
         return new LikeCondition(parameter, pattern);
@@ -69,10 +61,6 @@ public class IdentityQueryBuilder {
 
     public Sort desc(QueryParameter parameter) {
         return new Sort(parameter, false);
-    }
-
-    public <T extends IdentityType> IdentityQuery createIdentityQuery(Class<T> identityType) {
-        return new IdentityQuery(this, identityType, this.identityStore);
     }
 
     private void throwExceptionIfNotComparable(Object x) {

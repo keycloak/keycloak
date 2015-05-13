@@ -14,6 +14,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.entities.IdentityProviderEntity;
 import org.keycloak.models.entities.IdentityProviderMapperEntity;
@@ -1213,4 +1214,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return mapping;
     }
 
+    @Override
+    public List<UserFederationMapperModel> getUserFederationMappers() {
+        throw new IllegalStateException("Not yet implemented");
+    }
 }

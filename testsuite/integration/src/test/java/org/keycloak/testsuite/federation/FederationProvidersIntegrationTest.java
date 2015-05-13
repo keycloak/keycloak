@@ -12,8 +12,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
-import org.keycloak.federation.ldap.idm.model.LDAPUser;
-import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelReadOnlyException;
@@ -23,6 +22,7 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
@@ -53,7 +53,7 @@ public class FederationProvidersIntegrationTest {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            addUser(manager.getSession(), appRealm, "mary", "mary@test.com", "password-app");
+            FederationTestUtils.addLocalUser(manager.getSession(), appRealm, "mary", "mary@test.com", "password-app");
 
             Map<String,String> ldapConfig = ldapRule.getConfig();
             ldapConfig.put(LDAPConstants.SYNC_REGISTRATIONS, "true");
@@ -62,13 +62,13 @@ public class FederationProvidersIntegrationTest {
             ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap", -1, -1, 0);
 
             // Delete all LDAP users and add some new for testing
-            LDAPIdentityStore ldapStore = getLdapIdentityStore(manager.getSession(), ldapModel);
-            LDAPUtils.removeAllUsers(ldapStore);
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            LDAPUtils.removeAllUsers(ldapFedProvider, appRealm);
 
-            LDAPUser john = LDAPUtils.addUser(ldapStore, "johnkeycloak", "John", "Doe", "john@email.org");
-            LDAPUtils.updatePassword(ldapStore, john, "Password1");
+            LDAPObject john = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johnkeycloak", "John", "Doe", "john@email.org", "1234");
+            ldapFedProvider.getLdapIdentityStore().updatePassword(john, "Password1");
 
-            LDAPUser existing = LDAPUtils.addUser(ldapStore, "existing", "Existing", "Foo", "existing@email.org");
+            LDAPObject existing = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "existing", "Existing", "Foo", "existing@email.org", "5678");
         }
     });
 
@@ -108,18 +108,6 @@ public class FederationProvidersIntegrationTest {
 //
 //    }
 
-    static UserModel addUser(KeycloakSession session, RealmModel realm, String username, String email, String password) {
-        UserModel user = session.users().addUser(realm, username);
-        user.setEmail(email);
-        user.setEnabled(true);
-
-        UserCredentialModel creds = new UserCredentialModel();
-        creds.setType(CredentialRepresentation.PASSWORD);
-        creds.setValue(password);
-
-        user.updateCredential(creds);
-        return user;
-    }
 
     @Test
     public void caseSensitiveSearch() {
@@ -127,9 +115,6 @@ public class FederationProvidersIntegrationTest {
 
         // This should fail for now due to case-sensitivity
         loginPage.login("johnKeycloak", "Password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
-
-        loginPage.login("John@email.org", "Password1");
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
     }
 
@@ -191,6 +176,7 @@ public class FederationProvidersIntegrationTest {
         Assert.assertEquals("John", profilePage.getFirstName());
         Assert.assertEquals("Doe", profilePage.getLastName());
         Assert.assertEquals("john@email.org", profilePage.getEmail());
+        Assert.assertEquals("1234", profilePage.getPostalCode());
     }
 
     @Test
@@ -257,7 +243,7 @@ public class FederationProvidersIntegrationTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "email2@check.cz", "registerUserSuccess2", "Password1", "Password1");
+        registerPage.register("firstName", "lastName", "email2@check.cz", "registerUserSuccess2", "Password1", "Password1", "non-LDAP-Mapped street", null, null, "78910", null);
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         KeycloakSession session = keycloakRule.startSession();
@@ -267,6 +253,8 @@ public class FederationProvidersIntegrationTest {
             Assert.assertNotNull(user);
             Assert.assertNotNull(user.getFederationLink());
             Assert.assertEquals(user.getFederationLink(), ldapModel.getId());
+            Assert.assertEquals("78910", user.getAttribute("postal_code"));
+            Assert.assertEquals("non-LDAP-Mapped street", user.getAttribute("street"));
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -346,13 +334,14 @@ public class FederationProvidersIntegrationTest {
     @Test
     public void testSearch() {
         KeycloakSession session = keycloakRule.startSession();
-        LDAPIdentityStore ldapStore = getLdapIdentityStore(session, ldapModel);
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
-            LDAPUtils.addUser(ldapStore, "username1", "John1", "Doel1", "user1@email.org");
-            LDAPUtils.addUser(ldapStore, "username2", "John2", "Doel2", "user2@email.org");
-            LDAPUtils.addUser(ldapStore, "username3", "John3", "Doel3", "user3@email.org");
-            LDAPUtils.addUser(ldapStore, "username4", "John4", "Doel4", "user4@email.org");
+            LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+
+            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username1", "John1", "Doel1", "user1@email.org", "121");
+            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username2", "John2", "Doel2", "user2@email.org", "122");
+            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username3", "John3", "Doel3", "user3@email.org", "123");
+            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username4", "John4", "Doel4", "user4@email.org", "124");
 
             // Users are not at local store at this moment
             Assert.assertNull(session.userStorage().getUserByUsername("username1", appRealm));
@@ -362,19 +351,19 @@ public class FederationProvidersIntegrationTest {
 
             // search by username
             session.users().searchForUser("username1", appRealm);
-            SyncProvidersTest.assertUserImported(session.userStorage(), appRealm, "username1", "John1", "Doel1", "user1@email.org");
+            FederationTestUtils.assertUserImported(session.userStorage(), appRealm, "username1", "John1", "Doel1", "user1@email.org", "121");
 
             // search by email
             session.users().searchForUser("user2@email.org", appRealm);
-            SyncProvidersTest.assertUserImported(session.userStorage(), appRealm, "username2", "John2", "Doel2", "user2@email.org");
+            FederationTestUtils.assertUserImported(session.userStorage(), appRealm, "username2", "John2", "Doel2", "user2@email.org", "122");
 
             // search by lastName
             session.users().searchForUser("Doel3", appRealm);
-            SyncProvidersTest.assertUserImported(session.userStorage(), appRealm, "username3", "John3", "Doel3", "user3@email.org");
+            FederationTestUtils.assertUserImported(session.userStorage(), appRealm, "username3", "John3", "Doel3", "user3@email.org", "123");
 
             // search by firstName + lastName
             session.users().searchForUser("John4 Doel4", appRealm);
-            SyncProvidersTest.assertUserImported(session.userStorage(), appRealm, "username4", "John4", "Doel4", "user4@email.org");
+            FederationTestUtils.assertUserImported(session.userStorage(), appRealm, "username4", "John4", "Doel4", "user4@email.org", "124");
         } finally {
             keycloakRule.stopSession(session, true);
         }
@@ -402,7 +391,9 @@ public class FederationProvidersIntegrationTest {
             Assert.assertTrue(session.users().validCredentials(appRealm, user, cred));
 
             // LDAP password is still unchanged
-            Assert.assertTrue(LDAPUtils.validatePassword(getLdapIdentityStore(session, model), user, "Password1"));
+            LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, model);
+            LDAPObject ldapUser = ldapProvider.loadLDAPUserByUsername(appRealm, "johnkeycloak");
+            ldapProvider.getLdapIdentityStore().validatePassword(ldapUser, "Password1");
 
             // ATM it's not permitted to delete user in unsynced mode. Should be user deleted just locally instead?
             Assert.assertFalse(session.users().removeUser(appRealm, user));
@@ -417,12 +408,6 @@ public class FederationProvidersIntegrationTest {
         } finally {
             keycloakRule.stopSession(session, false);
         }
-    }
-
-    static LDAPIdentityStore getLdapIdentityStore(KeycloakSession keycloakSession, UserFederationProviderModel ldapFedModel) {
-        LDAPFederationProviderFactory ldapProviderFactory = (LDAPFederationProviderFactory) keycloakSession.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, ldapFedModel.getProviderName());
-        LDAPFederationProvider ldapProvider = ldapProviderFactory.getInstance(keycloakSession, ldapFedModel);
-        return ldapProvider.getLdapIdentityStore();
     }
 
 }

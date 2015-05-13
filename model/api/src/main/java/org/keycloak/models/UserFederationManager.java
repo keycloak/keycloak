@@ -85,7 +85,7 @@ public class UserFederationManager implements UserProvider {
 
     protected void validateUser(RealmModel realm, UserModel user) {
         UserFederationProvider link = getFederationLink(realm, user);
-        if (link != null  && !link.isValid(user)) {
+        if (link != null  && !link.isValid(realm, user)) {
             deleteInvalidUser(realm, user);
             throw new IllegalStateException("Federated user no longer valid");
         }
@@ -107,18 +107,13 @@ public class UserFederationManager implements UserProvider {
         }
     }
 
-    protected boolean isValid(RealmModel realm, UserModel user) {
-        UserFederationProvider link = getFederationLink(realm, user);
-        if (link != null) return link.isValid(user);
-        return true;
-    }
-
 
     protected UserModel validateAndProxyUser(RealmModel realm, UserModel user) {
         UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
-            if (isValid(realm, user)) {
-                return link.proxy(user);
+            UserModel validatedProxyUser = link.validateAndProxy(realm, user);
+            if (validatedProxyUser != null) {
+                return validatedProxyUser;
             } else {
                 deleteInvalidUser(realm, user);
                 return null;

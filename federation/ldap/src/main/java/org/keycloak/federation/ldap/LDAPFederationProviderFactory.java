@@ -6,11 +6,11 @@ import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.impl.KerberosServerSubjectAuthenticator;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
-import org.keycloak.federation.ldap.idm.model.IdentityType;
-import org.keycloak.federation.ldap.idm.model.LDAPUser;
+import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
-import org.keycloak.federation.ldap.idm.query.internal.IdentityQuery;
-import org.keycloak.federation.ldap.idm.query.internal.IdentityQueryBuilder;
+import org.keycloak.federation.ldap.idm.query.QueryParameter;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -76,11 +76,10 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
     }
 
     @Override
-    public UserFederationSyncResult syncAllUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model) {
+    public UserFederationSyncResult syncAllUsers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model) {
         logger.infof("Sync all users from LDAP to local store: realm: %s, federation provider: %s", realmId, model.getDisplayName());
 
-        LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(model);
-        IdentityQuery<LDAPUser> userQuery = ldapIdentityStore.createQueryBuilder().createIdentityQuery(LDAPUser.class);
+        LDAPIdentityQuery userQuery = createQuery(sessionFactory, realmId, model);
         UserFederationSyncResult syncResult = syncImpl(sessionFactory, userQuery, realmId, model);
 
         // TODO: Remove all existing keycloak users, which have federation links, but are not in LDAP. Perhaps don't check users, which were just added or updated during this sync?
@@ -93,21 +92,21 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
     public UserFederationSyncResult syncChangedUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model, Date lastSync) {
         logger.infof("Sync changed users from LDAP to local store: realm: %s, federation provider: %s, last sync time: " + lastSync, realmId, model.getDisplayName());
 
-        LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(model);
-
         // Sync newly created and updated users
-        IdentityQueryBuilder queryBuilder = ldapIdentityStore.createQueryBuilder();
-        Condition createCondition = queryBuilder.greaterThanOrEqualTo(IdentityType.CREATED_DATE, lastSync);
-        Condition modifyCondition = queryBuilder.greaterThanOrEqualTo(LDAPUtils.MODIFY_DATE, lastSync);
-        Condition orCondition = queryBuilder.orCondition(createCondition, modifyCondition);
-        IdentityQuery<LDAPUser> userQuery = queryBuilder.createIdentityQuery(LDAPUser.class).where(orCondition);
+        LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+        Condition createCondition = conditionsBuilder.greaterThanOrEqualTo(new QueryParameter(LDAPConstants.CREATE_TIMESTAMP), lastSync);
+        Condition modifyCondition = conditionsBuilder.greaterThanOrEqualTo(new QueryParameter(LDAPConstants.MODIFY_TIMESTAMP), lastSync);
+        Condition orCondition = conditionsBuilder.orCondition(createCondition, modifyCondition);
+
+        LDAPIdentityQuery userQuery = createQuery(sessionFactory, realmId, model);
+        userQuery.where(orCondition);
         UserFederationSyncResult result = syncImpl(sessionFactory, userQuery, realmId, model);
 
         logger.infof("Sync changed users finished: %s", result.getStatus());
         return result;
     }
 
-    protected UserFederationSyncResult syncImpl(KeycloakSessionFactory sessionFactory, IdentityQuery<LDAPUser> userQuery, final String realmId, final UserFederationProviderModel fedModel) {
+    protected UserFederationSyncResult syncImpl(KeycloakSessionFactory sessionFactory, LDAPIdentityQuery userQuery, final String realmId, final UserFederationProviderModel fedModel) {
 
         final UserFederationSyncResult syncResult = new UserFederationSyncResult();
 
@@ -120,7 +119,7 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
             boolean nextPage = true;
             while (nextPage) {
                 userQuery.setLimit(pageSize);
-                final List<LDAPUser> users = userQuery.getResultList();
+                final List<LDAPObject> users = userQuery.getResultList();
                 nextPage = userQuery.getPaginationContext() != null;
 
                 KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
@@ -135,7 +134,7 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
             }
         } else {
             // LDAP pagination not available. Do everything in single transaction
-            final List<LDAPUser> users = userQuery.getResultList();
+            final List<LDAPObject> users = userQuery.getResultList();
             KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
                 @Override
@@ -150,7 +149,27 @@ public class LDAPFederationProviderFactory implements UserFederationProviderFact
         return syncResult;
     }
 
-    protected UserFederationSyncResult importLdapUsers(KeycloakSession session, String realmId, UserFederationProviderModel fedModel, List<LDAPUser> ldapUsers) {
+    private LDAPIdentityQuery createQuery(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model) {
+        class QueryHolder {
+            LDAPIdentityQuery query;
+        }
+
+        final QueryHolder queryHolder = new QueryHolder();
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+
+            @Override
+            public void run(KeycloakSession session) {
+                LDAPFederationProvider ldapFedProvider = getInstance(session, model);
+                RealmModel realm = session.realms().getRealm(realmId);
+                queryHolder.query = LDAPUtils.createQueryForUserSearch(ldapFedProvider, realm);
+            }
+
+        });
+        return queryHolder.query;
+    }
+
+
+    protected UserFederationSyncResult importLdapUsers(KeycloakSession session, String realmId, UserFederationProviderModel fedModel, List<LDAPObject> ldapUsers) {
         RealmModel realm = session.realms().getRealm(realmId);
         LDAPFederationProvider ldapFedProvider = getInstance(session, fedModel);
         return ldapFedProvider.importLDAPUsers(realm, ldapUsers, fedModel);

@@ -7,10 +7,10 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
+import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
-import org.keycloak.federation.ldap.idm.model.LDAPUser;
-import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
@@ -57,12 +57,12 @@ public class SyncProvidersTest {
                     -1, -1, 0);
 
             // Delete all LDAP users and add 5 new users for testing
-            LDAPIdentityStore ldapStore = FederationProvidersIntegrationTest.getLdapIdentityStore(manager.getSession(), ldapModel);
-            LDAPUtils.removeAllUsers(ldapStore);
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            LDAPUtils.removeAllUsers(ldapFedProvider, appRealm);
 
             for (int i=1 ; i<=5 ; i++) {
-                LDAPUser user = LDAPUtils.addUser(ldapStore, "user" + i, "User" + i + "FN", "User" + i + "LN", "user" + i + "@email.org");
-                LDAPUtils.updatePassword(ldapStore, user, "Password1");
+                LDAPObject ldapUser = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "user" + i, "User" + i + "FN", "User" + i + "LN", "user" + i + "@email.org", "12" + i);
+                ldapFedProvider.getLdapIdentityStore().updatePassword(ldapUser, "Password1");
             }
 
             // Add dummy provider
@@ -96,11 +96,11 @@ public class SyncProvidersTest {
             RealmModel testRealm = session.realms().getRealm("test");
             UserProvider userProvider = session.userStorage();
             // Assert users imported
-            assertUserImported(userProvider, testRealm, "user1", "User1FN", "User1LN", "user1@email.org");
-            assertUserImported(userProvider, testRealm, "user2", "User2FN", "User2LN", "user2@email.org");
-            assertUserImported(userProvider, testRealm, "user3", "User3FN", "User3LN", "user3@email.org");
-            assertUserImported(userProvider, testRealm, "user4", "User4FN", "User4LN", "user4@email.org");
-            assertUserImported(userProvider, testRealm, "user5", "User5FN", "User5LN", "user5@email.org");
+            FederationTestUtils.assertUserImported(userProvider, testRealm, "user1", "User1FN", "User1LN", "user1@email.org", "121");
+            FederationTestUtils.assertUserImported(userProvider, testRealm, "user2", "User2FN", "User2LN", "user2@email.org", "122");
+            FederationTestUtils.assertUserImported(userProvider, testRealm, "user3", "User3FN", "User3LN", "user3@email.org", "123");
+            FederationTestUtils.assertUserImported(userProvider, testRealm, "user4", "User4FN", "User4LN", "user4@email.org", "124");
+            FederationTestUtils.assertUserImported(userProvider, testRealm, "user5", "User5FN", "User5LN", "user5@email.org", "125");
 
             // Assert lastSync time updated
             Assert.assertTrue(ldapModel.getLastSync() > 0);
@@ -117,12 +117,16 @@ public class SyncProvidersTest {
             sleep(1000);
 
             // Add user to LDAP and update 'user5' in LDAP
-            LDAPIdentityStore ldapStore = FederationProvidersIntegrationTest.getLdapIdentityStore(session, ldapModel);
-            LDAPUtils.addUser(ldapStore, "user6", "User6FN", "User6LN", "user6@email.org");
-            LDAPUtils.updateUser(ldapStore, "user5", "User5FNUpdated", "User5LNUpdated", "user5Updated@email.org");
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            FederationTestUtils.addLDAPUser(ldapFedProvider, testRealm, "user6", "User6FN", "User6LN", "user6@email.org", "126");
+            LDAPObject ldapUser5 = ldapFedProvider.loadLDAPUserByUsername(testRealm, "user5");
+            // NOTE: Changing LDAP attributes directly here
+            ldapUser5.setAttribute(LDAPConstants.EMAIL, "user5Updated@email.org");
+            ldapUser5.setAttribute(LDAPConstants.POSTAL_CODE, "521");
+            ldapFedProvider.getLdapIdentityStore().update(ldapUser5);
 
             // Assert still old users in local provider
-            assertUserImported(userProvider, testRealm, "user5", "User5FN", "User5LN", "user5@email.org");
+            FederationTestUtils.assertUserImported(userProvider, testRealm, "user5", "User5FN", "User5LN", "user5@email.org", "125");
             Assert.assertNull(userProvider.getUserByUsername("user6", testRealm));
 
             // Trigger partial sync
@@ -138,8 +142,8 @@ public class SyncProvidersTest {
             RealmModel testRealm = session.realms().getRealm("test");
             UserProvider userProvider = session.userStorage();
             // Assert users updated in local provider
-            assertUserImported(userProvider, testRealm, "user5", "User5FNUpdated", "User5LNUpdated", "user5Updated@email.org");
-            assertUserImported(userProvider, testRealm, "user6", "User6FN", "User6LN", "user6@email.org");
+            FederationTestUtils.assertUserImported(userProvider, testRealm, "user5", "User5FN", "User5LN", "user5Updated@email.org", "521");
+            FederationTestUtils.assertUserImported(userProvider, testRealm, "user6", "User6FN", "User6LN", "user6@email.org", "126");
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -188,13 +192,5 @@ public class SyncProvidersTest {
         Assert.assertEquals(syncResult.getAdded(), expectedAdded);
         Assert.assertEquals(syncResult.getUpdated(), expectedUpdated);
         Assert.assertEquals(syncResult.getRemoved(), expectedRemoved);
-    }
-
-    public static void assertUserImported(UserProvider userProvider, RealmModel realm, String username, String expectedFirstName, String expectedLastName, String expectedEmail) {
-        UserModel user = userProvider.getUserByUsername(username, realm);
-        Assert.assertNotNull(user);
-        Assert.assertEquals(expectedFirstName, user.getFirstName());
-        Assert.assertEquals(expectedLastName, user.getLastName());
-        Assert.assertEquals(expectedEmail, user.getEmail());
     }
 }

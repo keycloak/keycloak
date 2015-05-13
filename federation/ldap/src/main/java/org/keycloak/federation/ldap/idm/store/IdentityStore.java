@@ -2,11 +2,9 @@ package org.keycloak.federation.ldap.idm.store;
 
 import java.util.List;
 
-import org.keycloak.federation.ldap.idm.model.AttributedType;
-import org.keycloak.federation.ldap.idm.model.IdentityType;
-import org.keycloak.federation.ldap.idm.model.LDAPUser;
-import org.keycloak.federation.ldap.idm.query.internal.IdentityQuery;
-import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStoreConfiguration;
+import org.keycloak.federation.ldap.LDAPConfig;
+import org.keycloak.federation.ldap.idm.model.LDAPObject;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
 
 /**
  * IdentityStore representation providing minimal SPI
@@ -23,36 +21,36 @@ public interface IdentityStore {
      *
      * @return
      */
-    LDAPIdentityStoreConfiguration getConfig();
+    LDAPConfig getConfig();
 
     // General
 
     /**
      * Persists the specified IdentityType
      *
-     * @param value
+     * @param ldapObject
      */
-    void add(AttributedType value);
+    void add(LDAPObject ldapObject);
 
     /**
      * Updates the specified IdentityType
      *
-     * @param value
+     * @param ldapObject
      */
-    void update(AttributedType value);
+    void update(LDAPObject ldapObject);
 
     /**
      * Removes the specified IdentityType
      *
-     * @param value
+     * @param ldapObject
      */
-    void remove(AttributedType value);
+    void remove(LDAPObject ldapObject);
 
     // Identity query
 
-    <V extends IdentityType> List<V> fetchQueryResults(IdentityQuery<V> identityQuery);
+    List<LDAPObject> fetchQueryResults(LDAPIdentityQuery LDAPIdentityQuery);
 
-    <V extends IdentityType> int countQueryResults(IdentityQuery<V> identityQuery);
+    int countQueryResults(LDAPIdentityQuery LDAPIdentityQuery);
 
 //    // Relationship query
 //
@@ -68,7 +66,7 @@ public interface IdentityStore {
      * @param user Keycloak user
      * @param password Ldap password
      */
-    boolean validatePassword(LDAPUser user, String password);
+    boolean validatePassword(LDAPObject user, String password);
 
     /**
      * Updates the specified credential value.
@@ -76,6 +74,6 @@ public interface IdentityStore {
      * @param user Keycloak user
      * @param password Ldap password
      */
-    void updatePassword(LDAPUser user, String password);
+    void updatePassword(LDAPObject user, String password);
 
 }

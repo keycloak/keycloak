@@ -22,7 +22,7 @@ public class DummyUserFederationProvider implements UserFederationProvider {
     private static Map<String, UserModel> users = new HashMap<String, UserModel>();
 
     @Override
-    public UserModel proxy(UserModel local) {
+    public UserModel validateAndProxy(RealmModel realm, UserModel local) {
         return local;
     }
 
@@ -68,7 +68,7 @@ public class DummyUserFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public boolean isValid(UserModel local) {
+    public boolean isValid(RealmModel realm, UserModel local) {
         return false;
     }
 

@@ -42,16 +42,16 @@ public interface UserFederationProvider extends Provider {
 
 
     /**
-     * Gives the provider an option to proxy UserModels loaded from local storage.
+     * Gives the provider an option to validate if user still exists in federation backend and then proxy UserModel loaded from local storage.
      * This method is called whenever a UserModel is pulled from local storage.
      * For example, the LDAP provider proxies the UserModel and does on-demand synchronization with
      * LDAP whenever UserModel update methods are invoked.  It also overrides UserModel.updateCredential for the
      * credential types it supports
      *
      * @param local
-     * @return
+     * @return null if user is no longer valid or proxy object otherwise
      */
-    UserModel proxy(UserModel local);
+    UserModel validateAndProxy(RealmModel realm, UserModel local);
 
     /**
      * Should user registrations be synchronized with this provider?
@@ -120,7 +120,7 @@ public interface UserFederationProvider extends Provider {
      * @param local
      * @return
      */
-    boolean isValid(UserModel local);
+    boolean isValid(RealmModel realm, UserModel local);
 
     /**
      * What UserCredentialModel types should be handled by this provider for this user?  Keycloak will only call
@@ -153,7 +153,7 @@ public interface UserFederationProvider extends Provider {
     /**
      * Validate credentials of unknown user. The authenticated user is recognized based on provided credentials and returned back in CredentialValidationOutput
      * @param realm
-     * @param input
+     * @param credential
      * @return
      */
     CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel credential);

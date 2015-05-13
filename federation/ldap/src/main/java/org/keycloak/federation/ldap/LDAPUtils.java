@@ -1,17 +1,17 @@
 package org.keycloak.federation.ldap;
 
-import org.keycloak.federation.ldap.idm.model.Attribute;
-import org.keycloak.federation.ldap.idm.model.LDAPUser;
-import org.keycloak.federation.ldap.idm.query.AttributeParameter;
-import org.keycloak.federation.ldap.idm.query.QueryParameter;
-import org.keycloak.federation.ldap.idm.query.internal.IdentityQuery;
-import org.keycloak.federation.ldap.idm.query.internal.IdentityQueryBuilder;
-import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.UserModel;
-
 import java.util.List;
+
+import org.keycloak.federation.ldap.idm.model.LDAPDn;
+import org.keycloak.federation.ldap.idm.model.LDAPObject;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserFederationMapper;
+import org.keycloak.models.UserFederationMapperModel;
+import org.keycloak.models.UserModel;
 
 /**
  * Allow to directly call some operations against LDAPIdentityStore.
@@ -21,26 +21,32 @@ import java.util.List;
  */
 public class LDAPUtils {
 
-    public static QueryParameter MODIFY_DATE = new AttributeParameter("modifyDate");
+    /**
+     * @param ldapProvider
+     * @param realm
+     * @param user
+     * @return newly created LDAPObject with all the attributes, uuid and DN properly set
+     */
+    public static LDAPObject addUserToLDAP(LDAPFederationProvider ldapProvider, RealmModel realm, UserModel user) {
+        LDAPObject ldapObject = new LDAPObject();
 
-    public static LDAPUser addUser(LDAPIdentityStore ldapIdentityStore, String username, String firstName, String lastName, String email) {
-        if (getUser(ldapIdentityStore, username) != null) {
-            throw new ModelDuplicateException("User with same username already exists");
-        }
-        if (getUserByEmail(ldapIdentityStore, email) != null) {
-            throw new ModelDuplicateException("User with same email already exists");
+        LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
+        LDAPConfig ldapConfig = ldapStore.getConfig();
+        ldapObject.setRdnAttributeName(ldapConfig.getRdnLdapAttribute());
+        ldapObject.setObjectClasses(ldapConfig.getObjectClasses());
+
+        List<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+        for (UserFederationMapperModel mapperModel : federationMappers) {
+            LDAPFederationMapper ldapMapper = ldapProvider.getMapper(mapperModel);
+            ldapMapper.registerUserToLDAP(mapperModel, ldapProvider, ldapObject, user);
         }
 
-        LDAPUser ldapUser = new LDAPUser(username);
-        ldapUser.setFirstName(firstName);
-        ldapUser.setLastName(lastName);
-        ldapUser.setEmail(email);
-        ldapUser.setAttribute(new Attribute<String>("fullName", getFullName(username, firstName, lastName)));
-        ldapIdentityStore.add(ldapUser);
-        return ldapUser;
+        LDAPUtils.computeAndSetDn(ldapConfig, ldapObject);
+        ldapStore.add(ldapObject);
+        return ldapObject;
     }
 
-    public static LDAPUser updateUser(LDAPIdentityStore ldapIdentityStore, String username, String firstName, String lastName, String email) {
+    /*public static LDAPUser updateUser(LDAPIdentityStore ldapIdentityStore, String username, String firstName, String lastName, String email) {
         LDAPUser ldapUser = getUser(ldapIdentityStore, username);
         ldapUser.setFirstName(firstName);
         ldapUser.setLastName(lastName);
@@ -86,7 +92,7 @@ public class LDAPUtils {
 
     public static LDAPUser getUserByEmail(LDAPIdentityStore ldapIdentityStore, String email) {
         IdentityQueryBuilder queryBuilder = ldapIdentityStore.createQueryBuilder();
-        IdentityQuery<LDAPUser> query = queryBuilder.createIdentityQuery(LDAPUser.class)
+        LDAPIdentityQuery<LDAPUser> query = queryBuilder.createIdentityQuery(LDAPUser.class)
                 .where(queryBuilder.equal(LDAPUser.EMAIL, email));
         List<LDAPUser> users = query.getResultList();
 
@@ -106,18 +112,34 @@ public class LDAPUtils {
         }
         ldapIdentityStore.remove(ldapUser);
         return true;
-    }
+    }    */
 
-    public static void removeAllUsers(LDAPIdentityStore ldapIdentityStore) {
-        List<LDAPUser> allUsers = getAllUsers(ldapIdentityStore);
+    public static void removeAllUsers(LDAPFederationProvider ldapProvider, RealmModel realm) {
+        LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
+        LDAPIdentityQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
+        List<LDAPObject> allUsers = ldapQuery.getResultList();
 
-        for (LDAPUser user : allUsers) {
-            ldapIdentityStore.remove(user);
+        for (LDAPObject ldapUser : allUsers) {
+            ldapStore.remove(ldapUser);
         }
     }
 
+    public static LDAPIdentityQuery createQueryForUserSearch(LDAPFederationProvider ldapProvider, RealmModel realm) {
+        LDAPIdentityQuery ldapQuery = new LDAPIdentityQuery(ldapProvider);
+        LDAPConfig config = ldapProvider.getLdapIdentityStore().getConfig();
+        ldapQuery.setSearchScope(config.getSearchScope());
+        ldapQuery.addSearchDns(config.getUserDns());
+        ldapQuery.addObjectClasses(config.getObjectClasses());
+
+        List<UserFederationMapperModel> mapperModels = realm.getUserFederationMappers();
+        ldapQuery.addMappers(mapperModels);
+
+        return ldapQuery;
+    }
+
+    /*
     public static List<LDAPUser> getAllUsers(LDAPIdentityStore ldapIdentityStore) {
-        IdentityQuery<LDAPUser> userQuery = ldapIdentityStore.createQueryBuilder().createIdentityQuery(LDAPUser.class);
+        LDAPIdentityQuery<LDAPUser> userQuery = ldapIdentityStore.createQueryBuilder().createIdentityQuery(LDAPUser.class);
         return userQuery.getResultList();
     }
 
@@ -138,5 +160,23 @@ public class LDAPUtils {
         }
 
         return fullName;
+    }   */
+
+    // ldapObject has filled attributes, but doesn't have filled
+    public static void computeAndSetDn(LDAPConfig config, LDAPObject ldapObject) {
+        String rdnLdapAttrName = config.getRdnLdapAttribute();
+        String rdnLdapAttrValue = (String) ldapObject.getAttribute(rdnLdapAttrName);
+        if (rdnLdapAttrValue == null) {
+            throw new ModelException("RDN Attribute [" + rdnLdapAttrName + "] is not filled. Filled attributes: " + ldapObject.getAttributes());
+        }
+
+        LDAPDn dn = LDAPDn.fromString(config.getSingleUserDn());
+        dn.addToHead(rdnLdapAttrName, rdnLdapAttrValue);
+        ldapObject.setDn(dn);
+    }
+
+    public static String getUsername(LDAPObject ldapUser, LDAPConfig config) {
+        String usernameAttr = config.getUsernameLdapAttribute();
+        return (String) ldapUser.getAttribute(usernameAttr);
     }
 }

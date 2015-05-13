@@ -189,6 +189,8 @@ public interface RealmModel extends RoleContainerModel {
     void removeUserFederationProvider(UserFederationProviderModel provider);
     void setUserFederationProviders(List<UserFederationProviderModel> providers);
 
+    List<UserFederationMapperModel> getUserFederationMappers();
+
     String getLoginTheme();
 
     void setLoginTheme(String name);

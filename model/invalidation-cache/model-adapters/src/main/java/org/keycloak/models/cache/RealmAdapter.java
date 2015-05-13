@@ -5,11 +5,14 @@ import org.keycloak.enums.SslRequired;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -17,6 +20,7 @@ import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -946,6 +950,57 @@ public class RealmAdapter implements RealmModel {
             if (model.getName().equals(name)) return model;
         }
         return null;
+    }
+
+
+    @Override
+    public List<UserFederationMapperModel> getUserFederationMappers() {
+        // TODO: Some hardcoded stuff...
+        List<UserFederationMapperModel> mappers = new ArrayList<UserFederationMapperModel>();
+        mappers.add(createMapperModel("usn", "usernameMapper", "ldap-user-attribute-mapper",
+                "user.model.attribute", UserModel.USERNAME,
+                "ldap.attribute", LDAPConstants.UID));
+        mappers.add(createMapperModel("fn", "firstNameMapper", "ldap-user-attribute-mapper",
+                "user.model.attribute", UserModel.FIRST_NAME,
+                "ldap.attribute", LDAPConstants.CN));
+        mappers.add(createMapperModel("ln", "lastNameMapper", "ldap-user-attribute-mapper",
+                "user.model.attribute", UserModel.LAST_NAME,
+                "ldap.attribute", LDAPConstants.SN));
+        mappers.add(createMapperModel("emailMpr", "emailMapper", "ldap-user-attribute-mapper",
+                "user.model.attribute", UserModel.EMAIL,
+                "ldap.attribute", LDAPConstants.EMAIL));
+        mappers.add(createMapperModel("postalCodeMpr", "postalCodeMapper", "ldap-user-attribute-mapper",
+                "user.model.attribute", "postal_code",
+                "ldap.attribute", LDAPConstants.POSTAL_CODE));
+        mappers.add(createMapperModel("createdDateMpr", "createTimeStampMapper", "ldap-user-attribute-mapper",
+                "user.model.attribute", LDAPConstants.CREATE_TIMESTAMP,
+                "ldap.attribute", LDAPConstants.CREATE_TIMESTAMP,
+                "read.only", "true"));
+        mappers.add(createMapperModel("modifyDateMpr", "modifyTimeStampMapper", "ldap-user-attribute-mapper",
+                "user.model.attribute", LDAPConstants.MODIFY_TIMESTAMP,
+                "ldap.attribute", LDAPConstants.MODIFY_TIMESTAMP,
+                "read.only", "true"));
+        return mappers;
+    }
+
+    private static UserFederationMapperModel createMapperModel(String id, String name, String mapperId, String... config) {
+        UserFederationMapperModel mapperModel = new UserFederationMapperModel();
+        mapperModel.setId(id);
+        mapperModel.setName(name);
+        mapperModel.setFederationMapperId(mapperId);
+
+        Map<String, String> configMap = new HashMap<String, String>();
+        String key = null;
+        for (String configEntry : config) {
+            if (key == null) {
+                key = configEntry;
+            } else {
+                configMap.put(key, configEntry);
+                key = null;
+            }
+        }
+        mapperModel.setConfig(configMap);
+        return mapperModel;
     }
 
 }

@@ -43,7 +43,11 @@ public class KerberosFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public UserModel proxy(UserModel local) {
+    public UserModel validateAndProxy(RealmModel realm, UserModel local) {
+        if (!isValid(realm, local)) {
+            return null;
+        }
+
         if (kerberosConfig.getEditMode() == EditMode.READ_ONLY) {
             return new ReadOnlyKerberosUserModelDelegate(local, this);
         } else {
@@ -102,7 +106,7 @@ public class KerberosFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public boolean isValid(UserModel local) {
+    public boolean isValid(RealmModel realm, UserModel local) {
         // KerberosUsernamePasswordAuthenticator.isUserAvailable is an overhead, so avoid it for now
 
         String kerberosPrincipal = local.getUsername() + "@" + kerberosConfig.getKerberosRealm();
@@ -219,13 +223,16 @@ public class KerberosFederationProvider implements UserFederationProvider {
             if (!model.getId().equals(user.getFederationLink())) {
                 logger.warn("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() + "]");
                 return null;
-            } else if (isValid(user)) {
-                return proxy(user);
             } else {
-                logger.warn("User with username " + username + " already exists and is linked to provider [" + model.getDisplayName() +
-                        "] but kerberos principal is not correct. Kerberos principal on user is: " + user.getAttribute(KERBEROS_PRINCIPAL));
-                logger.warn("Will re-create user");
-                session.userStorage().removeUser(realm, user);
+                UserModel proxied = validateAndProxy(realm, user);
+                if (proxied != null) {
+                    return proxied;
+                } else {
+                    logger.warn("User with username " + username + " already exists and is linked to provider [" + model.getDisplayName() +
+                            "] but kerberos principal is not correct. Kerberos principal on user is: " + user.getAttribute(KERBEROS_PRINCIPAL));
+                    logger.warn("Will re-create user");
+                    session.userStorage().removeUser(realm, user);
+                }
             }
         }
 
@@ -248,6 +255,6 @@ public class KerberosFederationProvider implements UserFederationProvider {
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
         }
 
-        return proxy(user);
+        return validateAndProxy(realm, user);
     }
 }
