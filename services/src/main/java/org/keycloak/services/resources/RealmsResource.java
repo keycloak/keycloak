@@ -1,7 +1,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.NotFoundException;
+import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
 import org.keycloak.events.EventBuilder;
