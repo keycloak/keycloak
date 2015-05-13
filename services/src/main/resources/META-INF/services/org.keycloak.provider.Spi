@@ -2,3 +2,4 @@ org.keycloak.protocol.LoginProtocolSpi
 org.keycloak.protocol.ProtocolMapperSpi
 org.keycloak.exportimport.ClientImportSpi
 org.keycloak.wellknown.WellKnownSpi
+org.keycloak.messages.MessagesSpi
