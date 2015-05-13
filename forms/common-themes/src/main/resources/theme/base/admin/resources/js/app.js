@@ -1387,7 +1387,6 @@ module.directive('kcReadOnly', function() {
 
             scope.$watch(attrs.kcReadOnly, function(readOnly) {
                 if (readOnly) {
-                    console.debug('readonly');
                     element.find('input').each(disable);
                     element.find('button').each(disable);
                     element.find('select').each(disable);
