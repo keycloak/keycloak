@@ -830,15 +830,13 @@ module.factory('ClientOrigins', function($resource) {
     });
 });
 
-module.factory('Current', function(Realm, $route) {
+module.factory('Current', function(Realm, $route, $rootScope) {
     var current = {};
 
     current.realms = {};
     current.realm = null;
-    current.clients = {};
-    current.client = null;
 
-    current.refresh = function() {
+    $rootScope.$on('$routeChangeStart', function() {
         current.realm = null;
         current.realms = Realm.query(null, function(realms) {
             if ($route.current.params.realm) {
@@ -849,9 +847,7 @@ module.factory('Current', function(Realm, $route) {
                 }
             }
         });
-    }
-
-    current.refresh();
+    });
 
     return current;
 });
