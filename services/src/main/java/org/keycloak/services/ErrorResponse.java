@@ -11,9 +11,7 @@ import javax.ws.rs.core.Response;
 public class ErrorResponse {
 
     public static Response exists(String message) {
-        ErrorRepresentation error = new ErrorRepresentation();
-        error.setErrorMessage(message);
-        return Response.status(Response.Status.CONFLICT).entity(error).type(MediaType.APPLICATION_JSON).build();
+        return ErrorResponse.error(message, Response.Status.CONFLICT);
     }
 
     public static Response error(String message, Response.Status status) {
