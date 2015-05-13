@@ -195,7 +195,7 @@
                         <term>databaseSchema</term>
                         <listitem>
                             <para>
-                                Value of database schema (Hibernate property "hibernate.hbm2ddl.auto" ).
+                                Specify if schema should be updated or validated. Valid values are "update" and "validate" ("update is default).
                             </para>
                         </listitem>
                     </varlistentry>
