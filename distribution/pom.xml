@@ -28,15 +28,15 @@
 
     <modules>
         <module>adapters</module>
+        <module>feature-packs</module>
         <module>demo-dist</module>
         <module>docs-dist</module>
         <module>examples-dist</module>
         <module>modules</module>
-        <module>proxy-dist</module>
+        <module>proxy-dist</module>        
         <module>server-dist</module>
         <module>server-overlay</module>
         <module>src-dist</module>
-        <module>subsystem-war</module>
-        <module>feature-packs</module>
+        <module>subsystem-war</module>        
     </modules>
 </project>
