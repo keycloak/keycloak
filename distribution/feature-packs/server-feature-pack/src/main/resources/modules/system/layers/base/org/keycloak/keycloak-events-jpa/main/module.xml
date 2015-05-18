@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-events-jpa">
+    <resources>
+        <artifact name="${org.keycloak:keycloak-events-jpa}"/>
+    </resources>
+    <dependencies>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-events-api"/>
+        <module name="org.keycloak.keycloak-connections-jpa"/>
+        <module name="javax.persistence.api"/>
+        <module name="org.codehaus.jackson.jackson-core-asl"/>
+        <module name="org.codehaus.jackson.jackson-mapper-asl"/>
+        <module name="org.codehaus.jackson.jackson-xc"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.javassist"/>
+        <module name="org.hibernate" services="import"/>
+        <module name="javax.api"/>
+    </dependencies>
+
+</module>

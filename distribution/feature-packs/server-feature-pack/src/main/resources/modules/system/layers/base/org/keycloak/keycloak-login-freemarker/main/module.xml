@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-login-freemarker">
+    <resources>
+        <artifact name="${org.keycloak:keycloak-login-freemarker}"/>
+    </resources>
+    <dependencies>
+        <module name="org.keycloak.keycloak-forms-common-freemarker"/>
+        <module name="org.keycloak.keycloak-login-api"/>
+        <module name="org.keycloak.keycloak-email-api"/>
+        <module name="org.keycloak.keycloak-events-api"/>
+        <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-services"/>
+        <module name="org.keycloak.keycloak-social-core"/>
+        <module name="javax.ws.rs.api"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.freemarker"/>
+        <module name="javax.api"/>
+        <module name="javax.ws.rs.api"/>
+        <module name="org.jboss.resteasy.resteasy-jaxrs"/>
+    </dependencies>
+
+</module>

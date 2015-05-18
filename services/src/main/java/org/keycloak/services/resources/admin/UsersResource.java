@@ -7,6 +7,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -56,6 +57,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -78,6 +80,8 @@ public class UsersResource {
 
     private RealmAuth auth;
     
+    private AdminEventBuilder adminEvent;
+    
     @Context
     protected ClientConnection clientConnection;
 
@@ -90,9 +94,10 @@ public class UsersResource {
     @Context
     protected HttpHeaders headers;
 
-    public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager) {
+    public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
+        this.adminEvent = adminEvent;
 
         auth.init(RealmAuth.Resource.USER);
     }
@@ -116,11 +121,11 @@ public class UsersResource {
                 throw new NotFoundException("User not found");
             }
             updateUserFromRep(user, rep);
+            adminEvent.operation(OperationType.UPDATE).resourcePath(user).representation(rep).success();
 
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
             }
-
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("User exists with same username or email");
@@ -152,11 +157,13 @@ public class UsersResource {
         try {
             UserModel user = session.users().addUser(realm, rep.getUsername());
             updateUserFromRep(user, rep);
-
+            
+            adminEvent.operation(OperationType.CREATE).resourcePath(user).representation(rep).success();
+            
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
             }
-
+            
             return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getUsername()).build()).build();
         } catch (ModelDuplicateException e) {
             if (session.getTransaction().isActive()) {
@@ -217,7 +224,7 @@ public class UsersResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-
+        
         UserRepresentation rep = ModelToRepresentation.toRepresentation(user);
 
         if (realm.isIdentityFederationEnabled()) {
@@ -305,7 +312,7 @@ public class UsersResource {
 
         FederatedIdentityModel socialLink = new FederatedIdentityModel(provider, rep.getUserId(), rep.getUserName());
         session.users().addFederatedIdentity(realm, user, socialLink);
-
+        adminEvent.operation(OperationType.CREATE).resourcePath(user, uriInfo.getPath(), true).representation(rep).success();
         return Response.noContent().build();
     }
 
@@ -321,6 +328,7 @@ public class UsersResource {
         if (!session.users().removeFederatedIdentity(realm, user, provider)) {
             throw new NotFoundException("Link not found");
         }
+        adminEvent.operation(OperationType.DELETE).resourcePath(user, uriInfo.getPath(), true).success();
     }
 
     /**
@@ -374,6 +382,7 @@ public class UsersResource {
         } else {
             throw new NotFoundException("Consent not found for user " + username + " and client " + clientId);
         }
+        adminEvent.operation(OperationType.ACTION).resourcePath(user, client, uriInfo.getPath()).success();
     }
 
     /**
@@ -395,6 +404,7 @@ public class UsersResource {
         for (UserSessionModel userSession : userSessions) {
             AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
         }
+        adminEvent.operation(OperationType.ACTION).resourcePath(user, uriInfo.getPath()).success();
     }
 
     /**
@@ -416,6 +426,7 @@ public class UsersResource {
 
         boolean removed = new UserManager(session).removeUser(realm, user);
         if (removed) {
+            adminEvent.operation(OperationType.DELETE).resourcePath(user).success();
             return Response.noContent().build();
         } else {
             return ErrorResponse.error("User couldn't be deleted", Response.Status.BAD_REQUEST);
@@ -628,7 +639,8 @@ public class UsersResource {
             }
             user.grantRole(roleModel);
         }
-
+        
+        adminEvent.operation(OperationType.CREATE).resourcePath(user, realm, uriInfo.getPath()).representation(roles).success();
 
     }
 
@@ -665,6 +677,8 @@ public class UsersResource {
                 user.deleteRoleMapping(roleModel);
             }
         }
+        
+        adminEvent.operation(OperationType.DELETE).resourcePath(user, realm, uriInfo.getPath()).representation(roles).success();
     }
 
     @Path("{username}/role-mappings/clients/{clientId}")
@@ -679,8 +693,7 @@ public class UsersResource {
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
-
-        return new UserClientRoleMappingsResource(realm, auth, user, client);
+        return new UserClientRoleMappingsResource(realm, auth, user, client, adminEvent);
 
     }
     @Path("{username}/role-mappings/clients-by-id/{id}")
@@ -695,8 +708,8 @@ public class UsersResource {
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
-
-        return new UserClientRoleMappingsResource(realm, auth, user, client);
+        
+        return new UserClientRoleMappingsResource(realm, auth, user, client, adminEvent);
 
     }
     /**
@@ -729,6 +742,8 @@ public class UsersResource {
             throw new BadRequestException("Can't reset password as account is read only");
         }
         if (pass.isTemporary()) user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+        
+        adminEvent.operation(OperationType.ACTION).resourcePath(user, uriInfo.getPath()).success();
     }
 
     /**
@@ -748,6 +763,7 @@ public class UsersResource {
         }
 
         user.setTotp(false);
+        adminEvent.operation(OperationType.ACTION).resourcePath(user, uriInfo.getPath()).success();
     }
 
     /**
@@ -823,6 +839,9 @@ public class UsersResource {
             this.session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendPasswordReset(link, expiration);
 
             //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
+
+            adminEvent.operation(OperationType.ACTION).resourcePath(user, uriInfo.getPath()).success();
+
             return Response.ok().build();
         } catch (EmailException e) {
             logger.error("Failed to send password reset email", e);

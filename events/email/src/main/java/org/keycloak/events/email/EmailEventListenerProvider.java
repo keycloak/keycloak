@@ -3,6 +3,7 @@ package org.keycloak.events.email;
 import org.jboss.logging.Logger;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
+import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
@@ -47,6 +48,11 @@ public class EmailEventListenerProvider implements EventListenerProvider {
                 }
             }
         }
+    }
+
+    @Override
+    public void onEvent(AdminEvent event, boolean includeRepresentation) {
+
     }
 
     @Override

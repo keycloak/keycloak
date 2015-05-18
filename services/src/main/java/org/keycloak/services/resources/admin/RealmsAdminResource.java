@@ -6,6 +6,7 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.ClientConnection;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -33,6 +34,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -52,9 +54,12 @@ public class RealmsAdminResource {
 
     @Context
     protected KeycloakSession session;
-
+    
     @Context
     protected KeycloakApplication keycloak;
+    
+    @Context
+    protected ClientConnection clientConnection;
 
     public RealmsAdminResource(AdminAuth auth, TokenManager tokenManager) {
         this.auth = auth;
@@ -128,7 +133,7 @@ public class RealmsAdminResource {
 
             URI location = AdminRoot.realmsUrl(uriInfo).path(realm.getName()).build();
             logger.debugv("imported realm success, sending back: {0}", location.toString());
-
+            
             return Response.created(location).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Realm " + rep.getRealm() + " already exists");
@@ -158,10 +163,11 @@ public class RealmsAdminResource {
 
         Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
         List<InputPart> inputParts = uploadForm.get("file");
-
+        RealmRepresentation rep = null;
+        
         for (InputPart inputPart : inputParts) {
             // inputPart.getBody doesn't work as content-type is wrong, and inputPart.setMediaType is not supported on AS7 (RestEasy 2.3.2.Final)
-            RealmRepresentation rep = JsonSerialization.readValue(inputPart.getBodyAsString(), RealmRepresentation.class);
+            rep = JsonSerialization.readValue(inputPart.getBodyAsString(), RealmRepresentation.class);
             RealmModel realm;
             try {
                 realm = realmManager.importRealm(rep);
@@ -170,13 +176,14 @@ public class RealmsAdminResource {
             }
 
             grantPermissionsToRealmCreator(realm);
-
+            
+            URI location = null;
             if (inputParts.size() == 1) {
-                URI location = AdminRoot.realmsUrl(uriInfo).path(realm.getName()).build();
+                location = AdminRoot.realmsUrl(uriInfo).path(realm.getName()).build();
                 return Response.created(location).build();
             }
         }
-
+        
         return Response.noContent().build();
     }
 
@@ -218,8 +225,10 @@ public class RealmsAdminResource {
         } else {
             realmAuth = new RealmAuth(auth, realm.getClientByClientId(realmManager.getRealmAdminClientId(auth.getRealm())));
         }
-
-        RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager);
+        
+        AdminEventBuilder adminEvent = new AdminEventBuilder(realm, auth, session, clientConnection);
+        
+        RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         //resourceContext.initResource(adminResource);
         return adminResource;

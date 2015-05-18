@@ -57,10 +57,15 @@ public class RealmRepresentation {
     protected String accountTheme;
     protected String adminTheme;
     protected String emailTheme;
+    
     protected Boolean eventsEnabled;
     protected Long eventsExpiration;
     protected List<String> eventsListeners;
     protected List<String> enabledEventTypes;
+    
+    protected Boolean adminEventsEnabled;
+    protected Boolean adminEventsDetailsEnabled;
+    
     private List<IdentityProviderRepresentation> identityProviders;
     private List<IdentityProviderMapperRepresentation> identityProviderMappers;
     private List<ProtocolMapperRepresentation> protocolMappers;
@@ -505,6 +510,22 @@ public class RealmRepresentation {
 
     public void setEnabledEventTypes(List<String> enabledEventTypes) {
         this.enabledEventTypes = enabledEventTypes;
+    }
+
+    public Boolean isAdminEventsEnabled() {
+        return adminEventsEnabled;
+    }
+
+    public void setAdminEventsEnabled(Boolean adminEventsEnabled) {
+        this.adminEventsEnabled = adminEventsEnabled;
+    }
+
+    public Boolean isAdminEventsDetailsEnabled() {
+        return adminEventsDetailsEnabled;
+    }
+
+    public void setAdminEventsDetailsEnabled(Boolean adminEventsDetailsEnabled) {
+        this.adminEventsDetailsEnabled = adminEventsDetailsEnabled;
     }
 
     public List<UserFederationProviderRepresentation> getUserFederationProviders() {

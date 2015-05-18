@@ -1,0 +1,39 @@
+<build xmlns="urn:wildfly:feature-pack-build:1.0">
+    <dependencies>
+        <artifact name="org.wildfly:wildfly-feature-pack" />
+    </dependencies>
+    <config>
+        <standalone template="configuration/standalone/template.xml" subsystems="configuration/standalone/subsystems.xml" output-file="standalone/configuration/standalone.xml" />
+        <domain template="configuration/domain/template.xml" subsystems="configuration/domain/subsystems.xml" output-file="domain/configuration/domain.xml" />
+    </config>
+
+    <mkdirs>
+    </mkdirs>
+<!--    <copy-artifacts>
+        <copy-artifact artifact="org.keycloak.subsystem:keycloak-server" to-location="standalone/configuration" extract="true">
+            
+            <filter pattern="**/keycloak-server.json" include="true"/>
+        </copy-artifact>
+    </copy-artifacts>    -->
+    <file-permissions>
+        <permission value="755">
+            <filter pattern="*.sh" include="true"/>
+        </permission>
+        <permission value="700">
+            <filter pattern="*/tmp/auth" include="true"/>
+        </permission>
+        <permission value="600">
+            <filter pattern="*-users.properties" include="true" />
+            <filter pattern="*/.installation" include="true"/>
+        </permission>
+    </file-permissions>
+    <line-endings>
+        <windows>
+            <filter pattern="*.bat" include="true"/>
+        </windows>
+        <unix>
+            <filter pattern="*.sh" include="true"/>
+            <filter pattern="*.conf" include="true"/>
+        </unix>
+    </line-endings>
+</build>

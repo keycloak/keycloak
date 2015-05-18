@@ -56,7 +56,13 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-subsystem</artifactId>
+            <artifactId>keycloak-wildfly-server-subsystem</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-wildfly-adapter-subsystem</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak.subsystem</groupId>
@@ -174,7 +180,7 @@
                                     <artifactId>keycloak-server</artifactId>
                                     <type>war</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/modules/org/keycloak/keycloak-subsystem/main/auth-server</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/modules/org/keycloak/keycloak-server-subsystem/main/auth-server</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>

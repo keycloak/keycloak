@@ -2,6 +2,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -16,6 +17,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -30,13 +32,15 @@ public class ScopeMappedClientResource {
     protected ClientModel client;
     protected KeycloakSession session;
     protected ClientModel scopedClient;
-
-    public ScopeMappedClientResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session, ClientModel scopedClient) {
+    protected AdminEventBuilder adminEvent;
+    
+    public ScopeMappedClientResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session, ClientModel scopedClient, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
         this.client = client;
         this.session = session;
         this.scopedClient = scopedClient;
+        this.adminEvent = adminEvent;
     }
 
     /**
@@ -106,8 +110,8 @@ public class ScopeMappedClientResource {
                 throw new NotFoundException("Role not found");
             }
             client.addScopeMapping(roleModel);
+            adminEvent.operation(OperationType.CREATE).resourcePath(client, "/roles").representation(roles).success();
         }
-
     }
 
     /**
@@ -135,5 +139,6 @@ public class ScopeMappedClientResource {
                 client.deleteScopeMapping(roleModel);
             }
         }
+        adminEvent.operation(OperationType.DELETE).resourcePath(client, "/roles").representation(roles).success();
     }
 }

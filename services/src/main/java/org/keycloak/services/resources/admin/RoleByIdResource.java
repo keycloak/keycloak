@@ -3,6 +3,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -20,6 +21,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
+
 import java.util.List;
 import java.util.Set;
 
@@ -33,15 +36,17 @@ public class RoleByIdResource extends RoleResource {
     protected static final Logger logger = Logger.getLogger(RoleByIdResource.class);
     private final RealmModel realm;
     private final RealmAuth auth;
+    private AdminEventBuilder adminEvent;
 
     @Context
     protected KeycloakSession session;
 
-    public RoleByIdResource(RealmModel realm, RealmAuth auth) {
+    public RoleByIdResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
         super(realm);
 
         this.realm = realm;
         this.auth = auth;
+        this.adminEvent = adminEvent;
     }
 
     /**
@@ -57,7 +62,6 @@ public class RoleByIdResource extends RoleResource {
     public RoleRepresentation getRole(final @PathParam("role-id") String id) {
         RoleModel roleModel = getRoleModel(id);
         auth.requireView();
-
         return getRole(roleModel);
     }
 
@@ -76,7 +80,6 @@ public class RoleByIdResource extends RoleResource {
             r = RealmAuth.Resource.USER;
         }
         auth.init(r);
-
         return roleModel;
     }
 
@@ -92,6 +95,7 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         deleteRole(role);
+        adminEvent.operation(OperationType.DELETE).resourcePath(role).success();
     }
 
     /**
@@ -107,6 +111,7 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         updateRole(rep, role);
+        adminEvent.operation(OperationType.UPDATE).resourcePath(role).representation(rep).success();
     }
 
     /**
@@ -122,6 +127,10 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         addComposites(roles, role);
+        
+        adminEvent.operation(OperationType.ACTION)
+            .resourcePath(role, session.getContext().getUri().getPath()).representation(roles).success();
+        
     }
 
     /**
@@ -217,6 +226,9 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         deleteComposites(roles, role);
+        
+        adminEvent.operation(OperationType.DELETE)
+            .resourcePath(role, session.getContext().getUri().getPath()).representation(roles).success();
     }
 
 }

@@ -29,6 +29,11 @@ public class IdentityProviderSpi implements Spi {
     public static final String IDENTITY_PROVIDER_SPI_NAME = "identity_provider";
 
     @Override
+    public boolean isPrivate() {
+        return false;
+    }
+
+    @Override
     public String getName() {
         return IDENTITY_PROVIDER_SPI_NAME;
     }

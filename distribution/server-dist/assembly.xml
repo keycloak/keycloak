@@ -8,33 +8,28 @@
 
     <includeBaseDirectory>true</includeBaseDirectory>
 
+    <!-- If war is filtered it will get corrupted. Only need to filter module.xml -->
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>
-            <outputDirectory></outputDirectory>
+            <directory>target/${project.build.finalName}</directory>
+            <outputDirectory/>
+            <filtered>true</filtered>
+            <includes>
+                <include>**/module.xml</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>target/${project.build.finalName}</directory>
+            <outputDirectory/>
+            <filtered>false</filtered>
             <excludes>
-                <exclude>**/*.sh</exclude>
+                <exclude>**/module.xml</exclude>
                 <exclude>welcome-content/**</exclude>
-                <exclude>docs/**</exclude>
+                <exclude>appclient</exclude>
+                <exclude>appclient/*</exclude>
                 <exclude>standalone/deployments</exclude>
                 <exclude>standalone/deployments/*</exclude>
-                <exclude>standalone/configuration/standalone*.xml</exclude>
             </excludes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.build.directory}/unpacked</directory>
-            <outputDirectory>standalone/configuration</outputDirectory>
-            <includes>
-                <include>standalone*.xml</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>
-            <outputDirectory></outputDirectory>
-            <includes>
-                <include>**/*.sh</include>
-            </includes>
-            <fileMode>0755</fileMode>
         </fileSet>
         <fileSet>
             <directory>src/main/welcome-content</directory>
@@ -43,20 +38,30 @@
                 <include>*.*</include>
             </includes>
         </fileSet>
-    </fileSets>
-
-    <dependencySets>
-        <dependencySet>
+        <fileSet>
+            <directory>../../forms/common-themes/src/main/resources/theme</directory>
+            <outputDirectory>standalone/configuration/themes</outputDirectory>
             <includes>
-                <include>org.keycloak:keycloak-server-overlay:zip</include>
+                <include>**/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>../../</directory>
+            <includes>
+                <include>License.html</include>
             </includes>
             <outputDirectory></outputDirectory>
-            <unpack>true</unpack>
-            <unpackOptions>
-                <excludes>
-                    <exclude>standalone/configuration/standalone-keycloak.xml</exclude>
-                </excludes>
-            </unpackOptions>
-        </dependencySet>
-    </dependencySets>
+        </fileSet>
+    </fileSets>
+
+    <files>
+        <file>
+            <source>../server-overlay/src/main/themes/README.txt</source>
+            <outputDirectory>standalone/configuration/themes</outputDirectory>
+        </file>
+        <file>
+            <source>../server-overlay/src/main/providers/README.txt</source>
+            <outputDirectory>standalone/configuration/providers</outputDirectory>
+        </file>
+    </files>
 </assembly>

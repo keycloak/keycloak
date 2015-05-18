@@ -1,5 +1,6 @@
 package org.keycloak.events;
 
+import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.provider.Provider;
 
 /**
@@ -8,5 +9,7 @@ import org.keycloak.provider.Provider;
 public interface EventListenerProvider extends Provider {
 
     public void onEvent(Event event);
+
+    public void onEvent(AdminEvent event, boolean includeRepresentation);
 
 }

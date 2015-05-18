@@ -8,6 +8,12 @@ import org.keycloak.provider.Spi;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ThemeSpi implements Spi {
+
+    @Override
+    public boolean isPrivate() {
+        return true;
+    }
+
     @Override
     public String getName() {
         return "theme";

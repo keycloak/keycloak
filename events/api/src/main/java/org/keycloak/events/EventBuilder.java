@@ -7,6 +7,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.util.Time;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -149,7 +150,7 @@ public class EventBuilder {
     }
 
     private void send() {
-        event.setTime(System.currentTimeMillis());
+        event.setTime(Time.toMillis(Time.currentTime()));
 
         if (store != null) {
             if (realm.getEnabledEventTypes() != null && !realm.getEnabledEventTypes().isEmpty() ? realm.getEnabledEventTypes().contains(event.getType().name()) : event.getType().isSaveByDefault()) {

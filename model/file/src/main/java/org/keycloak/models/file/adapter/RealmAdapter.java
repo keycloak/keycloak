@@ -959,6 +959,26 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean isAdminEventsEnabled() {
+        return realm.isAdminEventsEnabled();
+    }
+
+    @Override
+    public void setAdminEventsEnabled(boolean enabled) {
+        realm.setAdminEventsEnabled(enabled);
+    }
+
+    @Override
+    public boolean isAdminEventsDetailsEnabled() {
+        return realm.isAdminEventsDetailsEnabled();
+    }
+
+    @Override
+    public void setAdminEventsDetailsEnabled(boolean enabled) {
+        realm.setAdminEventsDetailsEnabled(enabled);
+    }
+    
+    @Override
     public ClientModel getMasterAdminClient() {
         return this.masterAdminApp;
     }

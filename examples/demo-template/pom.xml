@@ -37,4 +37,25 @@
         <module>third-party</module>
         <module>third-party-cdi</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>no-keycloak-json</id>
+            <activation>
+                <property>
+                    <name>no-keycloak-json</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-war-plugin</artifactId>
+                        <configuration>
+                            <packagingExcludes>**/keycloak.json</packagingExcludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

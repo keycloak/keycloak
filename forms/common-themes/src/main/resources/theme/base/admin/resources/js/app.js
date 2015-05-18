@@ -303,6 +303,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmEventsCtrl'
         })
+        .when('/realms/:realm/admin-events', {
+            templateUrl : resourceUrl + '/partials/realm-events-admin.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'RealmAdminEventsCtrl'
+        })
         .when('/realms/:realm/events-settings', {
             templateUrl : resourceUrl + '/partials/realm-events-config.html',
             resolve : {
@@ -1387,7 +1399,6 @@ module.directive('kcReadOnly', function() {
 
             scope.$watch(attrs.kcReadOnly, function(readOnly) {
                 if (readOnly) {
-                    console.debug('readonly');
                     element.find('input').each(disable);
                     element.find('button').each(disable);
                     element.find('select').each(disable);

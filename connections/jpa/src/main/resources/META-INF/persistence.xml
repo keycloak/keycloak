@@ -35,9 +35,10 @@
         <class>org.keycloak.models.sessions.jpa.entities.UserSessionEntity</class>
         <class>org.keycloak.models.sessions.jpa.entities.UsernameLoginFailureEntity</class>
 
-        <!-- JpaAuditProvider -->
+        <!-- JpaAuditProviders -->
         <class>org.keycloak.events.jpa.EventEntity</class>
-
+        <class>org.keycloak.events.jpa.AdminEventEntity</class>
+        
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
         <properties>

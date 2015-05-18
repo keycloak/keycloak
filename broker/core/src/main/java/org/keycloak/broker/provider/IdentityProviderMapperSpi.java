@@ -10,6 +10,11 @@ import org.keycloak.provider.Spi;
 public class IdentityProviderMapperSpi implements Spi {
 
     @Override
+    public boolean isPrivate() {
+        return false;
+    }
+
+    @Override
     public String getName() {
         return "identity-provider-mapper";
     }

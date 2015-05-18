@@ -410,10 +410,15 @@ public class RepresentationToModel {
         if (rep.getAccountTheme() != null) realm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) realm.setAdminTheme(rep.getAdminTheme());
         if (rep.getEmailTheme() != null) realm.setEmailTheme(rep.getEmailTheme());
+        
         if (rep.isEventsEnabled() != null) realm.setEventsEnabled(rep.isEventsEnabled());
         if (rep.getEventsExpiration() != null) realm.setEventsExpiration(rep.getEventsExpiration());
         if (rep.getEventsListeners() != null) realm.setEventsListeners(new HashSet<>(rep.getEventsListeners()));
         if (rep.getEnabledEventTypes() != null) realm.setEnabledEventTypes(new HashSet<>(rep.getEnabledEventTypes()));
+        
+        if (rep.isAdminEventsEnabled() != null) realm.setAdminEventsEnabled(rep.isAdminEventsEnabled());
+        if (rep.isAdminEventsDetailsEnabled() != null) realm.setAdminEventsDetailsEnabled(rep.isAdminEventsDetailsEnabled());
+        
 
         if (rep.getPasswordPolicy() != null) realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 

@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--  Template used by WildFly build when directed to include Keycloak subsystem in a configuration. -->
+<config>
+   <extension-module>org.keycloak.keycloak-server-subsystem</extension-module>
+   <subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
+      <auth-server name="main-auth-server">
+         <enabled>true</enabled>
+         <web-context>auth</web-context>
+      </auth-server>
+   </subsystem>
+</config>

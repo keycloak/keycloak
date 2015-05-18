@@ -22,6 +22,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -1065,7 +1066,29 @@ public class RealmAdapter implements RealmModel {
         realm.setEnabledEventTypes(enabledEventTypes);
         em.flush();
     }
+    
+    @Override
+    public boolean isAdminEventsEnabled() {
+        return realm.isAdminEventsEnabled();
+    }
 
+    @Override
+    public void setAdminEventsEnabled(boolean enabled) {
+        realm.setAdminEventsEnabled(enabled);
+        em.flush();
+    }
+
+    @Override
+    public boolean isAdminEventsDetailsEnabled() {
+        return realm.isAdminEventsDetailsEnabled();
+    }
+
+    @Override
+    public void setAdminEventsDetailsEnabled(boolean enabled) {
+        realm.setAdminEventsDetailsEnabled(enabled);
+        em.flush();
+    }
+    
     @Override
     public ClientModel getMasterAdminClient() {
         return new ClientAdapter(this, em, session, realm.getMasterAdminClient());
@@ -1327,4 +1350,5 @@ public class RealmAdapter implements RealmModel {
         mapping.setConfig(config);
         return mapping;
     }
+
 }

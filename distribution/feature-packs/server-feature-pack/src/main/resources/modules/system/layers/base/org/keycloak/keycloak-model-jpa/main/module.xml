@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-model-jpa">
+    <resources>
+        <artifact name="${org.keycloak:keycloak-model-jpa}"/>
+    </resources>
+    <dependencies>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-connections-jpa" services="import"/>
+        <module name="javax.persistence.api"/>
+        <module name="net.iharder.base64"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.javassist"/>
+        <module name="org.hibernate" services="import"/>
+        <module name="org.bouncycastle" />
+        <module name="javax.api"/>
+    </dependencies>
+
+</module>

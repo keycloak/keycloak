@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-events-email">
+    <resources>
+        <artifact name="${org.keycloak:keycloak-events-email}"/>
+    </resources>
+    <dependencies>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-events-api"/>
+        <module name="org.keycloak.keycloak-email-api"/>
+        <module name="javax.mail.api"/>
+        <module name="org.jboss.logging"/>
+        <module name="javax.api"/>
+    </dependencies>
+
+</module>

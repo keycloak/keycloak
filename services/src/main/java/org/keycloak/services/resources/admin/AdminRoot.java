@@ -29,6 +29,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+
 import java.io.IOException;
 
 /**
@@ -185,7 +186,7 @@ public class AdminRoot {
         }
 
         Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
-
+        
         RealmsAdminResource adminResource = new RealmsAdminResource(auth, tokenManager);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         return adminResource;

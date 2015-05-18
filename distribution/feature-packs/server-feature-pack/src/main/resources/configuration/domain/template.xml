@@ -1,0 +1,88 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<domain xmlns="urn:jboss:domain:3.0">
+
+    <extensions>
+        <?EXTENSIONS?>
+    </extensions>
+
+    <system-properties>
+        <!-- IPv4 is not required, but setting this helps avoid unintended use of IPv6 -->
+        <property name="java.net.preferIPv4Stack" value="true"/>
+    </system-properties>
+
+    <management>
+        <access-control provider="simple">
+            <role-mapping>
+                <role name="SuperUser">
+                    <include>
+                        <user name="$local"/>
+                    </include>
+                </role>
+            </role-mapping>
+        </access-control>
+    </management>
+
+    <profiles>
+       <profile name="default">
+           <?SUBSYSTEMS socket-binding-group="standard-sockets"?>
+       </profile>
+       <profile name="ha">
+           <?SUBSYSTEMS socket-binding-group="ha-sockets"?>
+       </profile>
+       <profile name="full">
+           <?SUBSYSTEMS socket-binding-group="full-sockets"?>
+       </profile>
+       <profile name="full-ha">
+           <?SUBSYSTEMS socket-binding-group="full-ha-sockets"?>
+       </profile>
+    </profiles>
+
+    <!--
+         Named interfaces that can be referenced elsewhere in the configuration. The configuration
+         for how to associate these logical names with an actual network interface can either
+         be specified here or can be declared on a per-host basis in the equivalent element in host.xml.
+
+         These default configurations require the binding specification to be done in host.xml.
+    -->
+    <interfaces>
+        <interface name="management"/>
+        <interface name="public"/>
+        <interface name="unsecure"/>
+    </interfaces>
+
+    <socket-binding-groups>
+        <socket-binding-group name="standard-sockets" default-interface="public">
+            <!-- Needed for server groups using the 'default' profile  -->
+            <?SOCKET-BINDINGS?>
+        </socket-binding-group>
+        <socket-binding-group name="ha-sockets" default-interface="public">
+            <!-- Needed for server groups using the 'ha' profile  -->
+            <?SOCKET-BINDINGS?>
+        </socket-binding-group>
+        <socket-binding-group name="full-sockets" default-interface="public">
+            <!-- Needed for server groups using the 'full' profile  -->
+            <?SOCKET-BINDINGS?>
+        </socket-binding-group>
+        <socket-binding-group name="full-ha-sockets" default-interface="public">
+            <!-- Needed for server groups using the 'full-ha' profile  -->
+            <?SOCKET-BINDINGS?>
+        </socket-binding-group>
+    </socket-binding-groups>
+
+    <server-groups>
+        <server-group name="main-server-group" profile="full">
+            <jvm name="default">
+                <heap size="64m" max-size="512m"/>
+            </jvm>
+            <socket-binding-group ref="full-sockets"/>
+        </server-group>
+        <server-group name="other-server-group" profile="full-ha">
+            <jvm name="default">
+                <heap size="64m" max-size="512m"/>
+            </jvm>
+            <socket-binding-group ref="full-ha-sockets"/>
+        </server-group>
+    </server-groups>
+
+</domain>

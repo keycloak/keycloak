@@ -8,8 +8,8 @@ import org.keycloak.models.RealmModel;
  * @version $Revision: 1 $
  */
 public class ClientsByIdResource extends ClientsResource {
-    public ClientsByIdResource(RealmModel realm, RealmAuth auth) {
-        super(realm, auth);
+    public ClientsByIdResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
+        super(realm, auth, adminEvent);
     }
 
     @Override

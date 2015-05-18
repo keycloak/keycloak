@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:jboss:domain:keycloak-server:1.1"
+           xmlns="urn:jboss:domain:keycloak-server:1.1"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+
+    <!-- The subsystem root element -->
+    <xs:element name="subsystem" type="subsystem-type"/>
+
+    <xs:complexType name="subsystem-type">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                    The Keycloak server subsystem, used to configure the Keycloak server
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="auth-server" maxOccurs="1" minOccurs="0" type="auth-server-type"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="auth-server-type">
+        <xs:all>
+            <xs:element name="web-context" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The name of the war archive containing the Keycloak server web application.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+</xs:schema>
