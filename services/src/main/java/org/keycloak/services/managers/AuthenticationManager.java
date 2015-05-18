@@ -406,7 +406,7 @@ public class AuthenticationManager {
                 }
             }
         }
-
+        if (userSession.getState() != UserSessionModel.State.LOGGED_IN) userSession.setState(UserSessionModel.State.LOGGED_IN);
         // refresh the cookies!
         createLoginCookie(realm, userSession.getUser(), userSession, uriInfo, clientConnection);
         if (userSession.isRememberMe()) createRememberMeCookie(realm, userSession.getUser().getUsername(), uriInfo, clientConnection);
@@ -434,12 +434,12 @@ public class AuthenticationManager {
 
         event.detail(Details.CODE_ID, clientSession.getId());
 
-        Set<UserModel.RequiredAction> requiredActions = user.getRequiredActions();
+        Set<String> requiredActions = user.getRequiredActions();
         if (!requiredActions.isEmpty()) {
-            Iterator<RequiredAction> i = user.getRequiredActions().iterator();
-            UserModel.RequiredAction action = i.next();
+            Iterator<String> i = user.getRequiredActions().iterator();
+            String action = i.next();
             
-            if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL) && Validation.isEmpty(user.getEmail())) {
+            if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL.name()) && Validation.isEmpty(user.getEmail())) {
                 if (i.hasNext())
                     action = i.next();
                 else
@@ -447,16 +447,16 @@ public class AuthenticationManager {
             }
 
             if (action != null) {
-                accessCode.setRequiredAction(action);
+                accessCode.setRequiredAction(RequiredAction.valueOf(action));
 
                 LoginFormsProvider loginFormsProvider = session.getProvider(LoginFormsProvider.class).setClientSessionCode(accessCode.getCode())
                         .setUser(user);
-                if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL)) {
+                if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL.name())) {
                     event.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail()).success();
                     LoginActionsService.createActionCookie(realm, uriInfo, clientConnection, userSession.getId());
                 }
 
-                return loginFormsProvider.createResponse(action);
+                return loginFormsProvider.createResponse(RequiredAction.valueOf(action));
             }
         }
 

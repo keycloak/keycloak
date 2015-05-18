@@ -73,8 +73,23 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public Set<RequiredAction> getRequiredActions() {
+    public Set<String> getRequiredActions() {
         return delegate.getRequiredActions();
+    }
+
+    @Override
+    public void addRequiredAction(String action) {
+        delegate.addRequiredAction(action);
+    }
+
+    @Override
+    public void removeRequiredAction(String action) {
+        delegate.removeRequiredAction(action);
+    }
+
+    @Override
+    public boolean configuredForCredentialType(String type) {
+        return delegate.configuredForCredentialType(type);
     }
 
     @Override
@@ -211,4 +226,5 @@ public class UserModelDelegate implements UserModel {
     public boolean revokeConsentForClient(String clientId) {
         return delegate.revokeConsentForClient(clientId);
     }
+
 }

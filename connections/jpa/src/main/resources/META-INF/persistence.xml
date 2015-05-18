@@ -28,6 +28,7 @@
         <!-- JpaUserSessionProvider -->
         <class>org.keycloak.models.sessions.jpa.entities.ClientSessionEntity</class>
         <class>org.keycloak.models.sessions.jpa.entities.ClientSessionRoleEntity</class>
+        <class>org.keycloak.models.sessions.jpa.entities.ClientSessionAuthStatusEntity</class>
         <class>org.keycloak.models.sessions.jpa.entities.ClientSessionProtocolMapperEntity</class>
         <class>org.keycloak.models.sessions.jpa.entities.ClientSessionNoteEntity</class>
         <class>org.keycloak.models.sessions.jpa.entities.UserSessionNoteEntity</class>

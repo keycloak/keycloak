@@ -28,8 +28,8 @@ public class CachedUser {
     private boolean enabled;
     private boolean totp;
     private String federationLink;
-    private Map<String, String> attributes = new HashMap<String, String>();
-    private Set<UserModel.RequiredAction> requiredActions = new HashSet<UserModel.RequiredAction>();
+    private Map<String, String> attributes = new HashMap<>();
+    private Set<String> requiredActions = new HashSet<>();
     private Set<String> roleMappings = new HashSet<String>();
 
 
@@ -96,7 +96,7 @@ public class CachedUser {
         return attributes;
     }
 
-    public Set<UserModel.RequiredAction> getRequiredActions() {
+    public Set<String> getRequiredActions() {
         return requiredActions;
     }
 

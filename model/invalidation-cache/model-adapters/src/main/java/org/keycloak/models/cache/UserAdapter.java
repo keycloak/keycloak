@@ -102,7 +102,7 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public Set<RequiredAction> getRequiredActions() {
+    public Set<String> getRequiredActions() {
         if (updated != null) return updated.getRequiredActions();
         return cached.getRequiredActions();
     }
@@ -117,6 +117,27 @@ public class UserAdapter implements UserModel {
     public void removeRequiredAction(RequiredAction action) {
         getDelegateForUpdate();
         updated.removeRequiredAction(action);
+    }
+
+    @Override
+    public void addRequiredAction(String action) {
+        getDelegateForUpdate();
+        updated.addRequiredAction(action);
+    }
+
+    @Override
+    public void removeRequiredAction(String action) {
+        getDelegateForUpdate();
+        updated.removeRequiredAction(action);
+    }
+
+    @Override
+    public boolean configuredForCredentialType(String type) {
+        List<UserCredentialValueModel> creds = getCredentialsDirectly();
+        for (UserCredentialValueModel cred : creds) {
+            if (cred.getType().equals(type)) return true;
+        }
+        return false;
     }
 
     @Override

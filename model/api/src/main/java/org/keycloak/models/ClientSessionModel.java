@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -30,6 +31,14 @@ public interface ClientSessionModel {
 
     public Set<String> getProtocolMappers();
     public void setProtocolMappers(Set<String> protocolMappers);
+
+    public Map<String, UserSessionModel.AuthenticatorStatus> getAuthenticators();
+    public void setAuthenticatorStatus(String authenticator, UserSessionModel.AuthenticatorStatus status);
+    public void setAuthenticatorStatus(Map<String, UserSessionModel.AuthenticatorStatus> status);
+    public UserModel getAuthenticatedUser();
+    public void setAuthenticatedUser(UserModel user);
+
+
 
     /**
      * Authentication request type, i.e. OAUTH, SAML 2.0, SAML 1.1, etc.

@@ -5,6 +5,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.mongo.entities.MongoClientSessionEntity;
 import org.keycloak.models.sessions.mongo.entities.MongoUserSessionEntity;
@@ -12,6 +13,7 @@ import org.keycloak.models.sessions.mongo.entities.MongoUserSessionEntity;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -152,6 +154,37 @@ public class ClientSessionAdapter extends AbstractMongoAdapter<MongoClientSessio
     public void removeNote(String name) {
         entity.getNotes().remove(name);
         updateMongoEntity();
+    }
+
+    @Override
+    public Map<String, UserSessionModel.AuthenticatorStatus> getAuthenticators() {
+        return entity.getAuthenticatorStatus();
+    }
+
+    @Override
+    public void setAuthenticatorStatus(String authenticator, UserSessionModel.AuthenticatorStatus status) {
+        entity.getAuthenticatorStatus().put(authenticator, status);
+        updateMongoEntity();
+
+    }
+
+    @Override
+    public void setAuthenticatorStatus(Map<String, UserSessionModel.AuthenticatorStatus> status) {
+        entity.setAuthenticatorStatus(status);
+        updateMongoEntity();
+
+    }
+
+    @Override
+    public UserModel getAuthenticatedUser() {
+        return session.users().getUserById(entity.getAuthUserId(), realm);
+    }
+
+    @Override
+    public void setAuthenticatedUser(UserModel user) {
+        entity.setAuthUserId(user.getId());
+        updateMongoEntity();
+
     }
 
     @Override

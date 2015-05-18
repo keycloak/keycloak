@@ -33,14 +33,14 @@ public class UserRequiredActionEntity {
     protected UserEntity user;
 
     @Id
-    @Column(name="ACTION")
-    protected UserModel.RequiredAction action;
+    @Column(name="REQUIRED_ACTION")
+    protected String action;
 
-    public UserModel.RequiredAction getAction() {
+    public String getAction() {
         return action;
     }
 
-    public void setAction(UserModel.RequiredAction action) {
+    public void setAction(String action) {
         this.action = action;
     }
 
@@ -56,12 +56,12 @@ public class UserRequiredActionEntity {
 
         protected UserEntity user;
 
-        protected UserModel.RequiredAction action;
+        protected String action;
 
         public Key() {
         }
 
-        public Key(UserEntity user, UserModel.RequiredAction action) {
+        public Key(UserEntity user, String action) {
             this.user = user;
             this.action = action;
         }
@@ -70,7 +70,7 @@ public class UserRequiredActionEntity {
             return user;
         }
 
-        public UserModel.RequiredAction getAction() {
+        public String getAction() {
             return action;
         }
 

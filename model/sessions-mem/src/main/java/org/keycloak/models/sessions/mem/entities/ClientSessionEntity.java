@@ -1,6 +1,7 @@
 package org.keycloak.models.sessions.mem.entities;
 
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.UserSessionModel;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,6 +15,8 @@ public class ClientSessionEntity {
     private String id;
     private String clientId;
     private String realmId;
+    private Map<String, UserSessionModel.AuthenticatorStatus> authenticatorStatus = new HashMap<>();
+    private String authUserId;
 
     private UserSessionEntity session;
 
@@ -24,7 +27,7 @@ public class ClientSessionEntity {
     private ClientSessionModel.Action action;
     private Set<String> roles;
     private Set<String> protocolMappers;
-    private Map<String, String> notes = new HashMap<String, String>();
+    private Map<String, String> notes = new HashMap<>();
 
     public String getId() {
         return id;
@@ -108,5 +111,21 @@ public class ClientSessionEntity {
 
     public void setAuthMethod(String authMethod) {
         this.authMethod = authMethod;
+    }
+
+    public String getAuthUserId() {
+        return authUserId;
+    }
+
+    public void setAuthUserId(String authUserId) {
+        this.authUserId = authUserId;
+    }
+
+    public Map<String, UserSessionModel.AuthenticatorStatus> getAuthenticatorStatus() {
+        return authenticatorStatus;
+    }
+
+    public void setAuthenticatorStatus(Map<String, UserSessionModel.AuthenticatorStatus> authenticatorStatus) {
+        this.authenticatorStatus = authenticatorStatus;
     }
 }

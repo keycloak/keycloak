@@ -35,8 +35,12 @@ public interface UserModel {
 
     Map<String, String> getAttributes();
 
-    Set<RequiredAction> getRequiredActions();
-    
+    Set<String> getRequiredActions();
+
+    void addRequiredAction(String action);
+
+    void removeRequiredAction(String action);
+
     void addRequiredAction(RequiredAction action);
 
     void removeRequiredAction(RequiredAction action);
@@ -64,6 +68,14 @@ public interface UserModel {
     List<UserCredentialValueModel> getCredentialsDirectly();
 
     void updateCredentialDirectly(UserCredentialValueModel cred);
+
+    /**
+     * Is the use configured to use this credential type
+     *
+     * @param type
+     * @return
+     */
+    boolean configuredForCredentialType(String type);
 
     Set<RoleModel> getRealmRoleMappings();
     Set<RoleModel> getClientRoleMappings(ClientModel app);

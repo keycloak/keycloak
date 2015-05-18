@@ -57,6 +57,9 @@ public class ClientSessionEntity {
     @Column(name="ACTION")
     protected ClientSessionModel.Action action;
 
+    @Column(name="AUTH_USER_ID")
+    protected String userId;
+
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="clientSession")
     protected Collection<ClientSessionRoleEntity> roles = new ArrayList<ClientSessionRoleEntity>();
 
@@ -65,6 +68,9 @@ public class ClientSessionEntity {
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="clientSession")
     protected Collection<ClientSessionNoteEntity> notes = new ArrayList<ClientSessionNoteEntity>();
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="clientSession")
+    protected Collection<ClientSessionAuthStatusEntity> authanticatorStatus = new ArrayList<>();
 
     public String getId() {
         return id;
@@ -152,5 +158,21 @@ public class ClientSessionEntity {
 
     public void setAuthMethod(String authMethod) {
         this.authMethod = authMethod;
+    }
+
+    public Collection<ClientSessionAuthStatusEntity> getAuthanticatorStatus() {
+        return authanticatorStatus;
+    }
+
+    public void setAuthanticatorStatus(Collection<ClientSessionAuthStatusEntity> authanticatorStatus) {
+        this.authanticatorStatus = authanticatorStatus;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 }

@@ -5,11 +5,13 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -164,6 +166,31 @@ public class ClientSessionAdapter implements ClientSessionModel {
 
     void update() {
         provider.getTx().replace(cache, entity.getId(), entity);
+    }
+    @Override
+    public Map<String, UserSessionModel.AuthenticatorStatus> getAuthenticators() {
+        return entity.getAuthenticatorStatus();
+    }
+
+    @Override
+    public void setAuthenticatorStatus(String authenticator, UserSessionModel.AuthenticatorStatus status) {
+        entity.getAuthenticatorStatus().put(authenticator, status);
+
+    }
+
+    @Override
+    public void setAuthenticatorStatus(Map<String, UserSessionModel.AuthenticatorStatus> status) {
+        entity.setAuthenticatorStatus(status);
+    }
+
+    @Override
+    public UserModel getAuthenticatedUser() {
+        return session.users().getUserById(entity.getAuthUserId(), realm);    }
+
+    @Override
+    public void setAuthenticatedUser(UserModel user) {
+        entity.setAuthUserId(user.getId());
+
     }
 
 }

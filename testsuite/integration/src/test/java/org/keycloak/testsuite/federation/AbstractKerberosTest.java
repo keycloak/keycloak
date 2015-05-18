@@ -298,7 +298,7 @@ public abstract class AbstractKerberosTest {
             Assert.assertEquals(user.getLastName(), expectedLastname);
 
             if (updateProfileActionExpected) {
-                Assert.assertEquals(UserModel.RequiredAction.UPDATE_PROFILE.toString(), user.getRequiredActions().iterator().next().name());
+                Assert.assertEquals(UserModel.RequiredAction.UPDATE_PROFILE.toString(), user.getRequiredActions().iterator().next());
             } else {
                 Assert.assertTrue(user.getRequiredActions().isEmpty());
             }

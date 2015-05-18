@@ -1,6 +1,7 @@
 package org.keycloak.models;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -35,6 +36,13 @@ public interface UserSessionModel {
     void setLastSessionRefresh(int seconds);
 
     List<ClientSessionModel> getClientSessions();
+
+    public static enum AuthenticatorStatus {
+        SUCCESS,
+        SETUP_REQUIRED,
+        ATTEMPTED,
+        SKIPPED
+    }
 
     public String getNote(String name);
     public void setNote(String name, String value);
