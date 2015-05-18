@@ -4,6 +4,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionNoteEntity;
@@ -14,6 +15,7 @@ import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
 import javax.persistence.EntityManager;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -209,5 +211,30 @@ public class ClientSessionAdapter implements ClientSessionModel {
                 entity.getProtocolMappers().clear();
             }
         }
+    }
+
+    @Override
+    public Map<String, UserSessionModel.AuthenticatorStatus> getAuthenticators() {
+        return null;
+    }
+
+    @Override
+    public void setAuthenticatorStatus(String authenticator, UserSessionModel.AuthenticatorStatus status) {
+
+    }
+
+    @Override
+    public void setAuthenticatorStatus(Map<String, UserSessionModel.AuthenticatorStatus> status) {
+
+    }
+
+    @Override
+    public UserModel getAuthenticatedUser() {
+        return null;
+    }
+
+    @Override
+    public void setAuthenticatedUser(UserModel user) {
+
     }
 }

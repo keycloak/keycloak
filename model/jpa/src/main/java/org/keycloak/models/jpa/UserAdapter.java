@@ -139,8 +139,8 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public Set<RequiredAction> getRequiredActions() {
-        Set<RequiredAction> result = new HashSet<RequiredAction>();
+    public Set<String> getRequiredActions() {
+        Set<String> result = new HashSet<>();
         for (UserRequiredActionEntity attr : user.getRequiredActions()) {
             result.add(attr.getAction());
         }
@@ -149,13 +149,19 @@ public class UserAdapter implements UserModel {
 
     @Override
     public void addRequiredAction(RequiredAction action) {
+        String actionName = action.name();
+        addRequiredAction(actionName);
+    }
+
+    @Override
+    public void addRequiredAction(String actionName) {
         for (UserRequiredActionEntity attr : user.getRequiredActions()) {
-            if (attr.getAction().equals(action)) {
+            if (attr.getAction().equals(actionName)) {
                 return;
             }
         }
         UserRequiredActionEntity attr = new UserRequiredActionEntity();
-        attr.setAction(action);
+        attr.setAction(actionName);
         attr.setUser(user);
         em.persist(attr);
         user.getRequiredActions().add(attr);
@@ -163,14 +169,29 @@ public class UserAdapter implements UserModel {
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
+        String actionName = action.name();
+        removeRequiredAction(actionName);
+    }
+
+    @Override
+    public void removeRequiredAction(String actionName) {
         Iterator<UserRequiredActionEntity> it = user.getRequiredActions().iterator();
         while (it.hasNext()) {
             UserRequiredActionEntity attr = it.next();
-            if (attr.getAction().equals(action)) {
+            if (attr.getAction().equals(actionName)) {
                 it.remove();
                 em.remove(attr);
             }
         }
+    }
+
+    @Override
+    public boolean configuredForCredentialType(String type) {
+        List<UserCredentialValueModel> creds = getCredentialsDirectly();
+        for (UserCredentialValueModel cred : creds) {
+            if (cred.getType().equals(type)) return true;
+        }
+        return false;
     }
 
     @Override

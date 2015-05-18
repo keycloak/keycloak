@@ -4,10 +4,12 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.mem.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.mem.entities.UserSessionEntity;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -140,5 +142,31 @@ public class ClientSessionAdapter implements ClientSessionModel {
     @Override
     public void setAuthMethod(String method) {
         entity.setAuthMethod(method);
+    }
+
+    @Override
+    public Map<String, UserSessionModel.AuthenticatorStatus> getAuthenticators() {
+        return entity.getAuthenticatorStatus();
+    }
+
+    @Override
+    public void setAuthenticatorStatus(String authenticator, UserSessionModel.AuthenticatorStatus status) {
+        entity.getAuthenticatorStatus().put(authenticator, status);
+
+    }
+
+    @Override
+    public void setAuthenticatorStatus(Map<String, UserSessionModel.AuthenticatorStatus> status) {
+        entity.setAuthenticatorStatus(status);
+    }
+
+    @Override
+    public UserModel getAuthenticatedUser() {
+        return session.users().getUserById(entity.getAuthUserId(), realm);    }
+
+    @Override
+    public void setAuthenticatedUser(UserModel user) {
+        entity.setAuthUserId(user.getId());
+
     }
 }

@@ -110,28 +110,28 @@ public class UserModelTest extends AbstractModelTest {
         user = session.users().getUserByUsername("user", realm);
 
         Assert.assertEquals(1, user.getRequiredActions().size());
-        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP));
+        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP.name()));
 
         user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
         user = session.users().getUserByUsername("user", realm);
 
         Assert.assertEquals(1, user.getRequiredActions().size());
-        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP));
+        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP.name()));
 
-        user.addRequiredAction(RequiredAction.VERIFY_EMAIL);
+        user.addRequiredAction(RequiredAction.VERIFY_EMAIL.name());
         user = session.users().getUserByUsername("user", realm);
 
         Assert.assertEquals(2, user.getRequiredActions().size());
-        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP));
-        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL));
+        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP.name()));
+        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL.name()));
 
-        user.removeRequiredAction(RequiredAction.CONFIGURE_TOTP);
+        user.removeRequiredAction(RequiredAction.CONFIGURE_TOTP.name());
         user = session.users().getUserByUsername("user", realm);
 
         Assert.assertEquals(1, user.getRequiredActions().size());
-        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL));
+        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL.name()));
 
-        user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
+        user.removeRequiredAction(RequiredAction.VERIFY_EMAIL.name());
         user = session.users().getUserByUsername("user", realm);
 
         Assert.assertTrue(user.getRequiredActions().isEmpty());
@@ -142,9 +142,9 @@ public class UserModelTest extends AbstractModelTest {
         Assert.assertEquals(expected.getFirstName(), actual.getFirstName());
         Assert.assertEquals(expected.getLastName(), actual.getLastName());
 
-        RequiredAction[] expectedRequiredActions = expected.getRequiredActions().toArray(new RequiredAction[expected.getRequiredActions().size()]);
+        String[] expectedRequiredActions = expected.getRequiredActions().toArray(new String[expected.getRequiredActions().size()]);
         Arrays.sort(expectedRequiredActions);
-        RequiredAction[] actualRequiredActions = actual.getRequiredActions().toArray(new RequiredAction[actual.getRequiredActions().size()]);
+        String[] actualRequiredActions = actual.getRequiredActions().toArray(new String[actual.getRequiredActions().size()]);
         Arrays.sort(actualRequiredActions);
 
         Assert.assertArrayEquals(expectedRequiredActions, actualRequiredActions);

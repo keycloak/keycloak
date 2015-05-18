@@ -55,8 +55,8 @@ public class ModelToRepresentation {
         rep.setFederationLink(user.getFederationLink());
 
         List<String> reqActions = new ArrayList<String>();
-        for (UserModel.RequiredAction ra : user.getRequiredActions()){
-            reqActions.add(ra.name());
+        for (String ra : user.getRequiredActions()){
+            reqActions.add(ra);
         }
 
         rep.setRequiredActions(reqActions);

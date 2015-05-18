@@ -4,6 +4,7 @@ import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.entities.AbstractIdentifiableEntity;
 
 import java.util.HashMap;
@@ -29,6 +30,8 @@ public class MongoClientSessionEntity extends AbstractIdentifiableEntity impleme
     private List<String> roles;
     private List<String> protocolMappers;
     private Map<String, String> notes = new HashMap<String, String>();
+    private Map<String, UserSessionModel.AuthenticatorStatus> authenticatorStatus = new HashMap<>();
+    private String authUserId;
 
     public String getId() {
         return id;
@@ -116,6 +119,22 @@ public class MongoClientSessionEntity extends AbstractIdentifiableEntity impleme
 
     public void setSessionId(String sessionId) {
         this.sessionId = sessionId;
+    }
+
+    public Map<String, UserSessionModel.AuthenticatorStatus> getAuthenticatorStatus() {
+        return authenticatorStatus;
+    }
+
+    public void setAuthenticatorStatus(Map<String, UserSessionModel.AuthenticatorStatus> authenticatorStatus) {
+        this.authenticatorStatus = authenticatorStatus;
+    }
+
+    public String getAuthUserId() {
+        return authUserId;
+    }
+
+    public void setAuthUserId(String authUserId) {
+        this.authUserId = authUserId;
     }
 
     @Override

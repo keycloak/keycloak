@@ -117,6 +117,10 @@ public class LoginActionsService {
         return loginActionsBaseUrl(baseUriBuilder);
     }
 
+    public static UriBuilder authenticationFormProcessor(UriInfo uriInfo) {
+        return loginActionsBaseUrl(uriInfo).path("auth-form");
+    }
+
     public static UriBuilder loginActionsBaseUrl(UriBuilder baseUriBuilder) {
         return baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getLoginActionsService");
     }

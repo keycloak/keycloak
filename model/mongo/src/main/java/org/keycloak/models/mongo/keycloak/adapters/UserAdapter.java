@@ -159,8 +159,8 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
 
     @Override
-    public Set<RequiredAction> getRequiredActions() {
-        Set<RequiredAction> result = new HashSet<RequiredAction>();
+    public Set<String> getRequiredActions() {
+        Set<String> result = new HashSet<String>();
         if (user.getRequiredActions() != null) {
             result.addAll(user.getRequiredActions());
         }
@@ -169,12 +169,24 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        getMongoStore().pushItemToList(user, "requiredActions", action, true, invocationContext);
+        String actionName = action.name();
+        addRequiredAction(actionName);
+    }
+
+    @Override
+    public void addRequiredAction(String actionName) {
+        getMongoStore().pushItemToList(user, "requiredActions", actionName, true, invocationContext);
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        getMongoStore().pullItemFromList(user, "requiredActions", action, invocationContext);
+        String actionName = action.name();
+        removeRequiredAction(actionName);
+    }
+
+    @Override
+    public void removeRequiredAction(String actionName) {
+        getMongoStore().pullItemFromList(user, "requiredActions", actionName, invocationContext);
     }
 
     @Override
@@ -319,6 +331,16 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
         return result;
     }
+
+    @Override
+    public boolean configuredForCredentialType(String type) {
+        List<UserCredentialValueModel> creds = getCredentialsDirectly();
+        for (UserCredentialValueModel cred : creds) {
+            if (cred.getType().equals(type)) return true;
+        }
+        return false;
+    }
+
 
     @Override
     public void updateCredentialDirectly(UserCredentialValueModel credModel) {
