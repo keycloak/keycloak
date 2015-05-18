@@ -5,12 +5,17 @@
         <format>zip</format>
         <format>tar.gz</format>
     </formats>
+
     <includeBaseDirectory>false</includeBaseDirectory>
 
     <fileSets>
         <fileSet>
             <directory>${project.build.directory}/unpacked/modules</directory>
-            <outputDirectory>modules/system/layers/base</outputDirectory>
+            <outputDirectory>modules</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/content</directory>
+            <outputDirectory></outputDirectory>
         </fileSet>
         <fileSet>
             <directory>../../forms/common-themes/src/main/resources/theme</directory>

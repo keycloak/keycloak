@@ -16,7 +16,7 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-jboss-modules</artifactId>
+            <artifactId>keycloak-server-feature-pack</artifactId>
             <type>zip</type>
         </dependency>
         <dependency>
@@ -61,9 +61,9 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-jboss-modules</artifactId>
+                                    <artifactId>keycloak-server-feature-pack</artifactId>
                                     <type>zip</type>
-                                    <outputDirectory>${project.build.directory}/unpacked/modules</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
