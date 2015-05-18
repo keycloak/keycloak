@@ -13,7 +13,6 @@ public class RealmEventsConfigRepresentation {
     protected List<String> enabledEventTypes;
     
     protected Boolean adminEventsEnabled;
-    protected List<String> adminEnabledEventOperations;
     protected Boolean adminEventsDetailsEnabled;
 
     public boolean isEventsEnabled() {
@@ -54,14 +53,6 @@ public class RealmEventsConfigRepresentation {
 
     public void setAdminEventsEnabled(Boolean adminEventsEnabled) {
         this.adminEventsEnabled = adminEventsEnabled;
-    }
-
-    public List<String> getAdminEnabledEventOperations() {
-        return adminEnabledEventOperations;
-    }
-
-    public void setAdminEnabledEventOperations(List<String> adminEnabledEventOperations) {
-        this.adminEnabledEventOperations = adminEnabledEventOperations;
     }
 
     public Boolean isAdminEventsDetailsEnabled() {

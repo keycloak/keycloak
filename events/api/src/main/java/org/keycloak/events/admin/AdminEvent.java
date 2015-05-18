@@ -1,13 +1,13 @@
 package org.keycloak.events.admin;
 
-import java.util.Map;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AdminEvent {
 
     private long time;
+    
+    private String realmId;
 
     private AuthDetails authDetails;
 
@@ -30,6 +30,19 @@ public class AdminEvent {
 
     public void setTime(long time) {
         this.time = time;
+    }
+    
+    /**
+     * Returns the id of the realm
+     *
+     * @return
+     */
+    public String getRealmId() {
+        return realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
     }
 
     /**

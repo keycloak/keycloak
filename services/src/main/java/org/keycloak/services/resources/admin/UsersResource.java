@@ -7,7 +7,6 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
-import org.keycloak.events.AdminEventBuilder;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -122,7 +121,7 @@ public class UsersResource {
                 throw new NotFoundException("User not found");
             }
             updateUserFromRep(user, rep);
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo.getPath()).representation(rep).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(user).representation(rep).success();
 
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
@@ -159,9 +158,7 @@ public class UsersResource {
             UserModel user = session.users().addUser(realm, rep.getUsername());
             updateUserFromRep(user, rep);
             
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo.getAbsolutePathBuilder()
-                    .path(user.getUsername()).build().toString().substring(uriInfo.getBaseUri().toString().length()))
-                    .representation(rep).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(user).representation(rep).success();
             
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
@@ -228,8 +225,6 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
         
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
-
         UserRepresentation rep = ModelToRepresentation.toRepresentation(user);
 
         if (realm.isIdentityFederationEnabled()) {
@@ -268,7 +263,6 @@ public class UsersResource {
             UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(session);
             reps.add(rep);
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return reps;
     }
 
@@ -300,7 +294,6 @@ public class UsersResource {
                 }
             }
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return result;
     }
 
@@ -319,7 +312,7 @@ public class UsersResource {
 
         FederatedIdentityModel socialLink = new FederatedIdentityModel(provider, rep.getUserId(), rep.getUserName());
         session.users().addFederatedIdentity(realm, user, socialLink);
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).representation(rep).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(user, uriInfo.getPath(), true).representation(rep).success();
         return Response.noContent().build();
     }
 
@@ -335,7 +328,7 @@ public class UsersResource {
         if (!session.users().removeFederatedIdentity(realm, user, provider)) {
             throw new NotFoundException("Link not found");
         }
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(user, uriInfo.getPath(), true).success();
     }
 
     /**
@@ -362,7 +355,6 @@ public class UsersResource {
             UserConsentRepresentation rep = ModelToRepresentation.toRepresentation(consent);
             result.add(rep);
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return result;
     }
 
@@ -390,7 +382,7 @@ public class UsersResource {
         } else {
             throw new NotFoundException("Consent not found for user " + username + " and client " + clientId);
         }
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(user, client, uriInfo.getPath()).success();
     }
 
     /**
@@ -412,7 +404,7 @@ public class UsersResource {
         for (UserSessionModel userSession : userSessions) {
             AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
         }
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(user, uriInfo.getPath()).success();
     }
 
     /**
@@ -434,7 +426,7 @@ public class UsersResource {
 
         boolean removed = new UserManager(session).removeUser(realm, user);
         if (removed) {
-            adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo.getPath()).success();
+            adminEvent.operation(OperationType.DELETE).resourcePath(user).success();
             return Response.noContent().build();
         } else {
             return ErrorResponse.error("User couldn't be deleted", Response.Status.BAD_REQUEST);
@@ -543,7 +535,6 @@ public class UsersResource {
                 }
             }
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return all;
     }
 
@@ -570,7 +561,6 @@ public class UsersResource {
         for (RoleModel roleModel : realmMappings) {
             realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return realmMappingsRep;
     }
 
@@ -599,7 +589,6 @@ public class UsersResource {
                realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
             }
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return realmMappingsRep;
     }
 
@@ -622,7 +611,6 @@ public class UsersResource {
         }
 
         Set<RoleModel> available = realm.getRoles();
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return UserClientRoleMappingsResource.getAvailableRoles(user, available);
     }
 
@@ -652,7 +640,7 @@ public class UsersResource {
             user.grantRole(roleModel);
         }
         
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).representation(roles).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(user, realm, uriInfo.getPath()).representation(roles).success();
 
     }
 
@@ -690,7 +678,7 @@ public class UsersResource {
             }
         }
         
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(user, realm, uriInfo.getPath()).representation(roles).success();
     }
 
     @Path("{username}/role-mappings/clients/{clientId}")
@@ -705,7 +693,6 @@ public class UsersResource {
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return new UserClientRoleMappingsResource(realm, auth, user, client, adminEvent);
 
     }
@@ -722,7 +709,6 @@ public class UsersResource {
             throw new NotFoundException("Client not found");
         }
         
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return new UserClientRoleMappingsResource(realm, auth, user, client, adminEvent);
 
     }
@@ -757,7 +743,7 @@ public class UsersResource {
         }
         if (pass.isTemporary()) user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
         
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(user, uriInfo.getPath()).success();
     }
 
     /**
@@ -777,7 +763,7 @@ public class UsersResource {
         }
 
         user.setTotp(false);
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(user, uriInfo.getPath()).success();
     }
 
     /**
@@ -854,7 +840,7 @@ public class UsersResource {
 
             //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
 
-            adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).success();
+            adminEvent.operation(OperationType.ACTION).resourcePath(user, uriInfo.getPath()).success();
 
             return Response.ok().build();
         } catch (EmailException e) {

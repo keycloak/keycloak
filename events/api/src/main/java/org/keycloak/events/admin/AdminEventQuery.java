@@ -8,28 +8,36 @@ import java.util.List;
 public interface AdminEventQuery {
     
     /**
-     * Search by authentication realm
+     * Search by resource realm
      *
-     * @param realm realm name
+     * @param realmId realm id
      * @return Associated <code>AdminEventQuery</code> for method chaining
      */
-    AdminEventQuery authRealm(String realm);
+    AdminEventQuery realm(String realmId);
+    
+    /**
+     * Search by authentication realm
+     *
+     * @param realmId realm name
+     * @return Associated <code>AdminEventQuery</code> for method chaining
+     */
+    AdminEventQuery authRealm(String realmId);
     
     /**
      * Search by authenticated client
      *
-     * @param client client uuid
+     * @param clientId client uuid
      * @return Associated <code>AdminEventQuery</code> for method chaining
      */
-    AdminEventQuery authClient(String client);
+    AdminEventQuery authClient(String clientId);
 
     /**
      * Search by authenticated user
      *
-     * @param user user uuid
+     * @param userId user uuid
      * @return Associated <code>AdminEventQuery</code> for method chaining
      */
-    AdminEventQuery authUser(String user);
+    AdminEventQuery authUser(String userId);
 
     /**
      * Search by request ip address

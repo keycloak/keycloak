@@ -417,7 +417,6 @@ public class RepresentationToModel {
         if (rep.getEnabledEventTypes() != null) realm.setEnabledEventTypes(new HashSet<>(rep.getEnabledEventTypes()));
         
         if (rep.isAdminEventsEnabled() != null) realm.setAdminEventsEnabled(rep.isAdminEventsEnabled());
-        if (rep.getAdminEnabledEventOperations() != null) realm.setAdminEnabledEventOperations(new HashSet<>(rep.getAdminEnabledEventOperations()));
         if (rep.isAdminEventsDetailsEnabled() != null) realm.setAdminEventsDetailsEnabled(rep.isAdminEventsDetailsEnabled());
         
 

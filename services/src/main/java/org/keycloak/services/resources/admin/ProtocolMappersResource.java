@@ -3,11 +3,11 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.events.AdminEventBuilder;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -36,7 +36,7 @@ import java.util.List;
  */
 public class ProtocolMappersResource {
     protected static final Logger logger = Logger.getLogger(ProtocolMappersResource.class);
-
+    
     protected ClientModel client;
 
     protected  RealmAuth auth;
@@ -73,7 +73,6 @@ public class ProtocolMappersResource {
         for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
             if (mapper.getProtocol().equals(protocol)) mappers.add(ModelToRepresentation.toRepresentation(mapper));
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return mappers;
     }
 
@@ -90,9 +89,7 @@ public class ProtocolMappersResource {
         auth.requireManage();
         ProtocolMapperModel model = RepresentationToModel.toModel(rep);
         model = client.addProtocolMapper(model);
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo.getAbsolutePathBuilder()
-                .path(model.getId()).build().toString().substring(uriInfo.getBaseUri().toString().length()))
-                .representation(rep).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(model).representation(rep).success();
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
     /**
@@ -110,7 +107,7 @@ public class ProtocolMappersResource {
             model = RepresentationToModel.toModel(rep);
             model = client.addProtocolMapper(model);
         }
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo.getPath()).representation(reps).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo.getPath(), false).representation(reps).success();
     }
 
     @GET
@@ -123,7 +120,6 @@ public class ProtocolMappersResource {
         for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
             mappers.add(ModelToRepresentation.toRepresentation(mapper));
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return mappers;
     }
 
@@ -135,7 +131,6 @@ public class ProtocolMappersResource {
         auth.requireView();
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
-        adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
         return ModelToRepresentation.toRepresentation(model);
     }
 
@@ -149,7 +144,7 @@ public class ProtocolMappersResource {
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
         client.updateProtocolMapper(model);
-        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo.getPath()).representation(rep).success();
+        adminEvent.operation(OperationType.UPDATE).resourcePath(model).representation(rep).success();
     }
 
     @DELETE
@@ -160,7 +155,7 @@ public class ProtocolMappersResource {
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         client.removeProtocolMapper(model);
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(model).success();
 
     }
 

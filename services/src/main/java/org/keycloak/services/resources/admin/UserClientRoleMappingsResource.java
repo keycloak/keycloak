@@ -3,7 +3,6 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.events.AdminEventBuilder;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -69,7 +68,6 @@ public class UserClientRoleMappingsResource {
         for (RoleModel roleModel : mappings) {
             mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return mapRep;
     }
 
@@ -90,7 +88,6 @@ public class UserClientRoleMappingsResource {
         for (RoleModel roleModel : roles) {
             if (user.hasRole(roleModel)) mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return mapRep;
     }
 
@@ -107,7 +104,6 @@ public class UserClientRoleMappingsResource {
         auth.requireView();
 
         Set<RoleModel> available = client.getRoles();
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return getAvailableRoles(user, available);
     }
 
@@ -142,7 +138,7 @@ public class UserClientRoleMappingsResource {
             }
             user.grantRole(roleModel);
         }
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri().getPath()).representation(roles).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(client, user, "/roles/").representation(roles).success();
 
     }
 
@@ -175,6 +171,6 @@ public class UserClientRoleMappingsResource {
                 user.deleteRoleMapping(roleModel);
             }
         }
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri().getPath()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(client, user, "/roles/").representation(roles).success();
     }
 }

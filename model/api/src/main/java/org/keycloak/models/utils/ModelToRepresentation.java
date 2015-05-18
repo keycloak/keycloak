@@ -195,10 +195,6 @@ public class ModelToRepresentation {
         
         rep.setAdminEventsEnabled(realm.isAdminEventsEnabled());
         
-        if(realm.getAdminEnabledEventOperations() != null) {
-            rep.setAdminEnabledEventOperations(new LinkedList<String>(realm.getAdminEnabledEventOperations()));
-        }
-        
         rep.setAdminEventsDetailsEnabled(realm.isAdminEventsDetailsEnabled());
         
         return rep;

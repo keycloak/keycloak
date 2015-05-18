@@ -3,7 +3,6 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.events.AdminEventBuilder;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -63,9 +62,6 @@ public class RoleByIdResource extends RoleResource {
     public RoleRepresentation getRole(final @PathParam("role-id") String id) {
         RoleModel roleModel = getRoleModel(id);
         auth.requireView();
-        
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
-
         return getRole(roleModel);
     }
 
@@ -84,9 +80,6 @@ public class RoleByIdResource extends RoleResource {
             r = RealmAuth.Resource.USER;
         }
         auth.init(r);
-        
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
-
         return roleModel;
     }
 
@@ -102,7 +95,7 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         deleteRole(role);
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri().getPath()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(role).success();
     }
 
     /**
@@ -118,7 +111,7 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         updateRole(rep, role);
-        adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri().getPath()).representation(rep).success();
+        adminEvent.operation(OperationType.UPDATE).resourcePath(role).representation(rep).success();
     }
 
     /**
@@ -134,7 +127,9 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         addComposites(roles, role);
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri().getPath()).representation(roles).success();
+        
+        adminEvent.operation(OperationType.ACTION)
+            .resourcePath(role, session.getContext().getUri().getPath()).representation(roles).success();
         
     }
 
@@ -153,7 +148,6 @@ public class RoleByIdResource extends RoleResource {
         if (logger.isDebugEnabled()) logger.debug("*** getRoleComposites: '" + id + "'");
         RoleModel role = getRoleModel(id);
         auth.requireView();
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return getRoleComposites(role);
     }
 
@@ -170,7 +164,6 @@ public class RoleByIdResource extends RoleResource {
     public Set<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-id") String id) {
         RoleModel role = getRoleModel(id);
         auth.requireView();
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return getRealmRoleComposites(role);
     }
 
@@ -194,7 +187,6 @@ public class RoleByIdResource extends RoleResource {
             throw new NotFoundException("Could not find client: " + appName);
 
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return getClientRoleComposites(app, role);
     }
 
@@ -218,7 +210,6 @@ public class RoleByIdResource extends RoleResource {
             throw new NotFoundException("Could not find client: " + appId);
 
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return getClientRoleComposites(app, role);
     }
 
@@ -235,7 +226,9 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         deleteComposites(roles, role);
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri().getPath()).success();
+        
+        adminEvent.operation(OperationType.DELETE)
+            .resourcePath(role, session.getContext().getUri().getPath()).representation(roles).success();
     }
 
 }

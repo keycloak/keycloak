@@ -6,7 +6,6 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotAcceptableException;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.events.AdminEventBuilder;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -99,7 +98,6 @@ public class ClientAttributeCertificateResource {
         ClientKeyPairInfo info = new ClientKeyPairInfo();
         info.setCertificate(client.getAttribute(certificateAttribute));
         info.setPrivateKey(client.getAttribute(privateAttribute));
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return info;
     }
 
@@ -135,12 +133,14 @@ public class ClientAttributeCertificateResource {
         client.setAttribute(privateAttribute, privateKeyPem);
         client.setAttribute(certificateAttribute, certPem);
 
-
         KeycloakModelUtils.generateClientKeyPairCertificate(client);
         ClientKeyPairInfo info = new ClientKeyPairInfo();
         info.setCertificate(client.getAttribute(certificateAttribute));
         info.setPrivateKey(client.getAttribute(privateAttribute));
-        adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri().getPath()).representation(info).success();
+        
+        adminEvent.operation(OperationType.ACTION)
+        .resourcePath(client, session.getContext().getUri().getPath()).representation(info).success();
+        
         return info;
     }
 
@@ -198,7 +198,7 @@ public class ClientAttributeCertificateResource {
             info.setCertificate(certPem);
         }
         
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).representation(info).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(client, uriInfo.getPath()).representation(info).success();
         return info;
     }
 
@@ -325,7 +325,8 @@ public class ClientAttributeCertificateResource {
             stream.close();
             byte[] rtn = stream.toByteArray();
             
-            adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri().getPath()).success();
+            adminEvent.operation(OperationType.ACTION)
+            .resourcePath(client, session.getContext().getUri().getPath()).success();
             
             return rtn;
         } catch (Exception e) {

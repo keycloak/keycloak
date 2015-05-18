@@ -1197,12 +1197,6 @@ module.controller('RealmEventsConfigCtrl', function($scope, eventsConfig, RealmE
         'tags': serverInfo.enums['eventType']
     };
 
-    $scope.adminEnabledEventOperationsOptions = {
-        'multiple': true,
-        'simple_tags': true,
-        'tags': serverInfo.enums['operationType']
-    };
-
     var oldCopy = angular.copy($scope.eventsConfig);
     $scope.changed = false;
 
@@ -1327,7 +1321,6 @@ module.controller('RealmAdminEventsCtrl', function($scope, RealmAdminEvents, rea
         max : 5,
         first : 0
     }
-    $scope.query.authRealm = 'master';
 
     $scope.adminEnabledEventOperationsOptions = {
         'multiple': true,
@@ -1350,7 +1343,7 @@ module.controller('RealmAdminEventsCtrl', function($scope, RealmAdminEvents, rea
     	$scope.query.max = 5;
     	$scope.query.operationTypes = '';
     	$scope.query.resourcePath = '';
-    	$scope.query.authRealm = 'master';
+    	$scope.query.authRealm = '';
     	$scope.query.authClient = '';
     	$scope.query.authUser = '';
     	$scope.query.authIpAddress = '';

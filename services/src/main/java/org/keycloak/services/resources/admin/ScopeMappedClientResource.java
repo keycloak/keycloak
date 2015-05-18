@@ -2,7 +2,6 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.events.AdminEventBuilder;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -17,9 +16,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +59,6 @@ public class ScopeMappedClientResource {
         for (RoleModel roleModel : mappings) {
             mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return mapRep;
     }
 
@@ -79,7 +75,6 @@ public class ScopeMappedClientResource {
         auth.requireView();
 
         Set<RoleModel> roles = scopedClient.getRoles();
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return ScopeMappedResource.getAvailable(client, roles);
     }
 
@@ -96,7 +91,6 @@ public class ScopeMappedClientResource {
         auth.requireView();
 
         Set<RoleModel> roles = scopedClient.getRoles();
-        adminEvent.operation(OperationType.VIEW).resourcePath(session.getContext().getUri().getPath()).success();
         return ScopeMappedResource.getComposite(client, roles);
     }
 
@@ -116,9 +110,8 @@ public class ScopeMappedClientResource {
                 throw new NotFoundException("Role not found");
             }
             client.addScopeMapping(roleModel);
+            adminEvent.operation(OperationType.CREATE).resourcePath(client, "/roles").representation(roles).success();
         }
-        adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri().getPath()).representation(roles).success();
-
     }
 
     /**
@@ -146,6 +139,6 @@ public class ScopeMappedClientResource {
                 client.deleteScopeMapping(roleModel);
             }
         }
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri().getPath()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(client, "/roles").representation(roles).success();
     }
 }

@@ -137,6 +137,7 @@ public class MongoEventStoreProvider implements EventStoreProvider {
     private static DBObject convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
         BasicDBObject e = new BasicDBObject();
         e.put("time", adminEvent.getTime());
+        e.put("realmId", adminEvent.getRealmId());
         e.put("operationType", adminEvent.getOperationType().toString());
         setAuthDetails(e, adminEvent.getAuthDetails());
         e.put("resourcePath", adminEvent.getResourcePath());
@@ -152,6 +153,7 @@ public class MongoEventStoreProvider implements EventStoreProvider {
     static AdminEvent convertAdminEvent(BasicDBObject o) {
         AdminEvent adminEvent = new AdminEvent();
         adminEvent.setTime(o.getLong("time"));
+        adminEvent.setRealmId(o.getString("realmId"));
         adminEvent.setOperationType(OperationType.valueOf(o.getString("operationType")));
         setAuthDetails(adminEvent, o);
         adminEvent.setResourcePath(o.getString("resourcePath"));
@@ -164,18 +166,18 @@ public class MongoEventStoreProvider implements EventStoreProvider {
     }
 
     private static void setAuthDetails(BasicDBObject e, AuthDetails authDetails) {
-        e.put("realmId", authDetails.getRealmId());
-        e.put("clientId", authDetails.getClientId());
-        e.put("userId", authDetails.getUserId());
-        e.put("ipAddress", authDetails.getIpAddress());
+        e.put("authRealmId", authDetails.getRealmId());
+        e.put("authClientId", authDetails.getClientId());
+        e.put("authUserId", authDetails.getUserId());
+        e.put("authIpAddress", authDetails.getIpAddress());
     }
     
     private static void setAuthDetails(AdminEvent adminEvent, BasicDBObject o) {
         AuthDetails authDetails = new AuthDetails();
-        authDetails.setRealmId(o.getString("realmId"));
-        authDetails.setClientId(o.getString("clientId"));
-        authDetails.setUserId(o.getString("userId"));
-        authDetails.setIpAddress(o.getString("ipAddress"));
+        authDetails.setRealmId(o.getString("authRealmId"));
+        authDetails.setClientId(o.getString("authClientId"));
+        authDetails.setUserId(o.getString("authUserId"));
+        authDetails.setIpAddress(o.getString("authIpAddress"));
         adminEvent.setAuthDetails(authDetails);
     }
 

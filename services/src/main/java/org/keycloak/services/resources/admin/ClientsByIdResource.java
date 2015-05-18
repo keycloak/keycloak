@@ -1,6 +1,5 @@
 package org.keycloak.services.resources.admin;
 
-import org.keycloak.events.AdminEventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 

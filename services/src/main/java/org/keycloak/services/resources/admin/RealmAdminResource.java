@@ -5,8 +5,6 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
-import org.keycloak.Config;
-import org.keycloak.events.AdminEventBuilder;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
@@ -87,7 +85,7 @@ public class RealmAdminResource {
         this.auth = auth;
         this.realm = realm;
         this.tokenManager = tokenManager;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.realm(realm);
 
         auth.init(RealmAuth.Resource.REALM);
     }
@@ -156,14 +154,12 @@ public class RealmAdminResource {
                 CacheUserProvider cache = (CacheUserProvider)session.userStorage();
                 rep.setUserCacheEnabled(cache.isEnabled());
             }
-            adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
             return rep;
         } else {
             auth.requireAny();
 
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());
-            adminEvent.operation(OperationType.VIEW).resourcePath(uriInfo.getPath()).success();
             return rep;
         }
     }
@@ -199,7 +195,7 @@ public class RealmAdminResource {
                 usersSyncManager.refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, realm.getId());
             }
             
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo.getPath()).representation(rep).success();
+            adminEvent.operation(OperationType.UPDATE).representation(rep).success();
             return Response.noContent().build();
         } catch (PatternSyntaxException e) {
             return ErrorResponse.error("Specified regex pattern(s) is invalid.", Response.Status.BAD_REQUEST);
@@ -221,7 +217,7 @@ public class RealmAdminResource {
         if (!new RealmManager(session).removeRealm(realm)) {
             throw new NotFoundException("Realm doesn't exist");
         } else {
-            adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo.getPath()).success();
+            clearAdminEvents();
         }
     }
 
@@ -267,7 +263,7 @@ public class RealmAdminResource {
     @POST
     public GlobalRequestResult pushRevocation() {
         auth.requireManage();
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath(), false).success();
         return new ResourceAdminManager(session).pushRealmRevocationPolicy(uriInfo.getRequestUri(), realm);
     }
 
@@ -280,7 +276,7 @@ public class RealmAdminResource {
     @POST
     public GlobalRequestResult logoutAll() {
         session.sessions().removeUserSessions(realm);
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath(), false).success();
         return new ResourceAdminManager(session).logoutAll(uriInfo.getRequestUri(), realm);
     }
 
@@ -296,7 +292,7 @@ public class RealmAdminResource {
         UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
         if (userSession == null) throw new NotFoundException("Sesssion not found");
         AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo.getPath(), true).success();
 
     }
 
@@ -319,7 +315,6 @@ public class RealmAdminResource {
             if (size == 0) continue;
             stats.put(client.getClientId(), size);
         }
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).representation(stats).success();
         return stats;
     }
 
@@ -345,7 +340,6 @@ public class RealmAdminResource {
             map.put("active", size + "");
             data.add(map);
         }
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath()).representation(data).success();
         return data;
     }
 
@@ -468,17 +462,12 @@ public class RealmAdminResource {
         auth.init(RealmAuth.Resource.EVENTS).requireView();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        AdminEventQuery query = null;
-        
-        if(realm.getName().equals(Config.getAdminRealm())) {
-            query = eventStore.createAdminQuery();
-            if(authRealm != null) {
-                query.authRealm(authRealm);
-            }
-        } else {
-            query = eventStore.createAdminQuery().authRealm(realm.getId());
+        AdminEventQuery query = eventStore.createAdminQuery().realm(realm.getId());;
+
+        if (authRealm != null) {
+            query.authRealm(authRealm);
         }
-        
+
         if (authClient != null) {
             query.authClient(authClient);
         }

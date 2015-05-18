@@ -170,9 +170,6 @@ public class RealmManager {
         }
         
         realm.setAdminEventsEnabled(rep.isAdminEventsEnabled());
-        if(rep.getAdminEnabledEventOperations() != null) {
-            realm.setAdminEnabledEventOperations(new HashSet<String>(rep.getAdminEnabledEventOperations()));
-        }
         realm.setAdminEventsDetailsEnabled(rep.isAdminEventsDetailsEnabled());
     }
 

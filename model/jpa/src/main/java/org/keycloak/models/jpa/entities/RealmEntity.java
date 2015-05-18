@@ -138,11 +138,6 @@ public class RealmEntity {
     @Column(name="ADMIN_EVENTS_ENABLED")
     protected boolean adminEventsEnabled;
     
-    @ElementCollection
-    @Column(name="VALUE")
-    @CollectionTable(name="REALM_ENABLED_ADMIN_EVENT_OPERATIONS", joinColumns={ @JoinColumn(name="REALM_ID") })
-    protected Set<String> adminEnabledEventOperations = new HashSet<String>();
-    
     @Column(name="ADMIN_EVENTS_DETAILS_ENABLED")
     protected boolean adminEventsDetailsEnabled;
     
@@ -454,14 +449,6 @@ public class RealmEntity {
 
     public void setAdminEventsEnabled(boolean adminEventsEnabled) {
         this.adminEventsEnabled = adminEventsEnabled;
-    }
-
-    public Set<String> getAdminEnabledEventOperations() {
-        return adminEnabledEventOperations;
-    }
-
-    public void setAdminEnabledEventOperations(Set<String> adminEnabledEventOperations) {
-        this.adminEnabledEventOperations = adminEnabledEventOperations;
     }
 
     public boolean isAdminEventsDetailsEnabled() {

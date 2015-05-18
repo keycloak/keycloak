@@ -88,7 +88,7 @@ public class MemEventStoreProvider implements EventStoreProvider {
         synchronized(adminEvents) {
             Iterator<AdminEvent> itr = adminEvents.iterator();
             while (itr.hasNext()) {
-                if (itr.next().getAuthDetails().getRealmId().equals(realmId)) {
+                if (itr.next().getRealmId().equals(realmId)) {
                     itr.remove();
                 }
             }
@@ -101,7 +101,7 @@ public class MemEventStoreProvider implements EventStoreProvider {
             Iterator<AdminEvent> itr = adminEvents.iterator();
             while (itr.hasNext()) {
                 AdminEvent e = itr.next();
-                if (e.getAuthDetails().getRealmId().equals(realmId) && e.getTime() < olderThan) {
+                if (e.getRealmId().equals(realmId) && e.getTime() < olderThan) {
                     itr.remove();
                 }
             }

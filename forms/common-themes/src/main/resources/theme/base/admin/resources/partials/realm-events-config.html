@@ -1,5 +1,8 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
-    <h1><strong>Events</strong> {{realm.realm|capitalize}}</span> Events</h1>
+    <h1>
+        <span><strong>Events Config</strong> {{realm.realm|capitalize}}</span>
+        <kc-tooltip>Displays configuration options to enable persistence of user and admin events.</kc-tooltip>
+    </h1>
 
     <ul class="nav nav-tabs">
         <li data-ng-class="(path[2] == 'events') && 'active'"><a href="#/realms/{{realm.realm}}/events">Login Events</a></li>
@@ -80,16 +83,6 @@
                     </div>
 
                     <span tooltip-placement="right" tooltip="If enabled admin events are saved to the database which makes events available to the admin console." class="fa fa-info-circle"></span>
-                </div>
-
-                <div class="form-group" data-ng-show="eventsConfig.adminEventsEnabled">
-                    <label class="col-md-2 control-label" for="adminEnabledEventOperations" class="control-label">Saved Operations</label>
-
-                    <div class="col-md-6">
-                        <input ui-select2="adminEnabledEventOperationsOptions" id="adminEnabledEventOperations" ng-model="eventsConfig.adminEnabledEventOperations" data-placeholder="Select operations..."/>
-                    </div>
-
-                    <span tooltip-placement="right" tooltip="Configure what operations are saved." class="fa fa-info-circle"></span>
                 </div>
 
                 <div class="form-group" data-ng-show="eventsConfig.adminEventsEnabled">
