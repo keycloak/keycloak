@@ -9,7 +9,6 @@ import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationMapper;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserModel;
 
@@ -178,5 +177,10 @@ public class LDAPUtils {
     public static String getUsername(LDAPObject ldapUser, LDAPConfig config) {
         String usernameAttr = config.getUsernameLdapAttribute();
         return (String) ldapUser.getAttribute(usernameAttr);
+    }
+
+    public static boolean parseBooleanParameter(UserFederationMapperModel mapperModel, String paramName) {
+        String readOnly = mapperModel.getConfig().get(paramName);
+        return Boolean.parseBoolean(readOnly);
     }
 }

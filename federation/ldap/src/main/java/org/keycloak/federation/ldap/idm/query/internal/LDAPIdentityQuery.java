@@ -186,7 +186,7 @@ public class LDAPIdentityQuery {
     }
 
     public Set<Condition> getConditions() {
-        return unmodifiableSet(this.conditions);
+        return this.conditions;
     }
 
 }

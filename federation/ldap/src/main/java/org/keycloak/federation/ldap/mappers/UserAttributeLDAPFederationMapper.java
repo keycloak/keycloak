@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.federation.ldap.LDAPFederationProvider;
+import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
@@ -42,6 +43,8 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
 
     public static final String USER_MODEL_ATTRIBUTE = "user.model.attribute";
     public static final String LDAP_ATTRIBUTE = "ldap.attribute";
+
+    // TODO: Merge with fullname mapper
     public static final String READ_ONLY = "read.only";
 
     @Override
@@ -56,7 +59,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
 
     @Override
     public String getId() {
-        return "ldap-user-attribute-mapper";
+        return "user-attribute-ldap-mapper";
     }
 
     @Override
@@ -104,18 +107,52 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
     public UserModel proxy(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapObject, UserModel delegate) {
         if (ldapProvider.getEditMode() == UserFederationProvider.EditMode.WRITABLE && !isReadOnly(mapperModel)) {
 
-            // This assumes that mappers are sorted by type! Maybe improve...
-            TxAwareLDAPUserModelDelegate txDelegate;
-            if (delegate instanceof TxAwareLDAPUserModelDelegate) {
-                // We will reuse already existing delegate and just register our mapped attribute in existing transaction.
-                txDelegate = (TxAwareLDAPUserModelDelegate) delegate;
-            } else {
-                txDelegate = new TxAwareLDAPUserModelDelegate(delegate, ldapProvider, ldapObject);
-            }
+            final String userModelAttrName = mapperModel.getConfig().get(USER_MODEL_ATTRIBUTE);
+            final String ldapAttrName = mapperModel.getConfig().get(LDAP_ATTRIBUTE);
 
-            String userModelAttrName = mapperModel.getConfig().get(USER_MODEL_ATTRIBUTE);
-            String ldapAttrName = mapperModel.getConfig().get(LDAP_ATTRIBUTE);
-            txDelegate.addMappedAttribute(userModelAttrName, ldapAttrName);
+            AbstractTxAwareLDAPUserModelDelegate txDelegate = new AbstractTxAwareLDAPUserModelDelegate(delegate, ldapProvider, ldapObject) {
+
+                @Override
+                public void setAttribute(String name, String value) {
+                    setLDAPAttribute(name, value);
+
+                    super.setAttribute(name, value);
+                }
+
+                @Override
+                public void setEmail(String email) {
+                    setLDAPAttribute(UserModel.EMAIL, email);
+
+                    super.setEmail(email);
+                }
+
+                @Override
+                public void setLastName(String lastName) {
+                    setLDAPAttribute(UserModel.LAST_NAME, lastName);
+
+                    super.setLastName(lastName);
+                }
+
+                @Override
+                public void setFirstName(String firstName) {
+                    setLDAPAttribute(UserModel.FIRST_NAME, firstName);
+
+                    super.setFirstName(firstName);
+                }
+
+                protected void setLDAPAttribute(String modelAttrName, String value) {
+                    if (modelAttrName.equals(userModelAttrName)) {
+                        if (logger.isTraceEnabled()) {
+                            logger.tracef("Pushing user attribute to LDAP. Model attribute name: %s, LDAP attribute name: %s, Attribute value: %s", modelAttrName, ldapAttrName, value);
+                        }
+
+                        ensureTransactionStarted();
+
+                        ldapObject.setAttribute(ldapAttrName, value);
+                    }
+                }
+
+            };
 
             return txDelegate;
         } else {
@@ -144,7 +181,6 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
     }
 
     private boolean isReadOnly(UserFederationMapperModel mapperModel) {
-        String readOnly = mapperModel.getConfig().get(READ_ONLY);
-        return Boolean.parseBoolean(readOnly);
+        return LDAPUtils.parseBooleanParameter(mapperModel, READ_ONLY);
     }
 }

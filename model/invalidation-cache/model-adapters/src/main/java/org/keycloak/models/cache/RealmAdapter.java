@@ -957,26 +957,38 @@ public class RealmAdapter implements RealmModel {
     public List<UserFederationMapperModel> getUserFederationMappers() {
         // TODO: Some hardcoded stuff...
         List<UserFederationMapperModel> mappers = new ArrayList<UserFederationMapperModel>();
-        mappers.add(createMapperModel("usn", "usernameMapper", "ldap-user-attribute-mapper",
+
+        mappers.add(createMapperModel("usn", "usernameMapper", "user-attribute-ldap-mapper",
                 "user.model.attribute", UserModel.USERNAME,
                 "ldap.attribute", LDAPConstants.UID));
-        mappers.add(createMapperModel("fn", "firstNameMapper", "ldap-user-attribute-mapper",
+
+        // Uncomment this for CN + SN config
+        /*mappers.add(createMapperModel("fn", "firstNameMapper", "user-attribute-ldap-mapper",
                 "user.model.attribute", UserModel.FIRST_NAME,
-                "ldap.attribute", LDAPConstants.CN));
-        mappers.add(createMapperModel("ln", "lastNameMapper", "ldap-user-attribute-mapper",
+                "ldap.attribute", LDAPConstants.CN));*/
+
+        // Uncomment this for CN + SN + givenname config
+        mappers.add(createMapperModel("fn", "firstNameMapper", "user-attribute-ldap-mapper",
+                "user.model.attribute", UserModel.FIRST_NAME,
+                "ldap.attribute", LDAPConstants.GIVENNAME));
+        mappers.add(createMapperModel("fulln", "fullNameMapper", "full-name-ldap-mapper",
+                "ldap.full.name.attribute", LDAPConstants.CN));
+
+        mappers.add(createMapperModel("ln", "lastNameMapper", "user-attribute-ldap-mapper",
                 "user.model.attribute", UserModel.LAST_NAME,
                 "ldap.attribute", LDAPConstants.SN));
-        mappers.add(createMapperModel("emailMpr", "emailMapper", "ldap-user-attribute-mapper",
+
+        mappers.add(createMapperModel("emailMpr", "emailMapper", "user-attribute-ldap-mapper",
                 "user.model.attribute", UserModel.EMAIL,
                 "ldap.attribute", LDAPConstants.EMAIL));
-        mappers.add(createMapperModel("postalCodeMpr", "postalCodeMapper", "ldap-user-attribute-mapper",
+        mappers.add(createMapperModel("postalCodeMpr", "postalCodeMapper", "user-attribute-ldap-mapper",
                 "user.model.attribute", "postal_code",
                 "ldap.attribute", LDAPConstants.POSTAL_CODE));
-        mappers.add(createMapperModel("createdDateMpr", "createTimeStampMapper", "ldap-user-attribute-mapper",
+        mappers.add(createMapperModel("createdDateMpr", "createTimeStampMapper", "user-attribute-ldap-mapper",
                 "user.model.attribute", LDAPConstants.CREATE_TIMESTAMP,
                 "ldap.attribute", LDAPConstants.CREATE_TIMESTAMP,
                 "read.only", "true"));
-        mappers.add(createMapperModel("modifyDateMpr", "modifyTimeStampMapper", "ldap-user-attribute-mapper",
+        mappers.add(createMapperModel("modifyDateMpr", "modifyTimeStampMapper", "user-attribute-ldap-mapper",
                 "user.model.attribute", LDAPConstants.MODIFY_TIMESTAMP,
                 "ldap.attribute", LDAPConstants.MODIFY_TIMESTAMP,
                 "read.only", "true"));
