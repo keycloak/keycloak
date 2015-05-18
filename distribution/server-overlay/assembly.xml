@@ -40,7 +40,7 @@
             <destName>standalone-keycloak.xml</destName>
         </file>
         <file>
-            <source>../subsystem-war/src/main/resources/META-INF/keycloak-server.json</source>
+            <source>src/main/keycloak-server.json</source>
             <outputDirectory>standalone/configuration</outputDirectory>
         </file>
         <file>
