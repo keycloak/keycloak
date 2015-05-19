@@ -16,12 +16,7 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-overlay</artifactId>
-            <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-dist</artifactId>
+            <artifactId>keycloak-server-feature-pack</artifactId>
             <type>zip</type>
         </dependency>
     </dependencies>

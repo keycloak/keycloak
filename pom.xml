@@ -1130,6 +1130,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-server-feature-pack</artifactId>
+                    <version>${project.version}</version>
+                    <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-testsuite-integration</artifactId>
                 <version>${project.version}</version>
             </dependency>

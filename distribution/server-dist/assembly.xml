@@ -8,7 +8,6 @@
 
     <includeBaseDirectory>true</includeBaseDirectory>
 
-    <!-- If war is filtered it will get corrupted. Only need to filter module.xml -->
     <fileSets>
         <fileSet>
             <directory>target/${project.build.finalName}</directory>
@@ -38,30 +37,5 @@
                 <include>*.*</include>
             </includes>
         </fileSet>
-        <fileSet>
-            <directory>../../forms/common-themes/src/main/resources/theme</directory>
-            <outputDirectory>standalone/configuration/themes</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>../../</directory>
-            <includes>
-                <include>License.html</include>
-            </includes>
-            <outputDirectory></outputDirectory>
-        </fileSet>
     </fileSets>
-
-    <files>
-        <file>
-            <source>../server-overlay/src/main/themes/README.txt</source>
-            <outputDirectory>standalone/configuration/themes</outputDirectory>
-        </file>
-        <file>
-            <source>../server-overlay/src/main/providers/README.txt</source>
-            <outputDirectory>standalone/configuration/providers</outputDirectory>
-        </file>
-    </files>
 </assembly>
