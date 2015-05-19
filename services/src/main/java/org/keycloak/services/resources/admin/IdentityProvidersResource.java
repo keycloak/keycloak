@@ -82,9 +82,6 @@ public class IdentityProvidersResource {
         InputStream inputStream = file.getBody(InputStream.class, null);
         IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
         Map<String, String> config = providerFactory.parseConfig(inputStream);
-        
-        adminEvent.operation(OperationType.CREATE).resourcePath(providerFactory, uriInfo.getPath()).representation(config).success();
-
         return config;
     }
 
@@ -102,7 +99,6 @@ public class IdentityProvidersResource {
             IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
             Map<String, String> config;
             config = providerFactory.parseConfig(inputStream);
-            adminEvent.operation(OperationType.CREATE).resourcePath(providerFactory, uriInfo.getPath()).representation(config).success();
             return config;
         } finally {
             try {
@@ -137,7 +133,7 @@ public class IdentityProvidersResource {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(representation);
             this.realm.addIdentityProvider(identityProvider);
 
-            adminEvent.operation(OperationType.CREATE).resourcePath(identityProvider)
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, identityProvider.getInternalId())
                     .representation(representation).success();
             
             return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getProviderId()).build()).build();

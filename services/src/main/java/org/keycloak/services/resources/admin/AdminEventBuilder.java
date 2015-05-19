@@ -25,6 +25,8 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.Time;
 
+import javax.ws.rs.core.UriInfo;
+
 public class AdminEventBuilder {
     
     private static final Logger log = Logger.getLogger(AdminEventBuilder.class);
@@ -92,18 +94,6 @@ public class AdminEventBuilder {
         return this;
     }
 
-    public AdminEventBuilder authRealm(String realmId) {
-        AuthDetails authDetails = adminEvent.getAuthDetails();
-        if(authDetails == null) {
-            authDetails =  new AuthDetails();
-            authDetails.setRealmId(realmId);
-        } else {
-            authDetails.setRealmId(realmId);
-        }
-        adminEvent.setAuthDetails(authDetails);
-        return this;
-    }
-
     public AdminEventBuilder authClient(ClientModel client) {
         AuthDetails authDetails = adminEvent.getAuthDetails();
         if(authDetails == null) {
@@ -111,18 +101,6 @@ public class AdminEventBuilder {
             authDetails.setClientId(client.getId());
         } else {
             authDetails.setClientId(client.getId());
-        }
-        adminEvent.setAuthDetails(authDetails);
-        return this;
-    }
-
-    public AdminEventBuilder authClient(String clientId) {
-        AuthDetails authDetails = adminEvent.getAuthDetails();
-        if(authDetails == null) {
-            authDetails =  new AuthDetails();
-            authDetails.setClientId(clientId);
-        } else {
-            authDetails.setClientId(clientId);
         }
         adminEvent.setAuthDetails(authDetails);
         return this;
@@ -140,18 +118,6 @@ public class AdminEventBuilder {
         return this;
     }
 
-    public AdminEventBuilder authUser(String userId) {
-        AuthDetails authDetails = adminEvent.getAuthDetails();
-        if(authDetails == null) {
-            authDetails =  new AuthDetails();
-            authDetails.setUserId(userId);
-        } else {
-            authDetails.setUserId(userId);
-        }
-        adminEvent.setAuthDetails(authDetails);
-        return this;
-    }
-
     public AdminEventBuilder authIpAddress(String ipAddress) {
         AuthDetails authDetails = adminEvent.getAuthDetails();
         if(authDetails == null) {
@@ -163,59 +129,45 @@ public class AdminEventBuilder {
         adminEvent.setAuthDetails(authDetails);
         return this;
     }
-    
-    public AdminEventBuilder resourcePath(String resourcePath) {
-        adminEvent.setResourcePath(resourcePath);
+
+    public AdminEventBuilder resourcePath(UriInfo uriInfo) {
+        String path = getResourcePath(uriInfo);
+        adminEvent.setResourcePath(path);
         return this;
     }
-    
-    public AdminEventBuilder resourcePath(String resourcePath, boolean segment) {
-        if(segment) {
-            int index = resourcePath.lastIndexOf('/');
-            int subIndex = resourcePath.lastIndexOf('/', index - 1);
-            adminEvent.setResourcePath(resourcePath.substring(subIndex));
-        } else {
-            adminEvent.setResourcePath(resourcePath.substring(resourcePath.lastIndexOf('/')));
+
+    public AdminEventBuilder resourcePath(UriInfo uriInfo, String id) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getResourcePath(uriInfo));
+        sb.append("/");
+        sb.append(id);
+        adminEvent.setResourcePath(sb.toString());
+        return this;
+    }
+
+    private String getResourcePath(UriInfo uriInfo) {
+        String path = uriInfo.getPath();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("/realms/");
+        sb.append(realm.getName());
+        sb.append("/");
+        String realmRelative = sb.toString();
+
+        path = path.substring(path.indexOf(realmRelative) + realmRelative.length());
+
+        if (path.contains("clients-by-id")) {
+            path = path.replaceAll("clients-by-id", "clients");
+        } else if (path.contains("roles-by-id")) {
+            path = path.replaceAll("roles-by-id", "roles");
+        } else if (path.contains("role-mappings/realm")) {
+            path = path.replaceFirst("role-mappings/realm", "role-mappings");
+        } else if (path.contains("role-mappings/clients")) {
+            path = path.replaceFirst("role-mappings/clients", "role-mappings");
         }
-        return this;
+
+        return path;
     }
-    
-    public AdminEventBuilder resourcePath(Object model) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getResourcePath(model));
-        adminEvent.setResourcePath(sb.toString());
-        return this;
-    }
-    
-    public AdminEventBuilder resourcePath(Object model, String resourcePath) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getResourcePath(model));
-        sb.append(resourcePath.substring(resourcePath.lastIndexOf('/')));
-        adminEvent.setResourcePath(sb.toString());
-        return this;
-    }
-    
-    public AdminEventBuilder resourcePath(Object model, String resourcePath, boolean segment) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getResourcePath(model));
-        int index = resourcePath.lastIndexOf('/');
-        int subIndex = resourcePath.lastIndexOf('/', index - 1);
-        sb.append(resourcePath.substring(subIndex));
-        adminEvent.setResourcePath(sb.toString());
-        return this;
-    }
-    
-    public AdminEventBuilder resourcePath(Object model, Object subModel, String resourcePath) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getResourcePath(model));
-        int index = resourcePath.lastIndexOf('/');
-        int subIndex = resourcePath.lastIndexOf('/', index - 1);
-        sb.append(resourcePath.substring(subIndex, index+1));
-        sb.append(getResourcePath(subModel));
-        adminEvent.setResourcePath(sb.toString());
-        return this;
-    }
-    
 
     public void error(String error) {
         adminEvent.setOperationType(OperationType.valueOf(adminEvent.getOperationType().name() + "_ERROR"));
@@ -268,47 +220,5 @@ public class AdminEventBuilder {
             }
         }
     }
-    
-    private String getResourcePath(Object model) {
 
-        StringBuilder sb = new StringBuilder();
-
-        if (model instanceof RealmModel) {
-            RealmModel realm = (RealmModel) model;
-            sb.append("realms/" + realm.getId());
-        } else if (model instanceof ClientModel) {
-            ClientModel client = (ClientModel) model;
-            sb.append("clients/" + client.getId());
-        } else if (model instanceof UserModel) {
-            UserModel user = (UserModel) model;
-            sb.append("users/" + user.getId());
-
-        } else if (model instanceof IdentityProviderModel) {
-            IdentityProviderModel provider = (IdentityProviderModel) model;
-            sb.append("identity-Providers/" + provider.getProviderId());
-        } else if (model instanceof IdentityProviderRepresentation) {
-            IdentityProviderRepresentation provider = (IdentityProviderRepresentation) model;
-            sb.append("identity-Providers/" + provider.getProviderId());
-        } else if (model instanceof IdentityProviderMapperModel) {
-            IdentityProviderMapperModel provider = (IdentityProviderMapperModel) model;
-            sb.append("identity-Provider-Mappers/" + provider.getId());
-        } else if (model instanceof IdentityProviderFactory) {
-            IdentityProviderFactory provider = (IdentityProviderFactory) model;
-            sb.append("identity-Provider-Factory/" + provider.getId());
-
-        } else if (model instanceof ProtocolMapperModel) {
-            ProtocolMapperModel mapper = (ProtocolMapperModel) model;
-            sb.append("protocol-Mappers/" + mapper.getId());
-
-        } else if (model instanceof UserFederationProviderModel) {
-            UserFederationProviderModel provider = (UserFederationProviderModel) model;
-            sb.append("user-Federation-Providers/" + provider.getId());
-        
-        } else if (model instanceof RoleModel) {
-            RoleModel role = (RoleModel) model;
-            sb.append("roles/" + role.getId());
-        }
-
-        return sb.toString();
-    }
 }

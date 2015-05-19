@@ -138,9 +138,8 @@ public class ClientAttributeCertificateResource {
         info.setCertificate(client.getAttribute(certificateAttribute));
         info.setPrivateKey(client.getAttribute(privateAttribute));
         
-        adminEvent.operation(OperationType.ACTION)
-        .resourcePath(client, session.getContext().getUri().getPath()).representation(info).success();
-        
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
+
         return info;
     }
 
@@ -198,7 +197,7 @@ public class ClientAttributeCertificateResource {
             info.setCertificate(certPem);
         }
         
-        adminEvent.operation(OperationType.ACTION).resourcePath(client, uriInfo.getPath()).representation(info).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
         return info;
     }
 
@@ -324,10 +323,6 @@ public class ClientAttributeCertificateResource {
             stream.flush();
             stream.close();
             byte[] rtn = stream.toByteArray();
-            
-            adminEvent.operation(OperationType.ACTION)
-            .resourcePath(client, session.getContext().getUri().getPath()).success();
-            
             return rtn;
         } catch (Exception e) {
             throw new RuntimeException(e);

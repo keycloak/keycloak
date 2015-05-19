@@ -39,7 +39,10 @@ public class RoleByIdResource extends RoleResource {
     private AdminEventBuilder adminEvent;
 
     @Context
-    protected KeycloakSession session;
+    private KeycloakSession session;
+
+    @Context
+    private UriInfo uriInfo;
 
     public RoleByIdResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
         super(realm);
@@ -95,7 +98,7 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         deleteRole(role);
-        adminEvent.operation(OperationType.DELETE).resourcePath(role).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
     /**
@@ -111,7 +114,7 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
         updateRole(rep, role);
-        adminEvent.operation(OperationType.UPDATE).resourcePath(role).representation(rep).success();
+        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
     }
 
     /**
@@ -126,11 +129,7 @@ public class RoleByIdResource extends RoleResource {
     public void addComposites(final @PathParam("role-id") String id, List<RoleRepresentation> roles) {
         RoleModel role = getRoleModel(id);
         auth.requireManage();
-        addComposites(roles, role);
-        
-        adminEvent.operation(OperationType.ACTION)
-            .resourcePath(role, session.getContext().getUri().getPath()).representation(roles).success();
-        
+        addComposites(adminEvent, uriInfo, roles, role);
     }
 
     /**
@@ -227,8 +226,7 @@ public class RoleByIdResource extends RoleResource {
         auth.requireManage();
         deleteComposites(roles, role);
         
-        adminEvent.operation(OperationType.DELETE)
-            .resourcePath(role, session.getContext().getUri().getPath()).representation(roles).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(roles).success();
     }
 
 }
