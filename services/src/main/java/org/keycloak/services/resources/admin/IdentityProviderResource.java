@@ -86,7 +86,7 @@ public class IdentityProviderResource {
 
         this.realm.removeIdentityProviderByAlias(this.identityProviderModel.getAlias());
         
-        adminEvent.operation(OperationType.DELETE).resourcePath(identityProviderModel).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
         
         return Response.noContent().build();
     }
@@ -112,7 +112,7 @@ public class IdentityProviderResource {
                 updateUsersAfterProviderAliasChange(this.session.users().getUsers(this.realm), oldProviderId, newProviderId);
             }
             
-            adminEvent.operation(OperationType.UPDATE).resourcePath(providerRep).representation(providerRep).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(providerRep).success();
             
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
@@ -169,7 +169,6 @@ public class IdentityProviderResource {
         try {
             this.auth.requireView();
             IdentityProviderFactory factory = getIdentityProviderFactory();
-            adminEvent.operation(OperationType.ACTION).resourcePath(identityProviderModel, uriInfo.getPath()).success();
             return factory.create(identityProviderModel).export(uriInfo, realm, format);
         } catch (Exception e) {
             return ErrorResponse.error("Could not export public broker configuration for identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.NOT_FOUND);
@@ -232,7 +231,7 @@ public class IdentityProviderResource {
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
         model = realm.addIdentityProviderMapper(model);
         
-        adminEvent.operation(OperationType.CREATE).resourcePath(model, uriInfo.getPath())
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId())
             .representation(mapper).success();
         
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
@@ -260,7 +259,7 @@ public class IdentityProviderResource {
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
         realm.updateIdentityProviderMapper(model);
-        adminEvent.operation(OperationType.UPDATE).resourcePath(model).representation(rep).success();
+        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
 
     }
 
@@ -272,7 +271,7 @@ public class IdentityProviderResource {
         IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         realm.removeIdentityProviderMapper(model);
-        adminEvent.operation(OperationType.DELETE).resourcePath(model).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
 
     }
 

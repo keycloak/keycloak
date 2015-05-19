@@ -121,7 +121,7 @@ public class UsersResource {
                 throw new NotFoundException("User not found");
             }
             updateUserFromRep(user, rep);
-            adminEvent.operation(OperationType.UPDATE).resourcePath(user).representation(rep).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
 
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
@@ -158,7 +158,7 @@ public class UsersResource {
             UserModel user = session.users().addUser(realm, rep.getUsername());
             updateUserFromRep(user, rep);
             
-            adminEvent.operation(OperationType.CREATE).resourcePath(user).representation(rep).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, user.getId()).representation(rep).success();
             
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
@@ -312,7 +312,7 @@ public class UsersResource {
 
         FederatedIdentityModel socialLink = new FederatedIdentityModel(provider, rep.getUserId(), rep.getUserName());
         session.users().addFederatedIdentity(realm, user, socialLink);
-        adminEvent.operation(OperationType.CREATE).resourcePath(user, uriInfo.getPath(), true).representation(rep).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(rep).success();
         return Response.noContent().build();
     }
 
@@ -328,7 +328,7 @@ public class UsersResource {
         if (!session.users().removeFederatedIdentity(realm, user, provider)) {
             throw new NotFoundException("Link not found");
         }
-        adminEvent.operation(OperationType.DELETE).resourcePath(user, uriInfo.getPath(), true).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
     /**
@@ -382,7 +382,7 @@ public class UsersResource {
         } else {
             throw new NotFoundException("Consent not found for user " + username + " and client " + clientId);
         }
-        adminEvent.operation(OperationType.ACTION).resourcePath(user, client, uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }
 
     /**
@@ -404,7 +404,7 @@ public class UsersResource {
         for (UserSessionModel userSession : userSessions) {
             AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
         }
-        adminEvent.operation(OperationType.ACTION).resourcePath(user, uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }
 
     /**
@@ -426,7 +426,7 @@ public class UsersResource {
 
         boolean removed = new UserManager(session).removeUser(realm, user);
         if (removed) {
-            adminEvent.operation(OperationType.DELETE).resourcePath(user).success();
+            adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
             return Response.noContent().build();
         } else {
             return ErrorResponse.error("User couldn't be deleted", Response.Status.BAD_REQUEST);
@@ -638,10 +638,8 @@ public class UsersResource {
                 throw new NotFoundException("Role not found");
             }
             user.grantRole(roleModel);
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, role.getId()).representation(roles).success();
         }
-        
-        adminEvent.operation(OperationType.CREATE).resourcePath(user, realm, uriInfo.getPath()).representation(roles).success();
-
     }
 
     /**
@@ -667,7 +665,7 @@ public class UsersResource {
             for (RoleModel roleModel : roleModels) {
                 user.deleteRoleMapping(roleModel);
             }
-
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
         } else {
             for (RoleRepresentation role : roles) {
                 RoleModel roleModel = realm.getRole(role.getName());
@@ -675,10 +673,11 @@ public class UsersResource {
                     throw new NotFoundException("Role not found");
                 }
                 user.deleteRoleMapping(roleModel);
+
+                adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo, role.getId()).representation(roles).success();
             }
         }
         
-        adminEvent.operation(OperationType.DELETE).resourcePath(user, realm, uriInfo.getPath()).representation(roles).success();
     }
 
     @Path("{username}/role-mappings/clients/{clientId}")
@@ -693,7 +692,7 @@ public class UsersResource {
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
-        return new UserClientRoleMappingsResource(realm, auth, user, client, adminEvent);
+        return new UserClientRoleMappingsResource(uriInfo, realm, auth, user, client, adminEvent);
 
     }
     @Path("{username}/role-mappings/clients-by-id/{id}")
@@ -709,7 +708,7 @@ public class UsersResource {
             throw new NotFoundException("Client not found");
         }
         
-        return new UserClientRoleMappingsResource(realm, auth, user, client, adminEvent);
+        return new UserClientRoleMappingsResource(uriInfo, realm, auth, user, client, adminEvent);
 
     }
     /**
@@ -743,7 +742,7 @@ public class UsersResource {
         }
         if (pass.isTemporary()) user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
         
-        adminEvent.operation(OperationType.ACTION).resourcePath(user, uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }
 
     /**
@@ -763,7 +762,7 @@ public class UsersResource {
         }
 
         user.setTotp(false);
-        adminEvent.operation(OperationType.ACTION).resourcePath(user, uriInfo.getPath()).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }
 
     /**
@@ -840,7 +839,7 @@ public class UsersResource {
 
             //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
 
-            adminEvent.operation(OperationType.ACTION).resourcePath(user, uriInfo.getPath()).success();
+            adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
 
             return Response.ok().build();
         } catch (EmailException e) {

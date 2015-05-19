@@ -110,7 +110,7 @@ public class ScopeMappedClientResource {
                 throw new NotFoundException("Role not found");
             }
             client.addScopeMapping(roleModel);
-            adminEvent.operation(OperationType.CREATE).resourcePath(client, "/roles").representation(roles).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), roleModel.getId()).representation(roles).success();
         }
     }
 
@@ -129,7 +129,7 @@ public class ScopeMappedClientResource {
             for (RoleModel roleModel : roleModels) {
                 client.deleteScopeMapping(roleModel);
             }
-
+            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(roles).success();
         } else {
             for (RoleRepresentation role : roles) {
                 RoleModel roleModel = scopedClient.getRole(role.getName());
@@ -137,8 +137,8 @@ public class ScopeMappedClientResource {
                     throw new NotFoundException("Role not found");
                 }
                 client.deleteScopeMapping(roleModel);
+                adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri(), roleModel.getId()).representation(roles).success();
             }
         }
-        adminEvent.operation(OperationType.DELETE).resourcePath(client, "/roles").representation(roles).success();
     }
 }

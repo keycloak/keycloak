@@ -94,7 +94,7 @@ public class ClientsResource {
         try {
             ClientModel clientModel = RepresentationToModel.createClient(session, realm, rep, true);
             
-            adminEvent.operation(OperationType.CREATE).resourcePath(clientModel).representation(rep).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientModel.getId()).representation(rep).success();
             
             return Response.created(uriInfo.getAbsolutePathBuilder().path(getClientPath(clientModel)).build()).build();
         } catch (ModelDuplicateException e) {

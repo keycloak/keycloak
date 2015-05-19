@@ -131,7 +131,7 @@ public class UserFederationResource {
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
         checkKerberosCredential(model);
         
-        adminEvent.operation(OperationType.CREATE).resourcePath(model).representation(rep).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(rep).success();
 
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
@@ -157,7 +157,7 @@ public class UserFederationResource {
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
         checkKerberosCredential(model);
         
-        adminEvent.operation(OperationType.UPDATE).resourcePath(model).representation(rep).success();
+        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
 
     }
 
@@ -195,7 +195,7 @@ public class UserFederationResource {
         realm.removeUserFederationProvider(model);
         new UsersSyncManager().removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), model);
         
-        adminEvent.operation(OperationType.DELETE).resourcePath(model).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
 
     }
 
@@ -239,7 +239,7 @@ public class UserFederationResource {
                 } else if ("triggerChangedUsersSync".equals(action)) {
                     syncManager.syncChangedUsers(session.getKeycloakSessionFactory(), realm.getId(), model);
                 }
-                adminEvent.operation(OperationType.ACTION).resourcePath(model, "/sync").success();
+                adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
                 return Response.noContent().build();
             }
         }

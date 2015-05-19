@@ -132,7 +132,7 @@ public class RealmAdminResource {
      */
     @Path("roles")
     public RoleContainerResource getRoleContainerResource() {
-        return new RoleContainerResource(realm, auth, realm, adminEvent);
+        return new RoleContainerResource(uriInfo, realm, auth, realm, adminEvent);
     }
 
     /**
@@ -263,7 +263,7 @@ public class RealmAdminResource {
     @POST
     public GlobalRequestResult pushRevocation() {
         auth.requireManage();
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath(), false).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
         return new ResourceAdminManager(session).pushRealmRevocationPolicy(uriInfo.getRequestUri(), realm);
     }
 
@@ -276,7 +276,7 @@ public class RealmAdminResource {
     @POST
     public GlobalRequestResult logoutAll() {
         session.sessions().removeUserSessions(realm);
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo.getPath(), false).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
         return new ResourceAdminManager(session).logoutAll(uriInfo.getRequestUri(), realm);
     }
 
@@ -292,7 +292,7 @@ public class RealmAdminResource {
         UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
         if (userSession == null) throw new NotFoundException("Sesssion not found");
         AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo.getPath(), true).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
 
     }
 
