@@ -11,7 +11,10 @@ import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.internal.EqualCondition;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.mappers.UserFederationMapper;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserModel;
@@ -28,24 +31,9 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
     public static final String READ_ONLY = "read.only";
 
     @Override
-    public String getHelpText() {
-        return "Some help text - full name mapper - TODO";
-    }
-
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return null;
-    }
-
-    @Override
-    public String getId() {
-        return "full-name-ldap-mapper";
-    }
-
-    @Override
-    public void importUserFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapObject, UserModel user, boolean isCreate) {
+    public void onImportUserFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
         String ldapFullNameAttrName = getLdapFullNameAttrName(mapperModel);
-        String fullName = (String) ldapObject.getAttribute(ldapFullNameAttrName);
+        String fullName = ldapUser.getAttributeAsString(ldapFullNameAttrName);
         fullName = fullName.trim();
         if (fullName != null) {
             int lastSpaceIndex = fullName.lastIndexOf(" ");
@@ -59,22 +47,22 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
     }
 
     @Override
-    public void registerUserToLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapObject, UserModel localUser) {
+    public void onRegisterUserToLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
         String ldapFullNameAttrName = getLdapFullNameAttrName(mapperModel);
         String fullName = getFullName(localUser.getFirstName(), localUser.getLastName());
-        ldapObject.setAttribute(ldapFullNameAttrName, fullName);
+        ldapUser.setAttribute(ldapFullNameAttrName, fullName);
 
         if (isReadOnly(mapperModel)) {
-            ldapObject.addReadOnlyAttributeName(ldapFullNameAttrName);
+            ldapUser.addReadOnlyAttributeName(ldapFullNameAttrName);
         }
     }
 
     @Override
-    public UserModel proxy(final UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapObject, UserModel delegate) {
+    public UserModel proxy(final UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
         if (ldapProvider.getEditMode() == UserFederationProvider.EditMode.WRITABLE && !isReadOnly(mapperModel)) {
 
 
-            AbstractTxAwareLDAPUserModelDelegate txDelegate = new AbstractTxAwareLDAPUserModelDelegate(delegate, ldapProvider, ldapObject) {
+            TxAwareLDAPUserModelDelegate txDelegate = new TxAwareLDAPUserModelDelegate(delegate, ldapProvider, ldapUser) {
 
                 @Override
                 public void setFirstName(String firstName) {
@@ -97,7 +85,7 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
                     ensureTransactionStarted();
 
                     String ldapFullNameAttrName = getLdapFullNameAttrName(mapperModel);
-                    ldapObject.setAttribute(ldapFullNameAttrName, fullName);
+                    ldapUser.setAttribute(ldapFullNameAttrName, fullName);
                 }
 
             };
@@ -127,10 +115,10 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
                     lastNameCondition = (EqualCondition) condition;
                     query.getConditions().remove(condition);
                 } else if (param.getName().equals(LDAPConstants.GIVENNAME)) {
-                    // Some previous mapper already converted it
+                    // Some previous mapper already converted it to LDAP name
                     firstNameCondition = (EqualCondition) condition;
                 } else if (param.getName().equals(LDAPConstants.SN)) {
-                    // Some previous mapper already converted it
+                    // Some previous mapper already converted it to LDAP name
                     lastNameCondition = (EqualCondition) condition;
                 }
             }
@@ -169,6 +157,6 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
     }
 
     private boolean isReadOnly(UserFederationMapperModel mapperModel) {
-        return LDAPUtils.parseBooleanParameter(mapperModel, READ_ONLY);
+        return parseBooleanParameter(mapperModel, READ_ONLY);
     }
 }

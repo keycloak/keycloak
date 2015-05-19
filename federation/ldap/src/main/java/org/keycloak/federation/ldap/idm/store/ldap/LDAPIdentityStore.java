@@ -9,6 +9,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -389,10 +391,9 @@ public class LDAPIdentityStore implements IdentityStore {
 
             while (ldapAttributes.hasMore()) {
                 Attribute ldapAttribute = ldapAttributes.next();
-                Serializable ldapAttributeValue;
 
                 try {
-                    ldapAttributeValue = (Serializable) ldapAttribute.get();
+                    ldapAttribute.get();
                 } catch (NoSuchElementException nsee) {
                     continue;
                 }
@@ -400,23 +401,31 @@ public class LDAPIdentityStore implements IdentityStore {
                 String ldapAttributeName = ldapAttribute.getID();
 
                 if (ldapAttributeName.toLowerCase().equals(getConfig().getUuidAttributeName().toLowerCase())) {
-                    ldapObject.setUuid(this.operationManager.decodeEntryUUID(ldapAttributeValue));
-                } else if (ldapAttributeName.toLowerCase().equals(LDAPConstants.OBJECT_CLASS)) {
-                    List<String> objectClasses = new LinkedList<String>();
+                    Object uuidValue = ldapAttribute.get();
+                    ldapObject.setUuid(this.operationManager.decodeEntryUUID(uuidValue));
+                } else {
+                    Set<String> attrValues = new TreeSet<String>();
                     NamingEnumeration<?> enumm = ldapAttribute.getAll();
                     while (enumm.hasMoreElements()) {
                         String objectClass = enumm.next().toString();
-                        objectClasses.add(objectClass);
-                    }
-                    ldapObject.setObjectClasses(objectClasses);
-                } else {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracef("Populating ldap attribute [%s] with value [%s] for DN [%s].", ldapAttributeName, ldapAttributeValue, entryDN);
+                        attrValues.add(objectClass);
                     }
 
-                    ldapObject.setAttribute(ldapAttributeName, ldapAttributeValue);
-                    if (uppercasedReadOnlyAttrNames.contains(ldapAttributeName.toUpperCase())) {
-                        ldapObject.addReadOnlyAttributeName(ldapAttributeName);
+                    if (ldapAttributeName.toLowerCase().equals(LDAPConstants.OBJECT_CLASS)) {
+                        ldapObject.setObjectClasses(attrValues);
+                    } else {
+                        if (logger.isTraceEnabled()) {
+                            logger.tracef("Populating ldap attribute [%s] with value [%s] for DN [%s].", ldapAttributeName, attrValues.toString(), entryDN);
+                        }
+                        if (attrValues.size() == 1) {
+                            ldapObject.setAttribute(ldapAttributeName, attrValues.iterator().next());
+                        } else {
+                            ldapObject.setAttribute(ldapAttributeName, attrValues);
+                        }
+
+                        if (uppercasedReadOnlyAttrNames.contains(ldapAttributeName.toUpperCase())) {
+                            ldapObject.addReadOnlyAttributeName(ldapAttributeName);
+                        }
                     }
                 }
             }
@@ -487,16 +496,16 @@ public class LDAPIdentityStore implements IdentityStore {
     protected BasicAttributes extractAttributes(LDAPObject ldapObject, boolean isCreate) {
         BasicAttributes entryAttributes = new BasicAttributes();
 
-        for (Map.Entry<String, Serializable> attrEntry : ldapObject.getAttributes().entrySet()) {
+        for (Map.Entry<String, Object> attrEntry : ldapObject.getAttributes().entrySet()) {
             String attrName = attrEntry.getKey();
-            Serializable attrValue = attrEntry.getValue();
+            Object attrValue = attrEntry.getValue();
             if (!ldapObject.getReadOnlyAttributeNames().contains(attrName) && (isCreate || !ldapObject.getRdnAttributeName().equals(attrName))) {
 
                 if (String.class.isInstance(attrValue)) {
                     entryAttributes.put(attrName, attrValue);
                 } else if (Collection.class.isInstance(attrValue)) {
                     BasicAttribute attr = new BasicAttribute(attrName);
-                    Collection<String> valueCollection = (Collection<String>) attr;
+                    Collection<String> valueCollection = (Collection<String>) attrValue;
                     for (String val : valueCollection) {
                         attr.add(val);
                     }

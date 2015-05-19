@@ -16,7 +16,7 @@ import org.keycloak.models.UserFederationProviderModel;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  *
- * TODO: init properties at startup instead of always compute them
+ * TODO: init properties at constructor instead of always compute them
  */
 public class LDAPConfig {
 

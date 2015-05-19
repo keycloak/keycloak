@@ -252,4 +252,19 @@ public final class KeycloakModelUtils {
     public static String getMasterRealmAdminApplicationClientId(RealmModel realm) {
         return realm.getName() + "-realm";
     }
+
+    /**
+     *
+     * @param roles
+     * @param targetRole
+     * @return true if targetRole is in roles (directly or indirectly via composite role)
+     */
+    public static boolean hasRole(Set<RoleModel> roles, RoleModel targetRole) {
+        if (roles.contains(targetRole)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(targetRole)) return true;
+        }
+        return false;
+    }
 }

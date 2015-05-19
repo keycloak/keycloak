@@ -1,14 +1,16 @@
 package org.keycloak.federation.ldap.idm.model;
 
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class LDAPDn {
 
-    private final List<Entry> entries = new LinkedList<Entry>();
+    private final Deque<Entry> entries = new LinkedList<Entry>();
 
     public static LDAPDn fromString(String dnString) {
         LDAPDn dn = new LDAPDn();
@@ -43,7 +45,7 @@ public class LDAPDn {
      * @return string like "uid=joe" from the DN like "uid=joe,dc=something,dc=org"
      */
     public String getFirstRdn() {
-        Entry firstEntry = entries.get(0);
+        Entry firstEntry = entries.getFirst();
         return firstEntry.attrName + "=" + firstEntry.attrValue;
     }
 
@@ -51,7 +53,7 @@ public class LDAPDn {
      * @return string attribute name like "uid" from the DN like "uid=joe,dc=something,dc=org"
      */
     public String getFirstRdnAttrName() {
-        Entry firstEntry = entries.get(0);
+        Entry firstEntry = entries.getFirst();
         return firstEntry.attrName;
     }
 
@@ -60,28 +62,15 @@ public class LDAPDn {
      * @return string like "dc=something,dc=org" from the DN like "uid=joe,dc=something,dc=org"
      */
     public String getParentDn() {
-        StringBuilder builder = new StringBuilder();
-
-        int n = 0;
-        for (Entry rdn : entries) {
-            n++;
-            if (n > 2) {
-                builder.append(",");
-            }
-            if (n >= 2) {
-                builder.append(rdn.attrName).append("=").append(rdn.attrValue);
-            }
-        }
-
-        return builder.toString();
+        return new LinkedList<Entry>(entries).remove().toString();
     }
 
     public void addToHead(String rdnName, String rdnValue) {
-        entries.add(0, new Entry(rdnName, rdnValue));
+        entries.addFirst(new Entry(rdnName, rdnValue));
     }
 
     public void addToBottom(String rdnName, String rdnValue) {
-        entries.add(new Entry(rdnName, rdnValue));
+        entries.addLast(new Entry(rdnName, rdnValue));
     }
 
 

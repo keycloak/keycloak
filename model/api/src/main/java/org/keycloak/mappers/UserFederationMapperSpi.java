@@ -1,4 +1,4 @@
-package org.keycloak.models;
+package org.keycloak.mappers;
 
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -21,6 +21,6 @@ public class UserFederationMapperSpi implements Spi {
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return UserFederationMapper.class;
+        return UserFederationMapperFactory.class;
     }
 }

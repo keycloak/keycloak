@@ -19,7 +19,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.models.UserFederationMapper;
+import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
@@ -114,7 +114,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
         List<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
         for (UserFederationMapperModel mapperModel : federationMappers) {
             LDAPFederationMapper ldapMapper = getMapper(mapperModel);
-            proxied = ldapMapper.proxy(mapperModel, this, ldapObject, proxied);
+            proxied = ldapMapper.proxy(mapperModel, this, ldapObject, proxied, realm);
         }
 
         return proxied;
@@ -227,7 +227,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     /**
      * @param local
-     * @return ldapObject corresponding to local user or null if user is no longer in LDAP
+     * @return ldapUser corresponding to local user or null if user is no longer in LDAP
      */
     protected LDAPObject loadAndValidateUser(RealmModel realm, UserModel local) {
         LDAPObject ldapUser = loadLDAPUserByUsername(realm, local.getUsername());
@@ -271,7 +271,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
         List<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
         for (UserFederationMapperModel mapperModel : federationMappers) {
             LDAPFederationMapper ldapMapper = getMapper(mapperModel);
-            ldapMapper.importUserFromLDAP(mapperModel, this, ldapUser, imported, true);
+            ldapMapper.onImportUserFromLDAP(mapperModel, this, ldapUser, imported, realm, true);
         }
 
         String userDN = ldapUser.getDn().toString();
@@ -314,7 +314,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
         // complete I don't think we have to do anything here
-        // TODO: requires implementation... Maybe mappers callback
+        // TODO: requires implementation... Maybe mappers callback to ensure role deletion propagated to LDAP by RoleLDAPFederationMapper
     }
 
     public boolean validPassword(RealmModel realm, UserModel user, String password) {
@@ -407,7 +407,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
                     List<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
                     for (UserFederationMapperModel mapperModel : federationMappers) {
                         LDAPFederationMapper ldapMapper = getMapper(mapperModel);
-                        ldapMapper.importUserFromLDAP(mapperModel, this, ldapUser, currentUser, false);
+                        ldapMapper.onImportUserFromLDAP(mapperModel, this, ldapUser, currentUser, realm, false);
                     }
 
                     logger.debugf("Updated user from LDAP: %s", currentUser.getUsername());
@@ -477,8 +477,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
     }
 
     public LDAPFederationMapper getMapper(UserFederationMapperModel mapperModel) {
-        LDAPFederationMapper ldapMapper = (LDAPFederationMapper) getSession().getKeycloakSessionFactory()
-                .getProviderFactory(UserFederationMapper.class, mapperModel.getFederationMapperId());
+        LDAPFederationMapper ldapMapper = (LDAPFederationMapper) getSession().getProvider(UserFederationMapper.class, mapperModel.getFederationMapperId());
         if (ldapMapper == null) {
             throw new ModelException("Can't find mapper type with ID: " + mapperModel.getFederationMapperId());
         }

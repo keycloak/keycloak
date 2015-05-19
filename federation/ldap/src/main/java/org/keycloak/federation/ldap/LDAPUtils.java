@@ -37,7 +37,7 @@ public class LDAPUtils {
         List<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
         for (UserFederationMapperModel mapperModel : federationMappers) {
             LDAPFederationMapper ldapMapper = ldapProvider.getMapper(mapperModel);
-            ldapMapper.registerUserToLDAP(mapperModel, ldapProvider, ldapObject, user);
+            ldapMapper.onRegisterUserToLDAP(mapperModel, ldapProvider, ldapObject, user, realm);
         }
 
         LDAPUtils.computeAndSetDn(ldapConfig, ldapObject);
@@ -161,10 +161,10 @@ public class LDAPUtils {
         return fullName;
     }   */
 
-    // ldapObject has filled attributes, but doesn't have filled
+    // ldapUser has filled attributes, but doesn't have filled dn
     public static void computeAndSetDn(LDAPConfig config, LDAPObject ldapObject) {
         String rdnLdapAttrName = config.getRdnLdapAttribute();
-        String rdnLdapAttrValue = (String) ldapObject.getAttribute(rdnLdapAttrName);
+        String rdnLdapAttrValue = ldapObject.getAttributeAsString(rdnLdapAttrName);
         if (rdnLdapAttrValue == null) {
             throw new ModelException("RDN Attribute [" + rdnLdapAttrName + "] is not filled. Filled attributes: " + ldapObject.getAttributes());
         }
@@ -176,11 +176,6 @@ public class LDAPUtils {
 
     public static String getUsername(LDAPObject ldapUser, LDAPConfig config) {
         String usernameAttr = config.getUsernameLdapAttribute();
-        return (String) ldapUser.getAttribute(usernameAttr);
-    }
-
-    public static boolean parseBooleanParameter(UserFederationMapperModel mapperModel, String paramName) {
-        String readOnly = mapperModel.getConfig().get(paramName);
-        return Boolean.parseBoolean(readOnly);
+        return ldapUser.getAttributeAsString(usernameAttr);
     }
 }

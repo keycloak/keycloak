@@ -9,13 +9,31 @@ objectclass: top
 objectclass: organizationalUnit
 ou: People
 
-dn: ou=Roles,dc=keycloak,dc=org
+dn: ou=RealmRoles,dc=keycloak,dc=org
 objectclass: top
 objectclass: organizationalUnit
-ou: Roles
+ou: RealmRoles
 
-dn: ou=Groups,dc=keycloak,dc=org
+dn: cn=realmRole1,ou=RealmRoles,dc=keycloak,dc=org
+objectclass: top
+objectclass: groupOfNames
+cn: realmRole1
+member:
+
+dn: cn=realmRole2,ou=RealmRoles,dc=keycloak,dc=org
+objectclass: top
+objectclass: groupOfNames
+cn: realmRole2
+member:
+
+dn: ou=FinanceRoles,dc=keycloak,dc=org
 objectclass: top
 objectclass: organizationalUnit
-ou: Groups
+ou: FinanceRoles
+
+dn: cn=financeRole1,ou=FinanceRoles,dc=keycloak,dc=org
+objectclass: top
+objectclass: groupOfNames
+cn: financeRole1
+member:
 

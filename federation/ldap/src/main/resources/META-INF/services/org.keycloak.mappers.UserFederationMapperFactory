@@ -1,0 +1,3 @@
+org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapperFactory
+org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory
+org.keycloak.federation.ldap.mappers.RoleLDAPFederationMapperFactory

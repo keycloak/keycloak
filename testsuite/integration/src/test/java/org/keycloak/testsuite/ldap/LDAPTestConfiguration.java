@@ -15,9 +15,9 @@ import org.keycloak.models.UserFederationProvider;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LDAPConfiguration {
+public class LDAPTestConfiguration {
 
-    private static final Logger log = Logger.getLogger(LDAPConfiguration.class);
+    private static final Logger log = Logger.getLogger(LDAPTestConfiguration.class);
 
     private String connectionPropertiesLocation;
     private boolean startEmbeddedLdapLerver = true;
@@ -69,7 +69,7 @@ public class LDAPConfiguration {
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "false");
         DEFAULT_VALUES.put(KerberosConstants.KERBEROS_REALM, "KEYCLOAK.ORG");
         DEFAULT_VALUES.put(KerberosConstants.SERVER_PRINCIPAL, "HTTP/localhost@KEYCLOAK.ORG");
-        URL keytabUrl = LDAPConfiguration.class.getResource("/kerberos/http.keytab");
+        URL keytabUrl = LDAPTestConfiguration.class.getResource("/kerberos/http.keytab");
         String keyTabPath = new File(keytabUrl.getFile()).getAbsolutePath();
         DEFAULT_VALUES.put(KerberosConstants.KEYTAB, keyTabPath);
         DEFAULT_VALUES.put(KerberosConstants.DEBUG, "true");
@@ -78,11 +78,11 @@ public class LDAPConfiguration {
         DEFAULT_VALUES.put(KerberosConstants.USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION, "false");
     }
 
-    public static LDAPConfiguration readConfiguration(String connectionPropertiesLocation) {
-        LDAPConfiguration ldapConfiguration = new LDAPConfiguration();
-        ldapConfiguration.setConnectionPropertiesLocation(connectionPropertiesLocation);
-        ldapConfiguration.loadConnectionProperties();
-        return ldapConfiguration;
+    public static LDAPTestConfiguration readConfiguration(String connectionPropertiesLocation) {
+        LDAPTestConfiguration ldapTestConfiguration = new LDAPTestConfiguration();
+        ldapTestConfiguration.setConnectionPropertiesLocation(connectionPropertiesLocation);
+        ldapTestConfiguration.loadConnectionProperties();
+        return ldapTestConfiguration;
     }
 
     protected void loadConnectionProperties() {

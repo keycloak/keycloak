@@ -1,2 +1,0 @@
-org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper
-org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper

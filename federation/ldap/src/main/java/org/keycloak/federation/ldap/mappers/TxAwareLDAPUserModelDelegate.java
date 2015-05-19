@@ -10,18 +10,18 @@ import org.keycloak.models.utils.UserModelDelegate;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class AbstractTxAwareLDAPUserModelDelegate extends UserModelDelegate {
+public abstract class TxAwareLDAPUserModelDelegate extends UserModelDelegate {
 
-    public static final Logger logger = Logger.getLogger(AbstractTxAwareLDAPUserModelDelegate.class);
+    public static final Logger logger = Logger.getLogger(TxAwareLDAPUserModelDelegate.class);
 
     protected LDAPFederationProvider provider;
-    protected LDAPObject ldapObject;
+    protected LDAPObject ldapUser;
     private final LDAPTransaction transaction;
 
-    public AbstractTxAwareLDAPUserModelDelegate(UserModel delegate, LDAPFederationProvider provider, LDAPObject ldapObject) {
+    public TxAwareLDAPUserModelDelegate(UserModel delegate, LDAPFederationProvider provider, LDAPObject ldapUser) {
         super(delegate);
         this.provider = provider;
-        this.ldapObject = ldapObject;
+        this.ldapUser = ldapUser;
         this.transaction = findOrCreateTransaction();
     }
 
@@ -30,20 +30,18 @@ public abstract class AbstractTxAwareLDAPUserModelDelegate extends UserModelDele
     }
 
     // Try to find transaction in any delegate. We want to enlist just single transaction per all delegates
-    protected LDAPTransaction findOrCreateTransaction() {
+    private LDAPTransaction findOrCreateTransaction() {
         UserModelDelegate delegate = this;
         while (true) {
             UserModel deleg = delegate.getDelegate();
             if (!(deleg instanceof UserModelDelegate)) {
-                // Existing transaction not available. Need to create new
                 return new LDAPTransaction();
             } else {
                 delegate = (UserModelDelegate) deleg;
             }
 
-            // Check if it's transaction aware delegate
-            if (delegate instanceof AbstractTxAwareLDAPUserModelDelegate) {
-                AbstractTxAwareLDAPUserModelDelegate txDelegate = (AbstractTxAwareLDAPUserModelDelegate) delegate;
+            if (delegate instanceof TxAwareLDAPUserModelDelegate) {
+                TxAwareLDAPUserModelDelegate txDelegate = (TxAwareLDAPUserModelDelegate) delegate;
                 return txDelegate.getTransaction();
             }
         }
@@ -52,7 +50,7 @@ public abstract class AbstractTxAwareLDAPUserModelDelegate extends UserModelDele
     protected void ensureTransactionStarted() {
         if (transaction.state == TransactionState.NOT_STARTED) {
             if (logger.isTraceEnabled()) {
-                logger.trace("Starting and enlisting transaction for object " + ldapObject.getDn().toString());
+                logger.trace("Starting and enlisting transaction for object " + ldapUser.getDn().toString());
             }
 
             this.provider.getSession().getTransaction().enlistAfterCompletion(transaction);
@@ -81,10 +79,10 @@ public abstract class AbstractTxAwareLDAPUserModelDelegate extends UserModelDele
             }
 
             if (logger.isTraceEnabled()) {
-                logger.trace("Transaction commit! Updating LDAP attributes for object " + ldapObject.getDn().toString() + ", attributes: " + ldapObject.getAttributes());
+                logger.trace("Transaction commit! Updating LDAP attributes for object " + ldapUser.getDn().toString() + ", attributes: " + ldapUser.getAttributes());
             }
 
-            provider.getLdapIdentityStore().update(ldapObject);
+            provider.getLdapIdentityStore().update(ldapUser);
             state = TransactionState.FINISHED;
         }
 
@@ -94,7 +92,7 @@ public abstract class AbstractTxAwareLDAPUserModelDelegate extends UserModelDele
                 throw new IllegalStateException("Transaction in illegal state for rollback: " + state);
             }
 
-            logger.warn("Transaction rollback! Ignoring LDAP updates for object " + ldapObject.getDn().toString());
+            logger.warn("Transaction rollback! Ignoring LDAP updates for object " + ldapUser.getDn().toString());
             state = TransactionState.FINISHED;
         }
 

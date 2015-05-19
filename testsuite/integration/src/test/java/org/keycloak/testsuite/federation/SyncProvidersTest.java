@@ -11,6 +11,7 @@ import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
@@ -59,6 +60,9 @@ public class SyncProvidersTest {
             // Delete all LDAP users and add 5 new users for testing
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
             LDAPUtils.removeAllUsers(ldapFedProvider, appRealm);
+
+            // Add sample application TODO: REmove this!!!! It's just temporarily needed in SyncProvidersTest until model for federation mappers is implemented
+            ClientModel finance = appRealm.addClient("finance");
 
             for (int i=1 ; i<=5 ; i++) {
                 LDAPObject ldapUser = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "user" + i, "User" + i + "FN", "User" + i + "LN", "user" + i + "@email.org", "12" + i);

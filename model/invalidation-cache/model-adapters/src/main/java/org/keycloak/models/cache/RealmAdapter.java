@@ -952,6 +952,7 @@ public class RealmAdapter implements RealmModel {
         return null;
     }
 
+    public static String LDAP_MODE = "LDAP_ONLY";
 
     @Override
     public List<UserFederationMapperModel> getUserFederationMappers() {
@@ -992,6 +993,17 @@ public class RealmAdapter implements RealmModel {
                 "user.model.attribute", LDAPConstants.MODIFY_TIMESTAMP,
                 "ldap.attribute", LDAPConstants.MODIFY_TIMESTAMP,
                 "read.only", "true"));
+
+        mappers.add(createMapperModel("realmRoleMpr", "realmRoleMapper", "role-ldap-mapper",
+                "roles.dn", "ou=RealmRoles,dc=keycloak,dc=org",
+                "use.realm.roles.mapping", "true",
+                "mode", LDAP_MODE));
+        mappers.add(createMapperModel("financeRoleMpr", "financeRoleMapper", "role-ldap-mapper",
+                "roles.dn", "ou=FinanceRoles,dc=keycloak,dc=org",
+                "use.realm.roles.mapping", "false",
+                "client.id", "finance",
+                "mode", LDAP_MODE));
+
         return mappers;
     }
 

@@ -1,9 +1,6 @@
 package org.keycloak.federation.ldap.mappers;
 
-import org.keycloak.Config;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.UserFederationMapper;
+import org.keycloak.models.UserFederationMapperModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -15,18 +12,8 @@ public abstract class AbstractLDAPFederationMapper implements LDAPFederationMapp
 
     }
 
-    @Override
-    public UserFederationMapper create(KeycloakSession session) {
-        throw new RuntimeException("UNSUPPORTED METHOD");
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-
+    protected boolean parseBooleanParameter(UserFederationMapperModel mapperModel, String paramName) {
+        String paramm = mapperModel.getConfig().get(paramName);
+        return Boolean.parseBoolean(paramm);
     }
 }

@@ -11,6 +11,9 @@ import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.mappers.UserFederationMapper;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserModel;
@@ -43,31 +46,15 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
 
     public static final String USER_MODEL_ATTRIBUTE = "user.model.attribute";
     public static final String LDAP_ATTRIBUTE = "ldap.attribute";
-
-    // TODO: Merge with fullname mapper
     public static final String READ_ONLY = "read.only";
 
-    @Override
-    public String getHelpText() {
-        return "Some help text TODO";
-    }
 
     @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return null;
-    }
-
-    @Override
-    public String getId() {
-        return "user-attribute-ldap-mapper";
-    }
-
-    @Override
-    public void importUserFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapObject, UserModel user, boolean isCreate) {
+    public void onImportUserFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
         String userModelAttrName = mapperModel.getConfig().get(USER_MODEL_ATTRIBUTE);
         String ldapAttrName = mapperModel.getConfig().get(LDAP_ATTRIBUTE);
 
-        Serializable ldapAttrValue = ldapObject.getAttribute(ldapAttrName);
+        Object ldapAttrValue = ldapUser.getAttribute(ldapAttrName);
         if (ldapAttrValue != null) {
             Property<Object> userModelProperty = userModelProperties.get(userModelAttrName);
 
@@ -82,7 +69,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
     }
 
     @Override
-    public void registerUserToLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapObject, UserModel localUser) {
+    public void onRegisterUserToLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
         String userModelAttrName = mapperModel.getConfig().get(USER_MODEL_ATTRIBUTE);
         String ldapAttrName = mapperModel.getConfig().get(LDAP_ATTRIBUTE);
 
@@ -97,46 +84,42 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
             attrValue = localUser.getAttribute(userModelAttrName);
         }
 
-        ldapObject.setAttribute(ldapAttrName, (Serializable) attrValue);
+        ldapUser.setAttribute(ldapAttrName, attrValue);
         if (isReadOnly(mapperModel)) {
-            ldapObject.addReadOnlyAttributeName(ldapAttrName);
+            ldapUser.addReadOnlyAttributeName(ldapAttrName);
         }
     }
 
     @Override
-    public UserModel proxy(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapObject, UserModel delegate) {
+    public UserModel proxy(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
         if (ldapProvider.getEditMode() == UserFederationProvider.EditMode.WRITABLE && !isReadOnly(mapperModel)) {
 
             final String userModelAttrName = mapperModel.getConfig().get(USER_MODEL_ATTRIBUTE);
             final String ldapAttrName = mapperModel.getConfig().get(LDAP_ATTRIBUTE);
 
-            AbstractTxAwareLDAPUserModelDelegate txDelegate = new AbstractTxAwareLDAPUserModelDelegate(delegate, ldapProvider, ldapObject) {
+            TxAwareLDAPUserModelDelegate txDelegate = new TxAwareLDAPUserModelDelegate(delegate, ldapProvider, ldapUser) {
 
                 @Override
                 public void setAttribute(String name, String value) {
                     setLDAPAttribute(name, value);
-
                     super.setAttribute(name, value);
                 }
 
                 @Override
                 public void setEmail(String email) {
                     setLDAPAttribute(UserModel.EMAIL, email);
-
                     super.setEmail(email);
                 }
 
                 @Override
                 public void setLastName(String lastName) {
                     setLDAPAttribute(UserModel.LAST_NAME, lastName);
-
                     super.setLastName(lastName);
                 }
 
                 @Override
                 public void setFirstName(String firstName) {
                     setLDAPAttribute(UserModel.FIRST_NAME, firstName);
-
                     super.setFirstName(firstName);
                 }
 
@@ -148,7 +131,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
 
                         ensureTransactionStarted();
 
-                        ldapObject.setAttribute(ldapAttrName, value);
+                        ldapUser.setAttribute(ldapAttrName, value);
                     }
                 }
 
@@ -181,6 +164,6 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
     }
 
     private boolean isReadOnly(UserFederationMapperModel mapperModel) {
-        return LDAPUtils.parseBooleanParameter(mapperModel, READ_ONLY);
+        return parseBooleanParameter(mapperModel, READ_ONLY);
     }
 }

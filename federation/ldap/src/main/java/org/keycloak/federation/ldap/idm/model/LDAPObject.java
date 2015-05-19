@@ -18,7 +18,7 @@ public class LDAPObject {
 
     private final List<String> objectClasses = new LinkedList<String>();
     private final List<String> readOnlyAttributeNames = new LinkedList<String>();
-    private final Map<String, Serializable> attributes = new HashMap<String, Serializable>();
+    private final Map<String, Object> attributes = new HashMap<String, Object>();
 
     public String getUuid() {
         return uuid;
@@ -61,7 +61,7 @@ public class LDAPObject {
         this.rdnAttributeName = rdnAttributeName;
     }
 
-    public void setAttribute(String attributeName, Serializable attributeValue) {
+    public void setAttribute(String attributeName, Object attributeValue) {
         attributes.put(attributeName, attributeValue);
     }
 
@@ -70,12 +70,21 @@ public class LDAPObject {
     }
 
 
-    public Serializable getAttribute(String name) {
+    public Object getAttribute(String name) {
         return attributes.get(name);
     }
 
+    public String getAttributeAsString(String name) {
+        Object attrValue = attributes.get(name);
+        if (attrValue != null && !(attrValue instanceof String)) {
+            throw new IllegalStateException("Expected String but attribute was " + attrValue + " of type " + attrValue.getClass().getName());
+        }
 
-    public Map<String, Serializable> getAttributes() {
+        return (String) attrValue;
+    }
+
+
+    public Map<String, Object> getAttributes() {
         return attributes;
     }
 

@@ -4,7 +4,7 @@ import java.util.Map;
 
 import org.junit.rules.ExternalResource;
 import org.keycloak.testsuite.ldap.EmbeddedServersFactory;
-import org.keycloak.testsuite.ldap.LDAPConfiguration;
+import org.keycloak.testsuite.ldap.LDAPTestConfiguration;
 import org.keycloak.testsuite.ldap.LDAPEmbeddedServer;
 
 /**
@@ -14,15 +14,15 @@ public class LDAPRule extends ExternalResource {
 
     public static final String LDAP_CONNECTION_PROPERTIES_LOCATION = "ldap/ldap-connection.properties";
 
-    protected LDAPConfiguration ldapConfiguration;
+    protected LDAPTestConfiguration ldapTestConfiguration;
     protected LDAPEmbeddedServer ldapEmbeddedServer;
 
     @Override
     protected void before() throws Throwable {
         String connectionPropsLocation = getConnectionPropertiesLocation();
-        ldapConfiguration = LDAPConfiguration.readConfiguration(connectionPropsLocation);
+        ldapTestConfiguration = LDAPTestConfiguration.readConfiguration(connectionPropsLocation);
 
-        if (ldapConfiguration.isStartEmbeddedLdapLerver()) {
+        if (ldapTestConfiguration.isStartEmbeddedLdapLerver()) {
             EmbeddedServersFactory factory = EmbeddedServersFactory.readConfiguration();
             ldapEmbeddedServer = createServer(factory);
             ldapEmbeddedServer.init();
@@ -36,7 +36,7 @@ public class LDAPRule extends ExternalResource {
             if (ldapEmbeddedServer != null) {
                 ldapEmbeddedServer.stop();
                 ldapEmbeddedServer = null;
-                ldapConfiguration = null;
+                ldapTestConfiguration = null;
             }
         } catch (Exception e) {
             throw new RuntimeException("Error tearDown Embedded LDAP server.", e);
@@ -52,6 +52,6 @@ public class LDAPRule extends ExternalResource {
     }
 
     public Map<String, String> getConfig() {
-        return ldapConfiguration.getLDAPConfig();
+        return ldapTestConfiguration.getLDAPConfig();
     }
 }
