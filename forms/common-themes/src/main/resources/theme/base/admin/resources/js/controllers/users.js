@@ -308,8 +308,12 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
                 Notifications.success("The password has been reset");
                 $scope.password = null;
                 $scope.confirmPassword = null;
-            }, function() {
-                Notifications.error("Failed to reset user password");
+            }, function(response) {
+                if (response.data && response.data.errorMessage) {
+                    Notifications.error(response.data.errorMessage);
+                } else {
+                    Notifications.error("Failed to reset user password");
+                }
             });
         }, function() {
             $scope.password = null;
