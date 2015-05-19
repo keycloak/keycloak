@@ -38,6 +38,11 @@ public class MenuPage {
 	public void switchRealm(String realmName) {
 		clickOnMenuElement(Menu.REALM, realmName);
 	}
+	
+	public String getCurrentRealm() {
+		waitGuiForElement(By.cssSelector(MENU_LOCATOR));
+		return toggle.get(1).getText();
+	}
 
 	private void clickOnMenuElement(Menu menuType, String linkText) {
 		int menuOrder = 0;
@@ -48,7 +53,7 @@ public class MenuPage {
 		waitGuiForElement(By.cssSelector(MENU_LOCATOR));
         if (!menuList.get(menuOrder).isDisplayed()) 
 			toggle.get(menuOrder).click();
-        for (WebElement item : menuList.get(menuOrder).findElements(By.cssSelector(".dropdown-menu a"))) {
+        for (WebElement item : menuList.get(menuOrder).findElements(By.cssSelector(MENU_LOCATOR + " a"))) {
             if (item.getText().contains(linkText)) {
                 item.click();
                 return;
