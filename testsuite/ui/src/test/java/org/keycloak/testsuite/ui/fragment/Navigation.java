@@ -4,10 +4,10 @@ import static org.jboss.arquillian.graphene.Graphene.waitModel;
 import static org.keycloak.testsuite.ui.util.SeleniumUtils.waitGuiForElement;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
+import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
 
 
 public class Navigation {
@@ -24,8 +24,8 @@ public class Navigation {
     @FindByJQuery("a:contains('Roles')")
     private WebElement rolesLink;
 
-    @FindByJQuery("a:contains('Applications')")
-    private WebElement applicationsLink;
+    @FindByJQuery("a:contains('Clients')")
+    private WebElement clientsLink;
 
     @FindByJQuery("a:contains('OAuth')")
     private WebElement oauthLink;
@@ -60,7 +60,7 @@ public class Navigation {
 	@FindByJQuery("a:contains('Attributes')")
     private WebElement attributes;
 	
-    @FindByJQuery("div[id='content'] h2:visible")
+    @FindBy(css = "div h1 span")
     private WebElement currentHeader;
 
 	public void selectRealm(String realmName) {
@@ -79,8 +79,8 @@ public class Navigation {
         openPage(rolesLink, "Realm-Level Roles");
     }
 
-    public void applications() {
-        openPage(applicationsLink, "Applications");
+    public void clients() {
+        openPage(clientsLink, "Clients");
     }
 	
     public void oauth() {

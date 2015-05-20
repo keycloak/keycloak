@@ -3,26 +3,32 @@ package org.keycloak.testsuite.ui.model;
 /**
  * Created by fkiss.
  */
-public class Application {
+public class Client {
 
+	private String clientId;
     private String name;
-
     private boolean enabled;
-
     private String accessType;
-
     private String uri;
 
-    public Application(String name, String uri) {
-        this.uri = uri;
+	public Client(String clientId, String uri) {
+		this.name = clientId;
+		this.clientId = clientId;		
+		this.uri = uri;
+		this.enabled = true;
+	}
+	
+    public Client(String clientId, String name, String uri) {
+        this.clientId = clientId;
+		this.uri = uri;
         this.enabled = true;
         this.name = name;
     }
 
-    public Application() {
+    public Client() {
     }
 
-    public Application(String name, String uri, String accessType, boolean enabled) {
+    public Client(String name, String uri, String accessType, boolean enabled) {
         this.name = name;
         this.uri = uri;
         this.accessType = accessType;
@@ -45,12 +51,20 @@ public class Application {
 
     public void setUri(String uri) { this.uri = uri; }
 
+	public String getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(String clientId) {
+		this.clientId = clientId;
+	}
+	
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Application that = (Application) o;
+        Client that = (Client) o;
 
         if (enabled != that.enabled) return false;
         if (accessType != null ? !accessType.equals(that.accessType) : that.accessType != null) return false;
