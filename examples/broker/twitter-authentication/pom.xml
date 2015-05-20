@@ -6,7 +6,7 @@
     <parent>
         <artifactId>keycloak-examples-broker-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.2.1.Smartling-SNAPSHOT</version>
+        <version>1.2.0.Final-SNAPSHOT</version>
     </parent>
 
     <name>Keycloak Broker Examples - Twitter Authentication</name>

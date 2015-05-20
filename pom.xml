@@ -14,7 +14,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>1.2.1.Smartling-SNAPSHOT</version>
+    <version>1.2.0.Final-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
