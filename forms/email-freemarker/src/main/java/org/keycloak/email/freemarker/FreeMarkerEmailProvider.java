@@ -139,7 +139,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
             msg.setFrom(new InternetAddress(from));
             msg.setHeader("To", address);
             msg.setSubject(subject);
-            msg.setText(body);
+            msg.setContent(body,"text/html; charset=utf-8");
             msg.saveChanges();
             msg.setSentDate(new Date());
 
