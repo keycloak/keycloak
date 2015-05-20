@@ -1,9 +1,11 @@
 package org.keycloak.models.sessions.infinispan.entities;
 
+import java.io.Serializable;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginFailureEntity {
+public class LoginFailureEntity implements Serializable {
 
     private String username;
     private String realm;
