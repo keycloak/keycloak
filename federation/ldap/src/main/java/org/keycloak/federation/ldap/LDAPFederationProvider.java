@@ -111,7 +111,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
                 proxied = new UnsyncedLDAPUserModelDelegate(local, this);
         }
 
-        List<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
         for (UserFederationMapperModel mapperModel : federationMappers) {
             LDAPFederationMapper ldapMapper = getMapper(mapperModel);
             proxied = ldapMapper.proxy(mapperModel, this, ldapObject, proxied, realm);
@@ -268,7 +268,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
         UserModel imported = session.userStorage().addUser(realm, ldapUsername);
         imported.setEnabled(true);
 
-        List<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
         for (UserFederationMapperModel mapperModel : federationMappers) {
             LDAPFederationMapper ldapMapper = getMapper(mapperModel);
             ldapMapper.onImportUserFromLDAP(mapperModel, this, ldapUser, imported, realm, true);
@@ -404,7 +404,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
                 if ((fedModel.getId().equals(currentUser.getFederationLink())) && (ldapUser.getUuid().equals(currentUser.getAttribute(LDAPConstants.LDAP_ID)))) {
 
                     // Update keycloak user
-                    List<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+                    Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
                     for (UserFederationMapperModel mapperModel : federationMappers) {
                         LDAPFederationMapper ldapMapper = getMapper(mapperModel);
                         ldapMapper.onImportUserFromLDAP(mapperModel, this, ldapUser, currentUser, realm, false);
@@ -477,9 +477,9 @@ public class LDAPFederationProvider implements UserFederationProvider {
     }
 
     public LDAPFederationMapper getMapper(UserFederationMapperModel mapperModel) {
-        LDAPFederationMapper ldapMapper = (LDAPFederationMapper) getSession().getProvider(UserFederationMapper.class, mapperModel.getFederationMapperId());
+        LDAPFederationMapper ldapMapper = (LDAPFederationMapper) getSession().getProvider(UserFederationMapper.class, mapperModel.getFederationMapperType());
         if (ldapMapper == null) {
-            throw new ModelException("Can't find mapper type with ID: " + mapperModel.getFederationMapperId());
+            throw new ModelException("Can't find mapper type with ID: " + mapperModel.getFederationMapperType());
         }
 
         return ldapMapper;

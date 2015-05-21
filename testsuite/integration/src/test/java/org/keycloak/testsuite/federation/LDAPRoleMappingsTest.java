@@ -144,7 +144,7 @@ public class LDAPRoleMappingsTest {
     @Test
     public void test01_ldapOnlyRoleMappings() {
         // TODO: Remove me!!!
-        RealmAdapter.LDAP_MODE = "LDAP_ONLY";
+        //RealmAdapter.LDAP_MODE = "LDAP_ONLY";
 
         KeycloakSession session = keycloakRule.startSession();
         try {
@@ -231,7 +231,7 @@ public class LDAPRoleMappingsTest {
     @Test
     public void test02_readOnlyRoleMappings() {
         // TODO: Remove me!!!
-        RealmAdapter.LDAP_MODE = "READ_ONLY";
+        //RealmAdapter.LDAP_MODE = "READ_ONLY";
 
         KeycloakSession session = keycloakRule.startSession();
         try {
@@ -293,7 +293,7 @@ public class LDAPRoleMappingsTest {
     @Test
     public void test03_importRoleMappings() {
         // TODO: Remove me!!!
-        RealmAdapter.LDAP_MODE = "IMPORT";
+        //RealmAdapter.LDAP_MODE = "IMPORT";
 
         KeycloakSession session = keycloakRule.startSession();
         try {
@@ -346,7 +346,7 @@ public class LDAPRoleMappingsTest {
     }
 
     private static UserFederationMapperModel findRoleMapperModel(RealmModel appRealm) {
-        List<UserFederationMapperModel> fedMappers = appRealm.getUserFederationMappers();
+        Set<UserFederationMapperModel> fedMappers = appRealm.getUserFederationMappers();
         for (UserFederationMapperModel mapper : fedMappers) {
             if ("realmRoleMapper".equals(mapper.getName())) {
                 return mapper;

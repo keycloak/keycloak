@@ -1,21 +1,16 @@
-package org.keycloak.models;
+package org.keycloak.models.entities;
 
 import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UserFederationMapperModel {
+public class UserFederationMapperEntity {
 
     protected String id;
     protected String name;
-
-    // Refers to DB ID of federation provider
     protected String federationProviderId;
-
-    // Refers to ID of UserFederationMapper implementation ( UserFederationMapperFactory.getId )
     protected String federationMapperType;
-
     protected Map<String, String> config;
 
     public String getId() {
@@ -56,22 +51,5 @@ public class UserFederationMapperModel {
 
     public void setConfig(Map<String, String> config) {
         this.config = config;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        UserFederationMapperModel that = (UserFederationMapperModel) o;
-
-        if (!id.equals(that.id)) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return id.hashCode();
     }
 }

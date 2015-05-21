@@ -11,6 +11,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -18,6 +19,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
@@ -34,6 +36,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
+import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.util.UriUtils;
@@ -239,6 +242,11 @@ public class RepresentationToModel {
         if (rep.getUserFederationProviders() != null) {
             List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getUserFederationProviders());
             newRealm.setUserFederationProviders(providerModels);
+        }
+        if (rep.getUserFederationMappers() != null) {
+            for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
+                newRealm.addUserFederationMapper(toModel(newRealm, representation));
+            }
         }
 
         // create users and their role mappings and social mappings
@@ -473,6 +481,23 @@ public class RepresentationToModel {
             result.add(model);
         }
         return result;
+    }
+
+    public static UserFederationMapperModel toModel(RealmModel realm, UserFederationMapperRepresentation rep) {
+        UserFederationMapperModel model = new UserFederationMapperModel();
+        model.setId(rep.getId());
+        model.setName(rep.getName());
+        model.setFederationMapperType(rep.getFederationMapperType());
+        model.setConfig(rep.getConfig());
+
+        UserFederationProviderModel fedProvider = KeycloakModelUtils.findUserFederationProviderByDisplayName(rep.getFederationProviderDisplayName(), realm);
+        if (fedProvider == null) {
+            throw new ModelException("Couldn't find federation provider with display name [" + rep.getFederationProviderDisplayName() + "] referenced from mapper ["
+                    + rep.getName());
+        }
+        model.setFederationProviderId(fedProvider.getId());
+
+        return model;
     }
 
     // Roles

@@ -1,21 +1,16 @@
-package org.keycloak.models;
+package org.keycloak.representations.idm;
 
 import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UserFederationMapperModel {
+public class UserFederationMapperRepresentation {
 
     protected String id;
     protected String name;
-
-    // Refers to DB ID of federation provider
-    protected String federationProviderId;
-
-    // Refers to ID of UserFederationMapper implementation ( UserFederationMapperFactory.getId )
+    protected String federationProviderDisplayName;
     protected String federationMapperType;
-
     protected Map<String, String> config;
 
     public String getId() {
@@ -34,12 +29,12 @@ public class UserFederationMapperModel {
         this.name = name;
     }
 
-    public String getFederationProviderId() {
-        return federationProviderId;
+    public String getFederationProviderDisplayName() {
+        return federationProviderDisplayName;
     }
 
-    public void setFederationProviderId(String federationProviderId) {
-        this.federationProviderId = federationProviderId;
+    public void setFederationProviderDisplayName(String federationProviderDisplayName) {
+        this.federationProviderDisplayName = federationProviderDisplayName;
     }
 
     public String getFederationMapperType() {
@@ -57,21 +52,5 @@ public class UserFederationMapperModel {
     public void setConfig(Map<String, String> config) {
         this.config = config;
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        UserFederationMapperModel that = (UserFederationMapperModel) o;
-
-        if (!id.equals(that.id)) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return id.hashCode();
-    }
 }
+

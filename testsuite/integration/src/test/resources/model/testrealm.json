@@ -33,6 +33,16 @@
             }
         }
     ],
+    "userFederationMappers": [
+        {
+            "name": "FullNameMapper",
+            "federationProviderDisplayName": "MyLDAPProvider",
+            "federationMapperType": "full-name-ldap-mapper",
+            "config": {
+                "ldap.full.name.attribute": "cn"
+            }
+        }
+    ],
     "users": [
         {
             "username": "wburke",

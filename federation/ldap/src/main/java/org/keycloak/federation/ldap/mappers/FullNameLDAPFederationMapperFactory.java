@@ -11,6 +11,8 @@ import org.keycloak.provider.ProviderConfigProperty;
  */
 public class FullNameLDAPFederationMapperFactory extends AbstractLDAPFederationMapperFactory {
 
+    public static final String ID =  "full-name-ldap-mapper";
+
     @Override
     public String getHelpText() {
         return "Some help text - full name mapper - TODO";
@@ -23,7 +25,7 @@ public class FullNameLDAPFederationMapperFactory extends AbstractLDAPFederationM
 
     @Override
     public String getId() {
-        return "full-name-ldap-mapper";
+        return ID;
     }
 
     @Override

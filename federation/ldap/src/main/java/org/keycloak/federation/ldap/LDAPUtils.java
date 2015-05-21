@@ -1,6 +1,7 @@
 package org.keycloak.federation.ldap;
 
 import java.util.List;
+import java.util.Set;
 
 import org.keycloak.federation.ldap.idm.model.LDAPDn;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
@@ -34,7 +35,7 @@ public class LDAPUtils {
         ldapObject.setRdnAttributeName(ldapConfig.getRdnLdapAttribute());
         ldapObject.setObjectClasses(ldapConfig.getObjectClasses());
 
-        List<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
         for (UserFederationMapperModel mapperModel : federationMappers) {
             LDAPFederationMapper ldapMapper = ldapProvider.getMapper(mapperModel);
             ldapMapper.onRegisterUserToLDAP(mapperModel, ldapProvider, ldapObject, user, realm);
@@ -130,7 +131,7 @@ public class LDAPUtils {
         ldapQuery.addSearchDns(config.getUserDns());
         ldapQuery.addObjectClasses(config.getObjectClasses());
 
-        List<UserFederationMapperModel> mapperModels = realm.getUserFederationMappers();
+        Set<UserFederationMapperModel> mapperModels = realm.getUserFederationMappers();
         ldapQuery.addMappers(mapperModels);
 
         return ldapQuery;

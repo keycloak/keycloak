@@ -5,6 +5,8 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.constants.KerberosConstants;
+import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
@@ -15,6 +17,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
@@ -219,6 +222,15 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals("dummy", ldap.getProviderName());
         Assert.assertEquals(1, ldap.getPriority());
         Assert.assertEquals("ldap://foo", ldap.getConfig().get("important.config"));
+
+        // Test federation mappers
+        Set<UserFederationMapperModel> fedMappers = realm.getUserFederationMappers();
+        Assert.assertTrue(fedMappers.size() == 1);
+        UserFederationMapperModel fullNameMapper = fedMappers.iterator().next();
+        Assert.assertEquals("FullNameMapper", fullNameMapper.getName());
+        Assert.assertEquals(FullNameLDAPFederationMapperFactory.ID, fullNameMapper.getFederationMapperType());
+        Assert.assertEquals(ldap.getId(), fullNameMapper.getFederationProviderId());
+        Assert.assertEquals("cn", fullNameMapper.getConfig().get(FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE));
 
         // Assert that federation link wasn't created during import
         UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, "dummy");

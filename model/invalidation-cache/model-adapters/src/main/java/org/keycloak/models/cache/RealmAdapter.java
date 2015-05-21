@@ -952,79 +952,67 @@ public class RealmAdapter implements RealmModel {
         return null;
     }
 
-    public static String LDAP_MODE = "LDAP_ONLY";
-
     @Override
-    public List<UserFederationMapperModel> getUserFederationMappers() {
-        // TODO: Some hardcoded stuff...
-        List<UserFederationMapperModel> mappers = new ArrayList<UserFederationMapperModel>();
-
-        mappers.add(createMapperModel("usn", "usernameMapper", "user-attribute-ldap-mapper",
-                "user.model.attribute", UserModel.USERNAME,
-                "ldap.attribute", LDAPConstants.UID));
-
-        // Uncomment this for CN + SN config
-        /*mappers.add(createMapperModel("fn", "firstNameMapper", "user-attribute-ldap-mapper",
-                "user.model.attribute", UserModel.FIRST_NAME,
-                "ldap.attribute", LDAPConstants.CN));*/
-
-        // Uncomment this for CN + SN + givenname config
-        mappers.add(createMapperModel("fn", "firstNameMapper", "user-attribute-ldap-mapper",
-                "user.model.attribute", UserModel.FIRST_NAME,
-                "ldap.attribute", LDAPConstants.GIVENNAME));
-        mappers.add(createMapperModel("fulln", "fullNameMapper", "full-name-ldap-mapper",
-                "ldap.full.name.attribute", LDAPConstants.CN));
-
-        mappers.add(createMapperModel("ln", "lastNameMapper", "user-attribute-ldap-mapper",
-                "user.model.attribute", UserModel.LAST_NAME,
-                "ldap.attribute", LDAPConstants.SN));
-
-        mappers.add(createMapperModel("emailMpr", "emailMapper", "user-attribute-ldap-mapper",
-                "user.model.attribute", UserModel.EMAIL,
-                "ldap.attribute", LDAPConstants.EMAIL));
-        mappers.add(createMapperModel("postalCodeMpr", "postalCodeMapper", "user-attribute-ldap-mapper",
-                "user.model.attribute", "postal_code",
-                "ldap.attribute", LDAPConstants.POSTAL_CODE));
-        mappers.add(createMapperModel("createdDateMpr", "createTimeStampMapper", "user-attribute-ldap-mapper",
-                "user.model.attribute", LDAPConstants.CREATE_TIMESTAMP,
-                "ldap.attribute", LDAPConstants.CREATE_TIMESTAMP,
-                "read.only", "true"));
-        mappers.add(createMapperModel("modifyDateMpr", "modifyTimeStampMapper", "user-attribute-ldap-mapper",
-                "user.model.attribute", LDAPConstants.MODIFY_TIMESTAMP,
-                "ldap.attribute", LDAPConstants.MODIFY_TIMESTAMP,
-                "read.only", "true"));
-
-        mappers.add(createMapperModel("realmRoleMpr", "realmRoleMapper", "role-ldap-mapper",
-                "roles.dn", "ou=RealmRoles,dc=keycloak,dc=org",
-                "use.realm.roles.mapping", "true",
-                "mode", LDAP_MODE));
-        mappers.add(createMapperModel("financeRoleMpr", "financeRoleMapper", "role-ldap-mapper",
-                "roles.dn", "ou=FinanceRoles,dc=keycloak,dc=org",
-                "use.realm.roles.mapping", "false",
-                "client.id", "finance",
-                "mode", LDAP_MODE));
-
+    public Set<UserFederationMapperModel> getUserFederationMappers() {
+        if (updated != null) return updated.getUserFederationMappers();
+        Set<UserFederationMapperModel> mappers = new HashSet<UserFederationMapperModel>();
+        for (List<UserFederationMapperModel> models : cached.getUserFederationMappers().values()) {
+            for (UserFederationMapperModel model : models) {
+                mappers.add(model);
+            }
+        }
         return mappers;
     }
 
-    private static UserFederationMapperModel createMapperModel(String id, String name, String mapperId, String... config) {
-        UserFederationMapperModel mapperModel = new UserFederationMapperModel();
-        mapperModel.setId(id);
-        mapperModel.setName(name);
-        mapperModel.setFederationMapperId(mapperId);
+    @Override
+    public Set<UserFederationMapperModel> getUserFederationMappersByFederationProvider(String federationProviderId) {
+        if (updated != null) return updated.getUserFederationMappersByFederationProvider(federationProviderId);
+        Set<UserFederationMapperModel> mappers = new HashSet<>();
+        List<UserFederationMapperModel> list = cached.getUserFederationMappers().getList(federationProviderId);
+        for (UserFederationMapperModel entity : list) {
+            mappers.add(entity);
+        }
+        return mappers;
+    }
 
-        Map<String, String> configMap = new HashMap<String, String>();
-        String key = null;
-        for (String configEntry : config) {
-            if (key == null) {
-                key = configEntry;
-            } else {
-                configMap.put(key, configEntry);
-                key = null;
+    @Override
+    public UserFederationMapperModel addUserFederationMapper(UserFederationMapperModel mapper) {
+        getDelegateForUpdate();
+        return updated.addUserFederationMapper(mapper);
+    }
+
+    @Override
+    public void removeUserFederationMapper(UserFederationMapperModel mapper) {
+        getDelegateForUpdate();
+        updated.removeUserFederationMapper(mapper);
+    }
+
+    @Override
+    public void updateUserFederationMapper(UserFederationMapperModel mapper) {
+        getDelegateForUpdate();
+        updated.updateUserFederationMapper(mapper);
+    }
+
+    @Override
+    public UserFederationMapperModel getUserFederationMapperById(String id) {
+        if (updated != null) return updated.getUserFederationMapperById(id);
+        for (List<UserFederationMapperModel> models : cached.getUserFederationMappers().values()) {
+            for (UserFederationMapperModel model : models) {
+                if (model.getId().equals(id)) return model;
             }
         }
-        mapperModel.setConfig(configMap);
-        return mapperModel;
+        return null;
+    }
+
+    @Override
+    public UserFederationMapperModel getUserFederationMapperByName(String federationProviderId, String name) {
+        if (updated != null) return updated.getUserFederationMapperByName(federationProviderId, name);
+        List<UserFederationMapperModel> models = cached.getUserFederationMappers().getList(federationProviderId);
+        if (models == null) return null;
+        for (UserFederationMapperModel model : models) {
+            if (model.getName().equals(name)) return model;
+        }
+        return null;
     }
 
 }

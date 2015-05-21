@@ -6,9 +6,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.util.CertificateUtils;
 import org.keycloak.util.PemUtils;
@@ -23,6 +26,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -266,5 +271,50 @@ public final class KeycloakModelUtils {
             if (mapping.hasRole(targetRole)) return true;
         }
         return false;
+    }
+
+    /**
+     * Ensure that displayName of myProvider (if not null) is unique and there is no other provider with same displayName in the list.
+     *
+     * @param displayName to check for duplications
+     * @param myProvider provider, which is excluded from the list (if present)
+     * @param federationProviders
+     * @throws ModelDuplicateException if there is other provider with same displayName
+     */
+    public static void ensureUniqueDisplayName(String displayName, UserFederationProviderModel myProvider, List<UserFederationProviderModel> federationProviders) throws ModelDuplicateException {
+        if (displayName != null) {
+
+            for (UserFederationProviderModel federationProvider : federationProviders) {
+                if (myProvider != null && (myProvider.equals(federationProvider) || (myProvider.getId() != null && myProvider.getId().equals(federationProvider.getId())))) {
+                    continue;
+                }
+
+                if (displayName.equals(federationProvider.getDisplayName())) {
+                    throw new ModelDuplicateException("There is already existing federation provider with display name: " + displayName);
+                }
+            }
+        }
+    }
+
+    public static UserFederationProviderModel findUserFederationProviderByDisplayName(String displayName, RealmModel realm) {
+        if (displayName == null) {
+            return null;
+        }
+
+        for (UserFederationProviderModel fedProvider : realm.getUserFederationProviders()) {
+            if (displayName.equals(fedProvider.getDisplayName())) {
+                return fedProvider;
+            }
+        }
+        return null;
+    }
+
+    public static UserFederationProviderModel findUserFederationProviderById(String fedProviderId, RealmModel realm) {
+        for (UserFederationProviderModel fedProvider : realm.getUserFederationProviders()) {
+            if (fedProviderId.equals(fedProvider.getId())) {
+                return fedProvider;
+            }
+        }
+        return null;
     }
 }

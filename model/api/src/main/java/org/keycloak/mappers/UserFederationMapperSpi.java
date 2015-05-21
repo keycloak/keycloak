@@ -23,4 +23,9 @@ public class UserFederationMapperSpi implements Spi {
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
         return UserFederationMapperFactory.class;
     }
+
+    @Override
+    public boolean isPrivate() {
+        return false;
+    }
 }

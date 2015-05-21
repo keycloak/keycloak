@@ -475,11 +475,11 @@ public class LDAPOperationManager {
 
         String url = this.config.getConnectionUrl();
 
-        if (url == null) {
-            throw new RuntimeException("url");
+        if (url != null) {
+            env.put(Context.PROVIDER_URL, url);
+        } else {
+            logger.warn("LDAP URL is null. LDAPOperationManager won't work correctly");
         }
-
-        env.put(Context.PROVIDER_URL, url);
 
         String connectionPooling = this.config.getConnectionPooling();
         if (connectionPooling != null) {
