@@ -7,10 +7,10 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.constants.ServiceUrlConstants;
-import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.util.HostUtils;
@@ -70,8 +70,7 @@ public class AdminClient {
 
     public static AccessTokenResponse getToken(HttpServletRequest request) throws IOException {
 
-        HttpClient client = new HttpClientBuilder()
-                .disableTrustManager().build();
+        HttpClient client = new DefaultHttpClient();
 
 
         try {
@@ -104,8 +103,7 @@ public class AdminClient {
 
     public static void logout(HttpServletRequest request, AccessTokenResponse res) throws IOException {
 
-        HttpClient client = new HttpClientBuilder()
-                .disableTrustManager().build();
+        HttpClient client = new DefaultHttpClient();
 
 
         try {
@@ -135,8 +133,7 @@ public class AdminClient {
 
     public static List<RoleRepresentation> getRealmRoles(HttpServletRequest request, AccessTokenResponse res) throws Failure {
 
-        HttpClient client = new HttpClientBuilder()
-                .disableTrustManager().build();
+        HttpClient client = new DefaultHttpClient();
         try {
             HttpGet get = new HttpGet(getBaseUrl(request) + "/auth/admin/realms/demo/roles");
             get.addHeader("Authorization", "Bearer " + res.getToken());
