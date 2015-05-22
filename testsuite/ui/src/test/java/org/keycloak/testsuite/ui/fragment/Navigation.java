@@ -118,7 +118,7 @@ public class Navigation {
 	}
 	
 	public void credentials() {
-		openPage(credentials, "Credentials");
+		openPage(credentials, "Settings");
 	}
 	
 	public void attributes() {

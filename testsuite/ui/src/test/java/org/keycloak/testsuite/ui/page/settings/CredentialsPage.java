@@ -6,6 +6,7 @@
 package org.keycloak.testsuite.ui.page.settings;
 
 import java.util.List;
+import org.jboss.arquillian.graphene.findby.ByJQuery;
 import org.keycloak.testsuite.ui.model.PasswordPolicy;
 import org.keycloak.testsuite.ui.page.AbstractPage;
 import org.openqa.selenium.By;
@@ -21,7 +22,7 @@ public class CredentialsPage extends AbstractPage {
 	@FindBy(tagName = "select")
 	private Select addPolicySelect;
 	
-	@FindBy(css = "tr")
+	@FindBy(css = "tr.ng-scope")
 	private List<WebElement> allRows;
 	
 	public void addPolicy(PasswordPolicy policy, int value) {
@@ -43,15 +44,14 @@ public class CredentialsPage extends AbstractPage {
 	
 	private void setPolicyValue(PasswordPolicy policy, int value) {
 		int policyInputLocation = findPolicy(policy);
-		allRows.get(policyInputLocation).findElements(By.tagName("input")).get(0).sendKeys(String.valueOf(value));
+		allRows.get(policyInputLocation).findElement(By.tagName("input")).sendKeys(String.valueOf(value));
 	}
 	
 	private int findPolicy(PasswordPolicy policy) {
-		int i;
-		for (i = 0; i < allRows.size(); i++) {
-			System.out.println(allRows.get(i).getText());
-//			if(allRows.get(i).findElement(By.tagName("input")).getAttribute("value").equals(policy.getName()))
-//				return i;
+		for (int i = 0; i < allRows.size(); i++) {
+			String policyName = allRows.get(i).findElement(ByJQuery.selector("td:eq(0)")).getText();
+			if(policyName.equals(policy.getName()))
+				return i;
 		}
 		return 0;
 	}
