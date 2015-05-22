@@ -33,7 +33,7 @@ public class Navigation {
     @FindByJQuery("a:contains('Sessions')")
     private WebElement sessionsLink;
 
-    @FindByJQuery("a:contains('Security')")
+    @FindByJQuery("a:contains('Security Defenses')")
     private WebElement securityLink;
 
     @FindByJQuery("a:contains('Events')")
@@ -92,7 +92,7 @@ public class Navigation {
     }
 
     public void security() {
-        openPage(securityLink, "Browser Security Headers");
+        openPage(securityLink, "Settings");
     }
 
     public void events() {
