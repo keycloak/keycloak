@@ -76,7 +76,7 @@ public class Navigation {
     }
 
     public void roles() {
-        openPage(rolesLink, "Realm-Level Roles");
+        openPage(rolesLink, "Roles");
     }
 
     public void clients() {
@@ -106,7 +106,7 @@ public class Navigation {
     public void themes() { openPage(themesLink, "Theme Settings"); }
 
     public void roleMappings() {
-		openPage(usersRoleMappings, "Role Mappings");
+		openPage(usersRoleMappings, "User");
 	}
 	
 	public void timeoutSettings() {

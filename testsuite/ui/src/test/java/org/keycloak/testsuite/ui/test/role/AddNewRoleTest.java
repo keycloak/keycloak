@@ -14,6 +14,7 @@ import org.keycloak.testsuite.ui.model.Role;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.keycloak.testsuite.ui.AbstractKeyCloakTest;
 import org.keycloak.testsuite.ui.fragment.FlashMessage;
 import org.keycloak.testsuite.ui.page.settings.UserPage;
@@ -49,7 +50,8 @@ public class AddNewRoleTest extends AbstractKeyCloakTest<RolesPage> {
         page.deleteRole(role);
     }
     
-//    @Test
+	@Ignore
+    @Test
     public void testAddNewRoleWithLongName() {
         String name = "hjewr89y1894yh98(*&*&$jhjkashd)*(&y8934h*&@#hjkahsdj";
         page.addRole(new Role(name));
@@ -59,7 +61,7 @@ public class AddNewRoleTest extends AbstractKeyCloakTest<RolesPage> {
     }
     
     @Test
-    public void addExistingRole() {
+    public void testAddExistingRole() {
         Role role = new Role("role2");
         page.addRole(role);
 		flashMessage.waitUntilPresent();

@@ -131,7 +131,7 @@ public class UserPage extends AbstractPage {
 	}
 
 	public void showAllUsers() {
-		driver.findElement(className("kc-link")).click();
+		primaryButtons.get(0).click();
 	}
 
 	public void goToUser(User user) {
