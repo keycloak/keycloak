@@ -1,6 +1,9 @@
 package org.keycloak.models.cache.entities;
 
 import org.keycloak.enums.SslRequired;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -76,6 +79,10 @@ public class CachedRealm {
 
     private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
     private Map<String, String> smtpConfig = new HashMap<String, String>();
+    private Map<String, AuthenticationFlowModel> authenticationFlows = new HashMap<>();
+    private Map<String, AuthenticatorModel> authenticators = new HashMap<>();
+    private MultivaluedHashMap<String, AuthenticationExecutionModel> authenticationExecutions = new MultivaluedHashMap<>();
+    private Map<String, AuthenticationExecutionModel> executionsById = new HashMap<>();
 
     private boolean eventsEnabled;
     private long eventsExpiration;
@@ -183,6 +190,16 @@ public class CachedRealm {
         internationalizationEnabled = model.isInternationalizationEnabled();
         supportedLocales.addAll(model.getSupportedLocales());
         defaultLocale = model.getDefaultLocale();
+        for (AuthenticationFlowModel flow : model.getAuthenticationFlows()) {
+            authenticationFlows.put(flow.getId(), flow);
+            for (AuthenticationExecutionModel execution : model.getAuthenticationExecutions(flow.getId())) {
+                authenticationExecutions.add(flow.getId(), execution);
+                executionsById.put(execution.getId(), execution);
+            }
+        }
+        for (AuthenticatorModel authenticator : model.getAuthenticators()) {
+            authenticators.put(authenticator.getId(), authenticator);
+        }
 
     }
 
@@ -404,5 +421,21 @@ public class CachedRealm {
 
     public MultivaluedHashMap<String, IdentityProviderMapperModel> getIdentityProviderMappers() {
         return identityProviderMappers;
+    }
+
+    public Map<String, AuthenticationFlowModel> getAuthenticationFlows() {
+        return authenticationFlows;
+    }
+
+    public Map<String, AuthenticatorModel> getAuthenticators() {
+        return authenticators;
+    }
+
+    public MultivaluedHashMap<String, AuthenticationExecutionModel> getAuthenticationExecutions() {
+        return authenticationExecutions;
+    }
+
+    public Map<String, AuthenticationExecutionModel> getExecutionsById() {
+        return executionsById;
     }
 }

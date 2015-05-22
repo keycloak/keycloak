@@ -5,6 +5,9 @@ import com.mongodb.QueryBuilder;
 
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.enums.SslRequired;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -18,6 +21,9 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderCreationEventImpl;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.entities.AuthenticationExecutionEntity;
+import org.keycloak.models.entities.AuthenticationFlowEntity;
+import org.keycloak.models.entities.AuthenticatorEntity;
 import org.keycloak.models.entities.IdentityProviderEntity;
 import org.keycloak.models.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
@@ -1178,7 +1184,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             this.realm.getIdentityProviderMappers().remove(toDelete);
             updateMongoEntity();
         }
-
     }
 
     @Override
@@ -1221,6 +1226,243 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         mapping.setConfig(config);
         return mapping;
     }
+
+    @Override
+    public List<AuthenticationFlowModel> getAuthenticationFlows() {
+        List<AuthenticationFlowEntity> flows = getMongoEntity().getAuthenticationFlows();
+        if (flows.size() == 0) return Collections.EMPTY_LIST;
+        List<AuthenticationFlowModel> models = new LinkedList<>();
+        for (AuthenticationFlowEntity entity : flows) {
+            AuthenticationFlowModel model = entityToModel(entity);
+            models.add(model);
+        }
+        return models;
+    }
+
+    protected AuthenticationFlowModel entityToModel(AuthenticationFlowEntity entity) {
+        AuthenticationFlowModel model = new AuthenticationFlowModel();
+        model.setId(entity.getId());
+        model.setAlias(entity.getAlias());
+        model.setDescription(entity.getDescription());
+        return model;
+    }
+
+    @Override
+    public AuthenticationFlowModel getAuthenticationFlowById(String id) {
+        for (AuthenticationFlowModel model : getAuthenticationFlows()) {
+            if (model.getId().equals(id)) return model;
+        }
+        return null;
+    }
+
+    protected AuthenticationFlowEntity getFlowEntity(String id) {
+        List<AuthenticationFlowEntity> flows = getMongoEntity().getAuthenticationFlows();
+        for (AuthenticationFlowEntity entity : flows) {
+            if (id.equals(entity.getId())) return entity;
+        }
+        return null;
+
+    }
+
+    @Override
+    public void removeAuthenticationFlow(AuthenticationFlowModel model) {
+        AuthenticationFlowEntity toDelete = getFlowEntity(model.getId());
+        if (toDelete == null) return;
+        getMongoEntity().getAuthenticationFlows().remove(toDelete);
+        updateMongoEntity();
+    }
+
+    @Override
+    public void updateAuthenticationFlow(AuthenticationFlowModel model) {
+        List<AuthenticationFlowEntity> flows = getMongoEntity().getAuthenticationFlows();
+        AuthenticationFlowEntity toUpdate = getFlowEntity(model.getId());;
+        if (toUpdate == null) return;
+        toUpdate.setAlias(model.getAlias());
+        toUpdate.setDescription(model.getDescription());
+        updateMongoEntity();
+    }
+
+    @Override
+    public AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model) {
+        AuthenticationFlowEntity entity = new AuthenticationFlowEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setAlias(model.getAlias());
+        entity.setDescription(model.getDescription());
+        getMongoEntity().getAuthenticationFlows().add(entity);
+        model.setId(entity.getId());
+        updateMongoEntity();
+        return model;
+    }
+
+    @Override
+    public List<AuthenticationExecutionModel> getAuthenticationExecutions(String flowId) {
+        AuthenticationFlowEntity flow = getFlowEntity(flowId);
+        if (flow == null) return Collections.EMPTY_LIST;
+
+        List<AuthenticationExecutionEntity> queryResult = flow.getExecutions();
+        List<AuthenticationExecutionModel> executions = new LinkedList<>();
+        for (AuthenticationExecutionEntity entity : queryResult) {
+            AuthenticationExecutionModel model = entityToModel(entity);
+            executions.add(model);
+        }
+        return executions;
+    }
+
+    public AuthenticationExecutionModel entityToModel(AuthenticationExecutionEntity entity) {
+        AuthenticationExecutionModel model = new AuthenticationExecutionModel();
+        model.setId(entity.getId());
+        model.setUserSetupAllowed(entity.isUserSetupAllowed());
+        model.setRequirement(entity.getRequirement());
+        model.setPriority(entity.getPriority());
+        model.setAuthenticator(entity.getAuthenticator());
+        model.setParentFlow(entity.getParentFlow());
+        model.setAutheticatorFlow(entity.isAutheticatorFlow());
+        return model;
+    }
+
+    @Override
+    public AuthenticationExecutionModel getAuthenticationExecutionById(String id) {
+        AuthenticationExecutionEntity execution = getAuthenticationExecutionEntity(id);
+        return entityToModel(execution);
+    }
+
+    public AuthenticationExecutionEntity getAuthenticationExecutionEntity(String id) {
+        List<AuthenticationFlowEntity> flows = getMongoEntity().getAuthenticationFlows();
+        for (AuthenticationFlowEntity entity : flows) {
+            for (AuthenticationExecutionEntity exe : entity.getExecutions()) {
+                if (exe.getId().equals(id)) {
+                   return exe;
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public AuthenticationExecutionModel addAuthenticatorExecution(AuthenticationExecutionModel model) {
+        AuthenticationExecutionEntity entity = new AuthenticationExecutionEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setAuthenticator(model.getAuthenticator());
+        entity.setPriority(model.getPriority());
+        entity.setRequirement(model.getRequirement());
+        entity.setUserSetupAllowed(model.isUserSetupAllowed());
+        entity.setAutheticatorFlow(model.isAutheticatorFlow());
+        AuthenticationFlowEntity flow = getFlowEntity(model.getId());
+        flow.getExecutions().add(entity);
+        updateMongoEntity();
+        model.setId(entity.getId());
+        return model;
+
+    }
+
+    @Override
+    public void updateAuthenticatorExecution(AuthenticationExecutionModel model) {
+        AuthenticationExecutionEntity entity = null;
+        AuthenticationFlowEntity flow = getFlowEntity(model.getParentFlow());
+        for (AuthenticationExecutionEntity exe : flow.getExecutions()) {
+            if (exe.getId().equals(model.getId())) {
+                entity = exe;
+            }
+        }
+        if (entity == null) return;
+        entity.setAutheticatorFlow(model.isAutheticatorFlow());
+        entity.setAuthenticator(model.getAuthenticator());
+        entity.setPriority(model.getPriority());
+        entity.setRequirement(model.getRequirement());
+        entity.setUserSetupAllowed(model.isUserSetupAllowed());
+        updateMongoEntity();
+    }
+
+    @Override
+    public void removeAuthenticatorExecution(AuthenticationExecutionModel model) {
+        AuthenticationExecutionEntity entity = null;
+        AuthenticationFlowEntity flow = getFlowEntity(model.getParentFlow());
+        for (AuthenticationExecutionEntity exe : flow.getExecutions()) {
+            if (exe.getId().equals(model.getId())) {
+                entity = exe;
+            }
+        }
+        if (entity == null) return;
+        flow.getExecutions().remove(entity);
+        updateMongoEntity();
+
+    }
+
+    @Override
+    public List<AuthenticatorModel> getAuthenticators() {
+        List<AuthenticatorModel> authenticators = new LinkedList<>();
+        for (AuthenticatorEntity entity : getMongoEntity().getAuthenticators()) {
+            authenticators.add(entityToModel(entity));
+        }
+        return authenticators;
+    }
+
+    @Override
+    public AuthenticatorModel addAuthenticator(AuthenticatorModel model) {
+        AuthenticatorEntity auth = new AuthenticatorEntity();
+        auth.setId(KeycloakModelUtils.generateId());
+        auth.setAlias(model.getAlias());
+        auth.setProviderId(model.getProviderId());
+        auth.setConfig(model.getConfig());
+        realm.getAuthenticators().add(auth);
+        model.setId(auth.getId());
+        updateMongoEntity();
+        return model;
+    }
+
+    @Override
+    public void removeAuthenticator(AuthenticatorModel model) {
+        AuthenticatorEntity entity = getAuthenticatorEntity(model.getId());
+        if (entity == null) return;
+        getMongoEntity().getAuthenticators().remove(entity);
+        updateMongoEntity();
+
+    }
+
+    @Override
+    public AuthenticatorModel getAuthenticatorById(String id) {
+        AuthenticatorEntity entity = getAuthenticatorEntity(id);
+        if (entity == null) return null;
+        return entityToModel(entity);
+    }
+
+    public AuthenticatorEntity getAuthenticatorEntity(String id) {
+        AuthenticatorEntity entity = null;
+        for (AuthenticatorEntity auth : getMongoEntity().getAuthenticators()) {
+            if (auth.getId().equals(id)) {
+                entity = auth;
+                break;
+            }
+        }
+        return entity;
+    }
+
+    public AuthenticatorModel entityToModel(AuthenticatorEntity entity) {
+        AuthenticatorModel model = new AuthenticatorModel();
+        model.setId(entity.getId());
+        model.setProviderId(entity.getProviderId());
+        model.setAlias(entity.getAlias());
+        Map<String, String> config = new HashMap<>();
+        if (entity.getConfig() != null) config.putAll(entity.getConfig());
+        model.setConfig(config);
+        return model;
+    }
+
+    @Override
+    public void updateAuthenticator(AuthenticatorModel model) {
+        AuthenticatorEntity entity = getAuthenticatorEntity(model.getId());
+        if (entity == null) return;
+        entity.setAlias(model.getAlias());
+        entity.setProviderId(model.getProviderId());
+        if (entity.getConfig() == null) {
+            entity.setConfig(model.getConfig());
+        } else {
+            entity.getConfig().clear();
+            entity.getConfig().putAll(model.getConfig());
+        }
+        updateMongoEntity();
+    }
+
 
     @Override
     public Set<UserFederationMapperModel> getUserFederationMappers() {

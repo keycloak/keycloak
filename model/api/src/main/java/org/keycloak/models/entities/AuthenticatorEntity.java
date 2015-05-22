@@ -1,19 +1,16 @@
-package org.keycloak.models;
+package org.keycloak.models.entities;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
-* @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
-* @version $Revision: 1 $
-*/
-public class AuthenticatorModel {
-
-    private String id;
-    private String alias;
-    private String providerId;
-    private Map<String, String> config = new HashMap<String, String>();
-
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
+ */
+public class AuthenticatorEntity {
+    protected String id;
+    protected String alias;
+    protected String providerId;
+    private Map<String, String> config;
 
     public String getId() {
         return id;

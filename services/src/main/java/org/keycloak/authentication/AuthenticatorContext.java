@@ -9,6 +9,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.ClientSessionCode;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -48,6 +49,7 @@ public interface AuthenticatorContext {
 
     void success();
     void failure(AuthenticationProcessor.Error error);
+    void failure(AuthenticationProcessor.Error error, Response response);
     void challenge(Response challenge);
     void failureChallenge(AuthenticationProcessor.Error error, Response challenge);
     void attempted();

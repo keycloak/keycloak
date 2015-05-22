@@ -1,6 +1,9 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.enums.SslRequired;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -13,6 +16,9 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderCreationEventImpl;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.jpa.entities.AuthenticationExecutionEntity;
+import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
+import org.keycloak.models.jpa.entities.AuthenticatorEntity;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderMapperEntity;
@@ -1485,5 +1491,208 @@ public class RealmAdapter implements RealmModel {
         mapper.setConfig(config);
         return mapper;
     }
+
+    @Override
+    public List<AuthenticationFlowModel> getAuthenticationFlows() {
+        TypedQuery<AuthenticationFlowEntity> query = em.createNamedQuery("getAuthenticationFlowsByRealm", AuthenticationFlowEntity.class);
+        query.setParameter("realm", realm);
+        List<AuthenticationFlowEntity> flows = query.getResultList();
+        if (flows.size() == 0) return Collections.EMPTY_LIST;
+        List<AuthenticationFlowModel> models = new LinkedList<>();
+        for (AuthenticationFlowEntity entity : flows) {
+            AuthenticationFlowModel model = entityToModel(entity);
+            models.add(model);
+        }
+        return models;
+    }
+
+    protected AuthenticationFlowModel entityToModel(AuthenticationFlowEntity entity) {
+        AuthenticationFlowModel model = new AuthenticationFlowModel();
+        model.setId(entity.getId());
+        model.setAlias(entity.getAlias());
+        model.setDescription(entity.getDescription());
+        return model;
+    }
+
+    @Override
+    public AuthenticationFlowModel getAuthenticationFlowById(String id) {
+        AuthenticationFlowEntity entity = em.find(AuthenticationFlowEntity.class, id);
+        if (entity == null) return null;
+        return entityToModel(entity);
+    }
+
+    @Override
+    public void removeAuthenticationFlow(AuthenticationFlowModel model) {
+        AuthenticationFlowEntity entity = em.find(AuthenticationFlowEntity.class, model.getId());
+        if (entity == null) return;
+        em.remove(entity);
+        em.flush();
+    }
+
+    @Override
+    public void updateAuthenticationFlow(AuthenticationFlowModel model) {
+        AuthenticationFlowEntity entity = em.find(AuthenticationFlowEntity.class, model.getId());
+        if (entity == null) return;
+        entity.setAlias(model.getAlias());
+        entity.setDescription(model.getDescription());
+
+    }
+
+    @Override
+    public AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model) {
+        AuthenticationFlowEntity entity = new AuthenticationFlowEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setAlias(model.getAlias());
+        entity.setDescription(model.getDescription());
+        entity.setRealm(realm);
+        realm.getAuthenticationFlows().add(entity);
+        em.persist(entity);
+        em.flush();
+        model.setId(entity.getId());
+        return model;
+    }
+
+    @Override
+    public List<AuthenticationExecutionModel> getAuthenticationExecutions(String flowId) {
+        TypedQuery<AuthenticationExecutionEntity> query = em.createNamedQuery("getAuthenticationExecutionsByFlow", AuthenticationExecutionEntity.class);
+        AuthenticationFlowEntity flow = em.getReference(AuthenticationFlowEntity.class, flowId);
+        query.setParameter("realm", realm);
+        query.setParameter("flow", flow);
+        List<AuthenticationExecutionEntity> queryResult = query.getResultList();
+        List<AuthenticationExecutionModel> executions = new LinkedList<>();
+        for (AuthenticationExecutionEntity entity : queryResult) {
+            AuthenticationExecutionModel model = entityToModel(entity);
+            executions.add(model);
+        }
+        return executions;
+    }
+
+    public AuthenticationExecutionModel entityToModel(AuthenticationExecutionEntity entity) {
+        AuthenticationExecutionModel model = new AuthenticationExecutionModel();
+        model.setId(entity.getId());
+        model.setUserSetupAllowed(entity.isUserSetupAllowed());
+        model.setRequirement(entity.getRequirement());
+        model.setPriority(entity.getPriority());
+        model.setAuthenticator(entity.getAuthenticator());
+        model.setParentFlow(entity.getFlow().getId());
+        model.setAutheticatorFlow(entity.isAutheticatorFlow());
+        return model;
+    }
+
+    @Override
+    public AuthenticationExecutionModel getAuthenticationExecutionById(String id) {
+        AuthenticationExecutionEntity entity = em.find(AuthenticationExecutionEntity.class, id);
+        if (entity == null) return null;
+        return entityToModel(entity);
+    }
+
+    @Override
+    public AuthenticationExecutionModel addAuthenticatorExecution(AuthenticationExecutionModel model) {
+        AuthenticationExecutionEntity entity = new AuthenticationExecutionEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setAuthenticator(model.getAuthenticator());
+        entity.setPriority(model.getPriority());
+        entity.setRequirement(model.getRequirement());
+        AuthenticationFlowEntity flow = em.find(AuthenticationFlowEntity.class, model.getParentFlow());
+        entity.setFlow(flow);
+        flow.getExecutions().add(entity);
+        entity.setRealm(realm);
+        entity.setUserSetupAllowed(model.isUserSetupAllowed());
+        entity.setAutheticatorFlow(model.isAutheticatorFlow());
+        em.persist(entity);
+        em.flush();
+        model.setId(entity.getId());
+        return model;
+
+    }
+
+    @Override
+    public void updateAuthenticatorExecution(AuthenticationExecutionModel model) {
+        AuthenticationExecutionEntity entity = em.find(AuthenticationExecutionEntity.class, model.getId());
+        if (entity == null) return;
+        entity.setAutheticatorFlow(model.isAutheticatorFlow());
+        entity.setAuthenticator(model.getAuthenticator());
+        entity.setPriority(model.getPriority());
+        entity.setRequirement(model.getRequirement());
+        entity.setUserSetupAllowed(model.isUserSetupAllowed());
+        em.flush();
+    }
+
+    @Override
+    public void removeAuthenticatorExecution(AuthenticationExecutionModel model) {
+        AuthenticationExecutionEntity entity = em.find(AuthenticationExecutionEntity.class, model.getId());
+        if (entity == null) return;
+        em.remove(entity);
+        em.flush();
+
+    }
+
+    @Override
+    public AuthenticatorModel addAuthenticator(AuthenticatorModel model) {
+        AuthenticatorEntity auth = new AuthenticatorEntity();
+        auth.setId(KeycloakModelUtils.generateId());
+        auth.setAlias(model.getAlias());
+        auth.setRealm(realm);
+        auth.setProviderId(model.getProviderId());
+        auth.setConfig(model.getConfig());
+        realm.getAuthenticators().add(auth);
+        em.persist(auth);
+        em.flush();
+        model.setId(auth.getId());
+        return model;
+    }
+
+    @Override
+    public void removeAuthenticator(AuthenticatorModel model) {
+        AuthenticatorEntity entity = em.find(AuthenticatorEntity.class, model.getId());
+        if (entity == null) return;
+        em.remove(entity);
+        em.flush();
+
+    }
+
+    @Override
+    public AuthenticatorModel getAuthenticatorById(String id) {
+        AuthenticatorEntity entity = em.find(AuthenticatorEntity.class, id);
+        if (entity == null) return null;
+        return entityToModel(entity);
+    }
+
+    public AuthenticatorModel entityToModel(AuthenticatorEntity entity) {
+        AuthenticatorModel model = new AuthenticatorModel();
+        model.setId(entity.getId());
+        model.setProviderId(entity.getProviderId());
+        model.setAlias(entity.getAlias());
+        Map<String, String> config = new HashMap<>();
+        if (entity.getConfig() != null) config.putAll(entity.getConfig());
+        model.setConfig(config);
+        return model;
+    }
+
+    @Override
+    public void updateAuthenticator(AuthenticatorModel model) {
+        AuthenticatorEntity entity = em.find(AuthenticatorEntity.class, model.getId());
+        if (entity == null) return;
+        entity.setAlias(model.getAlias());
+        entity.setProviderId(model.getProviderId());
+        if (entity.getConfig() == null) {
+            entity.setConfig(model.getConfig());
+        } else {
+            entity.getConfig().clear();
+            entity.getConfig().putAll(model.getConfig());
+        }
+        em.flush();
+
+    }
+
+    @Override
+    public List<AuthenticatorModel> getAuthenticators() {
+        List<AuthenticatorModel> authenticators = new LinkedList<>();
+        for (AuthenticatorEntity entity : realm.getAuthenticators()) {
+            authenticators.add(entityToModel(entity));
+        }
+        return authenticators;
+    }
+
 
 }

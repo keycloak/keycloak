@@ -3,6 +3,7 @@ package org.keycloak.authentication;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -52,7 +53,7 @@ public class AuthenticationProcessor {
     protected ClientConnection connection;
     protected UriInfo uriInfo;
     protected KeycloakSession session;
-    protected List<AuthenticatorModel> authenticators;
+    protected List<AuthenticationExecutionModel> executions;
     protected BruteForceProtector protector;
     protected EventBuilder eventBuilder;
     protected HttpRequest request;
@@ -160,6 +161,13 @@ public class AuthenticationProcessor {
             this.challenge = challenge;
 
         }
+        @Override
+        public void failure(Error error, Response challenge) {
+            this.error = error;
+            this.status = Status.FAILED;
+            this.challenge = challenge;
+
+        }
 
         @Override
         public void attempted() {
@@ -264,28 +272,29 @@ public class AuthenticationProcessor {
         validateUser(authUser);
         Response challenge = null;
         Map<String, UserSessionModel.AuthenticatorStatus> previousAttempts = clientSession.getAuthenticators();
-        for (AuthenticatorModel model : authenticators) {
-            UserSessionModel.AuthenticatorStatus oldStatus = previousAttempts.get(model.getAlias());
+        for (AuthenticationExecutionModel model : executions) {
+            UserSessionModel.AuthenticatorStatus oldStatus = previousAttempts.get(model.getId());
             if (isProcessed(oldStatus)) continue;
 
-            AuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getProviderId());
-            Authenticator authenticator = factory.create(model);
+            AuthenticatorModel authenticatorModel = realm.getAuthenticatorById(model.getAuthenticator());
+            AuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, authenticatorModel.getProviderId());
+            Authenticator authenticator = factory.create(authenticatorModel);
             if (authenticator.requiresUser() && authUser == null){
                 if ( authenticator.requiresUser()) {
                     if (challenge != null) return challenge;
                     throw new AuthException(Error.UNKNOWN_USER);
                 }
             }
-            if (authUser != null && model.getRequirement() == AuthenticatorModel.Requirement.ALTERNATIVE) {
-                clientSession.setAuthenticatorStatus(model.getAlias(), UserSessionModel.AuthenticatorStatus.SKIPPED);
+            if (authUser != null && model.getRequirement() == AuthenticationExecutionModel.Requirement.ALTERNATIVE) {
+                clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.SKIPPED);
                 continue;
             }
             authUser = clientSession.getAuthenticatedUser();
 
             if (authenticator.requiresUser() && authUser != null && !authenticator.configuredFor(authUser)) {
-                if (model.getRequirement() == AuthenticatorModel.Requirement.REQUIRED) {
+                if (model.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) {
                     if (model.isUserSetupAllowed()) {
-                        clientSession.setAuthenticatorStatus(model.getAlias(), UserSessionModel.AuthenticatorStatus.SETUP_REQUIRED);
+                        clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.SETUP_REQUIRED);
                         authUser.addRequiredAction(authenticator.getRequiredAction());
 
                     } else {
@@ -294,25 +303,26 @@ public class AuthenticationProcessor {
                 }
                 continue;
             }
-            Result context = new Result(model, authenticator);
+            Result context = new Result(authenticatorModel, authenticator);
             authenticator.authenticate(context);
             Status result = context.getStatus();
             if (result == Status.SUCCESS){
-                clientSession.setAuthenticatorStatus(model.getAlias(), UserSessionModel.AuthenticatorStatus.SUCCESS);
-                if (model.isMasterAuthenticator()) return authenticationComplete();
+                clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.SUCCESS);
+                //if (model.isMasterAuthenticator()) return authenticationComplete();
                 continue;
             } else if (result == Status.FAILED) {
+                if (context.challenge != null) return context.challenge;
                 throw new AuthException(context.error);
             } else if (result == Status.CHALLENGE) {
-                if (model.getRequirement() == AuthenticatorModel.Requirement.REQUIRED) return context.challenge;
+                if (model.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) return context.challenge;
                 if (challenge != null) challenge = context.challenge;
                 continue;
             } else if (result == Status.FAILURE_CHALLENGE) {
                 logUserFailure();
                 return context.challenge;
             } else if (result == Status.ATTEMPTED) {
-                if (model.getRequirement() == AuthenticatorModel.Requirement.REQUIRED) throw new AuthException(Error.INVALID_CREDENTIALS);
-                clientSession.setAuthenticatorStatus(model.getAlias(), UserSessionModel.AuthenticatorStatus.ATTEMPTED);
+                if (model.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) throw new AuthException(Error.INVALID_CREDENTIALS);
+                clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.ATTEMPTED);
                 continue;
             }
         }

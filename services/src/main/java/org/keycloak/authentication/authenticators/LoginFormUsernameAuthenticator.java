@@ -6,11 +6,13 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -59,19 +61,37 @@ public class LoginFormUsernameAuthenticator implements Authenticator {
     }
 
     protected Response challenge(AuthenticatorContext context, MultivaluedMap<String, String> formData) {
-        LoginFormsProvider forms = context.getSession().getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(new ClientSessionCode(context.getRealm(), context.getClientSession()).getCode());
+        LoginFormsProvider forms = loginForm(context);
 
         if (formData.size() > 0) forms.setFormData(formData);
 
         return forms.createLogin();
     }
 
+    protected LoginFormsProvider loginForm(AuthenticatorContext context) {
+        ClientSessionCode code = new ClientSessionCode(context.getRealm(), context.getClientSession());
+        code.setAction(ClientSessionModel.Action.AUTHENTICATE);
+        return context.getSession().getProvider(LoginFormsProvider.class)
+                    .setClientSessionCode(code.getCode());
+    }
+
+    protected Response invalidUser(AuthenticatorContext context) {
+        return loginForm(context).setError(Messages.INVALID_USER).createLogin();
+    }
+
+    protected Response disabledUser(AuthenticatorContext context) {
+        return loginForm(context).setError(Messages.ACCOUNT_DISABLED).createLogin();
+    }
+
+    protected Response temporarilyDisabledUser(AuthenticatorContext context) {
+        return loginForm(context).setError(Messages.ACCOUNT_TEMPORARILY_DISABLED).createLogin();
+    }
+
     public void validateUser(AuthenticatorContext context) {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getFormParameters();
         String username = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
-            Response challengeResponse = challenge(context);
+            Response challengeResponse = invalidUser(context);
             context.failureChallenge(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
             return;
         }
@@ -82,17 +102,19 @@ public class LoginFormUsernameAuthenticator implements Authenticator {
 
     public boolean invalidUser(AuthenticatorContext context, UserModel user) {
         if (user == null) {
-            Response challengeResponse = challenge(context);
+            Response challengeResponse = invalidUser(context);
             context.failureChallenge(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
             return true;
         }
         if (!user.isEnabled()) {
-            context.failure(AuthenticationProcessor.Error.USER_DISABLED);
+            Response challengeResponse = disabledUser(context);
+            context.failureChallenge(AuthenticationProcessor.Error.USER_DISABLED, challengeResponse);
             return true;
         }
         if (context.getRealm().isBruteForceProtected()) {
             if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user.getUsername())) {
-                context.failure(AuthenticationProcessor.Error.USER_TEMPORARILY_DISABLED);
+                Response challengeResponse = temporarilyDisabledUser(context);
+                context.failureChallenge(AuthenticationProcessor.Error.USER_TEMPORARILY_DISABLED, challengeResponse);
                 return true;
             }
         }
