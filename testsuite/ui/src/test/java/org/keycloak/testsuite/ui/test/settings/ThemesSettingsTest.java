@@ -26,13 +26,6 @@ public class ThemesSettingsTest extends AbstractKeyCloakTest<ThemesSettingsPage>
 
         loginAsAdmin();
         navigation.themes();
-        page.changeLoginTheme(Theme.PATTERNFLY.getName());
-        page.saveTheme();
-        logOut();
-        page.verifyPatternflyTheme();
-
-        loginAsAdmin();
-        navigation.themes();
         page.changeLoginTheme(Theme.KEYCLOAK.getName());
         page.saveTheme();
         logOut();

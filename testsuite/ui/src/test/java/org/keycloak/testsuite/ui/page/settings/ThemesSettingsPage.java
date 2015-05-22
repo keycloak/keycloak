@@ -26,11 +26,8 @@ public class ThemesSettingsPage extends AbstractPage {
     @FindBy(css = "#emailTheme")
     private Select emailThemeSelect;
 
-    @FindBy(css = "link[href*='/auth/theme/login/keycloak/']")
-    private WebElement keycloakThemeLink;
-
-    @FindBy(css = "link[href*='/auth/theme/login/patternfly/']")
-    private WebElement patternFlyThemeLink;
+    @FindBy(css = "link[href*='login/keycloak/css/login.css']")
+    private WebElement keycloakTheme;
 
     public void changeLoginTheme(String themeName){
 		waitGuiForElement(By.id("loginTheme"));
@@ -50,18 +47,11 @@ public class ThemesSettingsPage extends AbstractPage {
     }
 
     public void verifyBaseTheme(){
-        waitGuiForElementNotPresent(patternFlyThemeLink);
-        waitGuiForElementNotPresent(keycloakThemeLink);
+        waitGuiForElementNotPresent(keycloakTheme);
     }
 
     public void verifyKeycloakTheme(){
-        waitGuiForElement(keycloakThemeLink);
-        waitGuiForElementNotPresent(patternFlyThemeLink);
-    }
-
-    public void verifyPatternflyTheme(){
-        waitGuiForElement(patternFlyThemeLink);
-        waitGuiForElementNotPresent(keycloakThemeLink);
+        waitGuiForElement(keycloakTheme);
     }
 
     public void saveTheme() {

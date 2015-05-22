@@ -103,7 +103,9 @@ public class Navigation {
 		openPage(loginLink, "Settings");
 	}
 
-    public void themes() { openPage(themesLink, "Theme Settings"); }
+    public void themes() { 
+		openPage(themesLink, "Settings"); 
+	}
 
     public void roleMappings() {
 		openPage(usersRoleMappings, "User");
