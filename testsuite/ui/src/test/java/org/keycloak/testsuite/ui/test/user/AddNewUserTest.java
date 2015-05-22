@@ -9,6 +9,7 @@ import org.keycloak.testsuite.ui.page.settings.UserPage;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.keycloak.testsuite.ui.AbstractKeyCloakTest;
 import static org.keycloak.testsuite.ui.util.Users.TEST_USER1;
 
@@ -46,7 +47,8 @@ public class AddNewUserTest extends AbstractKeyCloakTest<UserPage> {
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
     }
 
-//	@Test
+	@Ignore
+	@Test
     public void addUserWithLongNameTest() {
         String longUserName = "thisisthelongestnameeveranditcannotbeusedwhencreatingnewuserinkeycloak";
         User testUser = new User(longUserName);

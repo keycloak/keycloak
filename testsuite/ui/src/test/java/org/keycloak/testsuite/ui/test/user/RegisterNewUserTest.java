@@ -49,7 +49,6 @@ public class RegisterNewUserTest extends AbstractKeyCloakTest<RegisterPage> {
     @Test
     public void registerNewUserTest() {
         page.registerNewUser(TEST_USER1);
-        //assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 		logOut();
         loginAsAdmin();
         navigation.users();
@@ -61,7 +60,7 @@ public class RegisterNewUserTest extends AbstractKeyCloakTest<RegisterPage> {
 
     @Test
     public void registerNewUserWithWrongEmail() {
-        User testUser = TEST_USER1;
+        User testUser = new User(TEST_USER1);
 		testUser.setEmail("newUser.redhat.com");
         page.registerNewUser(testUser);
         assertTrue(page.isInvalidEmail());

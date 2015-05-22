@@ -52,6 +52,11 @@ public class User {
 		this(userName, password, email, firstName, lastName);
 		this.requiredUserActions = requiredUserActions;
     }
+	
+	public User(User user) {
+		this(user.userName, user.password, user.email, user.firstName, user.lastName,
+				user.userEnabled, user.emailVerified, user.requiredUserActions);
+	}
 
     public String getUserName() { return userName; }
 
