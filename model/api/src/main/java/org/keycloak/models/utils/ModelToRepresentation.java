@@ -307,7 +307,7 @@ public class ModelToRepresentation {
         config.putAll(model.getConfig());
         rep.setConfig(config);
 
-        UserFederationProviderModel fedProvider = KeycloakModelUtils.findUserFederationProviderById(model.getId(), realm);
+        UserFederationProviderModel fedProvider = KeycloakModelUtils.findUserFederationProviderById(model.getFederationProviderId(), realm);
         if (fedProvider == null) {
             throw new ModelException("Couldn't find federation provider with ID " + model.getId());
         }

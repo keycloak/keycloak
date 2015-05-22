@@ -5,13 +5,20 @@ import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
+import org.keycloak.federation.ldap.mappers.RoleLDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.RoleLDAPFederationMapperFactory;
+import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapperFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
@@ -59,7 +66,7 @@ class FederationTestUtils {
 
             @Override
             public String getAttribute(String name) {
-                if (name == "postal_code") {
+                if ("postal_code".equals(name)) {
                     return postalCode;
                 } else {
                     return null;
@@ -81,5 +88,40 @@ class FederationTestUtils {
         Assert.assertEquals(expectedLastName, user.getLastName());
         Assert.assertEquals(expectedEmail, user.getEmail());
         Assert.assertEquals(expectedPostalCode, user.getAttribute("postal_code"));
+    }
+
+    public static void addZipCodeLDAPMapper(RealmModel realm, UserFederationProviderModel providerModel) {
+        UserFederationMapperModel mapperModel = KeycloakModelUtils.createUserFederationMapperModel("zipCodeMapper", providerModel.getId(), UserAttributeLDAPFederationMapperFactory.ID,
+                UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, "postal_code",
+                UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, LDAPConstants.POSTAL_CODE,
+                UserAttributeLDAPFederationMapper.READ_ONLY, "false");
+        realm.addUserFederationMapper(mapperModel);
+    }
+
+    public static void addOrUpdateRoleLDAPMappers(RealmModel realm, UserFederationProviderModel providerModel, RoleLDAPFederationMapper.Mode mode) {
+        UserFederationMapperModel mapperModel = realm.getUserFederationMapperByName(providerModel.getId(), "realmRolesMapper");
+        if (mapperModel != null) {
+            mapperModel.getConfig().put(RoleLDAPFederationMapper.MODE, mode.toString());
+            realm.updateUserFederationMapper(mapperModel);
+        } else {
+            mapperModel = KeycloakModelUtils.createUserFederationMapperModel("realmRolesMapper", providerModel.getId(), RoleLDAPFederationMapperFactory.ID,
+                    RoleLDAPFederationMapper.ROLES_DN, "ou=RealmRoles,dc=keycloak,dc=org",
+                    RoleLDAPFederationMapper.USE_REALM_ROLES_MAPPING, "true",
+                    RoleLDAPFederationMapper.MODE, mode.toString());
+            realm.addUserFederationMapper(mapperModel);
+        }
+
+        mapperModel = realm.getUserFederationMapperByName(providerModel.getId(), "financeRolesMapper");
+        if (mapperModel != null) {
+            mapperModel.getConfig().put(RoleLDAPFederationMapper.MODE, mode.toString());
+            realm.updateUserFederationMapper(mapperModel);
+        } else {
+            mapperModel = KeycloakModelUtils.createUserFederationMapperModel("financeRolesMapper", providerModel.getId(), RoleLDAPFederationMapperFactory.ID,
+                    RoleLDAPFederationMapper.ROLES_DN, "ou=FinanceRoles,dc=keycloak,dc=org",
+                    RoleLDAPFederationMapper.USE_REALM_ROLES_MAPPING, "false",
+                    RoleLDAPFederationMapper.CLIENT_ID, "finance",
+                    RoleLDAPFederationMapper.MODE, mode.toString());
+            realm.addUserFederationMapper(mapperModel);
+        }
     }
 }

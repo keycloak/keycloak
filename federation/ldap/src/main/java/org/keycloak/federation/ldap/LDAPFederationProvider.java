@@ -59,12 +59,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
         this.model = model;
         this.ldapIdentityStore = ldapIdentityStore;
         this.kerberosConfig = new LDAPProviderKerberosConfig(model);
-        String editModeString = model.getConfig().get(LDAPConstants.EDIT_MODE);
-        if (editModeString == null) {
-            editMode = EditMode.READ_ONLY;
-        } else {
-            editMode = EditMode.valueOf(editModeString);
-        }
+        this.editMode = ldapIdentityStore.getConfig().getEditMode();
 
         supportedCredentialTypes.add(UserCredentialModel.PASSWORD);
         if (kerberosConfig.isAllowKerberosAuthentication()) {

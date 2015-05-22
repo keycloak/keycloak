@@ -10,6 +10,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
@@ -26,8 +27,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -273,6 +276,8 @@ public final class KeycloakModelUtils {
         return false;
     }
 
+    // USER FEDERATION RELATED STUFF
+
     /**
      * Ensure that displayName of myProvider (if not null) is unique and there is no other provider with same displayName in the list.
      *
@@ -296,6 +301,7 @@ public final class KeycloakModelUtils {
         }
     }
 
+
     public static UserFederationProviderModel findUserFederationProviderByDisplayName(String displayName, RealmModel realm) {
         if (displayName == null) {
             return null;
@@ -309,6 +315,7 @@ public final class KeycloakModelUtils {
         return null;
     }
 
+
     public static UserFederationProviderModel findUserFederationProviderById(String fedProviderId, RealmModel realm) {
         for (UserFederationProviderModel fedProvider : realm.getUserFederationProviders()) {
             if (fedProviderId.equals(fedProvider.getId())) {
@@ -316,5 +323,30 @@ public final class KeycloakModelUtils {
             }
         }
         return null;
+    }
+
+
+    public static UserFederationMapperModel createUserFederationMapperModel(String name, String federationProviderId, String mapperType, String... config) {
+        UserFederationMapperModel mapperModel = new UserFederationMapperModel();
+        mapperModel.setName(name);
+        mapperModel.setFederationProviderId(federationProviderId);
+        mapperModel.setFederationMapperType(mapperType);
+
+        Map<String, String> configMap = new HashMap<String, String>();
+        String key = null;
+        for (String configEntry : config) {
+            if (key == null) {
+                key = configEntry;
+            } else {
+                configMap.put(key, configEntry);
+                key = null;
+            }
+        }
+        if (key != null) {
+            throw new IllegalStateException("Invalid count of arguments for config. Maybe mistake?");
+        }
+        mapperModel.setConfig(configMap);
+
+        return mapperModel;
     }
 }

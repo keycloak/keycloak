@@ -25,18 +25,26 @@
     ],
     "userFederationProviders": [
         {
-            "displayName": "MyLDAPProvider",
-            "providerName": "dummy",
+            "displayName": "MyLDAPProvider1",
+            "providerName": "ldap",
             "priority": 1,
             "config": {
-                "important.config": "ldap://foo"
+                "connectionUrl": "ldap://foo"
+            }
+        },
+        {
+            "displayName": "MyLDAPProvider2",
+            "providerName": "ldap",
+            "priority": 2,
+            "config": {
+                "connectionUrl": "ldap://bar"
             }
         }
     ],
     "userFederationMappers": [
         {
             "name": "FullNameMapper",
-            "federationProviderDisplayName": "MyLDAPProvider",
+            "federationProviderDisplayName": "MyLDAPProvider1",
             "federationMapperType": "full-name-ldap-mapper",
             "config": {
                 "ldap.full.name.attribute": "cn"

@@ -24,6 +24,11 @@ public interface RealmModel extends RoleContainerModel {
         ClientModel getCreatedClient();
     }
 
+    interface UserFederationProviderCreationEvent extends ProviderEvent {
+        UserFederationProviderModel getCreatedFederationProvider();
+        RealmModel getRealm();
+    }
+
     String getId();
 
     String getName();

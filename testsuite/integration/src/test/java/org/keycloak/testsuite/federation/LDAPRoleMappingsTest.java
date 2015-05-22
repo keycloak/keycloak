@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.federation;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,7 +32,6 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.cache.RealmAdapter;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -96,7 +94,9 @@ public class LDAPRoleMappingsTest {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                     RoleLDAPFederationMapper roleMapper = new RoleLDAPFederationMapper();
-                    UserFederationMapperModel roleMapperModel = findRoleMapperModel(appRealm);
+
+                    FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, RoleLDAPFederationMapper.Mode.LDAP_ONLY);
+                    UserFederationMapperModel roleMapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "realmRolesMapper");
                     LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
 
                     LDAPObject ldapRole = roleMapper.loadLDAPRoleByName(roleMapperModel, ldapProvider, "realmRole3");
@@ -130,25 +130,16 @@ public class LDAPRoleMappingsTest {
     protected AppPage appPage;
 
     @WebResource
-    protected RegisterPage registerPage;
-
-    @WebResource
     protected LoginPage loginPage;
-
-    @WebResource
-    protected AccountUpdateProfilePage profilePage;
-
-    @WebResource
-    protected AccountPasswordPage changePasswordPage;
 
     @Test
     public void test01_ldapOnlyRoleMappings() {
-        // TODO: Remove me!!!
-        //RealmAdapter.LDAP_MODE = "LDAP_ONLY";
-
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
+
+            FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, RoleLDAPFederationMapper.Mode.LDAP_ONLY);
+
             UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
             UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
 
@@ -230,12 +221,12 @@ public class LDAPRoleMappingsTest {
 
     @Test
     public void test02_readOnlyRoleMappings() {
-        // TODO: Remove me!!!
-        //RealmAdapter.LDAP_MODE = "READ_ONLY";
-
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
+
+            FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, RoleLDAPFederationMapper.Mode.READ_ONLY);
+
             UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
 
             RoleModel realmRole1 = appRealm.getRole("realmRole1");
@@ -247,7 +238,7 @@ public class LDAPRoleMappingsTest {
 
             // Add some role mappings directly into LDAP
             RoleLDAPFederationMapper roleMapper = new RoleLDAPFederationMapper();
-            UserFederationMapperModel roleMapperModel = findRoleMapperModel(appRealm);
+            UserFederationMapperModel roleMapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "realmRolesMapper");
             LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
             LDAPObject maryLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "marykeycloak");
             roleMapper.addRoleMappingInLDAP(roleMapperModel, "realmRole1", ldapProvider, maryLdap);
@@ -292,16 +283,15 @@ public class LDAPRoleMappingsTest {
 
     @Test
     public void test03_importRoleMappings() {
-        // TODO: Remove me!!!
-        //RealmAdapter.LDAP_MODE = "IMPORT";
-
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
 
+            FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, RoleLDAPFederationMapper.Mode.IMPORT);
+
             // Add some role mappings directly in LDAP
             RoleLDAPFederationMapper roleMapper = new RoleLDAPFederationMapper();
-            UserFederationMapperModel roleMapperModel = findRoleMapperModel(appRealm);
+            UserFederationMapperModel roleMapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "realmRolesMapper");
             LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
             LDAPObject robLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "robkeycloak");
             roleMapper.addRoleMappingInLDAP(roleMapperModel, "realmRole1", ldapProvider, robLdap);
@@ -343,17 +333,6 @@ public class LDAPRoleMappingsTest {
         } finally {
             keycloakRule.stopSession(session, false);
         }
-    }
-
-    private static UserFederationMapperModel findRoleMapperModel(RealmModel appRealm) {
-        Set<UserFederationMapperModel> fedMappers = appRealm.getUserFederationMappers();
-        for (UserFederationMapperModel mapper : fedMappers) {
-            if ("realmRoleMapper".equals(mapper.getName())) {
-                return mapper;
-            }
-        }
-
-        throw new IllegalStateException("Mapper 'realmRoleMapper' not found");
     }
 
     private void deleteRoleMappingsInLDAP(UserFederationMapperModel roleMapperModel, RoleLDAPFederationMapper roleMapper, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, String roleName) {

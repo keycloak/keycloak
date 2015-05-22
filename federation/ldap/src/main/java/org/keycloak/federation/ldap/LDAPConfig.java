@@ -11,6 +11,7 @@ import java.util.Set;
 import javax.naming.directory.SearchControls;
 
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 
 /**
@@ -62,7 +63,7 @@ public class LDAPConfig {
         return dns.iterator().next();
     }
 
-    public Collection<String> getObjectClasses() {
+    public Collection<String> getUserObjectClasses() {
         String objClassesCfg = config.get(LDAPConstants.USER_OBJECT_CLASSES);
         String objClassesStr = (objClassesCfg != null && objClassesCfg.length() > 0) ? objClassesCfg.trim() : "inetOrgPerson,organizationalPerson";
 
@@ -161,5 +162,14 @@ public class LDAPConfig {
             rdn = getUsernameLdapAttribute();
         }
         return rdn;
+    }
+
+    public UserFederationProvider.EditMode getEditMode() {
+        String editModeString = config.get(LDAPConstants.EDIT_MODE);
+        if (editModeString == null) {
+            return UserFederationProvider.EditMode.READ_ONLY;
+        } else {
+            return UserFederationProvider.EditMode.valueOf(editModeString);
+        }
     }
 }

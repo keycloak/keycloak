@@ -81,20 +81,6 @@ public class LDAPIdentityStoreRegistry {
         }
     }
 
-    // Parse array of strings like [ "inetOrgPerson", "organizationalPerson" ] from the string like: "inetOrgPerson, organizationalPerson"
-    /*private static String[] getUserObjectClasses(Map<String,String> ldapConfig) {
-        String objClassesCfg = ldapConfig.get(LDAPConstants.USER_OBJECT_CLASSES);
-        String objClassesStr = (objClassesCfg != null && objClassesCfg.length() > 0) ? objClassesCfg.trim() : "inetOrgPerson, organizationalPerson";
-
-        String[] addObjectClasses = objClassesStr.split(",");
-
-        // Trim them
-        String[] userObjectClasses = new String[addObjectClasses.length];
-        for (int i=0 ; i<addObjectClasses.length ; i++) {
-            userObjectClasses[i] = addObjectClasses[i].trim();
-        }
-        return userObjectClasses;
-    }   */
 
     private class LDAPIdentityStoreContext {
 

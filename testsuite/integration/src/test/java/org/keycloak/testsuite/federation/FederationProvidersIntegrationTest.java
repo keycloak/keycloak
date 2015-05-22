@@ -23,8 +23,6 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.UserModelDelegate;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -61,6 +59,7 @@ public class FederationProvidersIntegrationTest {
             ldapConfig.put(LDAPConstants.EDIT_MODE, UserFederationProvider.EditMode.WRITABLE.toString());
 
             ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap", -1, -1, 0);
+            FederationTestUtils.addZipCodeLDAPMapper(appRealm, ldapModel);
 
             // Delete all LDAP users and add some new for testing
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
@@ -150,6 +149,7 @@ public class FederationProvidersIntegrationTest {
 
                 RealmModel appRealm = manager.getRealm("test");
                 ldapModel = appRealm.addUserFederationProvider(ldapModel.getProviderName(), ldapModel.getConfig(), ldapModel.getPriority(), ldapModel.getDisplayName(), -1, -1, 0);
+                FederationTestUtils.addZipCodeLDAPMapper(appRealm, ldapModel);
             } finally {
                 keycloakRule.stopSession(session, true);
             }

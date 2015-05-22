@@ -16,6 +16,7 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
+import org.keycloak.models.UserFederationProviderCreationEventImpl;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.entities.IdentityProviderEntity;
 import org.keycloak.models.entities.IdentityProviderMapperEntity;
@@ -852,7 +853,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         realm.getUserFederationProviders().add(entity);
         updateRealm();
 
-        return new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
+        UserFederationProviderModel providerModel = new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
+        session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, providerModel));
+        return providerModel;
     }
 
     @Override
@@ -932,8 +935,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         List<UserFederationProviderEntity> entities = new LinkedList<UserFederationProviderEntity>();
         for (UserFederationProviderModel model : providers) {
             UserFederationProviderEntity entity = new UserFederationProviderEntity();
-            if (model.getId() != null) entity.setId(model.getId());
-            else entity.setId(KeycloakModelUtils.generateId());
+            if (model.getId() != null) {
+                entity.setId(model.getId());
+            } else {
+                String id = KeycloakModelUtils.generateId();
+                entity.setId(id);
+                model.setId(id);
+            }
             entity.setProviderName(model.getProviderName());
             entity.setConfig(model.getConfig());
             entity.setPriority(model.getPriority());
@@ -946,6 +954,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
             entity.setLastSync(model.getLastSync());
             entities.add(entity);
+            session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, model));
         }
 
         realm.setUserFederationProviders(entities);
@@ -1236,7 +1245,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public UserFederationMapperModel addUserFederationMapper(UserFederationMapperModel model) {
         if (getUserFederationMapperByName(model.getFederationProviderId(), model.getName()) != null) {
-            throw new ModelDuplicateException("User federation mapper must be unique per federation provider");
+            throw new ModelDuplicateException("User federation mapper must be unique per federation provider. There is already: " + model.getName());
         }
         String id = KeycloakModelUtils.generateId();
         UserFederationMapperEntity entity = new UserFederationMapperEntity();

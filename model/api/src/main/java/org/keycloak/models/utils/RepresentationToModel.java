@@ -49,6 +49,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class RepresentationToModel {
 
@@ -239,11 +240,31 @@ public class RepresentationToModel {
             newRealm.setBrowserSecurityHeaders(BrowserSecurityHeaders.defaultHeaders);
         }
 
+        List<UserFederationProviderModel> providerModels = null;
         if (rep.getUserFederationProviders() != null) {
-            List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getUserFederationProviders());
+            providerModels = convertFederationProviders(rep.getUserFederationProviders());
             newRealm.setUserFederationProviders(providerModels);
         }
         if (rep.getUserFederationMappers() != null) {
+
+            // Remove builtin mappers for federation providers, which have some mappers already provided in JSON (likely due to previous export)
+            if (rep.getUserFederationProviders() != null) {
+                Set<String> providerNames = new TreeSet<String>();
+                for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
+                    providerNames.add(representation.getFederationProviderDisplayName());
+                }
+                for (String providerName : providerNames) {
+                    for (UserFederationProviderModel providerModel : providerModels) {
+                        if (providerName.equals(providerModel.getDisplayName())) {
+                            Set<UserFederationMapperModel> toDelete = newRealm.getUserFederationMappersByFederationProvider(providerModel.getId());
+                            for (UserFederationMapperModel mapperModel : toDelete) {
+                                newRealm.removeUserFederationMapper(mapperModel);
+                            }
+                        }
+                    }
+                }
+            }
+
             for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
                 newRealm.addUserFederationMapper(toModel(newRealm, representation));
             }
