@@ -14,12 +14,13 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CookieAuthenticatorFactory implements AuthenticatorFactory {
-    public static final String PROVIDER_ID = "auth-cookie";
-    static CookieAuthenticator SINGLETON = new CookieAuthenticator();
+public class LoginFormOTPAuthenticatorFactory implements AuthenticatorFactory {
+
+    public static final String PROVIDER_ID = "auth-login-form-otp";
+
     @Override
     public Authenticator create(AuthenticatorModel model) {
-        return SINGLETON;
+        return new LoginFormOTPAuthenticator(model);
     }
 
     @Override
@@ -49,17 +50,17 @@ public class CookieAuthenticatorFactory implements AuthenticatorFactory {
 
     @Override
     public String getDisplayCategory() {
-        return "Complete Authenticator";
+        return "Credential Validation";
     }
 
     @Override
     public String getDisplayType() {
-        return "Cookie Authenticator";
+        return "Login Form OTP";
     }
 
     @Override
     public String getHelpText() {
-        return "Validates the SSO cookie set by the auth server.";
+        return "Validates an OTP that is specified on the login page.";
     }
 
     @Override

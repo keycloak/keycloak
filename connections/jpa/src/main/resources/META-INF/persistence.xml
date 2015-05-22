@@ -24,6 +24,9 @@
         <class>org.keycloak.models.jpa.entities.UserConsentEntity</class>
         <class>org.keycloak.models.jpa.entities.UserConsentRoleEntity</class>
         <class>org.keycloak.models.jpa.entities.UserConsentProtocolMapperEntity</class>
+        <class>org.keycloak.models.jpa.entities.AuthenticationFlowEntity</class>
+        <class>org.keycloak.models.jpa.entities.AuthenticationExecutionEntity</class>
+        <class>org.keycloak.models.jpa.entities.AuthenticatorEntity</class>
 
         <!-- JpaUserSessionProvider -->
         <class>org.keycloak.models.sessions.jpa.entities.ClientSessionEntity</class>

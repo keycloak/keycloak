@@ -2,6 +2,9 @@ package org.keycloak.models.cache;
 
 import org.keycloak.Config;
 import org.keycloak.enums.SslRequired;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -17,6 +20,7 @@ import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -948,4 +952,104 @@ public class RealmAdapter implements RealmModel {
         return null;
     }
 
+    @Override
+    public List<AuthenticationFlowModel> getAuthenticationFlows() {
+        if (updated != null) return updated.getAuthenticationFlows();
+        List<AuthenticationFlowModel> models = new ArrayList<>();
+        models.addAll(cached.getAuthenticationFlows().values());
+        return models;
+    }
+
+    @Override
+    public AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model) {
+        getDelegateForUpdate();
+        return updated.addAuthenticationFlow(model);
+    }
+
+    @Override
+    public AuthenticationFlowModel getAuthenticationFlowById(String id) {
+        if (updated != null) return updated.getAuthenticationFlowById(id);
+        return cached.getAuthenticationFlows().get(id);
+    }
+
+    @Override
+    public void removeAuthenticationFlow(AuthenticationFlowModel model) {
+        getDelegateForUpdate();
+        updated.removeAuthenticationFlow(model);
+
+    }
+
+    @Override
+    public void updateAuthenticationFlow(AuthenticationFlowModel model) {
+        getDelegateForUpdate();
+        updated.updateAuthenticationFlow(model);
+
+    }
+
+    @Override
+    public List<AuthenticationExecutionModel> getAuthenticationExecutions(String flowId) {
+        if (updated != null) return updated.getAuthenticationExecutions(flowId);
+        List<AuthenticationExecutionModel> models = new ArrayList<>();
+        return cached.getAuthenticationExecutions().get(flowId);
+    }
+
+    @Override
+    public AuthenticationExecutionModel getAuthenticationExecutionById(String id) {
+        if (updated != null) return updated.getAuthenticationExecutionById(id);
+        return cached.getExecutionsById().get(id);
+    }
+
+    @Override
+    public AuthenticationExecutionModel addAuthenticatorExecution(AuthenticationExecutionModel model) {
+        getDelegateForUpdate();
+        return updated.addAuthenticatorExecution(model);
+    }
+
+    @Override
+    public void updateAuthenticatorExecution(AuthenticationExecutionModel model) {
+        getDelegateForUpdate();
+        updated.updateAuthenticatorExecution(model);
+
+    }
+
+    @Override
+    public void removeAuthenticatorExecution(AuthenticationExecutionModel model) {
+        getDelegateForUpdate();
+        updated.removeAuthenticatorExecution(model);
+
+    }
+
+    @Override
+    public List<AuthenticatorModel> getAuthenticators() {
+        if (updated != null) return updated.getAuthenticators();
+        List<AuthenticatorModel> models = new ArrayList<>();
+        models.addAll(cached.getAuthenticators().values());
+        return models;
+    }
+
+    @Override
+    public AuthenticatorModel addAuthenticator(AuthenticatorModel model) {
+        getDelegateForUpdate();
+        return updated.addAuthenticator(model);
+    }
+
+    @Override
+    public void updateAuthenticator(AuthenticatorModel model) {
+        getDelegateForUpdate();
+        updated.updateAuthenticator(model);
+
+    }
+
+    @Override
+    public void removeAuthenticator(AuthenticatorModel model) {
+        getDelegateForUpdate();
+        updated.removeAuthenticator(model);
+
+    }
+
+    @Override
+    public AuthenticatorModel getAuthenticatorById(String id) {
+        if (updated != null) return updated.getAuthenticatorById(id);
+        return cached.getAuthenticators().get(id);
+    }
 }

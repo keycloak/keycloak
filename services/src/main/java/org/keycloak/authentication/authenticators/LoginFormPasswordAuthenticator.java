@@ -6,6 +6,7 @@ import org.keycloak.models.AuthenticatorModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -31,19 +32,24 @@ public class LoginFormPasswordAuthenticator extends LoginFormUsernameAuthenticat
         validatePassword(context);
     }
 
+    protected Response badPassword(AuthenticatorContext context) {
+        return loginForm(context).setError(Messages.INVALID_USER).createLogin();
+    }
+
+
     public void validatePassword(AuthenticatorContext context) {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getFormParameters();
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
         if (password == null) {
-            Response challengeResponse = challenge(context);
+            Response challengeResponse = badPassword(context);
             context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
         credentials.add(UserCredentialModel.password(password));
         boolean valid = context.getSession().users().validCredentials(context.getRealm(), context.getUser(), credentials);
         if (!valid) {
-            Response challengeResponse = challenge(context);
+            Response challengeResponse = badPassword(context);
             context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
             return;
         }

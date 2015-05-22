@@ -151,6 +151,12 @@ public class RealmEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<IdentityProviderMapperEntity> identityProviderMappers = new ArrayList<IdentityProviderMapperEntity>();
 
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    Collection<AuthenticatorEntity> authenticators = new ArrayList<>();
+
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    Collection<AuthenticationFlowEntity> authenticationFlows = new ArrayList<>();
+
 
 
     @Column(name="INTERNATIONALIZATION_ENABLED")
@@ -534,6 +540,22 @@ public class RealmEntity {
 
     public void setIdentityProviderMappers(Collection<IdentityProviderMapperEntity> identityProviderMappers) {
         this.identityProviderMappers = identityProviderMappers;
+    }
+
+    public Collection<AuthenticatorEntity> getAuthenticators() {
+        return authenticators;
+    }
+
+    public void setAuthenticators(Collection<AuthenticatorEntity> authenticators) {
+        this.authenticators = authenticators;
+    }
+
+    public Collection<AuthenticationFlowEntity> getAuthenticationFlows() {
+        return authenticationFlows;
+    }
+
+    public void setAuthenticationFlows(Collection<AuthenticationFlowEntity> authenticationFlows) {
+        this.authenticationFlows = authenticationFlows;
     }
 }
 

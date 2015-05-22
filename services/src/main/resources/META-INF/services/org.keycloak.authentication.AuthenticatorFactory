@@ -1,0 +1,5 @@
+org.keycloak.authentication.authenticators.CookieAuthenticatorFactory
+org.keycloak.authentication.authenticators.LoginFormOTPAuthenticatorFactory
+org.keycloak.authentication.authenticators.LoginFormPasswordAuthenticatorFactory
+org.keycloak.authentication.authenticators.LoginFormUsernameAuthenticatorFactory
+org.keycloak.authentication.authenticators.OTPFormAuthenticatorFactory
