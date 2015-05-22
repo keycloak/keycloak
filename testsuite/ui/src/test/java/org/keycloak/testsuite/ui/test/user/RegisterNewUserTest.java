@@ -50,8 +50,8 @@ public class RegisterNewUserTest extends AbstractKeyCloakTest<RegisterPage> {
     public void registerNewUserTest() {
         page.registerNewUser(TEST_USER1);
         //assertTrue(flashMessage.getText(), flashMessage.isSuccess());
+		logOut();
         loginAsAdmin();
-		menuPage.switchRealm("master");
         navigation.users();
         userPage.deleteUser(TEST_USER1.getUserName());
         flashMessage.waitUntilPresent();
@@ -65,8 +65,8 @@ public class RegisterNewUserTest extends AbstractKeyCloakTest<RegisterPage> {
 		testUser.setEmail("newUser.redhat.com");
         page.registerNewUser(testUser);
         assertTrue(page.isInvalidEmail());
+		page.backToLoginPage();
         loginAsAdmin();
-		menuPage.switchRealm("master");
         navigation.users();
         assertNull(userPage.findUser(testUser.getUserName()));
     }
@@ -88,11 +88,11 @@ public class RegisterNewUserTest extends AbstractKeyCloakTest<RegisterPage> {
         assertFalse(page.isAttributeSpecified("username"));
 		testUser.setUserName("user");
         page.registerNewUser(testUser);
-        assertFalse(page.isAttributeSpecified("password."));
+        assertFalse(page.isAttributeSpecified("password"));
 		testUser.setPassword("password");
         page.registerNewUser(testUser);
-        loginAsAdmin();
-		menuPage.switchRealm("master");
+		logOut();
+		loginAsAdmin();
         navigation.users();
         userPage.deleteUser(TEST_USER1.getUserName());
         flashMessage.waitUntilPresent();
@@ -104,8 +104,8 @@ public class RegisterNewUserTest extends AbstractKeyCloakTest<RegisterPage> {
         page.registerNewUser(TEST_USER1, "psswd");
         assertFalse(page.isPasswordSame());
         page.registerNewUser(TEST_USER1);
+		logOut();
         loginAsAdmin();
-		menuPage.switchRealm("master");
         navigation.users();
         userPage.deleteUser(TEST_USER1.getUserName());
         flashMessage.waitUntilPresent();

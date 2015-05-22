@@ -68,7 +68,7 @@ public class Navigation {
 	}
 	
     public void settings() {
-        openPage(settingsLink, "General Settings");
+        openPage(settingsLink, "Settings");
     }
 
     public void users() {
@@ -100,7 +100,7 @@ public class Navigation {
     }
 	
 	public void login() {
-		openPage(loginLink, "Login Settings");
+		openPage(loginLink, "Settings");
 	}
 
     public void themes() { openPage(themesLink, "Theme Settings"); }

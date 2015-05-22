@@ -34,6 +34,9 @@ public class RegisterPage extends AbstractPage {
 
     @FindBy(css = "span.kc-feedback-text")
     private WebElement feedbackError;
+	
+	@FindBy(css = "div[id='kc-form-options'] span a")
+	private WebElement backToLoginForm;
 
 	public void registerNewUser(User user) {
 		registerNewUser(user, user.getPassword());
@@ -58,17 +61,21 @@ public class RegisterPage extends AbstractPage {
 
     public boolean isInvalidEmail() {
         waitGuiForElement(feedbackError, "Feedback message should be visible");
-        return feedbackError.getText().equals("Invalid email address");
+        return feedbackError.getText().equals("Invalid email address.");
     }
 
     public boolean isAttributeSpecified(String attribute) {
         waitGuiForElement(feedbackError, "Feedback message should be visible");
-        return !feedbackError.getText().equals("Please specify " + attribute);
+        return !feedbackError.getText().contains("Please specify " + attribute + ".");
     }
 
     public boolean isPasswordSame() {
         waitGuiForElement(feedbackError, "Feedback message should be visible");
-        return !feedbackError.getText().equals("Password confirmation doesn't match");
+        return !feedbackError.getText().equals("Password confirmation doesn't match.");
     }
+	
+	public void backToLoginPage() {
+		backToLoginForm.click();
+	}
 
 }
