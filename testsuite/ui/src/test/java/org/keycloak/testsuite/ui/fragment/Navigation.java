@@ -30,8 +30,11 @@ public class Navigation {
     @FindByJQuery("a:contains('OAuth')")
     private WebElement oauthLink;
 
-    @FindByJQuery("a:contains('Sessions')")
-    private WebElement sessionsLink;
+    @FindByJQuery("a:contains('Tokens')")
+    private WebElement tokensLink;
+	
+	@FindByJQuery("a:contains('Sessions')")
+    private WebElement sessionLink;
 
     @FindByJQuery("a:contains('Security Defenses')")
     private WebElement securityLink;
@@ -47,9 +50,6 @@ public class Navigation {
 
 	@FindByJQuery("a:contains('Role Mappings')")
     private WebElement usersRoleMappings;
-	
-	@FindByJQuery("a:contains('Timeout Settings')")
-    private WebElement timeoutSettings;
 	
 	@FindByJQuery("a:contains('Add Realm')")
     private WebElement addRealm;
@@ -87,9 +87,13 @@ public class Navigation {
         openPage(oauthLink, "OAuth Clients");
     }
 
-    public void sessions() {
-        openPage(sessionsLink, "Total Active Sessions");
+    public void tokens() {
+        openPage(tokensLink, "Settings");
     }
+	
+	public void sessions() {
+		openPage(sessionLink, "Sessions");
+	}
 
     public void security() {
         openPage(securityLink, "Settings");
@@ -109,10 +113,6 @@ public class Navigation {
 
     public void roleMappings() {
 		openPage(usersRoleMappings, "User");
-	}
-	
-	public void timeoutSettings() {
-		openPage(timeoutSettings, "Timeout Settings");
 	}
 	
 	public void addRealm() {
