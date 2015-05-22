@@ -33,9 +33,9 @@ When starting the server it can also import a realm from a json file:
 
 The Keycloak test server can load resources directly from the filesystem instead of the classpath. This allows editing html, styles and updating images without restarting the server. To make the server use resources from the filesystem start with:
 
+    mvn exec:java -Pkeycloak-server -Dresources
     
-You can also specify the theme directory used by the server wit
-    mvn exec:java -Pkeycloak-server -Dresourcesh:
+You can also specify the theme directory used by the server with:
 
     mvn exec:java -Pkeycloak-server -Dkeycloak.theme.dir=<PATH TO THEMES DIR>
     
