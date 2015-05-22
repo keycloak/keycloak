@@ -69,9 +69,23 @@
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="usernameLDAPAttribute"><span class="required">*</span> Username LDAP attribute</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="usernameLDAPAttribute" type="text" ng-model="instance.config.usernameLDAPAttribute" placeholder="LDAP attribute for uid" required>
+                    <input class="form-control" id="usernameLDAPAttribute" type="text" ng-model="instance.config.usernameLDAPAttribute" placeholder="LDAP attribute name for username" required>
                 </div>
                 <kc-tooltip>Name of LDAP attribute, which is mapped as Keycloak username. For many LDAP server vendors it's 'uid'. For Active directory it's usually 'sAMAccountName' or 'cn'</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="rdnLDAPAttribute"><span class="required">*</span> RDN LDAP attribute</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="rdnLDAPAttribute" type="text" ng-model="instance.config.rdnLDAPAttribute" placeholder="LDAP attribute name for user RDN" required>
+                </div>
+                <kc-tooltip>Name of LDAP attribute, which is used as RDN (top attribute) of typical user DN. Usually it's the same as Username LDAP attribute, however for Active directory it could be 'cn' when username attribute might be 'sAMAccountName' </kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="uuidLDAPAttribute"><span class="required">*</span> UUID LDAP attribute</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="uuidLDAPAttribute" type="text" ng-model="instance.config.uuidLDAPAttribute" placeholder="LDAP attribute name for UUID" required>
+                </div>
+                <kc-tooltip>Name of LDAP attribute, which is used as unique object identifier (UUID) for objects in LDAP. For many LDAP server vendors it's 'entryUUID' however some are different. For example for Active directory it should be 'objectGUID' </kc-tooltip>
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="userObjectClasses"><span class="required">*</span> User Object Classes</label>
@@ -91,18 +105,13 @@
                 </div>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="ldapBaseDn"><span class="required">*</span> Base DN</label>
+                <label class="col-md-2 control-label" for="ldapUserDns"><span class="required">*</span> User DN</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="ldapBaseDn" type="text" ng-model="instance.config.baseDn" placeholder="LDAP Base DN" required>
+                    <input class="form-control" id="ldapUserDns" type="text" ng-model="instance.config.userDns" placeholder="LDAP User DN" required>
                 </div>
-                <kc-tooltip>Base DN of LDAP tree where your data are. Base DN is usually ancestor of User DN Suffix</kc-tooltip>
-            </div>
-            <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="ldapUserDnSuffix"><span class="required">*</span> User DN Suffix</label>
-                <div class="col-md-6">
-                    <input class="form-control" id="ldapUserDnSuffix" type="text" ng-model="instance.config.userDnSuffix" placeholder="LDAP User DN Suffix" required>
-                </div>
-                <kc-tooltip>Base DN of LDAP tree where your users are. This DN is parent of all DNs of LDAP users</kc-tooltip>
+                <kc-tooltip>Full DN of LDAP tree where your users are. This DN is parent of LDAP users. It could be for example 'ou=users,dc=example,dc=com' assuming
+                    that your typical user will have DN like 'uid=john,ou=users,dc=example,dc=com'
+                </kc-tooltip>
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="ldapBindDn"><span class="required">*</span> Bind DN</label>
@@ -120,6 +129,19 @@
                 <div class="col-sm-4" data-ng-show="access.manageRealm">
                     <a class="btn btn-primary" data-ng-click="testAuthentication()">Test authentication</a>
                 </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="searchScope">Search scope</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="searchScope"
+                                ng-model="instance.config.searchScope"
+                                ng-options="searchScope.id as searchScope.name for searchScope in searchScopes"
+                                required>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>For one level, we search for users just in DNs specified by User DNs. For subtree, we search in whole of their subtree. See LDAP documentation for more details</kc-tooltip>
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="connectionPooling">Connection pooling</label>

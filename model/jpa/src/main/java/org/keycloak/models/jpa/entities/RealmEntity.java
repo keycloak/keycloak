@@ -103,6 +103,9 @@ public class RealmEntity {
     @JoinTable(name="FED_PROVIDERS")
     List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
 
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    Collection<UserFederationMapperEntity> userFederationMappers = new ArrayList<UserFederationMapperEntity>();
+
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="REALM_CLIENT", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="CLIENT_ID") })
     Collection<ClientEntity> clients = new ArrayList<>();
@@ -473,6 +476,14 @@ public class RealmEntity {
 
     public void setUserFederationProviders(List<UserFederationProviderEntity> userFederationProviders) {
         this.userFederationProviders = userFederationProviders;
+    }
+
+    public Collection<UserFederationMapperEntity> getUserFederationMappers() {
+        return userFederationMappers;
+    }
+
+    public void setUserFederationMappers(Collection<UserFederationMapperEntity> userFederationMappers) {
+        this.userFederationMappers = userFederationMappers;
     }
 
     public Collection<RealmAttributeEntity> getAttributes() {

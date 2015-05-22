@@ -27,8 +27,12 @@ public class FilePropertiesFederationProvider extends BasePropertiesFederationPr
      * @return
      */
     @Override
-    public UserModel proxy(UserModel local) {
-        return new WritableUserModelProxy(local, this);
+    public UserModel validateAndProxy(RealmModel realm, UserModel local) {
+        if (isValid(realm, local)) {
+            return new WritableUserModelProxy(local, this);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -65,7 +69,7 @@ public class FilePropertiesFederationProvider extends BasePropertiesFederationPr
             properties.setProperty(user.getUsername(), "");
             save();
         }
-        return proxy(user);
+        return validateAndProxy(realm, user);
     }
 
     @Override

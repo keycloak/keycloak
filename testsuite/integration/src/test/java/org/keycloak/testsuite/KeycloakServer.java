@@ -167,6 +167,10 @@ public class KeycloakServer {
                 System.setProperty("keycloak.theme.cacheTemplates", "false");
             }
 
+            if (!System.getProperties().containsKey("keycloak.theme.staticMaxAge")) {
+                System.setProperty("keycloak.theme.staticMaxAge", "-1");
+            }
+
             config.setResourcesHome(dir.getAbsolutePath());
         }
 

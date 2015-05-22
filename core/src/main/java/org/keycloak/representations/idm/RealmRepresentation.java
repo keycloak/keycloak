@@ -53,6 +53,7 @@ public class RealmRepresentation {
     protected Map<String, String> browserSecurityHeaders;
     protected Map<String, String> smtpServer;
     protected List<UserFederationProviderRepresentation> userFederationProviders;
+    protected List<UserFederationMapperRepresentation> userFederationMappers;
     protected String loginTheme;
     protected String accountTheme;
     protected String adminTheme;
@@ -534,6 +535,19 @@ public class RealmRepresentation {
 
     public void setUserFederationProviders(List<UserFederationProviderRepresentation> userFederationProviders) {
         this.userFederationProviders = userFederationProviders;
+    }
+
+    public List<UserFederationMapperRepresentation> getUserFederationMappers() {
+        return userFederationMappers;
+    }
+
+    public void setUserFederationMappers(List<UserFederationMapperRepresentation> userFederationMappers) {
+        this.userFederationMappers = userFederationMappers;
+    }
+
+    public void addUserFederationMapper(UserFederationMapperRepresentation userFederationMapper) {
+        if (userFederationMappers == null) userFederationMappers = new LinkedList<>();
+        userFederationMappers.add(userFederationMapper);
     }
 
     public List<IdentityProviderRepresentation> getIdentityProviders() {

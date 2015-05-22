@@ -15,9 +15,9 @@ import org.keycloak.models.UserFederationProvider;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LDAPConfiguration {
+public class LDAPTestConfiguration {
 
-    private static final Logger log = Logger.getLogger(LDAPConfiguration.class);
+    private static final Logger log = Logger.getLogger(LDAPTestConfiguration.class);
 
     private String connectionPropertiesLocation;
     private boolean startEmbeddedLdapLerver = true;
@@ -28,10 +28,9 @@ public class LDAPConfiguration {
 
     static {
         PROP_MAPPINGS.put(LDAPConstants.CONNECTION_URL, "idm.test.ldap.connection.url");
-        PROP_MAPPINGS.put(LDAPConstants.BASE_DN, "idm.test.ldap.base.dn");
         PROP_MAPPINGS.put("rolesDnSuffix", "idm.test.ldap.roles.dn.suffix");
         PROP_MAPPINGS.put("groupDnSuffix", "idm.test.ldap.group.dn.suffix");
-        PROP_MAPPINGS.put(LDAPConstants.USER_DN_SUFFIX, "idm.test.ldap.user.dn.suffix");
+        PROP_MAPPINGS.put(LDAPConstants.USER_DNS, "idm.test.ldap.user.dn.suffix");
         PROP_MAPPINGS.put(LDAPConstants.BIND_DN, "idm.test.ldap.bind.dn");
         PROP_MAPPINGS.put(LDAPConstants.BIND_CREDENTIAL, "idm.test.ldap.bind.credential");
         PROP_MAPPINGS.put(LDAPConstants.VENDOR, "idm.test.ldap.vendor");
@@ -53,10 +52,9 @@ public class LDAPConfiguration {
         PROP_MAPPINGS.put(KerberosConstants.USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION, "idm.test.kerberos.use.kerberos.for.password.authentication");
 
         DEFAULT_VALUES.put(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
-        DEFAULT_VALUES.put(LDAPConstants.BASE_DN, "dc=keycloak,dc=org");
         DEFAULT_VALUES.put("rolesDnSuffix", "ou=Roles,dc=keycloak,dc=org");
         DEFAULT_VALUES.put("groupDnSuffix", "ou=Groups,dc=keycloak,dc=org");
-        DEFAULT_VALUES.put(LDAPConstants.USER_DN_SUFFIX, "ou=People,dc=keycloak,dc=org");
+        DEFAULT_VALUES.put(LDAPConstants.USER_DNS, "ou=People,dc=keycloak,dc=org");
         DEFAULT_VALUES.put(LDAPConstants.BIND_DN, "uid=admin,ou=system");
         DEFAULT_VALUES.put(LDAPConstants.BIND_CREDENTIAL, "secret");
         DEFAULT_VALUES.put(LDAPConstants.VENDOR, LDAPConstants.VENDOR_OTHER);
@@ -71,7 +69,7 @@ public class LDAPConfiguration {
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "false");
         DEFAULT_VALUES.put(KerberosConstants.KERBEROS_REALM, "KEYCLOAK.ORG");
         DEFAULT_VALUES.put(KerberosConstants.SERVER_PRINCIPAL, "HTTP/localhost@KEYCLOAK.ORG");
-        URL keytabUrl = LDAPConfiguration.class.getResource("/kerberos/http.keytab");
+        URL keytabUrl = LDAPTestConfiguration.class.getResource("/kerberos/http.keytab");
         String keyTabPath = new File(keytabUrl.getFile()).getAbsolutePath();
         DEFAULT_VALUES.put(KerberosConstants.KEYTAB, keyTabPath);
         DEFAULT_VALUES.put(KerberosConstants.DEBUG, "true");
@@ -80,11 +78,11 @@ public class LDAPConfiguration {
         DEFAULT_VALUES.put(KerberosConstants.USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION, "false");
     }
 
-    public static LDAPConfiguration readConfiguration(String connectionPropertiesLocation) {
-        LDAPConfiguration ldapConfiguration = new LDAPConfiguration();
-        ldapConfiguration.setConnectionPropertiesLocation(connectionPropertiesLocation);
-        ldapConfiguration.loadConnectionProperties();
-        return ldapConfiguration;
+    public static LDAPTestConfiguration readConfiguration(String connectionPropertiesLocation) {
+        LDAPTestConfiguration ldapTestConfiguration = new LDAPTestConfiguration();
+        ldapTestConfiguration.setConnectionPropertiesLocation(connectionPropertiesLocation);
+        ldapTestConfiguration.loadConnectionProperties();
+        return ldapTestConfiguration;
     }
 
     protected void loadConnectionProperties() {

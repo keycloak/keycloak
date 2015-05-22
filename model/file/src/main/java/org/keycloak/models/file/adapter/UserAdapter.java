@@ -33,6 +33,7 @@ import org.keycloak.models.entities.CredentialEntity;
 import org.keycloak.models.entities.FederatedIdentityEntity;
 import org.keycloak.models.entities.RoleEntity;
 import org.keycloak.models.entities.UserEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.util.Time;
 
@@ -394,12 +395,7 @@ public class UserAdapter implements UserModel, Comparable {
     @Override
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
-        if (roles.contains(role)) return true;
-
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
-        }
-        return false;
+        return KeycloakModelUtils.hasRole(roles, role);
     }
 
     @Override

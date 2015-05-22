@@ -542,6 +542,7 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
             instance.config.useKerberosForPasswordAuthentication = false;
 
             instance.config.batchSizeForSync = DEFAULT_BATCH_SIZE;
+            instance.config.searchScope = "1";
 
             $scope.fullSyncEnabled = false;
             $scope.changedSyncEnabled = false;
@@ -557,6 +558,9 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
 
             if (!instance.config.batchSizeForSync) {
                 instance.config.batchSizeForSync = DEFAULT_BATCH_SIZE;
+            }
+            if (!instance.config.searchScope) {
+                instance.config.searchScope = "1";
             }
             $scope.fullSyncEnabled = (instance.fullSyncPeriod && instance.fullSyncPeriod > 0);
             $scope.changedSyncEnabled = (instance.changedSyncPeriod && instance.changedSyncPeriod > 0);
@@ -575,6 +579,11 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
         { "id": "tivoli", "name": "Tivoli" },
         { "id": "edirectory", "name": "Novell eDirectory" },
         { "id": "other", "name": "Other" }
+    ];
+
+    $scope.searchScopes = [
+        { "id": "1", "name": "One Level" },
+        { "id": "2", "name": "Subtree" }
     ];
 
     $scope.realm = realm;
@@ -607,12 +616,23 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
             $scope.lastVendor = $scope.instance.config.vendor;
 
             if ($scope.lastVendor === "ad") {
-                $scope.instance.config.usernameLDAPAttribute = "sAMAccountName";
+                $scope.instance.config.usernameLDAPAttribute = "cn";
                 $scope.instance.config.userObjectClasses = "person, organizationalPerson, user";
             } else {
                 $scope.instance.config.usernameLDAPAttribute = "uid";
                 $scope.instance.config.userObjectClasses = "inetOrgPerson, organizationalPerson";
             }
+
+            $scope.instance.config.rdnLDAPAttribute = $scope.instance.config.usernameLDAPAttribute;
+
+            var vendorToUUID = {
+                rhds: "nsuniqueid",
+                tivoli: "uniqueidentifier",
+                edirectory: "guid",
+                ad: "objectGUID",
+                other: "entryUUID"
+            };
+            $scope.instance.config.uuidLDAPAttribute = vendorToUUID[$scope.lastVendor];
         }
     }, true);
 
@@ -705,8 +725,8 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
     }
 
     function triggerSync(action) {
-        UserFederationSync.get({ action: action, realm: $scope.realm.realm, provider: $scope.instance.id }, function() {
-            Notifications.success("Sync of users finished successfully");
+        UserFederationSync.save({ action: action, realm: $scope.realm.realm, provider: $scope.instance.id }, {}, function(syncResult) {
+            Notifications.success("Sync of users finished successfully. " + syncResult.status);
         }, function() {
             Notifications.error("Error during sync of users");
         });

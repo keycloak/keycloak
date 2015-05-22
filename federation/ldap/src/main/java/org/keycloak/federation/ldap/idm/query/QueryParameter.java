@@ -7,6 +7,19 @@ package org.keycloak.federation.ldap.idm.query;
  * @author Shane Bryzak
  *
  */
-public interface QueryParameter {
+public class QueryParameter {
 
+    private String name;
+
+    public QueryParameter(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 }

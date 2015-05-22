@@ -9,6 +9,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.RealmCache;
 import org.keycloak.util.MultivaluedHashMap;
@@ -70,6 +71,7 @@ public class CachedRealm {
 
     private List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
     private List<UserFederationProviderModel> userFederationProviders = new ArrayList<UserFederationProviderModel>();
+    private MultivaluedHashMap<String, UserFederationMapperModel> userFederationMappers = new MultivaluedHashMap<String, UserFederationMapperModel>();
     private List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
 
     private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
@@ -136,6 +138,9 @@ public class CachedRealm {
 
         requiredCredentials = model.getRequiredCredentials();
         userFederationProviders = model.getUserFederationProviders();
+        for (UserFederationMapperModel mapper : model.getUserFederationMappers()) {
+            userFederationMappers.add(mapper.getFederationProviderId(), mapper);
+        }
 
         this.identityProviders = new ArrayList<>();
 
@@ -371,6 +376,10 @@ public class CachedRealm {
 
     public List<UserFederationProviderModel> getUserFederationProviders() {
         return userFederationProviders;
+    }
+
+    public MultivaluedHashMap<String, UserFederationMapperModel> getUserFederationMappers() {
+        return userFederationMappers;
     }
 
     public String getCertificatePem() {

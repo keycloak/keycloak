@@ -23,6 +23,7 @@ package org.keycloak.testsuite.pages;
 
 import org.junit.Assert;
 
+import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -55,6 +56,25 @@ public class RegisterPage extends AbstractPage {
 
     @FindBy(className = "feedback-error")
     private WebElement loginErrorMessage;
+
+    public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm,
+                         String street, String cityOrLocality, String stateOrRegion, String zipOrPostalCode, String country) {
+        fillExtendedField("street", street);
+        fillExtendedField("locality", cityOrLocality);
+        fillExtendedField("region", stateOrRegion);
+        fillExtendedField("postal_code", zipOrPostalCode);
+        fillExtendedField("country", country);
+
+        register(firstName, lastName, email, username, password, passwordConfirm);
+    }
+
+    private void fillExtendedField(String fieldName, String value) {
+        WebElement field = driver.findElement(By.id("user.attributes." + fieldName));
+        field.clear();
+        if (value != null) {
+            field.sendKeys(value);
+        }
+    }
 
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {
         firstNameInput.clear();
