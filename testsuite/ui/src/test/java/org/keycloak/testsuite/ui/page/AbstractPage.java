@@ -6,8 +6,8 @@
 
 package org.keycloak.testsuite.ui.page;
 
+import java.util.List;
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.testsuite.ui.util.Constants;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -28,6 +28,10 @@ public class AbstractPage {
 	//@FindByJQuery(".btn-primary:visible")
     @FindBy(css = ".btn-primary")
     protected WebElement primaryButton;
+	
+	    @FindBy(css = ".btn-primary")
+    protected List<WebElement> primaryButtons;
+
 	
 	@FindBy(css = ".ng-binding.btn.btn-danger")
 	protected WebElement deleteConfirmationButton;

@@ -8,6 +8,7 @@ import org.keycloak.testsuite.ui.page.settings.UserPage;
 
 
 import static org.junit.Assert.*;
+import org.junit.Before;
 import org.keycloak.testsuite.ui.AbstractKeyCloakTest;
 import static org.keycloak.testsuite.ui.util.Users.TEST_USER1;
 
@@ -20,12 +21,16 @@ public class AddNewUserTest extends AbstractKeyCloakTest<UserPage> {
     @FindByJQuery(".alert")
     private FlashMessage flashMessage;
 
+	@Before
+	public void beforeAddNewUserTest() {
+		navigation.users();
+	}
+	
     @Test
     public void addUserWithInvalidEmailTest() {
         String testUsername = "testUserInvEmail";
         String invalidEmail = "user.redhat.com";
         User testUser = new User(testUsername, "pass", invalidEmail);
-        navigation.users();
         page.addUser(testUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
@@ -36,14 +41,12 @@ public class AddNewUserTest extends AbstractKeyCloakTest<UserPage> {
     @Test
     public void addUserWithNoUsernameTest() {
         User testUser = new User();
-        navigation.users();
         page.addUser(testUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
     }
 
-/*  @Test
-    @InSequence(2)
+//	@Test
     public void addUserWithLongNameTest() {
         String longUserName = "thisisthelongestnameeveranditcannotbeusedwhencreatingnewuserinkeycloak";
         User testUser = new User(longUserName);
@@ -52,13 +55,12 @@ public class AddNewUserTest extends AbstractKeyCloakTest<UserPage> {
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
         assertNull(page.findUser(testUser.getUserName()));
-    }*/
+    }
 
     @Test
     public void addDuplicatedUser() {
-        String testUsername = "testDuplicatedUser";
+        String testUsername = "test_duplicated_user";
         User testUser = new User(testUsername);
-        navigation.users();
         page.addUser(testUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
@@ -78,7 +80,6 @@ public class AddNewUserTest extends AbstractKeyCloakTest<UserPage> {
 
     @Test
     public void addDisabledUser() {
-        navigation.users();
         page.addUser(TEST_USER1);
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 		navigation.users();

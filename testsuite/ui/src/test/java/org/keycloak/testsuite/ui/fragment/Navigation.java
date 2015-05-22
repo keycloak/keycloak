@@ -60,7 +60,7 @@ public class Navigation {
 	@FindByJQuery("a:contains('Attributes')")
     private WebElement attributes;
 	
-    @FindBy(css = "div h1 span")
+    @FindBy(css = "div h1")
     private WebElement currentHeader;
 
 	public void selectRealm(String realmName) {
