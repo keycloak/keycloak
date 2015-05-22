@@ -1,11 +1,9 @@
 package org.keycloak.federation.ldap.idm.store.ldap;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -123,7 +121,7 @@ public class LDAPIdentityStore implements IdentityStore {
             for (Condition condition : identityQuery.getConditions()) {
 
                 // Check if we are searching by ID
-                String uuidAttrName = getConfig().getUuidAttributeName();
+                String uuidAttrName = getConfig().getUuidLDAPAttributeName();
                 if (condition.getParameter() != null && condition.getParameter().getName().equals(uuidAttrName)) {
                     if (EqualCondition.class.isInstance(condition)) {
                         EqualCondition equalCondition = (EqualCondition) condition;
@@ -280,7 +278,7 @@ public class LDAPIdentityStore implements IdentityStore {
 
         QueryParameter queryParameter = condition.getParameter();
 
-        if (!getConfig().getUuidAttributeName().equals(queryParameter.getName())) {
+        if (!getConfig().getUuidLDAPAttributeName().equals(queryParameter.getName())) {
             String attributeName = queryParameter.getName();
 
             if (attributeName != null) {
@@ -400,7 +398,7 @@ public class LDAPIdentityStore implements IdentityStore {
 
                 String ldapAttributeName = ldapAttribute.getID();
 
-                if (ldapAttributeName.toLowerCase().equals(getConfig().getUuidAttributeName().toLowerCase())) {
+                if (ldapAttributeName.toLowerCase().equals(getConfig().getUuidLDAPAttributeName().toLowerCase())) {
                     Object uuidValue = ldapAttribute.get();
                     ldapObject.setUuid(this.operationManager.decodeEntryUUID(uuidValue));
                 } else {
@@ -502,6 +500,9 @@ public class LDAPIdentityStore implements IdentityStore {
             if (!ldapObject.getReadOnlyAttributeNames().contains(attrName) && (isCreate || !ldapObject.getRdnAttributeName().equals(attrName))) {
 
                 if (String.class.isInstance(attrValue)) {
+                    if (attrValue.toString().trim().length() == 0) {
+                        attrValue = LDAPConstants.EMPTY_ATTRIBUTE_VALUE;
+                    }
                     entryAttributes.put(attrName, attrValue);
                 } else if (Collection.class.isInstance(attrValue)) {
                     BasicAttribute attr = new BasicAttribute(attrName);
@@ -616,9 +617,9 @@ public class LDAPIdentityStore implements IdentityStore {
     protected String getEntryIdentifier(final LDAPObject ldapObject) {
         try {
             // we need this to retrieve the entry's identifier from the ldap server
-            String uuidAttrName = getConfig().getUuidAttributeName();
+            String uuidAttrName = getConfig().getUuidLDAPAttributeName();
             List<SearchResult> search = this.operationManager.search(ldapObject.getDn().toString(), "(" + ldapObject.getDn().getFirstRdn() + ")", Arrays.asList(uuidAttrName), SearchControls.OBJECT_SCOPE);
-            Attribute id = search.get(0).getAttributes().get(getConfig().getUuidAttributeName());
+            Attribute id = search.get(0).getAttributes().get(getConfig().getUuidLDAPAttributeName());
 
             if (id == null) {
                 throw new ModelException("Could not retrieve identifier for entry [" + ldapObject.getDn().toString() + "].");

@@ -108,8 +108,8 @@ public class LDAPConfig {
         return searchScope == null ? SearchControls.SUBTREE_SCOPE : Integer.parseInt(searchScope);
     }
 
-    public String getUuidAttributeName() {
-        String uuidAttrName = config.get(LDAPConstants.UUID_ATTRIBUTE_NAME);
+    public String getUuidLDAPAttributeName() {
+        String uuidAttrName = config.get(LDAPConstants.UUID_LDAP_ATTRIBUTE);
         if (uuidAttrName == null) {
             // Differences of unique attribute among various vendors
             String vendor = getVendor();

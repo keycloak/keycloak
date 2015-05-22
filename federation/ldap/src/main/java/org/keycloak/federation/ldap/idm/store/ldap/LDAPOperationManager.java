@@ -419,7 +419,7 @@ public class LDAPOperationManager {
     }
 
     private String getUuidAttributeName() {
-        return this.config.getUuidAttributeName();
+        return this.config.getUuidLDAPAttributeName();
     }
 
     public Attributes getAttributes(final String entryUUID, final String baseDN, Set<String> returningAttributes) {

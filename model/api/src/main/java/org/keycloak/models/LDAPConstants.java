@@ -14,6 +14,7 @@ public class LDAPConstants {
 
     public static final String USERNAME_LDAP_ATTRIBUTE = "usernameLDAPAttribute";
     public static final String RDN_LDAP_ATTRIBUTE = "rdnLDAPAttribute";
+    public static final String UUID_LDAP_ATTRIBUTE = "uuidLDAPAttribute";
     public static final String USER_OBJECT_CLASSES = "userObjectClasses";
 
     public static final String CONNECTION_URL = "connectionUrl";
@@ -23,7 +24,6 @@ public class LDAPConstants {
     public static final String BIND_CREDENTIAL = "bindCredential";
 
     public static final String SEARCH_SCOPE = "searchScope";
-    public static final String UUID_ATTRIBUTE_NAME = "uuidAttributeName";
     public static final String CONNECTION_POOLING = "connectionPooling";
     public static final String PAGINATION = "pagination";
 
