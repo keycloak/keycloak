@@ -49,6 +49,18 @@ public interface UserResource {
     @Path("reset-password-email")
     public void resetPasswordEmail();
 
+    @PUT
+    @Path("reset-password-email")
+    public void resetPasswordEmail(@QueryParam("client_id") String clientId);
+
+    @PUT
+    @Path("send-verify-email")
+    public void sendVerifyEmail();
+
+    @PUT
+    @Path("send-verify-email")
+    public void sendVerifyEmail(@QueryParam("client_id") String clientId);
+
     @GET
     @Path("sessions")
     public List<UserSessionRepresentation> getUserSessions();

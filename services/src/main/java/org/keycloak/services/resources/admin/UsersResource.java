@@ -57,6 +57,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.WebApplicationException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -786,46 +787,12 @@ public class UsersResource {
             return ErrorResponse.error("User not found", Response.Status.NOT_FOUND);
         }
 
-        if (!user.isEnabled()) {
-            return ErrorResponse.error("User is disabled", Response.Status.BAD_REQUEST);
-        }
-
         if (user.getEmail() == null) {
             return ErrorResponse.error("User email missing", Response.Status.BAD_REQUEST);
         }
 
-        if(redirectUri != null && clientId == null){
-            return ErrorResponse.error("Client id missing", Response.Status.BAD_REQUEST);
-        }
-
-        if(clientId == null){
-            clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
-        }
-
-        ClientModel client = realm.getClientByClientId(clientId);
-        if (client == null || !client.isEnabled()) {
-            return ErrorResponse.error(clientId + " not enabled", Response.Status.INTERNAL_SERVER_ERROR);
-        }
-
-        String redirect;
-        if(redirectUri != null){
-            redirect = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri, realm, client);
-            if(redirect == null){
-                return ErrorResponse.error("Invalid redirect uri.", Response.Status.BAD_REQUEST);
-            }
-        }else{
-            redirect = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
-        }
-
-
-        UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false, null, null);
-        //audit.session(userSession);
-        ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
-        clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        clientSession.setRedirectUri(redirect);
-        clientSession.setUserSession(userSession);
+        ClientSessionModel clientSession = createClientSession(user, redirectUri, clientId);
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
-
         accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD);
 
         try {
@@ -846,6 +813,100 @@ public class UsersResource {
             logger.error("Failed to send password reset email", e);
             return ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Send an email to the user with a link they can click to verify their email address.
+     * The redirectUri and clientId parameters are optional. The default for the
+     * redirect is the account client.
+     *
+     * @param username username (not id!)
+     * @param redirectUri redirect uri
+     * @param clientId client id
+     * @return
+     */
+    @Path("{username}/send-verify-email")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response sendVerifyEmail(@PathParam("username") String username, @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
+        auth.requireManage();
+
+        UserModel user = session.users().getUserByUsername(username, realm);
+        if (user == null) {
+            return ErrorResponse.error("User not found", Response.Status.NOT_FOUND);
+        }
+
+        if (user.getEmail() == null) {
+            return ErrorResponse.error("User email missing", Response.Status.BAD_REQUEST);
+        }
+
+        ClientSessionModel clientSession = createClientSession(user, redirectUri, clientId);
+        ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
+
+        accessCode.setAction(ClientSessionModel.Action.VERIFY_EMAIL);
+
+        try {
+            UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());
+            builder.queryParam("key", accessCode.getCode());
+
+            String link = builder.build(realm.getName()).toString();
+            long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
+
+            this.session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendVerifyEmail(link, expiration);
+
+            //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
+
+            adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+
+            return Response.ok().build();
+        } catch (EmailException e) {
+            logger.error("Failed to send verification email", e);
+            return ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private ClientSessionModel createClientSession(UserModel user, String redirectUri, String clientId) {
+
+        if (!user.isEnabled()) {
+            throw new WebApplicationException(
+                ErrorResponse.error("User is disabled", Response.Status.BAD_REQUEST));
+        }
+
+        if (redirectUri != null && clientId == null) {
+            throw new WebApplicationException(
+                ErrorResponse.error("Client id missing", Response.Status.BAD_REQUEST));
+        }
+
+        if (clientId == null) {
+            clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
+        }
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null || !client.isEnabled()) {
+            throw new WebApplicationException(
+                ErrorResponse.error(clientId + " not enabled", Response.Status.INTERNAL_SERVER_ERROR));
+        }
+
+        String redirect;
+        if (redirectUri != null) {
+            redirect = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri, realm, client);
+            if (redirect == null) {
+                throw new WebApplicationException(
+                    ErrorResponse.error("Invalid redirect uri.", Response.Status.BAD_REQUEST));
+            }
+        } else {
+            redirect = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
+        }
+
+
+        UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "form", false, null, null);
+        //audit.session(userSession);
+        ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
+        clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        clientSession.setRedirectUri(redirect);
+        clientSession.setUserSession(userSession);
+
+        return clientSession;
     }
 
 }
