@@ -23,7 +23,7 @@
         <module>jetty</module>
         <module>undertow</module>
         <module>wildfly</module>
-        <module>keycloak-as7-subsystem</module>
+        <module>as7-subsystem</module>
         <module>js</module>
         <module>installed</module>
         <module>admin-client</module>

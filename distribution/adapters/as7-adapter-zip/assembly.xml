@@ -17,7 +17,6 @@
                 <include>org/keycloak/keycloak-core/**</include>
                 <include>org/keycloak/keycloak-adapter-core/**</include>
                 <include>org/keycloak/keycloak-jboss-adapter-core/**</include>
-                <include>org/keycloak/keycloak-undertow-adapter/**</include>
                 <include>org/keycloak/keycloak-as7-adapter/**</include>
                 <include>org/keycloak/keycloak-as7-subsystem/**</include>
             </includes>
