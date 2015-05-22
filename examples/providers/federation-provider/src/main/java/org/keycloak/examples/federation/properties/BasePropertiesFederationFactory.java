@@ -8,6 +8,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -98,7 +99,9 @@ public abstract class BasePropertiesFederationFactory implements UserFederationP
     }
 
     @Override
-    public void syncAllUsers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model) {
+    public UserFederationSyncResult syncAllUsers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model) {
+        final UserFederationSyncResult syncResult = new UserFederationSyncResult();
+
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
             @Override
@@ -112,16 +115,21 @@ public abstract class BasePropertiesFederationFactory implements UserFederationP
 
                     if (localUser == null) {
                         // New user, let's import him
-                        federationProvider.getUserByUsername(realm, username);
+                        UserModel imported = federationProvider.getUserByUsername(realm, username);
+                        if (imported != null) {
+                            syncResult.increaseAdded();
+                        }
                     }
                 }
             }
 
         });
+
+        return syncResult;
     }
 
     @Override
-    public void syncChangedUsers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model, Date lastSync) {
-        syncAllUsers(sessionFactory, realmId, model);
+    public UserFederationSyncResult syncChangedUsers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model, Date lastSync) {
+        return syncAllUsers(sessionFactory, realmId, model);
     }
 }

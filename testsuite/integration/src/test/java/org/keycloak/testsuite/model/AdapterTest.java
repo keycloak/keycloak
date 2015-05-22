@@ -13,6 +13,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -23,8 +24,11 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertNotNull;
@@ -739,6 +743,59 @@ public class AdapterTest extends AbstractModelTest {
         }
 
         resetSession();
+    }
+
+    @Test
+    public void testUserFederationProviderDisplayNameCollisions() throws Exception {
+        RealmModel realm = realmManager.createRealm("JUGGLER1");
+        Map<String, String> cfg = Collections.emptyMap();
+        realm.addUserFederationProvider("ldap", cfg, 1, "providerName1", -1, -1, 0);
+        realm.addUserFederationProvider("ldap", cfg, 1, "providerName2", -1, -1, 0);
+
+        commit();
+
+        // Try to add federation provider with same display name
+        try {
+            realmManager.getRealmByName("JUGGLER1").addUserFederationProvider("ldap", cfg, 1, "providerName1", -1, -1, 0);
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+        commit(true);
+
+        // Try to rename federation provider tu duplicate display name
+        try {
+            List<UserFederationProviderModel> fedProviders = realmManager.getRealmByName("JUGGLER1").getUserFederationProviders();
+            for (UserFederationProviderModel fedProvider : fedProviders) {
+                if ("providerName1".equals(fedProvider.getDisplayName())) {
+                    fedProvider.setDisplayName("providerName2");
+                    realm.updateUserFederationProvider(fedProvider);
+                    break;
+                }
+            }
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+        commit(true);
+
+        // Try to rename federation provider tu duplicate display name
+        try {
+            List<UserFederationProviderModel> fedProviders = realmManager.getRealmByName("JUGGLER1").getUserFederationProviders();
+            for (UserFederationProviderModel fedProvider : fedProviders) {
+                if ("providerName1".equals(fedProvider.getDisplayName())) {
+                    fedProvider.setDisplayName("providerName2");
+                    break;
+                }
+            }
+
+            realm.setUserFederationProviders(fedProviders);
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+        commit(true);
+
     }
 
     private KeyPair generateKeypair() throws NoSuchAlgorithmException {

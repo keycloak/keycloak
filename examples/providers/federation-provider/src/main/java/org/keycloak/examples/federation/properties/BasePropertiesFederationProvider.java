@@ -113,7 +113,7 @@ public abstract class BasePropertiesFederationProvider implements UserFederation
      * @return
      */
     @Override
-    public boolean isValid(UserModel local) {
+    public boolean isValid(RealmModel realm, UserModel local) {
         return properties.containsKey(local.getUsername());
     }
 

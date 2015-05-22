@@ -13,14 +13,17 @@ public class LDAPConstants {
     public static final String VENDOR_NOVELL_EDIRECTORY="edirectory" ;
 
     public static final String USERNAME_LDAP_ATTRIBUTE = "usernameLDAPAttribute";
+    public static final String RDN_LDAP_ATTRIBUTE = "rdnLDAPAttribute";
+    public static final String UUID_LDAP_ATTRIBUTE = "uuidLDAPAttribute";
     public static final String USER_OBJECT_CLASSES = "userObjectClasses";
 
     public static final String CONNECTION_URL = "connectionUrl";
-    public static final String BASE_DN = "baseDn";
-    public static final String USER_DN_SUFFIX = "userDnSuffix";
+    public static final String SECURITY_PROTOCOL = "securityProtocol";
+    public static final String USER_DNS = "userDns";
     public static final String BIND_DN = "bindDn";
     public static final String BIND_CREDENTIAL = "bindCredential";
 
+    public static final String SEARCH_SCOPE = "searchScope";
     public static final String CONNECTION_POOLING = "connectionPooling";
     public static final String PAGINATION = "pagination";
 
@@ -40,12 +43,16 @@ public class LDAPConstants {
     public static final String LDAP_ID = "LDAP_ID";
     public static final String LDAP_ENTRY_DN = "LDAP_ENTRY_DN";
 
+    // String used in config to divide more possible values (for example more userDns), which are saved in DB as single string
+    public static final String CONFIG_DIVIDER = ":::";
 
     // Those are forked from Picketlink
     public static final String GIVENNAME = "givenname";
     public static final String CN = "cn";
     public static final String SN = "sn";
+    public static final String SAM_ACCOUNT_NAME = "sAMAccountName";
     public static final String EMAIL = "mail";
+    public static final String POSTAL_CODE = "postalCode";
     public static final String MEMBER = "member";
     public static final String MEMBER_OF = "memberOf";
     public static final String OBJECT_CLASS = "objectclass";
@@ -57,7 +64,7 @@ public class LDAPConstants {
 
     public static final String COMMA = ",";
     public static final String EQUAL = "=";
-    public static final String SPACE_STRING = " ";
+    public static final String EMPTY_ATTRIBUTE_VALUE = " ";
 
     public static final String CUSTOM_ATTRIBUTE_ENABLED = "enabled";
     public static final String CUSTOM_ATTRIBUTE_CREATE_DATE = "createDate";

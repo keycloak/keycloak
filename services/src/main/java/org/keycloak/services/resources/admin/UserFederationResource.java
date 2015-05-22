@@ -12,6 +12,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
@@ -131,7 +132,7 @@ public class UserFederationResource {
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
         checkKerberosCredential(model);
         
-        adminEvent.operation(OperationType.CREATE).resourcePath(model).representation(rep).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(rep).success();
 
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
@@ -157,7 +158,7 @@ public class UserFederationResource {
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
         checkKerberosCredential(model);
         
-        adminEvent.operation(OperationType.UPDATE).resourcePath(model).representation(rep).success();
+        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
 
     }
 
@@ -195,7 +196,7 @@ public class UserFederationResource {
         realm.removeUserFederationProvider(model);
         new UsersSyncManager().removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), model);
         
-        adminEvent.operation(OperationType.DELETE).resourcePath(model).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
 
     }
 
@@ -224,23 +225,25 @@ public class UserFederationResource {
      *
      * @return
      */
-    @GET
+    @POST
     @Path("sync/{id}")
     @NoCache
-    public Response syncUsers(@PathParam("id") String providerId, @QueryParam("action") String action) {
+    public UserFederationSyncResult syncUsers(@PathParam("id") String providerId, @QueryParam("action") String action) {
         logger.debug("Syncing users");
         auth.requireManage();
 
         for (UserFederationProviderModel model : realm.getUserFederationProviders()) {
             if (model.getId().equals(providerId)) {
                 UsersSyncManager syncManager = new UsersSyncManager();
+                UserFederationSyncResult syncResult = null;
                 if ("triggerFullSync".equals(action)) {
-                    syncManager.syncAllUsers(session.getKeycloakSessionFactory(), realm.getId(), model);
+                    syncResult = syncManager.syncAllUsers(session.getKeycloakSessionFactory(), realm.getId(), model);
                 } else if ("triggerChangedUsersSync".equals(action)) {
-                    syncManager.syncChangedUsers(session.getKeycloakSessionFactory(), realm.getId(), model);
+                    syncResult = syncManager.syncChangedUsers(session.getKeycloakSessionFactory(), realm.getId(), model);
                 }
-                adminEvent.operation(OperationType.ACTION).resourcePath(model, "/sync").success();
-                return Response.noContent().build();
+
+                adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+                return syncResult;
             }
         }
 

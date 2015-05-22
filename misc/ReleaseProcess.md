@@ -26,18 +26,16 @@ $ mvn -Pjboss-release deploy
 
 * Upload src and distro zips to sf.net/projects/keycloak.  This includes appliance, war-dist, each adapter, and proxy distros.  You need to create an adapters folder on sf.net and each uploaded adapter there.
 
-* Upload documentation to docs.jboss.org
+* Upload documentation to http://keycloak.github.io/
 ```
-$ sftp keycloak@filemgmt.jboss.org
-> cd docs_htdocs/keycloak/docs
-> mkdir 1.0.0.Final (or whatever version)
-> quit
-
-$ unzip distribution/examples-docs-zip/target/keycloak-examples-docs-dist.zip
-$ cd docs
-$ rsync -rv --protocol=28 * keycloak@filemgmt.jboss.org:/docs_htdocs/keycloak/docs/1.0.0.Final
+$ git clone https://github.com/keycloak/keycloak.github.io.git
+$ cd keycloak.github.io.git/docs
+$ rm -rf *
+$ unzip distribution/docs-dist/target/keycloak-docs-1.0.0.Final.zip
+$ git add --all
+$ git commit
+$ git push
 ```
-
 * tag release
 ```
 $ git tag -a -m "1.0.0.Final" 1.0.0.Final

@@ -25,8 +25,12 @@ public class ClasspathPropertiesFederationProvider extends BasePropertiesFederat
      * @return
      */
     @Override
-    public UserModel proxy(UserModel local) {
-        return new ReadonlyUserModelProxy(local);
+    public UserModel validateAndProxy(RealmModel realm, UserModel local) {
+        if (isValid(realm, local)) {
+            return new ReadonlyUserModelProxy(local);
+        } else {
+            return null;
+        }
     }
 
     /**

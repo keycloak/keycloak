@@ -1,17 +1,11 @@
 package org.keycloak.federation.ldap;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.logging.Logger;
-import org.keycloak.federation.ldap.idm.model.LDAPUser;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
-import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStoreConfiguration;
-import org.keycloak.federation.ldap.idm.store.ldap.LDAPMappingConfiguration;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserFederationProviderModel;
 
@@ -51,10 +45,7 @@ public class LDAPIdentityStoreRegistry {
      * @return PartitionManager instance based on LDAP store
      */
     public static LDAPIdentityStore createLdapIdentityStore(Map<String,String> ldapConfig) {
-        Properties connectionProps = new Properties();
-        if (ldapConfig.containsKey(LDAPConstants.CONNECTION_POOLING)) {
-            connectionProps.put("com.sun.jndi.ldap.connect.pool", ldapConfig.get(LDAPConstants.CONNECTION_POOLING));
-        }
+        LDAPConfig cfg = new LDAPConfig(ldapConfig);
 
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.authentication", "none simple");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.initsize", "1");
@@ -64,11 +55,7 @@ public class LDAPIdentityStoreRegistry {
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.protocol", "plain");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.debug", "off");
 
-        String vendor = ldapConfig.get(LDAPConstants.VENDOR);
-
-        boolean activeDirectory = vendor != null && vendor.equals(LDAPConstants.VENDOR_ACTIVE_DIRECTORY);
-
-        String ldapLoginNameMapping = ldapConfig.get(LDAPConstants.USERNAME_LDAP_ATTRIBUTE);
+        /*String ldapLoginNameMapping = ldapConfig.get(LDAPConstants.USERNAME_LDAP_ATTRIBUTE);
         if (ldapLoginNameMapping == null) {
             ldapLoginNameMapping = activeDirectory ? LDAPConstants.CN : LDAPConstants.UID;
         }
@@ -76,62 +63,16 @@ public class LDAPIdentityStoreRegistry {
         String ldapFirstNameMapping = activeDirectory ?  "givenName" : LDAPConstants.CN;
         String createTimestampMapping = activeDirectory ? "whenCreated" : LDAPConstants.CREATE_TIMESTAMP;
         String modifyTimestampMapping = activeDirectory ? "whenChanged" : LDAPConstants.MODIFY_TIMESTAMP;
-        String[] userObjectClasses = getUserObjectClasses(ldapConfig);
+        String[] userObjectClasses = getUserObjectClasses(ldapConfig);  */
 
-        boolean pagination = ldapConfig.containsKey(LDAPConstants.PAGINATION) ? Boolean.parseBoolean(ldapConfig.get(LDAPConstants.PAGINATION)) : false;
-        boolean userAccountControlsAfterPasswordUpdate = ldapConfig.containsKey(LDAPConstants.USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE) ?
-                Boolean.parseBoolean(ldapConfig.get(LDAPConstants.USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE)) : false;
 
-        // Differences of unique attribute among various vendors
-        String uniqueIdentifierAttributeName = LDAPConstants.ENTRY_UUID;
-        if (vendor != null) {
-            switch (vendor) {
-                case LDAPConstants.VENDOR_RHDS:
-                    uniqueIdentifierAttributeName = "nsuniqueid";
-                    break;
-                case LDAPConstants.VENDOR_TIVOLI:
-                    uniqueIdentifierAttributeName = "uniqueidentifier";
-                    break;
-                case LDAPConstants.VENDOR_NOVELL_EDIRECTORY:
-                    uniqueIdentifierAttributeName = "guid";
-                    break;
-                case LDAPConstants.VENDOR_ACTIVE_DIRECTORY:
-                    uniqueIdentifierAttributeName = LDAPConstants.OBJECT_GUID;
-            }
-        }
-
-        LDAPIdentityStoreConfiguration ldapStoreConfig = new LDAPIdentityStoreConfiguration()
-                .setConnectionProperties(connectionProps)
-                .setBaseDN(ldapConfig.get(LDAPConstants.BASE_DN))
-                .setBindDN(ldapConfig.get(LDAPConstants.BIND_DN))
-                .setBindCredential(ldapConfig.get(LDAPConstants.BIND_CREDENTIAL))
-                .setLdapURL(ldapConfig.get(LDAPConstants.CONNECTION_URL))
-                .setActiveDirectory(activeDirectory)
-                .setPagination(pagination)
-                .setUniqueIdentifierAttributeName(uniqueIdentifierAttributeName)
-                .setFactoryName("com.sun.jndi.ldap.LdapCtxFactory")
-                .setAuthType("simple")
-                .setUserAccountControlsAfterPasswordUpdate(userAccountControlsAfterPasswordUpdate);
-
-        LDAPMappingConfiguration ldapUserMappingConfig = ldapStoreConfig
-                .mappingConfig(LDAPUser.class)
-                .setBaseDN(ldapConfig.get(LDAPConstants.USER_DN_SUFFIX))
-                .setObjectClasses(new HashSet<String>(Arrays.asList(userObjectClasses)))
-                .setIdPropertyName("loginName")
-                .addAttributeMapping("loginName", ldapLoginNameMapping)
-                .addAttributeMapping("firstName", ldapFirstNameMapping)
-                .addAttributeMapping("lastName", LDAPConstants.SN)
-                .addAttributeMapping("email", LDAPConstants.EMAIL)
-                .addReadOnlyAttributeMapping("createdDate", createTimestampMapping)
-                .addReadOnlyAttributeMapping("modifyDate", modifyTimestampMapping);
-
-        if (activeDirectory && ldapLoginNameMapping.equals("sAMAccountName")) {
-            ldapUserMappingConfig.setBindingPropertyName("fullName");
+/*        if (activeDirectory && ldapLoginNameMapping.equals("sAMAccountName")) {
+            ldapUserMappingConfig.setBindingDnPropertyName("fullName");
             ldapUserMappingConfig.addAttributeMapping("fullName", LDAPConstants.CN);
             logger.infof("Using 'cn' attribute for DN of user and 'sAMAccountName' for username");
-        }
+        }    */
 
-        return new LDAPIdentityStore(ldapStoreConfig);
+        return new LDAPIdentityStore(cfg);
     }
 
     private static void checkSystemProperty(String name, String defaultValue) {
@@ -140,20 +81,6 @@ public class LDAPIdentityStoreRegistry {
         }
     }
 
-    // Parse array of strings like [ "inetOrgPerson", "organizationalPerson" ] from the string like: "inetOrgPerson, organizationalPerson"
-    private static String[] getUserObjectClasses(Map<String,String> ldapConfig) {
-        String objClassesCfg = ldapConfig.get(LDAPConstants.USER_OBJECT_CLASSES);
-        String objClassesStr = (objClassesCfg != null && objClassesCfg.length() > 0) ? objClassesCfg.trim() : "inetOrgPerson, organizationalPerson";
-
-        String[] objectClasses = objClassesStr.split(",");
-
-        // Trim them
-        String[] userObjectClasses = new String[objectClasses.length];
-        for (int i=0 ; i<objectClasses.length ; i++) {
-            userObjectClasses[i] = objectClasses[i].trim();
-        }
-        return userObjectClasses;
-    }
 
     private class LDAPIdentityStoreContext {
 

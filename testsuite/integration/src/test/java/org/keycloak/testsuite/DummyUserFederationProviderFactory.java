@@ -7,6 +7,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserFederationSyncResult;
 
 import java.util.Date;
 import java.util.HashSet;
@@ -63,15 +64,17 @@ public class DummyUserFederationProviderFactory implements UserFederationProvide
     }
 
     @Override
-    public void syncAllUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model) {
+    public UserFederationSyncResult syncAllUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model) {
         logger.info("syncAllUsers invoked");
         fullSyncCounter.incrementAndGet();
+        return UserFederationSyncResult.empty();
     }
 
     @Override
-    public void syncChangedUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model, Date lastSync) {
+    public UserFederationSyncResult syncChangedUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model, Date lastSync) {
         logger.info("syncChangedUsers invoked");
         changedSyncCounter.incrementAndGet();
+        return UserFederationSyncResult.empty();
     }
 
     public int getFullSyncCounter() {

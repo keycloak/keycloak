@@ -39,12 +39,10 @@ public class UserClientRoleMappingsResource {
     protected UserModel user;
     protected ClientModel client;
     protected AdminEventBuilder adminEvent;
-    
-    @Context
-    protected KeycloakSession session;
-    
+    private UriInfo uriInfo;
 
-    public UserClientRoleMappingsResource(RealmModel realm, RealmAuth auth, UserModel user, ClientModel client, AdminEventBuilder adminEvent) {
+    public UserClientRoleMappingsResource(UriInfo uriInfo, RealmModel realm, RealmAuth auth, UserModel user, ClientModel client, AdminEventBuilder adminEvent) {
+        this.uriInfo = uriInfo;
         this.realm = realm;
         this.auth = auth;
         this.user = user;
@@ -138,7 +136,7 @@ public class UserClientRoleMappingsResource {
             }
             user.grantRole(roleModel);
         }
-        adminEvent.operation(OperationType.CREATE).resourcePath(client, user, "/roles/").representation(roles).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
 
     }
 
@@ -171,6 +169,6 @@ public class UserClientRoleMappingsResource {
                 user.deleteRoleMapping(roleModel);
             }
         }
-        adminEvent.operation(OperationType.DELETE).resourcePath(client, user, "/roles/").representation(roles).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(roles).success();
     }
 }

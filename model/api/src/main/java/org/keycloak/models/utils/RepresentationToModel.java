@@ -11,6 +11,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -18,6 +19,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
@@ -34,6 +36,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
+import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.util.UriUtils;
@@ -46,6 +49,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class RepresentationToModel {
 
@@ -67,6 +71,8 @@ public class RepresentationToModel {
         if (rep.isEventsEnabled() != null) newRealm.setEventsEnabled(rep.isEventsEnabled());
         if (rep.getEventsExpiration() != null) newRealm.setEventsExpiration(rep.getEventsExpiration());
         if (rep.getEventsListeners() != null) newRealm.setEventsListeners(new HashSet<>(rep.getEventsListeners()));
+        if (rep.isAdminEventsEnabled() != null) newRealm.setAdminEventsEnabled(rep.isAdminEventsEnabled());
+        if (rep.isAdminEventsDetailsEnabled() != null) newRealm.setAdminEventsDetailsEnabled(rep.isAdminEventsDetailsEnabled());
 
         if (rep.getNotBefore() != null) newRealm.setNotBefore(rep.getNotBefore());
 
@@ -234,9 +240,34 @@ public class RepresentationToModel {
             newRealm.setBrowserSecurityHeaders(BrowserSecurityHeaders.defaultHeaders);
         }
 
+        List<UserFederationProviderModel> providerModels = null;
         if (rep.getUserFederationProviders() != null) {
-            List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getUserFederationProviders());
+            providerModels = convertFederationProviders(rep.getUserFederationProviders());
             newRealm.setUserFederationProviders(providerModels);
+        }
+        if (rep.getUserFederationMappers() != null) {
+
+            // Remove builtin mappers for federation providers, which have some mappers already provided in JSON (likely due to previous export)
+            if (rep.getUserFederationProviders() != null) {
+                Set<String> providerNames = new TreeSet<String>();
+                for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
+                    providerNames.add(representation.getFederationProviderDisplayName());
+                }
+                for (String providerName : providerNames) {
+                    for (UserFederationProviderModel providerModel : providerModels) {
+                        if (providerName.equals(providerModel.getDisplayName())) {
+                            Set<UserFederationMapperModel> toDelete = newRealm.getUserFederationMappersByFederationProvider(providerModel.getId());
+                            for (UserFederationMapperModel mapperModel : toDelete) {
+                                newRealm.removeUserFederationMapper(mapperModel);
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
+                newRealm.addUserFederationMapper(toModel(newRealm, representation));
+            }
         }
 
         // create users and their role mappings and social mappings
@@ -471,6 +502,23 @@ public class RepresentationToModel {
             result.add(model);
         }
         return result;
+    }
+
+    public static UserFederationMapperModel toModel(RealmModel realm, UserFederationMapperRepresentation rep) {
+        UserFederationMapperModel model = new UserFederationMapperModel();
+        model.setId(rep.getId());
+        model.setName(rep.getName());
+        model.setFederationMapperType(rep.getFederationMapperType());
+        model.setConfig(rep.getConfig());
+
+        UserFederationProviderModel fedProvider = KeycloakModelUtils.findUserFederationProviderByDisplayName(rep.getFederationProviderDisplayName(), realm);
+        if (fedProvider == null) {
+            throw new ModelException("Couldn't find federation provider with display name [" + rep.getFederationProviderDisplayName() + "] referenced from mapper ["
+                    + rep.getName());
+        }
+        model.setFederationProviderId(fedProvider.getId());
+
+        return model;
     }
 
     // Roles

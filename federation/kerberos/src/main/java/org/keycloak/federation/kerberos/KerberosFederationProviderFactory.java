@@ -14,6 +14,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserFederationSyncResult;
 
 /**
  * Factory for standalone Kerberos federation provider. Standalone means that it's not backed by LDAP. For Kerberos backed by LDAP (like MS AD or ApacheDS environment)
@@ -41,13 +42,15 @@ public class KerberosFederationProviderFactory implements UserFederationProvider
     }
 
     @Override
-    public void syncAllUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model) {
+    public UserFederationSyncResult syncAllUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model) {
         logger.warn("Sync users not supported for this provider");
+        return UserFederationSyncResult.empty();
     }
 
     @Override
-    public void syncChangedUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model, Date lastSync) {
+    public UserFederationSyncResult syncChangedUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model, Date lastSync) {
         logger.warn("Sync users not supported for this provider");
+        return UserFederationSyncResult.empty();
     }
 
     @Override

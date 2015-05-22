@@ -5,12 +5,14 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -25,6 +27,7 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
+import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -162,6 +165,10 @@ public class ModelToRepresentation {
             rep.setUserFederationProviders(fedProviderReps);
         }
 
+        for (UserFederationMapperModel mapper : realm.getUserFederationMappers()) {
+            rep.addUserFederationMapper(toRepresentation(realm, mapper));
+        }
+
         for (IdentityProviderModel provider : realm.getIdentityProviders()) {
             rep.addIdentityProvider(toRepresentation(provider));
         }
@@ -288,6 +295,24 @@ public class ModelToRepresentation {
         rep.setFullSyncPeriod(model.getFullSyncPeriod());
         rep.setChangedSyncPeriod(model.getChangedSyncPeriod());
         rep.setLastSync(model.getLastSync());
+        return rep;
+    }
+
+    public static UserFederationMapperRepresentation toRepresentation(RealmModel realm, UserFederationMapperModel model) {
+        UserFederationMapperRepresentation rep = new UserFederationMapperRepresentation();
+        rep.setId(model.getId());
+        rep.setName(model.getName());
+        rep.setFederationMapperType(model.getFederationMapperType());
+        Map<String, String> config = new HashMap<String, String>();
+        config.putAll(model.getConfig());
+        rep.setConfig(config);
+
+        UserFederationProviderModel fedProvider = KeycloakModelUtils.findUserFederationProviderById(model.getFederationProviderId(), realm);
+        if (fedProvider == null) {
+            throw new ModelException("Couldn't find federation provider with ID " + model.getId());
+        }
+        rep.setFederationProviderDisplayName(fedProvider.getDisplayName());
+
         return rep;
     }
 

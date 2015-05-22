@@ -8,11 +8,14 @@ import org.keycloak.models.AuthenticatorModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -947,6 +950,69 @@ public class RealmAdapter implements RealmModel {
         List<IdentityProviderMapperModel> models = cached.getIdentityProviderMappers().getList(alias);
         if (models == null) return null;
         for (IdentityProviderMapperModel model : models) {
+            if (model.getName().equals(name)) return model;
+        }
+        return null;
+    }
+
+    @Override
+    public Set<UserFederationMapperModel> getUserFederationMappers() {
+        if (updated != null) return updated.getUserFederationMappers();
+        Set<UserFederationMapperModel> mappers = new HashSet<UserFederationMapperModel>();
+        for (List<UserFederationMapperModel> models : cached.getUserFederationMappers().values()) {
+            for (UserFederationMapperModel model : models) {
+                mappers.add(model);
+            }
+        }
+        return mappers;
+    }
+
+    @Override
+    public Set<UserFederationMapperModel> getUserFederationMappersByFederationProvider(String federationProviderId) {
+        if (updated != null) return updated.getUserFederationMappersByFederationProvider(federationProviderId);
+        Set<UserFederationMapperModel> mappers = new HashSet<>();
+        List<UserFederationMapperModel> list = cached.getUserFederationMappers().getList(federationProviderId);
+        for (UserFederationMapperModel entity : list) {
+            mappers.add(entity);
+        }
+        return mappers;
+    }
+
+    @Override
+    public UserFederationMapperModel addUserFederationMapper(UserFederationMapperModel mapper) {
+        getDelegateForUpdate();
+        return updated.addUserFederationMapper(mapper);
+    }
+
+    @Override
+    public void removeUserFederationMapper(UserFederationMapperModel mapper) {
+        getDelegateForUpdate();
+        updated.removeUserFederationMapper(mapper);
+    }
+
+    @Override
+    public void updateUserFederationMapper(UserFederationMapperModel mapper) {
+        getDelegateForUpdate();
+        updated.updateUserFederationMapper(mapper);
+    }
+
+    @Override
+    public UserFederationMapperModel getUserFederationMapperById(String id) {
+        if (updated != null) return updated.getUserFederationMapperById(id);
+        for (List<UserFederationMapperModel> models : cached.getUserFederationMappers().values()) {
+            for (UserFederationMapperModel model : models) {
+                if (model.getId().equals(id)) return model;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public UserFederationMapperModel getUserFederationMapperByName(String federationProviderId, String name) {
+        if (updated != null) return updated.getUserFederationMapperByName(federationProviderId, name);
+        List<UserFederationMapperModel> models = cached.getUserFederationMappers().getList(federationProviderId);
+        if (models == null) return null;
+        for (UserFederationMapperModel model : models) {
             if (model.getName().equals(name)) return model;
         }
         return null;

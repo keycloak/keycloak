@@ -39,7 +39,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -75,6 +74,7 @@ public class KeycloakApplication extends Application {
         singletons.add(new ServerVersionResource());
         singletons.add(new RealmsResource());
         singletons.add(new AdminRoot());
+        singletons.add(new ModelExceptionMapper());
         classes.add(SkeletonKeyContextResolver.class);
         classes.add(QRCodeResource.class);
         classes.add(ThemeResource.class);

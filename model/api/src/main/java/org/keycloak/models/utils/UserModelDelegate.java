@@ -227,4 +227,7 @@ public class UserModelDelegate implements UserModel {
         return delegate.revokeConsentForClient(clientId);
     }
 
+    public UserModel getDelegate() {
+        return delegate;
+    }
 }

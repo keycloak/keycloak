@@ -3,11 +3,14 @@ package org.keycloak.federation.ldap;
 import org.jboss.logging.Logger;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
-import org.keycloak.federation.ldap.idm.model.LDAPUser;
-import org.keycloak.federation.ldap.idm.query.IdentityQuery;
-import org.keycloak.federation.ldap.idm.query.IdentityQueryBuilder;
+import org.keycloak.federation.ldap.idm.model.LDAPObject;
+import org.keycloak.federation.ldap.idm.query.Condition;
+import org.keycloak.federation.ldap.idm.query.QueryParameter;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
+import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -16,11 +19,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.mappers.UserFederationMapper;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
 import org.keycloak.constants.KerberosConstants;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,12 +59,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
         this.model = model;
         this.ldapIdentityStore = ldapIdentityStore;
         this.kerberosConfig = new LDAPProviderKerberosConfig(model);
-        String editModeString = model.getConfig().get(LDAPConstants.EDIT_MODE);
-        if (editModeString == null) {
-            editMode = EditMode.READ_ONLY;
-        } else {
-            editMode = EditMode.valueOf(editModeString);
-        }
+        this.editMode = ldapIdentityStore.getConfig().getEditMode();
 
         supportedCredentialTypes.add(UserCredentialModel.PASSWORD);
         if (kerberosConfig.isAllowKerberosAuthentication()) {
@@ -77,17 +79,40 @@ public class LDAPFederationProvider implements UserFederationProvider {
         return this.ldapIdentityStore;
     }
 
+    public EditMode getEditMode() {
+        return editMode;
+    }
+
     @Override
-    public UserModel proxy(UserModel local) {
-         switch (editMode) {
-             case READ_ONLY:
-                return new ReadonlyLDAPUserModelDelegate(local, this);
-             case WRITABLE:
-                return new WritableLDAPUserModelDelegate(local, this);
-             case UNSYNCED:
-                return new UnsyncedLDAPUserModelDelegate(local, this);
-         }
-        return local;
+    public UserModel validateAndProxy(RealmModel realm, UserModel local) {
+        LDAPObject ldapObject = loadAndValidateUser(realm, local);
+        if (ldapObject == null) {
+            return null;
+        }
+
+        return proxy(realm, local, ldapObject);
+    }
+
+    protected UserModel proxy(RealmModel realm, UserModel local, LDAPObject ldapObject) {
+        UserModel proxied = local;
+        switch (editMode) {
+            case READ_ONLY:
+                proxied = new ReadonlyLDAPUserModelDelegate(local, this);
+                break;
+            case WRITABLE:
+                proxied = new WritableLDAPUserModelDelegate(local, this, ldapObject);
+                break;
+            case UNSYNCED:
+                proxied = new UnsyncedLDAPUserModelDelegate(local, this);
+        }
+
+        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+        for (UserFederationMapperModel mapperModel : federationMappers) {
+            LDAPFederationMapper ldapMapper = getMapper(mapperModel);
+            proxied = ldapMapper.proxy(mapperModel, this, ldapObject, proxied, realm);
+        }
+
+        return proxied;
     }
 
     @Override
@@ -119,10 +144,11 @@ public class LDAPFederationProvider implements UserFederationProvider {
         if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) throw new IllegalStateException("Registration is not supported by this ldap server");
         if (!synchronizeRegistrations()) throw new IllegalStateException("Registration is not supported by this ldap server");
 
-        LDAPUser ldapUser = LDAPUtils.addUser(this.ldapIdentityStore, user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmail());
-        user.setAttribute(LDAPConstants.LDAP_ID, ldapUser.getId());
-        user.setAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapUser.getEntryDN());
-        return proxy(user);
+        LDAPObject ldapObject = LDAPUtils.addUserToLDAP(this, realm, user);
+        user.setAttribute(LDAPConstants.LDAP_ID, ldapObject.getUuid());
+        user.setAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapObject.getDn().toString());
+
+        return proxy(realm, user, ldapObject);
     }
 
     @Override
@@ -132,16 +158,24 @@ public class LDAPFederationProvider implements UserFederationProvider {
             return false;
         }
 
-        return LDAPUtils.removeUser(this.ldapIdentityStore, user.getUsername());
+        LDAPObject ldapObject = loadAndValidateUser(realm, user);
+        if (ldapObject == null) {
+            logger.warnf("User '%s' can't be deleted from LDAP as it doesn't exist here", user.getUsername());
+            return false;
+        }
+
+        ldapIdentityStore.remove(ldapObject);
+        return true;
     }
 
     @Override
     public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults) {
         List<UserModel> searchResults =new LinkedList<UserModel>();
 
-        Map<String, LDAPUser> ldapUsers = searchLDAP(attributes, maxResults);
-        for (LDAPUser ldapUser : ldapUsers.values()) {
-            if (session.userStorage().getUserByUsername(ldapUser.getLoginName(), realm) == null) {
+        List<LDAPObject> ldapUsers = searchLDAP(realm, attributes, maxResults);
+        for (LDAPObject ldapUser : ldapUsers) {
+            String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
+            if (session.userStorage().getUserByUsername(ldapUsername, realm) == null) {
                 UserModel imported = importUserFromLDAP(realm, ldapUser);
                 searchResults.add(imported);
             }
@@ -150,103 +184,117 @@ public class LDAPFederationProvider implements UserFederationProvider {
         return searchResults;
     }
 
-    protected Map<String, LDAPUser> searchLDAP(Map<String, String> attributes, int maxResults) {
+    protected List<LDAPObject> searchLDAP(RealmModel realm, Map<String, String> attributes, int maxResults) {
 
-        Map<String, LDAPUser> results = new HashMap<String, LDAPUser>();
+        List<LDAPObject> results = new ArrayList<LDAPObject>();
         if (attributes.containsKey(USERNAME)) {
-            LDAPUser user = LDAPUtils.getUser(this.ldapIdentityStore, attributes.get(USERNAME));
+            LDAPObject user = loadLDAPUserByUsername(realm, attributes.get(USERNAME));
             if (user != null) {
-                results.put(user.getLoginName(), user);
+                results.add(user);
             }
         }
 
         if (attributes.containsKey(EMAIL)) {
-            LDAPUser user = queryByEmail(attributes.get(EMAIL));
+            LDAPObject user = queryByEmail(realm, attributes.get(EMAIL));
             if (user != null) {
-                results.put(user.getLoginName(), user);
+                results.add(user);
             }
         }
 
         if (attributes.containsKey(FIRST_NAME) || attributes.containsKey(LAST_NAME)) {
-            IdentityQueryBuilder queryBuilder = this.ldapIdentityStore.createQueryBuilder();
-            IdentityQuery<LDAPUser> query = queryBuilder.createIdentityQuery(LDAPUser.class);
+            LDAPIdentityQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm);
+            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+
+            // Mapper should replace parameter with correct LDAP mapped attributes
             if (attributes.containsKey(FIRST_NAME)) {
-                query.where(queryBuilder.equal(LDAPUser.FIRST_NAME, attributes.get(FIRST_NAME)));
+                ldapQuery.where(conditionsBuilder.equal(new QueryParameter(FIRST_NAME), attributes.get(FIRST_NAME)));
             }
             if (attributes.containsKey(LAST_NAME)) {
-                query.where(queryBuilder.equal(LDAPUser.LAST_NAME, attributes.get(LAST_NAME)));
+                ldapQuery.where(conditionsBuilder.equal(new QueryParameter(LAST_NAME), attributes.get(LAST_NAME)));
             }
-            query.setLimit(maxResults);
-            List<LDAPUser> users = query.getResultList();
-            for (LDAPUser user : users) {
-                results.put(user.getLoginName(), user);
-            }
+
+            List<LDAPObject> ldapObjects = ldapQuery.getResultList();
+            results.addAll(ldapObjects);
         }
 
         return results;
     }
 
-    @Override
-    public boolean isValid(UserModel local) {
-        LDAPUser ldapUser = LDAPUtils.getUser(this.ldapIdentityStore, local.getUsername());
+    /**
+     * @param local
+     * @return ldapUser corresponding to local user or null if user is no longer in LDAP
+     */
+    protected LDAPObject loadAndValidateUser(RealmModel realm, UserModel local) {
+        LDAPObject ldapUser = loadLDAPUserByUsername(realm, local.getUsername());
         if (ldapUser == null) {
-            return false;
+            return null;
         }
-        return ldapUser.getId().equals(local.getAttribute(LDAPConstants.LDAP_ID));
+        if (ldapUser.getUuid().equals(local.getAttribute(LDAPConstants.LDAP_ID))) {
+            return ldapUser;
+        } else {
+            logger.warnf("LDAP User invalid. ID doesn't match. ID from LDAP [%s], ID from local DB: [%s]", ldapUser.getUuid(), local.getAttribute(LDAPConstants.LDAP_ID));
+            return null;
+        }
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel local) {
+        return loadAndValidateUser(realm, local) != null;
     }
 
     @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
-        LDAPUser ldapUser = LDAPUtils.getUser(this.ldapIdentityStore, username);
+        LDAPObject ldapUser = loadLDAPUserByUsername(realm, username);
         if (ldapUser == null) {
-            return null;
-        }
-
-        // KEYCLOAK-808: Should we allow case-sensitivity to be configurable?
-        if (!username.equals(ldapUser.getLoginName())) {
-            logger.warnf("User found in LDAP but with different username. LDAP username: %s, Searched username: %s", username, ldapUser.getLoginName());
             return null;
         }
 
         return importUserFromLDAP(realm, ldapUser);
     }
 
-    protected UserModel importUserFromLDAP(RealmModel realm, LDAPUser ldapUser) {
-        String email = (ldapUser.getEmail() != null && ldapUser.getEmail().trim().length() > 0) ? ldapUser.getEmail() : null;
+    protected UserModel importUserFromLDAP(RealmModel realm, LDAPObject ldapUser) {
+        String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
 
-        if (ldapUser.getLoginName() == null) {
-            throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. ID of user from LDAP: " + ldapUser.getId());
+        if (ldapUsername == null) {
+            throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. Mapped username LDAP attribute: " +
+                    ldapIdentityStore.getConfig().getUsernameLdapAttribute() + ", attributes from LDAP: " + ldapUser.getAttributes());
         }
 
-        UserModel imported = session.userStorage().addUser(realm, ldapUser.getLoginName());
+        UserModel imported = session.userStorage().addUser(realm, ldapUsername);
         imported.setEnabled(true);
-        imported.setEmail(email);
-        imported.setFirstName(ldapUser.getFirstName());
-        imported.setLastName(ldapUser.getLastName());
+
+        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+        for (UserFederationMapperModel mapperModel : federationMappers) {
+            LDAPFederationMapper ldapMapper = getMapper(mapperModel);
+            ldapMapper.onImportUserFromLDAP(mapperModel, this, ldapUser, imported, realm, true);
+        }
+
+        String userDN = ldapUser.getDn().toString();
         imported.setFederationLink(model.getId());
-        imported.setAttribute(LDAPConstants.LDAP_ID, ldapUser.getId());
-        imported.setAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapUser.getEntryDN());
+        imported.setAttribute(LDAPConstants.LDAP_ID, ldapUser.getUuid());
+        imported.setAttribute(LDAPConstants.LDAP_ENTRY_DN, userDN);
 
         logger.debugf("Imported new user from LDAP to Keycloak DB. Username: [%s], Email: [%s], LDAP_ID: [%s], LDAP Entry DN: [%s]", imported.getUsername(), imported.getEmail(),
-                ldapUser.getId(), ldapUser.getEntryDN());
-        return proxy(imported);
+                ldapUser.getUuid(), userDN);
+        return proxy(realm, imported, ldapUser);
     }
 
-    protected LDAPUser queryByEmail(String email) {
-        return LDAPUtils.getUserByEmail(this.ldapIdentityStore, email);
+    protected LDAPObject queryByEmail(RealmModel realm, String email) {
+        LDAPIdentityQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm);
+        LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+
+        // Mapper should replace "email" in parameter name with correct LDAP mapped attribute
+        Condition emailCondition = conditionsBuilder.equal(new QueryParameter(UserModel.EMAIL), email);
+        ldapQuery.where(emailCondition);
+
+        return ldapQuery.getFirstResult();
     }
 
 
     @Override
     public UserModel getUserByEmail(RealmModel realm, String email) {
-        LDAPUser ldapUser = queryByEmail(email);
+        LDAPObject ldapUser = queryByEmail(realm, email);
         if (ldapUser == null) {
-            return null;
-        }
-
-        // KEYCLOAK-808: Should we allow case-sensitivity to be configurable?
-        if (!email.equals(ldapUser.getEmail())) {
-            logger.warnf("User found in LDAP but with different email. LDAP email: %s, Searched email: %s", email, ldapUser.getEmail());
             return null;
         }
 
@@ -261,16 +309,18 @@ public class LDAPFederationProvider implements UserFederationProvider {
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
         // complete I don't think we have to do anything here
+        // TODO: requires implementation... Maybe mappers callback to ensure role deletion propagated to LDAP by RoleLDAPFederationMapper
     }
 
-    public boolean validPassword(UserModel user, String password) {
+    public boolean validPassword(RealmModel realm, UserModel user, String password) {
         if (kerberosConfig.isAllowKerberosAuthentication() && kerberosConfig.isUseKerberosForPasswordAuthentication()) {
             // Use Kerberos JAAS (Krb5LoginModule)
             KerberosUsernamePasswordAuthenticator authenticator = factory.createKerberosUsernamePasswordAuthenticator(kerberosConfig);
             return authenticator.validUser(user.getUsername(), password);
         } else {
             // Use Naming LDAP API
-            return LDAPUtils.validatePassword(this.ldapIdentityStore, user, password);
+            LDAPObject ldapUser = loadAndValidateUser(realm, user);
+            return ldapIdentityStore.validatePassword(ldapUser, password);
         }
     }
 
@@ -279,7 +329,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
     public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
         for (UserCredentialModel cred : input) {
             if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                return validPassword(user, cred.getValue());
+                return validPassword(realm, user, cred.getValue());
             } else {
                 return false; // invalid cred type
             }
@@ -334,27 +384,36 @@ public class LDAPFederationProvider implements UserFederationProvider {
     public void close() {
     }
 
-    protected void importLDAPUsers(RealmModel realm, List<LDAPUser> ldapUsers, UserFederationProviderModel fedModel) {
-        for (LDAPUser ldapUser : ldapUsers) {
-            String username = ldapUser.getLoginName();
+    protected UserFederationSyncResult importLDAPUsers(RealmModel realm, List<LDAPObject> ldapUsers, UserFederationProviderModel fedModel) {
+        UserFederationSyncResult syncResult = new UserFederationSyncResult();
+
+        for (LDAPObject ldapUser : ldapUsers) {
+            String username = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
             UserModel currentUser = session.userStorage().getUserByUsername(username, realm);
 
             if (currentUser == null) {
                 // Add new user to Keycloak
                 importUserFromLDAP(realm, ldapUser);
+                syncResult.increaseAdded();
             } else {
-                if ((fedModel.getId().equals(currentUser.getFederationLink())) && (ldapUser.getId().equals(currentUser.getAttribute(LDAPConstants.LDAP_ID)))) {
+                if ((fedModel.getId().equals(currentUser.getFederationLink())) && (ldapUser.getUuid().equals(currentUser.getAttribute(LDAPConstants.LDAP_ID)))) {
+
                     // Update keycloak user
-                    String email = (ldapUser.getEmail() != null && ldapUser.getEmail().trim().length() > 0) ? ldapUser.getEmail() : null;
-                    currentUser.setEmail(email);
-                    currentUser.setFirstName(ldapUser.getFirstName());
-                    currentUser.setLastName(ldapUser.getLastName());
+                    Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+                    for (UserFederationMapperModel mapperModel : federationMappers) {
+                        LDAPFederationMapper ldapMapper = getMapper(mapperModel);
+                        ldapMapper.onImportUserFromLDAP(mapperModel, this, ldapUser, currentUser, realm, false);
+                    }
+
                     logger.debugf("Updated user from LDAP: %s", currentUser.getUsername());
+                    syncResult.increaseUpdated();
                 } else {
                     logger.warnf("User '%s' is not updated during sync as he is not linked to federation provider '%s'", username, fedModel.getDisplayName());
                 }
             }
         }
+
+        return syncResult;
     }
 
     /**
@@ -371,18 +430,53 @@ public class LDAPFederationProvider implements UserFederationProvider {
             if (!model.getId().equals(user.getFederationLink())) {
                 logger.warnf("User with username [%s] already exists, but is not linked to provider [%s]", username, model.getDisplayName());
                 return null;
-            } else if (isValid(user)) {
-                return proxy(user);
             } else {
-                logger.warnf("User with username [%s] aready exists and is linked to provider [%s] but is not valid. Stale LDAP_ID on local user is: %s",
-                        username,  model.getDisplayName(), user.getAttribute(LDAPConstants.LDAP_ID));
-                logger.warn("Will re-create user");
-                session.userStorage().removeUser(realm, user);
+                LDAPObject ldapObject = loadAndValidateUser(realm, user);
+                if (ldapObject != null) {
+                    return proxy(realm, user, ldapObject);
+                } else {
+                    logger.warnf("User with username [%s] aready exists and is linked to provider [%s] but is not valid. Stale LDAP_ID on local user is: %s",
+                            username,  model.getDisplayName(), user.getAttribute(LDAPConstants.LDAP_ID));
+                    logger.warn("Will re-create user");
+                    session.userStorage().removeUser(realm, user);
+                }
             }
         }
 
         // Creating user to local storage
         logger.debugf("Kerberos authenticated user [%s] not in Keycloak storage. Creating him", username);
         return getUserByUsername(realm, username);
+    }
+
+    public LDAPObject loadLDAPUserByUsername(RealmModel realm, String username) {
+        LDAPIdentityQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm);
+        LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+
+        String usernameMappedAttribute = this.ldapIdentityStore.getConfig().getUsernameLdapAttribute();
+        Condition usernameCondition = conditionsBuilder.equal(new QueryParameter(usernameMappedAttribute), username);
+        ldapQuery.where(usernameCondition);
+
+        LDAPObject ldapUser = ldapQuery.getFirstResult();
+        if (ldapUser == null) {
+            return null;
+        }
+
+        // KEYCLOAK-808: Should we allow case-sensitivity to be configurable?
+        String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
+        if (!username.equals(ldapUsername)) {
+            logger.warnf("User found in LDAP but with different username. LDAP username: %s, Searched username: %s", username, ldapUsername);
+            return null;
+        }
+
+        return ldapUser;
+    }
+
+    public LDAPFederationMapper getMapper(UserFederationMapperModel mapperModel) {
+        LDAPFederationMapper ldapMapper = (LDAPFederationMapper) getSession().getProvider(UserFederationMapper.class, mapperModel.getFederationMapperType());
+        if (ldapMapper == null) {
+            throw new ModelException("Can't find mapper type with ID: " + mapperModel.getFederationMapperType());
+        }
+
+        return ldapMapper;
     }
 }

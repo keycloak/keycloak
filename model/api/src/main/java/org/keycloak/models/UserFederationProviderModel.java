@@ -20,7 +20,7 @@ public class UserFederationProviderModel {
     private int changedSyncPeriod = -1; // In seconds. -1 means that periodic changed sync is disabled
     private int lastSync;               // Date when last sync was done for this provider
 
-    public UserFederationProviderModel() {};
+    public UserFederationProviderModel() {}
 
     public UserFederationProviderModel(String id, String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
         this.id = id;
@@ -37,6 +37,10 @@ public class UserFederationProviderModel {
 
     public String getId() {
         return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getProviderName() {

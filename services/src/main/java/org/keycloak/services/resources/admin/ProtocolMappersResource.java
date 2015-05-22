@@ -89,7 +89,7 @@ public class ProtocolMappersResource {
         auth.requireManage();
         ProtocolMapperModel model = RepresentationToModel.toModel(rep);
         model = client.addProtocolMapper(model);
-        adminEvent.operation(OperationType.CREATE).resourcePath(model).representation(rep).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
     /**
@@ -107,7 +107,7 @@ public class ProtocolMappersResource {
             model = RepresentationToModel.toModel(rep);
             model = client.addProtocolMapper(model);
         }
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo.getPath(), false).representation(reps).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(reps).success();
     }
 
     @GET
@@ -144,7 +144,7 @@ public class ProtocolMappersResource {
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
         client.updateProtocolMapper(model);
-        adminEvent.operation(OperationType.UPDATE).resourcePath(model).representation(rep).success();
+        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
     }
 
     @DELETE
@@ -155,7 +155,7 @@ public class ProtocolMappersResource {
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         client.removeProtocolMapper(model);
-        adminEvent.operation(OperationType.DELETE).resourcePath(model).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
 
     }
 

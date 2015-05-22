@@ -49,5 +49,19 @@
                <exclude>**/module.xml</exclude>
             </excludes>
         </fileSet>
+        <fileSet>
+            <directory>../../../</directory>
+            <includes>
+                <include>License.html</include>
+            </includes>
+            <outputDirectory>content</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../../../forms/common-themes/src/main/resources/theme</directory>
+            <outputDirectory>content/standalone/configuration/themes</outputDirectory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+        </fileSet>
     </fileSets>
 </assembly>

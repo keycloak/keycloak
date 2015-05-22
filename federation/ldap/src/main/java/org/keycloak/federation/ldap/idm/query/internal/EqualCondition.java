@@ -1,6 +1,5 @@
 package org.keycloak.federation.ldap.idm.query.internal;
 
-import org.keycloak.federation.ldap.idm.query.AttributeParameter;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
 
@@ -29,7 +28,7 @@ public class EqualCondition implements Condition {
     @Override
     public String toString() {
         return "EqualCondition{" +
-                "parameter=" + ((AttributeParameter) parameter).getName() +
+                "parameter=" + parameter.getName() +
                 ", value=" + value +
                 '}';
     }

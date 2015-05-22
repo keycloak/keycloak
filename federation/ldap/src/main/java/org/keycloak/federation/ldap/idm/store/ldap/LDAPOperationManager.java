@@ -2,12 +2,15 @@ package org.keycloak.federation.ldap.idm.store.ldap;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.naming.Binding;
 import javax.naming.Context;
@@ -27,12 +30,10 @@ import javax.naming.ldap.PagedResultsControl;
 import javax.naming.ldap.PagedResultsResponseControl;
 
 import org.jboss.logging.Logger;
-import org.keycloak.federation.ldap.idm.model.IdentityType;
-import org.keycloak.federation.ldap.idm.query.IdentityQuery;
+import org.keycloak.federation.ldap.LDAPConfig;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
-
-import static javax.naming.directory.SearchControls.SUBTREE_SCOPE;
 
 /**
  * <p>This class provides a set of operations to manage LDAP trees.</p>
@@ -44,10 +45,10 @@ public class LDAPOperationManager {
 
     private static final Logger logger = Logger.getLogger(LDAPOperationManager.class);
 
-    private final LDAPIdentityStoreConfiguration config;
+    private final LDAPConfig config;
     private final Map<String, Object> connectionProperties;
 
-    public LDAPOperationManager(LDAPIdentityStoreConfiguration config) throws NamingException {
+    public LDAPOperationManager(LDAPConfig config) throws NamingException {
         this.config = config;
         this.connectionProperties = Collections.unmodifiableMap(createConnectionProperties());
     }
@@ -119,56 +120,29 @@ public class LDAPOperationManager {
 
     /**
      * <p>
-     * Searches the LDAP tree.
+     * Removes the object from the LDAP tree
      * </p>
-     *
-     * @param baseDN
-     * @param id
-     *
-     * @return
      */
-    public void removeEntryById(final String baseDN, final String id, final LDAPMappingConfiguration mappingConfiguration) {
-        final String filter = getFilterById(baseDN, id);
-
+    public void removeEntry(final String entryDn) {
         try {
-            final SearchControls cons = getSearchControls(mappingConfiguration);
-
             execute(new LdapOperation<SearchResult>() {
                 @Override
                 public SearchResult execute(LdapContext context) throws NamingException {
-                    NamingEnumeration<SearchResult> result = context.search(baseDN, filter, cons);
-
-                    if (result.hasMore()) {
-                        SearchResult sr = result.next();
-                        if (logger.isDebugEnabled()) {
-                            logger.debugf("Removing entry [%s] with attributes: [", sr.getNameInNamespace());
-
-                            NamingEnumeration<? extends Attribute> all = sr.getAttributes().getAll();
-
-                            while (all.hasMore()) {
-                                Attribute attribute = all.next();
-
-                                logger.debugf("  %s = %s", attribute.getID(), attribute.get());
-                            }
-
-                            logger.debugf("]");
-                        }
-                        destroySubcontext(context, sr.getNameInNamespace());
+                    if (logger.isDebugEnabled()) {
+                        logger.debugf("Removing entry with DN [%s]", entryDn);
                     }
-
-                    result.close();
-
+                    destroySubcontext(context, entryDn);
                     return null;
                 }
             });
         } catch (NamingException e) {
-            throw new ModelException("Could not remove entry from DN [" + baseDN + "] and id [" + id + "]", e);
+            throw new ModelException("Could not remove entry from DN [" + entryDn + "]", e);
         }
     }
 
-    public List<SearchResult> search(final String baseDN, final String filter, LDAPMappingConfiguration mappingConfiguration) throws NamingException {
+    public List<SearchResult> search(final String baseDN, final String filter, Collection<String> returningAttributes, int searchScope) throws NamingException {
         final List<SearchResult> result = new ArrayList<SearchResult>();
-        final SearchControls cons = getSearchControls(mappingConfiguration);
+        final SearchControls cons = getSearchControls(returningAttributes, searchScope);
 
         try {
             return execute(new LdapOperation<List<SearchResult>>() {
@@ -191,16 +165,16 @@ public class LDAPOperationManager {
         }
     }
 
-    public <V extends IdentityType> List<SearchResult> searchPaginated(final String baseDN, final String filter, LDAPMappingConfiguration mappingConfiguration, final IdentityQuery<V> identityQuery) throws NamingException {
+    public List<SearchResult> searchPaginated(final String baseDN, final String filter, final LDAPIdentityQuery identityQuery) throws NamingException {
         final List<SearchResult> result = new ArrayList<SearchResult>();
-        final SearchControls cons = getSearchControls(mappingConfiguration);
+        final SearchControls cons = getSearchControls(identityQuery.getReturningLdapAttributes(), identityQuery.getSearchScope());
 
         try {
             return execute(new LdapOperation<List<SearchResult>>() {
                 @Override
                 public List<SearchResult> execute(LdapContext context) throws NamingException {
                     try {
-                        byte[] cookie = (byte[])identityQuery.getPaginationContext();
+                        byte[] cookie = identityQuery.getPaginationContext();
                         PagedResultsControl pagedControls = new PagedResultsControl(identityQuery.getLimit(), cookie, Control.CRITICAL);
                         context.setRequestControls(new Control[] { pagedControls });
 
@@ -236,19 +210,19 @@ public class LDAPOperationManager {
         }
     }
 
-    private SearchControls getSearchControls(LDAPMappingConfiguration mappingConfiguration) {
+    private SearchControls getSearchControls(Collection<String> returningAttributes, int searchScope) {
         final SearchControls cons = new SearchControls();
 
-        cons.setSearchScope(SUBTREE_SCOPE);
+        cons.setSearchScope(searchScope);
         cons.setReturningObjFlag(false);
 
-        List<String> returningAttributes = getReturningAttributes(mappingConfiguration);
+        returningAttributes = getReturningAttributes(returningAttributes);
 
         cons.setReturningAttributes(returningAttributes.toArray(new String[returningAttributes.size()]));
         return cons;
     }
 
-    public String getFilterById(String baseDN, String id) {
+    public String getFilterById(String id) {
         String filter = null;
 
         if (this.config.isActiveDirectory()) {
@@ -264,24 +238,24 @@ public class LDAPOperationManager {
 
                 byte[] objectGUID = (byte[]) attributes.get(LDAPConstants.OBJECT_GUID).get();
 
-                filter = "(&(objectClass=*)(" + getUniqueIdentifierAttributeName() + LDAPConstants.EQUAL + LDAPUtil.convertObjectGUIToByteString(objectGUID) + "))";
+                filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + LDAPUtil.convertObjectGUIToByteString(objectGUID) + "))";
             } catch (NamingException ne) {
                 return filter;
             }
         }
 
         if (filter == null) {
-            filter = "(&(objectClass=*)(" + getUniqueIdentifierAttributeName() + LDAPConstants.EQUAL + id + "))";
+            filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + id + "))";
         }
 
         return filter;
     }
 
-    public SearchResult lookupById(final String baseDN, final String id, final LDAPMappingConfiguration mappingConfiguration) {
-        final String filter = getFilterById(baseDN, id);
+    public SearchResult lookupById(final String baseDN, final String id, final Collection<String> returningAttributes) {
+        final String filter = getFilterById(id);
 
         try {
-            final SearchControls cons = getSearchControls(mappingConfiguration);
+            final SearchControls cons = getSearchControls(returningAttributes, this.config.getSearchScope());
 
             return execute(new LdapOperation<SearchResult>() {
                 @Override
@@ -444,44 +418,15 @@ public class LDAPOperationManager {
         }
     }
 
-    private String getUniqueIdentifierAttributeName() {
-        return this.config.getUniqueIdentifierAttributeName();
+    private String getUuidAttributeName() {
+        return this.config.getUuidLDAPAttributeName();
     }
 
-    private NamingEnumeration<SearchResult> createEmptyEnumeration() {
-        return new NamingEnumeration<SearchResult>() {
-            @Override
-            public SearchResult next() throws NamingException {
-                return null;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public boolean hasMore() throws NamingException {
-                return false;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public void close() throws NamingException {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public boolean hasMoreElements() {
-                return false;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public SearchResult nextElement() {
-                return null;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-        };
-    }
-
-    public Attributes getAttributes(final String entryUUID, final String baseDN, LDAPMappingConfiguration mappingConfiguration) {
-        SearchResult search = lookupById(baseDN, entryUUID, mappingConfiguration);
+    public Attributes getAttributes(final String entryUUID, final String baseDN, Set<String> returningAttributes) {
+        SearchResult search = lookupById(baseDN, entryUUID, returningAttributes);
 
         if (search == null) {
-            throw new ModelException("Couldn't find item with entryUUID [" + entryUUID + "] and baseDN [" + baseDN + "]");
+            throw new ModelException("Couldn't find item with ID [" + entryUUID + " under base DN [" + baseDN + "]");
         }
 
         return search.getAttributes();
@@ -509,7 +454,7 @@ public class LDAPOperationManager {
         env.put(Context.INITIAL_CONTEXT_FACTORY, this.config.getFactoryName());
         env.put(Context.SECURITY_AUTHENTICATION, this.config.getAuthType());
 
-        String protocol = this.config.getProtocol();
+        String protocol = this.config.getSecurityProtocol();
 
         if (protocol != null) {
             env.put(Context.SECURITY_PROTOCOL, protocol);
@@ -528,17 +473,21 @@ public class LDAPOperationManager {
             env.put(Context.SECURITY_CREDENTIALS, bindCredential);
         }
 
-        String url = this.config.getLdapURL();
+        String url = this.config.getConnectionUrl();
 
-        if (url == null) {
-            throw new RuntimeException("url");
+        if (url != null) {
+            env.put(Context.PROVIDER_URL, url);
+        } else {
+            logger.warn("LDAP URL is null. LDAPOperationManager won't work correctly");
         }
 
-        env.put(Context.PROVIDER_URL, url);
+        String connectionPooling = this.config.getConnectionPooling();
+        if (connectionPooling != null) {
+            env.put("com.sun.jndi.ldap.connect.pool", connectionPooling);
+        }
 
         // Just dump the additional properties
-        Properties additionalProperties = this.config.getConnectionProperties();
-
+        Properties additionalProperties = this.config.getAdditionalConnectionProperties();
         if (additionalProperties != null) {
             for (Object key : additionalProperties.keySet()) {
                 env.put(key.toString(), additionalProperties.getProperty(key.toString()));
@@ -580,27 +529,13 @@ public class LDAPOperationManager {
         R execute(LdapContext context) throws NamingException;
     }
 
-    private List<String> getReturningAttributes(final LDAPMappingConfiguration mappingConfiguration) {
-        List<String> returningAttributes = new ArrayList<String>();
+    private Set<String> getReturningAttributes(final Collection<String> returningAttributes) {
+        Set<String> result = new HashSet<String>();
 
-        if (mappingConfiguration != null) {
-            returningAttributes.addAll(mappingConfiguration.getMappedProperties().values());
+        result.addAll(returningAttributes);
+        result.add(getUuidAttributeName());
+        result.add(LDAPConstants.OBJECT_CLASS);
 
-            returningAttributes.add(mappingConfiguration.getParentMembershipAttributeName());
-
-//            for (LDAPMappingConfiguration relationshipConfig : this.config.getRelationshipConfigs()) {
-//                if (relationshipConfig.getRelatedAttributedType().equals(mappingConfiguration.getMappedClass())) {
-//                    returningAttributes.addAll(relationshipConfig.getMappedProperties().values());
-//                }
-//            }
-        } else {
-            returningAttributes.add("*");
-        }
-
-        returningAttributes.add(getUniqueIdentifierAttributeName());
-        returningAttributes.add(LDAPConstants.CREATE_TIMESTAMP);
-        returningAttributes.add(LDAPConstants.OBJECT_CLASS);
-
-        return returningAttributes;
+        return result;
     }
 }

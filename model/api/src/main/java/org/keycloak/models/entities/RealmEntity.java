@@ -53,6 +53,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     private List<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
     private List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
+    private List<UserFederationMapperEntity> userFederationMappers = new ArrayList<UserFederationMapperEntity>();
     private List<IdentityProviderEntity> identityProviders = new ArrayList<IdentityProviderEntity>();
 
     private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
@@ -426,6 +427,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setUserFederationProviders(List<UserFederationProviderEntity> userFederationProviders) {
         this.userFederationProviders = userFederationProviders;
+    }
+
+    public List<UserFederationMapperEntity> getUserFederationMappers() {
+        return userFederationMappers;
+    }
+
+    public void setUserFederationMappers(List<UserFederationMapperEntity> userFederationMappers) {
+        this.userFederationMappers = userFederationMappers;
     }
 
     public List<IdentityProviderEntity> getIdentityProviders() {

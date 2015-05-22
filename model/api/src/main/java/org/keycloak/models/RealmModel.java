@@ -24,6 +24,11 @@ public interface RealmModel extends RoleContainerModel {
         ClientModel getCreatedClient();
     }
 
+    interface UserFederationProviderCreationEvent extends ProviderEvent {
+        UserFederationProviderModel getCreatedFederationProvider();
+        RealmModel getRealm();
+    }
+
     String getId();
 
     String getName();
@@ -207,6 +212,14 @@ public interface RealmModel extends RoleContainerModel {
     void updateUserFederationProvider(UserFederationProviderModel provider);
     void removeUserFederationProvider(UserFederationProviderModel provider);
     void setUserFederationProviders(List<UserFederationProviderModel> providers);
+
+    Set<UserFederationMapperModel> getUserFederationMappers();
+    Set<UserFederationMapperModel> getUserFederationMappersByFederationProvider(String federationProviderId);
+    UserFederationMapperModel addUserFederationMapper(UserFederationMapperModel mapper);
+    void removeUserFederationMapper(UserFederationMapperModel mapper);
+    void updateUserFederationMapper(UserFederationMapperModel mapper);
+    UserFederationMapperModel getUserFederationMapperById(String id);
+    UserFederationMapperModel getUserFederationMapperByName(String federationProviderId, String name);
 
     String getLoginTheme();
 

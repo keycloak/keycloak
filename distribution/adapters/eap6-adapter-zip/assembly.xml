@@ -11,15 +11,14 @@
         <fileSet>
             <directory>${project.build.directory}/unpacked</directory>
             <includes>
-                <include>net/iharder/base64/**</include>
                 <include>org/bouncycastle/**</include>
+                <include>net/iharder/base64/**</include>
                 <include>org/apache/httpcomponents/**</include>
                 <include>org/keycloak/keycloak-core/**</include>
                 <include>org/keycloak/keycloak-adapter-core/**</include>
                 <include>org/keycloak/keycloak-jboss-adapter-core/**</include>
-                <include>org/keycloak/keycloak-undertow-adapter/**</include>
                 <include>org/keycloak/keycloak-as7-adapter/**</include>
-                <include>org/keycloak/keycloak-subsystem/**</include>
+                <include>org/keycloak/keycloak-as7-subsystem/**</include>
             </includes>
             <excludes>
                 <exclude>**/*.war</exclude>

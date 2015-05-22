@@ -8,6 +8,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.Time;
@@ -43,19 +44,19 @@ public class UsersSyncManager {
         });
     }
 
-    public void syncAllUsers(final KeycloakSessionFactory sessionFactory, String realmId, final UserFederationProviderModel fedProvider) {
+    public UserFederationSyncResult syncAllUsers(final KeycloakSessionFactory sessionFactory, String realmId, final UserFederationProviderModel fedProvider) {
         final UserFederationProviderFactory fedProviderFactory = (UserFederationProviderFactory) sessionFactory.getProviderFactory(UserFederationProvider.class, fedProvider.getProviderName());
         updateLastSyncInterval(sessionFactory, fedProvider, realmId);
-        fedProviderFactory.syncAllUsers(sessionFactory, realmId, fedProvider);
+        return fedProviderFactory.syncAllUsers(sessionFactory, realmId, fedProvider);
     }
 
-    public void syncChangedUsers(final KeycloakSessionFactory sessionFactory, String realmId, final UserFederationProviderModel fedProvider) {
+    public UserFederationSyncResult syncChangedUsers(final KeycloakSessionFactory sessionFactory, String realmId, final UserFederationProviderModel fedProvider) {
         final UserFederationProviderFactory fedProviderFactory = (UserFederationProviderFactory) sessionFactory.getProviderFactory(UserFederationProvider.class, fedProvider.getProviderName());
 
         // See when we did last sync.
         int oldLastSync = fedProvider.getLastSync();
         updateLastSyncInterval(sessionFactory, fedProvider, realmId);
-        fedProviderFactory.syncChangedUsers(sessionFactory, realmId, fedProvider, Time.toDate(oldLastSync));
+        return fedProviderFactory.syncChangedUsers(sessionFactory, realmId, fedProvider, Time.toDate(oldLastSync));
     }
 
     public void refreshPeriodicSyncForProvider(final KeycloakSessionFactory sessionFactory, TimerProvider timer, final UserFederationProviderModel fedProvider, final String realmId) {

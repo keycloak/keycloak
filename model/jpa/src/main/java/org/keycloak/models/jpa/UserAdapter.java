@@ -404,12 +404,7 @@ public class UserAdapter implements UserModel {
     @Override
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
-        if (roles.contains(role)) return true;
-
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
-        }
-        return false;
+        return KeycloakModelUtils.hasRole(roles, role);
     }
 
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {

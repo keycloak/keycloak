@@ -1,12 +1,14 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
+import javax.ws.rs.core.UriInfo;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -38,13 +40,15 @@ public abstract class RoleResource {
         role.setDescription(rep.getDescription());
     }
 
-    protected void addComposites(List<RoleRepresentation> roles, RoleModel role) {
+    protected void addComposites(AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {
         for (RoleRepresentation rep : roles) {
             RoleModel composite = realm.getRoleById(rep.getId());
             if (composite == null) {
                 throw new NotFoundException("Could not find composite role: " + rep.getName());
             }
             role.addCompositeRole(composite);
+
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, rep.getId()).representation(roles).success();
         }
     }
 
