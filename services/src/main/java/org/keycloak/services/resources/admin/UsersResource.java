@@ -1,46 +1,13 @@
 package org.keycloak.services.resources.admin;
 
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.BadRequestException;
-import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.ClientConnection;
-import org.keycloak.email.EmailException;
-import org.keycloak.email.EmailProvider;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ModelReadOnlyException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.representations.idm.ClientMappingsRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.FederatedIdentityRepresentation;
-import org.keycloak.representations.idm.MappingsRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserConsentRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.UserManager;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.Urls;
-
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -56,14 +23,51 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.BadRequestException;
+import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.ClientConnection;
+import org.keycloak.email.EmailException;
+import org.keycloak.email.EmailProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelReadOnlyException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.ClientMappingsRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.MappingsRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserConsentRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.UserManager;
 
 /**
  * Base resource for managing users
@@ -77,6 +81,8 @@ public class UsersResource {
     protected RealmModel realm;
 
     private RealmAuth auth;
+
+    private TokenManager tokenManager;
     
     @Context
     protected ClientConnection clientConnection;
@@ -93,6 +99,7 @@ public class UsersResource {
     public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager) {
         this.auth = auth;
         this.realm = realm;
+        this.tokenManager = tokenManager;
 
         auth.init(RealmAuth.Resource.USER);
     }
@@ -828,6 +835,55 @@ public class UsersResource {
             logger.error("Failed to send password reset email", e);
             return ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Path("{email}/impersonate")
+    @POST
+    public Response impersonateUser(@PathParam("email") String email, @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
+
+        if (!auth.hasRealmRole(AdminRoles.ADMIN)) {
+            auth.requireManage();
+        }
+
+        EventBuilder event = new EventBuilder(realm, session, clientConnection);
+
+        event.detail(Details.AUTH_METHOD, "impersonate").detail(Details.RESPONSE_TYPE, "token").detail(Details.IMPERSONATE_ID, email);
+
+        UserModel user = session.users().getUserByEmail(email, realm);
+
+        if (user == null) {
+            return ErrorResponse.error("User not found", Response.Status.NOT_FOUND);
+        }
+
+        if (!user.isEnabled()) {
+            return ErrorResponse.error("User is disabled", Response.Status.BAD_REQUEST);
+        }
+
+        if (user.getEmail() == null) {
+            return ErrorResponse.error("User email missing", Response.Status.BAD_REQUEST);
+        }
+
+        ClientModel client = realm.getClientByClientId(clientId);
+
+
+        UserSessionProvider sessions = session.sessions();
+
+        UserSessionModel userSession = sessions.createUserSession(realm, user, email, clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+        event.session(userSession);
+
+        ClientSessionModel clientSession = sessions.createClientSession(realm, client);
+        clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+
+        TokenManager.attachClientSession(userSession, clientSession);
+
+        AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
+                                              .generateAccessToken(session, null, client, user, userSession, clientSession)
+                                              .generateRefreshToken()
+                                              .generateIDToken()
+                                              .build();
+
+        return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
     }
 
 }
