@@ -178,7 +178,6 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         }
         String[] objClasses = objectClasses.split(",");
 
-        // TODO: util method for trim and convert array to collection?
         Set<String> trimmed = new HashSet<String>();
         for (String objectClass : objClasses) {
             objectClass = objectClass.trim();

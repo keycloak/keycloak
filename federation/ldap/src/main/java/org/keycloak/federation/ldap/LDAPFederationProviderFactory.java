@@ -24,7 +24,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationEventAwareProviderFactory;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
@@ -89,7 +88,7 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
         String usernameLdapAttribute = ldapConfig.getUsernameLdapAttribute();
 
         UserFederationMapperModel mapperModel;
-        mapperModel = KeycloakModelUtils.createUserFederationMapperModel("usernameMapper", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.ID,
+        mapperModel = KeycloakModelUtils.createUserFederationMapperModel("username", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
                 UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, UserModel.USERNAME,
                 UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, usernameLdapAttribute,
                 UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
@@ -97,25 +96,25 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
 
         // For AD deployments with sAMAccountName is probably more common to map "cn" to full name of user
         if (activeDirectory && usernameLdapAttribute.equalsIgnoreCase(LDAPConstants.SAM_ACCOUNT_NAME)) {
-            mapperModel = KeycloakModelUtils.createUserFederationMapperModel("fullNameMapper", newProviderModel.getId(), FullNameLDAPFederationMapperFactory.ID,
+            mapperModel = KeycloakModelUtils.createUserFederationMapperModel("full name", newProviderModel.getId(), FullNameLDAPFederationMapperFactory.PROVIDER_ID,
                     FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, LDAPConstants.CN,
                     UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
             realm.addUserFederationMapper(mapperModel);
         } else {
-            mapperModel = KeycloakModelUtils.createUserFederationMapperModel("firstNameMapper", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.ID,
+            mapperModel = KeycloakModelUtils.createUserFederationMapperModel("first name", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
                     UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, UserModel.FIRST_NAME,
                     UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, LDAPConstants.CN,
                     UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
             realm.addUserFederationMapper(mapperModel);
         }
 
-        mapperModel = KeycloakModelUtils.createUserFederationMapperModel("lastNameMapper", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.ID,
+        mapperModel = KeycloakModelUtils.createUserFederationMapperModel("last name", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
                 UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, UserModel.LAST_NAME,
                 UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, LDAPConstants.SN,
                 UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
         realm.addUserFederationMapper(mapperModel);
 
-        mapperModel = KeycloakModelUtils.createUserFederationMapperModel("emailMapper", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.ID,
+        mapperModel = KeycloakModelUtils.createUserFederationMapperModel("email", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
                 UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, UserModel.EMAIL,
                 UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, LDAPConstants.EMAIL,
                 UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
@@ -125,14 +124,14 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
         String modifyTimestampLdapAttrName = activeDirectory ? "whenChanged" : LDAPConstants.MODIFY_TIMESTAMP;
 
         // map createTimeStamp as read-only
-        mapperModel = KeycloakModelUtils.createUserFederationMapperModel("creationDateMapper", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.ID,
+        mapperModel = KeycloakModelUtils.createUserFederationMapperModel("creation date", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
                 UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, LDAPConstants.CREATE_TIMESTAMP,
                 UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, createTimestampLdapAttrName,
                 UserAttributeLDAPFederationMapper.READ_ONLY, "true");
         realm.addUserFederationMapper(mapperModel);
 
         // map modifyTimeStamp as read-only
-        mapperModel = KeycloakModelUtils.createUserFederationMapperModel("modifyDateMapper", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.ID,
+        mapperModel = KeycloakModelUtils.createUserFederationMapperModel("modify date", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
                 UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, LDAPConstants.MODIFY_TIMESTAMP,
                 UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, modifyTimestampLdapAttrName,
                 UserAttributeLDAPFederationMapper.READ_ONLY, "true");

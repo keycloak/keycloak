@@ -952,6 +952,58 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'GenericUserFederationCtrl'
         })
+        .when('/realms/:realm/user-federation/providers/:provider/:instance/mappers', {
+            templateUrl : function(params){ return resourceUrl + '/partials/federated-mappers.html'; },
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                provider : function(UserFederationInstanceLoader) {
+                    return UserFederationInstanceLoader();
+                },
+                mapperTypes : function(UserFederationMapperTypesLoader) {
+                    return UserFederationMapperTypesLoader();
+                },
+                mappers : function(UserFederationMappersLoader) {
+                    return UserFederationMappersLoader();
+                }
+            },
+            controller : 'UserFederationMapperListCtrl'
+        })
+        .when('/realms/:realm/user-federation/providers/:provider/:instance/mappers/:mapperId', {
+            templateUrl : function(params){ return resourceUrl + '/partials/federated-mapper-detail.html'; },
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                provider : function(UserFederationInstanceLoader) {
+                    return UserFederationInstanceLoader();
+                },
+                mapperTypes : function(UserFederationMapperTypesLoader) {
+                    return UserFederationMapperTypesLoader();
+                },
+                mapper : function(UserFederationMapperLoader) {
+                    return UserFederationMapperLoader();
+                }
+            },
+            controller : 'UserFederationMapperCtrl'
+        })
+        .when('/create/user-federation-mappers/:realm/:provider/:instance', {
+            templateUrl : function(params){ return resourceUrl + '/partials/federated-mapper-detail.html'; },
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                provider : function(UserFederationInstanceLoader) {
+                    return UserFederationInstanceLoader();
+                },
+                mapperTypes : function(UserFederationMapperTypesLoader) {
+                    return UserFederationMapperTypesLoader();
+                },
+            },
+            controller : 'UserFederationMapperCreateCtrl'
+        })
+
         .when('/realms/:realm/defense/headers', {
             templateUrl : resourceUrl + '/partials/defense-headers.html',
             resolve : {

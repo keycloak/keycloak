@@ -116,6 +116,34 @@ module.factory('UserFederationFactoryLoader', function(Loader, UserFederationPro
     });
 });
 
+module.factory('UserFederationMapperTypesLoader', function(Loader, UserFederationMapperTypes, $route, $q) {
+    return Loader.get(UserFederationMapperTypes, function () {
+        return {
+            realm: $route.current.params.realm,
+            provider: $route.current.params.instance
+        }
+    });
+});
+
+module.factory('UserFederationMappersLoader', function(Loader, UserFederationMappers, $route, $q) {
+    return Loader.query(UserFederationMappers, function () {
+        return {
+            realm: $route.current.params.realm,
+            provider: $route.current.params.instance
+        }
+    });
+});
+
+module.factory('UserFederationMapperLoader', function(Loader, UserFederationMapper, $route, $q) {
+    return Loader.get(UserFederationMapper, function () {
+        return {
+            realm: $route.current.params.realm,
+            provider: $route.current.params.instance,
+            mapperId: $route.current.params.mapperId
+        }
+    });
+});
+
 
 module.factory('UserSessionStatsLoader', function(Loader, UserSessionStats, $route, $q) {
     return Loader.get(UserSessionStats, function() {
