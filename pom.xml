@@ -1272,7 +1272,9 @@
         <profile>
             <id>jboss-earlyaccess-repository</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <property>
+                    <name>!no-jboss-ea-repo</name>
+                </property>
             </activation>
             <repositories>
                 <repository>
