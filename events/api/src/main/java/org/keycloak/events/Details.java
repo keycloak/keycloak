@@ -24,5 +24,6 @@ public interface Details {
     String NODE_HOST = "node_host";
     String REASON = "reason";
     String REVOKED_CLIENT = "revoked_client";
+    String IMPERSONATE_ID = "impersonate_user";
 
 }

@@ -55,6 +55,11 @@ public class RealmAuth {
         }
     }
 
+    public boolean hasRealmRole(String realmRole) {
+        return auth.hasRealmRole(realmRole);
+    }
+
+
     private String getViewRole(Resource resource) {
         switch (resource) {
             case CLIENT:
