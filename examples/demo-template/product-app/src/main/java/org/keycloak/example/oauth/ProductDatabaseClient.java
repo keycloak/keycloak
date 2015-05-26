@@ -4,9 +4,9 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterUtils;
-import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.http.HttpServletRequest;
@@ -37,8 +37,8 @@ public class ProductDatabaseClient
 
     public static List<String> getProducts(HttpServletRequest req) throws Failure {
         KeycloakSecurityContext session = (KeycloakSecurityContext)req.getAttribute(KeycloakSecurityContext.class.getName());
-        HttpClient client = new HttpClientBuilder()
-                .disableTrustManager().build();
+
+        HttpClient client = new DefaultHttpClient();
         try {
             HttpGet get = new HttpGet(AdapterUtils.getOriginForRestCalls(req.getRequestURL().toString(), session) + "/database/products");
             get.addHeader("Authorization", "Bearer " + session.getTokenString());
