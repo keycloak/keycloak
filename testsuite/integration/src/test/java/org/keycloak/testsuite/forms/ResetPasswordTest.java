@@ -324,6 +324,25 @@ public class ResetPasswordTest {
 
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user((String) null).session((String) null).detail(Details.USERNAME, "invalid").removeDetail(Details.EMAIL).removeDetail(Details.CODE_ID).error("user_not_found").assertEvent();
     }
+    
+    @Test
+    public void resetPasswordMissingUsername() throws IOException, MessagingException, InterruptedException {
+        loginPage.open();
+        loginPage.resetPassword();
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword("");
+
+        resetPasswordPage.assertCurrent();
+
+        assertEquals("Please specify username.", resetPasswordPage.getErrorMessage());
+
+        assertEquals(0, greenMail.getReceivedMessages().length);
+        
+        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).client((String) null).user((String) null).session((String) null).clearDetails().error("username_missing").assertEvent();
+        
+    }
 
     @Test
     public void resetPasswordExpiredCode() throws IOException, MessagingException, InterruptedException {
