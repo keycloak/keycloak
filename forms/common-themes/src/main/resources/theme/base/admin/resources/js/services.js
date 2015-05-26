@@ -238,7 +238,33 @@ module.factory('UserFederationProviders', function($resource) {
 });
 
 module.factory('UserFederationSync', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/user-federation/sync/:provider');
+    return $resource(authUrl + '/admin/realms/:realm/user-federation/instances/:provider/sync');
+});
+
+module.factory('UserFederationMapperTypes', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/user-federation/instances/:provider/mapper-types', {
+        realm : '@realm',
+        provider : '@provider'
+    });
+});
+
+module.factory('UserFederationMappers', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/user-federation/instances/:provider/mappers', {
+        realm : '@realm',
+        provider : '@provider'
+    });
+});
+
+module.factory('UserFederationMapper', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/user-federation/instances/:provider/mappers/:mapperId', {
+        realm : '@realm',
+        provider : '@provider',
+        mapperId: '@mapperId'
+    }, {
+        update: {
+            method : 'PUT'
+        }
+    });
 });
 
 

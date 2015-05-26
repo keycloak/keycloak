@@ -235,8 +235,8 @@ public class RealmAdminResource {
     }
 
     @Path("user-federation")
-    public UserFederationResource userFederation() {
-        UserFederationResource fed = new UserFederationResource(realm, auth, adminEvent);
+    public UserFederationProvidersResource userFederation() {
+        UserFederationProvidersResource fed = new UserFederationProvidersResource(realm, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(fed);
         //resourceContext.initResource(fed);
         return fed;

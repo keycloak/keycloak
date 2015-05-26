@@ -91,7 +91,7 @@ class FederationTestUtils {
     }
 
     public static void addZipCodeLDAPMapper(RealmModel realm, UserFederationProviderModel providerModel) {
-        UserFederationMapperModel mapperModel = KeycloakModelUtils.createUserFederationMapperModel("zipCodeMapper", providerModel.getId(), UserAttributeLDAPFederationMapperFactory.ID,
+        UserFederationMapperModel mapperModel = KeycloakModelUtils.createUserFederationMapperModel("zipCodeMapper", providerModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
                 UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, "postal_code",
                 UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, LDAPConstants.POSTAL_CODE,
                 UserAttributeLDAPFederationMapper.READ_ONLY, "false");
@@ -104,7 +104,7 @@ class FederationTestUtils {
             mapperModel.getConfig().put(RoleLDAPFederationMapper.MODE, mode.toString());
             realm.updateUserFederationMapper(mapperModel);
         } else {
-            mapperModel = KeycloakModelUtils.createUserFederationMapperModel("realmRolesMapper", providerModel.getId(), RoleLDAPFederationMapperFactory.ID,
+            mapperModel = KeycloakModelUtils.createUserFederationMapperModel("realmRolesMapper", providerModel.getId(), RoleLDAPFederationMapperFactory.PROVIDER_ID,
                     RoleLDAPFederationMapper.ROLES_DN, "ou=RealmRoles,dc=keycloak,dc=org",
                     RoleLDAPFederationMapper.USE_REALM_ROLES_MAPPING, "true",
                     RoleLDAPFederationMapper.MODE, mode.toString());
@@ -116,7 +116,7 @@ class FederationTestUtils {
             mapperModel.getConfig().put(RoleLDAPFederationMapper.MODE, mode.toString());
             realm.updateUserFederationMapper(mapperModel);
         } else {
-            mapperModel = KeycloakModelUtils.createUserFederationMapperModel("financeRolesMapper", providerModel.getId(), RoleLDAPFederationMapperFactory.ID,
+            mapperModel = KeycloakModelUtils.createUserFederationMapperModel("financeRolesMapper", providerModel.getId(), RoleLDAPFederationMapperFactory.PROVIDER_ID,
                     RoleLDAPFederationMapper.ROLES_DN, "ou=FinanceRoles,dc=keycloak,dc=org",
                     RoleLDAPFederationMapper.USE_REALM_ROLES_MAPPING, "false",
                     RoleLDAPFederationMapper.CLIENT_ID, "finance",

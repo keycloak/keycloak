@@ -511,8 +511,8 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
     }
 
     function triggerSync(action) {
-        UserFederationSync.get({ action: action, realm: $scope.realm.realm, provider: $scope.instance.id }, function() {
-            Notifications.success("Sync of users finished successfully");
+        UserFederationSync.save({ action: action, realm: $scope.realm.realm, provider: $scope.instance.id }, {}, function(syncResult) {
+            Notifications.success("Sync of users finished successfully. " + syncResult.status);
         }, function() {
             Notifications.error("Error during sync of users");
         });
@@ -731,6 +731,131 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
             Notifications.error("Error during sync of users");
         });
     }
+
+});
+
+
+module.controller('UserFederationMapperListCtrl', function($scope, $location, Notifications, $route, Dialog, realm, provider, mapperTypes, mappers) {
+    console.log('UserFederationMapperListCtrl');
+
+    $scope.realm = realm;
+    $scope.provider = provider;
+
+    $scope.mapperTypes = mapperTypes;
+    $scope.mappers = mappers;
+
+    $scope.hasAnyMapperTypes = false;
+    for (var property in mapperTypes) {
+        if (!(property.startsWith('$'))) {
+            $scope.hasAnyMapperTypes = true;
+            break;
+        }
+    }
+
+});
+
+module.controller('UserFederationMapperCtrl', function($scope, realm,  provider, mapperTypes, mapper, UserFederationMapper, Notifications, Dialog, $location) {
+    console.log('UserFederationMapperCtrl');
+    $scope.realm = realm;
+    $scope.provider = provider;
+    $scope.create = false;
+    $scope.mapper = angular.copy(mapper);
+    $scope.changed = false;
+    $scope.mapperType = mapperTypes[mapper.federationMapperType];
+
+    $scope.$watch('mapper', function() {
+        if (!angular.equals($scope.mapper, mapper)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        UserFederationMapper.update({
+            realm : realm.realm,
+            provider: provider.id,
+            mapperId : mapper.id
+        }, $scope.mapper, function() {
+            $scope.changed = false;
+            mapper = angular.copy($scope.mapper);
+            $location.url("/realms/" + realm.realm + '/user-federation/providers/' + provider.providerName + '/' + provider.id + '/mappers/' + mapper.id);
+            Notifications.success("Your changes have been saved.");
+        }, function(error) {
+            if (error.status == 400) {
+                Notifications.error('Error in configuration of mapper: ' + error.data.error_description);
+            } else {
+                Notification.error('Unexpected error when creating mapper');
+            }
+        });
+    };
+
+    $scope.reset = function() {
+        $scope.mapper = angular.copy(mapper);
+        $scope.changed = false;
+    };
+
+    $scope.cancel = function() {
+        window.history.back();
+    };
+
+    $scope.remove = function() {
+        Dialog.confirmDelete($scope.mapper.name, 'mapper', function() {
+            UserFederationMapper.remove({ realm: realm.realm, provider: provider.id, mapperId : $scope.mapper.id }, function() {
+                Notifications.success("The mapper has been deleted.");
+                $location.url("/realms/" + realm.realm + '/user-federation/providers/' + provider.providerName + '/' + provider.id + '/mappers');
+            });
+        });
+    };
+
+});
+
+module.controller('UserFederationMapperCreateCtrl', function($scope, realm, provider, mapperTypes, UserFederationMapper, Notifications, Dialog, $location) {
+    console.log('UserFederationMapperCreateCtrl');
+    $scope.realm = realm;
+    $scope.provider = provider;
+    $scope.create = true;
+    $scope.mapper = { federationProviderDisplayName: provider.displayName, config: {}};
+    $scope.mapperTypes = mapperTypes;
+    $scope.mapperType = null;
+
+    $scope.$watch('mapperType', function() {
+        if ($scope.mapperType != null) {
+            $scope.mapper.config = {};
+            for ( var i = 0; i < $scope.mapperType.properties.length; i++) {
+                var property = $scope.mapperType.properties[i];
+                if (property.type === 'String' || property.type === 'boolean') {
+                    $scope.mapper.config[ property.name ] = property.defaultValue;
+                }
+            }
+        }
+    }, true);
+
+    $scope.save = function() {
+        if ($scope.mapperType == null) {
+            Notifications.error("You need to select mapper type!");
+            return;
+        }
+
+        $scope.mapper.federationMapperType = $scope.mapperType.id;
+        UserFederationMapper.save({
+            realm : realm.realm, provider: provider.id
+        }, $scope.mapper, function(data, headers) {
+            var l = headers().location;
+            var id = l.substring(l.lastIndexOf("/") + 1);
+            $location.url('/realms/' + realm.realm +'/user-federation/providers/' + provider.providerName + '/' + provider.id + '/mappers/' + id);
+            Notifications.success("Mapper has been created.");
+        }, function(error) {
+            if (error.status == 400) {
+                Notifications.error('Error in configuration of mapper: ' + error.data.error_description);
+            } else {
+                Notification.error('Unexpected error when creating mapper');
+            }
+        });
+    };
+
+    $scope.cancel = function() {
+        window.history.back();
+    };
+
 
 });
 
