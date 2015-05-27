@@ -320,4 +320,87 @@ public class UserTest extends AbstractClientTest {
         assertNull(user1.getAttributes());
     }
 
+    @Test
+    public void sendResetPasswordEmail() {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setUsername("user1");
+        realm.users().create(userRep);
+        UserResource user = realm.users().get("user1");
+
+        try {
+            user.resetPasswordEmail();
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User email missing", error.getErrorMessage());
+        }
+        try {
+            userRep = user.toRepresentation();
+            userRep.setEmail("user1@localhost");
+            userRep.setEnabled(false);
+            user.update(userRep);
+            user.resetPasswordEmail();
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User is disabled", error.getErrorMessage());
+        }
+        try {
+            userRep.setEnabled(true);
+            user.update(userRep);
+            user.resetPasswordEmail("invalidClientId");
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("invalidClientId not enabled", error.getErrorMessage());
+        }
+    }
+
+    @Test
+    public void sendVerifyEmail() {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setUsername("user1");
+        realm.users().create(userRep);
+        UserResource user = realm.users().get("user1");
+
+        try {
+            user.sendVerifyEmail();
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User email missing", error.getErrorMessage());
+        }
+        try {
+            userRep = user.toRepresentation();
+            userRep.setEmail("user1@localhost");
+            userRep.setEnabled(false);
+            user.update(userRep);
+            user.sendVerifyEmail();
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User is disabled", error.getErrorMessage());
+        }
+        try {
+            userRep.setEnabled(true);
+            user.update(userRep);
+            user.sendVerifyEmail("invalidClientId");
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("invalidClientId not enabled", error.getErrorMessage());
+        }
+    }
 }
