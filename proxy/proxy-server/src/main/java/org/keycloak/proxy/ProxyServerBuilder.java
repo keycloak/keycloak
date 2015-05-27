@@ -51,10 +51,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -75,6 +72,8 @@ public class ProxyServerBuilder {
     protected PathHandler root = new PathHandler(NOT_FOUND);
     protected HttpHandler proxyHandler;
     protected boolean sendAccessToken;
+
+    protected Map<String, String> headerNameConfig;
 
     public ProxyServerBuilder target(String uri) {
         SimpleProxyClientProvider provider = null;
@@ -98,6 +97,12 @@ public class ProxyServerBuilder {
         this.sendAccessToken = flag;
         return this;
     }
+
+    public ProxyServerBuilder headerNameConfig(Map<String, String> headerNameConfig) {
+        this.headerNameConfig = headerNameConfig;
+        return this;
+    }
+
     public ApplicationBuilder application(AdapterConfig config) {
         return new ApplicationBuilder(config);
     }
@@ -169,6 +174,11 @@ public class ProxyServerBuilder {
                 return this;
             }
 
+            public ConstraintBuilder injectIfAuthenticated() {
+                semantic = SecurityInfo.EmptyRoleSemantic.INJECT_IF_AUTHENTICATED;
+                return this;
+            }
+
             public ConstraintBuilder excludedMethods(Set<String> excludedMethods) {
                 this.excludedMethods = excludedMethods;
                 return this;
@@ -222,7 +232,7 @@ public class ProxyServerBuilder {
                     errorPage = base + "/" + errorPage;
                 }
             }
-            handler = new ConstraintAuthorizationHandler(handler, errorPage, sendAccessToken);
+            handler = new ConstraintAuthorizationHandler(handler, errorPage, sendAccessToken, headerNameConfig);
             handler = new ProxyAuthenticationCallHandler(handler);
             handler = new ConstraintMatcherHandler(matches, handler, toWrap, errorPage);
             final List<AuthenticationMechanism> mechanisms = new LinkedList<AuthenticationMechanism>();
@@ -373,6 +383,7 @@ public class ProxyServerBuilder {
                     if (constraint.isDeny()) constraintBuilder.deny();
                     if (constraint.isPermit()) constraintBuilder.permit();
                     if (constraint.isAuthenticate()) constraintBuilder.authenticate();
+                    if (constraint.isInjectIfAuthenticated()) constraintBuilder.injectIfAuthenticated();
                     constraintBuilder.add();
                 }
             }
@@ -383,6 +394,7 @@ public class ProxyServerBuilder {
 
     public static void initOptions(ProxyConfig config, ProxyServerBuilder builder) {
         builder.sendAccessToken(config.isSendAccessToken());
+        builder.headerNameConfig(config.getHeaderNames());
         if (config.getBufferSize() != null) builder.setBufferSize(config.getBufferSize());
         if (config.getBuffersPerRegion() != null) builder.setBuffersPerRegion(config.getBuffersPerRegion());
         if (config.getIoThreads() != null) builder.setIoThreads(config.getIoThreads());
