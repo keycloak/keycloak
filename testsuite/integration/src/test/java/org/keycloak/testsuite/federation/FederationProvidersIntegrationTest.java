@@ -13,6 +13,10 @@ import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
+import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
+import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapperFactory;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -20,9 +24,11 @@ import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -36,7 +42,9 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -261,6 +269,55 @@ public class FederationProvidersIntegrationTest {
             Assert.assertEquals("non-LDAP-Mapped street", user.getAttribute("street"));
         } finally {
             keycloakRule.stopSession(session, false);
+        }
+    }
+
+    @Test
+    public void testFullNameMapper() {
+        KeycloakSession session = keycloakRule.startSession();
+        UserFederationMapperModel firstNameMapper = null;
+
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            // assert that user "fullnameUser" is not in local DB
+            Assert.assertNull(session.users().getUserByUsername("fullname", appRealm));
+
+            // Add the user with some fullName into LDAP directly. Ensure that fullName is saved into "cn" attribute in LDAP (currently mapped to model firstName)
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "fullname", "James Dee", "Dee", "fullname@email.org", "4578");
+
+            // add fullname mapper to the provider and remove "firstNameMapper"
+            UserFederationMapperModel fullNameMapperModel = KeycloakModelUtils.createUserFederationMapperModel("full name", ldapModel.getId(), FullNameLDAPFederationMapperFactory.PROVIDER_ID,
+                    FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, LDAPConstants.CN,
+                    UserAttributeLDAPFederationMapper.READ_ONLY, "false");
+            appRealm.addUserFederationMapper(fullNameMapperModel);
+
+            firstNameMapper = appRealm.getUserFederationMapperByName(ldapModel.getId(), "first name");
+            appRealm.removeUserFederationMapper(firstNameMapper);
+
+            // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
+            FederationTestUtils.assertUserImported(session.users(), appRealm, "fullname", "James", "Dee", "fullname@email.org", "4578");
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            // Remove "fullnameUser" to assert he is removed from LDAP. Revert mappers to previous state
+            UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);
+            session.users().removeUser(appRealm, fullnameUser);
+
+            // Revert mappers
+            UserFederationMapperModel fullNameMapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "full name");
+            appRealm.removeUserFederationMapper(fullNameMapperModel);
+
+            firstNameMapper.setId(null);
+            appRealm.addUserFederationMapper(firstNameMapper);
+        } finally {
+            keycloakRule.stopSession(session, true);
         }
     }
 
