@@ -45,6 +45,9 @@ public class UrlBean {
     }
 
     public String getLoginAction() {
+        if (this.actionuri != null) {
+            return this.actionuri.toString();
+        }
         return Urls.realmLoginAction(baseURI, realm).toString();
     }
 

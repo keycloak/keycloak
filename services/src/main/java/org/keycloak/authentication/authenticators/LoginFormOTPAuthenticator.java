@@ -52,6 +52,7 @@ public class LoginFormOTPAuthenticator extends LoginFormUsernameAuthenticator {
             context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
+        context.success();
     }
 
     @Override
