@@ -49,7 +49,8 @@ public class ConstraintMatcherHandler implements HttpHandler {
             return;
         }
 
-        if (match.getRequiredRoles().isEmpty() && match.getEmptyRoleSemantic() == SecurityInfo.EmptyRoleSemantic.INJECT_IF_AUTHENTICATED) {
+        if (match.getRequiredRoles().isEmpty()
+                && match.getEmptyRoleSemantic() == SecurityInfo.EmptyRoleSemantic.PERMIT_AND_INJECT_IF_AUTHENTICATED) {
 
             boolean successfulAuthenticatedMethodFound = isSuccessfulAuthenticatedMethodFound(exchange);
 

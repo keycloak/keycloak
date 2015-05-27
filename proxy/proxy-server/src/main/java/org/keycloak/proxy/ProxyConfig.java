@@ -219,8 +219,8 @@ public class ProxyConfig {
         protected boolean permit;
         @JsonProperty("authenticate")
         protected boolean authenticate;
-        @JsonProperty("inject-if-authenticated")
-        protected boolean injectIfAuthenticated;
+        @JsonProperty("permit-and-inject")
+        protected boolean permitAndInject;
 
         public String getPattern() {
             return pattern;
@@ -262,12 +262,12 @@ public class ProxyConfig {
             this.authenticate = authenticate;
         }
 
-        public boolean isInjectIfAuthenticated() {
-            return injectIfAuthenticated;
+        public boolean isPermitAndInject() {
+            return permitAndInject;
         }
 
-        public void setInjectIfAuthenticated(boolean injectIfAuthenticated) {
-            this.injectIfAuthenticated = injectIfAuthenticated;
+        public void setPermitAndInject(boolean permitAndInject) {
+            this.permitAndInject = permitAndInject;
         }
 
         public Set<String> getMethods() {

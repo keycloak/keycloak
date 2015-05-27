@@ -182,106 +182,162 @@ $ java -jar bin/launcher.jar [your-config.json]
         </section>
         <section>
             <title>Application Config</title>
-        <para>
-            Next under the <literal>applications</literal> array attribute, you can define one or more applications per host you are proxying.
-            <variablelist>
-                <varlistentry>
-                    <term>base-path</term>
-                    <listitem>
-                        <para>
-                            The base context root for the application.  Must start with '/' <emphasis>REQUIRED.</emphasis>.
-                        </para>
-                    </listitem>
-                </varlistentry>
-                <varlistentry>
-                    <term>error-page</term>
-                    <listitem>
-                        <para>
-                            If the proxy has an error, it will display the target application's error page relative URL <emphasis>OPTIONAL.</emphasis>.
-                            This is a relative path to the base-path.  In the example above it would be <literal>/customer-portal/error.html</literal>.
-                        </para>
-                    </listitem>
-                </varlistentry>
-                <varlistentry>
-                    <term>adapter-config</term>
-                    <listitem>
-                        <para>
-                            <emphasis>REQUIRED.</emphasis>.  Same configuration as any other keycloak adapter.  See <link linkend='adapter-config'>Adapter Config</link>
-                        </para>
-                    </listitem>
-                </varlistentry>
-            </variablelist>
-        </para>
+            <para>
+                Next under the <literal>applications</literal> array attribute, you can define one or more applications per host you are proxying.
+                <variablelist>
+                    <varlistentry>
+                        <term>base-path</term>
+                        <listitem>
+                            <para>
+                                The base context root for the application.  Must start with '/' <emphasis>REQUIRED.</emphasis>.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>error-page</term>
+                        <listitem>
+                            <para>
+                                If the proxy has an error, it will display the target application's error page relative URL <emphasis>OPTIONAL.</emphasis>.
+                                This is a relative path to the base-path.  In the example above it would be <literal>/customer-portal/error.html</literal>.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>adapter-config</term>
+                        <listitem>
+                            <para>
+                                <emphasis>REQUIRED.</emphasis>.  Same configuration as any other keycloak adapter.  See <link linkend='adapter-config'>Adapter Config</link>
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
+            </para>
             <section>
                 <title>Constraint Config</title>
-
-        <para>
-            Next under each application you can define one or more constraints in the <literal>constraints</literal> array attribute.
-            A constraint defines a URL pattern relative to the base-path.  You can deny, permit, or require authentication for
-            a specific URL pattern.  You can specify roles allowed for that path as well.  More specific constraints will take
-            precedence over more general ones.
+                <para>
+                    Next under each application you can define one or more constraints in the <literal>constraints</literal> array attribute.
+                    A constraint defines a URL pattern relative to the base-path.  You can deny, permit, or require authentication for
+                    a specific URL pattern.  You can specify roles allowed for that path as well.  More specific constraints will take
+                    precedence over more general ones.
+                    <variablelist>
+                        <varlistentry>
+                            <term>pattern</term>
+                            <listitem>
+                                <para>
+                                    URL pattern to match relative to the base-path of the application.  Must start with '/' <emphasis>REQUIRED.</emphasis>.
+                                    You may only have one wildcard and it must come at the end of the pattern.  Valid <literal>/foo/bar/*</literal> and  <literal>/foo/*.txt</literal>
+                                    Not valid: <literal>/*/foo/*</literal>.
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                            <term>roles-allowed</term>
+                            <listitem>
+                                <para>
+                                    Array of strings of roles allowed to access this url pattern. <emphasis>OPTIONAL.</emphasis>.
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                            <term>methods</term>
+                            <listitem>
+                                <para>
+                                    Array of strings of HTTP methods that will exclusively match this pattern and HTTP request. <emphasis>OPTIONAL.</emphasis>.
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                            <term>excluded-methods</term>
+                            <listitem>
+                                <para>
+                                    Array of strings of HTTP methods that will be ignored when match this pattern. <emphasis>OPTIONAL.</emphasis>.
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                            <term>deny</term>
+                            <listitem>
+                                <para>
+                                    Deny all access to this URL pattern. <emphasis>OPTIONAL.</emphasis>.
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                            <term>permit</term>
+                            <listitem>
+                                <para>
+                                    Permit all access without requiring authentication or a role mapping. <emphasis>OPTIONAL.</emphasis>.
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                            <term>permit-and-inject</term>
+                            <listitem>
+                                <para>
+                                    Permit all access, but inject the headers, if user is already authenticated.<emphasis>OPTIONAL.</emphasis>.
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                            <term>authenticate</term>
+                            <listitem>
+                                <para>
+                                    Require authentication for this pattern, but no role mapping. <emphasis>OPTIONAL.</emphasis>.
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                    </variablelist>
+                </para>
+            </section>
+        </section>
+        <section>
+            <title>Header Names Config</title>
+            <para>
+            Next under the list of applications you can override the defaults for the names of the header fields injected by the proxy (see Keycloak Identity Headers).
+            This mapping is optional.
             <variablelist>
                 <varlistentry>
-                    <term>pattern</term>
+                    <term>keycloak-subject</term>
                     <listitem>
                         <para>
-                            URL pattern to match relative to the base-path of the application.  Must start with '/' <emphasis>REQUIRED.</emphasis>.
-                            You may only have one wildcard and it must come at the end of the pattern.  Valid <literal>/foo/bar/*</literal> and  <literal>/foo/*.txt</literal>
-                            Not valid: <literal>/*/foo/*</literal>.
+                            e.g. MYAPP_USER_ID
                         </para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term>roles-allowed</term>
+                    <term>kkeycloak-username</term>
                     <listitem>
                         <para>
-                            Array of strings of roles allowed to access this url pattern. <emphasis>OPTIONAL.</emphasis>.
+                            e.g. MYAPP_USER_NAME
                         </para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term>methods</term>
+                    <term>keycloak-email</term>
                     <listitem>
                         <para>
-                            Array of strings of HTTP methods that will exclusively match this pattern and HTTP request. <emphasis>OPTIONAL.</emphasis>.
+                            e.g. MYAPP_USER_EMAIL
                         </para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term>excluded-methods</term>
+                    <term>keycloak-name</term>
                     <listitem>
                         <para>
-                            Array of strings of HTTP methods that will be ignored when match this pattern. <emphasis>OPTIONAL.</emphasis>.
+                            e.g. MYAPP_USER_ID
                         </para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term>deny</term>
+                    <term>keycloak-access-token</term>
                     <listitem>
                         <para>
-                            Deny all access to this URL pattern. <emphasis>OPTIONAL.</emphasis>.
-                        </para>
-                    </listitem>
-                </varlistentry>
-                <varlistentry>
-                    <term>permit</term>
-                    <listitem>
-                        <para>
-                            Permit all access without requiring authentication or a role mapping. <emphasis>OPTIONAL.</emphasis>.
-                        </para>
-                    </listitem>
-                </varlistentry>
-                <varlistentry>
-                    <term>authenticate</term>
-                    <listitem>
-                        <para>
-                            Require authentication for this pattern, but no role mapping. <emphasis>OPTIONAL.</emphasis>.
+                            e.g. MYAPP_ACCESS_TOKEN
                         </para>
                     </listitem>
                 </varlistentry>
             </variablelist>
-        </para>
-        </section>
+            </para>
         </section>
     </section>
     <section>
@@ -333,6 +389,7 @@ $ java -jar bin/launcher.jar [your-config.json]
                     </listitem>
                 </varlistentry>
             </variablelist>
+            Header field names can be configured using a map of <term>header-names</term> in configuration file.
         </para>
     </section>
 </chapter>

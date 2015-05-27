@@ -175,7 +175,7 @@ public class ProxyServerBuilder {
             }
 
             public ConstraintBuilder injectIfAuthenticated() {
-                semantic = SecurityInfo.EmptyRoleSemantic.INJECT_IF_AUTHENTICATED;
+                semantic = SecurityInfo.EmptyRoleSemantic.PERMIT_AND_INJECT_IF_AUTHENTICATED;
                 return this;
             }
 
@@ -383,7 +383,7 @@ public class ProxyServerBuilder {
                     if (constraint.isDeny()) constraintBuilder.deny();
                     if (constraint.isPermit()) constraintBuilder.permit();
                     if (constraint.isAuthenticate()) constraintBuilder.authenticate();
-                    if (constraint.isInjectIfAuthenticated()) constraintBuilder.injectIfAuthenticated();
+                    if (constraint.isPermitAndInject()) constraintBuilder.injectIfAuthenticated();
                     constraintBuilder.add();
                 }
             }

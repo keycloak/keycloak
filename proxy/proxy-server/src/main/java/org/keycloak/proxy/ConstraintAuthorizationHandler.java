@@ -45,7 +45,7 @@ public class ConstraintAuthorizationHandler implements HttpHandler {
         }
 
         if (match != null) {
-            if(SecurityInfo.EmptyRoleSemantic.INJECT_IF_AUTHENTICATED.equals(match.getEmptyRoleSemantic())) {
+            if(SecurityInfo.EmptyRoleSemantic.PERMIT_AND_INJECT_IF_AUTHENTICATED.equals(match.getEmptyRoleSemantic())) {
                 authenticatedRequest(account, exchange);
                 return;
             } else {
