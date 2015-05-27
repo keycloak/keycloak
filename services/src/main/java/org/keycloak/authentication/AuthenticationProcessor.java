@@ -1,9 +1,11 @@
 package org.keycloak.authentication;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -23,40 +25,18 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-
-//
-// setup
-// cookie: master, alternative
-// CERT_AUTH: alternative
-// UserPassword: alternative
-//    OTP: optional
-//    CAPTHA: required
-//
-// scenario: username password
-// * cookie, attempted
-// * cert, attempated
-// * usernamepassord, doesn't see form, sets challenge to form
-//
-//
-//
-//
-//
-//
-//
-
-
-
 public class AuthenticationProcessor {
+    protected static Logger logger = Logger.getLogger(AuthenticationProcessor.class);
     protected RealmModel realm;
     protected UserSessionModel userSession;
     protected ClientSessionModel clientSession;
     protected ClientConnection connection;
     protected UriInfo uriInfo;
     protected KeycloakSession session;
-    protected List<AuthenticationExecutionModel> executions;
     protected BruteForceProtector protector;
     protected EventBuilder eventBuilder;
     protected HttpRequest request;
+    protected String flowId;
 
 
     public static enum Status {
@@ -98,6 +78,50 @@ public class AuthenticationProcessor {
         return session;
     }
 
+    public AuthenticationProcessor setRealm(RealmModel realm) {
+        this.realm = realm;
+        return this;
+    }
+
+    public AuthenticationProcessor setClientSession(ClientSessionModel clientSession) {
+        this.clientSession = clientSession;
+        return this;
+    }
+
+    public AuthenticationProcessor setConnection(ClientConnection connection) {
+        this.connection = connection;
+        return this;
+    }
+
+    public AuthenticationProcessor setUriInfo(UriInfo uriInfo) {
+        this.uriInfo = uriInfo;
+        return this;
+    }
+
+    public AuthenticationProcessor setSession(KeycloakSession session) {
+        this.session = session;
+        return this;
+    }
+
+    public AuthenticationProcessor setProtector(BruteForceProtector protector) {
+        this.protector = protector;
+        return this;
+    }
+
+    public AuthenticationProcessor setEventBuilder(EventBuilder eventBuilder) {
+        this.eventBuilder = eventBuilder;
+        return this;
+    }
+
+    public AuthenticationProcessor setRequest(HttpRequest request) {
+        this.request = request;
+        return this;
+    }
+
+    public AuthenticationProcessor setFlowId(String flowId) {
+        this.flowId = flowId;
+        return this;
+    }
 
     private class Result implements AuthenticatorContext {
         AuthenticatorModel model;
@@ -261,35 +285,74 @@ public class AuthenticationProcessor {
 
     }
 
-    protected boolean isProcessed(UserSessionModel.AuthenticatorStatus status) {
+    protected boolean isProcessed(AuthenticationExecutionModel model) {
+        if (model.isDisabled()) return true;
+        UserSessionModel.AuthenticatorStatus status = clientSession.getAuthenticators().get(model.getId());
+        if (status == null) return false;
         return status == UserSessionModel.AuthenticatorStatus.SUCCESS || status == UserSessionModel.AuthenticatorStatus.SKIPPED
                 || status == UserSessionModel.AuthenticatorStatus.ATTEMPTED
                 || status == UserSessionModel.AuthenticatorStatus.SETUP_REQUIRED;
     }
 
-    public Response authenticate() {
+    public boolean isSuccessful(AuthenticationExecutionModel model) {
+        UserSessionModel.AuthenticatorStatus status = clientSession.getAuthenticators().get(model.getId());
+        if (status == null) return false;
+        return status == UserSessionModel.AuthenticatorStatus.SUCCESS;
+    }
+
+    public Response authenticate() throws AuthException {
         UserModel authUser = clientSession.getAuthenticatedUser();
         validateUser(authUser);
-        Response challenge = null;
-        Map<String, UserSessionModel.AuthenticatorStatus> previousAttempts = clientSession.getAuthenticators();
+        Response challenge = processFlow(flowId);
+        if (challenge != null) return challenge;
+        if (clientSession.getAuthenticatedUser() == null) {
+            throw new AuthException(Error.UNKNOWN_USER);
+        }
+        return authenticationComplete();
+
+    }
+
+    public Response processFlow(String flowId) {
+        AuthenticationFlowModel flow = realm.getAuthenticationFlowById(flowId);
+        if (flow == null) {
+            logger.error("Unknown flow to execute with");
+            throw new AuthException(Error.INTERNAL_ERROR);
+        }
+        List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(flowId);
+        if (executions == null) return null;
+        Response alternativeChallenge = null;
+        boolean alternativeSuccessful = false;
         for (AuthenticationExecutionModel model : executions) {
-            UserSessionModel.AuthenticatorStatus oldStatus = previousAttempts.get(model.getId());
-            if (isProcessed(oldStatus)) continue;
+            if (isProcessed(model)) {
+                if (!alternativeSuccessful && model.isAlternative() && isSuccessful(model)) alternativeSuccessful = true;
+                continue;
+            }
+            Result context = null;
+            if (model.isAlternative() && alternativeSuccessful) {
+                clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.SKIPPED);
+                continue;
+            }
+            if (model.isAutheticatorFlow()) {
+                Response flowResponse = processFlow(model.getAuthenticator());
+                if (flowResponse == null) {
+                    clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.SUCCESS);
+                    if (model.isAlternative()) alternativeSuccessful = true;
+                    continue;
+                } else {
+                    return flowResponse;
+                }
+
+            }
 
             AuthenticatorModel authenticatorModel = realm.getAuthenticatorById(model.getAuthenticator());
             AuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, authenticatorModel.getProviderId());
             Authenticator authenticator = factory.create(authenticatorModel);
+            UserModel authUser = clientSession.getAuthenticatedUser();
+
             if (authenticator.requiresUser() && authUser == null){
-                if ( authenticator.requiresUser()) {
-                    if (challenge != null) return challenge;
-                    throw new AuthException(Error.UNKNOWN_USER);
-                }
+                if (alternativeChallenge != null) return alternativeChallenge;
+                throw new AuthException(Error.UNKNOWN_USER);
             }
-            if (authUser != null && model.getRequirement() == AuthenticationExecutionModel.Requirement.ALTERNATIVE) {
-                clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.SKIPPED);
-                continue;
-            }
-            authUser = clientSession.getAuthenticatedUser();
 
             if (authenticator.requiresUser() && authUser != null && !authenticator.configuredFor(authUser)) {
                 if (model.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) {
@@ -303,19 +366,21 @@ public class AuthenticationProcessor {
                 }
                 continue;
             }
-            Result context = new Result(authenticatorModel, authenticator);
+            context = new Result(authenticatorModel, authenticator);
             authenticator.authenticate(context);
             Status result = context.getStatus();
             if (result == Status.SUCCESS){
                 clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.SUCCESS);
-                //if (model.isMasterAuthenticator()) return authenticationComplete();
+                if (model.isAlternative()) alternativeSuccessful = true;
                 continue;
             } else if (result == Status.FAILED) {
+                logUserFailure();
                 if (context.challenge != null) return context.challenge;
                 throw new AuthException(context.error);
             } else if (result == Status.CHALLENGE) {
-                if (model.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) return context.challenge;
-                if (challenge != null) challenge = context.challenge;
+                if (model.isRequired()) return context.challenge;
+                else if (model.isAlternative()) alternativeChallenge = context.challenge;
+                else clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.SKIPPED);
                 continue;
             } else if (result == Status.FAILURE_CHALLENGE) {
                 logUserFailure();
@@ -326,14 +391,7 @@ public class AuthenticationProcessor {
                 continue;
             }
         }
-
-        if (authUser == null) {
-            if (challenge != null) return challenge;
-            throw new AuthException(Error.UNKNOWN_USER);
-        }
-
-
-        return authenticationComplete();
+        return null;
     }
 
 
@@ -349,7 +407,7 @@ public class AuthenticationProcessor {
         }
     }
 
-    protected  Response authenticationComplete() {
+    protected Response authenticationComplete() {
         if (userSession == null) { // if no authenticator attached a usersession
             userSession = session.sessions().createUserSession(realm, clientSession.getAuthenticatedUser(), clientSession.getAuthenticatedUser().getUsername(), connection.getRemoteAddr(), "form", false, null, null);
             userSession.setState(UserSessionModel.State.LOGGING_IN);

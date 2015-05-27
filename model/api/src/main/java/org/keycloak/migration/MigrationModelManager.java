@@ -1,6 +1,7 @@
 package org.keycloak.migration;
 
 import org.jboss.logging.Logger;
+import org.keycloak.migration.migrators.MigrateTo1_3_0_Beta1;
 import org.keycloak.migration.migrators.MigrationTo1_2_0_CR1;
 import org.keycloak.models.KeycloakSession;
 
@@ -23,6 +24,12 @@ public class MigrationModelManager {
                 logger.debug("Migrating older model to 1.2.0.RC1 updates");
             }
             new MigrationTo1_2_0_CR1().migrate(session);
+        }
+        if (stored == null || stored.lessThan(MigrateTo1_3_0_Beta1.VERSION)) {
+            if (stored != null) {
+                logger.debug("Migrating older model to 1.3.0.Beta1 updates");
+            }
+            new MigrateTo1_3_0_Beta1().migrate(session);
         }
 
         model.setStoredVersion(MigrationModel.LATEST_VERSION);
