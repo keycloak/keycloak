@@ -78,6 +78,23 @@ public class AuthenticationExecutionModel {
     public enum Requirement {
         REQUIRED,
         OPTIONAL,
-        ALTERNATIVE
+        ALTERNATIVE,
+        DISABLED
+    }
+
+    public boolean isRequired() {
+        return requirement == Requirement.REQUIRED;
+    }
+    public boolean isOptional() {
+        return requirement == Requirement.OPTIONAL;
+    }
+    public boolean isAlternative() {
+        return requirement == Requirement.ALTERNATIVE;
+    }
+    public boolean isDisabled() {
+        return requirement == Requirement.DISABLED;
+    }
+    public boolean isEnabled() {
+        return requirement != Requirement.DISABLED;
     }
 }
