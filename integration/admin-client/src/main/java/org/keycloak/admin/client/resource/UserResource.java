@@ -51,6 +51,10 @@ public interface UserResource {
     public void resetPasswordEmail();
 
     @PUT
+    @Path("reset-password-email")
+    public void resetPasswordEmail(@QueryParam("client_id") String clientId);
+
+    @PUT
     @Path("send-verify-email")
     public void sendVerifyEmail();
 
