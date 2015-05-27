@@ -38,5 +38,6 @@
         <module>tomcat7-adapter-zip</module>
         <module>tomcat8-adapter-zip</module>
         <module>wildfly-adapter-zip</module>
+        <module>wf8-adapter</module>
     </modules>
 </project>

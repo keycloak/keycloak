@@ -18,7 +18,7 @@
                 <include>org/keycloak/keycloak-jboss-adapter-core/**</include>
                 <include>org/keycloak/keycloak-undertow-adapter/**</include>
                 <include>org/keycloak/keycloak-wildfly-adapter/**</include>
-                <include>org/keycloak/keycloak-subsystem/**</include>
+                <include>org/keycloak/keycloak-adapter-subsystem/**</include>
             </includes>
             <excludes>
                 <exclude>**/*.war</exclude>

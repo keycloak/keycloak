@@ -233,7 +233,7 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(fedMappers1.size() == 1);
         UserFederationMapperModel fullNameMapper = fedMappers1.iterator().next();
         Assert.assertEquals("FullNameMapper", fullNameMapper.getName());
-        Assert.assertEquals(FullNameLDAPFederationMapperFactory.ID, fullNameMapper.getFederationMapperType());
+        Assert.assertEquals(FullNameLDAPFederationMapperFactory.PROVIDER_ID, fullNameMapper.getFederationMapperType());
         Assert.assertEquals(ldap1.getId(), fullNameMapper.getFederationProviderId());
         Assert.assertEquals("cn", fullNameMapper.getConfig().get(FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE));
 

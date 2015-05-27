@@ -1,0 +1,78 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/user-federation">User Federation</a></li>
+        <li><a href="#/realms/{{realm.realm}}/user-federation/providers/{{provider.providerName}}/{{provider.id}}">{{provider.displayName|capitalize}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/user-federation/providers/{{provider.providerName}}/{{provider.id}}/mappers">User Federation Mappers</a></li>
+        <li class="active" data-ng-show="create">Create User Federation Mapper</li>
+        <li class="active" data-ng-hide="create">{{mapper.name}}</li>
+    </ol>
+
+    <h1 data-ng-hide="create"><strong>User Federation Mapper</strong> {{mapper.name}}</h1>
+    <h1 data-ng-show="create"><strong>Add User Federation Mapper</strong></h1>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <fieldset>
+            <div class="form-group clearfix" data-ng-show="!create">
+                <label class="col-md-2 control-label" for="mapperId">ID </label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mapperId" type="text" ng-model="mapper.id" readonly>
+                </div>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="name">Name <span class="required">*</span></label>
+                <div class="col-md-6">
+                    <input class="form-control" id="name" type="text" ng-model="mapper.name" data-ng-readonly="!create" required>
+                </div>
+                <kc-tooltip>Name of the mapper.</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="create">
+                <label class="col-md-2 control-label" for="mapperTypeCreate">Mapper Type</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="mapperTypeCreate"
+                                ng-model="mapperType"
+                                ng-options="mapperType.name for (mapperKey, mapperType) in mapperTypes">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{mapperType.helpText}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-hide="create">
+                <label class="col-md-2 control-label" for="mapperType">Mapper Type</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mapperType" type="text" ng-model="mapperType.name" data-ng-readonly="true">
+                </div>
+                <kc-tooltip>{{mapperType.helpText}}</kc-tooltip>
+            </div>
+            <div data-ng-repeat="option in mapperType.properties" class="form-group">
+                <label class="col-md-2 control-label">{{option.label}}</label>
+
+                <div class="col-sm-4" data-ng-hide="option.type == 'boolean' || option.type == 'List'">
+                    <input class="form-control" type="text" data-ng-model="mapper.config[ option.name ]">
+                </div>
+                <div class="col-sm-4" data-ng-show="option.type == 'boolean'">
+                    <input ng-model="mapper.config[ option.name ]" value="'true'" name="option.name" id="option.name" onoffswitchmodel />
+                </div>
+                <div class="col-sm-4" data-ng-show="option.type == 'List'">
+                    <select ng-model="mapper.config[ option.name ]" ng-options="data for data in option.defaultValue">
+                        <option value="" selected> Select one... </option>
+                    </select>
+                </div>
+                <kc-tooltip>{{option.helpText}}</kc-tooltip>
+            </div>
+
+        </fieldset>
+        <div class="pull-right form-actions" data-ng-show="create && access.manageRealm">
+            <button kc-cancel data-ng-click="cancel()">Cancel</button>
+            <button kc-save>Save</button>
+        </div>
+
+        <div class="pull-right form-actions" data-ng-show="!create && access.manageRealm">
+            <button kc-reset data-ng-show="changed">Clear changes</button>
+            <button kc-save  data-ng-show="changed">Save</button>
+            <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

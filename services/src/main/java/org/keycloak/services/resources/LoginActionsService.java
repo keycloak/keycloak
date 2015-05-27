@@ -892,6 +892,13 @@ public class LoginActionsService {
         ClientSessionModel clientSession = accessCode.getClientSession();
 
         String username = formData.getFirst("username");
+        if(username == null || username.isEmpty()) {
+            event.error(Errors.USERNAME_MISSING);
+            return session.getProvider(LoginFormsProvider.class)
+                    .setError(Messages.MISSING_USERNAME)
+                    .setClientSessionCode(accessCode.getCode())
+                    .createPasswordReset();
+        }
 
         ClientModel client = clientSession.getClient();
         if (client == null) {

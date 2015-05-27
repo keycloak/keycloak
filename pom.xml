@@ -1081,6 +1081,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-wf8-modules</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-server-overlay</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
@@ -1272,7 +1278,9 @@
         <profile>
             <id>jboss-earlyaccess-repository</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <property>
+                    <name>!no-jboss-ea-repo</name>
+                </property>
             </activation>
             <repositories>
                 <repository>
@@ -1303,6 +1311,7 @@
             <id>distribution</id>
             <modules>
                 <module>distribution</module>
+                <module>testsuite/integration-arquillian</module>
             </modules>
         </profile>
         <profile>
@@ -1310,6 +1319,7 @@
             <modules>
                 <module>docbook</module>
                 <module>distribution</module>
+                <module>testsuite/integration-arquillian</module>
             </modules>
             <build>
                 <plugins>

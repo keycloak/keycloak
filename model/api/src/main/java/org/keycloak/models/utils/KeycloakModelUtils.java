@@ -1,6 +1,7 @@
 package org.keycloak.models.utils;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.keycloak.constants.KerberosConstants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -8,6 +9,7 @@ import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationMapperModel;
@@ -348,5 +350,32 @@ public final class KeycloakModelUtils {
         mapperModel.setConfig(configMap);
 
         return mapperModel;
+    }
+
+    /**
+     * Automatically add "kerberos" to required realm credentials if it's supported by saved provider
+     *
+     * @param realm
+     * @param model
+     * @return true if kerberos credentials were added
+     */
+    public static boolean checkKerberosCredential(RealmModel realm, UserFederationProviderModel model) {
+        String allowKerberosCfg = model.getConfig().get(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION);
+        if (Boolean.valueOf(allowKerberosCfg)) {
+            boolean found = false;
+            List<RequiredCredentialModel> currentCreds = realm.getRequiredCredentials();
+            for (RequiredCredentialModel cred : currentCreds) {
+                if (cred.getType().equals(UserCredentialModel.KERBEROS)) {
+                    found = true;
+                }
+            }
+
+            if (!found) {
+                realm.addRequiredCredential(UserCredentialModel.KERBEROS);
+                return true;
+            }
+        }
+
+        return false;
     }
 }
