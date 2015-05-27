@@ -321,6 +321,17 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean isEditUsernameAllowed() {
+        return realm.isEditUsernameAllowed();
+    }
+
+    @Override
+    public void setEditUsernameAllowed(boolean editUsernameAllowed) {
+        realm.setEditUsernameAllowed(editUsernameAllowed);
+        em.flush();
+    }
+
+    @Override
     public int getNotBefore() {
         return realm.getNotBefore();
     }

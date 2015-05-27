@@ -1,16 +1,15 @@
 package org.keycloak.services.validation;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
-
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
+
+import javax.ws.rs.core.MultivaluedMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 public class Validation {
 
@@ -66,10 +65,17 @@ public class Validation {
         errors.add(new FormMessage(field, message));
     }
 
-
     public static List<FormMessage> validateUpdateProfileForm(MultivaluedMap<String, String> formData) {
+        return validateUpdateProfileForm(null, formData);
+    }
+
+    public static List<FormMessage> validateUpdateProfileForm(RealmModel realm, MultivaluedMap<String, String> formData) {
         List<FormMessage> errors = new ArrayList<>();
         
+        if (realm != null && realm.isEditUsernameAllowed() && isEmpty(formData.getFirst(FIELD_USERNAME))) {
+            addError(errors, FIELD_USERNAME, Messages.MISSING_USERNAME);
+        }
+
         if (isEmpty(formData.getFirst(FIELD_FIRST_NAME))) {
             addError(errors, FIELD_FIRST_NAME, Messages.MISSING_FIRST_NAME);
         }

@@ -59,6 +59,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setRememberMe(boolean rememberMe);
 
+    boolean isEditUsernameAllowed();
+
+    void setEditUsernameAllowed(boolean editUsernameAllowed);
+
     //--- brute force settings
     boolean isBruteForceProtected();
     void setBruteForceProtected(boolean value);

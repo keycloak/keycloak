@@ -255,6 +255,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public boolean isEditUsernameAllowed() {
+        return realm.isEditUsernameAllowed();
+    }
+
+    @Override
+    public void setEditUsernameAllowed(boolean editUsernameAllowed) {
+        realm.setEditUsernameAllowed(editUsernameAllowed);
+        updateRealm();
+    }
+
+    @Override
     public PasswordPolicy getPasswordPolicy() {
         if (passwordPolicy == null) {
             passwordPolicy = new PasswordPolicy(realm.getPasswordPolicy());

@@ -1,13 +1,13 @@
 package org.keycloak.testsuite.admin;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.ClientErrorException;
@@ -410,4 +410,78 @@ public class UserTest extends AbstractClientTest {
             Assert.assertEquals("invalidClientId not enabled", error.getErrorMessage());
         }
     }
+
+    @Test
+    public void updateUserWithNewUsername() {
+        switchEditUsernameAllowedOn();
+        String id = createUser();
+
+        UserResource user = realm.users().get(id);
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setUsername("user11");
+        user.update(userRep);
+
+        userRep = realm.users().get(id).toRepresentation();
+        assertEquals("user11", userRep.getUsername());
+    }
+
+    @Test
+    public void updateUserWithNewUsernameNotPossible() {
+        String id = createUser();
+
+        UserResource user = realm.users().get(id);
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setUsername("user11");
+        user.update(userRep);
+
+        userRep = realm.users().get(id).toRepresentation();
+        assertEquals("user1", userRep.getUsername());
+    }
+
+    @Test
+    public void updateUserWithNewUsernameAccessingViaOldUsername() {
+        switchEditUsernameAllowedOn();
+        createUser();
+
+        try {
+            UserResource user = realm.users().get("user1");
+            UserRepresentation userRep = user.toRepresentation();
+            userRep.setUsername("user1");
+            user.update(userRep);
+
+            realm.users().get("user11").toRepresentation();
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(404, e.getResponse().getStatus());
+        }
+    }
+
+    @Test
+    public void updateUserWithExistingUsername() {
+        switchEditUsernameAllowedOn();
+        createUser();
+
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setUsername("user2");
+        Response response = realm.users().create(userRep);
+        String createdId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        try {
+            UserResource user = realm.users().get(createdId);
+            userRep = user.toRepresentation();
+            userRep.setUsername("user1");
+            user.update(userRep);
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(409, e.getResponse().getStatus());
+        }
+    }
+
+    private void switchEditUsernameAllowedOn() {
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setEditUsernameAllowed(true);
+        realm.update(rep);
+    }
+
 }
