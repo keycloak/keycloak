@@ -78,6 +78,10 @@ public class AuthenticationManager {
         this.protector = protector;
     }
 
+    public BruteForceProtector getProtector() {
+        return protector;
+    }
+
     public static boolean isSessionValid(RealmModel realm, UserSessionModel userSession) {
         if (userSession == null) {
             logger.debug("No user session");

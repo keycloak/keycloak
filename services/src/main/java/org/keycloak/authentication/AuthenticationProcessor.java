@@ -279,6 +279,10 @@ public class AuthenticationProcessor {
             super(message, cause, enableSuppression, writableStackTrace);
             this.error = error;
         }
+
+        public Error getError() {
+            return error;
+        }
     }
 
     public void logUserFailure() {
@@ -389,6 +393,9 @@ public class AuthenticationProcessor {
                 if (model.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) throw new AuthException(Error.INVALID_CREDENTIALS);
                 clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.ATTEMPTED);
                 continue;
+            } else {
+                logger.error("Unknown result status");
+                throw new AuthException(Error.INTERNAL_ERROR);
             }
         }
         return null;
@@ -398,7 +405,7 @@ public class AuthenticationProcessor {
 
     public void validateUser(UserModel authenticatedUser) {
         if (authenticatedUser != null) {
-            if (!clientSession.getAuthenticatedUser().isEnabled()) throw new AuthException(Error.USER_DISABLED);
+            if (!authenticatedUser.isEnabled()) throw new AuthException(Error.USER_DISABLED);
         }
         if (realm.isBruteForceProtected()) {
             if (protector.isTemporarilyDisabled(session, realm, authenticatedUser.getUsername())) {

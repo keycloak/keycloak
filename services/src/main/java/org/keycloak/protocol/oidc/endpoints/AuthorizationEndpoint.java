@@ -5,12 +5,15 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.authenticators.AuthenticationFlow;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -244,6 +247,32 @@ public class AuthorizationEndpoint {
             return buildRedirectToIdentityProvider(idpHint, accessCode);
         }
 
+        return oldBrowserAuthentication(accessCode);
+    }
+
+    protected Response newBrowserAuthentication(String accessCode) {
+        String flowId = null;
+        for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
+            if (flow.getAlias().equals("browser")) {
+                flowId = flow.getId();
+                break;
+            }
+        }
+        AuthenticationProcessor processor = new AuthenticationProcessor();
+        processor.setClientSession(clientSession)
+                .setFlowId(flowId)
+                .setConnection(clientConnection)
+                .setEventBuilder(event)
+                .setProtector(authManager.getProtector())
+                .setRealm(realm)
+                .setSession(session)
+                .setUriInfo(uriInfo)
+                .setRequest(request);
+
+        return processor.authenticate();
+    }
+
+    protected Response oldBrowserAuthentication(String accessCode) {
         Response response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);
         if (response != null) return response;
 

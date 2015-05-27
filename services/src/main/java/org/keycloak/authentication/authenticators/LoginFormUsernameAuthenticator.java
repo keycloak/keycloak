@@ -1,6 +1,7 @@
 package org.keycloak.authentication.authenticators;
 
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorContext;
@@ -51,7 +52,9 @@ public class LoginFormUsernameAuthenticator implements Authenticator {
 
     protected boolean isActionUrl(AuthenticatorContext context) {
         URI expected = LoginActionsService.authenticationFormProcessor(context.getUriInfo()).build(context.getRealm().getName());
-        return expected.getPath().equals(context.getUriInfo().getPath());
+        String current = context.getUriInfo().getAbsolutePath().getPath();
+        String expectedPath = expected.getPath();
+        return expectedPath.equals(current);
 
     }
 
@@ -71,7 +74,11 @@ public class LoginFormUsernameAuthenticator implements Authenticator {
     protected LoginFormsProvider loginForm(AuthenticatorContext context) {
         ClientSessionCode code = new ClientSessionCode(context.getRealm(), context.getClientSession());
         code.setAction(ClientSessionModel.Action.AUTHENTICATE);
+        URI action = LoginActionsService.authenticationFormProcessor(context.getUriInfo())
+                .queryParam(OAuth2Constants.CODE, code.getCode())
+                .build(context.getRealm().getName());
         return context.getSession().getProvider(LoginFormsProvider.class)
+                    .setActionUri(action)
                     .setClientSessionCode(code.getCode());
     }
 
@@ -98,6 +105,7 @@ public class LoginFormUsernameAuthenticator implements Authenticator {
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
         if (invalidUser(context, user)) return;
         context.setUser(user);
+        context.success();
     }
 
     public boolean invalidUser(AuthenticatorContext context, UserModel user) {

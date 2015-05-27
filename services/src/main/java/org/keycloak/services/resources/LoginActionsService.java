@@ -24,6 +24,7 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.events.Details;
@@ -32,6 +33,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.RoleModel;
@@ -118,7 +120,7 @@ public class LoginActionsService {
     }
 
     public static UriBuilder authenticationFormProcessor(UriInfo uriInfo) {
-        return loginActionsBaseUrl(uriInfo).path("auth-form");
+        return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "authForm");
     }
 
     public static UriBuilder loginActionsBaseUrl(UriBuilder baseUriBuilder) {
@@ -268,6 +270,116 @@ public class LoginActionsService {
         return session.getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(clientSessionCode.getCode())
                 .createRegistration();
+    }
+
+        /**
+     * URL called after login page.  YOU SHOULD NEVER INVOKE THIS DIRECTLY!
+     *
+     * @param code
+     * @return
+     */
+    @Path("auth-form")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response authForm(@QueryParam("code") String code) {
+        event.event(EventType.LOGIN);
+        if (!checkSsl()) {
+            event.error(Errors.SSL_REQUIRED);
+            return ErrorPage.error(session, Messages.HTTPS_REQUIRED);
+        }
+
+        if (!realm.isEnabled()) {
+            event.error(Errors.REALM_DISABLED);
+            return ErrorPage.error(session, Messages.REALM_NOT_ENABLED);
+        }
+        ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
+        if (clientCode == null) {
+            event.error(Errors.INVALID_CODE);
+            return ErrorPage.error(session, Messages.INVALID_CODE);
+        }
+
+        ClientSessionModel clientSession = clientCode.getClientSession();
+        event.detail(Details.CODE_ID, clientSession.getId());
+
+        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE) || clientSession.getUserSession() != null) {
+            clientCode.setAction(ClientSessionModel.Action.AUTHENTICATE);
+            event.client(clientSession.getClient()).error(Errors.EXPIRED_CODE);
+            return session.getProvider(LoginFormsProvider.class)
+                    .setError(Messages.EXPIRED_CODE)
+                    .setClientSessionCode(clientCode.getCode())
+                    .createLogin();
+        }
+
+        ClientModel client = clientSession.getClient();
+        if (client == null) {
+            event.error(Errors.CLIENT_NOT_FOUND);
+            return ErrorPage.error(session, Messages.UNKNOWN_LOGIN_REQUESTER);
+        }
+        if (!client.isEnabled()) {
+            event.error(Errors.CLIENT_NOT_FOUND);
+            return ErrorPage.error(session, Messages.LOGIN_REQUESTER_NOT_ENABLED);
+        }
+
+        String flowId = null;
+        for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
+            if (flow.getAlias().equals("browser")) {
+                flowId = flow.getId();
+                break;
+            }
+        }
+        AuthenticationProcessor processor = new AuthenticationProcessor();
+        processor.setClientSession(clientSession)
+                .setFlowId(flowId)
+                .setConnection(clientConnection)
+                .setEventBuilder(event)
+                .setProtector(authManager.getProtector())
+                .setRealm(realm)
+                .setSession(session)
+                .setUriInfo(uriInfo)
+                .setRequest(request);
+
+        try {
+            return processor.authenticate();
+        } catch (AuthenticationProcessor.AuthException e) {
+            return handleError(e, code);
+        } catch (Exception e) {
+            logger.error("failed authentication", e);
+            return ErrorPage.error(session, Messages.UNEXPECTED_ERROR_HANDLING_RESPONSE);
+
+        }
+
+    }
+
+    protected Response handleError(AuthenticationProcessor.AuthException e, String code) {
+        logger.error("failed authentication: " + e.getError().toString(), e);
+        if (e.getError() == AuthenticationProcessor.Error.INVALID_USER) {
+            event.error(Errors.USER_NOT_FOUND);
+            return session.getProvider(LoginFormsProvider.class)
+                    .setError(Messages.INVALID_USER)
+                    .setClientSessionCode(code)
+                    .createLogin();
+
+        } else if (e.getError() == AuthenticationProcessor.Error.USER_DISABLED) {
+            event.error(Errors.USER_DISABLED);
+            return session.getProvider(LoginFormsProvider.class)
+                    .setError(Messages.ACCOUNT_DISABLED)
+                    .setClientSessionCode(code)
+                    .createLogin();
+
+        } else if (e.getError() == AuthenticationProcessor.Error.USER_TEMPORARILY_DISABLED) {
+            event.error(Errors.USER_TEMPORARILY_DISABLED);
+            return session.getProvider(LoginFormsProvider.class)
+                    .setError(Messages.ACCOUNT_TEMPORARILY_DISABLED)
+                    .setClientSessionCode(code)
+                    .createLogin();
+
+        } else {
+            event.error(Errors.INVALID_USER_CREDENTIALS);
+            return session.getProvider(LoginFormsProvider.class)
+                    .setError(Messages.INVALID_USER)
+                    .setClientSessionCode(code)
+                    .createLogin();
+        }
     }
 
     /**

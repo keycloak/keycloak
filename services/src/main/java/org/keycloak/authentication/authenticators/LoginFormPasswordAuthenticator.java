@@ -53,6 +53,7 @@ public class LoginFormPasswordAuthenticator extends LoginFormUsernameAuthenticat
             context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
+        context.success();
     }
 
     @Override
@@ -62,7 +63,7 @@ public class LoginFormPasswordAuthenticator extends LoginFormUsernameAuthenticat
 
     @Override
     public boolean configuredFor(UserModel user) {
-        return false;
+        return user.configuredForCredentialType(UserCredentialModel.PASSWORD);
     }
 
     @Override

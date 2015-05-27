@@ -58,6 +58,7 @@ public class OTPFormAuthenticator implements Authenticator {
             context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
+        context.success();
     }
 
 
