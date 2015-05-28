@@ -93,7 +93,7 @@ public class LDAPRoleMappingsTest {
 
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    RoleLDAPFederationMapper roleMapper = new RoleLDAPFederationMapper();
+                    RoleLDAPFederationMapper roleMapper = new RoleLDAPFederationMapper(null, session);
 
                     FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, RoleLDAPFederationMapper.Mode.LDAP_ONLY);
                     UserFederationMapperModel roleMapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "realmRolesMapper");
@@ -237,7 +237,7 @@ public class LDAPRoleMappingsTest {
             }
 
             // Add some role mappings directly into LDAP
-            RoleLDAPFederationMapper roleMapper = new RoleLDAPFederationMapper();
+            RoleLDAPFederationMapper roleMapper = new RoleLDAPFederationMapper(null, session);
             UserFederationMapperModel roleMapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "realmRolesMapper");
             LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
             LDAPObject maryLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "marykeycloak");
@@ -290,7 +290,7 @@ public class LDAPRoleMappingsTest {
             FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, RoleLDAPFederationMapper.Mode.IMPORT);
 
             // Add some role mappings directly in LDAP
-            RoleLDAPFederationMapper roleMapper = new RoleLDAPFederationMapper();
+            RoleLDAPFederationMapper roleMapper = new RoleLDAPFederationMapper(null, session);
             UserFederationMapperModel roleMapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "realmRolesMapper");
             LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
             LDAPObject robLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "robkeycloak");

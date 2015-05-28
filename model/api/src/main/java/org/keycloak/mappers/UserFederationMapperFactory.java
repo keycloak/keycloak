@@ -11,7 +11,7 @@ import org.keycloak.provider.ProviderFactory;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface UserFederationMapperFactory extends ProviderFactory<UserFederationMapper>, ConfiguredProvider {
+public interface UserFederationMapperFactory extends ProviderFactory<UserFederationMapper> {
 
     /**
      * Refers to providerName (type) of the federation provider, which this mapper can be used for. For example "ldap" or "kerberos"
@@ -31,6 +31,4 @@ public interface UserFederationMapperFactory extends ProviderFactory<UserFederat
      */
     void validateConfig(UserFederationMapperModel mapperModel) throws MapperConfigValidationException;
 
-    // TODO: Remove this and add realm to the method on ConfiguredProvider?
-    List<ProviderConfigProperty> getConfigProperties(RealmModel realm);
 }
