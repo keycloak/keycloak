@@ -119,18 +119,6 @@ public class RealmAdminResource {
     }
 
     /**
-     * Base path for managing clients under this realm.
-     *
-     * @return
-     */
-    @Path("clients-by-id")
-    public ClientsByIdResource getClientsById() {
-        ClientsByIdResource clientsResource = new ClientsByIdResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(clientsResource);
-        return clientsResource;
-    }
-
-    /**
      * base path for managing realm-level roles of this realm
      *
      * @return

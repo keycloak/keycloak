@@ -60,7 +60,7 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
     };
 
     $scope.addClientRole = function() {
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/clients-by-id/' + $scope.client.id,
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/clients/' + $scope.client.id,
                 $scope.selectedClientRoles).success(function() {
                 $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
                 $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
@@ -72,7 +72,7 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
     };
 
     $scope.deleteClientRole = function() {
-        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/clients-by-id/' + $scope.client.id,
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/clients/' + $scope.client.id,
             {data : $scope.selectedClientMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
                 $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});

@@ -230,7 +230,7 @@ module.controller('ClientCertificateImportCtrl', function($scope, $location, $ht
         for (var i = 0; i < $scope.files.length; i++) {
             var $file = $scope.files[i];
             $scope.upload = $upload.upload({
-                url: authUrl + '/admin/realms/' + realm.realm + '/clients-by-id/' + client.id + '/certificates/' + attribute + '/upload',
+                url: authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id + '/certificates/' + attribute + '/upload',
                 // method: POST or PUT,
                 // headers: {'headerKey': 'headerValue'}, withCredential: true,
                 data: {keystoreFormat: $scope.uploadKeyFormat,
@@ -290,7 +290,7 @@ module.controller('ClientCertificateExportCtrl', function($scope, $location, $ht
 
     $scope.download = function() {
         $http({
-            url: authUrl + '/admin/realms/' + realm.realm + '/clients-by-id/' + client.id + '/certificates/' + attribute + '/download',
+            url: authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id + '/certificates/' + attribute + '/download',
             method: 'POST',
             responseType: 'arraybuffer',
             data: $scope.jks,
@@ -906,7 +906,7 @@ module.controller('ClientScopeMappingCtrl', function($scope, $http, realm, clien
     };
 
     $scope.addRealmRole = function() {
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/clients-by-id/' + client.id + '/scope-mappings/realm',
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id + '/scope-mappings/realm',
                 $scope.selectedRealmRoles).success(function() {
                 updateRealmRoles();
                 Notifications.success("Scope mappings updated.");
@@ -914,7 +914,7 @@ module.controller('ClientScopeMappingCtrl', function($scope, $http, realm, clien
     };
 
     $scope.deleteRealmRole = function() {
-        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/clients-by-id/' + client.id +  '/scope-mappings/realm',
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id +  '/scope-mappings/realm',
             {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function () {
                 updateRealmRoles();
                 Notifications.success("Scope mappings updated.");
@@ -922,7 +922,7 @@ module.controller('ClientScopeMappingCtrl', function($scope, $http, realm, clien
     };
 
     $scope.addClientRole = function() {
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/clients-by-id/' + client.id +  '/scope-mappings/clients-by-id/' + $scope.targetClient.id,
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id +  '/scope-mappings/clients/' + $scope.targetClient.id,
                 $scope.selectedClientRoles).success(function () {
                 updateClientRoles();
                 Notifications.success("Scope mappings updated.");
@@ -930,7 +930,7 @@ module.controller('ClientScopeMappingCtrl', function($scope, $http, realm, clien
     };
 
     $scope.deleteClientRole = function() {
-        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/clients-by-id/' + client.id +  '/scope-mappings/clients-by-id/' + $scope.targetClient.id,
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id +  '/scope-mappings/clients/' + $scope.targetClient.id,
             {data : $scope.selectedClientMappings, headers : {"content-type" : "application/json"}}).success(function () {
                 updateClientRoles();
                 Notifications.success("Scope mappings updated.");
@@ -1151,7 +1151,7 @@ module.controller('AddBuiltinProtocolMapperCtrl', function($scope, realm, client
                 toAdd.push($scope.mappers[i]);
             }
         }
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/clients-by-id/' + client.id + '/protocol-mappers/add-models',
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id + '/protocol-mappers/add-models',
                    toAdd).success(function() {
                 Notifications.success("Mappers added");
                 $location.url('/realms/' + realm.realm + '/clients/' + client.id +  '/mappers');
