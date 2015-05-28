@@ -984,7 +984,10 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 mapper : function(UserFederationMapperLoader) {
                     return UserFederationMapperLoader();
-                }
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
+                },
             },
             controller : 'UserFederationMapperCtrl'
         })
@@ -1000,6 +1003,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 mapperTypes : function(UserFederationMapperTypesLoader) {
                     return UserFederationMapperTypesLoader();
                 },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
+                }
             },
             controller : 'UserFederationMapperCreateCtrl'
         })

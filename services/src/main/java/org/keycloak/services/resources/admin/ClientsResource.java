@@ -118,6 +118,9 @@ public class ClientsResource {
         if (clientModel == null) {
             throw new NotFoundException("Could not find client: " + name);
         }
+
+        session.getContext().setClient(clientModel);
+
         ClientResource clientResource = new ClientResource(realm, auth, clientModel, session, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(clientResource);
         return clientResource;

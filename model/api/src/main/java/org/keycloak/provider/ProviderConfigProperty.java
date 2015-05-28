@@ -8,6 +8,7 @@ public class ProviderConfigProperty {
     public static final String BOOLEAN_TYPE="boolean";
     public static final String STRING_TYPE="String";
     public static final String LIST_TYPE="List";
+    public static final String CLIENT_LIST_TYPE="ClientList";
 
     protected String name;
     protected String label;

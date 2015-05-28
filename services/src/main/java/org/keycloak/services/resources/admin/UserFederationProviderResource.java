@@ -171,7 +171,7 @@ public class UserFederationProviderResource {
                 rep.setCategory(mapperFactory.getDisplayCategory());
                 rep.setName(mapperFactory.getDisplayType());
                 rep.setHelpText(mapperFactory.getHelpText());
-                List<ProviderConfigProperty> configProperties = mapperFactory.getConfigProperties(realm);
+                List<ProviderConfigProperty> configProperties = mapperFactory.getConfigProperties();
                 for (ProviderConfigProperty prop : configProperties) {
                     ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
                     propRep.setName(prop.getName());
