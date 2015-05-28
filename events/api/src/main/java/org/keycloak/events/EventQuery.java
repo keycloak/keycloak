@@ -1,5 +1,6 @@
 package org.keycloak.events;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -15,9 +16,9 @@ public interface EventQuery {
 
     public EventQuery user(String userId);
 
-    public EventQuery fromDate(String fromDate);
+    public EventQuery fromDate(Date fromDate);
 
-    public EventQuery toDate(String toDate);
+    public EventQuery toDate(Date toDate);
 
     public EventQuery ipAddress(String ipAddress);
 

@@ -3,6 +3,7 @@ package org.keycloak.events.jpa;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -88,28 +89,14 @@ public class JpaAdminEventQuery implements AdminEventQuery {
     }
 
     @Override
-    public AdminEventQuery fromTime(String fromTime) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        Long from = null;
-        try {
-            from = df.parse(fromTime).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        predicates.add(cb.greaterThanOrEqualTo(root.<Long>get("time"), from));
+    public AdminEventQuery fromTime(Date fromTime) {
+        predicates.add(cb.greaterThanOrEqualTo(root.<Long>get("time"), fromTime.getTime()));
         return this;
     }
 
     @Override
-    public AdminEventQuery toTime(String toTime) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        Long to = null;
-        try {
-            to = df.parse(toTime).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        predicates.add(cb.lessThanOrEqualTo(root.<Long>get("time"), to));
+    public AdminEventQuery toTime(Date toTime) {
+        predicates.add(cb.lessThanOrEqualTo(root.<Long>get("time"), toTime.getTime()));
         return this;
     }
 

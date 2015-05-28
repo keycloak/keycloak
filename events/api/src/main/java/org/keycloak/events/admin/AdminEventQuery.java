@@ -1,5 +1,6 @@
 package org.keycloak.events.admin;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -71,18 +72,18 @@ public interface AdminEventQuery {
     /**
      * Search by events after the specified time
      * 
-     * @param fromTime time in millis
+     * @param fromTime from date
      * @return <code>this</code> for method chaining
      */
-    AdminEventQuery fromTime(String fromTime);
+    AdminEventQuery fromTime(Date fromTime);
 
     /**
      * Search by events before the specified time
      * 
-     * @param toTime time in millis
+     * @param toTime to date
      * @return <code>this</code> for method chaining
      */
-    AdminEventQuery toTime(String toTime);
+    AdminEventQuery toTime(Date toTime);
 
     /**
      * Used for pagination

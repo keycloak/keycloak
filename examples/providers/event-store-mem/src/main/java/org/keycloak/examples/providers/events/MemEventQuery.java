@@ -7,6 +7,7 @@ import org.keycloak.events.EventType;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -77,18 +78,10 @@ public class MemEventQuery implements EventQuery {
     }
     
     @Override
-    public EventQuery fromDate(String fromDate) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        Long from = null;
-        try {
-            from = df.parse(fromDate).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        
+    public EventQuery fromDate(Date fromDate) {
         Iterator<Event> itr = this.events.iterator();
         while (itr.hasNext()) {
-            if (!(itr.next().getTime() >= from)) {
+            if (!(itr.next().getTime() >= fromDate.getTime())) {
                 itr.remove();
             }
         }
@@ -96,18 +89,10 @@ public class MemEventQuery implements EventQuery {
     }
     
     @Override
-    public EventQuery toDate(String toDate) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        Long to = null;
-        try {
-            to = df.parse(toDate).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        
+    public EventQuery toDate(Date toDate) {
         Iterator<Event> itr = this.events.iterator();
         while (itr.hasNext()) {
-            if (!(itr.next().getTime() <= to)) {
+            if (!(itr.next().getTime() <= toDate.getTime())) {
                 itr.remove();
             }
         }

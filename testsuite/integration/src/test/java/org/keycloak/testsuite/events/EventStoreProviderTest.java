@@ -84,14 +84,25 @@ public class EventStoreProviderTest {
         String d3 = new String("2015-03-06");
         String d4 = new String("2015-03-07");
         
+        String d5 = new String("2015-03-01");
+        String d6 = new String("2015-03-03");
+        String d7 = new String("2015-03-08");
+        String d8 = new String("2015-03-10");
+        
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         Date date1 = null, date2 = null, date3 = null, date4 = null;
+        Date date5 = null, date6 = null, date7 = null, date8 = null;
         
         try {
             date1 = formatter.parse(d1);
             date2 = formatter.parse(d2);
             date3 = formatter.parse(d3);
             date4 = formatter.parse(d4);
+            
+            date5 = formatter.parse(d5);
+            date6 = formatter.parse(d6);
+            date7 = formatter.parse(d7);
+            date8 = formatter.parse(d8);
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -124,22 +135,22 @@ public class EventStoreProviderTest {
         Assert.assertEquals(1, eventStore.createQuery().type(EventType.UPDATE_PROFILE).getResultList().size());
         Assert.assertEquals(1, eventStore.createQuery().type(EventType.UPDATE_EMAIL).getResultList().size());
         
-        Assert.assertEquals(8, eventStore.createQuery().fromDate("2015-03-04").getResultList().size());
-        Assert.assertEquals(8, eventStore.createQuery().toDate("2015-03-07").getResultList().size());
+        Assert.assertEquals(8, eventStore.createQuery().fromDate(date1).getResultList().size());
+        Assert.assertEquals(8, eventStore.createQuery().toDate(date4).getResultList().size());
         
-        Assert.assertEquals(4, eventStore.createQuery().fromDate("2015-03-06").getResultList().size());
-        Assert.assertEquals(4, eventStore.createQuery().toDate("2015-03-05").getResultList().size());
+        Assert.assertEquals(4, eventStore.createQuery().fromDate(date3).getResultList().size());
+        Assert.assertEquals(4, eventStore.createQuery().toDate(date2).getResultList().size());
         
-        Assert.assertEquals(0, eventStore.createQuery().fromDate("2015-03-08").getResultList().size());
-        Assert.assertEquals(0, eventStore.createQuery().toDate("2015-03-03").getResultList().size());
+        Assert.assertEquals(0, eventStore.createQuery().fromDate(date7).getResultList().size());
+        Assert.assertEquals(0, eventStore.createQuery().toDate(date6).getResultList().size());
         
-        Assert.assertEquals(8, eventStore.createQuery().fromDate("2015-03-04").toDate("2015-03-07").getResultList().size());
-        Assert.assertEquals(6, eventStore.createQuery().fromDate("2015-03-05").toDate("2015-03-07").getResultList().size());
-        Assert.assertEquals(4, eventStore.createQuery().fromDate("2015-03-04").toDate("2015-03-05").getResultList().size());
-        Assert.assertEquals(4, eventStore.createQuery().fromDate("2015-03-06").toDate("2015-03-07").getResultList().size());
+        Assert.assertEquals(8, eventStore.createQuery().fromDate(date1).toDate(date4).getResultList().size());
+        Assert.assertEquals(6, eventStore.createQuery().fromDate(date2).toDate(date4).getResultList().size());
+        Assert.assertEquals(4, eventStore.createQuery().fromDate(date1).toDate(date2).getResultList().size());
+        Assert.assertEquals(4, eventStore.createQuery().fromDate(date3).toDate(date4).getResultList().size());
         
-        Assert.assertEquals(0, eventStore.createQuery().fromDate("2015-03-01").toDate("2015-03-03").getResultList().size());
-        Assert.assertEquals(0, eventStore.createQuery().fromDate("2015-03-08").toDate("2015-03-10").getResultList().size());
+        Assert.assertEquals(0, eventStore.createQuery().fromDate(date5).toDate(date6).getResultList().size());
+        Assert.assertEquals(0, eventStore.createQuery().fromDate(date7).toDate(date8).getResultList().size());
         
     }
     
