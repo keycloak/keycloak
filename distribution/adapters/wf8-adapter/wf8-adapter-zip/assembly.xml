@@ -19,6 +19,7 @@
                 <include>org/keycloak/keycloak-undertow-adapter/**</include>
                 <include>org/keycloak/keycloak-wildfly-adapter/**</include>
                 <include>org/keycloak/keycloak-wf8-subsystem/**</include>
+                <include>org/keycloak/keycloak-adapter-subsystem/**</include>
             </includes>
             <excludes>
                 <exclude>**/*.war</exclude>
