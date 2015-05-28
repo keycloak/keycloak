@@ -31,6 +31,4 @@ public interface UserFederationMapperFactory extends ProviderFactory<UserFederat
      */
     void validateConfig(UserFederationMapperModel mapperModel) throws MapperConfigValidationException;
 
-    // TODO: Remove this and add realm to the method on ConfiguredProvider?
-    List<ProviderConfigProperty> getConfigProperties(RealmModel realm);
 }

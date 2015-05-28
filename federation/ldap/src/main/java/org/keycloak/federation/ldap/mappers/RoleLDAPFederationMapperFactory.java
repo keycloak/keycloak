@@ -59,7 +59,10 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
                 "If true, then LDAP role mappings will be mapped to realm role mappings in Keycloak. Otherwise it will be mapped to client role mappings", ProviderConfigProperty.BOOLEAN_TYPE, "true");
         configProperties.add(useRealmRolesMappings);
 
-        // NOTE: ClientID will be computed dynamically from available clients
+        ProviderConfigProperty clientIdProperty = createConfigProperty(RoleLDAPFederationMapper.CLIENT_ID, "Client ID",
+                "Client ID of client to which LDAP role mappings will be mapped. Applicable just if 'Use Realm Roles Mapping' is false",
+                ProviderConfigProperty.CLIENT_LIST_TYPE, null);
+        configProperties.add(clientIdProperty);
     }
 
     @Override
@@ -78,18 +81,8 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
     }
 
     @Override
-    public List<ProviderConfigProperty> getConfigProperties(RealmModel realm) {
-        List<ProviderConfigProperty> props = new ArrayList<ProviderConfigProperty>(configProperties);
-
-        Map<String, ClientModel> clients = realm.getClientNameMap();
-        List<String> clientIds = new ArrayList<String>(clients.keySet());
-
-        ProviderConfigProperty clientIdProperty = createConfigProperty(RoleLDAPFederationMapper.CLIENT_ID, "Client ID",
-                "Client ID of client to which LDAP role mappings will be mapped. Applicable just if 'Use Realm Roles Mapping' is false",
-                ProviderConfigProperty.LIST_TYPE, clientIds);
-        props.add(clientIdProperty);
-
-        return props;
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configProperties;
     }
 
     @Override

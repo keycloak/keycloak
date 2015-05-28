@@ -47,7 +47,7 @@
             <div data-ng-repeat="option in mapperType.properties" class="form-group">
                 <label class="col-md-2 control-label">{{option.label}}</label>
 
-                <div class="col-sm-4" data-ng-hide="option.type == 'boolean' || option.type == 'List'">
+                <div class="col-sm-4" data-ng-show="option.type == 'String'">
                     <input class="form-control" type="text" data-ng-model="mapper.config[ option.name ]">
                 </div>
                 <div class="col-sm-4" data-ng-show="option.type == 'boolean'">
@@ -55,6 +55,11 @@
                 </div>
                 <div class="col-sm-4" data-ng-show="option.type == 'List'">
                     <select ng-model="mapper.config[ option.name ]" ng-options="data for data in option.defaultValue">
+                        <option value="" selected> Select one... </option>
+                    </select>
+                </div>
+                <div class="col-sm-4" data-ng-show="option.type == 'ClientList'">
+                    <select ng-model="mapper.config[ option.name ]" ng-options="client.clientId as client.clientId for client in clients">
                         <option value="" selected> Select one... </option>
                     </select>
                 </div>

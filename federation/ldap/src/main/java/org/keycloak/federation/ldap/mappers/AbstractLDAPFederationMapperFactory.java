@@ -36,11 +36,6 @@ public abstract class AbstractLDAPFederationMapperFactory implements UserFederat
     }
 
     @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        throw new IllegalStateException("Method not supported for this implementation");
-    }
-
-    @Override
     public void close() {
     }
 

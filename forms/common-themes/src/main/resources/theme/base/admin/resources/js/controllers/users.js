@@ -754,10 +754,11 @@ module.controller('UserFederationMapperListCtrl', function($scope, $location, No
 
 });
 
-module.controller('UserFederationMapperCtrl', function($scope, realm,  provider, mapperTypes, mapper, UserFederationMapper, Notifications, Dialog, $location) {
+module.controller('UserFederationMapperCtrl', function($scope, realm,  provider, mapperTypes, mapper, clients, UserFederationMapper, Notifications, Dialog, $location) {
     console.log('UserFederationMapperCtrl');
     $scope.realm = realm;
     $scope.provider = provider;
+    $scope.clients = clients;
     $scope.create = false;
     $scope.mapper = angular.copy(mapper);
     $scope.changed = false;
@@ -780,10 +781,10 @@ module.controller('UserFederationMapperCtrl', function($scope, realm,  provider,
             $location.url("/realms/" + realm.realm + '/user-federation/providers/' + provider.providerName + '/' + provider.id + '/mappers/' + mapper.id);
             Notifications.success("Your changes have been saved.");
         }, function(error) {
-            if (error.status == 400) {
+            if (error.status == 400 && error.data.error_description) {
                 Notifications.error('Error in configuration of mapper: ' + error.data.error_description);
             } else {
-                Notification.error('Unexpected error when creating mapper');
+                Notifications.error('Unexpected error when creating mapper');
             }
         });
     };
@@ -808,10 +809,11 @@ module.controller('UserFederationMapperCtrl', function($scope, realm,  provider,
 
 });
 
-module.controller('UserFederationMapperCreateCtrl', function($scope, realm, provider, mapperTypes, UserFederationMapper, Notifications, Dialog, $location) {
+module.controller('UserFederationMapperCreateCtrl', function($scope, realm, provider, mapperTypes, clients, UserFederationMapper, Notifications, Dialog, $location) {
     console.log('UserFederationMapperCreateCtrl');
     $scope.realm = realm;
     $scope.provider = provider;
+    $scope.clients = clients;
     $scope.create = true;
     $scope.mapper = { federationProviderDisplayName: provider.displayName, config: {}};
     $scope.mapperTypes = mapperTypes;
@@ -844,10 +846,10 @@ module.controller('UserFederationMapperCreateCtrl', function($scope, realm, prov
             $location.url('/realms/' + realm.realm +'/user-federation/providers/' + provider.providerName + '/' + provider.id + '/mappers/' + id);
             Notifications.success("Mapper has been created.");
         }, function(error) {
-            if (error.status == 400) {
+            if (error.status == 400 && error.data.error_description) {
                 Notifications.error('Error in configuration of mapper: ' + error.data.error_description);
             } else {
-                Notification.error('Unexpected error when creating mapper');
+                Notifications.error('Unexpected error when creating mapper');
             }
         });
     };

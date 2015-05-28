@@ -48,7 +48,7 @@ public class UserAttributeLDAPFederationMapperFactory extends AbstractLDAPFedera
     }
 
     @Override
-    public List<ProviderConfigProperty> getConfigProperties(RealmModel realm) {
+    public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
 

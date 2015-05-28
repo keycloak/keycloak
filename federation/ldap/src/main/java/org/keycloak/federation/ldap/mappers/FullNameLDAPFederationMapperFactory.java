@@ -46,7 +46,7 @@ public class FullNameLDAPFederationMapperFactory extends AbstractLDAPFederationM
     }
 
     @Override
-    public List<ProviderConfigProperty> getConfigProperties(RealmModel realm) {
+    public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
 
