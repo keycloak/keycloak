@@ -541,6 +541,7 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
             instance.config.debug = false;
             instance.config.useKerberosForPasswordAuthentication = false;
 
+            instance.config.authType = 'simple';
             instance.config.batchSizeForSync = DEFAULT_BATCH_SIZE;
             instance.config.searchScope = "1";
 
@@ -556,12 +557,16 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
             instance.config.debug = (instance.config.debug === 'true' || instance.config.debug === true);
             instance.config.useKerberosForPasswordAuthentication = (instance.config.useKerberosForPasswordAuthentication === 'true' || instance.config.useKerberosForPasswordAuthentication === true);
 
+            if (!instance.config.authType) {
+                instance.config.authType = 'simple';
+            }
             if (!instance.config.batchSizeForSync) {
                 instance.config.batchSizeForSync = DEFAULT_BATCH_SIZE;
             }
             if (!instance.config.searchScope) {
-                instance.config.searchScope = "1";
+                instance.config.searchScope = '1';
             }
+
             $scope.fullSyncEnabled = (instance.fullSyncPeriod && instance.fullSyncPeriod > 0);
             $scope.changedSyncEnabled = (instance.changedSyncPeriod && instance.changedSyncPeriod > 0);
         }
@@ -579,6 +584,11 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
         { "id": "tivoli", "name": "Tivoli" },
         { "id": "edirectory", "name": "Novell eDirectory" },
         { "id": "other", "name": "Other" }
+    ];
+
+    $scope.authTypes = [
+        { "id": "none", "name": "none" },
+        { "id": "simple", "name": "simple" }
     ];
 
     $scope.searchScopes = [

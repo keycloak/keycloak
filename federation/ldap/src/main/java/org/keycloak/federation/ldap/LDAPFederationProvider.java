@@ -106,7 +106,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
                 proxied = new UnsyncedLDAPUserModelDelegate(local, this);
         }
 
-        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(model.getId());
         for (UserFederationMapperModel mapperModel : federationMappers) {
             LDAPFederationMapper ldapMapper = getMapper(mapperModel);
             proxied = ldapMapper.proxy(mapperModel, this, ldapObject, proxied, realm);
@@ -263,7 +263,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
         UserModel imported = session.userStorage().addUser(realm, ldapUsername);
         imported.setEnabled(true);
 
-        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(getModel().getId());
         for (UserFederationMapperModel mapperModel : federationMappers) {
             LDAPFederationMapper ldapMapper = getMapper(mapperModel);
             ldapMapper.onImportUserFromLDAP(mapperModel, this, ldapUser, imported, realm, true);
@@ -399,7 +399,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
                 if ((fedModel.getId().equals(currentUser.getFederationLink())) && (ldapUser.getUuid().equals(currentUser.getAttribute(LDAPConstants.LDAP_ID)))) {
 
                     // Update keycloak user
-                    Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+                    Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(model.getId());
                     for (UserFederationMapperModel mapperModel : federationMappers) {
                         LDAPFederationMapper ldapMapper = getMapper(mapperModel);
                         ldapMapper.onImportUserFromLDAP(mapperModel, this, ldapUser, currentUser, realm, false);

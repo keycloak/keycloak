@@ -119,16 +119,29 @@
                 </kc-tooltip>
             </div>
             <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="authType"><span class="required">*</span> Authentication Type</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="authType"
+                                ng-model="instance.config.authType"
+                                ng-options="authType.id as authType.name for authType in authTypes"
+                                required>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>LDAP Authentication type. Right now just 'none' (anonymous LDAP authentication) or 'simple' (Bind credential + Bind password authentication) mechanisms are available</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-hide="instance.config.authType == 'none'">
                 <label class="col-md-2 control-label" for="ldapBindDn"><span class="required">*</span> Bind DN</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="ldapBindDn" type="text" ng-model="instance.config.bindDn" placeholder="LDAP Bind DN" required>
+                    <input class="form-control" id="ldapBindDn" type="text" ng-model="instance.config.bindDn" placeholder="LDAP Bind DN" data-ng-required="instance.config.authType != 'none'">
                 </div>
                 <kc-tooltip>DN of LDAP admin, which will be used by Keycloak to access LDAP server</kc-tooltip>
             </div>
-            <div class="form-group clearfix">
+            <div class="form-group clearfix" data-ng-hide="instance.config.authType == 'none'">
                 <label class="col-md-2 control-label" for="ldapBindCredential"><span class="required">*</span> Bind Credential</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="ldapBindCredential" type="password" ng-model="instance.config.bindCredential" placeholder="LDAP Bind Credentials" required>
+                    <input class="form-control" id="ldapBindCredential" type="password" ng-model="instance.config.bindCredential" placeholder="LDAP Bind Credentials" data-ng-required="instance.config.authType != 'none'">
                 </div>
                 <kc-tooltip>Password of LDAP admin</kc-tooltip>
                 <div class="col-sm-4" data-ng-show="access.manageRealm">

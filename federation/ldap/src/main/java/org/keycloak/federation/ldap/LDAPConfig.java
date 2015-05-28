@@ -12,7 +12,6 @@ import javax.naming.directory.SearchControls;
 
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -37,8 +36,12 @@ public class LDAPConfig {
     }
 
     public String getAuthType() {
-        // hardcoded for now
-        return "simple";
+        String value = config.get(LDAPConstants.AUTH_TYPE);
+        if (value == null) {
+            return LDAPConstants.AUTH_TYPE_SIMPLE;
+        } else {
+            return value;
+        }
     }
 
     public String getSecurityProtocol() {
@@ -70,7 +73,7 @@ public class LDAPConfig {
         String[] objectClasses = objClassesStr.split(",");
 
         // Trim them
-        Set<String> userObjClasses = new HashSet<String>();
+        Set<String> userObjClasses = new HashSet<>();
         for (int i=0 ; i<objectClasses.length ; i++) {
             userObjClasses.add(objectClasses[i].trim());
         }
