@@ -14,7 +14,7 @@
 
     <artifactId>keycloak-as7-modules</artifactId>
 
-    <name>Keycloak JBoss AS 7 Modules</name>
+    <name>Keycloak AS7 / JBoss EAP 6 Modules</name>
     <packaging>pom</packaging>
     <dependencies>
         <dependency>

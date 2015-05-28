@@ -6,7 +6,7 @@
         <version>1.3.0.Final-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <name>Keycloak AS7 / EAP6 Integration</name>
+    <name>Keycloak AS7 / JBoss EAP 6 Integration</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
