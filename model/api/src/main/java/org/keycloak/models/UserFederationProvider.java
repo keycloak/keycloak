@@ -7,7 +7,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * SPI for plugging in federation storage.
+ * SPI for plugging in federation storage.  This class is instantiated once per session/request and is closed after
+ * the session/request is finished.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -72,7 +73,8 @@ public interface UserFederationProvider extends Provider {
     boolean removeUser(RealmModel realm, UserModel user);
 
     /**
-     * Required to import into local storage any user found.
+     * Keycloak will search for user in local storage first.  If it can't find the UserModel is local storage,
+     * it will call this method.  You are required to import the returned UserModel into local storage.
      *
      * @param realm
      * @param username
@@ -81,7 +83,8 @@ public interface UserFederationProvider extends Provider {
     UserModel getUserByUsername(RealmModel realm, String username);
 
     /**
-     * Required to import into local storage any user found.
+     * Keycloak will search for user in local storage first.  If it can't find the UserModel is local storage,
+     * it will call this method.  You are required to import the returned UserModel into local storage.
      *
      * @param realm
      * @param email
@@ -90,7 +93,8 @@ public interface UserFederationProvider extends Provider {
     UserModel getUserByEmail(RealmModel realm, String email);
 
     /**
-     * Required to import into local storage any user found.  Must not import if user already exists in KeycloakSession.userStorage()!
+     * Keycloak does not search in local storage first before calling this method.  The implementation must check
+     * to see if user is already in local storage (KeycloakSession.userStorage()) before doing an import.
      * Currently only attributes USERNAME, EMAIL, FIRST_NAME and LAST_NAME will be used.
      *
      * @param attributes
@@ -115,7 +119,8 @@ public interface UserFederationProvider extends Provider {
     void preRemove(RealmModel realm, RoleModel role);
 
     /**
-     * Is the Keycloak UserModel still valid and/or existing in federated storage?
+     * Is the Keycloak UserModel still valid and/or existing in federated storage?  Keycloak may call this method
+     * in various user operations.  The local storage may be deleted if this method returns false.
      *
      * @param local
      * @return
@@ -158,6 +163,12 @@ public interface UserFederationProvider extends Provider {
      */
     CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel credential);
 
+    /**
+     * This method is called at the end of requests.
+     *
+     */
     void close();
+
+
 
 }
