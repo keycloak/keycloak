@@ -3,6 +3,7 @@ package org.keycloak.examples.providers.events;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -112,18 +113,10 @@ public class MemAdminEventQuery implements AdminEventQuery {
     }
 
     @Override
-    public AdminEventQuery fromTime(String fromTime) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        Long from = null;
-        try {
-            from = df.parse(fromTime).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        
+    public AdminEventQuery fromTime(Date fromTime) {
         Iterator<AdminEvent> itr = this.adminEvents.iterator();
         while (itr.hasNext()) {
-            if (!(itr.next().getTime() >= from)) {
+            if (!(itr.next().getTime() >= fromTime.getTime())) {
                 itr.remove();
             }
         }
@@ -131,18 +124,10 @@ public class MemAdminEventQuery implements AdminEventQuery {
     }
 
     @Override
-    public AdminEventQuery toTime(String toTime) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        Long to = null;
-        try {
-            to = df.parse(toTime).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        
+    public AdminEventQuery toTime(Date toTime) {
         Iterator<AdminEvent> itr = this.adminEvents.iterator();
         while (itr.hasNext()) {
-            if (!(itr.next().getTime() <= to)) {
+            if (!(itr.next().getTime() <= toTime.getTime())) {
                 itr.remove();
             }
         }

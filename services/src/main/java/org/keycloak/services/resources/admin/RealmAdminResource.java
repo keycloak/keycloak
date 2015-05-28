@@ -35,6 +35,7 @@ import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.timer.TimerProvider;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -50,6 +51,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -416,10 +421,25 @@ public class RealmAdminResource {
         }
         
         if(dateFrom != null) {
-            query.fromDate(dateFrom);
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+            Date from = null;
+            try {
+                from = df.parse(dateFrom);
+            } catch (ParseException e) {
+                throw new BadRequestException("Invalid value for 'Date(From)', excepted format is yyyy-MM-dd");
+            }
+            query.fromDate(from);
         }
+        
         if(dateTo != null) {
-            query.toDate(dateTo);
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+            Date to = null;
+            try {
+                to = df.parse(dateTo);
+            } catch (ParseException e) {
+                throw new BadRequestException("Invalid value for 'Date(To)', excepted format is yyyy-MM-dd");
+            }
+            query.toDate(to);
         }
 
         if (ipAddress != null) {
@@ -494,10 +514,25 @@ public class RealmAdminResource {
         }
         
         if(dateFrom != null) {
-            query.fromTime(dateFrom);
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+            Date from = null;
+            try {
+                from = df.parse(dateFrom);
+            } catch (ParseException e) {
+                throw new BadRequestException("Invalid value for 'Date(From)', excepted format is yyyy-MM-dd");
+            }
+            query.fromTime(from);
         }
+        
         if(dateTo != null) {
-            query.toTime(dateTo);
+            SimpleDateFormat df = new SimpleDateFormat("Invalid value for 'Date(To)', excepted format is yyyy-MM-dd");
+            Date to = null;
+            try {
+                to = df.parse(dateTo);
+            } catch (ParseException e) {
+                throw new BadRequestException("An unexpected server error has occurred");
+            }
+            query.toTime(to);
         }
 
         if (firstResult != null) {
