@@ -56,4 +56,12 @@ public interface UserFederationProviderFactory extends ProviderFactory<UserFeder
      * @param lastSync
      */
     UserFederationSyncResult syncChangedUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model, Date lastSync);
+
+    /**
+     * This method is never called and is only an artifact of ProviderFactory.  Returning null with no implementation is recommended.
+     * @param session
+     * @return
+     */
+    @Override
+    UserFederationProvider create(KeycloakSession session);
 }
