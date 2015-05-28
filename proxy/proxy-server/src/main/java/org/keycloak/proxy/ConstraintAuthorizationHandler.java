@@ -15,7 +15,13 @@ import java.util.Map;
  */
 public class ConstraintAuthorizationHandler implements HttpHandler {
 
+    public static final String KEYCLOAK_SUBJECT = "KEYCLOAK_SUBJECT";
+    public static final String KEYCLOAK_USERNAME = "KEYCLOAK_USERNAME";
+    public static final String KEYCLOAK_EMAIL = "KEYCLOAK_EMAIL";
+    public static final String KEYCLOAK_NAME = "KEYCLOAK_NAME";
+    public static final String KEYCLOAK_ACCESS_TOKEN = "KEYCLOAK_ACCESS_TOKEN";
     private final Map<String, HttpString> httpHeaderNames;
+
     protected HttpHandler next;
     protected String errorPage;
     protected boolean sendAccessToken;
@@ -26,11 +32,11 @@ public class ConstraintAuthorizationHandler implements HttpHandler {
         this.sendAccessToken = sendAccessToken;
 
         this.httpHeaderNames = new HashMap<>();
-        this.httpHeaderNames.put("KEYCLOAK_SUBJECT", new HttpString(headerNames.getOrDefault("keycloak-subject", "KEYCLOAK_SUBJECT")));
-        this.httpHeaderNames.put("KEYCLOAK_USERNAME", new HttpString(headerNames.getOrDefault("keycloak-username", "KEYCLOAK_USERNAME")));
-        this.httpHeaderNames.put("KEYCLOAK_EMAIL", new HttpString(headerNames.getOrDefault("keycloak-email", "KEYCLOAK_EMAIL")));
-        this.httpHeaderNames.put("KEYCLOAK_NAME", new HttpString(headerNames.getOrDefault("keycloak-name", "KEYCLOAK_NAME")));
-        this.httpHeaderNames.put("KEYCLOAK_ACCESS_TOKEN", new HttpString(headerNames.getOrDefault("keycloak-access-token", "KEYCLOAK_ACCESS_TOKEN")));
+        this.httpHeaderNames.put(KEYCLOAK_SUBJECT, new HttpString(headerNames.getOrDefault("keycloak-subject", KEYCLOAK_SUBJECT)));
+        this.httpHeaderNames.put(KEYCLOAK_SUBJECT, new HttpString(headerNames.getOrDefault("keycloak-username", KEYCLOAK_USERNAME)));
+        this.httpHeaderNames.put(KEYCLOAK_EMAIL, new HttpString(headerNames.getOrDefault("keycloak-email", KEYCLOAK_EMAIL)));
+        this.httpHeaderNames.put(KEYCLOAK_NAME, new HttpString(headerNames.getOrDefault("keycloak-name", KEYCLOAK_NAME)));
+        this.httpHeaderNames.put(KEYCLOAK_ACCESS_TOKEN, new HttpString(headerNames.getOrDefault("keycloak-access-token", KEYCLOAK_ACCESS_TOKEN)));
     }
 
     @Override
@@ -76,20 +82,20 @@ public class ConstraintAuthorizationHandler implements HttpHandler {
             IDToken idToken = account.getKeycloakSecurityContext().getToken();
             if (idToken == null) return;
             if (idToken.getSubject() != null) {
-                exchange.getRequestHeaders().put(httpHeaderNames.get("KEYCLOAK_SUBJECT"), idToken.getSubject());
+                exchange.getRequestHeaders().put(httpHeaderNames.get(KEYCLOAK_SUBJECT), idToken.getSubject());
             }
 
             if (idToken.getPreferredUsername() != null) {
-                exchange.getRequestHeaders().put(httpHeaderNames.get("KEYCLOAK_USERNAME"), idToken.getPreferredUsername());
+                exchange.getRequestHeaders().put(httpHeaderNames.get(KEYCLOAK_USERNAME), idToken.getPreferredUsername());
             }
             if (idToken.getEmail() != null) {
-                exchange.getRequestHeaders().put(httpHeaderNames.get("KEYCLOAK_EMAIL"), idToken.getEmail());
+                exchange.getRequestHeaders().put(httpHeaderNames.get(KEYCLOAK_EMAIL), idToken.getEmail());
             }
             if (idToken.getName() != null) {
-                exchange.getRequestHeaders().put(httpHeaderNames.get("KEYCLOAK_NAME"), idToken.getName());
+                exchange.getRequestHeaders().put(httpHeaderNames.get(KEYCLOAK_NAME), idToken.getName());
             }
             if (sendAccessToken) {
-                exchange.getRequestHeaders().put(httpHeaderNames.get("KEYCLOAK_ACCESS_TOKEN"), account.getKeycloakSecurityContext().getTokenString());
+                exchange.getRequestHeaders().put(httpHeaderNames.get(KEYCLOAK_ACCESS_TOKEN), account.getKeycloakSecurityContext().getTokenString());
             }
         }
         next.handleRequest(exchange);
