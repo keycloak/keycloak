@@ -1,17 +1,13 @@
 package org.keycloak.federation.ldap.mappers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import org.keycloak.mappers.MapperConfigValidationException;
 import org.keycloak.mappers.UserFederationMapper;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
@@ -22,7 +18,7 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
 
     public static final String PROVIDER_ID = "role-ldap-mapper";
 
-    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     static {
         ProviderConfigProperty rolesDn = createConfigProperty(RoleLDAPFederationMapper.ROLES_DN, "LDAP Roles DN",
@@ -44,7 +40,7 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
                 ProviderConfigProperty.STRING_TYPE, LDAPConstants.GROUP_OF_NAMES);
         configProperties.add(roleObjectClasses);
 
-        List<String> modes = new LinkedList<String>();
+        List<String> modes = new LinkedList<>();
         for (RoleLDAPFederationMapper.Mode mode : RoleLDAPFederationMapper.Mode.values()) {
             modes.add(mode.toString());
         }
@@ -63,7 +59,7 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
     }
 
     @Override
-    public String getHelpText() {
+    protected String getHelpText() {
         return "Used to map role mappings of roles from some LDAP DN to Keycloak role mappings of either realm roles or client roles of particular client";
     }
 
@@ -78,18 +74,8 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
     }
 
     @Override
-    public List<ProviderConfigProperty> getConfigProperties(RealmModel realm) {
-        List<ProviderConfigProperty> props = new ArrayList<ProviderConfigProperty>(configProperties);
-
-        Map<String, ClientModel> clients = realm.getClientNameMap();
-        List<String> clientIds = new ArrayList<String>(clients.keySet());
-
-        ProviderConfigProperty clientIdProperty = createConfigProperty(RoleLDAPFederationMapper.CLIENT_ID, "Client ID",
-                "Client ID of client to which LDAP role mappings will be mapped. Applicable just if 'Use Realm Roles Mapping' is false",
-                ProviderConfigProperty.LIST_TYPE, clientIds);
-        props.add(clientIdProperty);
-
-        return props;
+    protected List<ProviderConfigProperty> getBaseConfigProperties() {
+        return configProperties;
     }
 
     @Override
@@ -113,6 +99,6 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
 
     @Override
     public UserFederationMapper create(KeycloakSession session) {
-        return new RoleLDAPFederationMapper();
+        return new RoleLDAPFederationMapper(this, session);
     }
 }

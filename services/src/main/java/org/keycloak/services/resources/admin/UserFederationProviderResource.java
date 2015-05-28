@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -158,20 +159,20 @@ public class UserFederationProviderResource {
     @NoCache
     public Map<String, UserFederationMapperTypeRepresentation> getMapperTypes() {
         this.auth.requireView();
-        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        Map<String, UserFederationMapperTypeRepresentation> types = new HashMap<>();
-        List<ProviderFactory> factories = sessionFactory.getProviderFactories(UserFederationMapper.class);
+        Set<UserFederationMapper> mappers = session.getAllProviders(UserFederationMapper.class);
 
-        for (ProviderFactory factory : factories) {
-            UserFederationMapperFactory mapperFactory = (UserFederationMapperFactory)factory;
+        Map<String, UserFederationMapperTypeRepresentation> types = new HashMap<>();
+
+        for (UserFederationMapper mapper : mappers) {
+            UserFederationMapperFactory mapperFactory = mapper.getFactory();
             if (mapperFactory.getFederationProviderType().equals(this.federationProviderModel.getProviderName())) {
 
                 UserFederationMapperTypeRepresentation rep = new UserFederationMapperTypeRepresentation();
                 rep.setId(mapperFactory.getId());
                 rep.setCategory(mapperFactory.getDisplayCategory());
                 rep.setName(mapperFactory.getDisplayType());
-                rep.setHelpText(mapperFactory.getHelpText());
-                List<ProviderConfigProperty> configProperties = mapperFactory.getConfigProperties(realm);
+                rep.setHelpText(mapper.getHelpText());
+                List<ProviderConfigProperty> configProperties = mapper.getConfigProperties();
                 for (ProviderConfigProperty prop : configProperties) {
                     ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
                     propRep.setName(prop.getName());

@@ -7,7 +7,6 @@ import org.keycloak.mappers.MapperConfigValidationException;
 import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
@@ -18,7 +17,7 @@ public class FullNameLDAPFederationMapperFactory extends AbstractLDAPFederationM
 
     public static final String PROVIDER_ID =  "full-name-ldap-mapper";
 
-    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     static {
         ProviderConfigProperty userModelAttribute = createConfigProperty(FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, "LDAP Full Name Attribute",
@@ -31,7 +30,7 @@ public class FullNameLDAPFederationMapperFactory extends AbstractLDAPFederationM
     }
 
     @Override
-    public String getHelpText() {
+    protected String getHelpText() {
         return "Used to map full-name of user from single attribute in LDAP (usually 'cn' attribute) to firstName and lastName attributes of UserModel in Keycloak DB";
     }
 
@@ -46,7 +45,7 @@ public class FullNameLDAPFederationMapperFactory extends AbstractLDAPFederationM
     }
 
     @Override
-    public List<ProviderConfigProperty> getConfigProperties(RealmModel realm) {
+    protected List<ProviderConfigProperty> getBaseConfigProperties() {
         return configProperties;
     }
 
@@ -62,6 +61,6 @@ public class FullNameLDAPFederationMapperFactory extends AbstractLDAPFederationM
 
     @Override
     public UserFederationMapper create(KeycloakSession session) {
-        return new FullNameLDAPFederationMapper();
+        return new FullNameLDAPFederationMapper(this);
     }
 }

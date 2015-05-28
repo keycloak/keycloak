@@ -1,18 +1,13 @@
 package org.keycloak.federation.ldap.mappers;
 
-import java.io.Serializable;
 import java.lang.reflect.Method;
-import java.util.List;
 import java.util.Map;
 
 import org.keycloak.federation.ldap.LDAPFederationProvider;
-import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
-import org.keycloak.mappers.UserFederationMapper;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
@@ -20,7 +15,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.reflection.Property;
 import org.keycloak.models.utils.reflection.PropertyCriteria;
 import org.keycloak.models.utils.reflection.PropertyQueries;
-import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -48,6 +42,9 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
     public static final String LDAP_ATTRIBUTE = "ldap.attribute";
     public static final String READ_ONLY = "read.only";
 
+    public UserAttributeLDAPFederationMapper(AbstractLDAPFederationMapperFactory factory) {
+        super(factory);
+    }
 
     @Override
     public void onImportUserFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {

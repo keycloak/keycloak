@@ -30,6 +30,10 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
     public static final String LDAP_FULL_NAME_ATTRIBUTE = "ldap.full.name.attribute";
     public static final String READ_ONLY = "read.only";
 
+    public FullNameLDAPFederationMapper(AbstractLDAPFederationMapperFactory factory) {
+        super(factory);
+    }
+
     @Override
     public void onImportUserFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
         String ldapFullNameAttrName = getLdapFullNameAttrName(mapperModel);
@@ -104,7 +108,7 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
         // Change conditions and compute condition for fullName from the conditions for firstName and lastName. Right now just "equal" condition is supported
         EqualCondition firstNameCondition = null;
         EqualCondition lastNameCondition = null;
-        Set<Condition> conditionsCopy = new HashSet<Condition>(query.getConditions());
+        Set<Condition> conditionsCopy = new HashSet<>(query.getConditions());
         for (Condition condition : conditionsCopy) {
             QueryParameter param = condition.getParameter();
             if (param != null) {
@@ -125,12 +129,12 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
         }
 
 
-        String fullName = null;
+        String fullName;
         if (firstNameCondition != null && lastNameCondition != null) {
             fullName = firstNameCondition.getValue() + " " + lastNameCondition.getValue();
         } else if (firstNameCondition != null) {
             fullName = (String) firstNameCondition.getValue();
-        } else if (firstNameCondition != null) {
+        } else if (lastNameCondition != null) {
             fullName = (String) lastNameCondition.getValue();
         } else {
             return;

@@ -6,7 +6,6 @@ import java.util.List;
 import org.keycloak.mappers.MapperConfigValidationException;
 import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
@@ -16,7 +15,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 public class UserAttributeLDAPFederationMapperFactory extends AbstractLDAPFederationMapperFactory {
 
     public static final String PROVIDER_ID = "user-attribute-ldap-mapper";
-    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     static {
         ProviderConfigProperty userModelAttribute = createConfigProperty(UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, "User Model Attribute",
@@ -33,7 +32,7 @@ public class UserAttributeLDAPFederationMapperFactory extends AbstractLDAPFedera
     }
 
     @Override
-    public String getHelpText() {
+    protected String getHelpText() {
         return "Used to map single attribute from LDAP user to attribute of UserModel in Keycloak DB";
     }
 
@@ -48,7 +47,7 @@ public class UserAttributeLDAPFederationMapperFactory extends AbstractLDAPFedera
     }
 
     @Override
-    public List<ProviderConfigProperty> getConfigProperties(RealmModel realm) {
+    protected List<ProviderConfigProperty> getBaseConfigProperties() {
         return configProperties;
     }
 
@@ -65,6 +64,6 @@ public class UserAttributeLDAPFederationMapperFactory extends AbstractLDAPFedera
 
     @Override
     public UserFederationMapper create(KeycloakSession session) {
-        return new UserAttributeLDAPFederationMapper();
+        return new UserAttributeLDAPFederationMapper(this);
     }
 }

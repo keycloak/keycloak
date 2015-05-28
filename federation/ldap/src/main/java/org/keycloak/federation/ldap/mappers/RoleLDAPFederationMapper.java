@@ -1,9 +1,11 @@
 package org.keycloak.federation.ldap.mappers;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -18,6 +20,7 @@ import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
@@ -27,6 +30,7 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
+import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * Map realm roles or roles of particular client to LDAP roles
@@ -61,7 +65,35 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     // List of IDs of UserFederationMapperModels where syncRolesFromLDAP was already called in this KeycloakSession. This is to improve performance
     // TODO: Rather address this with caching at LDAPIdentityStore level?
-    private Set<String> rolesSyncedModels = new TreeSet<String>();
+    private final Set<String> rolesSyncedModels = new TreeSet<>();
+
+    private final KeycloakSession session;
+
+    public RoleLDAPFederationMapper(AbstractLDAPFederationMapperFactory factory, KeycloakSession session) {
+        super(factory);
+        this.session = session;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        List<ProviderConfigProperty> props = new ArrayList<>(super.getConfigProperties());
+
+        // Client lists is computed dynamically
+        RealmModel realm = session.getContext().getRealm();
+        if (realm == null) {
+            throw new IllegalStateException("No realm available in KeycloakContext");
+        }
+
+        Map<String, ClientModel> clients = realm.getClientNameMap();
+        List<String> clientIds = new ArrayList<>(clients.keySet());
+
+        ProviderConfigProperty clientIdProperty = AbstractLDAPFederationMapperFactory.createConfigProperty(RoleLDAPFederationMapper.CLIENT_ID, "Client ID",
+                "Client ID of client to which LDAP role mappings will be mapped. Applicable just if 'Use Realm Roles Mapping' is false",
+                ProviderConfigProperty.LIST_TYPE, clientIds);
+        props.add(clientIdProperty);
+
+        return props;
+    }
 
     @Override
     public void onImportUserFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
@@ -178,7 +210,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         }
         String[] objClasses = objectClasses.split(",");
 
-        Set<String> trimmed = new HashSet<String>();
+        Set<String> trimmed = new HashSet<>();
         for (String objectClass : objClasses) {
             objectClass = objectClass.trim();
             if (objectClass.length() > 0) {
@@ -249,13 +281,13 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     protected Set<String> getExistingMemberships(UserFederationMapperModel mapperModel, LDAPObject ldapRole) {
         String memberAttrName = getMembershipLdapAttribute(mapperModel);
-        Set<String> memberships = new TreeSet<String>();
+        Set<String> memberships = new TreeSet<>();
         Object existingMemberships = ldapRole.getAttribute(memberAttrName);
 
         if (existingMemberships != null) {
             if (existingMemberships instanceof String) {
                 String existingMembership = existingMemberships.toString().trim();
-                if (existingMemberships != null && existingMembership.length() > 0) {
+                if (existingMembership.length() > 0) {
                     memberships.add(existingMembership);
                 }
             } else if (existingMemberships instanceof Collection) {
@@ -281,7 +313,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
     protected Set<RoleModel> getLDAPRoleMappingsConverted(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, RoleContainerModel roleContainer) {
         List<LDAPObject> ldapRoles = getLDAPRoleMappings(mapperModel, ldapProvider, ldapUser);
 
-        Set<RoleModel> roles = new HashSet<RoleModel>();
+        Set<RoleModel> roles = new HashSet<>();
         String roleNameLdapAttr = getRoleNameLdapAttribute(mapperModel);
         for (LDAPObject role : ldapRoles) {
             String roleName = role.getAttributeAsString(roleNameLdapAttr);
@@ -403,7 +435,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
             if (mode == Mode.LDAP_ONLY) {
                 // For LDAP-only we want to retrieve role mappings of target container just from LDAP
-                Set<RoleModel> modelRolesCopy = new HashSet<RoleModel>(modelRoleMappings);
+                Set<RoleModel> modelRolesCopy = new HashSet<>(modelRoleMappings);
                 for (RoleModel role : modelRolesCopy) {
                     if (role.getContainer().equals(targetRoleContainer)) {
                         modelRoleMappings.remove(role);
