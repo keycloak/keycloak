@@ -108,7 +108,7 @@ public class LDAPIdentityStore implements IdentityStore {
 
     @Override
     public List<LDAPObject> fetchQueryResults(LDAPIdentityQuery identityQuery) {
-        List<LDAPObject> results = new ArrayList<LDAPObject>();
+        List<LDAPObject> results = new ArrayList<>();
 
         try {
             if (identityQuery.getSorting() != null && !identityQuery.getSorting().isEmpty()) {
@@ -153,7 +153,7 @@ public class LDAPIdentityStore implements IdentityStore {
                 }
             }
         } catch (Exception e) {
-            throw new ModelException("Querying of identity type failed " + identityQuery, e);
+            throw new ModelException("Querying of LDAP failed " + identityQuery, e);
         }
 
         return results;
@@ -382,7 +382,7 @@ public class LDAPIdentityStore implements IdentityStore {
             NamingEnumeration<? extends Attribute> ldapAttributes = attributes.getAll();
 
             // Exact name of attributes might be different
-            List<String> uppercasedReadOnlyAttrNames = new ArrayList<String>();
+            List<String> uppercasedReadOnlyAttrNames = new ArrayList<>();
             for (String readonlyAttr : readOnlyAttrNames) {
                 uppercasedReadOnlyAttrNames.add(readonlyAttr.toUpperCase());
             }
@@ -402,11 +402,11 @@ public class LDAPIdentityStore implements IdentityStore {
                     Object uuidValue = ldapAttribute.get();
                     ldapObject.setUuid(this.operationManager.decodeEntryUUID(uuidValue));
                 } else {
-                    Set<String> attrValues = new TreeSet<String>();
+                    Set<String> attrValues = new TreeSet<>();
                     NamingEnumeration<?> enumm = ldapAttribute.getAll();
                     while (enumm.hasMoreElements()) {
-                        String objectClass = enumm.next().toString();
-                        attrValues.add(objectClass);
+                        String attrVal = enumm.next().toString();
+                        attrValues.add(attrVal);
                     }
 
                     if (ldapAttributeName.toLowerCase().equals(LDAPConstants.OBJECT_CLASS)) {

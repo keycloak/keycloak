@@ -23,6 +23,10 @@ public class LDAPConstants {
     public static final String BIND_DN = "bindDn";
     public static final String BIND_CREDENTIAL = "bindCredential";
 
+    public static final String AUTH_TYPE = "authType";
+    public static final String AUTH_TYPE_NONE = "none";
+    public static final String AUTH_TYPE_SIMPLE = "simple";
+
     public static final String SEARCH_SCOPE = "searchScope";
     public static final String CONNECTION_POOLING = "connectionPooling";
     public static final String PAGINATION = "pagination";

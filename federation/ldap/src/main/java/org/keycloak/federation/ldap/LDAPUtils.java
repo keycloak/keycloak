@@ -62,7 +62,7 @@ public class LDAPUtils {
         ldapQuery.addSearchDns(config.getUserDns());
         ldapQuery.addObjectClasses(config.getUserObjectClasses());
 
-        Set<UserFederationMapperModel> mapperModels = realm.getUserFederationMappers();
+        Set<UserFederationMapperModel> mapperModels = realm.getUserFederationMappersByFederationProvider(ldapProvider.getModel().getId());
         ldapQuery.addMappers(mapperModels);
 
         return ldapQuery;
