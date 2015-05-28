@@ -438,8 +438,8 @@ public class RealmAdminResource {
     /**
      * Query admin events.  Returns all admin events, or will query based on URL query parameters listed here
      *
-     * @param client app or oauth client name
-     * @param operationTypes operation type
+     * @param authRealm
+     * @param authClient
      * @param authUser user id
      * @param authIpAddress
      * @param resourcePath
