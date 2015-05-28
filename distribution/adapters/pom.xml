@@ -27,7 +27,7 @@
     </build>
 
     <modules>
-        <module>as7-adapter-zip</module>
+        <module>as7-adapter</module>
         <module>eap6-adapter-zip</module>
         <module>jetty81-adapter-zip</module>
         <module>jetty91-adapter-zip</module>
