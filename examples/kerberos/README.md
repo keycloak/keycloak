@@ -40,7 +40,7 @@ is in your `/etc/hosts` before other records for the 127.0.0.1 host to avoid iss
 
 **4)** Configure Kerberos client (On linux it's in file `/etc/krb5.conf` ). You need to configure `KEYCLOAK.ORG` realm and enable `forwardable` flag, which is needed 
 for credential delegation example, as application needs to forward Kerberos ticket and authenticate with it against LDAP server. 
-See [this file](https://github.com/keycloak/keycloak/blob/master/testsuite/integration/src/main/resources/kerberos/test-krb5.conf) for inspiration.
+See [this file](https://github.com/keycloak/keycloak/blob/master/testsuite/integration/src/test/resources/kerberos/test-krb5.conf) for inspiration.
 
 **5)**  Run ApacheDS based Kerberos server embedded in Keycloak. Easiest is to checkout keycloak sources, build and then run KerberosEmbeddedServer 
 as shown here: 
@@ -52,12 +52,12 @@ cd testsuite/integration
 mvn exec:java -Pkerberos
 ```
 
-More details about embedded Kerberos server in [testsuite README](https://github.com/keycloak/keycloak/blob/master/testsuite/integration/README.md#kerberos-server).
+More details about embedded Kerberos server in [testsuite README](https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#kerberos-server).
 
   
 **6)** Configure browser (Firefox, Chrome or other) and enable SPNEGO authentication and credential delegation for `localhost` . 
 In Firefox it can be done by adding `localhost` to both `network.negotiate-auth.trusted-uris` and `network.negotiate-auth.delegation-uris` . 
-More info in [testsuite README](https://github.com/keycloak/keycloak/blob/master/testsuite/integration/README.md#kerberos-server).  
+More info in [testsuite README](https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#kerberos-server).  
  
  
 **7)** Test the example. Obtain kerberos ticket by running command from CMD (on linux):

@@ -200,7 +200,7 @@ ktadd -k /tmp/http.keytab HTTP/www.mydomain.org@MYDOMAIN.ORG
             <para>
                 For quick testing and unit tests, we use very simple <ulink url="http://directory.apache.org/apacheds/">ApacheDS</ulink> Kerberos server.
                 You need to build Keycloak from sources and then run Kerberos server with maven-exec-plugin from our testsuite. See details
-                <ulink url="https://github.com/keycloak/keycloak/blob/master/testsuite/integration/README.md#kerberos-server">here</ulink> .
+                <ulink url="https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#kerberos-server">here</ulink> .
             </para>
         </section>
     </section>
@@ -234,7 +234,7 @@ GSSContext context = gssManager.createContext(serviceName, krb5Oid,
             <para>
                 Credential delegation has some security implications. So enable the protocol claim and support in browser just if you really need it.
                 It's highly recommended to use it together with HTTPS. See for example
-                <ulink url="http://www.microhowto.info/howto/configure_firefox_to_authenticate_using_spnego_and_kerberos.html#idp18752">this article</ulink>
+                <ulink url="http://www.microhowto.info/howto/configure_firefox_to_authenticate_using_spnego_and_kerberos.html#idp27072">this article</ulink>
                 for details.
             </para>
         </warning>
