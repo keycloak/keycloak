@@ -32,11 +32,15 @@ public class ConstraintAuthorizationHandler implements HttpHandler {
         this.sendAccessToken = sendAccessToken;
 
         this.httpHeaderNames = new HashMap<>();
-        this.httpHeaderNames.put(KEYCLOAK_SUBJECT, new HttpString(headerNames.getOrDefault("keycloak-subject", KEYCLOAK_SUBJECT)));
-        this.httpHeaderNames.put(KEYCLOAK_SUBJECT, new HttpString(headerNames.getOrDefault("keycloak-username", KEYCLOAK_USERNAME)));
-        this.httpHeaderNames.put(KEYCLOAK_EMAIL, new HttpString(headerNames.getOrDefault("keycloak-email", KEYCLOAK_EMAIL)));
-        this.httpHeaderNames.put(KEYCLOAK_NAME, new HttpString(headerNames.getOrDefault("keycloak-name", KEYCLOAK_NAME)));
-        this.httpHeaderNames.put(KEYCLOAK_ACCESS_TOKEN, new HttpString(headerNames.getOrDefault("keycloak-access-token", KEYCLOAK_ACCESS_TOKEN)));
+        this.httpHeaderNames.put(KEYCLOAK_SUBJECT, new HttpString(getOrDefault(headerNames, "keycloak-subject", KEYCLOAK_SUBJECT)));
+        this.httpHeaderNames.put(KEYCLOAK_SUBJECT, new HttpString(getOrDefault(headerNames, "keycloak-username", KEYCLOAK_USERNAME)));
+        this.httpHeaderNames.put(KEYCLOAK_EMAIL, new HttpString(getOrDefault(headerNames, "keycloak-email", KEYCLOAK_EMAIL)));
+        this.httpHeaderNames.put(KEYCLOAK_NAME, new HttpString(getOrDefault(headerNames, "keycloak-name", KEYCLOAK_NAME)));
+        this.httpHeaderNames.put(KEYCLOAK_ACCESS_TOKEN, new HttpString(getOrDefault(headerNames, "keycloak-access-token", KEYCLOAK_ACCESS_TOKEN)));
+    }
+
+    private String getOrDefault(Map<String, String> map, String key, String defaultValue) {
+        return map.containsKey(key) ? map.get(key) : defaultValue;
     }
 
     @Override
