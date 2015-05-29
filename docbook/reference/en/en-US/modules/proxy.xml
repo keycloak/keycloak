@@ -305,7 +305,7 @@ $ java -jar bin/launcher.jar [your-config.json]
                     </listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term>kkeycloak-username</term>
+                    <term>keycloak-username</term>
                     <listitem>
                         <para>
                             e.g. MYAPP_USER_NAME
