@@ -392,7 +392,7 @@ public class RealmAdminResource {
             try {
                 from = df.parse(dateFrom);
             } catch (ParseException e) {
-                throw new BadRequestException("Invalid value for 'Date(From)', excepted format is yyyy-MM-dd");
+                throw new BadRequestException("Invalid value for 'Date(From)', expected format is yyyy-MM-dd");
             }
             query.fromDate(from);
         }
@@ -403,7 +403,7 @@ public class RealmAdminResource {
             try {
                 to = df.parse(dateTo);
             } catch (ParseException e) {
-                throw new BadRequestException("Invalid value for 'Date(To)', excepted format is yyyy-MM-dd");
+                throw new BadRequestException("Invalid value for 'Date(To)', expected format is yyyy-MM-dd");
             }
             query.toDate(to);
         }
@@ -485,18 +485,18 @@ public class RealmAdminResource {
             try {
                 from = df.parse(dateFrom);
             } catch (ParseException e) {
-                throw new BadRequestException("Invalid value for 'Date(From)', excepted format is yyyy-MM-dd");
+                throw new BadRequestException("Invalid value for 'Date(From)', expected format is yyyy-MM-dd");
             }
             query.fromTime(from);
         }
         
         if(dateTo != null) {
-            SimpleDateFormat df = new SimpleDateFormat("Invalid value for 'Date(To)', excepted format is yyyy-MM-dd");
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
             Date to = null;
             try {
                 to = df.parse(dateTo);
             } catch (ParseException e) {
-                throw new BadRequestException("An unexpected server error has occurred");
+                throw new BadRequestException("Invalid value for 'Date(To)', expected format is yyyy-MM-dd");
             }
             query.toTime(to);
         }
