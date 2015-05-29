@@ -10,6 +10,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.List;
 
 public interface UsersResource {
@@ -31,7 +32,7 @@ public interface UsersResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public void create(UserRepresentation userRepresentation);
+    Response create(UserRepresentation userRepresentation);
 
     @Path("{username}")
     public UserResource get(@PathParam("username") String username);

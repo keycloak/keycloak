@@ -24,104 +24,94 @@ import static org.junit.Assert.fail;
  */
 public class UserTest extends AbstractClientTest {
 
-    @Test
-    public void createUser() {
+    public String createUser() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user1");
         user.setEmail("user1@localhost");
 
-        realm.users().create(user);
+        Response response = realm.users().create(user);
+        String createdId = ApiUtil.getCreatedId(response);
+        response.close();
+        return createdId;
+    }
+
+    @Test
+    public void verifyCreateUser() {
+        createUser();
     }
 
     @Test
     public void createDuplicatedUser1() {
         createUser();
 
-        try {
-            UserRepresentation user = new UserRepresentation();
-            user.setUsername("user1");
-            realm.users().create(user);
-            fail("Expected failure");
-        } catch (ClientErrorException e) {
-            assertEquals(409, e.getResponse().getStatus());
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user1");
+        Response response = realm.users().create(user);
+        assertEquals(409, response.getStatus());
 
-            // Just to show how to retrieve underlying error message
-            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
-            Assert.assertEquals("User exists with same username", error.getErrorMessage());
-        }
+        // Just to show how to retrieve underlying error message
+        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+        Assert.assertEquals("User exists with same username", error.getErrorMessage());
+
+        response.close();
     }
-    
+
     @Test
     public void createDuplicatedUser2() {
         createUser();
 
-        try {
-            UserRepresentation user = new UserRepresentation();
-            user.setUsername("user2");
-            user.setEmail("user1@localhost");
-            realm.users().create(user);
-            fail("Expected failure");
-        } catch (ClientErrorException e) {
-            assertEquals(409, e.getResponse().getStatus());
-        }
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user2");
+        user.setEmail("user1@localhost");
+        Response response = realm.users().create(user);
+        assertEquals(409, response.getStatus());
+        response.close();
     }
     
     @Test
     public void createDuplicatedUser3() {
         createUser();
 
-        try {
-            UserRepresentation user = new UserRepresentation();
-            user.setUsername("User1");
-            realm.users().create(user);
-            fail("Expected failure");
-        } catch (ClientErrorException e) {
-            assertEquals(409, e.getResponse().getStatus());
-        }
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("User1");
+        Response response = realm.users().create(user);
+        assertEquals(409, response.getStatus());
+        response.close();
     }
     
     @Test
     public void createDuplicatedUser4() {
         createUser();
 
-        try {
-            UserRepresentation user = new UserRepresentation();
-            user.setUsername("USER1");
-            realm.users().create(user);
-            fail("Expected failure");
-        } catch (ClientErrorException e) {
-            assertEquals(409, e.getResponse().getStatus());
-        }
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("USER1");
+        Response response = realm.users().create(user);
+        assertEquals(409, response.getStatus());
+        response.close();
     }
 
     @Test
     public void createDuplicatedUser5() {
         createUser();
 
-        try {
-            UserRepresentation user = new UserRepresentation();
-            user.setUsername("user2");
-            user.setEmail("User1@localhost");
-            realm.users().create(user);
-            fail("Expected failure");
-        } catch (ClientErrorException e) {
-            assertEquals(409, e.getResponse().getStatus());
-        }
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user2");
+        user.setEmail("User1@localhost");
+        Response response = realm.users().create(user);
+        assertEquals(409, response.getStatus());
+        response.close();
     }
     
     @Test
     public void createDuplicatedUser6() {
         createUser();
 
-        try {
-            UserRepresentation user = new UserRepresentation();
-            user.setUsername("user2");
-            user.setEmail("user1@LOCALHOST");
-            realm.users().create(user);
-            fail("Expected failure");
-        } catch (ClientErrorException e) {
-            assertEquals(409, e.getResponse().getStatus());
-        }
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user2");
+        user.setEmail("user1@LOCALHOST");
+        Response response = realm.users().create(user);
+        assertEquals(409, response.getStatus());
+        response.close();
     }
     
     private void createUsers() {
@@ -132,7 +122,7 @@ public class UserTest extends AbstractClientTest {
             user.setFirstName("First" + i);
             user.setLastName("Last" + i);
 
-            realm.users().create(user);
+            realm.users().create(user).close();
         }
     }
 
@@ -200,8 +190,8 @@ public class UserTest extends AbstractClientTest {
         addSampleIdentityProvider();
 
         // Add sample user
-        createUser();
-        UserResource user = realm.users().get("user1");
+        String id = createUser();
+        UserResource user = realm.users().get(id);
         assertEquals(0, user.getFederatedIdentity().size());
 
         // Add social link to the user
@@ -212,7 +202,7 @@ public class UserTest extends AbstractClientTest {
         assertEquals(204, response.getStatus());
 
         // Verify social link is here
-        user = realm.users().get("user1");
+        user = realm.users().get(id);
         List<FederatedIdentityRepresentation> federatedIdentities = user.getFederatedIdentity();
         assertEquals(1, federatedIdentities.size());
         link = federatedIdentities.get(0);
@@ -245,9 +235,9 @@ public class UserTest extends AbstractClientTest {
 
     @Test
     public void addRequiredAction() {
-        createUser();
+        String id = createUser();
 
-        UserResource user = realm.users().get("user1");
+        UserResource user = realm.users().get(id);
         assertTrue(user.toRepresentation().getRequiredActions().isEmpty());
 
         UserRepresentation userRep = user.toRepresentation();
@@ -260,10 +250,17 @@ public class UserTest extends AbstractClientTest {
 
     @Test
     public void removeRequiredAction() {
-        addRequiredAction();
+        String id = createUser();
 
-        UserResource user = realm.users().get("user1");
+        UserResource user = realm.users().get(id);
+        assertTrue(user.toRepresentation().getRequiredActions().isEmpty());
+
         UserRepresentation userRep = user.toRepresentation();
+        userRep.getRequiredActions().add("UPDATE_PASSWORD");
+        user.update(userRep);
+
+        user = realm.users().get(id);
+        userRep = user.toRepresentation();
         userRep.getRequiredActions().clear();
         user.update(userRep);
 
@@ -276,20 +273,25 @@ public class UserTest extends AbstractClientTest {
         user1.setUsername("user1");
         user1.attribute("attr1", "value1user1");
         user1.attribute("attr2", "value2user1");
-        realm.users().create(user1);
+
+        Response response = realm.users().create(user1);
+        String user1Id = ApiUtil.getCreatedId(response);
+        response.close();
 
         UserRepresentation user2 = new UserRepresentation();
         user2.setUsername("user2");
         user2.attribute("attr1", "value1user2");
         user2.attribute("attr2", "value2user2");
-        realm.users().create(user2);
 
-        user1 = realm.users().get("user1").toRepresentation();
+        response = realm.users().create(user2);
+        String user2Id = ApiUtil.getCreatedId(response);
+        response.close();
+        user1 = realm.users().get(user1Id).toRepresentation();
         assertEquals(2, user1.getAttributes().size());
         assertEquals("value1user1", user1.getAttributes().get("attr1"));
         assertEquals("value2user1", user1.getAttributes().get("attr2"));
 
-        user2 = realm.users().get("user2").toRepresentation();
+        user2 = realm.users().get(user2Id).toRepresentation();
         assertEquals(2, user2.getAttributes().size());
         assertEquals("value1user2", user2.getAttributes().get("attr1"));
         assertEquals("value2user2", user2.getAttributes().get("attr2"));
@@ -297,26 +299,26 @@ public class UserTest extends AbstractClientTest {
         user1.attribute("attr1", "value3user1");
         user1.attribute("attr3", "value4user1");
 
-        realm.users().get("user1").update(user1);
+        realm.users().get(user1Id).update(user1);
 
-        user1 = realm.users().get("user1").toRepresentation();
+        user1 = realm.users().get(user1Id).toRepresentation();
         assertEquals(3, user1.getAttributes().size());
         assertEquals("value3user1", user1.getAttributes().get("attr1"));
         assertEquals("value2user1", user1.getAttributes().get("attr2"));
         assertEquals("value4user1", user1.getAttributes().get("attr3"));
 
         user1.getAttributes().remove("attr1");
-        realm.users().get("user1").update(user1);
+        realm.users().get(user1Id).update(user1);
 
-        user1 = realm.users().get("user1").toRepresentation();
+        user1 = realm.users().get(user1Id).toRepresentation();
         assertEquals(2, user1.getAttributes().size());
         assertEquals("value2user1", user1.getAttributes().get("attr2"));
         assertEquals("value4user1", user1.getAttributes().get("attr3"));
 
         user1.getAttributes().clear();
-        realm.users().get("user1").update(user1);
+        realm.users().get(user1Id).update(user1);
 
-        user1 = realm.users().get("user1").toRepresentation();
+        user1 = realm.users().get(user1Id).toRepresentation();
         assertNull(user1.getAttributes());
     }
 
@@ -324,8 +326,10 @@ public class UserTest extends AbstractClientTest {
     public void sendResetPasswordEmail() {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setUsername("user1");
-        realm.users().create(userRep);
-        UserResource user = realm.users().get("user1");
+        Response response = realm.users().create(userRep);
+        String id = ApiUtil.getCreatedId(response);
+        response.close();
+        UserResource user = realm.users().get(id);
 
         try {
             user.resetPasswordEmail();
@@ -366,8 +370,11 @@ public class UserTest extends AbstractClientTest {
     public void sendVerifyEmail() {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setUsername("user1");
-        realm.users().create(userRep);
-        UserResource user = realm.users().get("user1");
+        Response response = realm.users().create(userRep);
+        String id = ApiUtil.getCreatedId(response);
+        response.close();
+
+        UserResource user = realm.users().get(id);
 
         try {
             user.sendVerifyEmail();
