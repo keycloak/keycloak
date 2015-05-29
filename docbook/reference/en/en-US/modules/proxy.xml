@@ -389,7 +389,14 @@ $ java -jar bin/launcher.jar [your-config.json]
                     </listitem>
                 </varlistentry>
             </variablelist>
-            Header field names can be configured using a map of <term>header-names</term> in configuration file.
+            Header field names can be configured using a map of <literal>header-names</literal> in configuration file:
+            <programlisting><![CDATA[
+{
+    "header-names" {
+        "keycloak-subject": "MY_SUBJECT"
+    }
+}
+            ]]></programlisting>
         </para>
     </section>
 </chapter>
