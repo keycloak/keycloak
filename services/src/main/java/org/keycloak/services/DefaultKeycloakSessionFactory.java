@@ -66,6 +66,10 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
                 Config.Scope scope = Config.scope(spi.getName(), provider);
                 factory.init(scope);
 
+                if (spi.isPrivate() && !isInternal(factory)) {
+                    log.warnv("{0} ({1}) is implementing the internal SPI {2}. This SPI is internal and may change without notice", factory.getId(), factory.getClass().getName(), spi.getName());
+                }
+
                 factories.put(factory.getId(), factory);
 
                 log.debugv("Loaded SPI {0} (provider = {1})", spi.getName(), provider);
@@ -73,6 +77,10 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
                 for (ProviderFactory factory : pm.load(spi)) {
                     Config.Scope scope = Config.scope(spi.getName(), factory.getId());
                     factory.init(scope);
+
+                    if (spi.isPrivate() && !isInternal(factory)) {
+                        log.warnv("{0} ({1}) is implementing the internal SPI {2}. This SPI is internal and may change without notice", factory.getId(), factory.getClass().getName(), spi.getName());
+                    }
 
                     factories.put(factory.getId(), factory);
                 }
@@ -136,6 +144,10 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
                 factory.close();
             }
         }
+    }
+
+    private boolean isInternal(ProviderFactory<?> factory) {
+        return factory.getClass().getPackage().getName().startsWith("org.keycloak");
     }
 
 }
