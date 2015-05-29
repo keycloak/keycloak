@@ -24,8 +24,8 @@
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-wildfly-adapter-subsystem</artifactId>
-    <name>Keycloak Adapter Subsystem</name>
+    <artifactId>keycloak-wf9-subsystem</artifactId>
+    <name>Keycloak Wildfly 9 Adapter Subsystem</name>
     <description/>
     <packaging>jar</packaging>
 

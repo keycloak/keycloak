@@ -25,7 +25,7 @@
     </parent>
 
     <artifactId>keycloak-wf8-subsystem</artifactId>
-    <name>Keycloak Adapter Subsystem</name>
+    <name>Keycloak Wildfly 8 Adapter Subsystem</name>
     <description/>
     <packaging>jar</packaging>
 
