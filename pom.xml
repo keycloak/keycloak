@@ -885,6 +885,16 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-wf8-subsystem</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-wf9-subsystem</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-subsystem</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1088,6 +1098,12 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wf8-modules</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-wf9-modules</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
