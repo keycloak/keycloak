@@ -197,7 +197,7 @@ module.factory('ServerInfo', function($resource) {
 
 
 module.factory('ClientProtocolMapper', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/protocol-mappers/models/:id', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/protocol-mappers/models/:id', {
         realm : '@realm',
         client: '@client',
         id : "@id"
@@ -364,7 +364,7 @@ module.factory('AvailableRealmRoleMapping', function($resource) {
 
 
 module.factory('ClientRoleMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/users/:userId/role-mappings/clients-by-id/:client', {
+    return $resource(authUrl + '/admin/realms/:realm/users/:userId/role-mappings/clients/:client', {
         realm : '@realm',
         userId : '@userId',
         client : "@client"
@@ -372,7 +372,7 @@ module.factory('ClientRoleMapping', function($resource) {
 });
 
 module.factory('AvailableClientRoleMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/users/:userId/role-mappings/clients-by-id/:client/available', {
+    return $resource(authUrl + '/admin/realms/:realm/users/:userId/role-mappings/clients/:client/available', {
         realm : '@realm',
         userId : '@userId',
         client : "@client"
@@ -380,7 +380,7 @@ module.factory('AvailableClientRoleMapping', function($resource) {
 });
 
 module.factory('CompositeClientRoleMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/users/:userId/role-mappings/clients-by-id/:client/composite', {
+    return $resource(authUrl + '/admin/realms/:realm/users/:userId/role-mappings/clients/:client/composite', {
         realm : '@realm',
         userId : '@userId',
         client : "@client"
@@ -388,28 +388,28 @@ module.factory('CompositeClientRoleMapping', function($resource) {
 });
 
 module.factory('ClientRealmScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/scope-mappings/realm', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/scope-mappings/realm', {
         realm : '@realm',
         client : '@client'
     });
 });
 
 module.factory('ClientAvailableRealmScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/scope-mappings/realm/available', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/scope-mappings/realm/available', {
         realm : '@realm',
         client : '@client'
     });
 });
 
 module.factory('ClientCompositeRealmScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/scope-mappings/realm/composite', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/scope-mappings/realm/composite', {
         realm : '@realm',
         client : '@client'
     });
 });
 
 module.factory('ClientClientScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/scope-mappings/clients-by-id/:targetClient', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/scope-mappings/clients/:targetClient', {
         realm : '@realm',
         client : '@client',
         targetClient : '@targetClient'
@@ -417,7 +417,7 @@ module.factory('ClientClientScopeMapping', function($resource) {
 });
 
 module.factory('ClientAvailableClientScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/scope-mappings/clients-by-id/:targetClient/available', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/scope-mappings/clients/:targetClient/available', {
         realm : '@realm',
         client : '@client',
         targetClient : '@targetClient'
@@ -425,7 +425,7 @@ module.factory('ClientAvailableClientScopeMapping', function($resource) {
 });
 
 module.factory('ClientCompositeClientScopeMapping', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/scope-mappings/clients-by-id/:targetClient/composite', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/scope-mappings/clients/:targetClient/composite', {
         realm : '@realm',
         client : '@client',
         targetClient : '@targetClient'
@@ -460,14 +460,14 @@ module.factory('RealmSessionStats', function($resource) {
 });
 
 module.factory('RealmClientSessionStats', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/client-by-id-session-stats', {
+    return $resource(authUrl + '/admin/realms/:realm/client-session-stats', {
         realm : '@realm'
     });
 });
 
 
 module.factory('RoleClientComposites', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/roles-by-id/:role/composites/clients-by-id/:client', {
+    return $resource(authUrl + '/admin/realms/:realm/roles-by-id/:role/composites/clients/:client', {
         realm : '@realm',
         role : '@role',
         client : "@client"
@@ -670,7 +670,7 @@ module.factory('RoleById', function($resource) {
 });
 
 module.factory('ClientRole', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/roles/:role', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/roles/:role', {
         realm : '@realm',
         client : "@client",
         role : '@role'
@@ -682,7 +682,7 @@ module.factory('ClientRole', function($resource) {
 });
 
 module.factory('ClientClaims', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/claims', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/claims', {
         realm : '@realm',
         client : "@client"
     },  {
@@ -693,7 +693,7 @@ module.factory('ClientClaims', function($resource) {
 });
 
 module.factory('ClientProtocolMappersByProtocol', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/protocol-mappers/protocol/:protocol', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/protocol-mappers/protocol/:protocol', {
         realm : '@realm',
         client : "@client",
         protocol : "@protocol"
@@ -701,41 +701,41 @@ module.factory('ClientProtocolMappersByProtocol', function($resource) {
 });
 
 module.factory('ClientSessionStats', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/session-stats', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/session-stats', {
         realm : '@realm',
         client : "@client"
     });
 });
 
 module.factory('ClientSessionStatsWithUsers', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/session-stats?users=true', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/session-stats?users=true', {
         realm : '@realm',
         client : "@client"
     });
 });
 
 module.factory('ClientSessionCount', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/session-count', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/session-count', {
         realm : '@realm',
         client : "@client"
     });
 });
 
 module.factory('ClientUserSessions', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/user-sessions', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/user-sessions', {
         realm : '@realm',
         client : "@client"
     });
 });
 
 module.factory('ClientLogoutAll', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/logout-all', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/logout-all', {
         realm : '@realm',
         client : "@client"
     });
 });
 module.factory('ClientLogoutUser', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/logout-user/:user', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/logout-user/:user', {
         realm : '@realm',
         client : "@client",
         user : "@user"
@@ -748,28 +748,28 @@ module.factory('RealmLogoutAll', function($resource) {
 });
 
 module.factory('ClientPushRevocation', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/push-revocation', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/push-revocation', {
         realm : '@realm',
         client : "@client"
     });
 });
 
 module.factory('ClientClusterNode', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/nodes/:node', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/nodes/:node', {
         realm : '@realm',
         client : "@client"
     });
 });
 
 module.factory('ClientTestNodesAvailable', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/test-nodes-available', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/test-nodes-available', {
         realm : '@realm',
         client : "@client"
     });
 });
 
 module.factory('ClientCertificate', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/certificates/:attribute', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/certificates/:attribute', {
             realm : '@realm',
             client : "@client",
             attribute: "@attribute"
@@ -777,7 +777,7 @@ module.factory('ClientCertificate', function($resource) {
 });
 
 module.factory('ClientCertificateGenerate', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/certificates/:attribute/generate', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/certificates/:attribute/generate', {
             realm : '@realm',
             client : "@client",
             attribute: "@attribute"
@@ -790,7 +790,7 @@ module.factory('ClientCertificateGenerate', function($resource) {
 });
 
 module.factory('ClientCertificateDownload', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/certificates/:attribute/download', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/certificates/:attribute/download', {
         realm : '@realm',
         client : "@client",
         attribute: "@attribute"
@@ -804,7 +804,7 @@ module.factory('ClientCertificateDownload', function($resource) {
 });
 
 module.factory('Client', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client', {
         realm : '@realm',
         client : '@client'
     },  {
@@ -815,7 +815,7 @@ module.factory('Client', function($resource) {
 });
 
 module.factory('ClientInstallation', function($resource) {
-    var url = authUrl + '/admin/realms/:realm/clients-by-id/:client/installation/json';
+    var url = authUrl + '/admin/realms/:realm/clients/:client/installation/json';
     return {
         url : function(parameters)
         {
@@ -824,7 +824,7 @@ module.factory('ClientInstallation', function($resource) {
     }
 });
 module.factory('ClientInstallationJBoss', function($resource) {
-    var url = authUrl + '/admin/realms/:realm/clients-by-id/:client/installation/jboss';
+    var url = authUrl + '/admin/realms/:realm/clients/:client/installation/jboss';
     return {
         url : function(parameters)
      {
@@ -834,7 +834,7 @@ module.factory('ClientInstallationJBoss', function($resource) {
 });
 
 module.factory('ClientCredentials', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/client-secret', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/client-secret', {
         realm : '@realm',
         client : '@client'
     },  {
@@ -845,7 +845,7 @@ module.factory('ClientCredentials', function($resource) {
 });
 
 module.factory('ClientOrigins', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-by-id/:client/allowed-origins', {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/allowed-origins', {
         realm : '@realm',
         client : '@client'
     },  {

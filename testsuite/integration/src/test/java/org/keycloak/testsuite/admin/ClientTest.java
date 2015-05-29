@@ -45,28 +45,36 @@ public class ClientTest extends AbstractClientTest {
         assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker");
     }
 
-    @Test
-    public void createClient() {
+    private String createClient() {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setClientId("my-app");
         rep.setEnabled(true);
-        realm.clients().create(rep);
+        Response response = realm.clients().create(rep);
+        response.close();
+        return ApiUtil.getCreatedId(response);
+    }
 
+    @Test
+    public void createClientVerify() {
+        String id = createClient();
+
+        assertNotNull(realm.clients().get(id));
         assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", "my-app");
     }
 
     @Test
     public void removeClient() {
-        createClient();
+        String id = createClient();
 
-        realm.clients().get("my-app").remove();
+        realm.clients().get(id).remove();
     }
 
     @Test
     public void getClientRepresentation() {
-        createClient();
+        String id = createClient();
 
-        ClientRepresentation rep = realm.clients().get("my-app").toRepresentation();
+        ClientRepresentation rep = realm.clients().get(id).toRepresentation();
+        assertEquals(id, rep.getId());
         assertEquals("my-app", rep.getClientId());
         assertTrue(rep.isEnabled());
     }
@@ -81,7 +89,7 @@ public class ClientTest extends AbstractClientTest {
         OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(codeResponse.getCode(), "password");
         assertEquals(200, response2.getStatusCode());
 
-        ClientResource app = keycloak.realm("test").clients().get("test-app");
+        ClientResource app = ApiUtil.findClientByClientId(keycloak.realm("test"), "test-app");
 
         assertEquals(2, (long) app.getApplicationSessionCount().get("count"));
 
@@ -96,26 +104,28 @@ public class ClientTest extends AbstractClientTest {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setClientId("my-app");
         rep.setEnabled(true);
-        realm.clients().create(rep);
+        Response response = realm.clients().create(rep);
+        response.close();
+        String id = ApiUtil.getCreatedId(response);
 
         RoleRepresentation role = new RoleRepresentation("test", "test");
-        realm.clients().get("my-app").roles().create(role);
+        realm.clients().get(id).roles().create(role);
 
-        rep = realm.clients().get("my-app").toRepresentation();
+        rep = realm.clients().get(id).toRepresentation();
         rep.setDefaultRoles(new String[] { "test" });
-        realm.clients().get("my-app").update(rep);
+        realm.clients().get(id).update(rep);
 
-        assertArrayEquals(new String[] { "test" }, realm.clients().get("my-app").toRepresentation().getDefaultRoles());
+        assertArrayEquals(new String[] { "test" }, realm.clients().get(id).toRepresentation().getDefaultRoles());
 
-        realm.clients().get("my-app").roles().deleteRole("test");
+        realm.clients().get(id).roles().deleteRole("test");
 
-        assertNull(realm.clients().get("my-app").toRepresentation().getDefaultRoles());
+        assertNull(realm.clients().get(id).toRepresentation().getDefaultRoles());
     }
 
     @Test
     public void testProtocolMappers() {
         createClient();
-        ProtocolMappersResource mappersResource = realm.clients().get("my-app").getProtocolMappers();
+        ProtocolMappersResource mappersResource = ApiUtil.findClientByClientId(realm, "my-app").getProtocolMappers();
 
         protocolMappersTest(mappersResource);
     }
@@ -171,4 +181,5 @@ public class ClientTest extends AbstractClientTest {
         } catch (NotFoundException nfe) {
         }
     }
+
 }

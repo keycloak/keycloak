@@ -681,35 +681,19 @@ public class UsersResource {
         
     }
 
-    @Path("{username}/role-mappings/clients/{clientId}")
-    public UserClientRoleMappingsResource getUserClientRoleMappingsResource(@PathParam("username") String username, @PathParam("clientId") String clientId) {
+    @Path("{username}/role-mappings/clients/{client}")
+    public UserClientRoleMappingsResource getUserClientRoleMappingsResource(@PathParam("username") String username, @PathParam("client") String client) {
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
 
-        ClientModel client = realm.getClientByClientId(clientId);
-
-        if (client == null) {
-            throw new NotFoundException("Client not found");
-        }
-        return new UserClientRoleMappingsResource(uriInfo, realm, auth, user, client, adminEvent);
-
-    }
-    @Path("{username}/role-mappings/clients-by-id/{id}")
-    public UserClientRoleMappingsResource getUserClientRoleMappingsResourceById(@PathParam("username") String username, @PathParam("id") String id) {
-        UserModel user = session.users().getUserByUsername(username, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-
-        ClientModel client = realm.getClientById(id);
-
+        ClientModel clientModel = realm.getClientById(client);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
         
-        return new UserClientRoleMappingsResource(uriInfo, realm, auth, user, client, adminEvent);
+        return new UserClientRoleMappingsResource(uriInfo, realm, auth, user, clientModel, adminEvent);
 
     }
     /**
