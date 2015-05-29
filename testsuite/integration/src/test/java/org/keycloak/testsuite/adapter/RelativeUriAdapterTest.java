@@ -26,6 +26,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -56,6 +57,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URL;
 import java.security.PublicKey;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -74,6 +76,8 @@ public class RelativeUriAdapterTest {
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule(){
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
+            adminRealm.setPasswordCredentialGrantAllowed(true);
+
             RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/adapter-test/demorealm-relative.json"), RealmRepresentation.class);
             RealmModel realm = manager.importRealm(representation);
 
@@ -85,19 +89,8 @@ public class RelativeUriAdapterTest {
             deployApplication("customer-db", "/customer-db", CustomerDatabaseServlet.class, url.getPath(), "user");
             url = getClass().getResource("/adapter-test/product-keycloak-relative.json");
             deployApplication("product-portal", "/product-portal", ProductServlet.class, url.getPath(), "user");
-            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-            TokenManager tm = new TokenManager();
-            UserModel admin = session.users().getUserByUsername("admin", adminRealm);
-            ClientSessionModel clientSession = session.sessions().createClientSession(realm, adminConsole);
-            clientSession.setNote(OIDCLoginProtocol.ISSUER, "http://localhost:8081/auth/realms/master");
-            UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, "user", null, "form", false, null, null);
-            AccessToken token = tm.createClientAccessToken(session, tm.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession, clientSession);
-            adminToken = tm.encodeToken(adminRealm, token);
-
         }
     };
-
-    public static String adminToken;
 
     @Rule
     public WebRule webRule = new WebRule(this);
@@ -115,42 +108,33 @@ public class RelativeUriAdapterTest {
     public void testLoginSSOAndLogout() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to("http://localhost:8081/customer-portal");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         loginPage.login("bburke@redhat.com", "password");
-        System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
         String pageSource = driver.getPageSource();
-        System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         // test SSO
         driver.navigate().to("http://localhost:8081/product-portal");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/product-portal");
         pageSource = driver.getPageSource();
-        System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
         // View stats
-        Client client = ClientBuilder.newClient();
-        UriBuilder authBase = UriBuilder.fromUri("http://localhost:8081/auth");
-        WebTarget adminTarget = client.target(AdminRoot.realmsUrl(authBase)).path("demo");
-        Map<String, Integer> stats = adminTarget.path("client-session-stats").request()
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
-                .get(new GenericType<Map<String, Integer>>(){});
-
-        Integer custSessionsCount = stats.get("customer-portal");
-        Assert.assertNotNull(custSessionsCount);
-        Assert.assertTrue(1 == custSessionsCount);
-        Integer prodStatsCount = stats.get("product-portal");
-        Assert.assertNotNull(prodStatsCount);
-        Assert.assertTrue(1 == prodStatsCount);
-
-        client.close();
-
+        List<Map<String, String>> stats = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", "security-admin-console").realm("demo").getClientSessionStats();
+        Map<String, String> customerPortalStats = null;
+        Map<String, String> productPortalStats = null;
+        for (Map<String, String> s : stats) {
+            if (s.get("clientId").equals("customer-portal")) {
+                customerPortalStats = s;
+            } else if (s.get("clientId").equals("product-portal")) {
+                productPortalStats = s;
+            }
+        }
+        Assert.assertEquals(1, Integer.parseInt(customerPortalStats.get("active")));
+        Assert.assertEquals(1, Integer.parseInt(productPortalStats.get("active")));
 
         // test logout
-
         String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
                 .queryParam(OAuth2Constants.REDIRECT_URI, "/customer-portal").build("demo").toString();
         driver.navigate().to(logoutUri);
@@ -159,8 +143,6 @@ public class RelativeUriAdapterTest {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         driver.navigate().to("http://localhost:8081/customer-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-
-
     }
 
     @Test

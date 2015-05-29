@@ -460,7 +460,7 @@ module.factory('RealmSessionStats', function($resource) {
 });
 
 module.factory('RealmClientSessionStats', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/client-by-id-session-stats', {
+    return $resource(authUrl + '/admin/realms/:realm/client-session-stats', {
         realm : '@realm'
     });
 });

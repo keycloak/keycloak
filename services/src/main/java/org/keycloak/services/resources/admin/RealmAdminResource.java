@@ -290,7 +290,7 @@ public class RealmAdminResource {
     }
 
     /**
-     * Returns a JSON map.  The key is the client name, the value is the number of sessions that currently are active
+     * Returns a JSON map.  The key is the client id, the value is the number of sessions that currently are active
      * with that client.  Only client's that actually have a session associated with them will be in this map.
      *
      * @return
@@ -299,29 +299,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    @Deprecated
-    public Map<String, Integer> getClientSessionStats() {
-        auth.requireView();
-        Map<String, Integer> stats = new HashMap<String, Integer>();
-        for (ClientModel client : realm.getClients()) {
-            int size = session.sessions().getActiveUserSessions(client.getRealm(), client);
-            if (size == 0) continue;
-            stats.put(client.getClientId(), size);
-        }
-        return stats;
-    }
-
-    /**
-     * Returns a JSON map.  The key is the client id, the value is the number of sessions that currently are active
-     * with that client.  Only client's that actually have a session associated with them will be in this map.
-     *
-     * @return
-     */
-    @Path("client-by-id-session-stats")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<Map<String, String>> getClientByIdSessionStats() {
+    public List<Map<String, String>> getClientSessionStats() {
         auth.requireView();
         List<Map<String, String>> data = new LinkedList<Map<String, String>>();
         for (ClientModel client : realm.getClients()) {

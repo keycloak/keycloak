@@ -9,6 +9,8 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
@@ -17,25 +19,29 @@ public interface RealmResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public RealmRepresentation toRepresentation();
+    RealmRepresentation toRepresentation();
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void update(RealmRepresentation realmRepresentation);
+    void update(RealmRepresentation realmRepresentation);
 
     @Path("clients")
-    public ClientsResource clients();
+    ClientsResource clients();
 
     @Path("users")
-    public UsersResource users();
+    UsersResource users();
 
     @Path("roles")
-    public RolesResource roles();
+    RolesResource roles();
 
     @Path("identity-provider")
     IdentityProvidersResource identityProviders();
 
     @DELETE
-    public void remove();
+    void remove();
 
+    @Path("client-session-stats")
+    @GET
+    List<Map<String, String>> getClientSessionStats();
+    
 }
