@@ -73,9 +73,6 @@ public class FederationProvidersIntegrationTest {
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
             LDAPUtils.removeAllUsers(ldapFedProvider, appRealm);
 
-            // Add sample application TODO: REmove this!!!! It's just temporarily needed in SyncProvidersTest until model for federation mappers is implemented
-            ClientModel finance = appRealm.addClient("finance");
-
             LDAPObject john = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johnkeycloak", "John", "Doe", "john@email.org", "1234");
             ldapFedProvider.getLdapIdentityStore().updatePassword(john, "Password1");
 

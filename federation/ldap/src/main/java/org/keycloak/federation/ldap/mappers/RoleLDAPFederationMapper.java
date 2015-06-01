@@ -120,10 +120,12 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     public LDAPIdentityQuery createRoleQuery(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider) {
         LDAPIdentityQuery ldapQuery = new LDAPIdentityQuery(ldapProvider);
-        ldapQuery.setSearchScope(SearchControls.ONELEVEL_SCOPE);
+
+        // For now, use same search scope, which is configured "globally" and used for user's search.
+        ldapQuery.setSearchScope(ldapProvider.getLdapIdentityStore().getConfig().getSearchScope());
 
         String rolesDn = getRolesDn(mapperModel);
-        ldapQuery.addSearchDns(Arrays.asList(rolesDn));
+        ldapQuery.setSearchDn(rolesDn);
 
         Collection<String> roleObjectClasses = getRoleObjectClasses(mapperModel);
         ldapQuery.addObjectClasses(roleObjectClasses);
@@ -205,7 +207,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         ldapObject.setAttribute(roleNameAttribute, roleName);
 
         LDAPDn roleDn = LDAPDn.fromString(getRolesDn(mapperModel));
-        roleDn.addToHead(roleNameAttribute, roleName);
+        roleDn.addFirst(roleNameAttribute, roleName);
         ldapObject.setDn(roleDn);
 
         // TODO: debug

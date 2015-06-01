@@ -56,7 +56,7 @@ public class LDAPIdentityStore implements IdentityStore {
         this.config = config;
 
         try {
-            this.operationManager = new LDAPOperationManager(getConfig());
+            this.operationManager = new LDAPOperationManager(config);
         } catch (NamingException e) {
             throw new ModelException("Couldn't init operation manager", e);
         }
@@ -115,8 +115,7 @@ public class LDAPIdentityStore implements IdentityStore {
                 throw new ModelException("LDAP Identity Store does not yet support sorted queries.");
             }
 
-            // TODO: proper support for search by more DNs
-            String baseDN = identityQuery.getSearchDns().iterator().next();
+            String baseDN = identityQuery.getSearchDn();
 
             for (Condition condition : identityQuery.getConditions()) {
 
@@ -263,6 +262,7 @@ public class LDAPIdentityStore implements IdentityStore {
         return filter;
     }
 
+
     protected void applyCondition(StringBuilder filter, Condition condition) {
         if (OrCondition.class.isInstance(condition)) {
             OrCondition orCondition = (OrCondition) condition;
@@ -351,6 +351,7 @@ public class LDAPIdentityStore implements IdentityStore {
         }
     }
 
+
     private StringBuilder getObjectClassesFilter(Collection<String> objectClasses) {
         StringBuilder builder = new StringBuilder();
 
@@ -364,6 +365,7 @@ public class LDAPIdentityStore implements IdentityStore {
 
         return builder;
     }
+
 
     private LDAPObject populateAttributedType(SearchResult searchResult, Collection<String> readOnlyAttrNames) {
         try {
@@ -430,66 +432,11 @@ public class LDAPIdentityStore implements IdentityStore {
 
             return ldapObject;
 
-            /*LDAPMappingConfiguration entryConfig = getMappingConfig(attributedType.getClass());
-
-            if (mappingConfig.getParentMembershipAttributeName() != null) {
-                StringBuilder filter = new StringBuilder("(&");
-                String entryBaseDN = entryDN.substring(entryDN.indexOf(LDAPConstants.COMMA) + 1);
-
-                filter
-                        .append("(")
-                        .append(getObjectClassesFilter(entryConfig))
-                        .append(")")
-                        .append("(")
-                        .append(mappingConfig.getParentMembershipAttributeName())
-                        .append(LDAPConstants.EQUAL).append("")
-                        .append(getBindingDN(attributedType, false))
-                        .append(LDAPConstants.COMMA)
-                        .append(entryBaseDN)
-                        .append(")");
-
-                filter.append(")");
-
-                if (logger.isTraceEnabled()) {
-                    logger.tracef("Searching parent entry for DN [%s] using filter [%s].", entryBaseDN, filter.toString());
-                }
-
-                List<SearchResult> search = this.operationManager.search(getConfig().getBaseDN(), filter.toString(), entryConfig);
-
-                if (!search.isEmpty()) {
-                    SearchResult next = search.get(0);
-
-                    Property<IdentityType> parentProperty = PropertyQueries
-                            .<IdentityType>createQuery(attributedType.getClass())
-                            .addCriteria(new TypedPropertyCriteria(attributedType.getClass())).getFirstResult();
-
-                    if (parentProperty != null) {
-                        String parentDN = next.getNameInNamespace();
-                        String parentBaseDN = parentDN.substring(parentDN.indexOf(",") + 1);
-                        Class<? extends IdentityType> baseDNType = getConfig().getSupportedTypeByBaseDN(parentBaseDN, getEntryObjectClasses(attributes));
-
-                        if (parentProperty.getJavaClass().isAssignableFrom(baseDNType)) {
-                            if (logger.isTraceEnabled()) {
-                                logger.tracef("Found parent [%s] for entry for DN [%s].", parentDN, entryDN);
-                            }
-
-                            int hierarchyDepthCount1 = ++hierarchyDepthCount;
-
-                            parentProperty.setValue(attributedType, populateAttributedType(next, null, hierarchyDepthCount1));
-                        }
-                    }
-                } else {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracef("No parent entry found for DN [%s] using filter [%s].", entryDN, filter.toString());
-                    }
-                }
-            }  */
-
-
         } catch (Exception e) {
             throw new ModelException("Could not populate attribute type " + searchResult.getNameInNamespace() + ".", e);
         }
     }
+
 
     protected BasicAttributes extractAttributes(LDAPObject ldapObject, boolean isCreate) {
         BasicAttributes entryAttributes = new BasicAttributes();
@@ -539,80 +486,6 @@ public class LDAPIdentityStore implements IdentityStore {
         return entryAttributes;
     }
 
-    /*public String getBindingDN(IdentityType attributedType, boolean appendBaseDN) {
-        LDAPMappingConfiguration mappingConfig = getMappingConfig(attributedType.getClass());
-
-        String baseDN;
-        if (mappingConfig.getBaseDN() == null || !appendBaseDN) {
-            baseDN = "";
-        } else {
-            baseDN = LDAPConstants.COMMA + getBaseDN(attributedType);
-        }
-
-        Property<String> bindingDnAttributeProperty = mappingConfig.getBindingDnProperty();
-        String bindingAttributeName = mappingConfig.getMappedAttributes().get(bindingDnAttributeProperty.getName());
-        String bindingAttributeValue = mappingConfig.getBindingDnProperty().getValue(attributedType);
-
-        return bindingAttributeName + LDAPConstants.EQUAL + bindingAttributeValue + baseDN;
-    }
-
-    private String getBaseDN(IdentityType attributedType) {
-        LDAPMappingConfiguration mappingConfig = getMappingConfig(attributedType.getClass());
-        String baseDN = mappingConfig.getBaseDN();
-        String parentDN = mappingConfig.getParentMapping().get(mappingConfig.getIdProperty().getValue(attributedType));
-
-        if (parentDN != null) {
-            baseDN = parentDN;
-        } else {
-            Property<IdentityType> parentProperty = PropertyQueries
-                    .<IdentityType>createQuery(attributedType.getClass())
-                    .addCriteria(new TypedPropertyCriteria(attributedType.getClass())).getFirstResult();
-
-            if (parentProperty != null) {
-                IdentityType parentType = parentProperty.getValue(attributedType);
-
-                if (parentType != null) {
-                    Property<String> parentIdProperty = getMappingConfig(parentType.getClass()).getIdProperty();
-
-                    String parentId = parentIdProperty.getValue(parentType);
-
-                    String parentBaseDN = mappingConfig.getParentMapping().get(parentId);
-
-                    if (parentBaseDN != null) {
-                        baseDN = parentBaseDN;
-                    } else {
-                        baseDN = getBaseDN(parentType);
-                    }
-                }
-            }
-        }
-
-        return baseDN;
-    }
-
-    protected void addToParentAsMember(final IdentityType attributedType) {
-        LDAPMappingConfiguration entryConfig = getMappingConfig(attributedType.getClass());
-
-        if (entryConfig.getParentMembershipAttributeName() != null) {
-            Property<IdentityType> parentProperty = PropertyQueries
-                    .<IdentityType>createQuery(attributedType.getClass())
-                    .addCriteria(new TypedPropertyCriteria(attributedType.getClass()))
-                    .getFirstResult();
-
-            if (parentProperty != null) {
-                IdentityType parentType = parentProperty.getValue(attributedType);
-
-                if (parentType != null) {
-                    Attributes attributes = this.operationManager.getAttributes(parentType.getId(), getBaseDN(parentType), entryConfig);
-                    Attribute attribute = attributes.get(entryConfig.getParentMembershipAttributeName());
-
-                    attribute.add(getBindingDN(attributedType, true));
-
-                    this.operationManager.modifyAttribute(getBindingDN(parentType, true), attribute);
-                }
-            }
-        }
-    }   */
 
     protected String getEntryIdentifier(final LDAPObject ldapObject) {
         try {

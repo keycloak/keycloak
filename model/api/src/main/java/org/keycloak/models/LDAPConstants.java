@@ -19,7 +19,7 @@ public class LDAPConstants {
 
     public static final String CONNECTION_URL = "connectionUrl";
     public static final String SECURITY_PROTOCOL = "securityProtocol";
-    public static final String USER_DNS = "userDns";
+    public static final String USERS_DN = "usersDn";
     public static final String BIND_DN = "bindDn";
     public static final String BIND_CREDENTIAL = "bindCredential";
 
