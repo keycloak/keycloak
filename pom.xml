@@ -47,7 +47,6 @@
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
         <dom4j.version>1.6.1</dom4j.version>
         <xml-apis.version>1.4.01</xml-apis.version>
-        <mysql.version>5.1.25</mysql.version>
         <slf4j.version>1.7.7.jbossorg-1</slf4j.version>
         <wildfly.version>9.0.0.CR1</wildfly.version>
         <wildfly.core.version>1.0.0.CR1</wildfly.core.version>
