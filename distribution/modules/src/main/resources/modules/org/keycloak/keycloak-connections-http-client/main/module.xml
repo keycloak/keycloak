@@ -14,7 +14,7 @@
         <module name="org.keycloak.keycloak-model-api"/>
         <module name="org.jboss.logging"/>
         <module name="javax.api"/>
-        <module name="org.apache.httpcomponents" slot="4.3" />
+        <module name="org.apache.httpcomponents"/>
     </dependencies>
 
 </module>
