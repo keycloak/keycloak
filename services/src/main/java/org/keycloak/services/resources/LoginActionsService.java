@@ -796,6 +796,8 @@ public class LoginActionsService {
             user.setEmailVerified(false);
         }
 
+        AttributeFormDataProcessor.process(formData, realm, user);
+        
         user.removeRequiredAction(RequiredAction.UPDATE_PROFILE);
         event.clone().event(EventType.UPDATE_PROFILE).success();
 
