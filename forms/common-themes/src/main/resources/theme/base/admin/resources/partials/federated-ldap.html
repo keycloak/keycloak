@@ -110,9 +110,9 @@
                 </div>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="ldapUserDns"><span class="required">*</span> User DN</label>
+                <label class="col-md-2 control-label" for="ldapUsersDn"><span class="required">*</span> Users DN</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="ldapUserDns" type="text" ng-model="instance.config.userDns" placeholder="LDAP User DN" required>
+                    <input class="form-control" id="ldapUsersDn" type="text" ng-model="instance.config.usersDn" placeholder="LDAP Users DN" required>
                 </div>
                 <kc-tooltip>Full DN of LDAP tree where your users are. This DN is parent of LDAP users. It could be for example 'ou=users,dc=example,dc=com' assuming
                     that your typical user will have DN like 'uid=john,ou=users,dc=example,dc=com'

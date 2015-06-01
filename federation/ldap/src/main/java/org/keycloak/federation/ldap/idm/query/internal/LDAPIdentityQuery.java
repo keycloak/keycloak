@@ -13,7 +13,6 @@ import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.Sort;
-import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -34,10 +33,10 @@ public class LDAPIdentityQuery {
     private int offset;
     private int limit;
     private byte[] paginationContext;
+    private String searchDn;
     private final Set<Condition> conditions = new LinkedHashSet<Condition>();
     private final Set<Sort> ordering = new LinkedHashSet<Sort>();
 
-    private final Set<String> searchDns = new LinkedHashSet<String>();
     private final Set<String> returningLdapAttributes = new LinkedHashSet<String>();
 
     // Contains just those returningLdapAttributes, which are read-only. They will be marked as read-only in returned LDAPObject instances as well
@@ -62,8 +61,8 @@ public class LDAPIdentityQuery {
         return this;
     }
 
-    public LDAPIdentityQuery addSearchDns(Collection<String> searchDns) {
-        this.searchDns.addAll(searchDns);
+    public LDAPIdentityQuery setSearchDn(String searchDn) {
+        this.searchDn = searchDn;
         return this;
     }
 
@@ -96,8 +95,8 @@ public class LDAPIdentityQuery {
         return unmodifiableSet(this.ordering);
     }
 
-    public Set<String> getSearchDns() {
-        return unmodifiableSet(this.searchDns);
+    public String getSearchDn() {
+        return this.searchDn;
     }
 
     public Set<String> getObjectClasses() {

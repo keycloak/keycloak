@@ -30,7 +30,7 @@ public class LDAPTestConfiguration {
         PROP_MAPPINGS.put(LDAPConstants.CONNECTION_URL, "idm.test.ldap.connection.url");
         PROP_MAPPINGS.put("rolesDnSuffix", "idm.test.ldap.roles.dn.suffix");
         PROP_MAPPINGS.put("groupDnSuffix", "idm.test.ldap.group.dn.suffix");
-        PROP_MAPPINGS.put(LDAPConstants.USER_DNS, "idm.test.ldap.user.dn.suffix");
+        PROP_MAPPINGS.put(LDAPConstants.USERS_DN, "idm.test.ldap.user.dn.suffix");
         PROP_MAPPINGS.put(LDAPConstants.BIND_DN, "idm.test.ldap.bind.dn");
         PROP_MAPPINGS.put(LDAPConstants.BIND_CREDENTIAL, "idm.test.ldap.bind.credential");
         PROP_MAPPINGS.put(LDAPConstants.VENDOR, "idm.test.ldap.vendor");
@@ -54,7 +54,7 @@ public class LDAPTestConfiguration {
         DEFAULT_VALUES.put(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
         DEFAULT_VALUES.put("rolesDnSuffix", "ou=Roles,dc=keycloak,dc=org");
         DEFAULT_VALUES.put("groupDnSuffix", "ou=Groups,dc=keycloak,dc=org");
-        DEFAULT_VALUES.put(LDAPConstants.USER_DNS, "ou=People,dc=keycloak,dc=org");
+        DEFAULT_VALUES.put(LDAPConstants.USERS_DN, "ou=People,dc=keycloak,dc=org");
         DEFAULT_VALUES.put(LDAPConstants.BIND_DN, "uid=admin,ou=system");
         DEFAULT_VALUES.put(LDAPConstants.BIND_CREDENTIAL, "secret");
         DEFAULT_VALUES.put(LDAPConstants.VENDOR, LDAPConstants.VENDOR_OTHER);

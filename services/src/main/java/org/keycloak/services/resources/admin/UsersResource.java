@@ -60,6 +60,7 @@ import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.WebApplicationException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -121,7 +122,16 @@ public class UsersResource {
             if (user == null) {
                 throw new NotFoundException("User not found");
             }
-            updateUserFromRep(user, rep);
+
+            Set<String> attrsToRemove;
+            if (rep.getAttributes() != null) {
+                attrsToRemove = new HashSet<>(user.getAttributes().keySet());
+                attrsToRemove.removeAll(rep.getAttributes().keySet());
+            } else {
+                attrsToRemove = Collections.emptySet();
+            }
+
+            updateUserFromRep(user, rep, attrsToRemove);
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
 
             if (session.getTransaction().isActive()) {
@@ -157,7 +167,8 @@ public class UsersResource {
 
         try {
             UserModel user = session.users().addUser(realm, rep.getUsername());
-            updateUserFromRep(user, rep);
+            Set<String> emptySet = Collections.emptySet();
+            updateUserFromRep(user, rep, emptySet);
             
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, user.getId()).representation(rep).success();
             
@@ -174,7 +185,7 @@ public class UsersResource {
         }
     }
 
-    private void updateUserFromRep(UserModel user, UserRepresentation rep) {
+    private void updateUserFromRep(UserModel user, UserRepresentation rep, Set<String> attrsToRemove) {
         user.setEmail(rep.getEmail());
         user.setFirstName(rep.getFirstName());
         user.setLastName(rep.getLastName());
@@ -200,9 +211,7 @@ public class UsersResource {
                 user.setAttribute(attr.getKey(), attr.getValue());
             }
 
-            Set<String> attrToRemove = new HashSet<String>(user.getAttributes().keySet());
-            attrToRemove.removeAll(rep.getAttributes().keySet());
-            for (String attr : attrToRemove) {
+            for (String attr : attrsToRemove) {
                 user.removeAttribute(attr);
             }
         }
