@@ -19,7 +19,7 @@
             <column name="AUTH_USER_ID" type="VARCHAR(255)"/>
             <column name="IP_ADDRESS" type="VARCHAR(255)"/>
             <column name="RESOURCE_PATH" type="VARCHAR(2550)"/>
-            <column name="REPRESENTATION" type="VARCHAR(25500)"/>
+            <column name="REPRESENTATION" type="BLOB(25500)"/>
             <column name="ERROR" type="VARCHAR(255)"/>
         </createTable>
         <createTable tableName="AUTHENTICATOR">
