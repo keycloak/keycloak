@@ -3,10 +3,7 @@ package org.keycloak.proxy;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -41,6 +38,8 @@ public class ProxyConfig {
     protected boolean sendAccessToken;
     @JsonProperty("applications")
     protected List<Application> applications = new LinkedList<Application>();
+    @JsonProperty("header-names")
+    private Map<String,String> headerNames = new HashMap<>();
 
     public String getBindAddress() {
         return bindAddress;
@@ -154,6 +153,14 @@ public class ProxyConfig {
         this.sendAccessToken = sendAccessToken;
     }
 
+    public void setHeaderNames(Map<String, String> headerNames) {
+        this.headerNames = headerNames;
+    }
+
+    public Map<String, String> getHeaderNames() {
+        return headerNames;
+    }
+
     public static class Application {
         @JsonProperty("base-path")
         protected String basePath;
@@ -212,6 +219,8 @@ public class ProxyConfig {
         protected boolean permit;
         @JsonProperty("authenticate")
         protected boolean authenticate;
+        @JsonProperty("permit-and-inject")
+        protected boolean permitAndInject;
 
         public String getPattern() {
             return pattern;
@@ -251,6 +260,14 @@ public class ProxyConfig {
 
         public void setAuthenticate(boolean authenticate) {
             this.authenticate = authenticate;
+        }
+
+        public boolean isPermitAndInject() {
+            return permitAndInject;
+        }
+
+        public void setPermitAndInject(boolean permitAndInject) {
+            this.permitAndInject = permitAndInject;
         }
 
         public Set<String> getMethods() {

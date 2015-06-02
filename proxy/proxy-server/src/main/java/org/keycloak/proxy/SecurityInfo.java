@@ -46,8 +46,12 @@ public class SecurityInfo<T extends SecurityInfo> implements Cloneable {
         /**
          * Mandate authentication but authorize access as no roles to check against.
          */
-        AUTHENTICATE;
+        AUTHENTICATE,
 
+        /**
+         * Permit access in any case, but provide authorization info only if authorized.
+         */
+        PERMIT_AND_INJECT_IF_AUTHENTICATED;
     }
 
     private volatile EmptyRoleSemantic emptyRoleSemantic = EmptyRoleSemantic.DENY;
