@@ -49,19 +49,9 @@
             <version>${project.version}</version>
         </dependency>      
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wildfly-extensions</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-feature-pack</artifactId>
             <type>zip</type>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-undertow-adapter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak.subsystem</groupId>
