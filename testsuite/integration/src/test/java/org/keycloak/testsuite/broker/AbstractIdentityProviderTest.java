@@ -53,6 +53,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 import javax.mail.MessagingException;
+import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -187,8 +188,7 @@ public abstract class AbstractIdentityProviderTest {
         // read email to take verification link from
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
         MimeMessage message = greenMail.getReceivedMessages()[0];
-        String body = (String) message.getContent();
-        String verificationUrl = MailUtil.getLink(body);
+        String verificationUrl = getVerificationEmailLink(message);
 
         driver.navigate().to(verificationUrl.trim());
 
@@ -804,5 +804,27 @@ public abstract class AbstractIdentityProviderTest {
                 this.session.users().removeUser(realm, user);
             }
         }
+    }
+    
+    private String getVerificationEmailLink(MimeMessage message) throws IOException, MessagingException {
+    	Multipart multipart = (Multipart) message.getContent();
+    	
+        final String textContentType = multipart.getBodyPart(0).getContentType();
+        
+        assertEquals("text/plain; charset=UTF-8", textContentType);
+        
+        final String textBody = (String) multipart.getBodyPart(0).getContent();
+        final String textVerificationUrl = MailUtil.getLink(textBody);
+    	
+        final String htmlContentType = multipart.getBodyPart(1).getContentType();
+        
+        assertEquals("text/html; charset=UTF-8", htmlContentType);
+        
+        final String htmlBody = (String) multipart.getBodyPart(1).getContent();
+        final String htmlVerificationUrl = MailUtil.getLink(htmlBody);
+        
+        assertEquals(htmlVerificationUrl, textVerificationUrl);
+
+        return htmlVerificationUrl;
     }
 }
