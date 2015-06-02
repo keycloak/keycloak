@@ -23,7 +23,6 @@ import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.dmr.ModelNode;
 
-import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.keycloak.subsystem.server.extension.authserver.KeycloakServerDeploymentProcessor;
 
 /**
@@ -40,16 +39,11 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
         context.addStep(new AbstractDeploymentChainStep() {
             @Override
             protected void execute(DeploymentProcessorTarget processorTarget) {
-                processorTarget.addDeploymentProcessor(KeycloakExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, 0, chooseDependencyProcessor());
                 processorTarget.addDeploymentProcessor(KeycloakExtension.SUBSYSTEM_NAME,
                         Phase.POST_MODULE, // PHASE
                         Phase.POST_MODULE_VALIDATOR_FACTORY - 1, // PRIORITY
                         new KeycloakServerDeploymentProcessor());
             }
         }, OperationContext.Stage.RUNTIME);
-    }
-
-    private DeploymentUnitProcessor chooseDependencyProcessor() {
-        return new KeycloakDependencyProcessorWildFly();
     }
 }
