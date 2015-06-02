@@ -53,6 +53,7 @@ public class IdentityProviderTest extends AbstractClientTest {
         assertTrue(representation.isEnabled());
         assertFalse(representation.isStoreToken());
         assertTrue(representation.isUpdateProfileFirstLogin());
+        assertFalse(representation.isTrustEmail());
     }
 
     @Test

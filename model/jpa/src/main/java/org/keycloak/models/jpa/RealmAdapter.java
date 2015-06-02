@@ -1154,6 +1154,7 @@ public class RealmAdapter implements RealmModel {
             identityProviderModel.setConfig(entity.getConfig());
             identityProviderModel.setEnabled(entity.isEnabled());
             identityProviderModel.setUpdateProfileFirstLogin(entity.isUpdateProfileFirstLogin());
+            identityProviderModel.setTrustEmail(entity.isTrustEmail());
             identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
             identityProviderModel.setStoreToken(entity.isStoreToken());
             identityProviderModel.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
@@ -1186,6 +1187,7 @@ public class RealmAdapter implements RealmModel {
         entity.setStoreToken(identityProvider.isStoreToken());
         entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
         entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
+        entity.setTrustEmail(identityProvider.isTrustEmail());
         entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
         entity.setConfig(identityProvider.getConfig());
 
@@ -1212,6 +1214,7 @@ public class RealmAdapter implements RealmModel {
                 entity.setAlias(identityProvider.getAlias());
                 entity.setEnabled(identityProvider.isEnabled());
                 entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
+                entity.setTrustEmail(identityProvider.isTrustEmail());
                 entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
                 entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
                 entity.setStoreToken(identityProvider.isStoreToken());

@@ -307,6 +307,16 @@
                     </row>
                     <row>
                         <entry>
+                            <literal>Trust email</literal>
+                        </entry>
+                        <entry>
+                            Allows you to trust email address returned from the social provider. If enabled then email address returned by the provider 
+                            is marked as 'verified' in the Keycloak user profile. This means that email verification step is skipped even 
+                            if "Verify email" feature is enabled in realm settings.
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
                             <literal>GUI order</literal>
                         </entry>
                         <entry>

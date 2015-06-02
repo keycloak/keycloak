@@ -13,6 +13,7 @@
             "providerId" : "google",
             "enabled": true,
             "updateProfileFirstLogin" : "true",
+            "trustEmail" : "true",
             "storeToken": "true",
             "config": {
                 "clientId": "clientId",
@@ -78,7 +79,7 @@
             "alias" : "model-stackoverflow",
             "providerId" : "stackoverflow",
             "enabled": true,
-            "updateProfileFirstLogin" : "true",
+            "updateProfileFirstLogin" : "false",
             "storeToken": false,
             "config": {
                 "key": "keyValue",
@@ -129,6 +130,7 @@
             "providerId" : "saml",
             "enabled": true,
             "updateProfileFirstLogin" : true,
+            "trustEmail" : true,
             "addReadTokenRoleOnCreate": true,
             "config": {
                 "singleSignOnServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-idp-basic/protocol/saml",

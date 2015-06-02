@@ -66,6 +66,13 @@
                 <kc-tooltip>Indicates if user must update his profile right after the first login.</kc-tooltip>
             </div>
             <div class="form-group">
+                <label class="col-md-2 control-label" for="trustEmail">Trust email</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.trustEmail" name="identityProvider.trustEmail" id="trustEmail" onoffswitch />
+                </div>
+                <kc-tooltip>If enabled then email provided by this provider is not verified even if verification is enabled for the realm.</kc-tooltip>
+            </div>
+            <div class="form-group">
                 <label class="col-md-2 control-label" for="guiOrder">GUI order</label>
                 <div class="col-md-6">
                     <input class="form-control" id="guiOrder" type="text" ng-model="identityProvider.config.guiOrder">
