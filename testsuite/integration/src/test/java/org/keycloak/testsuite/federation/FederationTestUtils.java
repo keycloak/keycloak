@@ -108,8 +108,9 @@ class FederationTestUtils {
             mapperModel.getConfig().put(RoleLDAPFederationMapper.MODE, mode.toString());
             realm.updateUserFederationMapper(mapperModel);
         } else {
+            String baseDn = providerModel.getConfig().get(LDAPConstants.BASE_DN);
             mapperModel = KeycloakModelUtils.createUserFederationMapperModel("realmRolesMapper", providerModel.getId(), RoleLDAPFederationMapperFactory.PROVIDER_ID,
-                    RoleLDAPFederationMapper.ROLES_DN, "ou=RealmRoles,dc=keycloak,dc=org",
+                    RoleLDAPFederationMapper.ROLES_DN, "ou=RealmRoles," + baseDn,
                     RoleLDAPFederationMapper.USE_REALM_ROLES_MAPPING, "true",
                     RoleLDAPFederationMapper.MODE, mode.toString());
             realm.addUserFederationMapper(mapperModel);
@@ -120,8 +121,9 @@ class FederationTestUtils {
             mapperModel.getConfig().put(RoleLDAPFederationMapper.MODE, mode.toString());
             realm.updateUserFederationMapper(mapperModel);
         } else {
+            String baseDn = providerModel.getConfig().get(LDAPConstants.BASE_DN);
             mapperModel = KeycloakModelUtils.createUserFederationMapperModel("financeRolesMapper", providerModel.getId(), RoleLDAPFederationMapperFactory.PROVIDER_ID,
-                    RoleLDAPFederationMapper.ROLES_DN, "ou=FinanceRoles,dc=keycloak,dc=org",
+                    RoleLDAPFederationMapper.ROLES_DN, "ou=FinanceRoles," + baseDn,
                     RoleLDAPFederationMapper.USE_REALM_ROLES_MAPPING, "false",
                     RoleLDAPFederationMapper.CLIENT_ID, "finance",
                     RoleLDAPFederationMapper.MODE, mode.toString());
