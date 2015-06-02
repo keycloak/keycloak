@@ -637,10 +637,12 @@ public abstract class AbstractIdentityProviderTest {
             String userLastName = "New last";
 
             assertEquals(expectedEmail, federatedUser.getEmail());
+            assertFalse(federatedUser.isEmailVerified());
             assertEquals(userFirstName, federatedUser.getFirstName());
             assertEquals(userLastName, federatedUser.getLastName());
         } else {
             assertEquals(expectedEmail, federatedUser.getEmail());
+            assertFalse(federatedUser.isEmailVerified());
             assertEquals("Test", federatedUser.getFirstName());
             assertEquals("User", federatedUser.getLastName());
         }
