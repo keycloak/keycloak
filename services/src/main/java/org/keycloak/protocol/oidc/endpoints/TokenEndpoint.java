@@ -37,6 +37,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -227,16 +228,7 @@ public class TokenEndpoint {
             throw new ErrorResponseException("invalid_grant", "Session not active", Response.Status.BAD_REQUEST);
         }
 
-        String adapterSessionId = formParams.getFirst(AdapterConstants.CLIENT_SESSION_STATE);
-        if (adapterSessionId != null) {
-            String adapterSessionHost = formParams.getFirst(AdapterConstants.CLIENT_SESSION_HOST);
-            logger.debugf("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'", adapterSessionId, client.getClientId(), adapterSessionHost);
-
-            event.detail(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
-            clientSession.setNote(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
-            event.detail(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
-            clientSession.setNote(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
-        }
+        updateClientSession(clientSession);
 
         AccessToken token = tokenManager.createClientAccessToken(session, accessCode.getRequestedRoles(), realm, client, user, userSession, clientSession);
 
@@ -259,6 +251,10 @@ public class TokenEndpoint {
         AccessTokenResponse res;
         try {
             res = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event, headers);
+
+            UserSessionModel userSession = session.sessions().getUserSession(realm, res.getSessionState());
+            updateClientSessions(userSession.getClientSessions());
+
         } catch (OAuthErrorException e) {
             event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
@@ -267,6 +263,45 @@ public class TokenEndpoint {
         event.success();
 
         return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+    }
+
+    private void updateClientSession(ClientSessionModel clientSession) {
+
+        if(clientSession == null) {
+            logger.error("client session is null");
+            return;
+        }
+
+        String adapterSessionId = formParams.getFirst(AdapterConstants.CLIENT_SESSION_STATE);
+        if (adapterSessionId != null) {
+            String adapterSessionHost = formParams.getFirst(AdapterConstants.CLIENT_SESSION_HOST);
+            logger.debugf("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'", adapterSessionId, client.getClientId(), adapterSessionHost);
+
+            event.detail(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
+            clientSession.setNote(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
+            event.detail(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
+            clientSession.setNote(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
+        }
+    }
+
+    private void updateClientSessions(List<ClientSessionModel> clientSessions) {
+        if(clientSessions == null) {
+            logger.error("client sessions is null");
+            return;
+        }
+        for (ClientSessionModel clientSession : clientSessions) {
+            if(clientSession == null) {
+                logger.error("client session is null");
+                continue;
+            }
+            if(clientSession.getClient() == null) {
+                logger.error("client model in client session is null");
+                continue;
+            }
+            if(client.getId().equals(clientSession.getClient().getId())) {
+                updateClientSession(clientSession);
+            }
+        }
     }
 
     public Response buildResourceOwnerPasswordCredentialsGrant() {
