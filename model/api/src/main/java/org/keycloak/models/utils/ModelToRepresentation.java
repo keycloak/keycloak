@@ -325,7 +325,7 @@ public class ModelToRepresentation {
         providerRep.setAlias(identityProviderModel.getAlias());
         providerRep.setEnabled(identityProviderModel.isEnabled());
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
-        providerRep.setUpdateProfileFirstLogin(identityProviderModel.isUpdateProfileFirstLogin());
+        providerRep.setUpdateProfileFirstLoginMode(identityProviderModel.getUpdateProfileFirstLoginMode());
         providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
         providerRep.setConfig(identityProviderModel.getConfig());

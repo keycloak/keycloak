@@ -41,8 +41,8 @@ public class IdentityProviderEntity {
     @Column(name="ENABLED")
     private boolean enabled;
 
-    @Column(name="UPDATE_PROFILE_FIRST_LOGIN")
-    private boolean updateProfileFirstLogin;
+    @Column(name = "UPDATE_PROFILE_FIRST_LOGIN_MODE")
+    private String updateProfileFirstLoginMode;
 
     @Column(name = "TRUST_EMAIL")
     private boolean trustEmail;
@@ -102,12 +102,12 @@ public class IdentityProviderEntity {
         this.enabled = enabled;
     }
 
-    public boolean isUpdateProfileFirstLogin() {
-        return this.updateProfileFirstLogin;
+    public String getUpdateProfileFirstLoginMode() {
+        return updateProfileFirstLoginMode;
     }
 
-    public void setUpdateProfileFirstLogin(boolean updateProfileFirstLogin) {
-        this.updateProfileFirstLogin = updateProfileFirstLogin;
+    public void setUpdateProfileFirstLoginMode(String updateProfileFirstLoginMode) {
+        this.updateProfileFirstLoginMode = updateProfileFirstLoginMode;
     }
 
     public boolean isStoreToken() {

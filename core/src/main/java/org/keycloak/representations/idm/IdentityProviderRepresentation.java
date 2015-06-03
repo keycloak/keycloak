@@ -29,7 +29,25 @@ public class IdentityProviderRepresentation {
     protected String internalId;
     protected String providerId;
     protected boolean enabled = true;
-    protected boolean updateProfileFirstLogin = true;
+
+    public static final String UPFLM_ON = "on";
+    public static final String UPFLM_MISSING = "missing";
+    public static final String UPFLM_OFF = "off";
+
+    /**
+     * Mode of profile update after first login when user is created over this identity provider. Possible values:
+     * <ul>
+     * <li><code>on</code> - update profile page is presented for all users
+     * <li><code>missing</code> - update profile page is presented for users with missing some of mandatory user profile fields
+     * <li><code>off</code> - update profile page is newer shown after first login
+     * </ul>
+     * 
+     * @see #UPFLM_ON
+     * @see #UPFLM_MISSING
+     * @see #UPFLM_OFF
+     */
+    protected String updateProfileFirstLoginMode = UPFLM_ON;
+
     protected boolean trustEmail;
     protected boolean storeToken;
     protected boolean addReadTokenRoleOnCreate;
@@ -76,12 +94,29 @@ public class IdentityProviderRepresentation {
         this.enabled = enabled;
     }
 
-    public boolean isUpdateProfileFirstLogin() {
-        return this.updateProfileFirstLogin;
+    /**
+     * 
+     * Deprecated because replaced by {@link #updateProfileFirstLoginMode}. Kept here to allow import of old realms.
+     * 
+     * @deprecated {@link #setUpdateProfileFirstLoginMode(String)}
+     */
+    @Deprecated
+    public void setUpdateProfileFirstLogin(boolean updateProfileFirstLogin) {
+        this.updateProfileFirstLoginMode = updateProfileFirstLogin ? UPFLM_ON : UPFLM_OFF;
     }
 
-    public void setUpdateProfileFirstLogin(boolean updateProfileFirstLogin) {
-        this.updateProfileFirstLogin = updateProfileFirstLogin;
+    /**
+     * @return see {@link #updateProfileFirstLoginMode}
+     */
+    public String getUpdateProfileFirstLoginMode() {
+        return updateProfileFirstLoginMode;
+    }
+
+    /**
+     * @param updateProfileFirstLoginMode see {@link #updateProfileFirstLoginMode}
+     */
+    public void setUpdateProfileFirstLoginMode(String updateProfileFirstLoginMode) {
+        this.updateProfileFirstLoginMode = updateProfileFirstLoginMode;
     }
 
     public boolean isAuthenticateByDefault() {

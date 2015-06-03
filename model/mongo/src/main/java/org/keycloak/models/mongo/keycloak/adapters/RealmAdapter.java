@@ -782,7 +782,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             identityProviderModel.setInternalId(entity.getInternalId());
             identityProviderModel.setConfig(entity.getConfig());
             identityProviderModel.setEnabled(entity.isEnabled());
-            identityProviderModel.setUpdateProfileFirstLogin(entity.isUpdateProfileFirstLogin());
+            identityProviderModel.setUpdateProfileFirstLoginMode(entity.getUpdateProfileFirstLoginMode());
             identityProviderModel.setTrustEmail(entity.isTrustEmail());
             identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
             identityProviderModel.setStoreToken(entity.isStoreToken());
@@ -813,7 +813,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setAlias(identityProvider.getAlias());
         entity.setProviderId(identityProvider.getProviderId());
         entity.setEnabled(identityProvider.isEnabled());
-        entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
+        entity.setUpdateProfileFirstLoginMode(identityProvider.getUpdateProfileFirstLoginMode());
         entity.setTrustEmail(identityProvider.isTrustEmail());
         entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
         entity.setStoreToken(identityProvider.isStoreToken());
@@ -826,7 +826,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void removeIdentityProviderByAlias(String alias) {
-        IdentityProviderEntity toRemove;
         for (IdentityProviderEntity entity : realm.getIdentityProviders()) {
             if (entity.getAlias().equals(alias)) {
                 realm.getIdentityProviders().remove(entity);
@@ -842,7 +841,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             if (entity.getInternalId().equals(identityProvider.getInternalId())) {
                 entity.setAlias(identityProvider.getAlias());
                 entity.setEnabled(identityProvider.isEnabled());
-                entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
+                entity.setUpdateProfileFirstLoginMode(identityProvider.getUpdateProfileFirstLoginMode());
                 entity.setTrustEmail(identityProvider.isTrustEmail());
                 entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
                 entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());

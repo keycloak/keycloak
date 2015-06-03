@@ -1164,7 +1164,7 @@ public class RealmAdapter implements RealmModel {
             identityProviderModel.setInternalId(entity.getInternalId());
             identityProviderModel.setConfig(entity.getConfig());
             identityProviderModel.setEnabled(entity.isEnabled());
-            identityProviderModel.setUpdateProfileFirstLogin(entity.isUpdateProfileFirstLogin());
+            identityProviderModel.setUpdateProfileFirstLoginMode(entity.getUpdateProfileFirstLoginMode());
             identityProviderModel.setTrustEmail(entity.isTrustEmail());
             identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
             identityProviderModel.setStoreToken(entity.isStoreToken());
@@ -1197,7 +1197,7 @@ public class RealmAdapter implements RealmModel {
         entity.setEnabled(identityProvider.isEnabled());
         entity.setStoreToken(identityProvider.isStoreToken());
         entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
-        entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
+        entity.setUpdateProfileFirstLoginMode(identityProvider.getUpdateProfileFirstLoginMode());
         entity.setTrustEmail(identityProvider.isTrustEmail());
         entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
         entity.setConfig(identityProvider.getConfig());
@@ -1224,7 +1224,7 @@ public class RealmAdapter implements RealmModel {
             if (entity.getInternalId().equals(identityProvider.getInternalId())) {
                 entity.setAlias(identityProvider.getAlias());
                 entity.setEnabled(identityProvider.isEnabled());
-                entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
+                entity.setUpdateProfileFirstLoginMode(identityProvider.getUpdateProfileFirstLoginMode());
                 entity.setTrustEmail(identityProvider.isTrustEmail());
                 entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
                 entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());

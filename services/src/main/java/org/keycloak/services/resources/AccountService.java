@@ -580,7 +580,7 @@ public class AccountService {
         String totp = formData.getFirst("totp");
         String totpSecret = formData.getFirst("totpSecret");
 
-        if (Validation.isEmpty(totp)) {
+        if (Validation.isBlank(totp)) {
             setReferrerOnPage();
             return account.setError(Messages.MISSING_TOTP).createResponse(AccountPages.TOTP);
         } else if (!new TimeBasedOTP().validate(totp, totpSecret.getBytes())) {
@@ -640,7 +640,7 @@ public class AccountService {
         String passwordConfirm = formData.getFirst("password-confirm");
 
         if (requireCurrent) {
-            if (Validation.isEmpty(password)) {
+            if (Validation.isBlank(password)) {
                 setReferrerOnPage();
                 return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
             }

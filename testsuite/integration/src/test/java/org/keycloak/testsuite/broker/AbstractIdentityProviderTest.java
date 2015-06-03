@@ -34,6 +34,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.testsuite.MailUtil;
 import org.keycloak.testsuite.OAuthClient;
@@ -136,18 +137,34 @@ public abstract class AbstractIdentityProviderTest {
     @Test
     public void testSuccessfulAuthentication() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-        identityProviderModel.setUpdateProfileFirstLogin(true);
+        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_ON);
 
-        UserModel user = assertSuccessfulAuthentication(identityProviderModel, "test-user", "new@email.com");
+        UserModel user = assertSuccessfulAuthentication(identityProviderModel, "test-user", "new@email.com", true);
         Assert.assertEquals("617-666-7777", user.getAttribute("mobile"));
+    }
+
+    @Test
+    public void testSuccessfulAuthenticationUpdateProfileOnMissing_nothingMissing() {
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_MISSING);
+
+        assertSuccessfulAuthentication(identityProviderModel, "test-user", "test-user@localhost", false);
+    }
+
+    @Test
+    public void testSuccessfulAuthenticationUpdateProfileOnMissing_missingEmail() {
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_MISSING);
+
+        assertSuccessfulAuthentication(identityProviderModel, "test-user-noemail", "new@email.com", true);
     }
 
     @Test
     public void testSuccessfulAuthenticationWithoutUpdateProfile() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-        identityProviderModel.setUpdateProfileFirstLogin(false);
+        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
 
-        assertSuccessfulAuthentication(identityProviderModel, "test-user", "test-user@localhost");
+        assertSuccessfulAuthentication(identityProviderModel, "test-user", "test-user@localhost", false);
     }
 
     /**
@@ -164,10 +181,10 @@ public abstract class AbstractIdentityProviderTest {
 
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
         try {
-            identityProviderModel.setUpdateProfileFirstLogin(false);
+            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
             identityProviderModel.setTrustEmail(false);
 
-            UserModel federatedUser = assertSuccessfulAuthenticationWithEmailVerification(identityProviderModel, "test-user", "test-user@localhost");
+            UserModel federatedUser = assertSuccessfulAuthenticationWithEmailVerification(identityProviderModel, "test-user", "test-user@localhost", false);
 
             // email is verified now
             assertFalse(federatedUser.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL.name()));
@@ -177,9 +194,10 @@ public abstract class AbstractIdentityProviderTest {
         }
     }
 
-    private UserModel assertSuccessfulAuthenticationWithEmailVerification(IdentityProviderModel identityProviderModel, String username, String expectedEmail)
+    private UserModel assertSuccessfulAuthenticationWithEmailVerification(IdentityProviderModel identityProviderModel, String username, String expectedEmail,
+            boolean isProfileUpdateExpected)
             throws IOException, MessagingException {
-        authenticateWithIdentityProvider(identityProviderModel, username);
+        authenticateWithIdentityProvider(identityProviderModel, username, isProfileUpdateExpected);
 
         // verify email is sent
         Assert.assertTrue(verifyEmailPage.isCurrent());
@@ -199,7 +217,7 @@ public abstract class AbstractIdentityProviderTest {
 
         assertNotNull(federatedUser);
 
-        doAssertFederatedUser(federatedUser, identityProviderModel, expectedEmail);
+        doAssertFederatedUser(federatedUser, identityProviderModel, expectedEmail, isProfileUpdateExpected);
 
         brokerServerRule.stopSession(session, true);
         session = brokerServerRule.startSession();
@@ -233,9 +251,9 @@ public abstract class AbstractIdentityProviderTest {
 
         try {
             IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-            identityProviderModel.setUpdateProfileFirstLogin(false);
+            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
 
-            UserModel federatedUser = assertSuccessfulAuthentication(identityProviderModel, "test-user-noemail", null);
+            UserModel federatedUser = assertSuccessfulAuthentication(identityProviderModel, "test-user-noemail", null, false);
 
             assertTrue(federatedUser.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL.name()));
 
@@ -255,10 +273,10 @@ public abstract class AbstractIdentityProviderTest {
 
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
         try {
-            identityProviderModel.setUpdateProfileFirstLogin(false);
+            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
             identityProviderModel.setTrustEmail(true);
 
-            UserModel federatedUser = assertSuccessfulAuthentication(identityProviderModel, "test-user", "test-user@localhost");
+            UserModel federatedUser = assertSuccessfulAuthentication(identityProviderModel, "test-user", "test-user@localhost", false);
 
             assertFalse(federatedUser.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL.name()));
 
@@ -282,10 +300,10 @@ public abstract class AbstractIdentityProviderTest {
 
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
         try {
-            identityProviderModel.setUpdateProfileFirstLogin(true);
+            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_ON);
             identityProviderModel.setTrustEmail(true);
 
-            UserModel user = assertSuccessfulAuthenticationWithEmailVerification(identityProviderModel, "test-user", "new@email.com");
+            UserModel user = assertSuccessfulAuthenticationWithEmailVerification(identityProviderModel, "test-user", "new@email.com", true);
             Assert.assertEquals("617-666-7777", user.getAttribute("mobile"));
         } finally {
             identityProviderModel.setTrustEmail(false);
@@ -302,9 +320,9 @@ public abstract class AbstractIdentityProviderTest {
 
         try {
             IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-            identityProviderModel.setUpdateProfileFirstLogin(false);
+            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
 
-            authenticateWithIdentityProvider(identityProviderModel, "test-user");
+            authenticateWithIdentityProvider(identityProviderModel, "test-user", false);
 
             // authenticated and redirected to app
             assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
@@ -321,7 +339,7 @@ public abstract class AbstractIdentityProviderTest {
 
             assertEquals("test-user@localhost", federatedUser.getUsername());
 
-            doAssertFederatedUser(federatedUser, identityProviderModel, "test-user@localhost");
+            doAssertFederatedUser(federatedUser, identityProviderModel, "test-user@localhost", false);
 
             Set<FederatedIdentityModel> federatedIdentities = this.session.users().getFederatedIdentities(federatedUser, realm);
 
@@ -350,9 +368,9 @@ public abstract class AbstractIdentityProviderTest {
 
         try {
             IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-            identityProviderModel.setUpdateProfileFirstLogin(false);
+            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
 
-            authenticateWithIdentityProvider(identityProviderModel, "test-user-noemail");
+            authenticateWithIdentityProvider(identityProviderModel, "test-user-noemail", false);
 
             brokerServerRule.stopSession(session, true);
             session = brokerServerRule.startSession();
@@ -455,7 +473,7 @@ public abstract class AbstractIdentityProviderTest {
     public void testUserAlreadyExistsWhenNotUpdatingProfile() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
 
-        identityProviderModel.setUpdateProfileFirstLogin(false);
+        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
 
         this.driver.navigate().to("http://localhost:8081/test-app/");
 
@@ -593,7 +611,7 @@ public abstract class AbstractIdentityProviderTest {
 
         identityProviderModel.setStoreToken(true);
 
-        authenticateWithIdentityProvider(identityProviderModel, "test-user");
+        authenticateWithIdentityProvider(identityProviderModel, "test-user", true);
 
         UserModel federatedUser = getFederatedUser();
         RealmModel realm = getRealm();
@@ -658,17 +676,18 @@ public abstract class AbstractIdentityProviderTest {
 
     protected abstract void doAssertTokenRetrieval(String pageSource);
 
-    private UserModel assertSuccessfulAuthentication(IdentityProviderModel identityProviderModel, String username, String expectedEmail) {
-        authenticateWithIdentityProvider(identityProviderModel, username);
+    private UserModel assertSuccessfulAuthentication(IdentityProviderModel identityProviderModel, String username, String expectedEmail, boolean isProfileUpdateExpected) {
+        authenticateWithIdentityProvider(identityProviderModel, username, isProfileUpdateExpected);
 
         // authenticated and redirected to app
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
+        assertTrue("Bad current URL " + this.driver.getCurrentUrl() + " and page source: " + this.driver.getPageSource(),
+                this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
 
         UserModel federatedUser = getFederatedUser();
 
         assertNotNull(federatedUser);
 
-        doAssertFederatedUser(federatedUser, identityProviderModel, expectedEmail);
+        doAssertFederatedUser(federatedUser, identityProviderModel, expectedEmail, isProfileUpdateExpected);
 
         brokerServerRule.stopSession(session, true);
         session = brokerServerRule.startSession();
@@ -691,11 +710,11 @@ public abstract class AbstractIdentityProviderTest {
         return federatedUser;
     }
 
-    private void authenticateWithIdentityProvider(IdentityProviderModel identityProviderModel, String username) {
+    private void authenticateWithIdentityProvider(IdentityProviderModel identityProviderModel, String username, boolean isProfileUpdateExpected) {
         loginIDP(username);
 
 
-        if (identityProviderModel.isUpdateProfileFirstLogin()) {
+        if (isProfileUpdateExpected) {
             String userEmail = "new@email.com";
             String userFirstName = "New first";
             String userLastName = "New last";
@@ -704,6 +723,7 @@ public abstract class AbstractIdentityProviderTest {
             this.updateProfilePage.assertCurrent();
             this.updateProfilePage.update(userFirstName, userLastName, userEmail);
         }
+
     }
 
     private void loginIDP(String username) {
@@ -749,7 +769,7 @@ public abstract class AbstractIdentityProviderTest {
 
         assertNotNull(identityProviderModel);
 
-        identityProviderModel.setUpdateProfileFirstLogin(true);
+        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_ON);
         identityProviderModel.setEnabled(true);
 
         return identityProviderModel;
@@ -759,8 +779,8 @@ public abstract class AbstractIdentityProviderTest {
         return this.session.realms().getRealm("realm-with-broker");
     }
 
-    protected void doAssertFederatedUser(UserModel federatedUser, IdentityProviderModel identityProviderModel, String expectedEmail) {
-        if (identityProviderModel.isUpdateProfileFirstLogin()) {
+    protected void doAssertFederatedUser(UserModel federatedUser, IdentityProviderModel identityProviderModel, String expectedEmail, boolean isProfileUpdateExpected) {
+        if (isProfileUpdateExpected) {
             String userFirstName = "New first";
             String userLastName = "New last";
 
