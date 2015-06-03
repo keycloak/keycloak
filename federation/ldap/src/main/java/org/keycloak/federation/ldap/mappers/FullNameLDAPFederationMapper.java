@@ -35,7 +35,7 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
         String ldapFullNameAttrName = getLdapFullNameAttrName(mapperModel);
         String fullName = ldapUser.getAttributeAsString(ldapFullNameAttrName);
         fullName = fullName.trim();
-        if (fullName != null) {
+        if (fullName != null && !fullName.trim().isEmpty()) {
             int lastSpaceIndex = fullName.lastIndexOf(" ");
             if (lastSpaceIndex == -1) {
                 user.setLastName(fullName);
