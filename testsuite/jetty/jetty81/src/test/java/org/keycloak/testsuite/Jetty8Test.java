@@ -66,6 +66,7 @@ public class Jetty8Test {
         File base = new File(dir.getFile()).getParentFile();
         list.add(new WebAppContext(new File(base, "customer-portal").toString(), "/customer-portal"));
         list.add(new WebAppContext(new File(base, "customer-db").toString(), "/customer-db"));
+        list.add(new WebAppContext(new File(base, "customer-db-error-page").toString(), "/customer-db-error-page"));
         list.add(new WebAppContext(new File(base, "product-portal").toString(), "/product-portal"));
         list.add(new WebAppContext(new File(base, "session-portal").toString(), "/session-portal"));
         list.add(new WebAppContext(new File(base, "input-portal").toString(), "/input-portal"));
@@ -129,6 +130,15 @@ public class Jetty8Test {
     @Test
     public void testNullBearerToken() throws Exception {
         testStrategy.testNullBearerToken();
+    }
+
+    /**
+     * KEYCLOAK-1368
+     * @throws Exception
+     */
+    @Test
+    public void testNullBearerTokenCustomErrorPage() throws Exception {
+        testStrategy.testNullBearerTokenCustomErrorPage();
     }
 
     /**

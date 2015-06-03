@@ -148,40 +148,9 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         return deploymentInfo;
     }
 
-    public void deployApplication(String name, String contextPath, Class<? extends Servlet> servletClass, String adapterConfigPath, String role) {
-        deployApplication(name, contextPath, servletClass, adapterConfigPath, role, true);
 
-    }
-
-    public void deployApplication(String name, String contextPath, Class<? extends Servlet> servletClass, String adapterConfigPath, String role, boolean isConstrained) {
-        deployApplication(name, contextPath, servletClass, adapterConfigPath, role, isConstrained, null);
-    }
-
-    public void deployApplication(String name, String contextPath, Class<? extends Servlet> servletClass, String adapterConfigPath, String role, boolean isConstrained, Class<? extends KeycloakConfigResolver> keycloakConfigResolver) {
-        String constraintUrl = "/*";
-        deployApplication(name, contextPath, servletClass, adapterConfigPath, role, isConstrained, keycloakConfigResolver, constraintUrl);
-    }
-
-    public void deployApplication(String name, String contextPath, Class<? extends Servlet> servletClass, String adapterConfigPath, String role, boolean isConstrained, Class<? extends KeycloakConfigResolver> keycloakConfigResolver, String constraintUrl) {
-        DeploymentInfo di = createDeploymentInfo(name, contextPath, servletClass);
-        if (null == keycloakConfigResolver) {
-            di.addInitParameter("keycloak.config.file", adapterConfigPath);
-        } else {
-            di.addInitParameter("keycloak.config.resolver", keycloakConfigResolver.getCanonicalName());
-        }
-        if (isConstrained) {
-            SecurityConstraint constraint = new SecurityConstraint();
-            WebResourceCollection collection = new WebResourceCollection();
-            collection.addUrlPattern(constraintUrl);
-            constraint.addWebResourceCollection(collection);
-            constraint.addRoleAllowed(role);
-            di.addSecurityConstraint(constraint);
-        }
-        LoginConfig loginConfig = new LoginConfig("KEYCLOAK", "demo", null, "/error.html");
-        di.setLoginConfig(loginConfig);
-        addErrorPage(di);
-
-        server.getServer().deploy(di);
+    public DeploymentBuilder createApplicationDeployment() {
+        return new DeploymentBuilder();
     }
 
     public void addErrorPage(DeploymentInfo di) {
@@ -300,6 +269,87 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
     protected String[] getTestRealms() {
         return new String[]{"test", "demo"};
+    }
+
+    public class DeploymentBuilder {
+
+        private String name;
+        private String contextPath;
+        private Class<? extends Servlet> servletClass;
+        private String adapterConfigPath;
+        private String role;
+        private boolean isConstrained = true;
+        private Class<? extends KeycloakConfigResolver> keycloakConfigResolver;
+        private String constraintUrl = "/*";
+        private String errorPage = "/error.html";
+
+        public DeploymentBuilder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public DeploymentBuilder contextPath(String contextPath) {
+            this.contextPath = contextPath;
+            return this;
+        }
+
+        public DeploymentBuilder servletClass(Class<? extends Servlet> servletClass) {
+            this.servletClass = servletClass;
+            return this;
+        }
+
+        public DeploymentBuilder adapterConfigPath(String adapterConfigPath) {
+            this.adapterConfigPath = adapterConfigPath;
+            return this;
+        }
+
+        public DeploymentBuilder role(String role) {
+            this.role = role;
+            return this;
+        }
+
+        public DeploymentBuilder isConstrained(boolean isConstrained) {
+            this.isConstrained = isConstrained;
+            return this;
+        }
+
+        public DeploymentBuilder keycloakConfigResolver(Class<? extends KeycloakConfigResolver> keycloakConfigResolver) {
+            this.keycloakConfigResolver = keycloakConfigResolver;
+            return this;
+        }
+
+        public DeploymentBuilder constraintUrl(String constraintUrl) {
+            this.constraintUrl = constraintUrl;
+            return this;
+        }
+
+        public DeploymentBuilder errorPage(String errorPage) {
+            this.errorPage = errorPage;
+            return this;
+        }
+
+        public void deployApplication() {
+            DeploymentInfo di = createDeploymentInfo(name, contextPath, servletClass);
+            if (null == keycloakConfigResolver) {
+                di.addInitParameter("keycloak.config.file", adapterConfigPath);
+            } else {
+                di.addInitParameter("keycloak.config.resolver", keycloakConfigResolver.getCanonicalName());
+            }
+            if (isConstrained) {
+                SecurityConstraint constraint = new SecurityConstraint();
+                WebResourceCollection collection = new WebResourceCollection();
+                collection.addUrlPattern(constraintUrl);
+                constraint.addWebResourceCollection(collection);
+                constraint.addRoleAllowed(role);
+                di.addSecurityConstraint(constraint);
+            }
+            LoginConfig loginConfig = new LoginConfig("KEYCLOAK", "demo", null, errorPage);
+            di.setLoginConfig(loginConfig);
+            addErrorPage(di);
+
+            server.getServer().deploy(di);
+        }
+
     }
 
 }

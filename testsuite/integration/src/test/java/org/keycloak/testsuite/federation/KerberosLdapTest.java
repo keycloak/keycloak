@@ -20,6 +20,7 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.adapter.CustomerServlet;
 import org.keycloak.testsuite.rule.KerberosRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebRule;
@@ -42,7 +43,10 @@ public class KerberosLdapTest extends AbstractKerberosTest {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             URL url = getClass().getResource("/kerberos-test/kerberos-app-keycloak.json");
-            keycloakRule.deployApplication("kerberos-portal", "/kerberos-portal", KerberosCredDelegServlet.class, url.getPath(), "user");
+            keycloakRule.createApplicationDeployment()
+                    .name("kerberos-portal").contextPath("/kerberos-portal")
+                    .servletClass(KerberosCredDelegServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
 
             Map<String,String> ldapConfig = kerberosRule.getConfig();
             ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "kerberos-ldap", -1, -1, 0);

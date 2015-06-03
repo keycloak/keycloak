@@ -21,6 +21,11 @@
  */
 package org.keycloak.testsuite.adapter;
 
+import io.undertow.util.Headers;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
@@ -389,6 +394,43 @@ public class AdapterTestStrategy extends ExternalResource {
         response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer null").get();
         Assert.assertEquals(401, response.getStatus());
         response.close();
+        client.close();
+
+    }
+
+    /**
+     * KEYCLOAK-1368
+     * @throws Exception
+     */
+    public void testNullBearerTokenCustomErrorPage() throws Exception {
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(APP_SERVER_BASE_URL + "/customer-db-error-page/");
+
+        Response response = target.request().get();
+
+        // TODO: follow redirects automatically if possible
+        if (response.getStatus() == 302) {
+            String location = response.getHeaderString(HttpHeaders.LOCATION);
+            response.close();
+            response = client.target(location).request().get();
+        }
+        Assert.assertEquals(200, response.getStatus());
+        String errorPageResponse = response.readEntity(String.class);
+        Assert.assertTrue(errorPageResponse.contains("Error Page"));
+        response.close();
+
+        response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer null").get();
+        // TODO: follow redirects automatically if possible
+        if (response.getStatus() == 302) {
+            String location = response.getHeaderString(HttpHeaders.LOCATION);
+            response.close();
+            response = client.target(location).request().get();
+        }
+        Assert.assertEquals(200, response.getStatus());
+        errorPageResponse = response.readEntity(String.class);
+        Assert.assertTrue(errorPageResponse.contains("Error Page"));
+        response.close();
+
         client.close();
 
     }
