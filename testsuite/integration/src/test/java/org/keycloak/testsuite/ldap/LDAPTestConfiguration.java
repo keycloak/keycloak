@@ -37,6 +37,7 @@ public class LDAPTestConfiguration {
         PROP_MAPPINGS.put(LDAPConstants.PAGINATION, "idm.test.ldap.pagination");
         PROP_MAPPINGS.put(LDAPConstants.BATCH_SIZE_FOR_SYNC, "idm.test.ldap.batch.size.for.sync");
         PROP_MAPPINGS.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, "idm.test.ldap.username.ldap.attribute");
+        PROP_MAPPINGS.put(LDAPConstants.RDN_LDAP_ATTRIBUTE, "idm.test.ldap.rdn.ldap.attribute");
         PROP_MAPPINGS.put(LDAPConstants.USER_OBJECT_CLASSES, "idm.test.ldap.user.object.classes");
         PROP_MAPPINGS.put(LDAPConstants.USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE, "idm.test.ldap.user.account.controls.after.password.update");
         PROP_MAPPINGS.put(LDAPConstants.EDIT_MODE, "idm.test.ldap.edit.mode");

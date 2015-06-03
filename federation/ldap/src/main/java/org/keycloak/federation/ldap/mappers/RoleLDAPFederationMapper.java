@@ -209,7 +209,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         roleDn.addFirst(roleNameAttribute, roleName);
         ldapObject.setDn(roleDn);
 
-        logger.infof("Creating role to [%s] to LDAP with DN [%s]", roleName, roleDn.toString());
+        logger.infof("Creating role [%s] to LDAP with DN [%s]", roleName, roleDn.toString());
         ldapProvider.getLdapIdentityStore().add(ldapObject);
         return ldapObject;
     }
