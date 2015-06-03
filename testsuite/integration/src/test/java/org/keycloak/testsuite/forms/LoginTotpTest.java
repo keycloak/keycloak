@@ -110,9 +110,11 @@ public class LoginTotpTest {
         loginTotpPage.assertCurrent();
 
         loginTotpPage.login("123456");
+        loginTotpPage.assertCurrent();
+        Assert.assertEquals("Invalid authenticator code.", loginPage.getError());
 
-        loginPage.assertCurrent();
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        //loginPage.assertCurrent();  // Invalid authenticator code.
+        //Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
         events.expectLogin().error("invalid_user_credentials").session((String) null).assertEvent();
     }

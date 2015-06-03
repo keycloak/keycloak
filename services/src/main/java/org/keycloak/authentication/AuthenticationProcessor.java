@@ -38,6 +38,7 @@ public class AuthenticationProcessor {
     protected EventBuilder event;
     protected HttpRequest request;
     protected String flowId;
+    protected boolean userSessionCreated;
 
 
     public static enum Status {
@@ -77,6 +78,14 @@ public class AuthenticationProcessor {
 
     public KeycloakSession getSession() {
         return session;
+    }
+
+    public UserSessionModel getUserSession() {
+        return userSession;
+    }
+
+    public boolean isUserSessionCreated() {
+        return userSessionCreated;
     }
 
     public AuthenticationProcessor setRealm(RealmModel realm) {
@@ -339,6 +348,40 @@ public class AuthenticationProcessor {
             throw new AuthException(Error.UNKNOWN_USER);
         }
         return authenticationComplete();
+    }
+
+    public Response authenticateOnly() throws AuthException {
+        event.event(EventType.LOGIN);
+        event.client(clientSession.getClient().getClientId())
+                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
+                .detail(Details.AUTH_METHOD, clientSession.getAuthMethod());
+        String authType = clientSession.getNote(Details.AUTH_TYPE);
+        if (authType != null) {
+            event.detail(Details.AUTH_TYPE, authType);
+        }
+        UserModel authUser = clientSession.getAuthenticatedUser();
+        validateUser(authUser);
+        Response challenge = processFlow(flowId);
+        if (challenge != null) return challenge;
+
+        String username = clientSession.getAuthenticatedUser().getUsername();
+        if (userSession == null) { // if no authenticator attached a usersession
+            userSession = session.sessions().createUserSession(realm, clientSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), "form", false, null, null);
+            userSession.setState(UserSessionModel.State.LOGGING_IN);
+            userSessionCreated = true;
+        }
+        TokenManager.attachClientSession(userSession, clientSession);
+        event.user(userSession.getUser())
+                .detail(Details.USERNAME, username)
+                .session(userSession);
+
+        return AuthenticationManager.actionRequired(session, userSession, clientSession, connection, request, uriInfo, event);
+    }
+
+    public Response finishAuthentication() {
+        event.success();
+        RealmModel realm = clientSession.getRealm();
+        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm , userSession, clientSession, request, uriInfo, connection);
 
     }
 

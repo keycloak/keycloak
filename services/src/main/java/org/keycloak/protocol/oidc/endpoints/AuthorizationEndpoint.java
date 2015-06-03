@@ -277,7 +277,21 @@ public class AuthorizationEndpoint {
                 .setUriInfo(uriInfo)
                 .setRequest(request);
 
-        return processor.authenticate();
+        Response challenge = processor.authenticateOnly();
+
+        if (challenge != null && prompt != null && prompt.equals("none")) {
+            if (processor.isUserSessionCreated()) {
+                session.sessions().removeUserSession(realm, processor.getUserSession());
+            }
+            OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo, headers, event);
+            return oauth.cancelLogin(clientSession);
+        }
+
+        if (challenge == null) {
+            return processor.finishAuthentication();
+        } else {
+            return challenge;
+        }
     }
 
     protected Response oldBrowserAuthentication(String accessCode) {

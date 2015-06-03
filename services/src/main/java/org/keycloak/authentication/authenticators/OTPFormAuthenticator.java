@@ -12,6 +12,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -34,7 +35,7 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
     @Override
     public void authenticate(AuthenticatorContext context) {
         if (!isActionUrl(context)) {
-            Response challengeResponse = challenge(context);
+            Response challengeResponse = challenge(context, null);
             context.challenge(challengeResponse);
             return;
         }
@@ -46,34 +47,34 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.TOTP);
         if (password == null) {
-            Response challengeResponse = challenge(context);
+            Response challengeResponse = challenge(context, null);
             context.challenge(challengeResponse);
             return;
         }
         credentials.add(UserCredentialModel.totp(password));
         boolean valid = context.getSession().users().validCredentials(context.getRealm(), context.getUser(), credentials);
         if (!valid) {
-            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = challenge(context);
+            context.getEvent().user(context.getUser())
+                    .error(Errors.INVALID_USER_CREDENTIALS);
+            Response challengeResponse = challenge(context, Messages.INVALID_TOTP);
             context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
         context.success();
     }
 
-
     @Override
     public boolean requiresUser() {
         return true;
     }
 
-    protected Response challenge(AuthenticatorContext context) {
+    protected Response challenge(AuthenticatorContext context, String error) {
         ClientSessionCode clientSessionCode = new ClientSessionCode(context.getRealm(), context.getClientSession());
         URI action = AbstractFormAuthenticator.getActionUrl(context, clientSessionCode);
         LoginFormsProvider forms = context.getSession().getProvider(LoginFormsProvider.class)
                 .setActionUri(action)
                 .setClientSessionCode(clientSessionCode.getCode());
-
+        if (error != null) forms.setError(error);
 
         return forms.createLoginTotp();
     }

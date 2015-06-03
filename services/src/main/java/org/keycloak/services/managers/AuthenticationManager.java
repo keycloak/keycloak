@@ -425,6 +425,17 @@ public class AuthenticationManager {
     public static Response nextActionAfterAuthentication(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession,
                                                   ClientConnection clientConnection,
                                                   HttpRequest request, UriInfo uriInfo, EventBuilder event) {
+        Response requiredAction = actionRequired(session, userSession, clientSession, clientConnection, request, uriInfo, event);
+        if (requiredAction != null) return requiredAction;
+        event.success();
+        RealmModel realm = clientSession.getRealm();
+        return redirectAfterSuccessfulFlow(session, realm , userSession, clientSession, request, uriInfo, clientConnection);
+
+    }
+
+    public static Response actionRequired(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession,
+                                                         ClientConnection clientConnection,
+                                                         HttpRequest request, UriInfo uriInfo, EventBuilder event) {
         RealmModel realm = clientSession.getRealm();
         UserModel user = userSession.getUser();
         isForcePasswordUpdateRequired(realm, user);
@@ -442,7 +453,7 @@ public class AuthenticationManager {
         if (!requiredActions.isEmpty()) {
             Iterator<String> i = user.getRequiredActions().iterator();
             String action = i.next();
-            
+
             if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL.name()) && Validation.isEmpty(user.getEmail())) {
                 if (i.hasNext())
                     action = i.next();
@@ -502,12 +513,12 @@ public class AuthenticationManager {
                         .createOAuthGrant(clientSession);
             }
         }
-
-        event.success();
-        return redirectAfterSuccessfulFlow(session, realm , userSession, clientSession, request, uriInfo, clientConnection);
+        return null;
 
     }
-    
+
+
+
     private static void isForcePasswordUpdateRequired(RealmModel realm, UserModel user) {
         int daysToExpirePassword = realm.getPasswordPolicy().getDaysToExpirePassword();
         if(daysToExpirePassword != -1) {

@@ -145,9 +145,9 @@ public class LoginTest {
 
             loginPage.assertCurrent();
 
-            Assert.assertEquals("Invalid username or password.", loginPage.getError());
+            Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
 
-            events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials").detail(Details.USERNAME, "login-test").assertEvent();
+            events.expectLogin().user(userId).session((String) null).error("user_disabled").detail(Details.USERNAME, "login-test").assertEvent();
         } finally {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
@@ -225,7 +225,7 @@ public class LoginTest {
         driver.navigate().to(oauth.getLoginFormUrl().toString() + "&prompt=none");
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).removeDetail(Details.USERNAME).detail(Details.AUTH_METHOD, "sso").assertEvent();
+        events.expectLogin().user(userId).removeDetail(Details.USERNAME).assertEvent();
     }
     
     @Test
@@ -359,7 +359,7 @@ public class LoginTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
+        events.expectLogin().user(userId).assertEvent();
     }
 
     @Test

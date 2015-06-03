@@ -43,15 +43,28 @@ public class AbstractFormAuthenticator {
     }
 
     protected Response invalidUser(AuthenticatorContext context) {
-        return loginForm(context).setError(Messages.INVALID_USER).createLogin();
+        return loginForm(context)
+                .setError(Messages.INVALID_USER)
+                .setClientSessionCode(new ClientSessionCode(context.getRealm(), context.getClientSession()).getCode())
+                .createLogin();
     }
 
     protected Response disabledUser(AuthenticatorContext context) {
-        return loginForm(context).setError(Messages.ACCOUNT_DISABLED).createLogin();
+        return loginForm(context)
+                .setClientSessionCode(new ClientSessionCode(context.getRealm(), context.getClientSession()).getCode())
+                .setError(Messages.ACCOUNT_DISABLED).createLogin();
     }
 
     protected Response temporarilyDisabledUser(AuthenticatorContext context) {
-        return loginForm(context).setError(Messages.ACCOUNT_TEMPORARILY_DISABLED).createLogin();
+        return loginForm(context)
+                .setClientSessionCode(new ClientSessionCode(context.getRealm(), context.getClientSession()).getCode())
+                .setError(Messages.ACCOUNT_TEMPORARILY_DISABLED).createLogin();
+    }
+
+    protected Response invalidCredentials(AuthenticatorContext context) {
+        return loginForm(context)
+                .setClientSessionCode(new ClientSessionCode(context.getRealm(), context.getClientSession()).getCode())
+                .setError(Messages.INVALID_USER).createLogin();
     }
 
     public boolean invalidUser(AuthenticatorContext context, UserModel user) {
@@ -62,6 +75,7 @@ public class AbstractFormAuthenticator {
             return true;
         }
         if (!user.isEnabled()) {
+            context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
             Response challengeResponse = disabledUser(context);
             context.failureChallenge(AuthenticationProcessor.Error.USER_DISABLED, challengeResponse);
@@ -69,6 +83,7 @@ public class AbstractFormAuthenticator {
         }
         if (context.getRealm().isBruteForceProtected()) {
             if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user.getUsername())) {
+                context.getEvent().user(user);
                 context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
                 Response challengeResponse = temporarilyDisabledUser(context);
                 context.failureChallenge(AuthenticationProcessor.Error.USER_TEMPORARILY_DISABLED, challengeResponse);

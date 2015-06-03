@@ -35,26 +35,25 @@ public class LoginFormPasswordAuthenticator extends LoginFormUsernameAuthenticat
         validatePassword(context);
     }
 
-    protected Response badPassword(AuthenticatorContext context) {
-        return loginForm(context).setError(Messages.INVALID_USER).createLogin();
-    }
-
-
     public void validatePassword(AuthenticatorContext context) {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getFormParameters();
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
         if (password == null) {
+            if (context.getUser() != null) {
+                context.getEvent().user(context.getUser());
+            }
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = badPassword(context);
+            Response challengeResponse = invalidCredentials(context);
             context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
         credentials.add(UserCredentialModel.password(password));
         boolean valid = context.getSession().users().validCredentials(context.getRealm(), context.getUser(), credentials);
         if (!valid) {
+            context.getEvent().user(context.getUser());
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = badPassword(context);
+            Response challengeResponse = invalidCredentials(context);
             context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
