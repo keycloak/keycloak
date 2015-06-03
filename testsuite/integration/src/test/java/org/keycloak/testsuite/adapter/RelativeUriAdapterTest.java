@@ -76,8 +76,6 @@ public class RelativeUriAdapterTest {
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule(){
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            adminRealm.setPasswordCredentialGrantAllowed(true);
-
             RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/adapter-test/demorealm-relative.json"), RealmRepresentation.class);
             RealmModel realm = manager.importRealm(representation);
 

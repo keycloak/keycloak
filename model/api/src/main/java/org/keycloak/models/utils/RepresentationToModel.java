@@ -96,7 +96,6 @@ public class RepresentationToModel {
         else newRealm.setAccessCodeLifespanLogin(1800);
 
         if (rep.getSslRequired() != null) newRealm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
-        if (rep.isPasswordCredentialGrantAllowed() != null) newRealm.setPasswordCredentialGrantAllowed(rep.isPasswordCredentialGrantAllowed());
         if (rep.isRegistrationAllowed() != null) newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isRegistrationEmailAsUsername() != null)
             newRealm.setRegistrationEmailAsUsername(rep.isRegistrationEmailAsUsername());
@@ -421,7 +420,6 @@ public class RepresentationToModel {
         if (rep.getQuickLoginCheckMilliSeconds() != null) realm.setQuickLoginCheckMilliSeconds(rep.getQuickLoginCheckMilliSeconds());
         if (rep.getMaxDeltaTimeSeconds() != null) realm.setMaxDeltaTimeSeconds(rep.getMaxDeltaTimeSeconds());
         if (rep.getFailureFactor() != null) realm.setFailureFactor(rep.getFailureFactor());
-        if (rep.isPasswordCredentialGrantAllowed() != null) realm.setPasswordCredentialGrantAllowed(rep.isPasswordCredentialGrantAllowed());
         if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isRegistrationEmailAsUsername() != null) realm.setRegistrationEmailAsUsername(rep.isRegistrationEmailAsUsername());
         if (rep.isRememberMe() != null) realm.setRememberMe(rep.isRememberMe());

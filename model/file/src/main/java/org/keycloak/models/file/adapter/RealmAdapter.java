@@ -139,16 +139,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean isPasswordCredentialGrantAllowed() {
-        return realm.isPasswordCredentialGrantAllowed();
-    }
-
-    @Override
-    public void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed) {
-        realm.setPasswordCredentialGrantAllowed(passwordCredentialGrantAllowed);
-    }
-
-    @Override
     public boolean isRegistrationAllowed() {
         return realm.isRegistrationAllowed();
     }

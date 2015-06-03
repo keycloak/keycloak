@@ -39,7 +39,6 @@ public class CachedRealm {
     private boolean registrationEmailAsUsername;
     private boolean rememberMe;
     private boolean verifyEmail;
-    private boolean passwordCredentialGrantAllowed;
     private boolean resetPasswordAllowed;
     private boolean identityFederationEnabled;
     private boolean editUsernameAllowed;
@@ -112,7 +111,6 @@ public class CachedRealm {
         registrationEmailAsUsername = model.isRegistrationEmailAsUsername();
         rememberMe = model.isRememberMe();
         verifyEmail = model.isVerifyEmail();
-        passwordCredentialGrantAllowed = model.isPasswordCredentialGrantAllowed();
         resetPasswordAllowed = model.isResetPasswordAllowed();
         identityFederationEnabled = model.isIdentityFederationEnabled();
         editUsernameAllowed = model.isEditUsernameAllowed();
@@ -244,10 +242,6 @@ public class CachedRealm {
 
     public boolean isRegistrationEmailAsUsername() {
         return registrationEmailAsUsername;
-    }
-
-    public boolean isPasswordCredentialGrantAllowed() {
-        return passwordCredentialGrantAllowed;
     }
 
     public boolean isRememberMe() {

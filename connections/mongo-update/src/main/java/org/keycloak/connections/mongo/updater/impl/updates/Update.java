@@ -53,6 +53,10 @@ public abstract class Update {
         log.debugv("Deleted entries from {0}", collection);
     }
 
+    protected void removeField(String collection, String field) {
+        db.getCollection(collection).update(new BasicDBObject(), new BasicDBObject("$unset" , new BasicDBObject(field, 1)), false, true);
+    }
+
     protected void renameCollection(String collection, String newName) {
         db.getCollection(collection).rename(newName);
     }
