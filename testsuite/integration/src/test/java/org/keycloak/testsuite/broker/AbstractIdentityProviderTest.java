@@ -167,7 +167,7 @@ public abstract class AbstractIdentityProviderTest {
             identityProviderModel.setUpdateProfileFirstLogin(false);
             identityProviderModel.setTrustEmail(false);
 
-            UserModel federatedUser = assertSuccessfulAuthenticationWithEmailVerifycation(identityProviderModel, "test-user", "test-user@localhost");
+            UserModel federatedUser = assertSuccessfulAuthenticationWithEmailVerification(identityProviderModel, "test-user", "test-user@localhost");
 
             // email is verified now
             assertFalse(federatedUser.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL.name()));
@@ -177,7 +177,7 @@ public abstract class AbstractIdentityProviderTest {
         }
     }
 
-    private UserModel assertSuccessfulAuthenticationWithEmailVerifycation(IdentityProviderModel identityProviderModel, String username, String expectedEmail)
+    private UserModel assertSuccessfulAuthenticationWithEmailVerification(IdentityProviderModel identityProviderModel, String username, String expectedEmail)
             throws IOException, MessagingException {
         authenticateWithIdentityProvider(identityProviderModel, username);
 
@@ -285,7 +285,7 @@ public abstract class AbstractIdentityProviderTest {
             identityProviderModel.setUpdateProfileFirstLogin(true);
             identityProviderModel.setTrustEmail(true);
 
-            UserModel user = assertSuccessfulAuthenticationWithEmailVerifycation(identityProviderModel, "test-user", "new@email.com");
+            UserModel user = assertSuccessfulAuthenticationWithEmailVerification(identityProviderModel, "test-user", "new@email.com");
             Assert.assertEquals("617-666-7777", user.getAttribute("mobile"));
         } finally {
             identityProviderModel.setTrustEmail(false);
