@@ -31,6 +31,7 @@ public class IdentityProviderEntity {
     private String name;
     private boolean enabled;
     private boolean updateProfileFirstLogin;
+    private boolean trustEmail;
     private boolean storeToken;
     protected boolean addReadTokenRoleOnCreate;
     private boolean authenticateByDefault;
@@ -115,5 +116,13 @@ public class IdentityProviderEntity {
 
     public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
         this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
+    }
+
+    public boolean isTrustEmail() {
+        return trustEmail;
+    }
+
+    public void setTrustEmail(boolean trustEmail) {
+        this.trustEmail = trustEmail;
     }
 }

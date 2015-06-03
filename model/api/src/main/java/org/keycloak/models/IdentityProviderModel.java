@@ -44,6 +44,8 @@ public class IdentityProviderModel {
     private boolean enabled;
 
     private boolean updateProfileFirstLogin = true;
+    
+    private boolean trustEmail;
 
     private boolean storeToken;
 
@@ -69,6 +71,7 @@ public class IdentityProviderModel {
         this.config = new HashMap<String, String>(model.getConfig());
         this.enabled = model.isEnabled();
         this.updateProfileFirstLogin = model.isUpdateProfileFirstLogin();
+        this.trustEmail = model.isTrustEmail();
         this.storeToken = model.isStoreToken();
         this.authenticateByDefault = model.isAuthenticateByDefault();
         this.addReadTokenRoleOnCreate = model.addReadTokenRoleOnCreate;
@@ -145,4 +148,13 @@ public class IdentityProviderModel {
     public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
         this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
     }
+
+    public boolean isTrustEmail() {
+        return trustEmail;
+    }
+
+    public void setTrustEmail(boolean trustEmail) {
+        this.trustEmail = trustEmail;
+    }
+    
 }

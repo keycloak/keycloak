@@ -107,6 +107,9 @@
         <addColumn tableName="CLIENT_SESSION">
             <column name="AUTH_USER_ID" type="VARCHAR(36)"/>
         </addColumn>
+        <addColumn tableName="IDENTITY_PROVIDER">
+            <column name="TRUST_EMAIL" type="BOOLEAN" defaultValueBoolean="false"/>
+        </addColumn>
         <addColumn tableName="USER_REQUIRED_ACTION">
             <column name="REQUIRED_ACTION" type="VARCHAR(36)">
                 <constraints nullable="false"/>

@@ -284,6 +284,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     }
                     federatedUser.addRequiredAction(UPDATE_PROFILE);
                 }
+                if(identityProviderConfig.isTrustEmail() && federatedUser.getEmail() != null && federatedUser.getEmail().trim().length()>0){
+                    federatedUser.setEmailVerified(true);
+                }
             } catch (Exception e) {
                 return redirectToLoginPage(e, clientCode);
             }

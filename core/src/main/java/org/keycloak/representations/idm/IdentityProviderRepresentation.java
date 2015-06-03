@@ -30,6 +30,7 @@ public class IdentityProviderRepresentation {
     protected String providerId;
     protected boolean enabled = true;
     protected boolean updateProfileFirstLogin = true;
+    protected boolean trustEmail;
     protected boolean storeToken;
     protected boolean addReadTokenRoleOnCreate;
     protected boolean authenticateByDefault;
@@ -106,4 +107,13 @@ public class IdentityProviderRepresentation {
     public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
         this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
     }
+
+    public boolean isTrustEmail() {
+        return trustEmail;
+    }
+
+    public void setTrustEmail(boolean trustEmail) {
+        this.trustEmail = trustEmail;
+    }
+
 }
