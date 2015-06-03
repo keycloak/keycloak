@@ -39,8 +39,6 @@ public abstract class AbstractClientTest {
         keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                adminstrationRealm.setPasswordCredentialGrantAllowed(true);
-
                 RealmModel testRealm = manager.createRealm(REALM_NAME);
                 testRealm.setEnabled(true);
                 KeycloakModelUtils.generateRealmKeys(testRealm);
@@ -58,8 +56,6 @@ public abstract class AbstractClientTest {
         keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                adminstrationRealm.setPasswordCredentialGrantAllowed(false);
-
                 RealmModel realm = manager.getRealmByName(REALM_NAME);
                 if (realm != null) {
                     manager.removeRealm(realm);

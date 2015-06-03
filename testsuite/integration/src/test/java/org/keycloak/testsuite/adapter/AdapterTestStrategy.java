@@ -122,9 +122,6 @@ public class AdapterTestStrategy extends ExternalResource {
     }
 
     public static RealmModel baseAdapterTestInitialization(KeycloakSession session, RealmManager manager, RealmModel adminRealm, Class<?> clazz) {
-        // Required by admin client
-        adminRealm.setPasswordCredentialGrantAllowed(true);
-
         RealmRepresentation representation = KeycloakServer.loadJson(clazz.getResourceAsStream("/adapter-test/demorealm.json"), RealmRepresentation.class);
         RealmModel demoRealm = manager.importRealm(representation);
         return demoRealm;

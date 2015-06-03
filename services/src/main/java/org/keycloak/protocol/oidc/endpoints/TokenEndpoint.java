@@ -305,10 +305,6 @@ public class TokenEndpoint {
     }
 
     public Response buildResourceOwnerPasswordCredentialsGrant() {
-        if (!realm.isPasswordCredentialGrantAllowed()) {
-            throw new ErrorResponseException("not_enabled", "Direct Grant REST API not enabled", Response.Status.FORBIDDEN);
-        }
-
         event.detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, "token");
 
         String username = formParams.getFirst(AuthenticationManager.FORM_USERNAME);

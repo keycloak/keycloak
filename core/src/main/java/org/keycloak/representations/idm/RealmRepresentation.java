@@ -18,6 +18,7 @@ public class RealmRepresentation {
     protected Integer accessCodeLifespanLogin;
     protected Boolean enabled;
     protected String sslRequired;
+    @Deprecated
     protected Boolean passwordCredentialGrantAllowed;
     protected Boolean registrationAllowed;
     protected Boolean registrationEmailAsUsername;
@@ -263,14 +264,6 @@ public class RealmRepresentation {
 
     public void setCodeSecret(String codeSecret) {
         this.codeSecret = codeSecret;
-    }
-
-    public Boolean isPasswordCredentialGrantAllowed() {
-        return passwordCredentialGrantAllowed;
-    }
-
-    public void setPasswordCredentialGrantAllowed(Boolean passwordCredentialGrantAllowed) {
-        this.passwordCredentialGrantAllowed = passwordCredentialGrantAllowed;
     }
 
     public Boolean isRegistrationAllowed() {

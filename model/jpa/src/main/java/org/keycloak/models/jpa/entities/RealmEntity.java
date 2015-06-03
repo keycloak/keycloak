@@ -49,8 +49,6 @@ public class RealmEntity {
     protected boolean registrationAllowed;
     @Column(name = "REG_EMAIL_AS_USERNAME")
     protected boolean registrationEmailAsUsername;
-    @Column(name="PASSWORD_CRED_GRANT_ALLOWED")
-    protected boolean passwordCredentialGrantAllowed;
     @Column(name="VERIFY_EMAIL")
     protected boolean verifyEmail;
     @Column(name="RESET_PASSWORD_ALLOWED")
@@ -206,14 +204,6 @@ public class RealmEntity {
 
     public void setSslRequired(String sslRequired) {
         this.sslRequired = sslRequired;
-    }
-
-    public boolean isPasswordCredentialGrantAllowed() {
-        return passwordCredentialGrantAllowed;
-    }
-
-    public void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed) {
-        this.passwordCredentialGrantAllowed = passwordCredentialGrantAllowed;
     }
 
     public boolean isRegistrationAllowed() {

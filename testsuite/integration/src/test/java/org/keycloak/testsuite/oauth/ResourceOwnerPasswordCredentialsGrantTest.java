@@ -33,7 +33,6 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             ClientModel app = appRealm.addClient("resource-owner");
             app.setSecret("secret");
-            appRealm.setPasswordCredentialGrantAllowed(true);
 
             UserModel user = session.users().addUser(appRealm, "direct-login");
             user.setEmail("direct-login@localhost");
@@ -103,33 +102,6 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
         events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).user(userId).client("resource-owner").assertEvent();
-    }
-
-    @Test
-    public void grantAccessTokenNotEnabled() throws Exception {
-        try {
-            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setPasswordCredentialGrantAllowed(false);
-                }
-            });
-
-            oauth.clientId("resource-owner");
-
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "password");
-
-            assertEquals(403, response.getStatusCode());
-            assertEquals("not_enabled", response.getError());
-
-        } finally {
-            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setPasswordCredentialGrantAllowed(true);
-                }
-            });
-        }
     }
 
     @Test

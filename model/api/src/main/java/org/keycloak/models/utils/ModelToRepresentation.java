@@ -99,7 +99,6 @@ public class ModelToRepresentation {
             rep.setCodeSecret(realm.getCodeSecret());
         }
         rep.setCertificate(realm.getCertificatePem());
-        rep.setPasswordCredentialGrantAllowed(realm.isPasswordCredentialGrantAllowed());
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
         rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
         rep.setRememberMe(realm.isRememberMe());

@@ -236,7 +236,6 @@ public class AdminAPITest {
         if (rep.getQuickLoginCheckMilliSeconds() != null) Assert.assertEquals(rep.getQuickLoginCheckMilliSeconds(), storedRealm.getQuickLoginCheckMilliSeconds());
         if (rep.getMaxDeltaTimeSeconds() != null) Assert.assertEquals(rep.getMaxDeltaTimeSeconds(), storedRealm.getMaxDeltaTimeSeconds());
         if (rep.getFailureFactor() != null) Assert.assertEquals(rep.getFailureFactor(), storedRealm.getFailureFactor());
-        if (rep.isPasswordCredentialGrantAllowed() != null) Assert.assertEquals(rep.isPasswordCredentialGrantAllowed(), storedRealm.isPasswordCredentialGrantAllowed());
         if (rep.isRegistrationAllowed() != null) Assert.assertEquals(rep.isRegistrationAllowed(), storedRealm.isRegistrationAllowed());
         if (rep.isRegistrationEmailAsUsername() != null) Assert.assertEquals(rep.isRegistrationEmailAsUsername(), storedRealm.isRegistrationEmailAsUsername());
         if (rep.isRememberMe() != null) Assert.assertEquals(rep.isRememberMe(), storedRealm.isRememberMe());
