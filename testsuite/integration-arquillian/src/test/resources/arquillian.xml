@@ -10,10 +10,9 @@
 		</protocol>
 	</container>
 	
-	<container qualifier="wildfly-8-managed">
+	<container qualifier="wildfly-8-managed" mode="manual" default="true">
 		<configuration>
 			<property name="jbossHome">${jbossHome}</property>
-			<property name="serverConfig">standalone.xml</property>
 		</configuration>
 	</container>
     

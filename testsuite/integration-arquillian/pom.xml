@@ -15,11 +15,11 @@
     <properties>
         <browser>phantomjs</browser>
 		
-        <arquillian-core.version>1.1.5.Final</arquillian-core.version>
+        <arquillian-core.version>1.1.8.Final</arquillian-core.version>
         <selenium.version>2.45.0</selenium.version>
-        <arquillian-drone.version>1.3.1.Final</arquillian-drone.version>
+        <arquillian-drone.version>2.0.0.Alpha4</arquillian-drone.version>
         <arquillian-phantomjs.version>1.1.4.Final</arquillian-phantomjs.version>
-        <arquillian-graphene.version>2.0.3.Final</arquillian-graphene.version>
+        <arquillian-graphene.version>2.1.0.Alpha2</arquillian-graphene.version>
         <arquillian-wildfly-container.version>8.1.0.Final</arquillian-wildfly-container.version>
         
         <!-- Used in profile "wildfly-8-remote".
@@ -72,6 +72,7 @@
         <dependency>
             <groupId>org.jboss.arquillian.junit</groupId>
             <artifactId>arquillian-junit-container</artifactId>
+			<version>1.1.8.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -169,7 +170,7 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <shouldDeploy>false</shouldDeploy>
-                                <arquillian.launch>wildfly-8-managed</arquillian.launch>
+                                <container-name>wildfly-8-managed</container-name>
                                 <browser>${browser}</browser>
                                 <jbossHome>${jbossHome}</jbossHome>
                             </systemPropertyVariables>

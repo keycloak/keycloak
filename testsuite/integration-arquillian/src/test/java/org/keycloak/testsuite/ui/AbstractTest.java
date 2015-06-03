@@ -19,16 +19,10 @@
 package org.keycloak.testsuite.ui;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
+import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.runner.RunWith;
-import org.keycloak.testsuite.ui.fragment.Navigation;
-import org.keycloak.testsuite.ui.fragment.MenuPage;
-import org.keycloak.testsuite.ui.page.LoginPage;
-import org.keycloak.testsuite.ui.page.account.PasswordPage;
-import static org.keycloak.testsuite.ui.util.Constants.ADMIN_PSSWD;
-
-import static org.keycloak.testsuite.ui.util.URL.BASE_URL;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -36,38 +30,22 @@ import org.openqa.selenium.WebDriver;
  * @author Petr Mensik
  */
 @RunWith(Arquillian.class)
-public abstract class AbstractTest {
-
-    private static boolean firstAdminLogin = Boolean.parseBoolean(
-            System.getProperty("firstAdminLogin", "true"));
-
-    @Page
-    protected LoginPage loginPage;
-
-    @Page
-    protected PasswordPage passwordPage;
-
-    @Page
-    protected MenuPage menuPage;
-
-    @Page
-    protected Navigation navigation;
+public abstract class AbstractTest extends KeyCloakServer {
 
     @Drone
     protected WebDriver driver;
 
-    public void logOut() {
-        menuPage.logOut();
-    }
-
-    public void loginAsAdmin() {
-        driver.get(BASE_URL);
-        loginPage.loginAsAdmin();
-        if (firstAdminLogin) {
-            passwordPage.confirmNewPassword(ADMIN_PSSWD);
-            passwordPage.submit();
-            firstAdminLogin = false;
-        }
-    }
+	@Before
+	public void beforeAllTest() {
+		if(!KeyCloakServer.RUNNING) {
+			startServer();
+			KeyCloakServer.RUNNING = true;
+		}
+	}
+	
+	@AfterClass
+	public static void afterClass() {
+		KeyCloakServer.RUNNING = false;
+	}
 
 }
