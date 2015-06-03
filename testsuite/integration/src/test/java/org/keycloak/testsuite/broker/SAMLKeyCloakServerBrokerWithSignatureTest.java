@@ -57,10 +57,8 @@ public class SAMLKeyCloakServerBrokerWithSignatureTest extends AbstractIdentityP
             if (expectedEmail == null) {
                 // Need to handle differences for various databases (like Oracle)
                 assertTrue(federatedUser.getEmail() == null || federatedUser.getEmail().equals(""));
-                assertFalse(federatedUser.isEmailVerified());
             } else {
                 assertEquals(expectedEmail, federatedUser.getEmail());
-                assertFalse(federatedUser.isEmailVerified());
             }
             assertNull(federatedUser.getFirstName());
             assertNull(federatedUser.getLastName());
