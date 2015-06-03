@@ -233,7 +233,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
         // Some membership placeholder needs to be always here as "member" is mandatory attribute on some LDAP servers
         if (memberships.size() == 0) {
-            memberships.add(LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
+            memberships.add(LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE);
         }
 
         ldapRole.setAttribute(getMembershipLdapAttribute(mapperModel), memberships);

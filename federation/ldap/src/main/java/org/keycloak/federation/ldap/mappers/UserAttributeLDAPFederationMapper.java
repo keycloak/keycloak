@@ -55,7 +55,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
         String ldapAttrName = mapperModel.getConfig().get(LDAP_ATTRIBUTE);
 
         Object ldapAttrValue = ldapUser.getAttribute(ldapAttrName);
-        if (ldapAttrValue != null) {
+        if (ldapAttrValue != null && !ldapAttrValue.toString().trim().isEmpty()) {
             Property<Object> userModelProperty = userModelProperties.get(userModelAttrName);
 
             if (userModelProperty != null) {

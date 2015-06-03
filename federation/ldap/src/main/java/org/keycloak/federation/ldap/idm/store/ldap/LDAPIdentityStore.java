@@ -476,7 +476,7 @@ public class LDAPIdentityStore implements IdentityStore {
                 if (objectClassValue.equals(LDAPConstants.GROUP_OF_NAMES)
                         || objectClassValue.equals(LDAPConstants.GROUP_OF_ENTRIES)
                         || objectClassValue.equals(LDAPConstants.GROUP_OF_UNIQUE_NAMES)) {
-                    entryAttributes.put(LDAPConstants.MEMBER, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
+                    entryAttributes.put(LDAPConstants.MEMBER, LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE);
                 }
             }
 
