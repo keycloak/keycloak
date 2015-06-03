@@ -271,6 +271,16 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean isEditUsernameAllowed() {
+        return realm.isEditUsernameAllowed();
+    }
+
+    @Override
+    public void setEditUsernameAllowed(boolean editUsernameAllowed) {
+        realm.setEditUsernameAllowed(editUsernameAllowed);
+    }
+
+    @Override
     public PasswordPolicy getPasswordPolicy() {
         if (passwordPolicy == null) {
             passwordPolicy = new PasswordPolicy(realm.getPasswordPolicy());

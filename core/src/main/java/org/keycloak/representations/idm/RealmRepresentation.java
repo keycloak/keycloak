@@ -24,6 +24,7 @@ public class RealmRepresentation {
     protected Boolean rememberMe;
     protected Boolean verifyEmail;
     protected Boolean resetPasswordAllowed;
+    protected Boolean editUsernameAllowed;
 
     protected Boolean userCacheEnabled;
     protected Boolean realmCacheEnabled;
@@ -326,6 +327,14 @@ public class RealmRepresentation {
 
     public void setResetPasswordAllowed(Boolean resetPassword) {
         this.resetPasswordAllowed = resetPassword;
+    }
+
+    public Boolean isEditUsernameAllowed() {
+        return editUsernameAllowed;
+    }
+
+    public void setEditUsernameAllowed(Boolean editUsernameAllowed) {
+        this.editUsernameAllowed = editUsernameAllowed;
     }
 
     @Deprecated

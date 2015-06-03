@@ -42,6 +42,7 @@ public class CachedRealm {
     private boolean passwordCredentialGrantAllowed;
     private boolean resetPasswordAllowed;
     private boolean identityFederationEnabled;
+    private boolean editUsernameAllowed;
     //--- brute force settings
     private boolean bruteForceProtected;
     private int maxFailureWaitSeconds;
@@ -114,6 +115,7 @@ public class CachedRealm {
         passwordCredentialGrantAllowed = model.isPasswordCredentialGrantAllowed();
         resetPasswordAllowed = model.isResetPasswordAllowed();
         identityFederationEnabled = model.isIdentityFederationEnabled();
+        editUsernameAllowed = model.isEditUsernameAllowed();
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
         maxFailureWaitSeconds = model.getMaxFailureWaitSeconds();
@@ -286,6 +288,10 @@ public class CachedRealm {
 
     public boolean isResetPasswordAllowed() {
         return resetPasswordAllowed;
+    }
+
+    public boolean isEditUsernameAllowed() {
+        return editUsernameAllowed;
     }
 
     public int getSsoSessionIdleTimeout() {

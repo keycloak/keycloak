@@ -198,6 +198,7 @@ module.controller('UserListCtrl', function($scope, realm, User) {
 module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFederationInstances, $location, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.create = !user.id;
+    $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
 
     if ($scope.create) {
         $scope.user = { enabled: true, attributes: {} }

@@ -59,6 +59,8 @@ public class RealmEntity {
     protected boolean rememberMe;
     @Column(name="PASSWORD_POLICY")
     protected String passwordPolicy;
+    @Column(name="EDIT_USERNAME_ALLOWED")
+    protected boolean editUsernameAllowed;
 
     @Column(name="SSO_IDLE_TIMEOUT")
     private int ssoSessionIdleTimeout;
@@ -252,6 +254,14 @@ public class RealmEntity {
 
     public void setResetPasswordAllowed(boolean resetPasswordAllowed) {
         this.resetPasswordAllowed = resetPasswordAllowed;
+    }
+
+    public boolean isEditUsernameAllowed() {
+        return editUsernameAllowed;
+    }
+
+    public void setEditUsernameAllowed(boolean editUsernameAllowed) {
+        this.editUsernameAllowed = editUsernameAllowed;
     }
 
     public int getSsoSessionIdleTimeout() {

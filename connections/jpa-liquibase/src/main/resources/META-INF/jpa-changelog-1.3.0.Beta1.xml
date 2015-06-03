@@ -94,6 +94,9 @@
             <column name="ADMIN_EVENTS_DETAILS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
             </column>
+            <column name="EDIT_USERNAME_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
         </addColumn>
         <createTable tableName="CLIENT_SESSION_AUTH_STATUS">
             <column name="AUTHENTICATOR" type="VARCHAR(36)">

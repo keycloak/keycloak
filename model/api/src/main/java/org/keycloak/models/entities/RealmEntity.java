@@ -20,6 +20,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private boolean passwordCredentialGrantAllowed;
     private boolean resetPasswordAllowed;
     private String passwordPolicy;
+    private boolean editUsernameAllowed;
     //--- brute force settings
     private boolean bruteForceProtected;
     private int maxFailureWaitSeconds;
@@ -148,6 +149,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setResetPasswordAllowed(boolean resetPasswordAllowed) {
         this.resetPasswordAllowed = resetPasswordAllowed;
+    }
+
+    public boolean isEditUsernameAllowed() {
+        return editUsernameAllowed;
+    }
+
+    public void setEditUsernameAllowed(boolean editUsernameAllowed) {
+        this.editUsernameAllowed = editUsernameAllowed;
     }
 
     public String getPasswordPolicy() {
