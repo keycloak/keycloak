@@ -45,11 +45,23 @@ public class CookieTokenStoreAdapterTest {
             manager.importRealm(representation);
 
             URL url = getClass().getResource("/adapter-test/cust-app-keycloak.json");
-            deployApplication("customer-portal", "/customer-portal", CustomerServlet.class, url.getPath(), "user");
+            createApplicationDeployment()
+                    .name("customer-portal").contextPath("/customer-portal")
+                    .servletClass(CustomerServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
+
             url = getClass().getResource("/adapter-test/cust-app-cookie-keycloak.json");
-            deployApplication("customer-cookie-portal", "/customer-cookie-portal", CustomerServlet.class, url.getPath(), "user");
+            createApplicationDeployment()
+                    .name("customer-cookie-portal").contextPath("/customer-cookie-portal")
+                    .servletClass(CustomerServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
+
             url = getClass().getResource("/adapter-test/customer-db-keycloak.json");
-            deployApplication("customer-db", "/customer-db", CustomerDatabaseServlet.class, url.getPath(), "user");
+            createApplicationDeployment()
+                    .name("customer-db").contextPath("/customer-db")
+                    .servletClass(CustomerDatabaseServlet.class).adapterConfigPath(url.getPath())
+                    .role("user")
+                    .errorPage(null).deployApplication();
         }
     };
 

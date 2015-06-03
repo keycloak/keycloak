@@ -60,6 +60,7 @@ public class TomcatTest {
         System.setProperty("my.host.name", "localhost");
         tomcat.deploy("/customer-portal", "customer-portal");
         tomcat.deploy("/customer-db", "customer-db");
+        tomcat.deploy("/customer-db-error-page", "customer-db-error-page");
         tomcat.deploy("/product-portal", "product-portal");
         tomcat.deploy("/secure-portal", "secure-portal");
         tomcat.deploy("/session-portal", "session-portal");
@@ -117,6 +118,15 @@ public class TomcatTest {
     @Test
     public void testNullBearerToken() throws Exception {
         testStrategy.testNullBearerToken();
+    }
+
+    /**
+     * KEYCLOAK-1368
+     * @throws Exception
+     */
+    @Test
+    public void testNullBearerTokenCustomErrorPage() throws Exception {
+        testStrategy.testNullBearerTokenCustomErrorPage();
     }
 
     /**

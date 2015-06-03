@@ -26,6 +26,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.federation.KerberosCredDelegServlet;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -57,7 +58,11 @@ public class MultiTenancyTest {
             RealmRepresentation tenant2 = KeycloakServer.loadJson(getClass().getResourceAsStream("/adapter-test/tenant2-realm.json"), RealmRepresentation.class);
             manager.importRealm(tenant2);
 
-            deployApplication("multi-tenant", "/multi-tenant", MultiTenantServlet.class, null, "user", true, MultiTenantResolver.class);
+            createApplicationDeployment()
+                    .name("multi-tenant").contextPath("/multi-tenant")
+                    .servletClass(MultiTenantServlet.class)
+                    .role("user")
+                    .keycloakConfigResolver(MultiTenantResolver.class).deployApplication();
         }
 
         protected String[] getTestRealms() {
