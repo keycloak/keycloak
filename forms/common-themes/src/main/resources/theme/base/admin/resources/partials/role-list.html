@@ -33,7 +33,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr ng-repeat="role in roles | filter:{name: searchQuery}">
+        <tr ng-repeat="role in roles | orderBy:'name' | filter:{name: searchQuery}">
             <td><a href="#/realms/{{realm.realm}}/roles/{{role.id}}">{{role.name}}</a></td>
             <td>{{role.composite}}</td>
             <td>{{role.description}}</td>
