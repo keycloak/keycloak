@@ -35,6 +35,7 @@ import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.freemarker.LocaleHelper;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -77,6 +78,10 @@ public class OAuthClient {
     private String uiLocales = null;
 
     private PublicKey realmPublicKey;
+
+    private String clientSessionState;
+
+    private String clientSessionHost;
 
     public OAuthClient(WebDriver driver) {
         this.driver = driver;
@@ -128,6 +133,14 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
         }
 
+        if(clientSessionState != null) {
+            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, clientSessionState));
+        }
+
+        if(clientSessionHost != null) {
+            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
+        }
+
         UrlEncodedFormEntity formEntity = null;
         try {
             formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
@@ -154,6 +167,13 @@ public class OAuthClient {
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
         parameters.add(new BasicNameValuePair("username", username));
         parameters.add(new BasicNameValuePair("password", password));
+
+        if(clientSessionState != null) {
+            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, clientSessionState));
+        }
+        if(clientSessionHost != null) {
+            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
+        }
 
         UrlEncodedFormEntity formEntity;
         try {
@@ -209,6 +229,13 @@ public class OAuthClient {
         }
         else if (clientId != null) {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
+        }
+
+        if(clientSessionState != null) {
+            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, clientSessionState));
+        }
+        if(clientSessionHost != null) {
+            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
         }
 
         UrlEncodedFormEntity formEntity;
@@ -357,6 +384,16 @@ public class OAuthClient {
 
     public OAuthClient uiLocales(String uiLocales){
         this.uiLocales = uiLocales;
+        return this;
+    }
+
+    public OAuthClient clientSessionState(String client_session_state) {
+        this.clientSessionState = client_session_state;
+        return this;
+    }
+
+    public OAuthClient clientSessionHost(String client_session_host) {
+        this.clientSessionHost = client_session_host;
         return this;
     }
 

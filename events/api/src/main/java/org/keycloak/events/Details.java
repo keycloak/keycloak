@@ -24,5 +24,7 @@ public interface Details {
     String NODE_HOST = "node_host";
     String REASON = "reason";
     String REVOKED_CLIENT = "revoked_client";
+    String CLIENT_SESSION_STATE = "client_session_state";
+    String CLIENT_SESSION_HOST = "client_session_host";
 
 }
