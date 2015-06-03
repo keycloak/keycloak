@@ -10,9 +10,11 @@ import org.keycloak.models.sessions.jpa.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionNoteEntity;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionProtocolMapperEntity;
 import org.keycloak.models.sessions.jpa.entities.ClientSessionRoleEntity;
+import org.keycloak.models.sessions.jpa.entities.ClientUserSessionNoteEntity;
 import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
 
 import javax.persistence.EntityManager;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -76,6 +78,32 @@ public class ClientSessionAdapter implements ClientSessionModel {
             }
         }
         return null;
+    }
+
+    @Override
+    public void setUserSessionNote(String name, String value) {
+        for (ClientUserSessionNoteEntity attr : entity.getUserSessionNotes()) {
+            if (attr.getName().equals(name)) {
+                attr.setValue(value);
+                return;
+            }
+        }
+        ClientUserSessionNoteEntity attr = new ClientUserSessionNoteEntity();
+        attr.setName(name);
+        attr.setValue(value);
+        attr.setClientSession(entity);
+        em.persist(attr);
+        entity.getUserSessionNotes().add(attr);
+
+    }
+
+    @Override
+    public Map<String, String> getUserSessionNotes() {
+        Map<String, String> copy = new HashMap<>();
+        for (ClientUserSessionNoteEntity attr : entity.getUserSessionNotes()) {
+            copy.put(attr.getName(), attr.getValue());
+        }
+        return copy;
     }
 
     @Override

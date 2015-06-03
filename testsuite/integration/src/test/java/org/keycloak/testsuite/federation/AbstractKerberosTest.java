@@ -108,7 +108,7 @@ public abstract class AbstractKerberosTest {
                 .client("kerberos-app")
                 .user(keycloakRule.getUser("test", "hnelson").getId())
                 .detail(Details.REDIRECT_URI, KERBEROS_APP_URL)
-                .detail(Details.AUTH_METHOD, "spnego")
+                //.detail(Details.AUTH_METHOD, "spnego")
                 .detail(Details.USERNAME, "hnelson")
                 .assertEvent();
 
@@ -164,7 +164,7 @@ public abstract class AbstractKerberosTest {
                 .client("kerberos-app")
                 .user(keycloakRule.getUser("test", "jduke").getId())
                 .detail(Details.REDIRECT_URI, KERBEROS_APP_URL)
-                .detail(Details.AUTH_METHOD, "spnego")
+                //.detail(Details.AUTH_METHOD, "spnego")
                 .detail(Details.USERNAME, "jduke")
                 .assertEvent();
         spnegoResponse.close();

@@ -10,6 +10,10 @@ import org.keycloak.models.RealmModel;
  * @version $Revision: 1 $
  */
 public class DefaultAuthenticationFlows {
+
+    public static final String BROWSER_FLOW = "browser";
+    public static final String FORMS_FLOW = "forms";
+
     public static void addFlows(RealmModel realm) {
         AuthenticatorModel model = new AuthenticatorModel();
         model.setProviderId("auth-cookie");
@@ -31,9 +35,13 @@ public class DefaultAuthenticationFlows {
         model.setProviderId("auth-otp-form");
         model.setAlias("Single OTP Form");
         AuthenticatorModel otp = realm.addAuthenticator(model);
+        model = new AuthenticatorModel();
+        model.setProviderId("auth-spnego");
+        model.setAlias("Kerberos");
+        AuthenticatorModel kerberos = realm.addAuthenticator(model);
 
         AuthenticationFlowModel browser = new AuthenticationFlowModel();
-        browser.setAlias("browser");
+        browser.setAlias(BROWSER_FLOW);
         browser.setDescription("browser based authentication");
         browser = realm.addAuthenticationFlow(browser);
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
@@ -44,15 +52,23 @@ public class DefaultAuthenticationFlows {
         execution.setUserSetupAllowed(false);
         execution.setAutheticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(browser.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        execution.setAuthenticator(kerberos.getId());
+        execution.setPriority(1);
+        execution.setUserSetupAllowed(false);
+        execution.setAutheticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
         AuthenticationFlowModel forms = new AuthenticationFlowModel();
-        forms.setAlias("forms");
+        forms.setAlias(FORMS_FLOW);
         forms.setDescription("Username, password, otp and other auth forms.");
         forms = realm.addAuthenticationFlow(forms);
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(browser.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
         execution.setAuthenticator(forms.getId());
-        execution.setPriority(1);
+        execution.setPriority(2);
         execution.setUserSetupAllowed(false);
         execution.setAutheticatorFlow(true);
         realm.addAuthenticatorExecution(execution);

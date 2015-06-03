@@ -29,6 +29,7 @@ public class ClientSessionEntity extends SessionEntity {
     private Set<String> roles;
     private Set<String> protocolMappers;
     private Map<String, String> notes;
+    private Map<String, String> userSessionNotes;
     private Map<String, UserSessionModel.AuthenticatorStatus> authenticatorStatus = new HashMap<>();
     private String authUserId;
 
@@ -126,5 +127,13 @@ public class ClientSessionEntity extends SessionEntity {
 
     public void setAuthUserId(String authUserId) {
         this.authUserId = authUserId;
+    }
+
+    public Map<String, String> getUserSessionNotes() {
+        return userSessionNotes;
+    }
+
+    public void setUserSessionNotes(Map<String, String> userSessionNotes) {
+        this.userSessionNotes = userSessionNotes;
     }
 }

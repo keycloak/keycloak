@@ -3,6 +3,8 @@ package org.keycloak.authentication.authenticators;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -61,8 +63,8 @@ public class LoginFormOTPAuthenticator extends LoginFormUsernameAuthenticator {
     }
 
     @Override
-    public boolean configuredFor(UserModel user) {
-        return user.configuredForCredentialType(UserCredentialModel.TOTP);
+    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
+        return session.users().configuredForCredentialType(UserCredentialModel.TOTP, realm, user) && user.isTotp();
     }
 
     @Override

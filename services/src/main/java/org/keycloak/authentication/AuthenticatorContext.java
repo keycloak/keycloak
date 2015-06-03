@@ -2,6 +2,8 @@ package org.keycloak.authentication;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -19,9 +21,15 @@ import javax.ws.rs.core.UriInfo;
  * @version $Revision: 1 $
  */
 public interface AuthenticatorContext {
-    AuthenticatorModel getModel();
+    EventBuilder getEvent();
 
-    void setModel(AuthenticatorModel model);
+    AuthenticationExecutionModel getExecution();
+
+    void setExecution(AuthenticationExecutionModel execution);
+
+    AuthenticatorModel getAuthenticatorModel();
+
+    void setAuthenticatorModel(AuthenticatorModel model);
 
     Authenticator getAuthenticator();
 

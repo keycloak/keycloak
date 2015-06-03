@@ -30,6 +30,7 @@ public class MongoClientSessionEntity extends AbstractIdentifiableEntity impleme
     private List<String> roles;
     private List<String> protocolMappers;
     private Map<String, String> notes = new HashMap<String, String>();
+    private Map<String, String> userSessionNotes = new HashMap<String, String>();
     private Map<String, UserSessionModel.AuthenticatorStatus> authenticatorStatus = new HashMap<>();
     private String authUserId;
 
@@ -111,6 +112,14 @@ public class MongoClientSessionEntity extends AbstractIdentifiableEntity impleme
 
     public void setNotes(Map<String, String> notes) {
         this.notes = notes;
+    }
+
+    public Map<String, String> getUserSessionNotes() {
+        return userSessionNotes;
+    }
+
+    public void setUserSessionNotes(Map<String, String> userSessionNotes) {
+        this.userSessionNotes = userSessionNotes;
     }
 
     public String getSessionId() {

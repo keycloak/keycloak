@@ -70,6 +70,9 @@ public class ClientSessionEntity {
     protected Collection<ClientSessionNoteEntity> notes = new ArrayList<ClientSessionNoteEntity>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="clientSession")
+    protected Collection<ClientUserSessionNoteEntity> userSessionNotes = new ArrayList<>();
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="clientSession")
     protected Collection<ClientSessionAuthStatusEntity> authanticatorStatus = new ArrayList<>();
 
     public String getId() {
@@ -174,5 +177,13 @@ public class ClientSessionEntity {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public Collection<ClientUserSessionNoteEntity> getUserSessionNotes() {
+        return userSessionNotes;
+    }
+
+    public void setUserSessionNotes(Collection<ClientUserSessionNoteEntity> userSessionNotes) {
+        this.userSessionNotes = userSessionNotes;
     }
 }

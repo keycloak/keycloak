@@ -334,16 +334,6 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
-    public boolean configuredForCredentialType(String type) {
-        List<UserCredentialValueModel> creds = getCredentialsDirectly();
-        for (UserCredentialValueModel cred : creds) {
-            if (cred.getType().equals(type)) return true;
-        }
-        return false;
-    }
-
-
-    @Override
     public void updateCredentialDirectly(UserCredentialValueModel credModel) {
         CredentialEntity credentialEntity = getCredentialEntity(user, credModel.getType());
 

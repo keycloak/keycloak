@@ -88,11 +88,6 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public boolean configuredForCredentialType(String type) {
-        return delegate.configuredForCredentialType(type);
-    }
-
-    @Override
     public void addRequiredAction(RequiredAction action) {
         delegate.addRequiredAction(action);
     }

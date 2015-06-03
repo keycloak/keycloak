@@ -52,6 +52,21 @@ public interface ClientSessionModel {
     public void setNote(String name, String value);
     public void removeNote(String name);
 
+    /**
+     * These are notes you want applied to the UserSessionModel when the client session is attached to it.
+     *
+     * @param name
+     * @param value
+     */
+    public void setUserSessionNote(String name, String value);
+
+    /**
+     * These are notes you want applied to the UserSessionModel when the client session is attached to it.
+     *
+     * @return
+     */
+    public Map<String, String> getUserSessionNotes();
+
     public static enum Action {
         OAUTH_GRANT,
         CODE_TO_TOKEN,

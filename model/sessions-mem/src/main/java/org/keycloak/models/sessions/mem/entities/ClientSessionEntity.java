@@ -28,6 +28,7 @@ public class ClientSessionEntity {
     private Set<String> roles;
     private Set<String> protocolMappers;
     private Map<String, String> notes = new HashMap<>();
+    private Map<String, String> userSessionNotes = new HashMap<>();
 
     public String getId() {
         return id;
@@ -127,5 +128,9 @@ public class ClientSessionEntity {
 
     public void setAuthenticatorStatus(Map<String, UserSessionModel.AuthenticatorStatus> authenticatorStatus) {
         this.authenticatorStatus = authenticatorStatus;
+    }
+
+    public Map<String, String> getUserSessionNotes() {
+        return userSessionNotes;
     }
 }

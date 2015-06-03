@@ -135,6 +135,16 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
+    public void setUserSessionNote(String name, String value) {
+        entity.getUserSessionNotes().put(name, value);
+    }
+
+    @Override
+    public Map<String, String> getUserSessionNotes() {
+        return entity.getUserSessionNotes();
+    }
+
+    @Override
     public String getAuthMethod() {
         return entity.getAuthMethod();
     }

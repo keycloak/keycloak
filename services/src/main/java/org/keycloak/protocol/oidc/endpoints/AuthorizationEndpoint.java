@@ -6,7 +6,6 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.authenticators.AuthenticationFlow;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -44,6 +43,7 @@ import java.util.List;
 public class AuthorizationEndpoint {
 
     private static final Logger logger = Logger.getLogger(AuthorizationEndpoint.class);
+    public static final String CODE_AUTH_TYPE = "code";
 
     private enum Action {
         REGISTER, CODE
@@ -247,10 +247,18 @@ public class AuthorizationEndpoint {
             return buildRedirectToIdentityProvider(idpHint, accessCode);
         }
 
-        return oldBrowserAuthentication(accessCode);
+        return newBrowserAuthentication(accessCode);
     }
 
     protected Response newBrowserAuthentication(String accessCode) {
+        List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
+        for (IdentityProviderModel identityProvider : identityProviders) {
+            if (identityProvider.isAuthenticateByDefault()) {
+                return buildRedirectToIdentityProvider(identityProvider.getAlias(), accessCode);
+            }
+        }
+        clientSession.setNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
+
         String flowId = null;
         for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
             if (flow.getAlias().equals("browser")) {

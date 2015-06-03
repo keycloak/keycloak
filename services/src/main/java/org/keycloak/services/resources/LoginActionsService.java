@@ -343,6 +343,7 @@ public class LoginActionsService {
         } catch (AuthenticationProcessor.AuthException e) {
             return handleError(e, code);
         } catch (Exception e) {
+            event.error(Errors.INVALID_USER_CREDENTIALS);
             logger.error("failed authentication", e);
             return ErrorPage.error(session, Messages.UNEXPECTED_ERROR_HANDLING_RESPONSE);
 

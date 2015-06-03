@@ -45,6 +45,7 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.testsuite.utils.CredentialHelper;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -57,6 +58,7 @@ public class RequiredActionTotpSetupTest {
 
         @Override
         public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
+            CredentialHelper.setRequiredCredential(CredentialRepresentation.TOTP, appRealm);
             appRealm.addRequiredCredential(CredentialRepresentation.TOTP);
             appRealm.setResetPasswordAllowed(true);
         }
@@ -137,6 +139,7 @@ public class RequiredActionTotpSetupTest {
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
+        String src = driver.getPageSource();
         loginTotpPage.login(totp.generate(totpSecret));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -181,7 +184,7 @@ public class RequiredActionTotpSetupTest {
         // Login with one-time password
         loginTotpPage.login(totp.generate(totpCode));
 
-        loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+        loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
 
         // Open account page
         accountTotpPage.open();
@@ -204,11 +207,11 @@ public class RequiredActionTotpSetupTest {
         totpPage.assertCurrent();
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent().getSessionId();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+        events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setuptotp2").assertEvent();
     }
 
 }

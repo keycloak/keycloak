@@ -6,6 +6,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.ClientConnection;
 import org.keycloak.VerificationException;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
@@ -17,6 +18,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -282,6 +284,10 @@ public class SamlService {
                 }
             }
 
+            return newBrowserAuthentication(clientSession);
+        }
+
+        private Response oldBrowserAuthentication(ClientSessionModel clientSession) {
             Response response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);
             if (response != null) return response;
 
@@ -310,6 +316,29 @@ public class SamlService {
 
             return forms.createLogin();
         }
+
+        protected Response newBrowserAuthentication(ClientSessionModel clientSession) {
+            String flowId = null;
+            for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
+                if (flow.getAlias().equals("browser")) {
+                    flowId = flow.getId();
+                    break;
+                }
+            }
+            AuthenticationProcessor processor = new AuthenticationProcessor();
+            processor.setClientSession(clientSession)
+                    .setFlowId(flowId)
+                    .setConnection(clientConnection)
+                    .setEventBuilder(event)
+                    .setProtector(authManager.getProtector())
+                    .setRealm(realm)
+                    .setSession(session)
+                    .setUriInfo(uriInfo)
+                    .setRequest(request);
+
+            return processor.authenticate();
+        }
+
 
         private String getBindingType(AuthnRequestType requestAbstractType) {
             URI requestedProtocolBinding = requestAbstractType.getProtocolBinding();

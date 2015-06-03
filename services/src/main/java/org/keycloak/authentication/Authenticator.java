@@ -1,5 +1,7 @@
 package org.keycloak.authentication;
 
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
@@ -10,7 +12,7 @@ import org.keycloak.provider.Provider;
 public interface Authenticator extends Provider {
     boolean requiresUser();
     void authenticate(AuthenticatorContext context);
-    boolean configuredFor(UserModel user);
+    boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user);
     String getRequiredAction();
 
 
