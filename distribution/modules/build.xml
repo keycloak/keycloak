@@ -46,11 +46,6 @@
             <maven-resource group="net.iharder" artifact="base64"/>
         </module-def>
 
-        <module-def name="org.bouncycastle">
-            <maven-resource group="org.bouncycastle" artifact="bcprov-jdk15on"/>
-            <maven-resource group="org.bouncycastle" artifact="bcpkix-jdk15on"/>
-        </module-def>
-
         <module-def name="org.keycloak.keycloak-broker-core">
             <maven-resource group="org.keycloak" artifact="keycloak-broker-core"/>
         </module-def>
@@ -69,10 +64,6 @@
 
         <module-def name="org.keycloak.keycloak-services">
             <maven-resource group="org.keycloak" artifact="keycloak-services"/>
-        </module-def>
-
-        <module-def name="org.keycloak.keycloak-wildfly-extensions">
-            <maven-resource group="org.keycloak" artifact="keycloak-wildfly-extensions"/>
         </module-def>
 
         <module-def name="com.google.zxing.core">
@@ -315,40 +306,9 @@
 
         <module-def name="org.keycloak.keycloak-server"></module-def>
 
-        <module-def name="org.keycloak.keycloak-adapter-core">
-            <maven-resource group="org.keycloak" artifact="keycloak-adapter-core"/>
-        </module-def>
-
-        <module-def name="org.keycloak.keycloak-jboss-adapter-core">
-            <maven-resource group="org.keycloak" artifact="keycloak-jboss-adapter-core"/>
-        </module-def>
-
-        <module-def name="org.keycloak.keycloak-as7-adapter">
-            <maven-resource group="org.keycloak" artifact="keycloak-as7-adapter"/>
-            <maven-resource group="org.keycloak" artifact="keycloak-tomcat-core-adapter"/>
-        </module-def>
-
-        <module-def name="org.keycloak.keycloak-undertow-adapter">
-            <maven-resource group="org.keycloak" artifact="keycloak-undertow-adapter"/>
-        </module-def>
-
-        <module-def name="org.keycloak.keycloak-wildfly-adapter">
-            <maven-resource group="org.keycloak" artifact="keycloak-wildfly-adapter"/>
-        </module-def>
-
         <module-def name="org.keycloak.keycloak-server-subsystem">
             <maven-resource group="org.keycloak" artifact="keycloak-wildfly-server-subsystem"/>
         </module-def>
-        <module-def name="org.keycloak.keycloak-as7-subsystem">
-            <maven-resource group="org.keycloak" artifact="keycloak-as7-subsystem"/>
-        </module-def>
-
-        <module-def name="org.apache.httpcomponents" slot="4.3">
-            <maven-resource group="org.apache.httpcomponents" artifact="httpclient"/>
-            <maven-resource group="org.apache.httpcomponents" artifact="httpcore"/>
-            <maven-resource group="org.apache.httpcomponents" artifact="httpmime"/>
-        </module-def>
-
     </target>
 
     <target name="clean-target">

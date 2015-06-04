@@ -36,7 +36,6 @@
         <module name="org.keycloak.keycloak-forms-common-themes" services="import"/>
         <module name="org.keycloak.keycloak-invalidation-cache-infinispan" services="import"/>
         <module name="org.keycloak.keycloak-invalidation-cache-model" services="import"/>
-        <module name="org.keycloak.keycloak-jboss-adapter-core" services="import"/>
         <module name="org.keycloak.keycloak-js-adapter" services="import"/>
         <module name="org.keycloak.keycloak-kerberos-federation" services="import"/>
         <module name="org.keycloak.keycloak-ldap-federation" services="import"/>
@@ -50,7 +49,6 @@
         <module name="org.keycloak.keycloak-model-sessions-jpa" services="import"/>
         <module name="org.keycloak.keycloak-model-sessions-mem" services="import"/>
         <module name="org.keycloak.keycloak-model-sessions-mongo" services="import"/>
-        <module name="org.keycloak.keycloak-wildfly-extensions" services="import"/>
 
         <module name="org.keycloak.keycloak-saml-protocol" services="import"/>
         <module name="org.keycloak.keycloak-services" export="true" services="import"/>
@@ -78,7 +76,7 @@
         <module name="net.iharder.base64"/>
         <module name="javax.api"/>
         <module name="javax.activation.api"/>
-        <module name="org.apache.httpcomponents" slot="4.3" />
+        <module name="org.apache.httpcomponents"/>
     </dependencies>
 
 </module>

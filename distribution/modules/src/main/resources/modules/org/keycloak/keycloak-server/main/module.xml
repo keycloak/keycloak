@@ -9,10 +9,6 @@
     <dependencies>
         <module name="org.keycloak.keycloak-account-api" services="import"/>
         <module name="org.keycloak.keycloak-account-freemarker" services="import"/>
-        <module name="org.keycloak.keycloak-adapter-core" services="import"/>
-        <module name="org.keycloak.keycloak-adapter-subsystem" services="import"/>
-        <module name="org.keycloak.keycloak-as7-adapter" services="import"/>
-        <module name="org.keycloak.keycloak-as7-subsystem" services="import"/>
         <module name="org.keycloak.keycloak-connections-infinispan" services="import"/>
         <module name="org.keycloak.keycloak-connections-jpa" services="import"/>
         <module name="org.keycloak.keycloak-connections-jpa-liquibase" services="import"/>
@@ -36,7 +32,6 @@
         <module name="org.keycloak.keycloak-forms-common-themes" services="import"/>
         <module name="org.keycloak.keycloak-invalidation-cache-infinispan" services="import"/>
         <module name="org.keycloak.keycloak-invalidation-cache-model" services="import"/>
-        <module name="org.keycloak.keycloak-jboss-adapter-core" services="import"/>
         <module name="org.keycloak.keycloak-js-adapter" services="import"/>
         <module name="org.keycloak.keycloak-kerberos-federation" services="import"/>
         <module name="org.keycloak.keycloak-ldap-federation" services="import"/>
@@ -61,8 +56,6 @@
         <module name="org.keycloak.keycloak-server-subsystem" services="import"/>
         <module name="org.keycloak.keycloak-timer-api" services="import"/>
         <module name="org.keycloak.keycloak-timer-basic" services="import"/>
-        <module name="org.keycloak.keycloak-undertow-adapter" services="import"/>
-        <module name="org.keycloak.keycloak-wildfly-adapter" services="import"/>
     </dependencies>
 
 </module>

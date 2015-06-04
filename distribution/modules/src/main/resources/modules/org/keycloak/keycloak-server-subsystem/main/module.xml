@@ -46,7 +46,6 @@
         <module name="org.jboss.as.web-common" optional="true"/>
         <module name="org.jboss.as.web" optional="true"/>
         <module name="org.jboss.as.version" optional="true"/>
-        <module name="org.keycloak.keycloak-as7-adapter" optional="true"/>
         <module name="org.jboss.metadata"/>
     </dependencies>
 </module>
