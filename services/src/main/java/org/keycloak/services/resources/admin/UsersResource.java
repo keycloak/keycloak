@@ -20,6 +20,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -48,6 +49,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -837,9 +839,15 @@ public class UsersResource {
         }
     }
 
-    @Path("{email}/impersonate")
+    /**
+     * Custom Smartling endpoint to allow for impersonation.
+     * @param username username (email) of user to impersonate
+     * @param clientId client id
+     * @return on success, an {@link org.keycloak.representations.AccessTokenResponse}, on failure an {@link org.keycloak.services.ErrorResponse}
+     */
+    @Path("{username}/impersonate")
     @POST
-    public Response impersonateUser(@PathParam("email") String email, @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
+    public Response impersonateUser(@PathParam("username") String username, @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
 
         if (!auth.hasRealmRole(AdminRoles.ADMIN)) {
             auth.requireManage();
@@ -847,9 +855,9 @@ public class UsersResource {
 
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
 
-        event.detail(Details.AUTH_METHOD, "impersonate").detail(Details.RESPONSE_TYPE, "token").detail(Details.IMPERSONATE_ID, email);
+        event.detail(Details.AUTH_METHOD, "impersonate").detail(Details.RESPONSE_TYPE, "token").detail(Details.IMPERSONATE_ID, username);
 
-        UserModel user = session.users().getUserByEmail(email, realm);
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
 
         if (user == null) {
             return ErrorResponse.error("User not found", Response.Status.NOT_FOUND);
@@ -868,7 +876,7 @@ public class UsersResource {
 
         UserSessionProvider sessions = session.sessions();
 
-        UserSessionModel userSession = sessions.createUserSession(realm, user, email, clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+        UserSessionModel userSession = sessions.createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "impersonate", false, null, null);
         event.session(userSession);
 
         ClientSessionModel clientSession = sessions.createClientSession(realm, client);
@@ -884,6 +892,28 @@ public class UsersResource {
                                               .build();
 
         return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+    /**
+     * Verifies a user's password - custom endpoint for Smartling for doing privileged actions
+     * @param username user's username (email address)
+     * @param formData contains password
+     * @return 200 (success) or 400 (failure)
+     */
+    @Path("{username}/verify-password")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response verifyPassword(@PathParam("username") String username, MultivaluedMap<String, String> formData) {
+
+        AuthenticationManager authenticationManager = new AuthenticationManager();
+        formData.addFirst(AuthenticationManager.FORM_USERNAME, username);
+
+        AuthenticationManager.AuthenticationStatus authenticationStatus = authenticationManager.authenticateForm(session, clientConnection, realm, formData);
+
+        if (AuthenticationManager.AuthenticationStatus.SUCCESS.equals(authenticationStatus))
+            return Response.ok().build();
+
+        return ErrorResponse.error("Invalid password", Response.Status.BAD_REQUEST);
     }
 
 }
