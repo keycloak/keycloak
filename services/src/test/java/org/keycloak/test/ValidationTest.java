@@ -24,4 +24,26 @@ public class ValidationTest {
         Assert.assertFalse(Validation.isEmailValid("abc@foo."));
         Assert.assertFalse(Validation.isEmailValid("abc@foo..bar"));
     }
+    
+    @Test
+    public void testIsEmpty(){
+        Assert.assertTrue(Validation.isEmpty(null));
+        Assert.assertTrue(Validation.isEmpty(""));
+        Assert.assertFalse(Validation.isEmpty(" "));
+        Assert.assertFalse(Validation.isEmpty("     "));
+        Assert.assertFalse(Validation.isEmpty("a"));
+        Assert.assertFalse(Validation.isEmpty("    a "));
+        Assert.assertFalse(Validation.isEmpty("asgadfgedfs"));
+    }
+    
+    @Test
+    public void testIsBlank(){
+        Assert.assertTrue(Validation.isBlank(null));
+        Assert.assertTrue(Validation.isBlank(""));
+        Assert.assertTrue(Validation.isBlank(" "));
+        Assert.assertTrue(Validation.isBlank("  \n   "));
+        Assert.assertFalse(Validation.isBlank("a"));
+        Assert.assertFalse(Validation.isBlank("    a "));
+        Assert.assertFalse(Validation.isBlank("asgadfgedfs"));
+    }
 }
