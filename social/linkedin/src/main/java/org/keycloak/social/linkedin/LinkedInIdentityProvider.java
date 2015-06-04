@@ -69,7 +69,7 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider imp
 
             return user;
 		} catch (Exception e) {
-			throw new IdentityBrokerException("Could not obtain user profile from github.", e);
+			throw new IdentityBrokerException("Could not obtain user profile from linkedIn.", e);
 		}
 	}
 
