@@ -513,7 +513,6 @@ public class LDAPOperationManager {
             context = createLdapContext();
             return operation.execute(context);
         } catch (NamingException ne) {
-            logger.error("Could not create Ldap context or operation execution error.", ne);
             throw ne;
         } finally {
             if (context != null) {

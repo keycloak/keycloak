@@ -11,13 +11,10 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
-import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
 import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
-import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapperFactory;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelReadOnlyException;
@@ -42,9 +39,7 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -71,7 +66,7 @@ public class FederationProvidersIntegrationTest {
 
             // Delete all LDAP users and add some new for testing
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
-            LDAPUtils.removeAllUsers(ldapFedProvider, appRealm);
+            FederationTestUtils.removeAllLDAPUsers(ldapFedProvider, appRealm);
 
             LDAPObject john = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johnkeycloak", "John", "Doe", "john@email.org", "1234");
             ldapFedProvider.getLdapIdentityStore().updatePassword(john, "Password1");
