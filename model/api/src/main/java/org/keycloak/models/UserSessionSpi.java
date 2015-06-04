@@ -12,7 +12,7 @@ public class UserSessionSpi implements Spi {
     public static final String NAME = "userSessions";
 
     @Override
-    public boolean isPrivate() {
+    public boolean isInternal() {
         return true;
     }
 

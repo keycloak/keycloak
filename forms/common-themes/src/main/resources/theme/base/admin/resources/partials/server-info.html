@@ -14,7 +14,11 @@
 
     <fieldset>
         <legend collapsed>Providers</legend>
+
         <div class="form-group">
+            <h3>Public SPIs</h3>
+            <kc-tooltip>For public SPIs there are built-in providers, but it's also supported to write your own custom providers.</kc-tooltip>
+
             <table class="table table-striped table-bordered">
                 <thead>
                 <tr>
@@ -23,10 +27,34 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr data-ng-repeat="(spi, providers) in serverInfo.providers">
-                    <td>{{spi}}</td>
+                <tr data-ng-repeat="spi in (serverInfo.providers | filter:{internal:false} | orderBy:'name')">
+                    <td>{{spi.name}}</td>
                     <td>
-                        <div data-ng-repeat="provider in providers">
+                        <div data-ng-repeat="provider in (spi.implementations | orderBy:'toString()')">
+                            {{provider}}
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="form-group">
+            <h3>Internal SPIs</h3>
+            <kc-tooltip>For internal SPIs there are only built-in providers. It's not recommended to write your own custom providers as internal SPIs may change or be removed without notice.</kc-tooltip>
+
+            <table class="table table-striped table-bordered">
+                <thead>
+                <tr>
+                    <th>SPI</th>
+                    <th>Providers</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr data-ng-repeat="spi in (serverInfo.providers | filter:{internal:true} | orderBy:'name')">
+                    <td>{{spi.name}}</td>
+                    <td>
+                        <div data-ng-repeat="provider in (spi.implementations | orderBy:'toString()')">
                             {{provider}}
                         </div>
                     </td>

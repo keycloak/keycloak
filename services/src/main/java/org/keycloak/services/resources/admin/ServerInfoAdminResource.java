@@ -69,9 +69,13 @@ public class ServerInfoAdminResource {
     }
 
     private void setProviders(ServerInfoRepresentation info) {
-        Map<String, Set<String>> providers = new HashMap<String, Set<String>>();
+        List<SpiInfoRepresentation> providers = new LinkedList<>();
         for (Spi spi : ServiceLoader.load(Spi.class)) {
-            providers.put(spi.getName(), session.listProviderIds(spi.getProviderClass()));
+            SpiInfoRepresentation spiRep = new SpiInfoRepresentation();
+            spiRep.setName(spi.getName());
+            spiRep.setInternal(spi.isInternal());
+            spiRep.setImplementations(session.listProviderIds(spi.getProviderClass()));
+            providers.add(spiRep);
         }
         info.providers = providers;
     }
@@ -197,7 +201,7 @@ public class ServerInfoAdminResource {
         private List<String> protocols;
         private List<Map<String, String>> clientImporters;
 
-        private Map<String, Set<String>> providers;
+        private List<SpiInfoRepresentation> providers;
 
         private List<String> eventListeners;
         private Map<String, List<ProtocolMapperTypeRepresentation>> protocolMapperTypes;
@@ -240,7 +244,7 @@ public class ServerInfoAdminResource {
             return clientImporters;
         }
 
-        public Map<String, Set<String>> getProviders() {
+        public List<SpiInfoRepresentation> getProviders() {
             return providers;
         }
 
@@ -262,6 +266,36 @@ public class ServerInfoAdminResource {
 
         public void setEnums(Map<String, List<String>> enums) {
             this.enums = enums;
+        }
+    }
+
+    public static class SpiInfoRepresentation {
+        private String name;
+        private boolean internal;
+        private Set<String> implementations;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public boolean isInternal() {
+            return internal;
+        }
+
+        public void setInternal(boolean internal) {
+            this.internal = internal;
+        }
+
+        public Set<String> getImplementations() {
+            return implementations;
+        }
+
+        public void setImplementations(Set<String> implementations) {
+            this.implementations = implementations;
         }
     }
 
