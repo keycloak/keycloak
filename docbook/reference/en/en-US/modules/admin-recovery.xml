@@ -1,0 +1,15 @@
+<chapter id="admin-recovery">
+    <title>Recovering the Master Admin User</title>
+    <para>
+        It is possible for the "admin" user in the master realm to become inoperable.  This may be because it was
+        accentally deleted, its role mappings were removed, or the password was simply forgotten.
+    </para>
+    <para>
+        To recover the master admin user, just start the server with the following system property:
+        <programlisting><![CDATA[
+bin/standalone.sh -Dkeycloak.recover-admin=true
+]]></programlisting>
+        Then you can log in to the master admin account with the default password "admin".  You will then be
+        prompted to immediately change this password.
+    </para>
+</chapter>
