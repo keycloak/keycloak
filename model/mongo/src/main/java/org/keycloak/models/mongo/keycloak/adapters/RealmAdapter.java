@@ -18,6 +18,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationMapperEventImpl;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderCreationEventImpl;
 import org.keycloak.models.UserFederationProviderModel;
@@ -862,7 +863,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateRealm();
 
         UserFederationProviderModel providerModel = new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
+
         session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, providerModel));
+
         return providerModel;
     }
 
@@ -962,6 +965,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
             entity.setLastSync(model.getLastSync());
             entities.add(entity);
+
             session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, model));
         }
 
@@ -1501,7 +1505,11 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
         getMongoEntity().getUserFederationMappers().add(entity);
         updateMongoEntity();
-        return entityToModel(entity);
+        UserFederationMapperModel mapperModel = entityToModel(entity);
+
+        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapperModel, this, session));
+
+        return mapperModel;
     }
 
     protected UserFederationMapperEntity getUserFederationMapperEntity(String id) {
@@ -1555,6 +1563,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             entity.getConfig().putAll(mapper.getConfig());
         }
         updateMongoEntity();
+
+        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapper, this, session));
     }
 
     @Override

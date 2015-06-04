@@ -45,16 +45,6 @@ public class LDAPUtils {
         return ldapUser;
     }
 
-    public static void removeAllUsers(LDAPFederationProvider ldapProvider, RealmModel realm) {
-        LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
-        LDAPIdentityQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
-        List<LDAPObject> allUsers = ldapQuery.getResultList();
-
-        for (LDAPObject ldapUser : allUsers) {
-            ldapStore.remove(ldapUser);
-        }
-    }
-
     public static LDAPIdentityQuery createQueryForUserSearch(LDAPFederationProvider ldapProvider, RealmModel realm) {
         LDAPIdentityQuery ldapQuery = new LDAPIdentityQuery(ldapProvider);
         LDAPConfig config = ldapProvider.getLdapIdentityStore().getConfig();

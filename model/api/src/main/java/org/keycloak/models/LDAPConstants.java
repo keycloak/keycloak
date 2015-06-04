@@ -63,6 +63,7 @@ public class LDAPConstants {
     public static final String OBJECT_CLASS = "objectclass";
     public static final String UID = "uid";
     public static final String USER_PASSWORD_ATTRIBUTE = "userpassword";
+    public static final String GROUP = "group";
     public static final String GROUP_OF_NAMES = "groupOfNames";
     public static final String GROUP_OF_ENTRIES = "groupOfEntries";
     public static final String GROUP_OF_UNIQUE_NAMES = "groupOfUniqueNames";

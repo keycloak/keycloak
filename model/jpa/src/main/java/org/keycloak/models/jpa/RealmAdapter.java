@@ -13,6 +13,7 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationMapperEventImpl;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderCreationEventImpl;
 import org.keycloak.models.UserFederationProviderModel;
@@ -789,7 +790,9 @@ public class RealmAdapter implements RealmModel {
         realm.getUserFederationProviders().add(entity);
         em.flush();
         UserFederationProviderModel providerModel = new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
+
         session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, providerModel));
+
         return providerModel;
     }
 
@@ -907,6 +910,7 @@ public class RealmAdapter implements RealmModel {
             entity.setLastSync(model.getLastSync());
             em.persist(entity);
             realm.getUserFederationProviders().add(entity);
+
             session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, model));
         }
     }
@@ -1413,7 +1417,11 @@ public class RealmAdapter implements RealmModel {
 
         em.persist(entity);
         this.realm.getUserFederationMappers().add(entity);
-        return entityToModel(entity);
+        UserFederationMapperModel mapperModel = entityToModel(entity);
+
+        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapperModel, this, session));
+
+        return mapperModel;
     }
 
     @Override
@@ -1467,6 +1475,8 @@ public class RealmAdapter implements RealmModel {
             entity.getConfig().putAll(mapper.getConfig());
         }
         em.flush();
+
+        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapper, this, session));
     }
 
     @Override

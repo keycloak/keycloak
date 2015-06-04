@@ -1,10 +1,14 @@
 package org.keycloak.testsuite.federation;
 
+import java.util.List;
+
 import org.junit.Assert;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.mappers.RoleLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.RoleLDAPFederationMapperFactory;
 import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
@@ -129,5 +133,31 @@ class FederationTestUtils {
                     RoleLDAPFederationMapper.MODE, mode.toString());
             realm.addUserFederationMapper(mapperModel);
         }
+    }
+
+    public static void removeAllLDAPUsers(LDAPFederationProvider ldapProvider, RealmModel realm) {
+        LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
+        LDAPIdentityQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
+        List<LDAPObject> allUsers = ldapQuery.getResultList();
+
+        for (LDAPObject ldapUser : allUsers) {
+            ldapStore.remove(ldapUser);
+        }
+    }
+
+    public static void removeAllLDAPRoles(KeycloakSession session, RealmModel appRealm, UserFederationProviderModel ldapModel, String mapperName) {
+        UserFederationMapperModel mapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), mapperName);
+        LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+        LDAPIdentityQuery roleQuery = new RoleLDAPFederationMapper().createRoleQuery(mapperModel, ldapProvider);
+        List<LDAPObject> ldapRoles = roleQuery.getResultList();
+        for (LDAPObject ldapRole : ldapRoles) {
+            ldapProvider.getLdapIdentityStore().remove(ldapRole);
+        }
+    }
+
+    public static void createLDAPRole(KeycloakSession session, RealmModel appRealm, UserFederationProviderModel ldapModel, String mapperName, String roleName) {
+        UserFederationMapperModel mapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), mapperName);
+        LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+        new RoleLDAPFederationMapper().createLDAPRole(mapperModel, roleName, ldapProvider);
     }
 }
