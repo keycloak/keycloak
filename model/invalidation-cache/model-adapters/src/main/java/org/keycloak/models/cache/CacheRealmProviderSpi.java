@@ -11,7 +11,7 @@ import org.keycloak.provider.Spi;
 public class CacheRealmProviderSpi implements Spi {
 
     @Override
-    public boolean isPrivate() {
+    public boolean isInternal() {
         return true;
     }
 
