@@ -172,7 +172,7 @@ public class OAuthGrantTest {
         // Open login form and assert grantPage not shown
         oauth.openLoginForm();
         appPage.assertCurrent();
-        events.expectLogin().detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).client("third-party").assertEvent();
+        events.expectLogin().removeDetail(Details.USERNAME).client("third-party").assertEvent();
 
         // Revoke grant in account mgmt.
         accountAppsPage.open();

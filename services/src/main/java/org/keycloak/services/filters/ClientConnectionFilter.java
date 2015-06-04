@@ -15,6 +15,7 @@ import java.io.IOException;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Deprecated
 public class ClientConnectionFilter implements Filter {
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {

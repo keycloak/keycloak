@@ -315,6 +315,8 @@ public class LoginActionsService {
             event.error(Errors.CLIENT_NOT_FOUND);
             return ErrorPage.error(session, Messages.UNKNOWN_LOGIN_REQUESTER);
         }
+        session.getContext().setClient(client);
+
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_NOT_FOUND);
             return ErrorPage.error(session, Messages.LOGIN_REQUESTER_NOT_ENABLED);

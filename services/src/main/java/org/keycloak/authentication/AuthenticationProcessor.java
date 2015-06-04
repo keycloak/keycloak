@@ -434,7 +434,7 @@ public class AuthenticationProcessor {
             if (authenticator.requiresUser() && authUser != null) {
                 configuredFor = authenticator.configuredFor(session, realm, authUser);
                 if (!configuredFor) {
-                    if (model.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) {
+                    if (model.isRequired()) {
                         if (model.isUserSetupAllowed()) {
                             clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.SETUP_REQUIRED);
                             String requiredAction = authenticator.getRequiredAction();
@@ -445,6 +445,9 @@ public class AuthenticationProcessor {
                         } else {
                             throw new AuthException(Error.CREDENTIAL_SETUP_REQUIRED);
                         }
+                    } else if (model.isOptional()) {
+                        clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.SKIPPED);
+                        continue;
                     }
                 }
             }
@@ -477,7 +480,9 @@ public class AuthenticationProcessor {
                 clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.CHALLENGED);
                 return context.challenge;
             } else if (result == Status.ATTEMPTED) {
-                if (model.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) throw new AuthException(Error.INVALID_CREDENTIALS);
+                if (model.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) {
+                    throw new AuthException(Error.INVALID_CREDENTIALS);
+                }
                 clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.ATTEMPTED);
                 continue;
             } else {
