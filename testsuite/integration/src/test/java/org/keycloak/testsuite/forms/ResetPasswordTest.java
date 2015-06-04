@@ -52,7 +52,9 @@ import org.keycloak.util.Time;
 import org.openqa.selenium.WebDriver;
 
 import javax.mail.MessagingException;
+import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
+
 import java.io.IOException;
 import java.util.Collections;
 
@@ -146,9 +148,8 @@ public class ResetPasswordTest {
         assertEquals(1, greenMail.getReceivedMessages().length);
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
-
-        String body = (String) message.getContent();
-        String changePasswordUrl = MailUtil.getLink(body);
+        
+        final String changePasswordUrl = getPasswordResetEmailLink(message);
 
         driver.navigate().to(changePasswordUrl.trim());
 
@@ -211,8 +212,7 @@ public class ResetPasswordTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        String body = (String) message.getContent();
-        String changePasswordUrl = MailUtil.getLink(body);
+        String changePasswordUrl = getPasswordResetEmailLink(message);
 
         driver.navigate().to(changePasswordUrl.trim());
 
@@ -256,8 +256,7 @@ public class ResetPasswordTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[greenMail.getReceivedMessages().length - 1];
 
-        String body = (String) message.getContent();
-        String changePasswordUrl = MailUtil.getLink(body);
+        String changePasswordUrl = getPasswordResetEmailLink(message);
 
         driver.navigate().to(changePasswordUrl.trim());
 
@@ -294,8 +293,7 @@ public class ResetPasswordTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[greenMail.getReceivedMessages().length - 1];
 
-        String body = (String) message.getContent();
-        String changePasswordUrl = MailUtil.getLink(body);
+        String changePasswordUrl = getPasswordResetEmailLink(message);
 
         driver.navigate().to(changePasswordUrl.trim());
 
@@ -364,8 +362,7 @@ public class ResetPasswordTest {
 
             MimeMessage message = greenMail.getReceivedMessages()[0];
 
-            String body = (String) message.getContent();
-            String changePasswordUrl = MailUtil.getLink(body);
+            String changePasswordUrl = getPasswordResetEmailLink(message);
 
             Time.setOffset(350);
 
@@ -513,8 +510,7 @@ public class ResetPasswordTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        String body = (String) message.getContent();
-        String changePasswordUrl = MailUtil.getLink(body);
+        String changePasswordUrl = getPasswordResetEmailLink(message);
 
         String sessionId = events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
 
@@ -609,8 +605,7 @@ public class ResetPasswordTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        String body = (String) message.getContent();
-        String changePasswordUrl = MailUtil.getLink(body);
+        String changePasswordUrl = getPasswordResetEmailLink(message);
 
         driver.manage().deleteAllCookies();
 
@@ -628,6 +623,28 @@ public class ResetPasswordTest {
         loginPage.open();
 
         assertTrue(loginPage.isCurrent());
+    }
+    
+    private String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
+    	Multipart multipart = (Multipart) message.getContent();
+    	
+        final String textContentType = multipart.getBodyPart(0).getContentType();
+        
+        assertEquals("text/plain; charset=UTF-8", textContentType);
+        
+        final String textBody = (String) multipart.getBodyPart(0).getContent();
+        final String textChangePwdUrl = MailUtil.getLink(textBody);
+        
+        final String htmlContentType = multipart.getBodyPart(1).getContentType();
+        
+        assertEquals("text/html; charset=UTF-8", htmlContentType);
+        
+        final String htmlBody = (String) multipart.getBodyPart(1).getContent();
+        final String htmlChangePwdUrl = MailUtil.getLink(htmlBody);
+        
+        assertEquals(htmlChangePwdUrl, textChangePwdUrl);
+
+        return htmlChangePwdUrl;
     }
 
 }
