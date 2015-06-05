@@ -119,6 +119,18 @@ public class UsersResource {
     public Response updateUser(final @PathParam("username") String username, final UserRepresentation rep) {
         auth.requireManage();
 
+        if (!username.equals(rep.getUsername())) {
+            logger.warn(String.format("Request to change username from %s to %s", username, rep.getUsername()));
+
+            // Double-check duplicated username and email here due to federation
+            if (session.users().getUserByUsername(rep.getUsername(), realm) != null) {
+                return ErrorResponse.exists("User exists with same username");
+            }
+            if (rep.getEmail() != null && session.users().getUserByEmail(rep.getEmail(), realm) != null) {
+                return ErrorResponse.exists("User exists with same email");
+            }
+        }
+
         try {
             UserModel user = session.users().getUserByUsername(username, realm);
             if (user == null) {
@@ -176,6 +188,7 @@ public class UsersResource {
     }
 
     private void updateUserFromRep(UserModel user, UserRepresentation rep) {
+        user.setUsername(rep.getUsername());
         user.setEmail(rep.getEmail());
         user.setFirstName(rep.getFirstName());
         user.setLastName(rep.getLastName());
