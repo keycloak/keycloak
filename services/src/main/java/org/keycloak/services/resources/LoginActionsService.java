@@ -357,31 +357,17 @@ public class LoginActionsService {
         logger.error("failed authentication: " + e.getError().toString(), e);
         if (e.getError() == AuthenticationProcessor.Error.INVALID_USER) {
             event.error(Errors.USER_NOT_FOUND);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.INVALID_USER)
-                    .setClientSessionCode(code)
-                    .createLogin();
-
+            return ErrorPage.error(session, Messages.INVALID_USER);
         } else if (e.getError() == AuthenticationProcessor.Error.USER_DISABLED) {
             event.error(Errors.USER_DISABLED);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.ACCOUNT_DISABLED)
-                    .setClientSessionCode(code)
-                    .createLogin();
-
+            return ErrorPage.error(session, Messages.ACCOUNT_DISABLED);
         } else if (e.getError() == AuthenticationProcessor.Error.USER_TEMPORARILY_DISABLED) {
             event.error(Errors.USER_TEMPORARILY_DISABLED);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.ACCOUNT_TEMPORARILY_DISABLED)
-                    .setClientSessionCode(code)
-                    .createLogin();
+            return ErrorPage.error(session, Messages.ACCOUNT_TEMPORARILY_DISABLED);
 
         } else {
             event.error(Errors.INVALID_USER_CREDENTIALS);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.INVALID_USER)
-                    .setClientSessionCode(code)
-                    .createLogin();
+            return ErrorPage.error(session, Messages.INVALID_USER);
         }
     }
 

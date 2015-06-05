@@ -333,7 +333,7 @@ public class AuthenticationProcessor {
     }
 
     public Response authenticate() throws AuthException {
-        logger.info("AUTHENTICATE");
+        logger.debug("AUTHENTICATE");
         event.event(EventType.LOGIN);
         event.client(clientSession.getClient().getClientId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
