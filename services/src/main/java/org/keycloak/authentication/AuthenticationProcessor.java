@@ -20,6 +20,7 @@ import org.keycloak.services.managers.BruteForceProtector;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -332,6 +333,7 @@ public class AuthenticationProcessor {
     }
 
     public Response authenticate() throws AuthException {
+        logger.info("AUTHENTICATE");
         event.event(EventType.LOGIN);
         event.client(clientSession.getClient().getClientId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
@@ -381,7 +383,7 @@ public class AuthenticationProcessor {
     public Response finishAuthentication() {
         event.success();
         RealmModel realm = clientSession.getRealm();
-        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm , userSession, clientSession, request, uriInfo, connection);
+        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, connection);
 
     }
 
@@ -393,11 +395,13 @@ public class AuthenticationProcessor {
         }
         List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(flowId);
         if (executions == null) return null;
+        Collections.sort(executions, AuthenticationExecutionModel.ExecutionComparator.SINGLETON);
         Response alternativeChallenge = null;
         AuthenticationExecutionModel challengedAlternativeExecution = null;
         boolean alternativeSuccessful = false;
         for (AuthenticationExecutionModel model : executions) {
             if (isProcessed(model)) {
+                logger.info("execution is processed");
                 if (!alternativeSuccessful && model.isAlternative() && isSuccessful(model)) alternativeSuccessful = true;
                 continue;
             }
@@ -421,6 +425,7 @@ public class AuthenticationProcessor {
             AuthenticatorModel authenticatorModel = realm.getAuthenticatorById(model.getAuthenticator());
             AuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, authenticatorModel.getProviderId());
             Authenticator authenticator = factory.create(authenticatorModel);
+            logger.info("authenticator: " + authenticatorModel.getProviderId());
             UserModel authUser = clientSession.getAuthenticatedUser();
 
             if (authenticator.requiresUser() && authUser == null){
@@ -428,7 +433,7 @@ public class AuthenticationProcessor {
                     clientSession.setAuthenticatorStatus(challengedAlternativeExecution.getId(), UserSessionModel.AuthenticatorStatus.CHALLENGED);
                     return alternativeChallenge;
                 }
-                throw new AuthException(Error.UNKNOWN_USER);
+                throw new AuthException("authenticator: " + authenticatorModel.getProviderId(), Error.UNKNOWN_USER);
             }
             boolean configuredFor = false;
             if (authenticator.requiresUser() && authUser != null) {
@@ -436,6 +441,7 @@ public class AuthenticationProcessor {
                 if (!configuredFor) {
                     if (model.isRequired()) {
                         if (model.isUserSetupAllowed()) {
+                            logger.info("authenticator SETUP_REQUIRED: " + authenticatorModel.getProviderId());
                             clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.SETUP_REQUIRED);
                             String requiredAction = authenticator.getRequiredAction();
                             if (!authUser.getRequiredActions().contains(requiredAction)) {
@@ -455,15 +461,18 @@ public class AuthenticationProcessor {
             authenticator.authenticate(context);
             Status result = context.getStatus();
             if (result == Status.SUCCESS){
+                logger.info("authenticator SUCCESS: " + authenticatorModel.getProviderId());
                 clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.SUCCESS);
                 if (model.isAlternative()) alternativeSuccessful = true;
                 continue;
             } else if (result == Status.FAILED) {
+                logger.info("authenticator FAILED: " + authenticatorModel.getProviderId());
                 logUserFailure();
                 clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.FAILED);
                 if (context.challenge != null) return context.challenge;
                 throw new AuthException(context.error);
             } else if (result == Status.CHALLENGE) {
+                logger.info("authenticator CHALLENGE: " + authenticatorModel.getProviderId());
                 if (model.isRequired() || (model.isOptional() && configuredFor)) {
                     clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.CHALLENGED);
                     return context.challenge;
@@ -476,16 +485,19 @@ public class AuthenticationProcessor {
                 }
                 continue;
             } else if (result == Status.FAILURE_CHALLENGE) {
+                logger.info("authenticator FAILURE_CHALLENGE: " + authenticatorModel.getProviderId());
                 logUserFailure();
                 clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.CHALLENGED);
                 return context.challenge;
             } else if (result == Status.ATTEMPTED) {
+                logger.info("authenticator ATTEMPTED: " + authenticatorModel.getProviderId());
                 if (model.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) {
                     throw new AuthException(Error.INVALID_CREDENTIALS);
                 }
                 clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.ATTEMPTED);
                 continue;
             } else {
+                logger.info("authenticator INTERNAL_ERROR: " + authenticatorModel.getProviderId());
                 logger.error("Unknown result status");
                 throw new AuthException(Error.INTERNAL_ERROR);
             }
@@ -508,9 +520,14 @@ public class AuthenticationProcessor {
 
     protected Response authenticationComplete() {
         String username = clientSession.getAuthenticatedUser().getUsername();
+        String rememberMe = clientSession.getNote(Details.REMEMBER_ME);
+        boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("true");
         if (userSession == null) { // if no authenticator attached a usersession
-            userSession = session.sessions().createUserSession(realm, clientSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), "form", false, null, null);
+            userSession = session.sessions().createUserSession(realm, clientSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), clientSession.getAuthMethod(), remember, null, null);
             userSession.setState(UserSessionModel.State.LOGGING_IN);
+        }
+        if (remember) {
+            event.detail(Details.REMEMBER_ME, "true");
         }
         TokenManager.attachClientSession(userSession, clientSession);
         event.user(userSession.getUser())

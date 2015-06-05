@@ -15,5 +15,4 @@ public interface Authenticator extends Provider {
     boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user);
     String getRequiredAction();
 
-
 }

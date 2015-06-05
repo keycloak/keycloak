@@ -34,6 +34,14 @@ public class CredentialHelper {
         }
     }
 
+    public static AuthenticationExecutionModel.Requirement getRequirement(RealmModel realm, String authenticatorProviderId, String flowAlias) {
+        AuthenticatorModel authenticator = findAuthenticatorByProviderId(realm, authenticatorProviderId);
+        AuthenticationFlowModel flow =  findAuthenticatorFlowByAlias(realm, flowAlias);
+        AuthenticationExecutionModel execution = findExecutionByAuthenticator(realm, flow.getId(), authenticator.getId());
+        return execution.getRequirement();
+
+    }
+
     public static void requireAuthentication(RealmModel realm, String authenticatorProviderId, String flowAlias) {
         AuthenticationExecutionModel.Requirement requirement = AuthenticationExecutionModel.Requirement.REQUIRED;
         authenticationRequirement(realm, authenticatorProviderId, flowAlias, requirement);

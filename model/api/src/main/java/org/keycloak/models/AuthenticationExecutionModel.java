@@ -1,10 +1,20 @@
 package org.keycloak.models;
 
+import java.util.Comparator;
+
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
 * @version $Revision: 1 $
 */
 public class AuthenticationExecutionModel {
+    public static class ExecutionComparator implements Comparator<AuthenticationExecutionModel> {
+        public static final ExecutionComparator SINGLETON = new ExecutionComparator();
+
+        @Override
+        public int compare(AuthenticationExecutionModel o1, AuthenticationExecutionModel o2) {
+            return o1.priority - o2.priority;
+        }
+    }
 
     private String id;
     private String authenticator;

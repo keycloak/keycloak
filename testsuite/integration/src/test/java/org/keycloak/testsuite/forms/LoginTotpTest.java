@@ -144,28 +144,4 @@ public class LoginTotpTest {
 
         events.expectLogin().error("invalid_user_credentials").session((String) null).assertEvent();
     }
-
-    @Test
-    public void loginWithTotpExpiredPasswordToken() throws Exception {
-        try {
-            loginPage.open();
-            loginPage.login("test-user@localhost", "password");
-
-            loginTotpPage.assertCurrent();
-
-            Time.setOffset(350);
-
-            loginTotpPage.login(totp.generate("totpSecret"));
-
-            loginPage.assertCurrent();
-            Assert.assertEquals("Invalid username or password.", loginPage.getError());
-
-            AssertEvents.ExpectedEvent expectedEvent = events.expectLogin().error("invalid_user_credentials")
-                    .session((String) null);
-            expectedEvent.assertEvent();
-        } finally {
-            Time.setOffset(0);
-        }
-    }
-
 }

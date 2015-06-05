@@ -24,6 +24,7 @@ import javax.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public class LoginFormUsernameAuthenticator extends AbstractFormAuthenticator implements Authenticator {
+    public static final String FORM_USERNAME = "FORM_USERNAME";
     protected AuthenticatorModel model;
 
     public LoginFormUsernameAuthenticator(AuthenticatorModel model) {
@@ -35,9 +36,14 @@ public class LoginFormUsernameAuthenticator extends AbstractFormAuthenticator im
         if (!isActionUrl(context)) {
             MultivaluedMap<String, String> formData = new MultivaluedMapImpl<>();
             String loginHint = context.getClientSession().getNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
-            if (loginHint == null) {
-                loginHint = AuthenticationManager.getRememberMeUsername(context.getRealm(), context.getHttpRequest().getHttpHeaders());
+
+            String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getRealm(), context.getHttpRequest().getHttpHeaders());
+
+            if (loginHint != null || rememberMeUsername != null) {
                 if (loginHint != null) {
+                    formData.add(AuthenticationManager.FORM_USERNAME, loginHint);
+                } else {
+                    formData.add(AuthenticationManager.FORM_USERNAME, rememberMeUsername);
                     formData.add("rememberMe", "on");
                 }
             }
@@ -83,9 +89,15 @@ public class LoginFormUsernameAuthenticator extends AbstractFormAuthenticator im
             return;
         }
         context.getEvent().detail(Details.USERNAME, username);
-        context.getClientSession().setNote("FORM_USERNAME", username);
+        context.getClientSession().setNote(FORM_USERNAME, username);
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
         if (invalidUser(context, user)) return;
+        String rememberMe = inputData.getFirst("rememberMe");
+        boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
+        if (remember) {
+            context.getClientSession().setNote(Details.REMEMBER_ME, "true");
+            context.getEvent().detail(Details.REMEMBER_ME, "true");
+        }
         context.setUser(user);
         context.success();
     }
