@@ -75,7 +75,8 @@ public class LDAPIdentityStore implements IdentityStore {
         }
 
         String entryDN = ldapObject.getDn().toString();
-        this.operationManager.createSubContext(entryDN, extractAttributes(ldapObject, true));
+        BasicAttributes ldapAttributes = extractAttributes(ldapObject, true);
+        this.operationManager.createSubContext(entryDN, ldapAttributes);
         ldapObject.setUuid(getEntryIdentifier(ldapObject));
 
         if (logger.isTraceEnabled()) {

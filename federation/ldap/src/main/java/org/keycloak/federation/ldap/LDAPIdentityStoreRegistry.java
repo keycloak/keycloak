@@ -24,7 +24,7 @@ public class LDAPIdentityStoreRegistry {
         // Ldap config might have changed for the realm. In this case, we must re-initialize
         Map<String, String> config = model.getConfig();
         if (context == null || !config.equals(context.config)) {
-            logLDAPConfig(model.getId(), config);
+            logLDAPConfig(model.getDisplayName(), config);
 
             LDAPIdentityStore store = createLdapIdentityStore(config);
             context = new LDAPIdentityStoreContext(config, store);
@@ -34,10 +34,10 @@ public class LDAPIdentityStoreRegistry {
     }
 
     // Don't log LDAP password
-    private void logLDAPConfig(String fedProviderId, Map<String, String> ldapConfig) {
+    private void logLDAPConfig(String fedProviderDisplayName, Map<String, String> ldapConfig) {
         Map<String, String> copy = new HashMap<String, String>(ldapConfig);
         copy.remove(LDAPConstants.BIND_CREDENTIAL);
-        logger.infof("Creating new LDAP based partition manager for the Federation provider: " + fedProviderId + ", LDAP Configuration: " + copy);
+        logger.infof("Creating new LDAP based partition manager for the Federation provider: " + fedProviderDisplayName + ", LDAP Configuration: " + copy);
     }
 
     /**

@@ -279,14 +279,15 @@ public class FederationProvidersIntegrationTest {
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
             FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "fullname", "James Dee", "Dee", "fullname@email.org", "4578");
 
-            // add fullname mapper to the provider and remove "firstNameMapper"
+            // add fullname mapper to the provider and remove "firstNameMapper". For this test, we will simply map full name to the LDAP attribute, which was before firstName ( "givenName" on active directory, "cn" on other LDAP servers)
+            firstNameMapper = appRealm.getUserFederationMapperByName(ldapModel.getId(), "first name");
+            String ldapFirstNameAttributeName = firstNameMapper.getConfig().get(UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE);
+            appRealm.removeUserFederationMapper(firstNameMapper);
+
             UserFederationMapperModel fullNameMapperModel = KeycloakModelUtils.createUserFederationMapperModel("full name", ldapModel.getId(), FullNameLDAPFederationMapperFactory.PROVIDER_ID,
-                    FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, LDAPConstants.CN,
+                    FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, ldapFirstNameAttributeName,
                     UserAttributeLDAPFederationMapper.READ_ONLY, "false");
             appRealm.addUserFederationMapper(fullNameMapperModel);
-
-            firstNameMapper = appRealm.getUserFederationMapperByName(ldapModel.getId(), "first name");
-            appRealm.removeUserFederationMapper(firstNameMapper);
 
             // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
             FederationTestUtils.assertUserImported(session.users(), appRealm, "fullname", "James", "Dee", "fullname@email.org", "4578");

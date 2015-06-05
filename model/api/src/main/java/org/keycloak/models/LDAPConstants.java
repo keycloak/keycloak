@@ -52,7 +52,7 @@ public class LDAPConstants {
     public static final String CONFIG_DIVIDER = ":::";
 
     // Those are forked from Picketlink
-    public static final String GIVENNAME = "givenname";
+    public static final String GIVENNAME = "givenName";
     public static final String CN = "cn";
     public static final String SN = "sn";
     public static final String SAM_ACCOUNT_NAME = "sAMAccountName";
