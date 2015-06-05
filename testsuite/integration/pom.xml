@@ -421,7 +421,6 @@
                 <keycloak.connectionsMongo.host>localhost</keycloak.connectionsMongo.host>
                 <keycloak.connectionsMongo.port>27018</keycloak.connectionsMongo.port>
                 <keycloak.connectionsMongo.db>keycloak</keycloak.connectionsMongo.db>
-                <keycloak.connectionsMongo.clearOnStartup>true</keycloak.connectionsMongo.clearOnStartup>
                 <keycloak.connectionsMongo.bindIp>127.0.0.1</keycloak.connectionsMongo.bindIp>
             </properties>
 
@@ -448,7 +447,6 @@
                                         <keycloak.connectionsMongo.host>${keycloak.connectionsMongo.host}</keycloak.connectionsMongo.host>
                                         <keycloak.connectionsMongo.port>${keycloak.connectionsMongo.port}</keycloak.connectionsMongo.port>
                                         <keycloak.connectionsMongo.db>${keycloak.connectionsMongo.db}</keycloak.connectionsMongo.db>
-                                        <keycloak.connectionsMongo.clearOnStartup>${keycloak.connectionsMongo.clearOnStartup}</keycloak.connectionsMongo.clearOnStartup>
                                         <keycloak.connectionsMongo.bindIp>${keycloak.connectionsMongo.bindIp}</keycloak.connectionsMongo.bindIp>
                                     </systemPropertyVariables>
                                 </configuration>
