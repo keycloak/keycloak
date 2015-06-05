@@ -180,10 +180,10 @@ public class SAMLEndpoint {
             SAMLDocumentHolder holder = extractRequestDocument(samlRequest);
             RequestAbstractType requestAbstractType = (RequestAbstractType) holder.getSamlObject();
             // validate destination
-            if (!uriInfo.getAbsolutePath().equals(requestAbstractType.getDestination())) {
+            if (requestAbstractType.getDestination() != null && !uriInfo.getAbsolutePath().equals(requestAbstractType.getDestination())) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                event.error(Errors.INVALID_SAML_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
+                event.error(Errors.INVALID_SAML_RESPONSE);
                 return ErrorPage.error(session, Messages.INVALID_REQUEST);
             }
             if (config.isValidateSignature()) {
@@ -354,10 +354,10 @@ public class SAMLEndpoint {
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
             StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
             // validate destination
-            if (!uriInfo.getAbsolutePath().toString().equals(statusResponse.getDestination())) {
+            if (statusResponse.getDestination() != null && !uriInfo.getAbsolutePath().toString().equals(statusResponse.getDestination())) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                event.error(Errors.INVALID_SAML_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
+                event.error(Errors.INVALID_SAML_RESPONSE);
                 return ErrorPage.error(session, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
             }
             if (config.isValidateSignature()) {

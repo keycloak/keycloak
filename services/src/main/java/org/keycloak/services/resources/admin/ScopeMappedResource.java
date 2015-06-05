@@ -215,23 +215,12 @@ public class ScopeMappedResource {
 
     }
 
-    @Path("clients/{clientId}")
-    public ScopeMappedClientResource getClientScopeMappings(@PathParam("clientId") String clientId) {
-        ClientModel app = realm.getClientByClientId(clientId);
-
-        if (app == null) {
-            throw new NotFoundException("Role not found");
-        }
-        return new ScopeMappedClientResource(realm, auth, client, session, app, adminEvent);
-    }
-
-    @Path("clients-by-id/{id}")
-    public ScopeMappedClientResource getClientByIdScopeMappings(@PathParam("id") String id) {
-        ClientModel app = realm.getClientById(id);
-
-        if (app == null) {
+    @Path("clients/{client}")
+    public ScopeMappedClientResource getClientByIdScopeMappings(@PathParam("client") String client) {
+        ClientModel clientModel = realm.getClientById(client);
+        if (clientModel == null) {
             throw new NotFoundException("Client not found");
         }
-        return new ScopeMappedClientResource(realm, auth, client, session, app, adminEvent);
+        return new ScopeMappedClientResource(realm, auth, this.client, session, clientModel, adminEvent);
     }
 }

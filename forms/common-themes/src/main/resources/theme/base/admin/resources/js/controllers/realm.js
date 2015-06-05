@@ -597,7 +597,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         if (instance && instance.alias) {
 
         } else {
-            $scope.identityProvider.updateProfileFirstLogin = false;
+            $scope.identityProvider.updateProfileFirstLoginMode = "on";
         }
 
     };
@@ -645,7 +645,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
 
         } else {
             $scope.identityProvider.config.nameIDPolicyFormat = $scope.nameIdFormats[0].format;
-            $scope.identityProvider.updateProfileFirstLogin = false;
+            $scope.identityProvider.updateProfileFirstLoginMode = "off";
         }
     }
 
@@ -663,7 +663,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         $scope.identityProvider.alias = providerFactory.id;
         $scope.identityProvider.providerId = providerFactory.id;
         $scope.identityProvider.enabled = true;
-        $scope.identityProvider.updateProfileFirstLogin = false;
+        $scope.identityProvider.updateProfileFirstLoginMode = "off";
         $scope.identityProvider.authenticateByDefault = false;
         $scope.newIdentityProvider = true;
     }

@@ -13,7 +13,6 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.util.CertificateUtils;
@@ -30,7 +29,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -334,7 +332,7 @@ public final class KeycloakModelUtils {
         mapperModel.setFederationProviderId(federationProviderId);
         mapperModel.setFederationMapperType(mapperType);
 
-        Map<String, String> configMap = new HashMap<String, String>();
+        Map<String, String> configMap = new HashMap<>();
         String key = null;
         for (String configEntry : config) {
             if (key == null) {

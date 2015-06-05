@@ -13,7 +13,7 @@ public class AuthenticationExecutionEntity {
     protected AuthenticationExecutionModel.Requirement requirement;
     protected int priority;
     private boolean userSetupAllowed;
-    private boolean autheticatorFlow;
+    private boolean authenticatorFlow;
     private String parentFlow;
 
     public String getId() {
@@ -56,12 +56,12 @@ public class AuthenticationExecutionEntity {
         this.userSetupAllowed = userSetupAllowed;
     }
 
-    public boolean isAutheticatorFlow() {
-        return autheticatorFlow;
+    public boolean isAuthenticatorFlow() {
+        return authenticatorFlow;
     }
 
-    public void setAutheticatorFlow(boolean autheticatorFlow) {
-        this.autheticatorFlow = autheticatorFlow;
+    public void setAuthenticatorFlow(boolean authenticatorFlow) {
+        this.authenticatorFlow = authenticatorFlow;
     }
 
     public String getParentFlow() {

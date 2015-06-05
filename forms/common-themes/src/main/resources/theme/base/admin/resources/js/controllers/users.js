@@ -14,23 +14,23 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
     $scope.clientMappings = [];
     $scope.dummymodel = [];
 
-    $scope.realmMappings = RealmRoleMapping.query({realm : realm.realm, userId : user.username});
-    $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.username});
-    $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.username});
+    $scope.realmMappings = RealmRoleMapping.query({realm : realm.realm, userId : user.id});
+    $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
+    $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
 
     $scope.addRealmRole = function() {
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/realm',
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.id + '/role-mappings/realm',
                 $scope.selectedRealmRoles).success(function() {
-                $scope.realmMappings = RealmRoleMapping.query({realm : realm.realm, userId : user.username});
-                $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.username});
-                $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.username});
+                $scope.realmMappings = RealmRoleMapping.query({realm : realm.realm, userId : user.id});
+                $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
+                $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.selectedRealmMappings = [];
                 $scope.selectRealmRoles = [];
                 if ($scope.client) {
                     console.log('load available');
-                    $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
-                    $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
-                    $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
+                    $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
+                    $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
+                    $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
                     $scope.selectedClientRoles = [];
                     $scope.selectedClientMappings = [];
                 }
@@ -40,18 +40,18 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
     };
 
     $scope.deleteRealmRole = function() {
-        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/realm',
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.id + '/role-mappings/realm',
             {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function() {
-                $scope.realmMappings = RealmRoleMapping.query({realm : realm.realm, userId : user.username});
-                $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.username});
-                $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.username});
+                $scope.realmMappings = RealmRoleMapping.query({realm : realm.realm, userId : user.id});
+                $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
+                $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.selectedRealmMappings = [];
                 $scope.selectRealmRoles = [];
                 if ($scope.client) {
                     console.log('load available');
-                    $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
-                    $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
-                    $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
+                    $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
+                    $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
+                    $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
                     $scope.selectedClientRoles = [];
                     $scope.selectedClientMappings = [];
                 }
@@ -60,11 +60,11 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
     };
 
     $scope.addClientRole = function() {
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/clients-by-id/' + $scope.client.id,
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.id + '/role-mappings/clients/' + $scope.client.id,
                 $scope.selectedClientRoles).success(function() {
-                $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
-                $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
-                $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
+                $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
+                $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
+                $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
                 $scope.selectedClientRoles = [];
                 $scope.selectedClientMappings = [];
                 Notifications.success("Role mappings updated.");
@@ -72,11 +72,11 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
     };
 
     $scope.deleteClientRole = function() {
-        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/clients-by-id/' + $scope.client.id,
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.id + '/role-mappings/clients/' + $scope.client.id,
             {data : $scope.selectedClientMappings, headers : {"content-type" : "application/json"}}).success(function() {
-                $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
-                $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
-                $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
+                $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
+                $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
+                $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
                 $scope.selectedClientRoles = [];
                 $scope.selectedClientMappings = [];
                 Notifications.success("Role mappings updated.");
@@ -88,9 +88,9 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
         console.log('changeClient');
         if ($scope.client) {
             console.log('load available');
-            $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
-            $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
-            $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.username, client : $scope.client.id});
+            $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
+            $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
+            $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
         } else {
             $scope.clientRoles = null;
             $scope.clientMappings = null;
@@ -110,9 +110,9 @@ module.controller('UserSessionsCtrl', function($scope, realm, user, sessions, Us
     $scope.sessions = sessions;
 
     $scope.logoutAll = function() {
-        UserLogout.save({realm : realm.realm, user: user.username}, function () {
+        UserLogout.save({realm : realm.realm, user: user.id}, function () {
             Notifications.success('Logged out user in all clients');
-            UserSessions.query({realm: realm.realm, user: user.username}, function(updated) {
+            UserSessions.query({realm: realm.realm, user: user.id}, function(updated) {
                 $scope.sessions = updated;
             })
         });
@@ -121,7 +121,7 @@ module.controller('UserSessionsCtrl', function($scope, realm, user, sessions, Us
     $scope.logoutSession = function(sessionId) {
         console.log('here in logoutSession');
         UserSessionLogout.delete({realm : realm.realm, session: sessionId}, function() {
-            UserSessions.query({realm: realm.realm, user: user.username}, function(updated) {
+            UserSessions.query({realm: realm.realm, user: user.id}, function(updated) {
                 $scope.sessions = updated;
                 Notifications.success('Logged out session');
             })
@@ -141,8 +141,8 @@ module.controller('UserConsentsCtrl', function($scope, realm, user, userConsents
     $scope.userConsents = userConsents;
 
     $scope.revokeConsent = function(clientId) {
-        UserConsents.delete({realm : realm.realm, user: user.username, client: clientId }, function () {
-            UserConsents.query({realm: realm.realm, user: user.username}, function(updated) {
+        UserConsents.delete({realm : realm.realm, user: user.id, client: clientId }, function () {
+            UserConsents.query({realm: realm.realm, user: user.id}, function(updated) {
                 $scope.userConsents = updated;
             })
             Notifications.success('Consent revoked successfully');
@@ -197,7 +197,8 @@ module.controller('UserListCtrl', function($scope, realm, User) {
 
 module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFederationInstances, $location, Dialog, Notifications) {
     $scope.realm = realm;
-    $scope.create = !user.username;
+    $scope.create = !user.id;
+    $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
 
     if ($scope.create) {
         $scope.user = { enabled: true, attributes: {} }
@@ -237,17 +238,24 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
         if ($scope.create) {
             User.save({
                 realm: realm.realm
-            }, $scope.user, function () {
+            }, $scope.user, function (data, headers) {
                 $scope.changed = false;
                 user = angular.copy($scope.user);
 
-                $location.url("/realms/" + realm.realm + "/users/" + $scope.user.username);
+                var l = headers().location;
+
+                console.debug("Location == " + l);
+
+                var id = l.substring(l.lastIndexOf("/") + 1);
+
+
+                $location.url("/realms/" + realm.realm + "/users/" + id);
                 Notifications.success("The user has been created.");
             });
         } else {
             User.update({
                 realm: realm.realm,
-                userId: $scope.user.username
+                userId: $scope.user.id
             }, $scope.user, function () {
                 $scope.changed = false;
                 user = angular.copy($scope.user);
@@ -266,10 +274,10 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
     };
 
     $scope.remove = function() {
-        Dialog.confirmDelete($scope.user.username, 'user', function() {
+        Dialog.confirmDelete($scope.user.id, 'user', function() {
             $scope.user.$remove({
                 realm : realm.realm,
-                userId : $scope.user.username
+                userId : $scope.user.id
             }, function() {
                 $location.url("/realms/" + realm.realm + "/users");
                 Notifications.success("The user has been deleted.");
@@ -304,7 +312,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
         var msg = 'Are you sure you want to change the users password?';
 
         Dialog.confirm(msgTitle, msg, function() {
-            UserCredentials.resetPassword({ realm: realm.realm, userId: user.username }, { type : "password", value : $scope.password, temporary: $scope.temporaryPassword }, function() {
+            UserCredentials.resetPassword({ realm: realm.realm, userId: user.id }, { type : "password", value : $scope.password, temporary: $scope.temporaryPassword }, function() {
                 Notifications.success("The password has been reset");
                 $scope.password = null;
                 $scope.confirmPassword = null;
@@ -323,7 +331,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
 
     $scope.removeTotp = function() {
         Dialog.confirm('Remove totp', 'Are you sure you want to remove the users totp configuration?', function() {
-            UserCredentials.removeTotp({ realm: realm.realm, userId: user.username }, { }, function() {
+            UserCredentials.removeTotp({ realm: realm.realm, userId: user.id }, { }, function() {
                 Notifications.success("The users totp configuration has been removed");
                 $scope.user.totp = false;
             }, function() {
@@ -334,7 +342,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
 
     $scope.resetPasswordEmail = function() {
         Dialog.confirm('Reset password email', 'Are you sure you want to send password reset email to user?', function() {
-            UserCredentials.resetPasswordEmail({ realm: realm.realm, userId: user.username }, { }, function() {
+            UserCredentials.resetPasswordEmail({ realm: realm.realm, userId: user.id }, { }, function() {
                 Notifications.success("Password reset email sent to user");
             }, function() {
                 Notifications.error("Failed to send password reset mail to user");
@@ -541,6 +549,7 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
             instance.config.debug = false;
             instance.config.useKerberosForPasswordAuthentication = false;
 
+            instance.config.authType = 'simple';
             instance.config.batchSizeForSync = DEFAULT_BATCH_SIZE;
             instance.config.searchScope = "1";
 
@@ -556,12 +565,16 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
             instance.config.debug = (instance.config.debug === 'true' || instance.config.debug === true);
             instance.config.useKerberosForPasswordAuthentication = (instance.config.useKerberosForPasswordAuthentication === 'true' || instance.config.useKerberosForPasswordAuthentication === true);
 
+            if (!instance.config.authType) {
+                instance.config.authType = 'simple';
+            }
             if (!instance.config.batchSizeForSync) {
                 instance.config.batchSizeForSync = DEFAULT_BATCH_SIZE;
             }
             if (!instance.config.searchScope) {
-                instance.config.searchScope = "1";
+                instance.config.searchScope = '1';
             }
+
             $scope.fullSyncEnabled = (instance.fullSyncPeriod && instance.fullSyncPeriod > 0);
             $scope.changedSyncEnabled = (instance.changedSyncPeriod && instance.changedSyncPeriod > 0);
         }
@@ -579,6 +592,11 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
         { "id": "tivoli", "name": "Tivoli" },
         { "id": "edirectory", "name": "Novell eDirectory" },
         { "id": "other", "name": "Other" }
+    ];
+
+    $scope.authTypes = [
+        { "id": "none", "name": "none" },
+        { "id": "simple", "name": "simple" }
     ];
 
     $scope.searchScopes = [
@@ -754,10 +772,11 @@ module.controller('UserFederationMapperListCtrl', function($scope, $location, No
 
 });
 
-module.controller('UserFederationMapperCtrl', function($scope, realm,  provider, mapperTypes, mapper, UserFederationMapper, Notifications, Dialog, $location) {
+module.controller('UserFederationMapperCtrl', function($scope, realm,  provider, mapperTypes, mapper, clients, UserFederationMapper, Notifications, Dialog, $location) {
     console.log('UserFederationMapperCtrl');
     $scope.realm = realm;
     $scope.provider = provider;
+    $scope.clients = clients;
     $scope.create = false;
     $scope.mapper = angular.copy(mapper);
     $scope.changed = false;
@@ -780,10 +799,10 @@ module.controller('UserFederationMapperCtrl', function($scope, realm,  provider,
             $location.url("/realms/" + realm.realm + '/user-federation/providers/' + provider.providerName + '/' + provider.id + '/mappers/' + mapper.id);
             Notifications.success("Your changes have been saved.");
         }, function(error) {
-            if (error.status == 400) {
+            if (error.status == 400 && error.data.error_description) {
                 Notifications.error('Error in configuration of mapper: ' + error.data.error_description);
             } else {
-                Notification.error('Unexpected error when creating mapper');
+                Notifications.error('Unexpected error when creating mapper');
             }
         });
     };
@@ -808,10 +827,11 @@ module.controller('UserFederationMapperCtrl', function($scope, realm,  provider,
 
 });
 
-module.controller('UserFederationMapperCreateCtrl', function($scope, realm, provider, mapperTypes, UserFederationMapper, Notifications, Dialog, $location) {
+module.controller('UserFederationMapperCreateCtrl', function($scope, realm, provider, mapperTypes, clients, UserFederationMapper, Notifications, Dialog, $location) {
     console.log('UserFederationMapperCreateCtrl');
     $scope.realm = realm;
     $scope.provider = provider;
+    $scope.clients = clients;
     $scope.create = true;
     $scope.mapper = { federationProviderDisplayName: provider.displayName, config: {}};
     $scope.mapperTypes = mapperTypes;
@@ -844,10 +864,10 @@ module.controller('UserFederationMapperCreateCtrl', function($scope, realm, prov
             $location.url('/realms/' + realm.realm +'/user-federation/providers/' + provider.providerName + '/' + provider.id + '/mappers/' + id);
             Notifications.success("Mapper has been created.");
         }, function(error) {
-            if (error.status == 400) {
+            if (error.status == 400 && error.data.error_description) {
                 Notifications.error('Error in configuration of mapper: ' + error.data.error_description);
             } else {
-                Notification.error('Unexpected error when creating mapper');
+                Notifications.error('Unexpected error when creating mapper');
             }
         });
     };

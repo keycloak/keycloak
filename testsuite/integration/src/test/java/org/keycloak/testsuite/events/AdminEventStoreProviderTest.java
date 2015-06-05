@@ -83,14 +83,25 @@ public class AdminEventStoreProviderTest {
         String d3 = new String("2015-03-06");
         String d4 = new String("2015-03-07");
         
+        String d5 = new String("2015-03-01");
+        String d6 = new String("2015-03-03");
+        String d7 = new String("2015-03-08");
+        String d8 = new String("2015-03-10");
+        
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         Date date1 = null, date2 = null, date3 = null, date4 = null;
+        Date date5 = null, date6 = null, date7 = null, date8 = null;
         
         try {
             date1 = formatter.parse(d1);
             date2 = formatter.parse(d2);
             date3 = formatter.parse(d3);
             date4 = formatter.parse(d4);
+            
+            date5 = formatter.parse(d5);
+            date6 = formatter.parse(d6);
+            date7 = formatter.parse(d7);
+            date8 = formatter.parse(d8);
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -121,22 +132,22 @@ public class AdminEventStoreProviderTest {
         Assert.assertEquals(1, eventStore.createAdminQuery().operation(OperationType.DELETE).getResultList().size());
         Assert.assertEquals(4, eventStore.createAdminQuery().operation(OperationType.CREATE).getResultList().size());
         
-        Assert.assertEquals(8, eventStore.createAdminQuery().fromTime("2015-03-04").getResultList().size());
-        Assert.assertEquals(8, eventStore.createAdminQuery().toTime("2015-03-07").getResultList().size());
+        Assert.assertEquals(8, eventStore.createAdminQuery().fromTime(date1).getResultList().size());
+        Assert.assertEquals(8, eventStore.createAdminQuery().toTime(date4).getResultList().size());
         
-        Assert.assertEquals(4, eventStore.createAdminQuery().fromTime("2015-03-06").getResultList().size());
-        Assert.assertEquals(4, eventStore.createAdminQuery().toTime("2015-03-05").getResultList().size());
+        Assert.assertEquals(4, eventStore.createAdminQuery().fromTime(date3).getResultList().size());
+        Assert.assertEquals(4, eventStore.createAdminQuery().toTime(date2).getResultList().size());
         
-        Assert.assertEquals(0, eventStore.createAdminQuery().fromTime("2015-03-08").getResultList().size());
-        Assert.assertEquals(0, eventStore.createAdminQuery().toTime("2015-03-03").getResultList().size());
+        Assert.assertEquals(0, eventStore.createAdminQuery().fromTime(date7).getResultList().size());
+        Assert.assertEquals(0, eventStore.createAdminQuery().toTime(date6).getResultList().size());
         
-        Assert.assertEquals(8, eventStore.createAdminQuery().fromTime("2015-03-04").toTime("2015-03-07").getResultList().size());
-        Assert.assertEquals(6, eventStore.createAdminQuery().fromTime("2015-03-05").toTime("2015-03-07").getResultList().size());
-        Assert.assertEquals(4, eventStore.createAdminQuery().fromTime("2015-03-04").toTime("2015-03-05").getResultList().size());
-        Assert.assertEquals(4, eventStore.createAdminQuery().fromTime("2015-03-06").toTime("2015-03-07").getResultList().size());
+        Assert.assertEquals(8, eventStore.createAdminQuery().fromTime(date1).toTime(date4).getResultList().size());
+        Assert.assertEquals(6, eventStore.createAdminQuery().fromTime(date2).toTime(date4).getResultList().size());
+        Assert.assertEquals(4, eventStore.createAdminQuery().fromTime(date1).toTime(date2).getResultList().size());
+        Assert.assertEquals(4, eventStore.createAdminQuery().fromTime(date3).toTime(date4).getResultList().size());
         
-        Assert.assertEquals(0, eventStore.createAdminQuery().fromTime("2015-03-01").toTime("2015-03-03").getResultList().size());
-        Assert.assertEquals(0, eventStore.createAdminQuery().fromTime("2015-03-08").toTime("2015-03-10").getResultList().size());
+        Assert.assertEquals(0, eventStore.createAdminQuery().fromTime(date5).toTime(date6).getResultList().size());
+        Assert.assertEquals(0, eventStore.createAdminQuery().fromTime(date7).toTime(date8).getResultList().size());
         
     }
     

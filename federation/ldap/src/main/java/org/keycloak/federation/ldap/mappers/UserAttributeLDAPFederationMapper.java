@@ -1,18 +1,13 @@
 package org.keycloak.federation.ldap.mappers;
 
-import java.io.Serializable;
 import java.lang.reflect.Method;
-import java.util.List;
 import java.util.Map;
 
 import org.keycloak.federation.ldap.LDAPFederationProvider;
-import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
-import org.keycloak.mappers.UserFederationMapper;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
@@ -20,7 +15,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.reflection.Property;
 import org.keycloak.models.utils.reflection.PropertyCriteria;
 import org.keycloak.models.utils.reflection.PropertyQueries;
-import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -55,7 +49,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
         String ldapAttrName = mapperModel.getConfig().get(LDAP_ATTRIBUTE);
 
         Object ldapAttrValue = ldapUser.getAttribute(ldapAttrName);
-        if (ldapAttrValue != null) {
+        if (ldapAttrValue != null && !ldapAttrValue.toString().trim().isEmpty()) {
             Property<Object> userModelProperty = userModelProperties.get(userModelAttrName);
 
             if (userModelProperty != null) {
@@ -124,7 +118,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
                 }
 
                 protected void setLDAPAttribute(String modelAttrName, String value) {
-                    if (modelAttrName.equals(userModelAttrName)) {
+                    if (modelAttrName.equalsIgnoreCase(userModelAttrName)) {
                         if (logger.isTraceEnabled()) {
                             logger.tracef("Pushing user attribute to LDAP. Model attribute name: %s, LDAP attribute name: %s, Attribute value: %s", modelAttrName, ldapAttrName, value);
                         }
@@ -157,7 +151,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
         // Change conditions and use ldapAttribute instead of userModel
         for (Condition condition : query.getConditions()) {
             QueryParameter param = condition.getParameter();
-            if (param != null && param.getName().equals(userModelAttrName)) {
+            if (param != null && param.getName().equalsIgnoreCase(userModelAttrName)) {
                 param.setName(ldapAttrName);
             }
         }

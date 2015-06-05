@@ -25,7 +25,7 @@ public class UserFederationMapperSpi implements Spi {
     }
 
     @Override
-    public boolean isPrivate() {
-        return false;
+    public boolean isInternal() {
+        return true;
     }
 }

@@ -21,6 +21,11 @@
  */
 package org.keycloak.testsuite.adapter;
 
+import io.undertow.util.Headers;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
@@ -44,6 +49,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountSessionsPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
@@ -65,6 +71,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -115,9 +122,6 @@ public class AdapterTestStrategy extends ExternalResource {
     }
 
     public static RealmModel baseAdapterTestInitialization(KeycloakSession session, RealmManager manager, RealmModel adminRealm, Class<?> clazz) {
-        // Required by admin client
-        adminRealm.setPasswordCredentialGrantAllowed(true);
-
         RealmRepresentation representation = KeycloakServer.loadJson(clazz.getResourceAsStream("/adapter-test/demorealm.json"), RealmRepresentation.class);
         RealmModel demoRealm = manager.importRealm(representation);
         return demoRealm;
@@ -133,25 +137,6 @@ public class AdapterTestStrategy extends ExternalResource {
     protected void after() {
         super.after();
         webRule.after();
-    }
-
-    protected String createAdminToken() {
-        KeycloakSession session = keycloakRule.startSession();
-        try {
-            RealmManager manager = new RealmManager(session);
-
-            RealmModel adminRealm = manager.getRealm(Config.getAdminRealm());
-            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-            TokenManager tm = new TokenManager();
-            UserModel admin = session.users().getUserByUsername("admin", adminRealm);
-            ClientSessionModel clientSession = session.sessions().createClientSession(adminRealm, adminConsole);
-            clientSession.setNote(OIDCLoginProtocol.ISSUER, AUTH_SERVER_URL + "/realms/master");
-            UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, "admin", null, "form", false, null, null);
-            AccessToken token = tm.createClientAccessToken(session, TokenManager.getAccess(null, adminConsole, admin), adminRealm, adminConsole, admin, userSession, clientSession);
-            return tm.encodeToken(adminRealm, token);
-        } finally {
-            keycloakRule.stopSession(session, true);
-        }
     }
 
     public void testSavedPostRequest() throws Exception {
@@ -212,27 +197,20 @@ public class AdapterTestStrategy extends ExternalResource {
         Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
         // View stats
-        String adminToken = createAdminToken();
-
-        Client client = ClientBuilder.newClient();
-        UriBuilder authBase = UriBuilder.fromUri(AUTH_SERVER_URL);
-        WebTarget adminTarget = client.target(AdminRoot.realmsUrl(authBase)).path("demo");
-        Map<String, Integer> stats = adminTarget.path("client-session-stats").request()
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
-                .get(new GenericType<Map<String, Integer>>() {
-                });
-        Integer custSessionsCount = stats.get("customer-portal");
-        Assert.assertNotNull(custSessionsCount);
-        Assert.assertEquals(1, custSessionsCount.intValue());
-        Integer prodStatsCount = stats.get("product-portal");
-        Assert.assertNotNull(prodStatsCount);
-        Assert.assertTrue(1 == prodStatsCount);
-
-        client.close();
-
+        List<Map<String, String>> stats = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", "security-admin-console").realm("demo").getClientSessionStats();
+        Map<String, String> customerPortalStats = null;
+        Map<String, String> productPortalStats = null;
+        for (Map<String, String> s : stats) {
+            if (s.get("clientId").equals("customer-portal")) {
+                customerPortalStats = s;
+            } else if (s.get("clientId").equals("product-portal")) {
+                productPortalStats = s;
+            }
+        }
+        Assert.assertEquals(1, Integer.parseInt(customerPortalStats.get("active")));
+        Assert.assertEquals(1, Integer.parseInt(productPortalStats.get("active")));
 
         // test logout
-
         String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
                 .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/customer-portal").build("demo").toString();
         driver.navigate().to(logoutUri);
@@ -244,8 +222,6 @@ public class AdapterTestStrategy extends ExternalResource {
         loginPage.cancel();
         System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getPageSource().contains("Error Page"));
-
-
     }
 
     public void testServletRequestLogout() throws Exception {
@@ -420,6 +396,43 @@ public class AdapterTestStrategy extends ExternalResource {
     }
 
     /**
+     * KEYCLOAK-1368
+     * @throws Exception
+     */
+    public void testNullBearerTokenCustomErrorPage() throws Exception {
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(APP_SERVER_BASE_URL + "/customer-db-error-page/");
+
+        Response response = target.request().get();
+
+        // TODO: follow redirects automatically if possible
+        if (response.getStatus() == 302) {
+            String location = response.getHeaderString(HttpHeaders.LOCATION);
+            response.close();
+            response = client.target(location).request().get();
+        }
+        Assert.assertEquals(200, response.getStatus());
+        String errorPageResponse = response.readEntity(String.class);
+        Assert.assertTrue(errorPageResponse.contains("Error Page"));
+        response.close();
+
+        response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer null").get();
+        // TODO: follow redirects automatically if possible
+        if (response.getStatus() == 302) {
+            String location = response.getHeaderString(HttpHeaders.LOCATION);
+            response.close();
+            response = client.target(location).request().get();
+        }
+        Assert.assertEquals(200, response.getStatus());
+        errorPageResponse = response.readEntity(String.class);
+        Assert.assertTrue(errorPageResponse.contains("Error Page"));
+        response.close();
+
+        client.close();
+
+    }
+
+    /**
      * KEYCLOAK-518
      * @throws Exception
      */
@@ -587,7 +600,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
         // logout mposolda with admin client
         Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
-        keycloakAdmin.realm("demo").clients().get("session-portal").logoutUser("mposolda");
+        ApiUtil.findClientByClientId(keycloakAdmin.realm("demo"), "session-portal").logoutUser("mposolda");
 
         // bburke should be still logged with original httpSession in our browser window
         driver.navigate().to(APP_SERVER_BASE_URL + "/session-portal");

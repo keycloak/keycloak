@@ -9,9 +9,9 @@
                 <div class="form-inline">
                     <div class="form-group">
                         <div class="input-group">
-                            <input type="text" placeholder="Search..." data-ng-model="query.search" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                            <input type="text" placeholder="Search..." data-ng-model="query.search" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('userSearch').click()">
                             <div class="input-group-addon">
-                                    <i class="fa fa-search" data-ng-click="firstPage()" type="submit"></i>
+                                    <i class="fa fa-search" id="userSearch" data-ng-click="firstPage()"></i>
                             </div>
                         </div>
                     </div>
@@ -45,7 +45,7 @@
         </tfoot>
         <tbody>
         <tr ng-repeat="user in users">
-            <td><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></td>
+            <td><a href="#/realms/{{realm.realm}}/users/{{user.id}}">{{user.username}}</a></td>
             <td>{{user.lastName}}</td>
             <td>{{user.firstName}}</td>
             <td>{{user.email}}</td>

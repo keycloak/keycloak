@@ -21,6 +21,7 @@ public class ModelTest extends AbstractModelTest {
         realm.setRegistrationAllowed(true);
         realm.setRegistrationEmailAsUsername(true);
         realm.setResetPasswordAllowed(true);
+        realm.setEditUsernameAllowed(true);
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setVerifyEmail(true);
         realm.setAccessTokenLifespan(1000);
@@ -55,6 +56,7 @@ public class ModelTest extends AbstractModelTest {
         Assert.assertEquals(expected.isRegistrationAllowed(), actual.isRegistrationAllowed());
         Assert.assertEquals(expected.isRegistrationEmailAsUsername(), actual.isRegistrationEmailAsUsername());
         Assert.assertEquals(expected.isResetPasswordAllowed(), actual.isResetPasswordAllowed());
+        Assert.assertEquals(expected.isEditUsernameAllowed(), actual.isEditUsernameAllowed());
         Assert.assertEquals(expected.getSslRequired(), actual.getSslRequired());
         Assert.assertEquals(expected.isVerifyEmail(), actual.isVerifyEmail());
         Assert.assertEquals(expected.getAccessTokenLifespan(), actual.getAccessTokenLifespan());

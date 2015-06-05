@@ -227,7 +227,8 @@ public class RealmsAdminResource {
         }
         
         AdminEventBuilder adminEvent = new AdminEventBuilder(realm, auth, session, clientConnection);
-        
+        session.getContext().setRealm(realm);
+
         RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         //resourceContext.initResource(adminResource);

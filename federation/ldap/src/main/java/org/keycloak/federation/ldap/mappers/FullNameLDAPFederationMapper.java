@@ -1,24 +1,19 @@
 package org.keycloak.federation.ldap.mappers;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.keycloak.federation.ldap.LDAPFederationProvider;
-import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.internal.EqualCondition;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
-import org.keycloak.mappers.UserFederationMapper;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserModel;
-import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * Mapper useful for the LDAP deployments when some attribute (usually CN) is mapped to full name of user
@@ -35,7 +30,7 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
         String ldapFullNameAttrName = getLdapFullNameAttrName(mapperModel);
         String fullName = ldapUser.getAttributeAsString(ldapFullNameAttrName);
         fullName = fullName.trim();
-        if (fullName != null) {
+        if (fullName != null && !fullName.trim().isEmpty()) {
             int lastSpaceIndex = fullName.lastIndexOf(" ");
             if (lastSpaceIndex == -1) {
                 user.setLastName(fullName);
@@ -130,7 +125,7 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
             fullName = firstNameCondition.getValue() + " " + lastNameCondition.getValue();
         } else if (firstNameCondition != null) {
             fullName = (String) firstNameCondition.getValue();
-        } else if (firstNameCondition != null) {
+        } else if (lastNameCondition != null) {
             fullName = (String) lastNameCondition.getValue();
         } else {
             return;

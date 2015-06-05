@@ -1,24 +1,32 @@
 package org.keycloak.federation.ldap.mappers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
+import org.jboss.logging.Logger;
+import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.mappers.MapperConfigValidationException;
 import org.keycloak.mappers.UserFederationMapper;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
+import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationProviderFactory;
+import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMapperFactory {
+
+    private static final Logger logger = Logger.getLogger(RoleLDAPFederationMapperFactory.class);
 
     public static final String PROVIDER_ID = "role-ldap-mapper";
 
@@ -40,8 +48,8 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
         configProperties.add(membershipLDAPAttribute);
 
         ProviderConfigProperty roleObjectClasses = createConfigProperty(RoleLDAPFederationMapper.ROLE_OBJECT_CLASSES, "Role Object Classes",
-                "Object classes of the role object divided by comma (if more values needed). In typical LDAP deployment it could be 'groupOfNames' or 'groupOfEntries' ",
-                ProviderConfigProperty.STRING_TYPE, LDAPConstants.GROUP_OF_NAMES);
+                "Object class (or classes) of the role object. It's divided by comma if more classes needed. In typical LDAP deployment it could be 'groupOfNames' . In Active Directory it's usually 'group' ",
+                ProviderConfigProperty.STRING_TYPE, null);
         configProperties.add(roleObjectClasses);
 
         List<String> modes = new LinkedList<String>();
@@ -59,7 +67,10 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
                 "If true, then LDAP role mappings will be mapped to realm role mappings in Keycloak. Otherwise it will be mapped to client role mappings", ProviderConfigProperty.BOOLEAN_TYPE, "true");
         configProperties.add(useRealmRolesMappings);
 
-        // NOTE: ClientID will be computed dynamically from available clients
+        ProviderConfigProperty clientIdProperty = createConfigProperty(RoleLDAPFederationMapper.CLIENT_ID, "Client ID",
+                "Client ID of client to which LDAP role mappings will be mapped. Applicable just if 'Use Realm Roles Mapping' is false",
+                ProviderConfigProperty.CLIENT_LIST_TYPE, null);
+        configProperties.add(clientIdProperty);
     }
 
     @Override
@@ -78,18 +89,8 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
     }
 
     @Override
-    public List<ProviderConfigProperty> getConfigProperties(RealmModel realm) {
-        List<ProviderConfigProperty> props = new ArrayList<ProviderConfigProperty>(configProperties);
-
-        Map<String, ClientModel> clients = realm.getClientNameMap();
-        List<String> clientIds = new ArrayList<String>(clients.keySet());
-
-        ProviderConfigProperty clientIdProperty = createConfigProperty(RoleLDAPFederationMapper.CLIENT_ID, "Client ID",
-                "Client ID of client to which LDAP role mappings will be mapped. Applicable just if 'Use Realm Roles Mapping' is false",
-                ProviderConfigProperty.LIST_TYPE, clientIds);
-        props.add(clientIdProperty);
-
-        return props;
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configProperties;
     }
 
     @Override
@@ -97,9 +98,46 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
         return PROVIDER_ID;
     }
 
+    // Sync roles from LDAP to Keycloak DB during creation or update of mapperModel
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+        factory.register(new ProviderEventListener() {
+
+            @Override
+            public void onEvent(ProviderEvent event) {
+                if (event instanceof RealmModel.UserFederationMapperEvent) {
+                    RealmModel.UserFederationMapperEvent mapperEvent = (RealmModel.UserFederationMapperEvent)event;
+                    UserFederationMapperModel mapperModel = mapperEvent.getFederationMapper();
+                    RealmModel realm = mapperEvent.getRealm();
+                    KeycloakSession session = mapperEvent.getSession();
+
+                    if (mapperModel.getFederationMapperType().equals(PROVIDER_ID)) {
+                        try {
+                            String federationProviderId = mapperModel.getFederationProviderId();
+                            UserFederationProviderModel providerModel = KeycloakModelUtils.findUserFederationProviderById(federationProviderId, realm);
+                            if (providerModel == null) {
+                                throw new IllegalStateException("Can't find federation provider with ID [" + federationProviderId + "] in realm " + realm.getName());
+                            }
+
+                            UserFederationProviderFactory ldapFactory = (UserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, providerModel.getProviderName());
+                            LDAPFederationProvider ldapProvider = (LDAPFederationProvider) ldapFactory.getInstance(session, providerModel);
+
+                            // Sync roles
+                            new RoleLDAPFederationMapper().syncRolesFromLDAP(mapperModel, ldapProvider, realm);
+                        } catch (Exception e) {
+                            logger.warn("Exception during initial sync of roles from LDAP.", e);
+                        }
+                    }
+                }
+            }
+
+        });
+    }
+
     @Override
     public void validateConfig(UserFederationMapperModel mapperModel) throws MapperConfigValidationException {
         checkMandatoryConfigAttribute(RoleLDAPFederationMapper.ROLES_DN, "LDAP Roles DN", mapperModel);
+        checkMandatoryConfigAttribute(RoleLDAPFederationMapper.MODE, "Mode", mapperModel);
 
         String realmMappings = mapperModel.getConfig().get(RoleLDAPFederationMapper.USE_REALM_ROLES_MAPPING);
         boolean useRealmMappings = Boolean.parseBoolean(realmMappings);

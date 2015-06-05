@@ -17,7 +17,7 @@
         <module>wildfly-adapter</module>
         <module>wildfly-extensions</module>
         <module>wildfly-server-subsystem</module>
-        <module>wildfly-adapter-subsystem</module>
         <module>wf8-subsystem</module>
+        <module>wf9-subsystem</module>
     </modules>
 </project>

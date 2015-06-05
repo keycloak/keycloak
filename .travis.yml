@@ -3,6 +3,8 @@ language: java
 cache:
     directories:
         - $HOME/.m2
-sudo: false
 
-after_script: 'misc/.travis/after.sh'
+before_cache:
+  - rm -rf $HOME/.m2/repository/org/keycloak
+
+sudo: false

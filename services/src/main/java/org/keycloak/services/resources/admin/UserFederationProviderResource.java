@@ -1,5 +1,7 @@
 package org.keycloak.services.resources.admin;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -171,7 +173,7 @@ public class UserFederationProviderResource {
                 rep.setCategory(mapperFactory.getDisplayCategory());
                 rep.setName(mapperFactory.getDisplayType());
                 rep.setHelpText(mapperFactory.getHelpText());
-                List<ProviderConfigProperty> configProperties = mapperFactory.getConfigProperties(realm);
+                List<ProviderConfigProperty> configProperties = mapperFactory.getConfigProperties();
                 for (ProviderConfigProperty prop : configProperties) {
                     ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
                     propRep.setName(prop.getName());
@@ -202,6 +204,26 @@ public class UserFederationProviderResource {
         for (UserFederationMapperModel model : realm.getUserFederationMappersByFederationProvider(this.federationProviderModel.getId())) {
             mappers.add(ModelToRepresentation.toRepresentation(realm, model));
         }
+
+        // Sort mappers by category,type,name
+        Collections.sort(mappers, new Comparator<UserFederationMapperRepresentation>() {
+
+            @Override
+            public int compare(UserFederationMapperRepresentation o1, UserFederationMapperRepresentation o2) {
+                UserFederationMapperFactory factory1 = (UserFederationMapperFactory) session.getKeycloakSessionFactory().getProviderFactory(UserFederationMapper.class, o1.getFederationMapperType());
+                UserFederationMapperFactory factory2 = (UserFederationMapperFactory) session.getKeycloakSessionFactory().getProviderFactory(UserFederationMapper.class, o2.getFederationMapperType());
+
+                int compare = factory1.getDisplayCategory().compareTo(factory2.getDisplayCategory());
+                if (compare != 0) return compare;
+
+                compare = factory1.getDisplayType().compareTo(factory2.getDisplayType());
+                if (compare != 0) return compare;
+
+                compare = o1.getName().compareTo(o2.getName());
+                return compare;
+            }
+        });
+
         return mappers;
     }
 

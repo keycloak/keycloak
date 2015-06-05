@@ -96,35 +96,30 @@ public class ClientsResource {
             
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientModel.getId()).representation(rep).success();
             
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(getClientPath(clientModel)).build()).build();
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
         }
     }
 
-    protected String getClientPath(ClientModel clientModel) {
-        return clientModel.getClientId();
-    }
-
     /**
      * Base path for managing a specific client.
      *
-     * @param name
+     * @param id id of client (not client-id)
      * @return
      */
-    @Path("{app-name}")
-    public ClientResource getClient(final @PathParam("app-name") String name) {
-        ClientModel clientModel = getClientByPathParam(name);
+    @Path("{id}")
+    public ClientResource getClient(final @PathParam("id") String id) {
+        ClientModel clientModel = realm.getClientById(id);
         if (clientModel == null) {
-            throw new NotFoundException("Could not find client: " + name);
+            throw new NotFoundException("Could not find client: " + id);
         }
+
+        session.getContext().setClient(clientModel);
+
         ClientResource clientResource = new ClientResource(realm, auth, clientModel, session, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(clientResource);
         return clientResource;
-    }
-
-    protected ClientModel getClientByPathParam(String name) {
-        return realm.getClientByClientId(name);
     }
 
 }

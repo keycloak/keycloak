@@ -299,10 +299,22 @@
                         </entry>
                         <entry>
                             Allows you to force users to update their profile right after the authentication finishes and
-                            before the account is actually created in Keycloak. When enabled, users will be presented with the
+                            before the account is actually created in Keycloak. When "On", users will be always presented with the
                             <emphasis>update profile page</emphasis> asking for additional information in order to federate their identities.
-                            If disabled, the account will be created with the minimal information obtained from the identity provider
+                            When "On missing info", users will be presented with the <emphasis>update profile page</emphasis> only if some 
+                            mandatory information (email, first name, last name) is not provided by identity provider.
+                            If "Off", the account will be created with the minimal information obtained from the identity provider
                             during the authentication process.
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
+                            <literal>Trust email</literal>
+                        </entry>
+                        <entry>
+                            Allows you to trust email address returned from the social provider. If enabled then email address returned by the provider 
+                            is marked as 'verified' in the Keycloak user profile. This means that email verification step is skipped even 
+                            if "Verify email" feature is enabled in realm settings.
                         </entry>
                     </row>
                     <row>

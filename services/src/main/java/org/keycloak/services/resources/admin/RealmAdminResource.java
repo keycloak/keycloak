@@ -35,6 +35,7 @@ import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.timer.TimerProvider;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -50,6 +51,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -109,18 +114,6 @@ public class RealmAdminResource {
     @Path("clients")
     public ClientsResource getClients() {
         ClientsResource clientsResource = new ClientsResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(clientsResource);
-        return clientsResource;
-    }
-
-    /**
-     * Base path for managing clients under this realm.
-     *
-     * @return
-     */
-    @Path("clients-by-id")
-    public ClientsByIdResource getClientsById() {
-        ClientsByIdResource clientsResource = new ClientsByIdResource(realm, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(clientsResource);
         return clientsResource;
     }
@@ -297,7 +290,7 @@ public class RealmAdminResource {
     }
 
     /**
-     * Returns a JSON map.  The key is the client name, the value is the number of sessions that currently are active
+     * Returns a JSON map.  The key is the client id, the value is the number of sessions that currently are active
      * with that client.  Only client's that actually have a session associated with them will be in this map.
      *
      * @return
@@ -306,29 +299,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    @Deprecated
-    public Map<String, Integer> getClientSessionStats() {
-        auth.requireView();
-        Map<String, Integer> stats = new HashMap<String, Integer>();
-        for (ClientModel client : realm.getClients()) {
-            int size = session.sessions().getActiveUserSessions(client.getRealm(), client);
-            if (size == 0) continue;
-            stats.put(client.getClientId(), size);
-        }
-        return stats;
-    }
-
-    /**
-     * Returns a JSON map.  The key is the client id, the value is the number of sessions that currently are active
-     * with that client.  Only client's that actually have a session associated with them will be in this map.
-     *
-     * @return
-     */
-    @Path("client-by-id-session-stats")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<Map<String, String>> getClientByIdSessionStats() {
+    public List<Map<String, String>> getClientSessionStats() {
         auth.requireView();
         List<Map<String, String>> data = new LinkedList<Map<String, String>>();
         for (ClientModel client : realm.getClients()) {
@@ -416,10 +387,25 @@ public class RealmAdminResource {
         }
         
         if(dateFrom != null) {
-            query.fromDate(dateFrom);
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+            Date from = null;
+            try {
+                from = df.parse(dateFrom);
+            } catch (ParseException e) {
+                throw new BadRequestException("Invalid value for 'Date(From)', expected format is yyyy-MM-dd");
+            }
+            query.fromDate(from);
         }
+        
         if(dateTo != null) {
-            query.toDate(dateTo);
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+            Date to = null;
+            try {
+                to = df.parse(dateTo);
+            } catch (ParseException e) {
+                throw new BadRequestException("Invalid value for 'Date(To)', expected format is yyyy-MM-dd");
+            }
+            query.toDate(to);
         }
 
         if (ipAddress != null) {
@@ -438,8 +424,8 @@ public class RealmAdminResource {
     /**
      * Query admin events.  Returns all admin events, or will query based on URL query parameters listed here
      *
-     * @param client app or oauth client name
-     * @param operationTypes operation type
+     * @param authRealm
+     * @param authClient
      * @param authUser user id
      * @param authIpAddress
      * @param resourcePath
@@ -494,10 +480,25 @@ public class RealmAdminResource {
         }
         
         if(dateFrom != null) {
-            query.fromTime(dateFrom);
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+            Date from = null;
+            try {
+                from = df.parse(dateFrom);
+            } catch (ParseException e) {
+                throw new BadRequestException("Invalid value for 'Date(From)', expected format is yyyy-MM-dd");
+            }
+            query.fromTime(from);
         }
+        
         if(dateTo != null) {
-            query.toTime(dateTo);
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+            Date to = null;
+            try {
+                to = df.parse(dateTo);
+            } catch (ParseException e) {
+                throw new BadRequestException("Invalid value for 'Date(To)', expected format is yyyy-MM-dd");
+            }
+            query.toTime(to);
         }
 
         if (firstResult != null) {

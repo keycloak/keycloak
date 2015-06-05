@@ -54,7 +54,9 @@ import org.keycloak.testsuite.utils.CredentialHelper;
 import org.openqa.selenium.WebDriver;
 
 import javax.mail.MessagingException;
+import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
+
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
@@ -124,9 +126,8 @@ public class RequiredActionEmailVerificationTest {
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
-
-        String body = (String) message.getContent();
-        String verificationUrl = MailUtil.getLink(body);
+        
+        String verificationUrl = getPasswordResetEmailLink(message);
 
         AssertEvents.ExpectedEvent emailEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost");
         Event sendEvent = emailEvent.assertEvent();
@@ -159,14 +160,12 @@ public class RequiredActionEmailVerificationTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        String body = (String) message.getContent();
-
         Event sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail("username", "verifyEmail").detail("email", "email@mail.com").assertEvent();
         String sessionId = sendEvent.getSessionId();
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
-        String verificationUrl = MailUtil.getLink(body);
+        String verificationUrl = getPasswordResetEmailLink(message);
 
         driver.navigate().to(verificationUrl.trim());
 
@@ -197,11 +196,9 @@ public class RequiredActionEmailVerificationTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[1];
 
-        String body = (String) message.getContent();
-
         events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).session(sessionId).detail("email", "test-user@localhost").assertEvent(sendEvent);
 
-        String verificationUrl = MailUtil.getLink(body);
+        String verificationUrl = getPasswordResetEmailLink(message);
 
         driver.navigate().to(verificationUrl.trim());
 
@@ -223,8 +220,7 @@ public class RequiredActionEmailVerificationTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        String body = (String) message.getContent();
-        String verificationUrl = MailUtil.getLink(body);
+        String verificationUrl = getPasswordResetEmailLink(message);
 
         AssertEvents.ExpectedEvent emailEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost");
         Event sendEvent = emailEvent.assertEvent();
@@ -247,6 +243,27 @@ public class RequiredActionEmailVerificationTest {
 
         assertTrue(loginPage.isCurrent());
     }
+    
+    private String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
+    	Multipart multipart = (Multipart) message.getContent();
+    	
+        final String textContentType = multipart.getBodyPart(0).getContentType();
+        
+        assertEquals("text/plain; charset=UTF-8", textContentType);
+        
+        final String textBody = (String) multipart.getBodyPart(0).getContent();
+        final String textChangePwdUrl = MailUtil.getLink(textBody);
+    	
+        final String htmlContentType = multipart.getBodyPart(1).getContentType();
+        
+        assertEquals("text/html; charset=UTF-8", htmlContentType);
+        
+        final String htmlBody = (String) multipart.getBodyPart(1).getContent();
+        final String htmlChangePwdUrl = MailUtil.getLink(htmlBody);
+        
+        assertEquals(htmlChangePwdUrl, textChangePwdUrl);
 
+        return htmlChangePwdUrl;
+    }
 
 }

@@ -129,9 +129,9 @@ public class SamlService {
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
             StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
             // validate destination
-            if (!uriInfo.getAbsolutePath().toString().equals(statusResponse.getDestination())) {
-                event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
+            if (statusResponse.getDestination() != null && !uriInfo.getAbsolutePath().toString().equals(statusResponse.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
+                event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, Messages.INVALID_REQUEST);
             }
 
@@ -231,9 +231,9 @@ public class SamlService {
 
         protected Response loginRequest(String relayState, AuthnRequestType requestAbstractType, ClientModel client) {
             // validate destination
-            if (!uriInfo.getAbsolutePath().equals(requestAbstractType.getDestination())) {
-                event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
+            if (requestAbstractType.getDestination() != null && !uriInfo.getAbsolutePath().equals(requestAbstractType.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
+                event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
                 return ErrorPage.error(session, Messages.INVALID_REQUEST);
             }
             String bindingType = getBindingType(requestAbstractType);
@@ -278,8 +278,8 @@ public class SamlService {
                 if (isSupportedNameIdFormat(nameIdFormat)) {
                     clientSession.setNote(GeneralConstants.NAMEID_FORMAT, nameIdFormat);
                 } else {
-                    event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
                     event.detail(Details.REASON, "unsupported_nameid_format");
+                    event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
                     return ErrorPage.error(session, Messages.UNSUPPORTED_NAME_ID_FORMAT);
                 }
             }
@@ -368,9 +368,9 @@ public class SamlService {
 
         protected Response logoutRequest(LogoutRequestType logoutRequest, ClientModel client, String relayState) {
             // validate destination
-            if (!uriInfo.getAbsolutePath().equals(logoutRequest.getDestination())) {
-                event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
+            if (logoutRequest.getDestination() != null && !uriInfo.getAbsolutePath().equals(logoutRequest.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
+                event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
                 return ErrorPage.error(session, Messages.INVALID_REQUEST);
             }
 

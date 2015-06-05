@@ -4,14 +4,15 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
-
 import com.mongodb.DBObject;
+
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventType;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -59,31 +60,17 @@ public class MongoEventQuery implements EventQuery {
     }
 
     @Override
-    public EventQuery fromDate(String fromDate) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        Long from = null;
-        try {
-            from = df.parse(fromDate).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
+    public EventQuery fromDate(Date fromDate) {
         BasicDBObject time = query.containsField("time") ? (BasicDBObject) query.get("time") : new BasicDBObject();
-        time.append("$gte", from);
+        time.append("$gte", fromDate.getTime());
         query.put("time", time);
         return this;
     }
 
     @Override
-    public EventQuery toDate(String toDate) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        Long to = null;
-        try {
-            to = df.parse(toDate).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
+    public EventQuery toDate(Date toDate) {
         BasicDBObject time = query.containsField("time") ? (BasicDBObject) query.get("time") : new BasicDBObject();
-        time.append("$lte", to);
+        time.append("$lte", toDate.getTime());
         query.put("time", time);
         return this;
     }

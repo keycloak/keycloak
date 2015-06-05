@@ -99,7 +99,6 @@ public class ModelToRepresentation {
             rep.setCodeSecret(realm.getCodeSecret());
         }
         rep.setCertificate(realm.getCertificatePem());
-        rep.setPasswordCredentialGrantAllowed(realm.isPasswordCredentialGrantAllowed());
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
         rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
         rep.setRememberMe(realm.isRememberMe());
@@ -124,6 +123,7 @@ public class ModelToRepresentation {
 
         rep.setVerifyEmail(realm.isVerifyEmail());
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
+        rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
         rep.setAccessTokenLifespan(realm.getAccessTokenLifespan());
         rep.setSsoSessionIdleTimeout(realm.getSsoSessionIdleTimeout());
         rep.setSsoSessionMaxLifespan(realm.getSsoSessionMaxLifespan());
@@ -324,7 +324,8 @@ public class ModelToRepresentation {
         providerRep.setAlias(identityProviderModel.getAlias());
         providerRep.setEnabled(identityProviderModel.isEnabled());
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
-        providerRep.setUpdateProfileFirstLogin(identityProviderModel.isUpdateProfileFirstLogin());
+        providerRep.setUpdateProfileFirstLoginMode(identityProviderModel.getUpdateProfileFirstLoginMode());
+        providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
         providerRep.setConfig(identityProviderModel.getConfig());
         providerRep.setAddReadTokenRoleOnCreate(identityProviderModel.isAddReadTokenRoleOnCreate());

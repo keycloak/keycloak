@@ -57,8 +57,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.WebApplicationException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -105,22 +107,31 @@ public class UsersResource {
     /**
      * Update the user
      *
-     * @param username user name (not id!)
+     * @param id
      * @param rep
      * @return
      */
-    @Path("{username}")
+    @Path("{id}")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateUser(final @PathParam("username") String username, final UserRepresentation rep) {
+    public Response updateUser(final @PathParam("id") String id, final UserRepresentation rep) {
         auth.requireManage();
 
         try {
-            UserModel user = session.users().getUserByUsername(username, realm);
+            UserModel user = session.users().getUserById(id, realm);
             if (user == null) {
                 throw new NotFoundException("User not found");
             }
-            updateUserFromRep(user, rep);
+
+            Set<String> attrsToRemove;
+            if (rep.getAttributes() != null) {
+                attrsToRemove = new HashSet<>(user.getAttributes().keySet());
+                attrsToRemove.removeAll(rep.getAttributes().keySet());
+            } else {
+                attrsToRemove = Collections.emptySet();
+            }
+
+            updateUserFromRep(user, rep, attrsToRemove);
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
 
             if (session.getTransaction().isActive()) {
@@ -156,7 +167,8 @@ public class UsersResource {
 
         try {
             UserModel user = session.users().addUser(realm, rep.getUsername());
-            updateUserFromRep(user, rep);
+            Set<String> emptySet = Collections.emptySet();
+            updateUserFromRep(user, rep, emptySet);
             
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, user.getId()).representation(rep).success();
             
@@ -164,7 +176,7 @@ public class UsersResource {
                 session.getTransaction().commit();
             }
             
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getUsername()).build()).build();
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             if (session.getTransaction().isActive()) {
                 session.getTransaction().setRollbackOnly();
@@ -173,7 +185,10 @@ public class UsersResource {
         }
     }
 
-    private void updateUserFromRep(UserModel user, UserRepresentation rep) {
+    private void updateUserFromRep(UserModel user, UserRepresentation rep, Set<String> attrsToRemove) {
+        if (realm.isEditUsernameAllowed()) {
+            user.setUsername(rep.getUsername());
+        }
         user.setEmail(rep.getEmail());
         user.setFirstName(rep.getFirstName());
         user.setLastName(rep.getLastName());
@@ -199,9 +214,7 @@ public class UsersResource {
                 user.setAttribute(attr.getKey(), attr.getValue());
             }
 
-            Set<String> attrToRemove = new HashSet<String>(user.getAttributes().keySet());
-            attrToRemove.removeAll(rep.getAttributes().keySet());
-            for (String attr : attrToRemove) {
+            for (String attr : attrsToRemove) {
                 user.removeAttribute(attr);
             }
         }
@@ -210,17 +223,17 @@ public class UsersResource {
     /**
      * Get represenation of the user
      *
-     * @param username username (not id!)
+     * @param id user id
      * @return
      */
-    @Path("{username}")
+    @Path("{id}")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public UserRepresentation getUser(final @PathParam("username") String username) {
+    public UserRepresentation getUser(final @PathParam("id") String id) {
         auth.requireView();
 
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -244,16 +257,16 @@ public class UsersResource {
     /**
      * List set of sessions associated with this user.
      *
-     * @param username
+     * @param id
      * @return
      */
-    @Path("{username}/sessions")
+    @Path("{id}/sessions")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserSessionRepresentation> getSessions(final @PathParam("username") String username) {
+    public List<UserSessionRepresentation> getSessions(final @PathParam("id") String id) {
         auth.requireView();
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -269,16 +282,16 @@ public class UsersResource {
     /**
      * List set of social logins associated with this user.
      *
-     * @param username
+     * @param id
      * @return
      */
-    @Path("{username}/federated-identity")
+    @Path("{id}/federated-identity")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<FederatedIdentityRepresentation> getFederatedIdentity(final @PathParam("username") String username) {
+    public List<FederatedIdentityRepresentation> getFederatedIdentity(final @PathParam("id") String id) {
         auth.requireView();
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -297,12 +310,12 @@ public class UsersResource {
         return result;
     }
 
-    @Path("{username}/federated-identity/{provider}")
+    @Path("{id}/federated-identity/{provider}")
     @POST
     @NoCache
-    public Response addFederatedIdentity(final @PathParam("username") String username, final @PathParam("provider") String provider, FederatedIdentityRepresentation rep) {
+    public Response addFederatedIdentity(final @PathParam("id") String id, final @PathParam("provider") String provider, FederatedIdentityRepresentation rep) {
         auth.requireManage();
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -316,12 +329,12 @@ public class UsersResource {
         return Response.noContent().build();
     }
 
-    @Path("{username}/federated-identity/{provider}")
+    @Path("{id}/federated-identity/{provider}")
     @DELETE
     @NoCache
-    public void removeFederatedIdentity(final @PathParam("username") String username, final @PathParam("provider") String provider) {
+    public void removeFederatedIdentity(final @PathParam("id") String id, final @PathParam("provider") String provider) {
         auth.requireManage();
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -334,16 +347,16 @@ public class UsersResource {
     /**
      * List set of consents granted by this user.
      *
-     * @param username
+     * @param id
      * @return
      */
-    @Path("{username}/consents")
+    @Path("{id}/consents")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserConsentRepresentation> getConsents(final @PathParam("username") String username) {
+    public List<UserConsentRepresentation> getConsents(final @PathParam("id") String id) {
         auth.requireView();
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -361,15 +374,15 @@ public class UsersResource {
     /**
      * Revoke consent for particular client
      *
-     * @param username
+     * @param id
      * @param clientId
      */
-    @Path("{username}/consents/{client}")
+    @Path("{id}/consents/{client}")
     @DELETE
     @NoCache
-    public void revokeConsent(final @PathParam("username") String username, final @PathParam("client") String clientId) {
+    public void revokeConsent(final @PathParam("id") String id, final @PathParam("client") String clientId) {
         auth.requireManage();
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -380,7 +393,7 @@ public class UsersResource {
             // Logout clientSessions for this user and client
             AuthenticationManager.backchannelUserFromClient(session, realm, user, client, uriInfo, headers);
         } else {
-            throw new NotFoundException("Consent not found for user " + username + " and client " + clientId);
+            throw new NotFoundException("Consent not found for user " + id + " and client " + clientId);
         }
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }
@@ -389,13 +402,13 @@ public class UsersResource {
      * Remove all user sessions associated with this user.  And, for all client that have an admin URL, tell
      * them to invalidate the sessions for this particular user.
      *
-     * @param username username (not id!)
+     * @param id user id
      */
-    @Path("{username}/logout")
+    @Path("{id}/logout")
     @POST
-    public void logout(final @PathParam("username") String username) {
+    public void logout(final @PathParam("id") String id) {
         auth.requireManage();
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -410,16 +423,15 @@ public class UsersResource {
     /**
      * delete this user
      *
-     * @param username username (not id!)
+     * @param id user id
      */
-    @Path("{username}")
+    @Path("{id}")
     @DELETE
     @NoCache
-    public Response deleteUser(final @PathParam("username") String username) {
+    public Response deleteUser(final @PathParam("id") String id) {
         auth.requireManage();
 
-        UserRepresentation rep = getUser(username);
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -490,17 +502,17 @@ public class UsersResource {
     /**
      * Get role mappings for this user
      *
-     * @param username username (not id!)
+     * @param id user id
      * @return
      */
-    @Path("{username}/role-mappings")
+    @Path("{id}/role-mappings")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public MappingsRepresentation getRoleMappings(@PathParam("username") String username) {
+    public MappingsRepresentation getRoleMappings(@PathParam("id") String id) {
         auth.requireView();
 
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -541,17 +553,17 @@ public class UsersResource {
     /**
      * Get realm-level role mappings for this user
      *
-     * @param username username (not id!)
+     * @param id user id
      * @return
      */
-    @Path("{username}/role-mappings/realm")
+    @Path("{id}/role-mappings/realm")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getRealmRoleMappings(@PathParam("username") String username) {
+    public List<RoleRepresentation> getRealmRoleMappings(@PathParam("id") String id) {
         auth.requireView();
 
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -567,17 +579,17 @@ public class UsersResource {
     /**
      * Effective realm-level role mappings for this user.  Will recurse all composite roles to get this list.
      *
-     * @param username username (not id!)
+     * @param id user id
      * @return
      */
-    @Path("{username}/role-mappings/realm/composite")
+    @Path("{id}/role-mappings/realm/composite")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getCompositeRealmRoleMappings(@PathParam("username") String username) {
+    public List<RoleRepresentation> getCompositeRealmRoleMappings(@PathParam("id") String id) {
         auth.requireView();
 
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -595,17 +607,17 @@ public class UsersResource {
     /**
      * Realm-level roles that can be mapped to this user
      *
-     * @param username username (not id!)
+     * @param id
      * @return
      */
-    @Path("{username}/role-mappings/realm/available")
+    @Path("{id}/role-mappings/realm/available")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getAvailableRealmRoleMappings(@PathParam("username") String username) {
+    public List<RoleRepresentation> getAvailableRealmRoleMappings(@PathParam("id") String id) {
         auth.requireView();
 
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -617,17 +629,17 @@ public class UsersResource {
     /**
      * Add realm-level role mappings
      *
-     * @param username username (not id!)
+     * @param id
      * @param roles
      */
-    @Path("{username}/role-mappings/realm")
+    @Path("{id}/role-mappings/realm")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public void addRealmRoleMappings(@PathParam("username") String username, List<RoleRepresentation> roles) {
+    public void addRealmRoleMappings(@PathParam("id") String id, List<RoleRepresentation> roles) {
         auth.requireManage();
 
         logger.debugv("** addRealmRoleMappings: {0}", roles);
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -645,17 +657,17 @@ public class UsersResource {
     /**
      * Delete realm-level role mappings
      *
-     * @param username username (not id!)
+     * @param id user id
      * @param roles
      */
-    @Path("{username}/role-mappings/realm")
+    @Path("{id}/role-mappings/realm")
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
-    public void deleteRealmRoleMappings(@PathParam("username") String username, List<RoleRepresentation> roles) {
+    public void deleteRealmRoleMappings(@PathParam("id") String id, List<RoleRepresentation> roles) {
         auth.requireManage();
 
         logger.debug("deleteRealmRoleMappings");
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -680,51 +692,35 @@ public class UsersResource {
         
     }
 
-    @Path("{username}/role-mappings/clients/{clientId}")
-    public UserClientRoleMappingsResource getUserClientRoleMappingsResource(@PathParam("username") String username, @PathParam("clientId") String clientId) {
-        UserModel user = session.users().getUserByUsername(username, realm);
+    @Path("{id}/role-mappings/clients/{client}")
+    public UserClientRoleMappingsResource getUserClientRoleMappingsResource(@PathParam("id") String id, @PathParam("client") String client) {
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
 
-        ClientModel client = realm.getClientByClientId(clientId);
-
-        if (client == null) {
-            throw new NotFoundException("Client not found");
-        }
-        return new UserClientRoleMappingsResource(uriInfo, realm, auth, user, client, adminEvent);
-
-    }
-    @Path("{username}/role-mappings/clients-by-id/{id}")
-    public UserClientRoleMappingsResource getUserClientRoleMappingsResourceById(@PathParam("username") String username, @PathParam("id") String id) {
-        UserModel user = session.users().getUserByUsername(username, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-
-        ClientModel client = realm.getClientById(id);
-
+        ClientModel clientModel = realm.getClientById(client);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
         
-        return new UserClientRoleMappingsResource(uriInfo, realm, auth, user, client, adminEvent);
+        return new UserClientRoleMappingsResource(uriInfo, realm, auth, user, clientModel, adminEvent);
 
     }
     /**
      *  Set up a temporary password for this user.  User will have to reset this temporary password when they log
      *  in next.
      *
-     * @param username username (not id!)
+     * @param id
      * @param pass temporary password
      */
-    @Path("{username}/reset-password")
+    @Path("{id}/reset-password")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void resetPassword(@PathParam("username") String username, CredentialRepresentation pass) {
+    public void resetPassword(@PathParam("id") String id, CredentialRepresentation pass) {
         auth.requireManage();
 
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -748,15 +744,15 @@ public class UsersResource {
     /**
      *
      *
-     * @param username username (not id!)
+     * @param id
      */
-    @Path("{username}/remove-totp")
+    @Path("{id}/remove-totp")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void removeTotp(@PathParam("username") String username) {
+    public void removeTotp(@PathParam("id") String id) {
         auth.requireManage();
 
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -770,62 +766,28 @@ public class UsersResource {
      * The redirectUri and clientId parameters are optional. The default for the
      * redirect is the account client.
      *
-     * @param username username (not id!)
+     * @param id
      * @param redirectUri redirect uri
      * @param clientId client id
      * @return
      */
-    @Path("{username}/reset-password-email")
+    @Path("{id}/reset-password-email")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response resetPasswordEmail(@PathParam("username") String username, @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
+    public Response resetPasswordEmail(@PathParam("id") String id, @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
         auth.requireManage();
 
-        UserModel user = session.users().getUserByUsername(username, realm);
+        UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             return ErrorResponse.error("User not found", Response.Status.NOT_FOUND);
-        }
-
-        if (!user.isEnabled()) {
-            return ErrorResponse.error("User is disabled", Response.Status.BAD_REQUEST);
         }
 
         if (user.getEmail() == null) {
             return ErrorResponse.error("User email missing", Response.Status.BAD_REQUEST);
         }
 
-        if(redirectUri != null && clientId == null){
-            return ErrorResponse.error("Client id missing", Response.Status.BAD_REQUEST);
-        }
-
-        if(clientId == null){
-            clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
-        }
-
-        ClientModel client = realm.getClientByClientId(clientId);
-        if (client == null || !client.isEnabled()) {
-            return ErrorResponse.error(clientId + " not enabled", Response.Status.INTERNAL_SERVER_ERROR);
-        }
-
-        String redirect;
-        if(redirectUri != null){
-            redirect = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri, realm, client);
-            if(redirect == null){
-                return ErrorResponse.error("Invalid redirect uri.", Response.Status.BAD_REQUEST);
-            }
-        }else{
-            redirect = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
-        }
-
-
-        UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false, null, null);
-        //audit.session(userSession);
-        ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
-        clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        clientSession.setRedirectUri(redirect);
-        clientSession.setUserSession(userSession);
+        ClientSessionModel clientSession = createClientSession(user, redirectUri, clientId);
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
-
         accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD);
 
         try {
@@ -846,6 +808,100 @@ public class UsersResource {
             logger.error("Failed to send password reset email", e);
             return ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Send an email to the user with a link they can click to verify their email address.
+     * The redirectUri and clientId parameters are optional. The default for the
+     * redirect is the account client.
+     *
+     * @param id
+     * @param redirectUri redirect uri
+     * @param clientId client id
+     * @return
+     */
+    @Path("{id}/send-verify-email")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response sendVerifyEmail(@PathParam("id") String id, @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
+        auth.requireManage();
+
+        UserModel user = session.users().getUserById(id, realm);
+        if (user == null) {
+            return ErrorResponse.error("User not found", Response.Status.NOT_FOUND);
+        }
+
+        if (user.getEmail() == null) {
+            return ErrorResponse.error("User email missing", Response.Status.BAD_REQUEST);
+        }
+
+        ClientSessionModel clientSession = createClientSession(user, redirectUri, clientId);
+        ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
+
+        accessCode.setAction(ClientSessionModel.Action.VERIFY_EMAIL);
+
+        try {
+            UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());
+            builder.queryParam("key", accessCode.getCode());
+
+            String link = builder.build(realm.getName()).toString();
+            long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
+
+            this.session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendVerifyEmail(link, expiration);
+
+            //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
+
+            adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+
+            return Response.ok().build();
+        } catch (EmailException e) {
+            logger.error("Failed to send verification email", e);
+            return ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private ClientSessionModel createClientSession(UserModel user, String redirectUri, String clientId) {
+
+        if (!user.isEnabled()) {
+            throw new WebApplicationException(
+                ErrorResponse.error("User is disabled", Response.Status.BAD_REQUEST));
+        }
+
+        if (redirectUri != null && clientId == null) {
+            throw new WebApplicationException(
+                ErrorResponse.error("Client id missing", Response.Status.BAD_REQUEST));
+        }
+
+        if (clientId == null) {
+            clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
+        }
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null || !client.isEnabled()) {
+            throw new WebApplicationException(
+                ErrorResponse.error(clientId + " not enabled", Response.Status.BAD_REQUEST));
+        }
+
+        String redirect;
+        if (redirectUri != null) {
+            redirect = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri, realm, client);
+            if (redirect == null) {
+                throw new WebApplicationException(
+                    ErrorResponse.error("Invalid redirect uri.", Response.Status.BAD_REQUEST));
+            }
+        } else {
+            redirect = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
+        }
+
+
+        UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "form", false, null, null);
+        //audit.session(userSession);
+        ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
+        clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        clientSession.setRedirectUri(redirect);
+        clientSession.setUserSession(userSession);
+
+        return clientSession;
     }
 
 }

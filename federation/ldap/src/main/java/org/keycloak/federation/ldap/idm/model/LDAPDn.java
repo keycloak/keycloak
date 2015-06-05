@@ -2,15 +2,13 @@ package org.keycloak.federation.ldap.idm.model;
 
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class LDAPDn {
 
-    private final Deque<Entry> entries = new LinkedList<Entry>();
+    private final Deque<Entry> entries = new LinkedList<>();
 
     public static LDAPDn fromString(String dnString) {
         LDAPDn dn = new LDAPDn();
@@ -18,7 +16,7 @@ public class LDAPDn {
         String[] rdns = dnString.split(",");
         for (String entryStr : rdns) {
             String[] rdn = entryStr.split("=");
-            dn.addToBottom(rdn[0].trim(), rdn[1].trim());
+            dn.addLast(rdn[0].trim(), rdn[1].trim());
         }
 
         return dn;
@@ -62,14 +60,14 @@ public class LDAPDn {
      * @return string like "dc=something,dc=org" from the DN like "uid=joe,dc=something,dc=org"
      */
     public String getParentDn() {
-        return new LinkedList<Entry>(entries).remove().toString();
+        return new LinkedList<>(entries).remove().toString();
     }
 
-    public void addToHead(String rdnName, String rdnValue) {
+    public void addFirst(String rdnName, String rdnValue) {
         entries.addFirst(new Entry(rdnName, rdnValue));
     }
 
-    public void addToBottom(String rdnName, String rdnValue) {
+    public void addLast(String rdnName, String rdnValue) {
         entries.addLast(new Entry(rdnName, rdnValue));
     }
 

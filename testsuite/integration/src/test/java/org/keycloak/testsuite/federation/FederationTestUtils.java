@@ -1,10 +1,14 @@
 package org.keycloak.testsuite.federation;
 
+import java.util.List;
+
 import org.junit.Assert;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.mappers.RoleLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.RoleLDAPFederationMapperFactory;
 import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
@@ -91,9 +95,13 @@ class FederationTestUtils {
     }
 
     public static void addZipCodeLDAPMapper(RealmModel realm, UserFederationProviderModel providerModel) {
-        UserFederationMapperModel mapperModel = KeycloakModelUtils.createUserFederationMapperModel("zipCodeMapper", providerModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
-                UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, "postal_code",
-                UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, LDAPConstants.POSTAL_CODE,
+        addUserAttributeMapper(realm, providerModel, "zipCodeMapper", "postal_code", LDAPConstants.POSTAL_CODE); 
+    }
+
+    public static void addUserAttributeMapper(RealmModel realm, UserFederationProviderModel providerModel, String mapperName, String userModelAttributeName, String ldapAttributeName) {
+        UserFederationMapperModel mapperModel = KeycloakModelUtils.createUserFederationMapperModel(mapperName, providerModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
+                UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, userModelAttributeName,
+                UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, ldapAttributeName,
                 UserAttributeLDAPFederationMapper.READ_ONLY, "false");
         realm.addUserFederationMapper(mapperModel);
     }
@@ -104,8 +112,9 @@ class FederationTestUtils {
             mapperModel.getConfig().put(RoleLDAPFederationMapper.MODE, mode.toString());
             realm.updateUserFederationMapper(mapperModel);
         } else {
+            String baseDn = providerModel.getConfig().get(LDAPConstants.BASE_DN);
             mapperModel = KeycloakModelUtils.createUserFederationMapperModel("realmRolesMapper", providerModel.getId(), RoleLDAPFederationMapperFactory.PROVIDER_ID,
-                    RoleLDAPFederationMapper.ROLES_DN, "ou=RealmRoles,dc=keycloak,dc=org",
+                    RoleLDAPFederationMapper.ROLES_DN, "ou=RealmRoles," + baseDn,
                     RoleLDAPFederationMapper.USE_REALM_ROLES_MAPPING, "true",
                     RoleLDAPFederationMapper.MODE, mode.toString());
             realm.addUserFederationMapper(mapperModel);
@@ -116,12 +125,39 @@ class FederationTestUtils {
             mapperModel.getConfig().put(RoleLDAPFederationMapper.MODE, mode.toString());
             realm.updateUserFederationMapper(mapperModel);
         } else {
+            String baseDn = providerModel.getConfig().get(LDAPConstants.BASE_DN);
             mapperModel = KeycloakModelUtils.createUserFederationMapperModel("financeRolesMapper", providerModel.getId(), RoleLDAPFederationMapperFactory.PROVIDER_ID,
-                    RoleLDAPFederationMapper.ROLES_DN, "ou=FinanceRoles,dc=keycloak,dc=org",
+                    RoleLDAPFederationMapper.ROLES_DN, "ou=FinanceRoles," + baseDn,
                     RoleLDAPFederationMapper.USE_REALM_ROLES_MAPPING, "false",
                     RoleLDAPFederationMapper.CLIENT_ID, "finance",
                     RoleLDAPFederationMapper.MODE, mode.toString());
             realm.addUserFederationMapper(mapperModel);
         }
+    }
+
+    public static void removeAllLDAPUsers(LDAPFederationProvider ldapProvider, RealmModel realm) {
+        LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
+        LDAPIdentityQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
+        List<LDAPObject> allUsers = ldapQuery.getResultList();
+
+        for (LDAPObject ldapUser : allUsers) {
+            ldapStore.remove(ldapUser);
+        }
+    }
+
+    public static void removeAllLDAPRoles(KeycloakSession session, RealmModel appRealm, UserFederationProviderModel ldapModel, String mapperName) {
+        UserFederationMapperModel mapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), mapperName);
+        LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+        LDAPIdentityQuery roleQuery = new RoleLDAPFederationMapper().createRoleQuery(mapperModel, ldapProvider);
+        List<LDAPObject> ldapRoles = roleQuery.getResultList();
+        for (LDAPObject ldapRole : ldapRoles) {
+            ldapProvider.getLdapIdentityStore().remove(ldapRole);
+        }
+    }
+
+    public static void createLDAPRole(KeycloakSession session, RealmModel appRealm, UserFederationProviderModel ldapModel, String mapperName, String roleName) {
+        UserFederationMapperModel mapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), mapperName);
+        LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+        new RoleLDAPFederationMapper().createLDAPRole(mapperModel, roleName, ldapProvider);
     }
 }

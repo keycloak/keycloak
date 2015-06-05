@@ -136,7 +136,7 @@ public class BearerTokenRequestAuthenticator {
         return new AuthChallenge() {
             @Override
             public boolean errorPage() {
-                return false;
+                return true;
             }
 
             @Override

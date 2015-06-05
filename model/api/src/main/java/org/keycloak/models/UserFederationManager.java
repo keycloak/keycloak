@@ -20,6 +20,9 @@ public class UserFederationManager implements UserProvider {
 
     protected KeycloakSession session;
 
+    // Set of already validated/proxied users during this session. Key is user ID
+    private Map<String, UserModel> managedUsers = new HashMap<>();
+
     public UserFederationManager(KeycloakSession session) {
         this.session = session;
     }
@@ -47,7 +50,9 @@ public class UserFederationManager implements UserProvider {
             UserFederationProvider fed = getFederationProvider(federation);
             if (fed.synchronizeRegistrations()) {
                 user.setFederationLink(federation.getId());
-                return fed.register(realm, user);
+                UserModel registered = fed.register(realm, user);
+                managedUsers.put(registered.getId(), registered);
+                return registered;
             }
         }
         return user;
@@ -70,6 +75,7 @@ public class UserFederationManager implements UserProvider {
             boolean fedRemoved = link.removeUser(realm, user);
             if (fedRemoved) {
                 boolean localRemoved = session.userStorage().removeUser(realm, user);
+                managedUsers.remove(user.getId());
                 if (!localRemoved) {
                     logger.warn("User removed from federation provider, but failed to remove him from keycloak model");
                 }
@@ -84,6 +90,10 @@ public class UserFederationManager implements UserProvider {
     }
 
     protected void validateUser(RealmModel realm, UserModel user) {
+        if (managedUsers.containsKey(user.getId())) {
+            return;
+        }
+
         UserFederationProvider link = getFederationLink(realm, user);
         if (link != null  && !link.isValid(realm, user)) {
             deleteInvalidUser(realm, user);
@@ -100,7 +110,7 @@ public class UserFederationManager implements UserProvider {
             if (realmModel == null) return;
             UserModel deletedUser = tx.userStorage().getUserById(user.getId(), realmModel);
             tx.userStorage().removeUser(realmModel, deletedUser);
-            logger.debugf("Removed invalid user '%s'", user.getUsername());
+            logger.infof("Removed invalid user '%s'", user.getUsername());
             tx.getTransaction().commit();
         } finally {
             tx.close();
@@ -109,10 +119,16 @@ public class UserFederationManager implements UserProvider {
 
 
     protected UserModel validateAndProxyUser(RealmModel realm, UserModel user) {
+        UserModel managed = managedUsers.get(user.getId());
+        if (managed != null) {
+            return managed;
+        }
+
         UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
             UserModel validatedProxyUser = link.validateAndProxy(realm, user);
             if (validatedProxyUser != null) {
+                managedUsers.put(user.getId(), user);
                 return validatedProxyUser;
             } else {
                 deleteInvalidUser(realm, user);

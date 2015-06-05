@@ -11,18 +11,21 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
-import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
-import org.keycloak.models.ClientModel;
+import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
+import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -63,10 +66,7 @@ public class FederationProvidersIntegrationTest {
 
             // Delete all LDAP users and add some new for testing
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
-            LDAPUtils.removeAllUsers(ldapFedProvider, appRealm);
-
-            // Add sample application TODO: REmove this!!!! It's just temporarily needed in SyncProvidersTest until model for federation mappers is implemented
-            ClientModel finance = appRealm.addClient("finance");
+            FederationTestUtils.removeAllLDAPUsers(ldapFedProvider, appRealm);
 
             LDAPObject john = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johnkeycloak", "John", "Doe", "john@email.org", "1234");
             ldapFedProvider.getLdapIdentityStore().updatePassword(john, "Password1");
@@ -261,6 +261,56 @@ public class FederationProvidersIntegrationTest {
             Assert.assertEquals("non-LDAP-Mapped street", user.getAttribute("street"));
         } finally {
             keycloakRule.stopSession(session, false);
+        }
+    }
+
+    @Test
+    public void testFullNameMapper() {
+        KeycloakSession session = keycloakRule.startSession();
+        UserFederationMapperModel firstNameMapper = null;
+
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            // assert that user "fullnameUser" is not in local DB
+            Assert.assertNull(session.users().getUserByUsername("fullname", appRealm));
+
+            // Add the user with some fullName into LDAP directly. Ensure that fullName is saved into "cn" attribute in LDAP (currently mapped to model firstName)
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "fullname", "James Dee", "Dee", "fullname@email.org", "4578");
+
+            // add fullname mapper to the provider and remove "firstNameMapper". For this test, we will simply map full name to the LDAP attribute, which was before firstName ( "givenName" on active directory, "cn" on other LDAP servers)
+            firstNameMapper = appRealm.getUserFederationMapperByName(ldapModel.getId(), "first name");
+            String ldapFirstNameAttributeName = firstNameMapper.getConfig().get(UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE);
+            appRealm.removeUserFederationMapper(firstNameMapper);
+
+            UserFederationMapperModel fullNameMapperModel = KeycloakModelUtils.createUserFederationMapperModel("full name", ldapModel.getId(), FullNameLDAPFederationMapperFactory.PROVIDER_ID,
+                    FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, ldapFirstNameAttributeName,
+                    UserAttributeLDAPFederationMapper.READ_ONLY, "false");
+            appRealm.addUserFederationMapper(fullNameMapperModel);
+
+            // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
+            FederationTestUtils.assertUserImported(session.users(), appRealm, "fullname", "James", "Dee", "fullname@email.org", "4578");
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            // Remove "fullnameUser" to assert he is removed from LDAP. Revert mappers to previous state
+            UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);
+            session.users().removeUser(appRealm, fullnameUser);
+
+            // Revert mappers
+            UserFederationMapperModel fullNameMapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "full name");
+            appRealm.removeUserFederationMapper(fullNameMapperModel);
+
+            firstNameMapper.setId(null);
+            appRealm.addUserFederationMapper(firstNameMapper);
+        } finally {
+            keycloakRule.stopSession(session, true);
         }
     }
 

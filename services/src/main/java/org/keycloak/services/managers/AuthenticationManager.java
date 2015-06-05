@@ -453,8 +453,8 @@ public class AuthenticationManager {
         if (!requiredActions.isEmpty()) {
             Iterator<String> i = user.getRequiredActions().iterator();
             String action = i.next();
-
-            if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL.name()) && Validation.isEmpty(user.getEmail())) {
+            
+            if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL.name()) && Validation.isBlank(user.getEmail())) {
                 if (i.hasNext())
                     action = i.next();
                 else

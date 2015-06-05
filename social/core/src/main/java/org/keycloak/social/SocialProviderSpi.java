@@ -29,7 +29,7 @@ public class SocialProviderSpi implements Spi {
     public static final String SOCIAL_SPI_NAME = "social";
 
     @Override
-    public boolean isPrivate() {
+    public boolean isInternal() {
         return false;
     }
 

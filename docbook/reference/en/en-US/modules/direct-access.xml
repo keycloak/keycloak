@@ -3,8 +3,7 @@
     <para>
         Keycloak allows you to make direct REST invocations to obtain an access token.
         (See <ulink url="http://tools.ietf.org/html/rfc6749#section-4.3">Resource Owner Password Credentials Grant</ulink>
-        from OAuth 2.0 spec).  To use it, Direct Access Grants must be allowed by your realm.  This is a configuration switch
-        in the admin console under Settings->General, specifically the "Direct Grant API" switch.  You must also have
+        from OAuth 2.0 spec).  To use it you must also have
         registered a valid Client to use as the "client_id" for this grant request.
     </para>
     <warning>
@@ -12,7 +11,9 @@
             It is highly recommended that you do not use Direct Access Grants to write your own login pages for your application.
             You will lose a lot of features that Keycloak has if you do this.  Specifically all the account management, remember me,
             lost password, account reset features of Keycloak.  Instead, if you want to tailor the look and feel of Keycloak login
-            pages, you should create your own <link linkend="themes">theme</link>.
+            pages, you should create your own <link linkend="themes">theme</link>. There are also security implications
+            to using Direct Access Grants compared to the redirect based flows as you are exposing plain text passwords
+            to applications directly.
         </para>
         <para>
             It is even highly recommended that you use the browser to log in for native mobile applications!  Android

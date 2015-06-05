@@ -11,7 +11,7 @@
 
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="totp" class="${properties.kcLabelClass!}">${msg("doLogIn")}</label>
+                    <label for="totp" class="${properties.kcLabelClass!}">${msg("loginTotpOneTime")}</label>
                 </div>
 
                 <div class="${properties.kcInputWrapperClass!}">
@@ -27,8 +27,8 @@
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <div class="${properties.kcFormButtonsWrapperClass!}">
-                        <input class="btn btn-primary btn-lg" name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>
-                        <input class="btn btn-default btn-lg" name="cancel" id="kc-cancel" type="submit" value="${msg("doCancel")}"/>
+                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>
+                        <input class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" name="cancel" id="kc-cancel" type="submit" value="${msg("doCancel")}"/>
                     </div>
                 </div>
             </div>

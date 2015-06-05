@@ -34,7 +34,7 @@ public class LDAPUtils {
         ldapUser.setRdnAttributeName(ldapConfig.getRdnLdapAttribute());
         ldapUser.setObjectClasses(ldapConfig.getUserObjectClasses());
 
-        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(ldapProvider.getModel().getId());
         for (UserFederationMapperModel mapperModel : federationMappers) {
             LDAPFederationMapper ldapMapper = ldapProvider.getMapper(mapperModel);
             ldapMapper.onRegisterUserToLDAP(mapperModel, ldapProvider, ldapUser, user, realm);
@@ -45,40 +45,30 @@ public class LDAPUtils {
         return ldapUser;
     }
 
-    public static void removeAllUsers(LDAPFederationProvider ldapProvider, RealmModel realm) {
-        LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
-        LDAPIdentityQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
-        List<LDAPObject> allUsers = ldapQuery.getResultList();
-
-        for (LDAPObject ldapUser : allUsers) {
-            ldapStore.remove(ldapUser);
-        }
-    }
-
     public static LDAPIdentityQuery createQueryForUserSearch(LDAPFederationProvider ldapProvider, RealmModel realm) {
         LDAPIdentityQuery ldapQuery = new LDAPIdentityQuery(ldapProvider);
         LDAPConfig config = ldapProvider.getLdapIdentityStore().getConfig();
         ldapQuery.setSearchScope(config.getSearchScope());
-        ldapQuery.addSearchDns(config.getUserDns());
+        ldapQuery.setSearchDn(config.getUsersDn());
         ldapQuery.addObjectClasses(config.getUserObjectClasses());
 
-        Set<UserFederationMapperModel> mapperModels = realm.getUserFederationMappers();
+        Set<UserFederationMapperModel> mapperModels = realm.getUserFederationMappersByFederationProvider(ldapProvider.getModel().getId());
         ldapQuery.addMappers(mapperModels);
 
         return ldapQuery;
     }
 
-    // ldapUser has filled attributes, but doesn't have filled dn
-    public static void computeAndSetDn(LDAPConfig config, LDAPObject ldapObject) {
+    // ldapUser has filled attributes, but doesn't have filled dn.
+    private static void computeAndSetDn(LDAPConfig config, LDAPObject ldapUser) {
         String rdnLdapAttrName = config.getRdnLdapAttribute();
-        String rdnLdapAttrValue = ldapObject.getAttributeAsString(rdnLdapAttrName);
+        String rdnLdapAttrValue = ldapUser.getAttributeAsString(rdnLdapAttrName);
         if (rdnLdapAttrValue == null) {
-            throw new ModelException("RDN Attribute [" + rdnLdapAttrName + "] is not filled. Filled attributes: " + ldapObject.getAttributes());
+            throw new ModelException("RDN Attribute [" + rdnLdapAttrName + "] is not filled. Filled attributes: " + ldapUser.getAttributes());
         }
 
-        LDAPDn dn = LDAPDn.fromString(config.getSingleUserDn());
-        dn.addToHead(rdnLdapAttrName, rdnLdapAttrValue);
-        ldapObject.setDn(dn);
+        LDAPDn dn = LDAPDn.fromString(config.getUsersDn());
+        dn.addFirst(rdnLdapAttrName, rdnLdapAttrValue);
+        ldapUser.setDn(dn);
     }
 
     public static String getUsername(LDAPObject ldapUser, LDAPConfig config) {

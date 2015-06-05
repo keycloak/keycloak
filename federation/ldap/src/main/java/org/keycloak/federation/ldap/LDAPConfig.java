@@ -1,8 +1,6 @@
 package org.keycloak.federation.ldap;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
@@ -12,7 +10,6 @@ import javax.naming.directory.SearchControls;
 
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -37,8 +34,12 @@ public class LDAPConfig {
     }
 
     public String getAuthType() {
-        // hardcoded for now
-        return "simple";
+        String value = config.get(LDAPConstants.AUTH_TYPE);
+        if (value == null) {
+            return LDAPConstants.AUTH_TYPE_SIMPLE;
+        } else {
+            return value;
+        }
     }
 
     public String getSecurityProtocol() {
@@ -46,21 +47,8 @@ public class LDAPConfig {
         return config.get(LDAPConstants.SECURITY_PROTOCOL);
     }
 
-    public Collection<String> getUserDns() {
-        String value = config.get(LDAPConstants.USER_DNS);
-        if (value == null) {
-            return Collections.emptyList();
-        } else {
-            return Arrays.asList(value.split(LDAPConstants.CONFIG_DIVIDER));
-        }
-    }
-
-    public String getSingleUserDn() {
-        Collection<String> dns = getUserDns();
-        if (dns.size() == 0) {
-            throw new IllegalStateException("No user DN configured. User DNS value is " + config.get(LDAPConstants.USER_DNS));
-        }
-        return dns.iterator().next();
+    public String getUsersDn() {
+        return config.get(LDAPConstants.USERS_DN);
     }
 
     public Collection<String> getUserObjectClasses() {
@@ -70,7 +58,7 @@ public class LDAPConfig {
         String[] objectClasses = objClassesStr.split(",");
 
         // Trim them
-        Set<String> userObjClasses = new HashSet<String>();
+        Set<String> userObjClasses = new HashSet<>();
         for (int i=0 ; i<objectClasses.length ; i++) {
             userObjClasses.add(objectClasses[i].trim());
         }

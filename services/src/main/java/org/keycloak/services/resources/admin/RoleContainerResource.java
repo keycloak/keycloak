@@ -223,60 +223,31 @@ public class RoleContainerResource extends RoleResource {
     }
 
     /**
-     * An client-level roles for a specific client for this role's composite
-     *
-     * @param roleName role's name (not id!)
-     * @param clientId
-     * @return
-     */
-    @Path("{role-name}/composites/client/{clientId}")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public Set<RoleRepresentation> getClientRoleComposites(
-                                                           final @PathParam("role-name") String roleName,
-                                                           final @PathParam("clientId") String clientId) {
-        auth.requireManage();
-
-        RoleModel role = roleContainer.getRole(roleName);
-        if (role == null) {
-            throw new NotFoundException("Could not find role: " + roleName);
-        }
-        ClientModel app = realm.getClientByClientId(clientId);
-        if (app == null) {
-            throw new NotFoundException("Could not find client: " + clientId);
-
-        }
-        return getClientRoleComposites(app, role);
-    }
-
-
-    /**
      * An app-level roles for a specific app for this role's composite
      *
      * @param roleName role's name (not id!)
-     * @param id
+     * @param client
      * @return
      */
-    @Path("{role-name}/composites/client-by-id/{id}")
+    @Path("{role-name}/composites/clients/{client}")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<RoleRepresentation> getClientByIdRoleComposites(@Context final UriInfo uriInfo,
+    public Set<RoleRepresentation> getClientRoleComposites(@Context final UriInfo uriInfo,
                                                                 final @PathParam("role-name") String roleName,
-                                                                final @PathParam("id") String id) {
+                                                                final @PathParam("client") String client) {
         auth.requireManage();
 
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
-        ClientModel client = realm.getClientById(id);
+        ClientModel clientModel = realm.getClientById(client);
         if (client == null) {
-            throw new NotFoundException("Could not find client: " + id);
+            throw new NotFoundException("Could not find client: " + client);
 
         }
-        return getClientRoleComposites(client, role);
+        return getClientRoleComposites(clientModel, role);
     }
 
 

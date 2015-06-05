@@ -77,7 +77,7 @@
 
                     <td>
                         <#if application.client.consentRequired>
-                            <button type='submit' class='btn btn-primary' id='revoke-${application.client.clientId}' name='clientId' value="${application.client.id}">${msg("revoke")}</button>
+                            <button type='submit' class='${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!}' id='revoke-${application.client.clientId}' name='clientId' value="${application.client.id}">${msg("revoke")}</button>
                         </#if>
                     </td>
                 </tr>

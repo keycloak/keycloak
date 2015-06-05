@@ -19,10 +19,10 @@
                 <div class="col-sm-5 col-md-5">
                     <#if identity.connected>
                         <#if federatedIdentity.removeLinkPossible>
-                            <a href="${identity.actionUrl}" type="submit" id="remove-${identity.providerId!}" class="btn btn-primary btn-lg">${msg("doRemove")}</a>
+                            <a href="${identity.actionUrl}" type="submit" id="remove-${identity.providerId!}" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doRemove")}</a>
                         </#if>
                     <#else>
-                        <a href="${identity.actionUrl}" type="submit" id="add-${identity.providerId!}" class="btn btn-primary btn-lg">${msg("doAdd")}</a>
+                        <a href="${identity.actionUrl}" type="submit" id="add-${identity.providerId!}" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doAdd")}</a>
                     </#if>
                 </div>
             </div>

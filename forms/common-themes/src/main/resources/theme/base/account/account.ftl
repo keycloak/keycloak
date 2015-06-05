@@ -16,11 +16,11 @@
 
         <div class="form-group ${messagesPerField.printIfExists('username','has-error')}">
             <div class="col-sm-2 col-md-2">
-                <label for="username" class="control-label">${msg("username")}</label>
+                <label for="username" class="control-label">${msg("username")}</label> <#if realm.editUsernameAllowed><span class="required">*</span></#if>
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="username" name="username" disabled="disabled" value="${(account.username!'')?html}"/>
+                <input type="text" class="form-control" id="username" name="username" <#if !realm.editUsernameAllowed>disabled="disabled"</#if> value="${(account.username!'')?html}"/>
             </div>
         </div>
 
@@ -104,8 +104,8 @@
             <div id="kc-form-buttons" class="col-md-offset-2 col-md-10 submit">
                 <div class="">
                     <#if url.referrerURI??><a href="${url.referrerURI}">${msg("backToApplication")}/a></#if>
-                    <button type="submit" class="btn btn-primary btn-lg" name="submitAction" value="Save">${msg("doSave")}</button>
-                    <button type="submit" class="btn btn-default btn-lg" name="submitAction" value="Cancel">${msg("doCancel")}</button>
+                    <button type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="submitAction" value="Save">${msg("doSave")}</button>
+                    <button type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" name="submitAction" value="Cancel">${msg("doCancel")}</button>
                 </div>
             </div>
         </div>

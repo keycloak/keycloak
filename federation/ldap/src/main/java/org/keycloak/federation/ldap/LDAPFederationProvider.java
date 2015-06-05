@@ -106,7 +106,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
                 proxied = new UnsyncedLDAPUserModelDelegate(local, this);
         }
 
-        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(model.getId());
         for (UserFederationMapperModel mapperModel : federationMappers) {
             LDAPFederationMapper ldapMapper = getMapper(mapperModel);
             proxied = ldapMapper.proxy(mapperModel, this, ldapObject, proxied, realm);
@@ -263,7 +263,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
         UserModel imported = session.userStorage().addUser(realm, ldapUsername);
         imported.setEnabled(true);
 
-        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(getModel().getId());
         for (UserFederationMapperModel mapperModel : federationMappers) {
             LDAPFederationMapper ldapMapper = getMapper(mapperModel);
             ldapMapper.onImportUserFromLDAP(mapperModel, this, ldapUser, imported, realm, true);
@@ -308,8 +308,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
-        // complete I don't think we have to do anything here
-        // TODO: requires implementation... Maybe mappers callback to ensure role deletion propagated to LDAP by RoleLDAPFederationMapper
+        // TODO: Maybe mappers callback to ensure role deletion propagated to LDAP by RoleLDAPFederationMapper?
     }
 
     public boolean validPassword(RealmModel realm, UserModel user, String password) {
@@ -399,7 +398,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
                 if ((fedModel.getId().equals(currentUser.getFederationLink())) && (ldapUser.getUuid().equals(currentUser.getAttribute(LDAPConstants.LDAP_ID)))) {
 
                     // Update keycloak user
-                    Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappers();
+                    Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(model.getId());
                     for (UserFederationMapperModel mapperModel : federationMappers) {
                         LDAPFederationMapper ldapMapper = getMapper(mapperModel);
                         ldapMapper.onImportUserFromLDAP(mapperModel, this, ldapUser, currentUser, realm, false);

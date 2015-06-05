@@ -18,6 +18,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationMapperEventImpl;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderCreationEventImpl;
 import org.keycloak.models.UserFederationProviderModel;
@@ -108,17 +109,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public void setSslRequired(SslRequired sslRequired) {
         realm.setSslRequired(sslRequired.name());
-        updateRealm();
-    }
-
-    @Override
-    public boolean isPasswordCredentialGrantAllowed() {
-        return realm.isPasswordCredentialGrantAllowed();
-    }
-
-    @Override
-    public void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed) {
-        realm.setPasswordCredentialGrantAllowed(passwordCredentialGrantAllowed);
         updateRealm();
     }
 
@@ -251,6 +241,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public void setResetPasswordAllowed(boolean resetPassword) {
         realm.setResetPasswordAllowed(resetPassword);
+        updateRealm();
+    }
+
+    @Override
+    public boolean isEditUsernameAllowed() {
+        return realm.isEditUsernameAllowed();
+    }
+
+    @Override
+    public void setEditUsernameAllowed(boolean editUsernameAllowed) {
+        realm.setEditUsernameAllowed(editUsernameAllowed);
         updateRealm();
     }
 
@@ -771,7 +772,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             identityProviderModel.setInternalId(entity.getInternalId());
             identityProviderModel.setConfig(entity.getConfig());
             identityProviderModel.setEnabled(entity.isEnabled());
-            identityProviderModel.setUpdateProfileFirstLogin(entity.isUpdateProfileFirstLogin());
+            identityProviderModel.setUpdateProfileFirstLoginMode(entity.getUpdateProfileFirstLoginMode());
+            identityProviderModel.setTrustEmail(entity.isTrustEmail());
             identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
             identityProviderModel.setStoreToken(entity.isStoreToken());
             identityProviderModel.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
@@ -801,7 +803,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setAlias(identityProvider.getAlias());
         entity.setProviderId(identityProvider.getProviderId());
         entity.setEnabled(identityProvider.isEnabled());
-        entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
+        entity.setUpdateProfileFirstLoginMode(identityProvider.getUpdateProfileFirstLoginMode());
+        entity.setTrustEmail(identityProvider.isTrustEmail());
         entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
         entity.setStoreToken(identityProvider.isStoreToken());
         entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
@@ -813,7 +816,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void removeIdentityProviderByAlias(String alias) {
-        IdentityProviderEntity toRemove;
         for (IdentityProviderEntity entity : realm.getIdentityProviders()) {
             if (entity.getAlias().equals(alias)) {
                 realm.getIdentityProviders().remove(entity);
@@ -829,7 +831,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             if (entity.getInternalId().equals(identityProvider.getInternalId())) {
                 entity.setAlias(identityProvider.getAlias());
                 entity.setEnabled(identityProvider.isEnabled());
-                entity.setUpdateProfileFirstLogin(identityProvider.isUpdateProfileFirstLogin());
+                entity.setUpdateProfileFirstLoginMode(identityProvider.getUpdateProfileFirstLoginMode());
+                entity.setTrustEmail(identityProvider.isTrustEmail());
                 entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
                 entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
                 entity.setStoreToken(identityProvider.isStoreToken());
@@ -860,7 +863,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateRealm();
 
         UserFederationProviderModel providerModel = new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
+
         session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, providerModel));
+
         return providerModel;
     }
 
@@ -960,6 +965,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
             entity.setLastSync(model.getLastSync());
             entities.add(entity);
+
             session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, model));
         }
 
@@ -1230,7 +1236,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {
         List<AuthenticationFlowEntity> flows = getMongoEntity().getAuthenticationFlows();
-        if (flows.size() == 0) return Collections.EMPTY_LIST;
         List<AuthenticationFlowModel> models = new LinkedList<>();
         for (AuthenticationFlowEntity entity : flows) {
             AuthenticationFlowModel model = entityToModel(entity);
@@ -1249,10 +1254,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public AuthenticationFlowModel getAuthenticationFlowById(String id) {
-        for (AuthenticationFlowModel model : getAuthenticationFlows()) {
-            if (model.getId().equals(id)) return model;
-        }
-        return null;
+        AuthenticationFlowEntity entity = getFlowEntity(id);
+        if (entity == null) return null;
+        return entityToModel(entity);
     }
 
     protected AuthenticationFlowEntity getFlowEntity(String id) {
@@ -1274,7 +1278,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void updateAuthenticationFlow(AuthenticationFlowModel model) {
-        List<AuthenticationFlowEntity> flows = getMongoEntity().getAuthenticationFlows();
         AuthenticationFlowEntity toUpdate = getFlowEntity(model.getId());;
         if (toUpdate == null) return;
         toUpdate.setAlias(model.getAlias());
@@ -1316,7 +1319,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         model.setPriority(entity.getPriority());
         model.setAuthenticator(entity.getAuthenticator());
         model.setParentFlow(entity.getParentFlow());
-        model.setAutheticatorFlow(entity.isAutheticatorFlow());
+        model.setAutheticatorFlow(entity.isAuthenticatorFlow());
         return model;
     }
 
@@ -1346,8 +1349,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
-        entity.setAutheticatorFlow(model.isAutheticatorFlow());
-        AuthenticationFlowEntity flow = getFlowEntity(model.getId());
+        entity.setAuthenticatorFlow(model.isAutheticatorFlow());
+        entity.setParentFlow(model.getParentFlow());
+        AuthenticationFlowEntity flow = getFlowEntity(model.getParentFlow());
         flow.getExecutions().add(entity);
         updateMongoEntity();
         model.setId(entity.getId());
@@ -1365,7 +1369,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             }
         }
         if (entity == null) return;
-        entity.setAutheticatorFlow(model.isAutheticatorFlow());
+        entity.setAuthenticatorFlow(model.isAutheticatorFlow());
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
@@ -1499,7 +1503,11 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
         getMongoEntity().getUserFederationMappers().add(entity);
         updateMongoEntity();
-        return entityToModel(entity);
+        UserFederationMapperModel mapperModel = entityToModel(entity);
+
+        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapperModel, this, session));
+
+        return mapperModel;
     }
 
     protected UserFederationMapperEntity getUserFederationMapperEntity(String id) {
@@ -1553,6 +1561,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             entity.getConfig().putAll(mapper.getConfig());
         }
         updateMongoEntity();
+
+        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapper, this, session));
     }
 
     @Override

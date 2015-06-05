@@ -8,14 +8,12 @@ import org.keycloak.models.AuthenticatorModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -122,18 +120,6 @@ public class RealmAdapter implements RealmModel {
     public void setRegistrationEmailAsUsername(boolean registrationEmailAsUsername) {
         getDelegateForUpdate();
         updated.setRegistrationEmailAsUsername(registrationEmailAsUsername);
-    }
-    
-    @Override
-    public boolean isPasswordCredentialGrantAllowed() {
-        if (updated != null) return updated.isPasswordCredentialGrantAllowed();
-        return cached.isPasswordCredentialGrantAllowed();
-    }
-
-    @Override
-    public void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed) {
-        getDelegateForUpdate();
-        updated.setPasswordCredentialGrantAllowed(passwordCredentialGrantAllowed);
     }
 
     @Override
@@ -254,6 +240,18 @@ public class RealmAdapter implements RealmModel {
     public void setResetPasswordAllowed(boolean resetPasswordAllowed) {
         getDelegateForUpdate();
         updated.setResetPasswordAllowed(resetPasswordAllowed);
+    }
+
+    @Override
+    public boolean isEditUsernameAllowed() {
+        if (updated != null) return updated.isEditUsernameAllowed();
+        return cached.isEditUsernameAllowed();
+    }
+
+    @Override
+    public void setEditUsernameAllowed(boolean editUsernameAllowed) {
+        getDelegateForUpdate();
+        updated.setEditUsernameAllowed(editUsernameAllowed);
     }
 
     @Override

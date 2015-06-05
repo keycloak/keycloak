@@ -34,7 +34,9 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.Urls;
+import org.keycloak.testsuite.MailUtil;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet.UserSessionStatus;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
@@ -42,6 +44,8 @@ import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
+import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.rule.GreenMailRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.By;
@@ -49,6 +53,9 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
+import javax.mail.MessagingException;
+import javax.mail.Multipart;
+import javax.mail.internet.MimeMessage;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.ClientRequestContext;
@@ -58,6 +65,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
@@ -91,6 +99,13 @@ public abstract class AbstractIdentityProviderTest {
     @WebResource
     private LoginUpdateProfilePage updateProfilePage;
 
+
+    @WebResource
+    protected VerifyEmailPage verifyEmailPage;
+
+    @Rule
+    public GreenMailRule greenMail = new GreenMailRule();
+
     @WebResource
     protected OAuthClient oauth;
 
@@ -123,17 +138,106 @@ public abstract class AbstractIdentityProviderTest {
     @Test
     public void testSuccessfulAuthentication() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_ON);
 
-        UserModel user = assertSuccessfulAuthentication(identityProviderModel, "test-user", "new@email.com");
+        UserModel user = assertSuccessfulAuthentication(identityProviderModel, "test-user", "new@email.com", true);
         Assert.assertEquals("617-666-7777", user.getAttribute("mobile"));
+    }
+
+    @Test
+    public void testSuccessfulAuthenticationUpdateProfileOnMissing_nothingMissing() {
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_MISSING);
+
+        assertSuccessfulAuthentication(identityProviderModel, "test-user", "test-user@localhost", false);
+    }
+
+    @Test
+    public void testSuccessfulAuthenticationUpdateProfileOnMissing_missingEmail() {
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_MISSING);
+
+        assertSuccessfulAuthentication(identityProviderModel, "test-user-noemail", "new@email.com", true);
     }
 
     @Test
     public void testSuccessfulAuthenticationWithoutUpdateProfile() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-        identityProviderModel.setUpdateProfileFirstLogin(false);
+        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
 
-        assertSuccessfulAuthentication(identityProviderModel, "test-user", "test-user@localhost");
+        assertSuccessfulAuthentication(identityProviderModel, "test-user", "test-user@localhost", false);
+    }
+
+    /**
+     * Test that verify email action is performed if email is provided and email trust is not enabled for the provider
+     * 
+     * @throws MessagingException
+     * @throws IOException
+     */
+    @Test
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_emailProvided_emailVerifyEnabled() throws IOException, MessagingException {
+        getRealm().setVerifyEmail(true);
+        brokerServerRule.stopSession(this.session, true);
+        this.session = brokerServerRule.startSession();
+
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        try {
+            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
+            identityProviderModel.setTrustEmail(false);
+
+            UserModel federatedUser = assertSuccessfulAuthenticationWithEmailVerification(identityProviderModel, "test-user", "test-user@localhost", false);
+
+            // email is verified now
+            assertFalse(federatedUser.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL.name()));
+
+        } finally {
+            getRealm().setVerifyEmail(false);
+        }
+    }
+
+    private UserModel assertSuccessfulAuthenticationWithEmailVerification(IdentityProviderModel identityProviderModel, String username, String expectedEmail,
+            boolean isProfileUpdateExpected)
+            throws IOException, MessagingException {
+        authenticateWithIdentityProvider(identityProviderModel, username, isProfileUpdateExpected);
+
+        // verify email is sent
+        Assert.assertTrue(verifyEmailPage.isCurrent());
+
+        // read email to take verification link from
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+        String verificationUrl = getVerificationEmailLink(message);
+
+        driver.navigate().to(verificationUrl.trim());
+
+        // authenticated and redirected to app
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
+
+        UserModel federatedUser = getFederatedUser();
+
+        assertNotNull(federatedUser);
+
+        doAssertFederatedUser(federatedUser, identityProviderModel, expectedEmail, isProfileUpdateExpected);
+
+        brokerServerRule.stopSession(session, true);
+        session = brokerServerRule.startSession();
+
+        RealmModel realm = getRealm();
+
+        Set<FederatedIdentityModel> federatedIdentities = this.session.users().getFederatedIdentities(federatedUser, realm);
+
+        assertEquals(1, federatedIdentities.size());
+
+        FederatedIdentityModel federatedIdentityModel = federatedIdentities.iterator().next();
+
+        assertEquals(getProviderId(), federatedIdentityModel.getIdentityProvider());
+        assertEquals(federatedUser.getUsername(), federatedIdentityModel.getIdentityProvider() + "." + federatedIdentityModel.getUserName());
+
+        driver.navigate().to("http://localhost:8081/test-app/logout");
+        driver.navigate().to("http://localhost:8081/test-app");
+
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
+        return federatedUser;
     }
 
     /**
@@ -147,13 +251,62 @@ public abstract class AbstractIdentityProviderTest {
 
         try {
             IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-            identityProviderModel.setUpdateProfileFirstLogin(false);
+            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
 
-            UserModel federatedUser = assertSuccessfulAuthentication(identityProviderModel, "test-user-noemail", null);
+            UserModel federatedUser = assertSuccessfulAuthentication(identityProviderModel, "test-user-noemail", null, false);
 
             assertTrue(federatedUser.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL.name()));
 
         } finally {
+            getRealm().setVerifyEmail(false);
+        }
+    }
+
+    /**
+     * Test for KEYCLOAK-1372 - verify email action is not performed if email is provided but email trust is enabled for the provider
+     */
+    @Test
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_emailProvided_emailVerifyEnabled_emailTrustEnabled() {
+        getRealm().setVerifyEmail(true);
+        brokerServerRule.stopSession(this.session, true);
+        this.session = brokerServerRule.startSession();
+
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        try {
+            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
+            identityProviderModel.setTrustEmail(true);
+
+            UserModel federatedUser = assertSuccessfulAuthentication(identityProviderModel, "test-user", "test-user@localhost", false);
+
+            assertFalse(federatedUser.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL.name()));
+
+        } finally {
+            identityProviderModel.setTrustEmail(false);
+            getRealm().setVerifyEmail(false);
+        }
+    }
+
+    /**
+     * Test for KEYCLOAK-1372 - verify email action is performed if email is provided and email trust is enabled for the provider, but email is changed on First login update profile page
+     * 
+     * @throws MessagingException
+     * @throws IOException
+     */
+    @Test
+    public void testSuccessfulAuthentication_emailTrustEnabled_emailVerifyEnabled_emailUpdatedOnFirstLogin() throws IOException, MessagingException {
+        getRealm().setVerifyEmail(true);
+        brokerServerRule.stopSession(this.session, true);
+        this.session = brokerServerRule.startSession();
+
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        try {
+            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_ON);
+            identityProviderModel.setTrustEmail(true);
+
+            UserModel user = assertSuccessfulAuthenticationWithEmailVerification(identityProviderModel, "test-user", "new@email.com", true);
+            Assert.assertEquals("617-666-7777", user.getAttribute("mobile"));
+        } finally {
+            identityProviderModel.setTrustEmail(false);
             getRealm().setVerifyEmail(false);
         }
     }
@@ -167,9 +320,9 @@ public abstract class AbstractIdentityProviderTest {
 
         try {
             IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-            identityProviderModel.setUpdateProfileFirstLogin(false);
+            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
 
-            authenticateWithIdentityProvider(identityProviderModel, "test-user");
+            authenticateWithIdentityProvider(identityProviderModel, "test-user", false);
 
             // authenticated and redirected to app
             assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
@@ -186,7 +339,7 @@ public abstract class AbstractIdentityProviderTest {
 
             assertEquals("test-user@localhost", federatedUser.getUsername());
 
-            doAssertFederatedUser(federatedUser, identityProviderModel, "test-user@localhost");
+            doAssertFederatedUser(federatedUser, identityProviderModel, "test-user@localhost", false);
 
             Set<FederatedIdentityModel> federatedIdentities = this.session.users().getFederatedIdentities(federatedUser, realm);
 
@@ -215,9 +368,9 @@ public abstract class AbstractIdentityProviderTest {
 
         try {
             IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-            identityProviderModel.setUpdateProfileFirstLogin(false);
+            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
 
-            authenticateWithIdentityProvider(identityProviderModel, "test-user-noemail");
+            authenticateWithIdentityProvider(identityProviderModel, "test-user-noemail", false);
 
             brokerServerRule.stopSession(session, true);
             session = brokerServerRule.startSession();
@@ -275,15 +428,10 @@ public abstract class AbstractIdentityProviderTest {
 
     @Test
     public void testProviderOnLoginPage() {
-        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-        RealmModel realm = getRealm();
-        ClientModel clientModel = realm.getClientByClientId("test-app");
-
         // Provider button is available on login page
         this.driver.navigate().to("http://localhost:8081/test-app/");
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
         loginPage.findSocialButton(getProviderId());
-
      }
 
     @Test
@@ -325,7 +473,7 @@ public abstract class AbstractIdentityProviderTest {
     public void testUserAlreadyExistsWhenNotUpdatingProfile() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
 
-        identityProviderModel.setUpdateProfileFirstLogin(false);
+        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
 
         this.driver.navigate().to("http://localhost:8081/test-app/");
 
@@ -390,7 +538,6 @@ public abstract class AbstractIdentityProviderTest {
         revokeGrant();
 
         // Logout from account management
-        String pageSource = driver.getPageSource();
         System.out.println("*** logout from account management");
         accountFederatedIdentityPage.logout();
         assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
@@ -400,7 +547,6 @@ public abstract class AbstractIdentityProviderTest {
         this.loginPage.clickSocial(identityProviderModel.getAlias());
         this.loginPage.login("test-user", "password");
         doAfterProviderAuthentication();
-        String current = driver.getCurrentUrl();
         this.updateProfilePage.assertCurrent();
     }
 
@@ -465,7 +611,7 @@ public abstract class AbstractIdentityProviderTest {
 
         identityProviderModel.setStoreToken(true);
 
-        authenticateWithIdentityProvider(identityProviderModel, "test-user");
+        authenticateWithIdentityProvider(identityProviderModel, "test-user", true);
 
         UserModel federatedUser = getFederatedUser();
         RealmModel realm = getRealm();
@@ -530,17 +676,18 @@ public abstract class AbstractIdentityProviderTest {
 
     protected abstract void doAssertTokenRetrieval(String pageSource);
 
-    private UserModel assertSuccessfulAuthentication(IdentityProviderModel identityProviderModel, String username, String expectedEmail) {
-        authenticateWithIdentityProvider(identityProviderModel, username);
+    private UserModel assertSuccessfulAuthentication(IdentityProviderModel identityProviderModel, String username, String expectedEmail, boolean isProfileUpdateExpected) {
+        authenticateWithIdentityProvider(identityProviderModel, username, isProfileUpdateExpected);
 
         // authenticated and redirected to app
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
+        assertTrue("Bad current URL " + this.driver.getCurrentUrl() + " and page source: " + this.driver.getPageSource(),
+                this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
 
         UserModel federatedUser = getFederatedUser();
 
         assertNotNull(federatedUser);
 
-        doAssertFederatedUser(federatedUser, identityProviderModel, expectedEmail);
+        doAssertFederatedUser(federatedUser, identityProviderModel, expectedEmail, isProfileUpdateExpected);
 
         brokerServerRule.stopSession(session, true);
         session = brokerServerRule.startSession();
@@ -563,11 +710,11 @@ public abstract class AbstractIdentityProviderTest {
         return federatedUser;
     }
 
-    private void authenticateWithIdentityProvider(IdentityProviderModel identityProviderModel, String username) {
+    private void authenticateWithIdentityProvider(IdentityProviderModel identityProviderModel, String username, boolean isProfileUpdateExpected) {
         loginIDP(username);
 
 
-        if (identityProviderModel.isUpdateProfileFirstLogin()) {
+        if (isProfileUpdateExpected) {
             String userEmail = "new@email.com";
             String userFirstName = "New first";
             String userLastName = "New last";
@@ -576,6 +723,7 @@ public abstract class AbstractIdentityProviderTest {
             this.updateProfilePage.assertCurrent();
             this.updateProfilePage.update(userFirstName, userLastName, userEmail);
         }
+
     }
 
     private void loginIDP(String username) {
@@ -621,7 +769,7 @@ public abstract class AbstractIdentityProviderTest {
 
         assertNotNull(identityProviderModel);
 
-        identityProviderModel.setUpdateProfileFirstLogin(true);
+        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_ON);
         identityProviderModel.setEnabled(true);
 
         return identityProviderModel;
@@ -631,8 +779,8 @@ public abstract class AbstractIdentityProviderTest {
         return this.session.realms().getRealm("realm-with-broker");
     }
 
-    protected void doAssertFederatedUser(UserModel federatedUser, IdentityProviderModel identityProviderModel, String expectedEmail) {
-        if (identityProviderModel.isUpdateProfileFirstLogin()) {
+    protected void doAssertFederatedUser(UserModel federatedUser, IdentityProviderModel identityProviderModel, String expectedEmail, boolean isProfileUpdateExpected) {
+        if (isProfileUpdateExpected) {
             String userFirstName = "New first";
             String userLastName = "New last";
 
@@ -676,5 +824,27 @@ public abstract class AbstractIdentityProviderTest {
                 this.session.users().removeUser(realm, user);
             }
         }
+    }
+    
+    private String getVerificationEmailLink(MimeMessage message) throws IOException, MessagingException {
+    	Multipart multipart = (Multipart) message.getContent();
+    	
+        final String textContentType = multipart.getBodyPart(0).getContentType();
+        
+        assertEquals("text/plain; charset=UTF-8", textContentType);
+        
+        final String textBody = (String) multipart.getBodyPart(0).getContent();
+        final String textVerificationUrl = MailUtil.getLink(textBody);
+    	
+        final String htmlContentType = multipart.getBodyPart(1).getContentType();
+        
+        assertEquals("text/html; charset=UTF-8", htmlContentType);
+        
+        final String htmlBody = (String) multipart.getBodyPart(1).getContent();
+        final String htmlVerificationUrl = MailUtil.getLink(htmlBody);
+        
+        assertEquals(htmlVerificationUrl, textVerificationUrl);
+
+        return htmlVerificationUrl;
     }
 }

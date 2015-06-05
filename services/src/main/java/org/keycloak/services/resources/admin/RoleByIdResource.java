@@ -170,46 +170,45 @@ public class RoleByIdResource extends RoleResource {
      * Return a set of client-level roles for a specific client that are in the role's composite
      *
      * @param id
-     * @param appName
+     * @param client
      * @return
      */
-    @Path("{role-id}/composites/clients/{app}")
+    @Path("{role-id}/composites/clients/{client}")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Set<RoleRepresentation> getClientRoleComposites(final @PathParam("role-id") String id,
-                                                                final @PathParam("app") String appName) {
+                                                                final @PathParam("client") String client) {
         RoleModel role = getRoleModel(id);
         auth.requireView();
-        ClientModel app = realm.getClientByClientId(appName);
-        if (app == null) {
-            throw new NotFoundException("Could not find client: " + appName);
-
+        ClientModel clientModel = realm.getClientById(client);
+        if (clientModel == null) {
+            throw new NotFoundException("Could not find client: " + client);
         }
-        return getClientRoleComposites(app, role);
+        return getClientRoleComposites(clientModel, role);
     }
 
     /**
      * Return a set of client-level roles for a specific client that are in the role's composite
      *
-     * @param id
-     * @param appId
+     * @param role
+     * @param client
      * @return
      */
-    @Path("{role-id}/composites/clients-by-id/{appId}")
+    @Path("{role}/composites/clients/{client}")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<RoleRepresentation> getClientByIdRoleComposites(final @PathParam("role-id") String id,
-                                                                final @PathParam("appId") String appId) {
-        RoleModel role = getRoleModel(id);
+    public Set<RoleRepresentation> getClientByIdRoleComposites(final @PathParam("role-id") String role,
+                                                                final @PathParam("client") String client) {
+        RoleModel roleModel = getRoleModel(role);
         auth.requireView();
-        ClientModel app = realm.getClientById(appId);
-        if (app == null) {
-            throw new NotFoundException("Could not find client: " + appId);
+        ClientModel clientModel = realm.getClientById(client);
+        if (clientModel == null) {
+            throw new NotFoundException("Could not find client: " + client);
 
         }
-        return getClientRoleComposites(app, role);
+        return getClientRoleComposites(clientModel, roleModel);
     }
 
     /**

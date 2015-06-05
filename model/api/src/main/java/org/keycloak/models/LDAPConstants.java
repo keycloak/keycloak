@@ -19,9 +19,14 @@ public class LDAPConstants {
 
     public static final String CONNECTION_URL = "connectionUrl";
     public static final String SECURITY_PROTOCOL = "securityProtocol";
-    public static final String USER_DNS = "userDns";
+    public static final String BASE_DN = "baseDn"; // used for tests only
+    public static final String USERS_DN = "usersDn";
     public static final String BIND_DN = "bindDn";
     public static final String BIND_CREDENTIAL = "bindCredential";
+
+    public static final String AUTH_TYPE = "authType";
+    public static final String AUTH_TYPE_NONE = "none";
+    public static final String AUTH_TYPE_SIMPLE = "simple";
 
     public static final String SEARCH_SCOPE = "searchScope";
     public static final String CONNECTION_POOLING = "connectionPooling";
@@ -47,7 +52,7 @@ public class LDAPConstants {
     public static final String CONFIG_DIVIDER = ":::";
 
     // Those are forked from Picketlink
-    public static final String GIVENNAME = "givenname";
+    public static final String GIVENNAME = "givenName";
     public static final String CN = "cn";
     public static final String SN = "sn";
     public static final String SAM_ACCOUNT_NAME = "sAMAccountName";
@@ -58,6 +63,7 @@ public class LDAPConstants {
     public static final String OBJECT_CLASS = "objectclass";
     public static final String UID = "uid";
     public static final String USER_PASSWORD_ATTRIBUTE = "userpassword";
+    public static final String GROUP = "group";
     public static final String GROUP_OF_NAMES = "groupOfNames";
     public static final String GROUP_OF_ENTRIES = "groupOfEntries";
     public static final String GROUP_OF_UNIQUE_NAMES = "groupOfUniqueNames";
@@ -65,12 +71,13 @@ public class LDAPConstants {
     public static final String COMMA = ",";
     public static final String EQUAL = "=";
     public static final String EMPTY_ATTRIBUTE_VALUE = " ";
+    public static final String EMPTY_MEMBER_ATTRIBUTE_VALUE = "";
 
     public static final String CUSTOM_ATTRIBUTE_ENABLED = "enabled";
     public static final String CUSTOM_ATTRIBUTE_CREATE_DATE = "createDate";
     public static final String CUSTOM_ATTRIBUTE_EXPIRY_DATE = "expiryDate";
     public static final String ENTRY_UUID = "entryUUID";
     public static final String OBJECT_GUID = "objectGUID";
-    public static final String CREATE_TIMESTAMP = "createTimeStamp";
-    public static final String MODIFY_TIMESTAMP = "modifyTimeStamp";
+    public static final String CREATE_TIMESTAMP = "createTimestamp";
+    public static final String MODIFY_TIMESTAMP = "modifyTimestamp";
 }

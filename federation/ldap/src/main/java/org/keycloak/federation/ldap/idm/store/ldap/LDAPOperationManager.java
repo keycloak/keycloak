@@ -451,8 +451,9 @@ public class LDAPOperationManager {
     private Map<String, Object> createConnectionProperties() {
         HashMap<String, Object> env = new HashMap<String, Object>();
 
+        String authType = this.config.getAuthType();
         env.put(Context.INITIAL_CONTEXT_FACTORY, this.config.getFactoryName());
-        env.put(Context.SECURITY_AUTHENTICATION, this.config.getAuthType());
+        env.put(Context.SECURITY_AUTHENTICATION, authType);
 
         String protocol = this.config.getSecurityProtocol();
 
@@ -468,7 +469,7 @@ public class LDAPOperationManager {
             bindCredential = this.config.getBindCredential().toCharArray();
         }
 
-        if (bindDN != null) {
+        if (!LDAPConstants.AUTH_TYPE_NONE.equals(authType)) {
             env.put(Context.SECURITY_PRINCIPAL, bindDN);
             env.put(Context.SECURITY_CREDENTIALS, bindCredential);
         }
@@ -512,7 +513,6 @@ public class LDAPOperationManager {
             context = createLdapContext();
             return operation.execute(context);
         } catch (NamingException ne) {
-            logger.error("Could not create Ldap context or operation execution error.", ne);
             throw ne;
         } finally {
             if (context != null) {

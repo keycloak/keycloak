@@ -154,19 +154,7 @@ public class AdminEventBuilder {
         sb.append("/");
         String realmRelative = sb.toString();
 
-        path = path.substring(path.indexOf(realmRelative) + realmRelative.length());
-
-        if (path.contains("clients-by-id")) {
-            path = path.replaceAll("clients-by-id", "clients");
-        } else if (path.contains("roles-by-id")) {
-            path = path.replaceAll("roles-by-id", "roles");
-        } else if (path.contains("role-mappings/realm")) {
-            path = path.replaceFirst("role-mappings/realm", "role-mappings");
-        } else if (path.contains("role-mappings/clients")) {
-            path = path.replaceFirst("role-mappings/clients", "role-mappings");
-        }
-
-        return path;
+        return path.substring(path.indexOf(realmRelative) + realmRelative.length());
     }
 
     public void error(String error) {
