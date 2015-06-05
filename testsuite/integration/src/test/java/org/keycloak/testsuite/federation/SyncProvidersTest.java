@@ -75,6 +75,11 @@ public class SyncProvidersTest {
             .outerRule(ldapRule)
             .around(keycloakRule);
 
+//    @Test
+//    public void test01runit() throws Exception {
+//        Thread.sleep(10000000);
+//    }
+
     @Test
     public void testLDAPSync() {
         UsersSyncManager usersSyncManager = new UsersSyncManager();

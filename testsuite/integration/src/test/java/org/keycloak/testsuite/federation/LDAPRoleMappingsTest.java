@@ -67,13 +67,13 @@ public class LDAPRoleMappingsTest {
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
             FederationTestUtils.removeAllLDAPUsers(ldapFedProvider, appRealm);
 
+            // Add sample application
+            ClientModel finance = appRealm.addClient("finance");
+
             // Delete all LDAP roles
             FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, RoleLDAPFederationMapper.Mode.LDAP_ONLY);
             FederationTestUtils.removeAllLDAPRoles(manager.getSession(), appRealm, ldapModel, "realmRolesMapper");
             FederationTestUtils.removeAllLDAPRoles(manager.getSession(), appRealm, ldapModel, "financeRolesMapper");
-
-            // Add sample application
-            ClientModel finance = appRealm.addClient("finance");
 
             // Add some users for testing
             LDAPObject john = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johnkeycloak", "John", "Doe", "john@email.org", "1234");
@@ -133,7 +133,12 @@ public class LDAPRoleMappingsTest {
             RoleModel realmRole2 = appRealm.getRole("realmRole2");
             mary.grantRole(realmRole2);
 
-            RoleModel realmRole3 = appRealm.addRole("realmRole3");
+            // This role may already exists from previous test (was imported from LDAP), but may not
+            RoleModel realmRole3 = appRealm.getRole("realmRole3");
+            if (realmRole3 == null) {
+                realmRole3 = appRealm.addRole("realmRole3");
+            }
+
             john.grantRole(realmRole3);
             mary.grantRole(realmRole3);
 
