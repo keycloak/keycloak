@@ -2,7 +2,7 @@
     <title>Recovering the Master Admin User</title>
     <para>
         It is possible for the "admin" user in the master realm to become inoperable.  This may be because it was
-        accentally deleted, its role mappings were removed, or the password was simply forgotten.
+        accidentally deleted, its role mappings were removed, or the password was simply forgotten.
     </para>
     <para>
         To recover the master admin user, just start the server with the following system property:
