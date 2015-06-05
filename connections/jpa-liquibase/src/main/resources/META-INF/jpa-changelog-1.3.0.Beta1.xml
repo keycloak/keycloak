@@ -28,7 +28,7 @@
             </column>
             <column name="ALIAS" type="VARCHAR(255)"/>
             <column name="REALM_ID" type="VARCHAR(36)"/>
-            <column name="PROVIDER_ID" type="VARCHAR(36)"/>
+            <column name="PROVIDER_ID" type="VARCHAR(255)"/>
         </createTable>
         <createTable tableName="AUTHENTICATION_FLOW">
             <column name="ID" type="VARCHAR(36)">

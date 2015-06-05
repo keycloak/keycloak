@@ -116,7 +116,7 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
                             UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
                     realm.addUserFederationMapper(mapperModel);
 
-                    mapperModel = KeycloakModelUtils.createUserFederationMapperModel("username2", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
+                    mapperModel = KeycloakModelUtils.createUserFederationMapperModel("username-cn", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
                             UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, UserModel.USERNAME,
                             UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, LDAPConstants.CN,
                             UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
