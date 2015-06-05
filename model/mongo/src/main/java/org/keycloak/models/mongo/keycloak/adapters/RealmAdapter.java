@@ -1236,7 +1236,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {
         List<AuthenticationFlowEntity> flows = getMongoEntity().getAuthenticationFlows();
-        if (flows.size() == 0) return Collections.EMPTY_LIST;
         List<AuthenticationFlowModel> models = new LinkedList<>();
         for (AuthenticationFlowEntity entity : flows) {
             AuthenticationFlowModel model = entityToModel(entity);
@@ -1255,10 +1254,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public AuthenticationFlowModel getAuthenticationFlowById(String id) {
-        for (AuthenticationFlowModel model : getAuthenticationFlows()) {
-            if (model.getId().equals(id)) return model;
-        }
-        return null;
+        AuthenticationFlowEntity entity = getFlowEntity(id);
+        if (entity == null) return null;
+        return entityToModel(entity);
     }
 
     protected AuthenticationFlowEntity getFlowEntity(String id) {
@@ -1280,7 +1278,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void updateAuthenticationFlow(AuthenticationFlowModel model) {
-        List<AuthenticationFlowEntity> flows = getMongoEntity().getAuthenticationFlows();
         AuthenticationFlowEntity toUpdate = getFlowEntity(model.getId());;
         if (toUpdate == null) return;
         toUpdate.setAlias(model.getAlias());
@@ -1322,7 +1319,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         model.setPriority(entity.getPriority());
         model.setAuthenticator(entity.getAuthenticator());
         model.setParentFlow(entity.getParentFlow());
-        model.setAutheticatorFlow(entity.isAutheticatorFlow());
+        model.setAutheticatorFlow(entity.isAuthenticatorFlow());
         return model;
     }
 
@@ -1352,8 +1349,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
-        entity.setAutheticatorFlow(model.isAutheticatorFlow());
-        AuthenticationFlowEntity flow = getFlowEntity(model.getId());
+        entity.setAuthenticatorFlow(model.isAutheticatorFlow());
+        entity.setParentFlow(model.getParentFlow());
+        AuthenticationFlowEntity flow = getFlowEntity(model.getParentFlow());
         flow.getExecutions().add(entity);
         updateMongoEntity();
         model.setId(entity.getId());
@@ -1371,7 +1369,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             }
         }
         if (entity == null) return;
-        entity.setAutheticatorFlow(model.isAutheticatorFlow());
+        entity.setAuthenticatorFlow(model.isAutheticatorFlow());
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());

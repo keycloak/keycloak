@@ -76,13 +76,17 @@ public class MongoAdminEventQuery implements AdminEventQuery{
 
     @Override
     public AdminEventQuery fromTime(Date fromTime) {
-        query.put("time", BasicDBObjectBuilder.start("$gte", fromTime.getTime()).get());
+        BasicDBObject time = query.containsField("time") ? (BasicDBObject) query.get("time") : new BasicDBObject();
+        time.append("$gte", fromTime.getTime());
+        query.put("time", time);
         return this;
     }
 
     @Override
     public AdminEventQuery toTime(Date toTime) {
-        query.put("time", BasicDBObjectBuilder.start("$lte", toTime.getTime()).get());
+        BasicDBObject time = query.containsField("time") ? (BasicDBObject) query.get("time") : new BasicDBObject();
+        time.append("$lte", toTime.getTime());
+        query.put("time", time);
         return this;
     }
 

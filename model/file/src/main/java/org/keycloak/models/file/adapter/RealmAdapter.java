@@ -1287,7 +1287,7 @@ public class RealmAdapter implements RealmModel {
         model.setPriority(entity.getPriority());
         model.setAuthenticator(entity.getAuthenticator());
         model.setParentFlow(entity.getParentFlow());
-        model.setAutheticatorFlow(entity.isAutheticatorFlow());
+        model.setAutheticatorFlow(entity.isAuthenticatorFlow());
         return model;
     }
 
@@ -1317,7 +1317,7 @@ public class RealmAdapter implements RealmModel {
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
-        entity.setAutheticatorFlow(model.isAutheticatorFlow());
+        entity.setAuthenticatorFlow(model.isAutheticatorFlow());
         AuthenticationFlowEntity flow = getFlowEntity(model.getId());
         flow.getExecutions().add(entity);
         model.setId(entity.getId());
@@ -1335,7 +1335,7 @@ public class RealmAdapter implements RealmModel {
             }
         }
         if (entity == null) return;
-        entity.setAutheticatorFlow(model.isAutheticatorFlow());
+        entity.setAuthenticatorFlow(model.isAutheticatorFlow());
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
