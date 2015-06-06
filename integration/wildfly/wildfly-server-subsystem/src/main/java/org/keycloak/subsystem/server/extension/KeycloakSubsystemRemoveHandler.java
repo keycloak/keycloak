@@ -14,18 +14,16 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+package org.keycloak.subsystem.server.extension;
 
-package org.keycloak.subsystem.server.extension.authserver;
-
-import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.dmr.ModelNode;
-import org.keycloak.subsystem.server.extension.KeycloakAdapterConfigService;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
@@ -36,25 +34,25 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
-public final class AuthServerRemoveHandler extends AbstractRemoveStepHandler {
+public final class KeycloakSubsystemRemoveHandler extends ReloadRequiredRemoveStepHandler {
 
-    public static AuthServerRemoveHandler INSTANCE = new AuthServerRemoveHandler();
+    static KeycloakSubsystemRemoveHandler INSTANCE = new KeycloakSubsystemRemoveHandler();
 
-    private AuthServerRemoveHandler() {}
+    private KeycloakSubsystemRemoveHandler() {}
 
     @Override
     protected void performRemove(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        String deploymentName = AuthServerUtil.getDeploymentName(operation);
-        KeycloakAdapterConfigService.getInstance().removeServerDeployment(deploymentName);
+        String deploymentName = ServerUtil.getDeploymentName(operation);
+        KeycloakAdapterConfigService.INSTANCE.setWebContext(null);
 
         if (requiresRuntime(context)) { // don't do this on a domain controller
-            addStepToRemoveAuthServer(context, deploymentName);
+            addStepToRemoveServerWar(context, deploymentName);
         }
 
         super.performRemove(context, operation, model);
     }
 
-    private void addStepToRemoveAuthServer(OperationContext context, String deploymentName) {
+    private void addStepToRemoveServerWar(OperationContext context, String deploymentName) {
         PathAddress deploymentAddress = PathAddress.pathAddress(PathElement.pathElement(DEPLOYMENT, deploymentName));
         ModelNode op = Util.createOperation(REMOVE, deploymentAddress);
         context.addStep(op, getRemoveHandler(context, deploymentAddress), OperationContext.Stage.MODEL);

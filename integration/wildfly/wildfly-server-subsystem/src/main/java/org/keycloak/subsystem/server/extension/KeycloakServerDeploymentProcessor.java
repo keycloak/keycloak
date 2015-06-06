@@ -14,14 +14,13 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.keycloak.subsystem.server.extension.authserver;
+package org.keycloak.subsystem.server.extension;
 
 import org.jboss.as.ee.component.EEModuleDescription;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
-import org.keycloak.subsystem.server.extension.KeycloakAdapterConfigService;
 
 /**
  * DUP responsible for setting the web context of a Keycloak auth server.
@@ -33,22 +32,22 @@ public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcesso
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
+        KeycloakAdapterConfigService config = KeycloakAdapterConfigService.INSTANCE;
         String deploymentName = deploymentUnit.getName();
-        KeycloakAdapterConfigService service = KeycloakAdapterConfigService.getInstance();
-        if (!service.isKeycloakServerDeployment(deploymentName)) {
+
+        if (!config.isKeycloakServerDeployment(deploymentName)) {
             return;
         }
 
         final EEModuleDescription description = deploymentUnit.getAttachment(org.jboss.as.ee.component.Attachments.EE_MODULE_DESCRIPTION);
-        String webContext = service.getWebContext(deploymentName);
+        String webContext = config.getWebContext();
         if (webContext == null) {
-            throw new DeploymentUnitProcessingException("Can't determine web context/module for Keycloak Auth Server");
+            throw new DeploymentUnitProcessingException("Can't determine web context/module for Keycloak Server");
         }
         description.setModuleName(webContext);
     }
 
     @Override
     public void undeploy(DeploymentUnit du) {
-
     }
 }

@@ -126,7 +126,7 @@
                                     <version>${project.version}</version>
                                     <type>war</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/base/org/keycloak/keycloak-server-subsystem/main/auth-server</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/base/org/keycloak/keycloak-server-subsystem/main/server-war</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
