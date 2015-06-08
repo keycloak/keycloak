@@ -181,8 +181,8 @@ public class LDAPIdentityStore implements IdentityStore {
     public boolean validatePassword(LDAPObject user, String password) {
         String userDN = user.getDn().toString();
 
-        if (logger.isDebugEnabled()) {
-            logger.debugf("Using DN [%s] for authentication of user", userDN);
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Using DN [%s] for authentication of user", userDN);
         }
 
         if (operationManager.authenticate(userDN, password)) {
@@ -259,7 +259,9 @@ public class LDAPIdentityStore implements IdentityStore {
         filter.append(getObjectClassesFilter(identityQuery.getObjectClasses()));
         filter.append(")");
 
-        logger.infof("Using filter for LDAP search: %s", filter);
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Using filter for LDAP search: %s . Searching in DN: %s", filter, identityQuery.getSearchDn());
+        }
         return filter;
     }
 
@@ -378,10 +380,6 @@ public class LDAPIdentityStore implements IdentityStore {
             ldapObject.setDn(dn);
             ldapObject.setRdnAttributeName(dn.getFirstRdnAttrName());
 
-            if (logger.isTraceEnabled()) {
-                logger.tracef("Populating LDAP Object from DN [%s]", entryDN);
-            }
-
             NamingEnumeration<? extends Attribute> ldapAttributes = attributes.getAll();
 
             // Exact name of attributes might be different
@@ -415,9 +413,6 @@ public class LDAPIdentityStore implements IdentityStore {
                     if (ldapAttributeName.equalsIgnoreCase(LDAPConstants.OBJECT_CLASS)) {
                         ldapObject.setObjectClasses(attrValues);
                     } else {
-                        if (logger.isTraceEnabled()) {
-                            logger.tracef("Populating ldap attribute [%s] with value [%s] for DN [%s].", ldapAttributeName, attrValues.toString(), entryDN);
-                        }
                         if (attrValues.size() == 1) {
                             ldapObject.setAttribute(ldapAttributeName, attrValues.iterator().next());
                         } else {
@@ -431,6 +426,9 @@ public class LDAPIdentityStore implements IdentityStore {
                 }
             }
 
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Found ldap object [%s] and populated with the attributes [%s]. Read-only attributes are [%s]", ldapObject.getDn().toString(), ldapObject.getAttributes(), ldapObject.getReadOnlyAttributeNames());
+            }
             return ldapObject;
 
         } catch (Exception e) {
