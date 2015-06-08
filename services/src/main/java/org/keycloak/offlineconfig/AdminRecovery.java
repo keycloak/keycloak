@@ -36,6 +36,7 @@ public class AdminRecovery {
     private static final Logger log = Logger.getLogger(AdminRecovery.class);
 
     public static final String RECOVER_ADMIN_ACCOUNT = "keycloak.recover-admin";
+    public static final String TEMP_ADMIN_PASSWORD = "keycloak.temp-admin-password";
 
     // Don't allow instances
     private AdminRecovery() {}
@@ -47,14 +48,15 @@ public class AdminRecovery {
 
         session.getTransaction().begin();
         try {
-            doRecover(session);
+            doRecover(session, getTempAdminPassword());
             session.getTransaction().commit();
             log.info("*******************************");
             log.info("Recovered Master Admin account.");
             log.info("*******************************");
         } finally {
             session.close();
-            System.setProperty(AdminRecovery.RECOVER_ADMIN_ACCOUNT, "false");
+            System.clearProperty(RECOVER_ADMIN_ACCOUNT);
+            System.clearProperty(TEMP_ADMIN_PASSWORD);
         }
     }
 
@@ -63,7 +65,15 @@ public class AdminRecovery {
         return Boolean.parseBoolean(strNeedRecovery);
     }
 
-    private static void doRecover(KeycloakSession session) {
+    private static String getTempAdminPassword() {
+        String tempAdminPassword = System.getProperty(TEMP_ADMIN_PASSWORD);
+        if ((tempAdminPassword == null) || tempAdminPassword.isEmpty()) {
+            throw new OfflineConfigException("Must provide temporary admin password to recover admin account.");
+        }
+        return tempAdminPassword;
+    }
+
+    private static void doRecover(KeycloakSession session, String tempAdminPassword) {
         RealmProvider realmProvider = session.realms();
         UserProvider userProvider = session.users();
 
@@ -75,6 +85,6 @@ public class AdminRecovery {
             adminUser = userProvider.addUser(realm, "admin");
         }
 
-        ApplianceBootstrap.setupAdminUser(session, realm, adminUser);
+        ApplianceBootstrap.setupAdminUser(session, realm, adminUser, tempAdminPassword);
     }
 }

@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.offlineconfig;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -27,6 +28,7 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.offlineconfig.AdminRecovery;
+import org.keycloak.offlineconfig.OfflineConfigException;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebRule;
 
@@ -41,6 +43,13 @@ public class AdminRecoveryTest {
 
     @Rule
     public WebRule webRule = new WebRule(this);
+
+    // Verifies that system properties were cleared at the end of recovery
+    @After
+    public void verifySysPropsCleared() {
+        Assert.assertNull(System.getProperty(AdminRecovery.RECOVER_ADMIN_ACCOUNT));
+        Assert.assertNull(System.getProperty(AdminRecovery.TEMP_ADMIN_PASSWORD));
+    }
 
     @Test
     public void testAdminDeletedRecovery() {
@@ -78,8 +87,16 @@ public class AdminRecoveryTest {
         Assert.assertNotEquals("forgotten-password", getAdminPassword());
     }
 
+    @Test(expected = OfflineConfigException.class)
+    public void testAdminRecoveryWithoutPassword() {
+        KeycloakSession session = keycloakRule.startSession();
+        System.setProperty(AdminRecovery.RECOVER_ADMIN_ACCOUNT, "true");
+        AdminRecovery.recover(session.getKeycloakSessionFactory());
+    }
+
     private void doAdminRecovery(KeycloakSession session) {
         System.setProperty(AdminRecovery.RECOVER_ADMIN_ACCOUNT, "true");
+        System.setProperty(AdminRecovery.TEMP_ADMIN_PASSWORD, "foo");
         AdminRecovery.recover(session.getKeycloakSessionFactory());
     }
 
