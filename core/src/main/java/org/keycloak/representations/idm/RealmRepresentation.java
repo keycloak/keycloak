@@ -266,6 +266,10 @@ public class RealmRepresentation {
         this.codeSecret = codeSecret;
     }
 
+    public Boolean isPasswordCredentialGrantAllowed() {
+        return passwordCredentialGrantAllowed;
+    }
+
     public Boolean isRegistrationAllowed() {
         return registrationAllowed;
     }
