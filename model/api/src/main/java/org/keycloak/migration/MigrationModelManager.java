@@ -17,11 +17,13 @@ public class MigrationModelManager {
         String storedVersion = model.getStoredVersion();
         if (MigrationModel.LATEST_VERSION.equals(storedVersion)) return;
         ModelVersion stored = null;
-        if (storedVersion != null) new ModelVersion(storedVersion);
+        if (storedVersion != null) {
+            stored = new ModelVersion(storedVersion);
+        }
 
         if (stored == null || stored.lessThan(MigrationTo1_2_0_CR1.VERSION)) {
             if (stored != null) {
-                logger.debug("Migrating older model to 1.2.0.RC1 updates");
+                logger.debug("Migrating older model to 1.2.0.CR1 updates");
             }
             new MigrationTo1_2_0_CR1().migrate(session);
         }
