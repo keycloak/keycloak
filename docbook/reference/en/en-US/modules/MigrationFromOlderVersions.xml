@@ -89,6 +89,19 @@
                     option to enable/disable for a realm is removed.
                 </para>
             </simplesect>
+            <simplesect>
+                <title>Database changed</title>
+                <para>
+                    There are again few database changes. Remember to backup your database prior to upgrading.
+                </para>
+            </simplesect>
+            <simplesect>
+                <title>UserFederationProvider changed</title>
+                <para>
+                    There are few minor changes in UserFederationProvider interface. You may need to sync your implementation when upgrade
+                    to newer version and upgrade few methods, which has changed signature. Changes are really minor, but were needed to improve performance of federation.
+                </para>
+            </simplesect>
         </section>
         <section>
             <title>Migrating from 1.2.0.Beta1 to 1.2.0.RC1</title>
