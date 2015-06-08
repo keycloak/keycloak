@@ -5,6 +5,8 @@ package org.keycloak.models;
  */
 public class LDAPConstants {
 
+    public static final String LDAP_PROVIDER = "ldap";
+
     public static final String VENDOR = "vendor";
     public static final String VENDOR_RHDS = "rhds";
     public static final String VENDOR_ACTIVE_DIRECTORY = "ad";
@@ -80,4 +82,21 @@ public class LDAPConstants {
     public static final String OBJECT_GUID = "objectGUID";
     public static final String CREATE_TIMESTAMP = "createTimestamp";
     public static final String MODIFY_TIMESTAMP = "modifyTimestamp";
+
+    public static String getUuidAttributeName(String vendor) {
+        if (vendor != null) {
+            switch (vendor) {
+                case VENDOR_RHDS:
+                    return "nsuniqueid";
+                case VENDOR_TIVOLI:
+                    return "uniqueidentifier";
+                case VENDOR_NOVELL_EDIRECTORY:
+                    return "guid";
+                case VENDOR_ACTIVE_DIRECTORY:
+                    return OBJECT_GUID;
+            }
+        }
+
+        return ENTRY_UUID;
+    }
 }

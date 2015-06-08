@@ -41,7 +41,7 @@ import java.util.Set;
  */
 public class LDAPFederationProviderFactory extends UserFederationEventAwareProviderFactory {
     private static final Logger logger = Logger.getLogger(LDAPFederationProviderFactory.class);
-    public static final String PROVIDER_NAME = "ldap";
+    public static final String PROVIDER_NAME = LDAPConstants.LDAP_PROVIDER;
 
     private LDAPIdentityStoreRegistry ldapStoreRegistry;
 
@@ -79,7 +79,7 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
 
     // Best effort to create appropriate mappers according to our LDAP config
     @Override
-    protected void onProviderModelCreated(RealmModel realm, UserFederationProviderModel newProviderModel) {
+    public void onProviderModelCreated(RealmModel realm, UserFederationProviderModel newProviderModel) {
         LDAPConfig ldapConfig = new LDAPConfig(newProviderModel.getConfig());
 
         boolean activeDirectory = ldapConfig.isActiveDirectory();

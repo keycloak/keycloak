@@ -48,7 +48,14 @@ public class LDAPConfig {
     }
 
     public String getUsersDn() {
-        return config.get(LDAPConstants.USERS_DN);
+        String usersDn = config.get(LDAPConstants.USERS_DN);
+
+        if (usersDn == null) {
+            // Just for the backwards compatibility 1.2 -> 1.3 . Should be removed later.
+            usersDn = config.get("userDnSuffix");
+        }
+
+        return usersDn;
     }
 
     public Collection<String> getUserObjectClasses() {
@@ -101,31 +108,13 @@ public class LDAPConfig {
         if (uuidAttrName == null) {
             // Differences of unique attribute among various vendors
             String vendor = getVendor();
-            if (vendor != null) {
-                switch (vendor) {
-                    case LDAPConstants.VENDOR_RHDS:
-                        uuidAttrName = "nsuniqueid";
-                        break;
-                    case LDAPConstants.VENDOR_TIVOLI:
-                        uuidAttrName = "uniqueidentifier";
-                        break;
-                    case LDAPConstants.VENDOR_NOVELL_EDIRECTORY:
-                        uuidAttrName = "guid";
-                        break;
-                    case LDAPConstants.VENDOR_ACTIVE_DIRECTORY:
-                        uuidAttrName = LDAPConstants.OBJECT_GUID;
-                }
-            }
-
-            if (uuidAttrName == null) {
-                uuidAttrName = LDAPConstants.ENTRY_UUID;
-            }
+            uuidAttrName = LDAPConstants.getUuidAttributeName(vendor);
         }
 
         return uuidAttrName;
     }
 
-    // TODO: Remove and use mapper instead
+    // TODO: Remove and use mapper instead?
     public boolean isUserAccountControlsAfterPasswordUpdate() {
         String userAccountCtrls = config.get(LDAPConstants.USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE);
         return userAccountCtrls==null ? false : Boolean.parseBoolean(userAccountCtrls);
@@ -148,6 +137,12 @@ public class LDAPConfig {
         String rdn = config.get(LDAPConstants.RDN_LDAP_ATTRIBUTE);
         if (rdn == null) {
             rdn = getUsernameLdapAttribute();
+
+            if (rdn.equalsIgnoreCase(LDAPConstants.SAM_ACCOUNT_NAME)) {
+                // Just for the backwards compatibility 1.2 -> 1.3 . Should be removed later.
+                rdn = LDAPConstants.CN;
+            }
+
         }
         return rdn;
     }
