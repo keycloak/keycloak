@@ -44,11 +44,12 @@ public interface UserFederationProvider extends Provider {
 
     /**
      * Gives the provider an option to validate if user still exists in federation backend and then proxy UserModel loaded from local storage.
-     * This method is called whenever a UserModel is pulled from local storage.
+     * This method is called whenever a UserModel is pulled from Keycloak local storage.
      * For example, the LDAP provider proxies the UserModel and does on-demand synchronization with
      * LDAP whenever UserModel update methods are invoked.  It also overrides UserModel.updateCredential for the
      * credential types it supports
      *
+     * @param realm
      * @param local
      * @return null if user is no longer valid or proxy object otherwise
      */
@@ -122,6 +123,7 @@ public interface UserFederationProvider extends Provider {
      * Is the Keycloak UserModel still valid and/or existing in federated storage?  Keycloak may call this method
      * in various user operations.  The local storage may be deleted if this method returns false.
      *
+     * @param realm
      * @param local
      * @return
      */
