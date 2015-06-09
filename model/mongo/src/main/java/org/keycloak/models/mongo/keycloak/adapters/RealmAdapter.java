@@ -877,16 +877,19 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             if (entity.getId().equals(provider.getId())) {
                 session.users().preRemove(this, new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
                         entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
-
-                Set<UserFederationMapperEntity> mappers = getUserFederationMapperEntitiesByFederationProvider(provider.getId());
-                for (UserFederationMapperEntity mapper : mappers) {
-                    getMongoEntity().getUserFederationMappers().remove(mapper);
-                }
+                removeFederationMappersForProvider(provider.getId());
 
                 it.remove();
             }
         }
         updateRealm();
+    }
+
+    private void removeFederationMappersForProvider(String federationProviderId) {
+        Set<UserFederationMapperEntity> mappers = getUserFederationMapperEntitiesByFederationProvider(federationProviderId);
+        for (UserFederationMapperEntity mapper : mappers) {
+            getMongoEntity().getUserFederationMappers().remove(mapper);
+        }
     }
 
     @Override
@@ -943,8 +946,52 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             KeycloakModelUtils.ensureUniqueDisplayName(currentProvider.getDisplayName(), currentProvider, providers);
         }
 
-        List<UserFederationProviderEntity> entities = new LinkedList<UserFederationProviderEntity>();
+        List<UserFederationProviderEntity> existingProviders = realm.getUserFederationProviders();
+        List<UserFederationProviderEntity> toRemove = new LinkedList<>();
+        for (UserFederationProviderEntity entity : existingProviders) {
+            boolean found = false;
+            for (UserFederationProviderModel model : providers) {
+                if (entity.getId().equals(model.getId())) {
+                    entity.setConfig(model.getConfig());
+                    entity.setPriority(model.getPriority());
+                    entity.setProviderName(model.getProviderName());
+                    String displayName = model.getDisplayName();
+                    if (displayName != null) {
+                        entity.setDisplayName(displayName);
+                    }
+                    entity.setFullSyncPeriod(model.getFullSyncPeriod());
+                    entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
+                    entity.setLastSync(model.getLastSync());
+                    found = true;
+                    break;
+                }
+
+            }
+            if (found) continue;
+            session.users().preRemove(this, new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
+                    entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
+            removeFederationMappersForProvider(entity.getId());
+
+            toRemove.add(entity);
+        }
+
+        for (UserFederationProviderEntity entity : toRemove) {
+            realm.getUserFederationProviders().remove(entity);
+        }
+
+        List<UserFederationProviderModel> add = new LinkedList<UserFederationProviderModel>();
         for (UserFederationProviderModel model : providers) {
+            boolean found = false;
+            for (UserFederationProviderEntity entity : realm.getUserFederationProviders()) {
+                if (entity.getId().equals(model.getId())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) add.add(model);
+        }
+
+        for (UserFederationProviderModel model : add) {
             UserFederationProviderEntity entity = new UserFederationProviderEntity();
             if (model.getId() != null) {
                 entity.setId(model.getId());
@@ -964,12 +1011,11 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             entity.setFullSyncPeriod(model.getFullSyncPeriod());
             entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
             entity.setLastSync(model.getLastSync());
-            entities.add(entity);
+            realm.getUserFederationProviders().add(entity);
 
             session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, model));
         }
 
-        realm.setUserFederationProviders(entities);
         updateRealm();
     }
 

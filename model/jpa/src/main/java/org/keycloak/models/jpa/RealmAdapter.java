@@ -804,18 +804,23 @@ public class RealmAdapter implements RealmModel {
             if (entity.getId().equals(provider.getId())) {
 
                 session.users().preRemove(this, provider);
+                removeFederationMappersForProvider(provider.getId());
 
-                Set<UserFederationMapperEntity> mappers = getUserFederationMapperEntitiesByFederationProvider(provider.getId());
-                for (UserFederationMapperEntity mapper : mappers) {
-                    realm.getUserFederationMappers().remove(mapper);
-                    em.remove(mapper);
-                }
                 it.remove();
                 em.remove(entity);
                 return;
             }
         }
     }
+
+    private void removeFederationMappersForProvider(String federationProviderId) {
+        Set<UserFederationMapperEntity> mappers = getUserFederationMapperEntitiesByFederationProvider(federationProviderId);
+        for (UserFederationMapperEntity mapper : mappers) {
+            realm.getUserFederationMappers().remove(mapper);
+            em.remove(mapper);
+        }
+    }
+
     @Override
     public void updateUserFederationProvider(UserFederationProviderModel model) {
         KeycloakModelUtils.ensureUniqueDisplayName(model.getDisplayName(), model, getUserFederationProviders());
@@ -855,10 +860,9 @@ public class RealmAdapter implements RealmModel {
                     entity.setConfig(model.getConfig());
                     entity.setPriority(model.getPriority());
                     entity.setProviderName(model.getProviderName());
-                    entity.setPriority(model.getPriority());
                     String displayName = model.getDisplayName();
                     if (displayName != null) {
-                        entity.setDisplayName(model.getDisplayName());
+                        entity.setDisplayName(displayName);
                     }
                     entity.setFullSyncPeriod(model.getFullSyncPeriod());
                     entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
@@ -871,6 +875,8 @@ public class RealmAdapter implements RealmModel {
             if (found) continue;
             session.users().preRemove(this, new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
                     entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
+            removeFederationMappersForProvider(entity.getId());
+
             it.remove();
             em.remove(entity);
         }
