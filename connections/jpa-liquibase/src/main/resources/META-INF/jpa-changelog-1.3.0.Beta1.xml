@@ -112,13 +112,13 @@
         </addColumn>
         <addColumn tableName="IDENTITY_PROVIDER">
             <column name="TRUST_EMAIL" type="BOOLEAN" defaultValueBoolean="false"/>
-            <column name="UPDATE_PROFILE_FIRST_LOGIN_MODE" type="VARCHAR(10)" defaultValue="on">
+            <column name="UPDATE_PROFILE_FIRST_LGN_MD" type="VARCHAR(10)" defaultValue="on">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
-        <!-- migrate value from UPDATE_PROFILE_FIRST_LOGIN to UPDATE_PROFILE_FIRST_LOGIN_MODE then drop it -->
+        <!-- migrate value from UPDATE_PROFILE_FIRST_LOGIN to UPDATE_PROFILE_FIRST_LGN_MD then drop it -->
         <update tableName="IDENTITY_PROVIDER">
-            <column name="UPDATE_PROFILE_FIRST_LOGIN_MODE" value="off"/>
+            <column name="UPDATE_PROFILE_FIRST_LGN_MD" value="off"/>
             <where>UPDATE_PROFILE_FIRST_LOGIN = false</where>
         </update>
         <dropColumn tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LOGIN"/>

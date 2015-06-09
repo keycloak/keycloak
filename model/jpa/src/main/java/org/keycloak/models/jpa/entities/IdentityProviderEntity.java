@@ -41,7 +41,7 @@ public class IdentityProviderEntity {
     @Column(name="ENABLED")
     private boolean enabled;
 
-    @Column(name = "UPDATE_PROFILE_FIRST_LOGIN_MODE")
+    @Column(name = "UPDATE_PROFILE_FIRST_LGN_MD")
     private String updateProfileFirstLoginMode;
 
     @Column(name = "TRUST_EMAIL")
