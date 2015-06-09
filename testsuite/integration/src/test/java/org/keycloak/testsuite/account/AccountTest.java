@@ -242,7 +242,9 @@ public class AccountTest {
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().session((String) null).error("invalid_user_credentials").assertEvent();
+        events.expectLogin().session((String) null).error("invalid_user_credentials")
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "new-password");

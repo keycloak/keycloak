@@ -316,7 +316,7 @@ public class LoginActionsService {
             return ErrorPage.error(session, Messages.UNKNOWN_LOGIN_REQUESTER);
         }
         if (!client.isEnabled()) {
-            event.error(Errors.CLIENT_NOT_FOUND);
+            event.error(Errors.CLIENT_DISABLED);
             return ErrorPage.error(session, Messages.LOGIN_REQUESTER_NOT_ENABLED);
         }
 
@@ -443,7 +443,7 @@ public class LoginActionsService {
             return ErrorPage.error(session, Messages.UNKNOWN_LOGIN_REQUESTER);
         }
         if (!client.isEnabled()) {
-            event.error(Errors.CLIENT_NOT_FOUND);
+            event.error(Errors.CLIENT_DISABLED);
             return ErrorPage.error(session, Messages.LOGIN_REQUESTER_NOT_ENABLED);
         }
 
@@ -741,6 +741,7 @@ public class LoginActionsService {
         }
         user.updateConsent(grantedConsent);
 
+        event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
         event.success();
 
         return authManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, clientConnection);

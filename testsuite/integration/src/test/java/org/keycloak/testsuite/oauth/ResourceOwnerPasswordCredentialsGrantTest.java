@@ -93,6 +93,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .detail(Details.USERNAME, login)
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
                 .assertEvent();
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
@@ -128,6 +129,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
                 .assertEvent();
 
         HttpResponse logoutResponse = oauth.doLogout(response.getRefreshToken(), "secret");
@@ -180,6 +182,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .detail(Details.RESPONSE_TYPE, "token")
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
                 .error(Errors.INVALID_USER_CREDENTIALS)
                 .assertEvent();
     }
@@ -203,6 +206,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .detail(Details.USERNAME, "invalid")
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
                 .error(Errors.INVALID_USER_CREDENTIALS)
                 .assertEvent();
     }
