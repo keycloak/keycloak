@@ -465,7 +465,6 @@ public class AuthenticationManager {
         }
 
         if (client.isConsentRequired()) {
-            accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT);
 
             UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
 
@@ -496,11 +495,18 @@ public class AuthenticationManager {
 
             // Skip grant screen if everything was already approved by this user
             if (realmRoles.size() > 0 || resourceRoles.size() > 0 || protocolMappers.size() > 0) {
+                accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT);
+
                 return session.getProvider(LoginFormsProvider.class)
                         .setClientSessionCode(accessCode.getCode())
                         .setAccessRequest(realmRoles, resourceRoles, protocolMappers)
                         .createOAuthGrant(clientSession);
+            } else {
+                String consentDetail = (grantedConsent != null) ? Details.CONSENT_VALUE_PERSISTED_CONSENT : Details.CONSENT_VALUE_NO_CONSENT_REQUIRED;
+                event.detail(Details.CONSENT, consentDetail);
             }
+        } else {
+            event.detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED);
         }
 
         event.success();
