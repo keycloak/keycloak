@@ -29,7 +29,7 @@ import org.keycloak.testsuite.integration.ui.page.settings.UserPage;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
-import org.keycloak.testsuite.integration.ui.AbstractKeyCloakTest;
+import org.keycloak.testsuite.integration.ui.AbstractKeyCloakUITest;
 import org.keycloak.testsuite.integration.ui.page.settings.LoginSettingsPage;
 import static org.keycloak.testsuite.integration.ui.util.Users.*;
 
@@ -37,7 +37,7 @@ import static org.keycloak.testsuite.integration.ui.util.Users.*;
  *
  * @author Petr Mensik
  */
-public class RegisterNewUserTest extends AbstractKeyCloakTest<RegisterPage> {
+public class RegisterNewUserTest extends AbstractKeyCloakUITest<RegisterPage> {
 
     @Page
     private UserPage userPage;

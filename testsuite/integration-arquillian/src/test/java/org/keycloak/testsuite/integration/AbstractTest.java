@@ -16,13 +16,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.integration.ui;
+package org.keycloak.testsuite.integration;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.keycloak.testsuite.integration.ui.KeyCloakServer;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -32,14 +33,16 @@ import org.openqa.selenium.WebDriver;
 @RunWith(Arquillian.class)
 public abstract class AbstractTest extends KeyCloakServer {
 
+	protected static String LOGIN_URL = "";
+	
     @Drone
     protected WebDriver driver;
 
 	@Before
 	public void beforeAllTest() {
+//		if(!isServerRunning()) {
 		if(!KeyCloakServer.RUNNING) {
 			startServer();
-			KeyCloakServer.RUNNING = true;
 		}
 	}
 	
@@ -47,5 +50,5 @@ public abstract class AbstractTest extends KeyCloakServer {
 	public static void afterClass() {
 		KeyCloakServer.RUNNING = false;
 	}
-
+	
 }

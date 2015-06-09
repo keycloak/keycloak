@@ -15,7 +15,7 @@ import org.keycloak.testsuite.integration.ui.model.Role;
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.keycloak.testsuite.integration.ui.AbstractKeyCloakTest;
+import org.keycloak.testsuite.integration.ui.AbstractKeyCloakUITest;
 import org.keycloak.testsuite.integration.ui.fragment.FlashMessage;
 import org.keycloak.testsuite.integration.ui.page.settings.UserPage;
 import static org.openqa.selenium.By.id;
@@ -26,7 +26,7 @@ import org.openqa.selenium.support.ui.Select;
  *
  * @author Petr Mensik
  */
-public class AddNewRoleTest extends AbstractKeyCloakTest<RolesPage> {
+public class AddNewRoleTest extends AbstractKeyCloakUITest<RolesPage> {
 	
 	@Page
 	private UserPage userPage;

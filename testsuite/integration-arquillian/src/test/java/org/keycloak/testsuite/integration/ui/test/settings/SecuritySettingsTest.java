@@ -19,14 +19,14 @@
 package org.keycloak.testsuite.integration.ui.test.settings;
 
 import org.junit.Test;
-import org.keycloak.testsuite.integration.ui.AbstractKeyCloakTest;
+import org.keycloak.testsuite.integration.ui.AbstractKeyCloakUITest;
 import org.keycloak.testsuite.integration.ui.page.settings.SecurityPage;
 
 /**
  *
  * @author Filip Kiss
  */
-public class SecuritySettingsTest extends AbstractKeyCloakTest<SecurityPage>{
+public class SecuritySettingsTest extends AbstractKeyCloakUITest<SecurityPage>{
 
     @Test
     public void securitySettingsTest() {

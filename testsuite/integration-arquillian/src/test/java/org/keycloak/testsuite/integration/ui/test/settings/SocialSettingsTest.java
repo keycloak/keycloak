@@ -22,7 +22,7 @@ import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import static  org.junit.Assert.*;
 import org.junit.Test;
 import org.keycloak.testsuite.integration.ui.page.settings.SocialSettingsPage;
-import org.keycloak.testsuite.integration.ui.AbstractKeyCloakTest;
+import org.keycloak.testsuite.integration.ui.AbstractKeyCloakUITest;
 import org.keycloak.testsuite.integration.ui.fragment.FlashMessage;
 import org.keycloak.testsuite.integration.ui.model.Provider;
 import org.keycloak.testsuite.integration.ui.model.SocialProvider;
@@ -32,7 +32,7 @@ import org.keycloak.testsuite.integration.ui.util.URL;
  *
  * @author Petr Mensik
  */
-public class SocialSettingsTest extends AbstractKeyCloakTest<SocialSettingsPage> {
+public class SocialSettingsTest extends AbstractKeyCloakUITest<SocialSettingsPage> {
 	
 	@FindByJQuery(".alert")
     private FlashMessage flashMessage;

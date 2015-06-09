@@ -28,13 +28,13 @@ import org.keycloak.testsuite.integration.ui.page.settings.ClientPage;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
-import org.keycloak.testsuite.integration.ui.AbstractKeyCloakTest;
+import org.keycloak.testsuite.integration.ui.AbstractKeyCloakUITest;
 
 /**
  *
  * @author Filip Kiss
  */
-public class AddNewClientTest extends AbstractKeyCloakTest<ClientPage> {
+public class AddNewClientTest extends AbstractKeyCloakUITest<ClientPage> {
 
     @FindByJQuery(".alert")
     private FlashMessage flashMessage;

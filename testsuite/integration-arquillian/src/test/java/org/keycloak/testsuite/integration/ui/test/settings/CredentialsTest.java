@@ -20,7 +20,7 @@ package org.keycloak.testsuite.integration.ui.test.settings;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.testsuite.integration.ui.AbstractKeyCloakTest;
+import org.keycloak.testsuite.integration.ui.AbstractKeyCloakUITest;
 import org.keycloak.testsuite.integration.ui.model.PasswordPolicy;
 import org.keycloak.testsuite.integration.ui.page.settings.CredentialsPage;
 
@@ -28,7 +28,7 @@ import org.keycloak.testsuite.integration.ui.page.settings.CredentialsPage;
  *
  * @author Petr Mensik
  */
-public class CredentialsTest extends AbstractKeyCloakTest<CredentialsPage> {
+public class CredentialsTest extends AbstractKeyCloakUITest<CredentialsPage> {
 	
 	@Before
 	public void beforeCredentialsTest() {

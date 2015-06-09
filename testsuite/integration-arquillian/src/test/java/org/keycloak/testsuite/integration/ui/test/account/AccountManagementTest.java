@@ -27,7 +27,7 @@ import static org.keycloak.testsuite.integration.ui.util.Constants.ADMIN_PSSWD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
-import org.keycloak.testsuite.integration.ui.AbstractKeyCloakTest;
+import org.keycloak.testsuite.integration.ui.AbstractKeyCloakUITest;
 import org.keycloak.testsuite.integration.ui.fragment.FlashMessage;
 import org.keycloak.testsuite.integration.ui.model.Account;
 import org.keycloak.testsuite.integration.ui.page.account.AccountPage;
@@ -37,7 +37,7 @@ import org.keycloak.testsuite.integration.ui.page.account.PasswordPage;
  *
  * @author Petr Mensik
  */
-public class AccountManagementTest extends AbstractKeyCloakTest<AccountPage> {
+public class AccountManagementTest extends AbstractKeyCloakUITest<AccountPage> {
 
 	@FindByJQuery(".alert")
     private FlashMessage flashMessage;

@@ -18,6 +18,7 @@
 
 package org.keycloak.testsuite.integration.ui;
 
+import org.keycloak.testsuite.integration.AbstractTest;
 import java.util.concurrent.TimeUnit;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -35,7 +36,7 @@ import static org.keycloak.testsuite.integration.ui.util.URL.BASE_URL;
  * @author Petr Mensik
  * @param <P>
  */
-public abstract class AbstractKeyCloakTest<P extends AbstractPage> extends AbstractTest {
+public abstract class AbstractKeyCloakUITest<P extends AbstractPage> extends AbstractTest {
 
 	private static boolean firstAdminLogin = Boolean.parseBoolean(
             System.getProperty("firstAdminLogin", "true"));

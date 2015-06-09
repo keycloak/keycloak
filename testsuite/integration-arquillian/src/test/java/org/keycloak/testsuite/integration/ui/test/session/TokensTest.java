@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.keycloak.testsuite.integration.ui.page.settings.TokensPage;
 
 import static org.jboss.arquillian.graphene.Graphene.waitModel;
-import org.keycloak.testsuite.integration.ui.AbstractKeyCloakTest;
+import org.keycloak.testsuite.integration.ui.AbstractKeyCloakUITest;
 import static org.keycloak.testsuite.integration.ui.util.SeleniumUtils.waitGuiForElement;
 
 
@@ -32,7 +32,7 @@ import static org.keycloak.testsuite.integration.ui.util.SeleniumUtils.waitGuiFo
  *
  * @author Petr Mensik
  */
-public class TokensTest extends AbstractKeyCloakTest<TokensPage> {
+public class TokensTest extends AbstractKeyCloakUITest<TokensPage> {
 
 	private static final int TIMEOUT = 10;
 	private static final TimeUnit TIME_UNIT = TimeUnit.SECONDS;

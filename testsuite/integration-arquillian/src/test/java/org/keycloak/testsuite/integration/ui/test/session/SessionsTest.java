@@ -20,7 +20,7 @@ package org.keycloak.testsuite.integration.ui.test.session;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.testsuite.integration.ui.AbstractKeyCloakTest;
+import org.keycloak.testsuite.integration.ui.AbstractKeyCloakUITest;
 import org.keycloak.testsuite.integration.ui.page.session.SessionsPage;
 import static org.keycloak.testsuite.integration.ui.util.SeleniumUtils.waitGuiForElement;
 
@@ -28,7 +28,7 @@ import static org.keycloak.testsuite.integration.ui.util.SeleniumUtils.waitGuiFo
  *
  * @author Petr Mensik
  */
-public class SessionsTest extends AbstractKeyCloakTest<SessionsPage> {
+public class SessionsTest extends AbstractKeyCloakUITest<SessionsPage> {
 	
 	@Before
 	public void beforeSessionTest() {

@@ -15,7 +15,7 @@
     <properties>
         <browser>phantomjs</browser>
 		
-        <arquillian-core.version>1.1.8.Final</arquillian-core.version>
+        <arquillian-core.version>1.1.5.Final</arquillian-core.version>
         <selenium.version>2.45.0</selenium.version>
         <arquillian-drone.version>2.0.0.Alpha4</arquillian-drone.version>
         <arquillian-phantomjs.version>1.1.4.Final</arquillian-phantomjs.version>
@@ -64,6 +64,10 @@
     </dependencyManagement>
 
     <dependencies>
+		<dependency>
+			<groupId>org.keycloak</groupId>
+			<artifactId>keycloak-core</artifactId>
+		</dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -72,7 +76,6 @@
         <dependency>
             <groupId>org.jboss.arquillian.junit</groupId>
             <artifactId>arquillian-junit-container</artifactId>
-			<version>1.1.8.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -82,11 +85,36 @@
             <type>pom</type>
             <scope>test</scope>
         </dependency>
+		<dependency>
+			<groupId>org.jboss.arquillian.protocol</groupId>
+			<artifactId>arquillian-protocol-servlet</artifactId>
+		</dependency>
         <dependency>
             <groupId>org.jboss.arquillian.extension</groupId>
             <artifactId>arquillian-phantom-driver</artifactId>
-            <version>${arquillian-phantomjs.version}</version>
             <scope>test</scope>
+        </dependency>
+		<dependency>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+        </dependency>
+		<dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jaxrs</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
