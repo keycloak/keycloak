@@ -21,6 +21,7 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
+import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.testsuite.integration.AbstractTest;
@@ -36,23 +37,24 @@ import org.keycloak.testsuite.integration.ui.application.page.InputPage;
  * @author <a href="mailto:pmensik@redhat.com">Petr Mensik</a>
  */
 public class AdapterTest extends AbstractTest {
-	
+
 	@Page
 	private InputPage inputPage;
-	
+
 	@Test
+	@RunAsClient
 	public void test() throws InterruptedException {
 		deployApplication(SessionServlet.class);
 		Thread.sleep(20_000);
 	}
-	
+
 	public void testSavedPostRequest() {
 		deployApplication(InputServlet.class);
 		String inputAppURL = getStringApplicationURL() + "/input-portal";
 		driver.get(inputAppURL);
 		assertTrue(driver.getCurrentUrl().contains(inputAppURL));
 		inputPage.execute("hello");
-		
+
 		Client client = ClientBuilder.newClient();
 		Form form = new Form();
 		form.param("parameter", "hello");
@@ -60,7 +62,7 @@ public class AdapterTest extends AbstractTest {
 		assertTrue(text.contains("parameter=hello"));
 		client.close();
 	}
-	
+
 	public void testServletRequestLogout() {
 		deployApplication(CustomerServlet.class);
 		String customerAppURL = getStringApplicationURL() + "/customer-portal";

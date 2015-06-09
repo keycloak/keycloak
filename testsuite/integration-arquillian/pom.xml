@@ -15,7 +15,7 @@
     <properties>
         <browser>phantomjs</browser>
 		
-        <arquillian-core.version>1.1.5.Final</arquillian-core.version>
+        <arquillian-core.version>1.1.8.Final</arquillian-core.version>
         <selenium.version>2.45.0</selenium.version>
         <arquillian-drone.version>2.0.0.Alpha4</arquillian-drone.version>
         <arquillian-phantomjs.version>1.1.4.Final</arquillian-phantomjs.version>
