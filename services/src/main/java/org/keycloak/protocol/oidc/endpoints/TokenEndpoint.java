@@ -151,7 +151,7 @@ public class TokenEndpoint {
             if (legacyGrantType != null) {
                 grantType = legacyGrantType;
             } else {
-                throw new ErrorResponseException("invalid_request", "Missing query parameter: " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
+                throw new ErrorResponseException("invalid_request", "Missing form parameter: " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
             }
         }
 
