@@ -41,7 +41,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 			user.setIdpConfig(getConfig());
 			user.setIdp(this);
 
-			AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile);
+			AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
 
 			return user;
 		} catch (Exception e) {
