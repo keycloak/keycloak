@@ -14,8 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
-package org.keycloak.subsystem.server.extension.authserver;
+package org.keycloak.subsystem.server.extension;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -26,20 +25,19 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.keycloak.subsystem.server.extension.KeycloakAdapterConfigService;
 
 /**
  * Update an attribute on an Auth Server.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
-public class AuthServerWriteAttributeHandler extends ModelOnlyWriteAttributeHandler { //extends ReloadRequiredWriteAttributeHandler {
+public class KeycloakSubsystemWriteAttributeHandler extends ModelOnlyWriteAttributeHandler { //extends ReloadRequiredWriteAttributeHandler {
 
-    public AuthServerWriteAttributeHandler(List<SimpleAttributeDefinition> definitions) {
+    public KeycloakSubsystemWriteAttributeHandler(List<SimpleAttributeDefinition> definitions) {
         this(definitions.toArray(new AttributeDefinition[definitions.size()]));
     }
 
-    public AuthServerWriteAttributeHandler(AttributeDefinition... definitions) {
+    public KeycloakSubsystemWriteAttributeHandler(AttributeDefinition... definitions) {
         super(definitions);
     }
 
@@ -50,34 +48,24 @@ public class AuthServerWriteAttributeHandler extends ModelOnlyWriteAttributeHand
             return;
         }
 
-        boolean isEnabled = AuthServerDefinition.ENABLED.resolveModelAttribute(context, model.getModel()).asBoolean();
-        String deploymentName = AuthServerUtil.getDeploymentName(operation);
+        String deploymentName = ServerUtil.getDeploymentName(operation);
 
-        if (attributeName.equals(AuthServerDefinition.WEB_CONTEXT.getName())) {
-
-            KeycloakAdapterConfigService.getInstance().removeServerDeployment(deploymentName);
-            KeycloakAdapterConfigService.getInstance().addServerDeployment(deploymentName, newValue.asString());
-            if (isEnabled) {
-                AuthServerUtil.addStepToRedeployAuthServer(context, deploymentName);
-            }
-        }
-
-        if (attributeName.equals(AuthServerDefinition.ENABLED.getName())) {
-            if (!isEnabled) { // we are disabling
-                AuthServerUtil.addStepToUndeployAuthServer(context, deploymentName);
-            } else { // we are enabling
-                AuthServerUtil.addStepToDeployAuthServer(context, deploymentName);
-            }
+        if (attributeName.equals(KeycloakSubsystemDefinition.WEB_CONTEXT.getName())) {
+            KeycloakAdapterConfigService.INSTANCE.setWebContext(newValue.asString());
+            ServerUtil.addStepToRedeployServerWar(context, deploymentName);
         }
 
         super.finishModelStage(context, operation, attributeName, newValue, oldValue, model);
     }
 
     private boolean attribNotChanging(String attributeName, ModelNode newValue, ModelNode oldValue) {
-        SimpleAttributeDefinition attribDef = AuthServerDefinition.lookup(attributeName);
-        if (!oldValue.isDefined()) oldValue = attribDef.getDefaultValue();
-        if (!newValue.isDefined()) newValue = attribDef.getDefaultValue();
+        SimpleAttributeDefinition attribDef = KeycloakSubsystemDefinition.lookup(attributeName);
+        if (!oldValue.isDefined()) {
+            oldValue = attribDef.getDefaultValue();
+        }
+        if (!newValue.isDefined()) {
+            newValue = attribDef.getDefaultValue();
+        }
         return newValue.equals(oldValue);
     }
-
 }

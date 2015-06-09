@@ -18,21 +18,8 @@
                 ]]>
             </xs:documentation>
         </xs:annotation>
-        <xs:choice minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="auth-server" maxOccurs="1" minOccurs="0" type="auth-server-type"/>
+        <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="web-context" type="xs:string" minOccurs="0" maxOccurs="1"/>
         </xs:choice>
     </xs:complexType>
-
-    <xs:complexType name="auth-server-type">
-        <xs:all>
-            <xs:element name="web-context" type="xs:string" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
-        </xs:all>
-        <xs:attribute name="name" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>The name of the war archive containing the Keycloak server web application.</xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
 </xs:schema>

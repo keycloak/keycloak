@@ -3,9 +3,6 @@
 <config>
    <extension-module>org.keycloak.keycloak-server-subsystem</extension-module>
    <subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
-      <auth-server name="main-auth-server">
-         <enabled>true</enabled>
-         <web-context>auth</web-context>
-      </auth-server>
+      <web-context>auth</web-context>
    </subsystem>
 </config>

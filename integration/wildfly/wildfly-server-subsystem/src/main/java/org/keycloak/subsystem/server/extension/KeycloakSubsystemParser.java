@@ -16,17 +16,11 @@
  */
 package org.keycloak.subsystem.server.extension;
 
-import org.keycloak.subsystem.server.extension.authserver.AuthServerDefinition;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
@@ -34,8 +28,10 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
-import java.util.Collections;
 import java.util.List;
+
+import static org.keycloak.subsystem.server.extension.KeycloakExtension.PATH_SUBSYSTEM;
+import static org.keycloak.subsystem.server.extension.KeycloakSubsystemDefinition.WEB_CONTEXT;
 
 /**
  * The subsystem parser, which uses stax to read and write to and from xml
@@ -49,12 +45,14 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
     public void readElement(final XMLExtendedStreamReader reader, final List<ModelNode> list) throws XMLStreamException {
         // Require no attributes
         ParseUtils.requireNoAttributes(reader);
-        ModelNode addKeycloakSub = Util.createAddOperation(PathAddress.pathAddress(KeycloakExtension.PATH_SUBSYSTEM));
+        ModelNode addKeycloakSub = Util.createAddOperation(PathAddress.pathAddress(PATH_SUBSYSTEM));
         list.add(addKeycloakSub);
 
         while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
-            if (reader.getLocalName().equals(AuthServerDefinition.TAG_NAME)) {
-                readAuthServer(reader, list);
+            if (reader.getLocalName().equals(WEB_CONTEXT.getXmlName())) {
+                WEB_CONTEXT.parseAndSetParameter(reader.getElementText(), addKeycloakSub, reader);
+            } else {
+                throw new XMLStreamException("Unknown keycloak-server subsystem tag: " + reader.getLocalName());
             }
         }
     }
@@ -64,64 +62,21 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         return reader.nextTag();
     }
 
-    private void readAuthServer(XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
-        String authServerName = readNameAttribute(reader);
-        ModelNode addAuthServer = new ModelNode();
-        addAuthServer.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.ADD);
-        PathAddress addr = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, KeycloakExtension.SUBSYSTEM_NAME),
-                                                   PathElement.pathElement(AuthServerDefinition.TAG_NAME, authServerName));
-        addAuthServer.get(ModelDescriptionConstants.OP_ADDR).set(addr.toModelNode());
-
-        while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
-            String tagName = reader.getLocalName();
-            SimpleAttributeDefinition def = AuthServerDefinition.lookup(tagName);
-            if (def == null) throw new XMLStreamException("Unknown auth-server tag " + tagName);
-            def.parseAndSetParameter(reader.getElementText(), addAuthServer, reader);
-        }
-
-        list.add(addAuthServer);
-    }
-
-    // expects that the current tag will have one single attribute called "name"
-    private String readNameAttribute(XMLExtendedStreamReader reader) throws XMLStreamException {
-        String name = null;
-        for (int i = 0; i < reader.getAttributeCount(); i++) {
-            String attr = reader.getAttributeLocalName(i);
-            if (attr.equals("name")) {
-                name = reader.getAttributeValue(i);
-                continue;
-            }
-            throw ParseUtils.unexpectedAttribute(reader, i);
-        }
-        if (name == null) {
-            throw ParseUtils.missingRequired(reader, Collections.singleton("name"));
-        }
-        return name;
-    }
-
     /**
      * {@inheritDoc}
      */
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final SubsystemMarshallingContext context) throws XMLStreamException {
         context.startSubsystemElement(KeycloakExtension.NAMESPACE, false);
-        writeAuthServers(writer, context);
+        writeWebContext(writer, context);
         writer.writeEndElement();
     }
 
-    private void writeAuthServers(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
-        if (!context.getModelNode().get(AuthServerDefinition.TAG_NAME).isDefined()) {
+    private void writeWebContext(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
+        if (!context.getModelNode().get(WEB_CONTEXT.getName()).isDefined()) {
             return;
         }
-        for (Property authServer : context.getModelNode().get(AuthServerDefinition.TAG_NAME).asPropertyList()) {
-            writer.writeStartElement(AuthServerDefinition.TAG_NAME);
-            writer.writeAttribute("name", authServer.getName());
-            ModelNode authServerElements = authServer.getValue();
-            for (AttributeDefinition element : AuthServerDefinition.ALL_ATTRIBUTES) {
-                element.marshallAsElement(authServerElements, writer);
-            }
 
-            writer.writeEndElement();
-        }
+        WEB_CONTEXT.marshallAsElement(context.getModelNode(), writer);
     }
 }

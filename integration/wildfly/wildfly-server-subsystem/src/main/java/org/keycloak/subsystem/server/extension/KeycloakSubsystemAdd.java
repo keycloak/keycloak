@@ -17,13 +17,18 @@
 package org.keycloak.subsystem.server.extension;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.dmr.ModelNode;
 
-import org.keycloak.subsystem.server.extension.authserver.KeycloakServerDeploymentProcessor;
+import static org.keycloak.subsystem.server.extension.KeycloakExtension.SUBSYSTEM_NAME;
+import static org.keycloak.subsystem.server.extension.KeycloakSubsystemDefinition.ALL_ATTRIBUTES;
+import static org.keycloak.subsystem.server.extension.KeycloakSubsystemDefinition.WEB_CONTEXT;
 
 /**
  * The Keycloak subsystem add update handler.
@@ -35,15 +40,44 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
     static final KeycloakSubsystemAdd INSTANCE = new KeycloakSubsystemAdd();
 
     @Override
-    protected void performBoottime(final OperationContext context, ModelNode operation, final ModelNode model) {
+    protected void performBoottime(final OperationContext context, final ModelNode operation, final ModelNode model) {
         context.addStep(new AbstractDeploymentChainStep() {
             @Override
             protected void execute(DeploymentProcessorTarget processorTarget) {
-                processorTarget.addDeploymentProcessor(KeycloakExtension.SUBSYSTEM_NAME,
+                processorTarget.addDeploymentProcessor(SUBSYSTEM_NAME,
                         Phase.POST_MODULE, // PHASE
                         Phase.POST_MODULE_VALIDATOR_FACTORY - 1, // PRIORITY
                         new KeycloakServerDeploymentProcessor());
             }
         }, OperationContext.Stage.RUNTIME);
+    }
+
+    protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws  OperationFailedException {
+        ModelNode model = resource.getModel();
+
+        // set attribute values from parsed model
+        for (AttributeDefinition attrDef : ALL_ATTRIBUTES) {
+            attrDef.validateAndSet(operation, model);
+        }
+
+        // returns early if on domain controller
+        if (!requiresRuntime(context)) {
+            return;
+        }
+
+        // don't want to try to start server on host controller
+        if (!context.isNormalServer()) {
+            return;
+        }
+
+        ModelNode webContextNode = resource.getModel().get(WEB_CONTEXT.getName());
+        if (!webContextNode.isDefined()) {
+            webContextNode = WEB_CONTEXT.getDefaultValue();
+        }
+        String webContext = webContextNode.asString();
+
+        ServerUtil serverUtil = new ServerUtil(operation);
+        serverUtil.addStepToUploadServerWar(context);
+        KeycloakAdapterConfigService.INSTANCE.setWebContext(webContext);
     }
 }
