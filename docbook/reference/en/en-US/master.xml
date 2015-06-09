@@ -35,6 +35,7 @@
                 <!ENTITY UserFederation SYSTEM "modules/user-federation.xml">
                 <!ENTITY Kerberos SYSTEM "modules/kerberos.xml">
                 <!ENTITY ExportImport SYSTEM "modules/export-import.xml">
+                <!ENTITY AdminRecovery SYSTEM "modules/admin-recovery.xml">
                 <!ENTITY ServerCache SYSTEM "modules/cache.xml">
                 <!ENTITY SecurityVulnerabilities SYSTEM "modules/security-vulnerabilities.xml">
                 <!ENTITY Clustering SYSTEM "modules/clustering.xml">
@@ -126,6 +127,7 @@ This one is short
     &UserFederation;
     &Kerberos;
     &ExportImport;
+    &AdminRecovery;
     &ServerCache;
     &SAML;
     &SecurityVulnerabilities;
