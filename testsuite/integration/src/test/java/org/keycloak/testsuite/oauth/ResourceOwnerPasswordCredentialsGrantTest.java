@@ -1,6 +1,10 @@
 package org.keycloak.testsuite.oauth;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -201,6 +205,24 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .removeDetail(Details.REDIRECT_URI)
                 .error(Errors.INVALID_USER_CREDENTIALS)
                 .assertEvent();
+    }
+
+    @Test
+    public void grantAccessTokenMissingGrantType() throws Exception {
+        oauth.clientId("resource-owner");
+
+        DefaultHttpClient client = new DefaultHttpClient();
+        try {
+            HttpPost post = new HttpPost(oauth.getResourceOwnerPasswordCredentialGrantUrl());
+            OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(client.execute(post));
+
+            assertEquals(400, response.getStatusCode());
+
+            assertEquals("invalid_request", response.getError());
+            assertEquals("Missing form parameter: grant_type", response.getErrorDescription());
+        } finally {
+            client.close();
+        }
     }
 
 }
