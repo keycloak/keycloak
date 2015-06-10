@@ -1548,4 +1548,37 @@ public class RealmAdapter implements RealmModel {
         mapper.setConfig(config);
         return mapper;
     }
+
+    @Override
+    public Set<String> getDefaultRequiredActions() {
+        Set<String> result = new HashSet<String>();
+        if (realm.getDefaultRequiredActions() != null) {
+            result.addAll(realm.getDefaultRequiredActions());
+        }
+        return result;
+    }
+
+    @Override
+    public void addDefaultRequiredAction(String action) {
+        Set<String> actions = getDefaultRequiredActions();
+        actions.add(action);
+        setDefaultRequiredActions(actions);
+
+    }
+
+    @Override
+    public void removeDefaultRequiredAction(String action) {
+        Set<String> actions = getDefaultRequiredActions();
+        actions.remove(action);
+        setDefaultRequiredActions(actions);
+
+    }
+
+    @Override
+    public void setDefaultRequiredActions(Set<String> action) {
+        List<String> result = new ArrayList<String>();
+        result.addAll(action);
+        realm.setDefaultRequiredActions(result);
+
+    }
 }

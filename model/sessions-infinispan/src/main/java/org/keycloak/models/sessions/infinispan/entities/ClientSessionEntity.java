@@ -24,7 +24,7 @@ public class ClientSessionEntity extends SessionEntity {
 
     private int timestamp;
 
-    private ClientSessionModel.Action action;
+    private String action;
 
     private Set<String> roles;
     private Set<String> protocolMappers;
@@ -81,11 +81,11 @@ public class ClientSessionEntity extends SessionEntity {
         this.timestamp = timestamp;
     }
 
-    public ClientSessionModel.Action getAction() {
+    public String getAction() {
         return action;
     }
 
-    public void setAction(ClientSessionModel.Action action) {
+    public void setAction(String action) {
         this.action = action;
     }
 

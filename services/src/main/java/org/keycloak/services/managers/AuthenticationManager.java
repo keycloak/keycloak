@@ -148,7 +148,7 @@ public class AuthenticationManager {
 
     public static void backchannelLogoutClientSession(KeycloakSession session, RealmModel realm, ClientSessionModel clientSession, UserSessionModel userSession, UriInfo uriInfo, HttpHeaders headers) {
         ClientModel client = clientSession.getClient();
-        if (client instanceof ClientModel && !client.isFrontchannelLogout() && clientSession.getAction() != ClientSessionModel.Action.LOGGED_OUT) {
+        if (client instanceof ClientModel && !client.isFrontchannelLogout() && !ClientSessionModel.Action.LOGGED_OUT.name().equals(clientSession.getAction())) {
             String authMethod = clientSession.getAuthMethod();
             if (authMethod == null) return; // must be a keycloak service like account
             LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
@@ -156,7 +156,7 @@ public class AuthenticationManager {
                     .setHttpHeaders(headers)
                     .setUriInfo(uriInfo);
             protocol.backchannelLogout(userSession, clientSession);
-            clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
+            clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
         }
 
     }
@@ -188,7 +188,7 @@ public class AuthenticationManager {
         List<ClientSessionModel> redirectClients = new LinkedList<ClientSessionModel>();
         for (ClientSessionModel clientSession : userSession.getClientSessions()) {
             ClientModel client = clientSession.getClient();
-            if (clientSession.getAction() == ClientSessionModel.Action.LOGGED_OUT) continue;
+            if (ClientSessionModel.Action.LOGGED_OUT.name().equals(clientSession.getAction())) continue;
             if (client.isFrontchannelLogout()) {
                 String authMethod = clientSession.getAuthMethod();
                 if (authMethod == null) continue; // must be a keycloak service like account
@@ -205,7 +205,7 @@ public class AuthenticationManager {
                 try {
                     logger.debugv("backchannel logout to: {0}", client.getClientId());
                     protocol.backchannelLogout(userSession, clientSession);
-                    clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
+                    clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
                 } catch (Exception e) {
                     logger.warn("Failed to logout client, continuing", e);
                 }
@@ -219,7 +219,7 @@ public class AuthenticationManager {
                     .setHttpHeaders(headers)
                     .setUriInfo(uriInfo);
             // setting this to logged out cuz I"m not sure protocols can always verify that the client was logged out or not
-            nextRedirectClient.setAction(ClientSessionModel.Action.LOGGED_OUT);
+            nextRedirectClient.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
             try {
                 logger.debugv("frontchannel logout to: {0}", nextRedirectClient.getClient().getClientId());
                 Response response = protocol.frontchannelLogout(userSession, nextRedirectClient);
@@ -476,7 +476,7 @@ public class AuthenticationManager {
         }
 
         if (client.isConsentRequired()) {
-            accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT);
+            accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT.name());
 
             UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
 

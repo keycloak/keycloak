@@ -54,8 +54,8 @@ public class ClientSessionEntity {
     @Column(name="AUTH_METHOD")
     protected String authMethod;
 
-    @Column(name="ACTION")
-    protected ClientSessionModel.Action action;
+    @Column(name="CURRENT_ACTION")
+    protected String action;
 
     @Column(name="AUTH_USER_ID")
     protected String userId;
@@ -123,11 +123,11 @@ public class ClientSessionEntity {
         this.redirectUri = redirectUri;
     }
 
-    public ClientSessionModel.Action getAction() {
+    public String getAction() {
         return action;
     }
 
-    public void setAction(ClientSessionModel.Action action) {
+    public void setAction(String action) {
         this.action = action;
     }
 

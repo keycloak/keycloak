@@ -22,9 +22,9 @@ public interface ClientSessionModel {
 
     public void setTimestamp(int timestamp);
 
-    public Action getAction();
+    public String getAction();
 
-    public void setAction(Action action);
+    public void setAction(String action);
 
     public Set<String> getRoles();
     public void setRoles(Set<String> roles);

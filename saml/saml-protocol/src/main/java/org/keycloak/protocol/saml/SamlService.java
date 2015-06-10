@@ -21,6 +21,7 @@ import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -32,6 +33,7 @@ import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.HttpAuthenticationManager;
@@ -59,6 +61,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
+import java.util.List;
 
 /**
  * Resource class for the oauth/openid connect token service
@@ -264,7 +267,7 @@ public class SamlService {
             ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
             clientSession.setAuthMethod(SamlProtocol.LOGIN_PROTOCOL);
             clientSession.setRedirectUri(redirect);
-            clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
+            clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
             clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
             clientSession.setNote(SamlProtocol.SAML_BINDING, bindingType);
             clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
@@ -317,7 +320,22 @@ public class SamlService {
             return forms.createLogin();
         }
 
+        private Response buildRedirectToIdentityProvider(String providerId, String accessCode) {
+            logger.debug("Automatically redirect to identity provider: " + providerId);
+            return Response.temporaryRedirect(
+                    Urls.identityProviderAuthnRequest(uriInfo.getBaseUri(), providerId, realm.getName(), accessCode))
+                    .build();
+        }
+
+
         protected Response newBrowserAuthentication(ClientSessionModel clientSession) {
+            List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
+            for (IdentityProviderModel identityProvider : identityProviders) {
+                if (identityProvider.isAuthenticateByDefault()) {
+                    return buildRedirectToIdentityProvider(identityProvider.getAlias(), new ClientSessionCode(realm, clientSession).getCode() );
+                }
+            }
+
             String flowId = null;
             for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
                 if (flow.getAlias().equals("browser")) {
@@ -336,7 +354,11 @@ public class SamlService {
                     .setUriInfo(uriInfo)
                     .setRequest(request);
 
-            return processor.authenticate();
+            try {
+                return processor.authenticate();
+            } catch (Exception e) {
+                return processor.handleBrowserException(e);
+            }
         }
 
 
@@ -394,7 +416,7 @@ public class SamlService {
                 // remove client from logout requests
                 for (ClientSessionModel clientSession : userSession.getClientSessions()) {
                     if (clientSession.getClient().getId().equals(client.getId())) {
-                        clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
+                        clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
                     }
                 }
                 logger.debug("browser Logout");
@@ -405,7 +427,7 @@ public class SamlService {
                     if (clientSession == null) continue;
                     if (clientSession.getClient().getClientId().equals(client.getClientId())) {
                         // remove requesting client from logout
-                        clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
+                        clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
                     }
                     UserSessionModel userSession = clientSession.getUserSession();
                     try {

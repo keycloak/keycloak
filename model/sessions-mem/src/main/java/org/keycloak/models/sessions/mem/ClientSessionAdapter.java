@@ -93,12 +93,12 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
-    public ClientSessionModel.Action getAction() {
+    public String getAction() {
         return entity.getAction();
     }
 
     @Override
-    public void setAction(ClientSessionModel.Action action) {
+    public void setAction(String action) {
         entity.setAction(action);
     }
 

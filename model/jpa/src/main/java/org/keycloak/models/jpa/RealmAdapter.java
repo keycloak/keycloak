@@ -1707,5 +1707,30 @@ public class RealmAdapter implements RealmModel {
         return authenticators;
     }
 
+    @Override
+    public Set<String> getDefaultRequiredActions() {
+        Set<String> result = new HashSet<String>();
+        result.addAll(realm.getDefaultRequiredActions());
+        return result;
+    }
+
+
+
+    @Override
+    public void setDefaultRequiredActions(Set<String> actions) {
+        realm.setDefaultRequiredActions(actions);
+    }
+
+    @Override
+    public void addDefaultRequiredAction(String action) {
+        realm.getDefaultRequiredActions().add(action);
+    }
+
+    @Override
+    public void removeDefaultRequiredAction(String action) {
+        realm.getDefaultRequiredActions().remove(action);
+    }
+
+
 
 }

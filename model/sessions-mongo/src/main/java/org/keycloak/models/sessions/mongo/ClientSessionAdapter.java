@@ -108,12 +108,12 @@ public class ClientSessionAdapter extends AbstractMongoAdapter<MongoClientSessio
     }
 
     @Override
-    public Action getAction() {
+    public String getAction() {
         return entity.getAction();
     }
 
     @Override
-    public void setAction(Action action) {
+    public void setAction(String action) {
         entity.setAction(action);
         updateMongoEntity();
     }

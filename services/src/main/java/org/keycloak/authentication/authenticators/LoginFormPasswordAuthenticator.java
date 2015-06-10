@@ -9,7 +9,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -28,7 +27,7 @@ public class LoginFormPasswordAuthenticator extends LoginFormUsernameAuthenticat
 
     @Override
     public void authenticate(AuthenticatorContext context) {
-        if (!isActionUrl(context)) {
+        if (!isAction(context, LOGIN_FORM_ACTION)) {
             context.failure(AuthenticationProcessor.Error.INTERNAL_ERROR);
             return;
         }

@@ -220,7 +220,7 @@ public class AuthorizationEndpoint {
         clientSession = session.sessions().createClientSession(realm, client);
         clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
         clientSession.setRedirectUri(redirectUri);
-        clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
+        clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
         clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
         clientSession.setNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, responseType);
         clientSession.setNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUriParam);
@@ -277,7 +277,12 @@ public class AuthorizationEndpoint {
                 .setUriInfo(uriInfo)
                 .setRequest(request);
 
-        Response challenge = processor.authenticateOnly();
+        Response challenge = null;
+        try {
+            challenge = processor.authenticateOnly();
+        } catch (Exception e) {
+            return processor.handleBrowserException(e);
+        }
 
         if (challenge != null && prompt != null && prompt.equals("none")) {
             if (processor.isUserSessionCreated()) {

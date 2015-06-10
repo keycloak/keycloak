@@ -27,7 +27,7 @@ public class LoginFormOTPAuthenticator extends LoginFormUsernameAuthenticator {
 
     @Override
     public void authenticate(AuthenticatorContext context) {
-        if (!isActionUrl(context)) {
+        if (!isAction(context, LOGIN_FORM_ACTION)) {
             context.failure(AuthenticationProcessor.Error.INTERNAL_ERROR);
             return;
         }

@@ -24,7 +24,7 @@ public class ClientSessionEntity {
     private String authMethod;
 
     private int timestamp;
-    private ClientSessionModel.Action action;
+    private String action;
     private Set<String> roles;
     private Set<String> protocolMappers;
     private Map<String, String> notes = new HashMap<>();
@@ -78,11 +78,11 @@ public class ClientSessionEntity {
         this.timestamp = timestamp;
     }
 
-    public ClientSessionModel.Action getAction() {
+    public String getAction() {
         return action;
     }
 
-    public void setAction(ClientSessionModel.Action action) {
+    public void setAction(String action) {
         this.action = action;
     }
 

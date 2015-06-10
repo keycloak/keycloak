@@ -373,7 +373,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     private ClientSessionCode parseClientSessionCode(String code) {
         ClientSessionCode clientCode = ClientSessionCode.parse(code, this.session, this.realmModel);
 
-        if (clientCode != null && clientCode.isValid(AUTHENTICATE)) {
+        if (clientCode != null && clientCode.isValid(AUTHENTICATE.name())) {
             ClientSessionModel clientSession = clientCode.getClientSession();
 
             if (clientSession != null) {

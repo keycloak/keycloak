@@ -33,7 +33,7 @@ public class LoginFormUsernameAuthenticator extends AbstractFormAuthenticator im
 
     @Override
     public void authenticate(AuthenticatorContext context) {
-        if (!isActionUrl(context)) {
+        if (!isAction(context, LOGIN_FORM_ACTION)) {
             MultivaluedMap<String, String> formData = new MultivaluedMapImpl<>();
             String loginHint = context.getClientSession().getNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
 

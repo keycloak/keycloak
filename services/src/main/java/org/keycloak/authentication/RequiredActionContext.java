@@ -11,7 +11,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.BruteForceProtector;
-import org.keycloak.services.managers.ClientSessionCode;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -20,47 +19,14 @@ import javax.ws.rs.core.UriInfo;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface AuthenticatorContext {
+public interface RequiredActionContext {
     EventBuilder getEvent();
-
-    AuthenticationExecutionModel getExecution();
-
-    void setExecution(AuthenticationExecutionModel execution);
-
-    AuthenticatorModel getAuthenticatorModel();
-
-    void setAuthenticatorModel(AuthenticatorModel model);
-
-    String getAction();
-
-    Authenticator getAuthenticator();
-
-    void setAuthenticator(Authenticator authenticator);
-
-    AuthenticationProcessor.Status getStatus();
-
     UserModel getUser();
-
-    void setUser(UserModel user);
-
     RealmModel getRealm();
-
     ClientSessionModel getClientSession();
-    void attachUserSession(UserSessionModel userSession);
-
+    UserSessionModel getUserSession();
     ClientConnection getConnection();
-
     UriInfo getUriInfo();
-
     KeycloakSession getSession();
-
     HttpRequest getHttpRequest();
-    BruteForceProtector getProtector();
-
-    void success();
-    void failure(AuthenticationProcessor.Error error);
-    void failure(AuthenticationProcessor.Error error, Response response);
-    void challenge(Response challenge);
-    void failureChallenge(AuthenticationProcessor.Error error, Response challenge);
-    void attempted();
 }

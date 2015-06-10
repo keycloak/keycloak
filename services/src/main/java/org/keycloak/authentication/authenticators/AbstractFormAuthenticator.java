@@ -19,26 +19,27 @@ import java.net.URI;
  * @version $Revision: 1 $
  */
 public class AbstractFormAuthenticator {
-    protected boolean isActionUrl(AuthenticatorContext context) {
-        URI expected = LoginActionsService.authenticationFormProcessor(context.getUriInfo()).build(context.getRealm().getName());
-        String current = context.getUriInfo().getAbsolutePath().getPath();
-        String expectedPath = expected.getPath();
-        return expectedPath.equals(current);
 
+    public static final String LOGIN_FORM_ACTION = "login_form";
+    public static final String ACTION = "action";
+
+    protected boolean isAction(AuthenticatorContext context, String action) {
+        return action.equals(context.getAction());
     }
 
     protected LoginFormsProvider loginForm(AuthenticatorContext context) {
         ClientSessionCode code = new ClientSessionCode(context.getRealm(), context.getClientSession());
-        code.setAction(ClientSessionModel.Action.AUTHENTICATE);
-        URI action = getActionUrl(context, code);
+        code.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+        URI action = getActionUrl(context, code, LOGIN_FORM_ACTION);
         return context.getSession().getProvider(LoginFormsProvider.class)
                     .setActionUri(action)
                     .setClientSessionCode(code.getCode());
     }
 
-    public static URI getActionUrl(AuthenticatorContext context, ClientSessionCode code) {
+    public static URI getActionUrl(AuthenticatorContext context, ClientSessionCode code, String action) {
         return LoginActionsService.authenticationFormProcessor(context.getUriInfo())
-                    .queryParam(OAuth2Constants.CODE, code.getCode())
+                .queryParam(OAuth2Constants.CODE, code.getCode())
+                .queryParam(ACTION, action)
                     .build(context.getRealm().getName());
     }
 

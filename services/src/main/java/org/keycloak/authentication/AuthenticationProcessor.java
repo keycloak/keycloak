@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -15,8 +16,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -39,6 +42,7 @@ public class AuthenticationProcessor {
     protected EventBuilder event;
     protected HttpRequest request;
     protected String flowId;
+    protected String action;
     protected boolean userSessionCreated;
 
 
@@ -134,6 +138,11 @@ public class AuthenticationProcessor {
         return this;
     }
 
+    public AuthenticationProcessor setAction(String action) {
+        this.action = action;
+        return this;
+    }
+
     private class Result implements AuthenticatorContext {
         AuthenticatorModel model;
         AuthenticationExecutionModel execution;
@@ -166,6 +175,11 @@ public class AuthenticationProcessor {
         @Override
         public void setAuthenticatorModel(AuthenticatorModel model) {
             this.model = model;
+        }
+
+        @Override
+        public String getAction() {
+            return AuthenticationProcessor.this.action;
         }
 
         @Override
@@ -331,6 +345,34 @@ public class AuthenticationProcessor {
         if (status == null) return false;
         return status == UserSessionModel.AuthenticatorStatus.SUCCESS;
     }
+
+    public Response handleBrowserException(Exception failure) {
+        if (failure instanceof AuthException) {
+            AuthException e = (AuthException)failure;
+            logger.error("failed authentication: " + e.getError().toString(), e);
+            if (e.getError() == AuthenticationProcessor.Error.INVALID_USER) {
+                event.error(Errors.USER_NOT_FOUND);
+                return ErrorPage.error(session, Messages.INVALID_USER);
+            } else if (e.getError() == AuthenticationProcessor.Error.USER_DISABLED) {
+                event.error(Errors.USER_DISABLED);
+                return ErrorPage.error(session, Messages.ACCOUNT_DISABLED);
+            } else if (e.getError() == AuthenticationProcessor.Error.USER_TEMPORARILY_DISABLED) {
+                event.error(Errors.USER_TEMPORARILY_DISABLED);
+                return ErrorPage.error(session, Messages.ACCOUNT_TEMPORARILY_DISABLED);
+
+            } else {
+                event.error(Errors.INVALID_USER_CREDENTIALS);
+                return ErrorPage.error(session, Messages.INVALID_USER);
+            }
+
+        } else {
+            logger.error("failed authentication", failure);
+            event.error(Errors.INVALID_USER_CREDENTIALS);
+            return ErrorPage.error(session, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST);
+        }
+
+    }
+
 
     public Response authenticate() throws AuthException {
         logger.debug("AUTHENTICATE");

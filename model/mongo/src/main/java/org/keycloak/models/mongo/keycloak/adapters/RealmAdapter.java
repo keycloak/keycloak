@@ -1590,4 +1590,32 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         mapper.setConfig(config);
         return mapper;
     }
+
+    @Override
+    public Set<String> getDefaultRequiredActions() {
+        Set<String> result = new HashSet<String>();
+        result.addAll(realm.getDefaultRequiredActions());
+        return result;
+    }
+
+
+
+    @Override
+    public void setDefaultRequiredActions(Set<String> actions) {
+        List<String> result = new ArrayList<String>();
+        result.addAll(actions);
+        getMongoEntity().setDefaultRequiredActions(result);
+        updateMongoEntity();
+    }
+
+    @Override
+    public void addDefaultRequiredAction(String action) {
+        getMongoStore().pushItemToList(getMongoEntity(), "defaultRequiredActions", action, true, invocationContext);
+    }
+
+    @Override
+    public void removeDefaultRequiredAction(String action) {
+        getMongoStore().pullItemFromList(getMongoEntity(), "defaultRequiredActions", action, invocationContext);
+    }
+
 }

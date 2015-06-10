@@ -788,7 +788,7 @@ public class UsersResource {
 
         ClientSessionModel clientSession = createClientSession(user, redirectUri, clientId);
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
-        accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD);
+        accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD.name());
 
         try {
             UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
@@ -838,7 +838,7 @@ public class UsersResource {
         ClientSessionModel clientSession = createClientSession(user, redirectUri, clientId);
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
 
-        accessCode.setAction(ClientSessionModel.Action.VERIFY_EMAIL);
+        accessCode.setAction(ClientSessionModel.Action.VERIFY_EMAIL.name());
 
         try {
             UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());

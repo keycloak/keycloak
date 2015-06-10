@@ -1116,4 +1116,30 @@ public class RealmAdapter implements RealmModel {
         if (updated != null) return updated.getAuthenticatorById(id);
         return cached.getAuthenticators().get(id);
     }
+
+    @Override
+    public Set<String> getDefaultRequiredActions() {
+        return cached.getDefaultRequiredActions();
+    }
+
+    @Override
+    public void addDefaultRequiredAction(String action) {
+        getDelegateForUpdate();
+        updated.addDefaultRequiredAction(action);
+
+    }
+
+    @Override
+    public void removeDefaultRequiredAction(String action) {
+        getDelegateForUpdate();
+        updated.removeDefaultRequiredAction(action);
+
+    }
+
+    @Override
+    public void setDefaultRequiredActions(Set<String> action) {
+        getDelegateForUpdate();
+        updated.setDefaultRequiredActions(action);
+
+    }
 }

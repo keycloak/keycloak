@@ -13,7 +13,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.LoginActionsService;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -26,6 +25,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class OTPFormAuthenticator extends AbstractFormAuthenticator implements Authenticator {
+    public static final String TOTP_FORM_ACTION = "totp";
     protected AuthenticatorModel model;
 
     public OTPFormAuthenticator(AuthenticatorModel model) {
@@ -34,7 +34,7 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
 
     @Override
     public void authenticate(AuthenticatorContext context) {
-        if (!isActionUrl(context)) {
+        if (!isAction(context, TOTP_FORM_ACTION)) {
             Response challengeResponse = challenge(context, null);
             context.challenge(challengeResponse);
             return;
@@ -43,7 +43,7 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
     }
 
     public void validateOTP(AuthenticatorContext context) {
-        MultivaluedMap<String, String> inputData = context.getHttpRequest().getFormParameters();
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.TOTP);
         if (password == null) {
@@ -70,7 +70,7 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
 
     protected Response challenge(AuthenticatorContext context, String error) {
         ClientSessionCode clientSessionCode = new ClientSessionCode(context.getRealm(), context.getClientSession());
-        URI action = AbstractFormAuthenticator.getActionUrl(context, clientSessionCode);
+        URI action = AbstractFormAuthenticator.getActionUrl(context, clientSessionCode, TOTP_FORM_ACTION);
         LoginFormsProvider forms = context.getSession().getProvider(LoginFormsProvider.class)
                 .setActionUri(action)
                 .setClientSessionCode(clientSessionCode.getCode());
