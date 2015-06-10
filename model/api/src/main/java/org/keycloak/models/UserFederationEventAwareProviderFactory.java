@@ -29,5 +29,5 @@ public abstract class UserFederationEventAwareProviderFactory implements UserFed
         });
     }
 
-    protected abstract void onProviderModelCreated(RealmModel realm, UserFederationProviderModel createdProviderModel);
+    public abstract void onProviderModelCreated(RealmModel realm, UserFederationProviderModel createdProviderModel);
 }

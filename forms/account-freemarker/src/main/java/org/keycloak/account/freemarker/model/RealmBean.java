@@ -46,4 +46,8 @@ public class RealmBean {
         return realm.getSupportedLocales();
     }
 
+    public boolean isEditUsernameAllowed() {
+        return realm.isEditUsernameAllowed();
+    }
+
 }

@@ -504,6 +504,7 @@ public class SamlService {
                                     @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
                                     @QueryParam(GeneralConstants.RELAY_STATE) String relayState) {
         logger.debug("SAML GET");
+        //String uri = uriInfo.getRequestUri().toString();
         return new RedirectBindingProtocol().execute(samlRequest, samlResponse, relayState);
     }
 

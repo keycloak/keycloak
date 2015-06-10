@@ -41,7 +41,6 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
     @Test
     public void testJson() throws Exception {
         ModelNode node = new ModelNode();
-        node.get("enabled").set(true);
         node.get("web-context").set("auth");
 
         System.out.println("json=" + node.toJSONString(false));

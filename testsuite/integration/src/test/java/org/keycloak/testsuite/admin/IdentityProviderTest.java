@@ -52,7 +52,8 @@ public class IdentityProviderTest extends AbstractClientTest {
         assertEquals("clientSecret", representation.getConfig().get("clientSecret"));
         assertTrue(representation.isEnabled());
         assertFalse(representation.isStoreToken());
-        assertTrue(representation.isUpdateProfileFirstLogin());
+        assertEquals(IdentityProviderRepresentation.UPFLM_ON, representation.getUpdateProfileFirstLoginMode());
+        assertFalse(representation.isTrustEmail());
     }
 
     @Test

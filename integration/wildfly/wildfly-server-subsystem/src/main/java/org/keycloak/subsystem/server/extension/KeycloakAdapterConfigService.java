@@ -14,13 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package org.keycloak.subsystem.server.extension;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 
 /**
  * This service keeps track of the entire Keycloak management model so as to provide
@@ -30,37 +24,25 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
  */
 public final class KeycloakAdapterConfigService {
 
-    private static final KeycloakAdapterConfigService INSTANCE = new KeycloakAdapterConfigService();
+    static final KeycloakAdapterConfigService INSTANCE = new KeycloakAdapterConfigService();
 
-    public static KeycloakAdapterConfigService getInstance() {
-        return INSTANCE;
-    }
+    static final String DEPLOYMENT_NAME = "keycloak-server";
 
-    // key=auth-server deployment name; value=web-context
-    private final Map<String, String> webContexts = new HashMap<String, String>();
-
+    private String webContext;
 
 
     private KeycloakAdapterConfigService() {
     }
 
-    public void addServerDeployment(String deploymentName, String webContext) {
-        this.webContexts.put(deploymentName, webContext);
+    void setWebContext(String webContext) {
+        this.webContext = webContext;
     }
 
-    public String getWebContext(String deploymentName) {
-        return webContexts.get(deploymentName);
+    String getWebContext() {
+        return webContext;
     }
 
-    public void removeServerDeployment(String deploymentName) {
-        this.webContexts.remove(deploymentName);
-    }
-
-    public boolean isWebContextUsed(String webContext) {
-        return webContexts.containsValue(webContext);
-    }
-
-    public boolean isKeycloakServerDeployment(String deploymentName) {
-        return this.webContexts.containsKey(deploymentName);
+    boolean isKeycloakServerDeployment(String deploymentName) {
+        return DEPLOYMENT_NAME.equals(deploymentName);
     }
 }

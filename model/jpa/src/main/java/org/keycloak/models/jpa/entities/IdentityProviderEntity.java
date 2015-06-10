@@ -41,8 +41,11 @@ public class IdentityProviderEntity {
     @Column(name="ENABLED")
     private boolean enabled;
 
-    @Column(name="UPDATE_PROFILE_FIRST_LOGIN")
-    private boolean updateProfileFirstLogin;
+    @Column(name = "UPDATE_PROFILE_FIRST_LGN_MD")
+    private String updateProfileFirstLoginMode;
+
+    @Column(name = "TRUST_EMAIL")
+    private boolean trustEmail;
 
     @Column(name="STORE_TOKEN")
     private boolean storeToken;
@@ -99,12 +102,12 @@ public class IdentityProviderEntity {
         this.enabled = enabled;
     }
 
-    public boolean isUpdateProfileFirstLogin() {
-        return this.updateProfileFirstLogin;
+    public String getUpdateProfileFirstLoginMode() {
+        return updateProfileFirstLoginMode;
     }
 
-    public void setUpdateProfileFirstLogin(boolean updateProfileFirstLogin) {
-        this.updateProfileFirstLogin = updateProfileFirstLogin;
+    public void setUpdateProfileFirstLoginMode(String updateProfileFirstLoginMode) {
+        this.updateProfileFirstLoginMode = updateProfileFirstLoginMode;
     }
 
     public boolean isStoreToken() {
@@ -137,5 +140,13 @@ public class IdentityProviderEntity {
 
     public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
         this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
+    }
+
+    public boolean isTrustEmail() {
+        return trustEmail;
+    }
+
+    public void setTrustEmail(boolean trustEmail) {
+        this.trustEmail = trustEmail;
     }
 }

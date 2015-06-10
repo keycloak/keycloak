@@ -76,19 +76,29 @@ public class RelativeUriAdapterTest {
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule(){
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            adminRealm.setPasswordCredentialGrantAllowed(true);
-
             RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/adapter-test/demorealm-relative.json"), RealmRepresentation.class);
             RealmModel realm = manager.importRealm(representation);
 
             realmPublicKey = realm.getPublicKey();
 
             URL url = getClass().getResource("/adapter-test/cust-app-keycloak-relative.json");
-            deployApplication("customer-portal", "/customer-portal", CustomerServlet.class, url.getPath(), "user");
+            createApplicationDeployment()
+                    .name("customer-portal").contextPath("/customer-portal")
+                    .servletClass(CustomerServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
+
             url = getClass().getResource("/adapter-test/customer-db-keycloak-relative.json");
-            deployApplication("customer-db", "/customer-db", CustomerDatabaseServlet.class, url.getPath(), "user");
+            createApplicationDeployment()
+                    .name("customer-db").contextPath("/customer-db")
+                    .servletClass(CustomerDatabaseServlet.class).adapterConfigPath(url.getPath())
+                    .role("user")
+                    .errorPage(null).deployApplication();
+
             url = getClass().getResource("/adapter-test/product-keycloak-relative.json");
-            deployApplication("product-portal", "/product-portal", ProductServlet.class, url.getPath(), "user");
+            createApplicationDeployment()
+                    .name("product-portal").contextPath("/product-portal")
+                    .servletClass(ProductServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
         }
     };
 

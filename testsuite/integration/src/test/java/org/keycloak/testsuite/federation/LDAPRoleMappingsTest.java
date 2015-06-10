@@ -13,7 +13,6 @@ import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
-import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
@@ -34,11 +33,8 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.pages.AccountPasswordPage;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -67,13 +63,19 @@ public class LDAPRoleMappingsTest {
 
             ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap", -1, -1, 0);
 
-            // Delete all LDAP users and add some new for testing
+            // Delete all LDAP users
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
-            LDAPUtils.removeAllUsers(ldapFedProvider, appRealm);
+            FederationTestUtils.removeAllLDAPUsers(ldapFedProvider, appRealm);
 
             // Add sample application
             ClientModel finance = appRealm.addClient("finance");
 
+            // Delete all LDAP roles
+            FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, RoleLDAPFederationMapper.Mode.LDAP_ONLY);
+            FederationTestUtils.removeAllLDAPRoles(manager.getSession(), appRealm, ldapModel, "realmRolesMapper");
+            FederationTestUtils.removeAllLDAPRoles(manager.getSession(), appRealm, ldapModel, "financeRolesMapper");
+
+            // Add some users for testing
             LDAPObject john = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johnkeycloak", "John", "Doe", "john@email.org", "1234");
             ldapFedProvider.getLdapIdentityStore().updatePassword(john, "Password1");
 
@@ -83,34 +85,12 @@ public class LDAPRoleMappingsTest {
             LDAPObject rob = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "robkeycloak", "Rob", "Brown", "rob@email.org", "8910");
             ldapFedProvider.getLdapIdentityStore().updatePassword(rob, "Password1");
 
+            // Add some roles for testing
+            FederationTestUtils.createLDAPRole(manager.getSession(), appRealm, ldapModel, "realmRolesMapper", "realmRole1");
+            FederationTestUtils.createLDAPRole(manager.getSession(), appRealm, ldapModel, "realmRolesMapper", "realmRole2");
+            FederationTestUtils.createLDAPRole(manager.getSession(), appRealm, ldapModel, "financeRolesMapper", "financeRole1");
         }
-    }) {
-
-        @Override
-        protected void after() {
-            // Need to cleanup some LDAP objects after the test
-            update(new KeycloakRule.KeycloakSetup() {
-
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    RoleLDAPFederationMapper roleMapper = new RoleLDAPFederationMapper();
-
-                    FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, RoleLDAPFederationMapper.Mode.LDAP_ONLY);
-                    UserFederationMapperModel roleMapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "realmRolesMapper");
-                    LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
-
-                    LDAPObject ldapRole = roleMapper.loadLDAPRoleByName(roleMapperModel, ldapProvider, "realmRole3");
-                    if (ldapRole != null) {
-                        ldapProvider.getLdapIdentityStore().remove(ldapRole);
-                    }
-                }
-
-            });
-
-            super.after();
-        }
-
-    };
+    });
 
     @ClassRule
     public static TestRule chain = RuleChain
@@ -153,7 +133,12 @@ public class LDAPRoleMappingsTest {
             RoleModel realmRole2 = appRealm.getRole("realmRole2");
             mary.grantRole(realmRole2);
 
-            RoleModel realmRole3 = appRealm.addRole("realmRole3");
+            // This role may already exists from previous test (was imported from LDAP), but may not
+            RoleModel realmRole3 = appRealm.getRole("realmRole3");
+            if (realmRole3 == null) {
+                realmRole3 = appRealm.addRole("realmRole3");
+            }
+
             john.grantRole(realmRole3);
             mary.grantRole(realmRole3);
 
@@ -270,12 +255,20 @@ public class LDAPRoleMappingsTest {
             // Delete role mappings directly in LDAP
             deleteRoleMappingsInLDAP(roleMapperModel, roleMapper, ldapProvider, maryLdap, "realmRole1");
             deleteRoleMappingsInLDAP(roleMapperModel, roleMapper, ldapProvider, maryLdap, "realmRole2");
+        } finally {
+            keycloakRule.stopSession(session, false);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+            UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
 
             // Assert role mappings is not available
-            maryRoles = mary.getRealmRoleMappings();
-            Assert.assertFalse(maryRoles.contains(realmRole1));
-            Assert.assertFalse(maryRoles.contains(realmRole2));
-            Assert.assertFalse(maryRoles.contains(realmRole3));
+            Set<RoleModel> maryRoles = mary.getRealmRoleMappings();
+            Assert.assertFalse(maryRoles.contains(appRealm.getRole("realmRole1")));
+            Assert.assertFalse(maryRoles.contains(appRealm.getRole("realmRole2")));
+            Assert.assertFalse(maryRoles.contains(appRealm.getRole("realmRole3")));
         } finally {
             keycloakRule.stopSession(session, false);
         }

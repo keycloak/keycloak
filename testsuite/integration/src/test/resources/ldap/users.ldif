@@ -14,26 +14,9 @@ objectclass: top
 objectclass: organizationalUnit
 ou: RealmRoles
 
-dn: cn=realmRole1,ou=RealmRoles,dc=keycloak,dc=org
-objectclass: top
-objectclass: groupOfNames
-cn: realmRole1
-member:
-
-dn: cn=realmRole2,ou=RealmRoles,dc=keycloak,dc=org
-objectclass: top
-objectclass: groupOfNames
-cn: realmRole2
-member:
-
 dn: ou=FinanceRoles,dc=keycloak,dc=org
 objectclass: top
 objectclass: organizationalUnit
 ou: FinanceRoles
 
-dn: cn=financeRole1,ou=FinanceRoles,dc=keycloak,dc=org
-objectclass: top
-objectclass: groupOfNames
-cn: financeRole1
-member:
 

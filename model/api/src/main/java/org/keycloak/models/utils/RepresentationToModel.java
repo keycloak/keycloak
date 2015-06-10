@@ -96,13 +96,13 @@ public class RepresentationToModel {
         else newRealm.setAccessCodeLifespanLogin(1800);
 
         if (rep.getSslRequired() != null) newRealm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
-        if (rep.isPasswordCredentialGrantAllowed() != null) newRealm.setPasswordCredentialGrantAllowed(rep.isPasswordCredentialGrantAllowed());
         if (rep.isRegistrationAllowed() != null) newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isRegistrationEmailAsUsername() != null)
             newRealm.setRegistrationEmailAsUsername(rep.isRegistrationEmailAsUsername());
         if (rep.isRememberMe() != null) newRealm.setRememberMe(rep.isRememberMe());
         if (rep.isVerifyEmail() != null) newRealm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
+        if (rep.isEditUsernameAllowed() != null) newRealm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
         if (rep.getPrivateKey() == null || rep.getPublicKey() == null) {
             KeycloakModelUtils.generateRealmKeys(newRealm);
         } else {
@@ -420,12 +420,12 @@ public class RepresentationToModel {
         if (rep.getQuickLoginCheckMilliSeconds() != null) realm.setQuickLoginCheckMilliSeconds(rep.getQuickLoginCheckMilliSeconds());
         if (rep.getMaxDeltaTimeSeconds() != null) realm.setMaxDeltaTimeSeconds(rep.getMaxDeltaTimeSeconds());
         if (rep.getFailureFactor() != null) realm.setFailureFactor(rep.getFailureFactor());
-        if (rep.isPasswordCredentialGrantAllowed() != null) realm.setPasswordCredentialGrantAllowed(rep.isPasswordCredentialGrantAllowed());
         if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isRegistrationEmailAsUsername() != null) realm.setRegistrationEmailAsUsername(rep.isRegistrationEmailAsUsername());
         if (rep.isRememberMe() != null) realm.setRememberMe(rep.isRememberMe());
         if (rep.isVerifyEmail() != null) realm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
+        if (rep.isEditUsernameAllowed() != null) realm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
         if (rep.getSslRequired() != null) realm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
         if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null) realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
@@ -917,7 +917,8 @@ public class RepresentationToModel {
         identityProviderModel.setAlias(representation.getAlias());
         identityProviderModel.setProviderId(representation.getProviderId());
         identityProviderModel.setEnabled(representation.isEnabled());
-        identityProviderModel.setUpdateProfileFirstLogin(representation.isUpdateProfileFirstLogin());
+        identityProviderModel.setUpdateProfileFirstLoginMode(representation.getUpdateProfileFirstLoginMode());
+        identityProviderModel.setTrustEmail(representation.isTrustEmail());
         identityProviderModel.setAuthenticateByDefault(representation.isAuthenticateByDefault());
         identityProviderModel.setStoreToken(representation.isStoreToken());
         identityProviderModel.setAddReadTokenRoleOnCreate(representation.isAddReadTokenRoleOnCreate());

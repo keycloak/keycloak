@@ -38,7 +38,7 @@ public class AccountBean {
     }
 
     public String getUsername() {
-        return user.getUsername();
+        return profileFormData != null ? profileFormData.getFirst("username") : user.getUsername();
     }
 
     public String getEmail() {

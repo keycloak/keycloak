@@ -41,7 +41,7 @@ import java.util.Set;
  */
 public class LDAPFederationProviderFactory extends UserFederationEventAwareProviderFactory {
     private static final Logger logger = Logger.getLogger(LDAPFederationProviderFactory.class);
-    public static final String PROVIDER_NAME = "ldap";
+    public static final String PROVIDER_NAME = LDAPConstants.LDAP_PROVIDER;
 
     private LDAPIdentityStoreRegistry ldapStoreRegistry;
 
@@ -79,7 +79,7 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
 
     // Best effort to create appropriate mappers according to our LDAP config
     @Override
-    protected void onProviderModelCreated(RealmModel realm, UserFederationProviderModel newProviderModel) {
+    public void onProviderModelCreated(RealmModel realm, UserFederationProviderModel newProviderModel) {
         LDAPConfig ldapConfig = new LDAPConfig(newProviderModel.getConfig());
 
         boolean activeDirectory = ldapConfig.isActiveDirectory();
@@ -94,12 +94,42 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
                 UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
         realm.addUserFederationMapper(mapperModel);
 
-        // For AD deployments with sAMAccountName is probably more common to map "cn" to full name of user
-        if (activeDirectory && usernameLdapAttribute.equalsIgnoreCase(LDAPConstants.SAM_ACCOUNT_NAME)) {
-            mapperModel = KeycloakModelUtils.createUserFederationMapperModel("full name", newProviderModel.getId(), FullNameLDAPFederationMapperFactory.PROVIDER_ID,
-                    FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, LDAPConstants.CN,
-                    UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
-            realm.addUserFederationMapper(mapperModel);
+        // CN is typically used as RDN for Active Directory deployments
+        if (ldapConfig.getRdnLdapAttribute().equalsIgnoreCase(LDAPConstants.CN)) {
+
+            if (usernameLdapAttribute.equalsIgnoreCase(LDAPConstants.CN)) {
+
+                // For AD deployments with "cn" as username, we will map "givenName" to first name
+                mapperModel = KeycloakModelUtils.createUserFederationMapperModel("first name", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
+                        UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, UserModel.FIRST_NAME,
+                        UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, LDAPConstants.GIVENNAME,
+                        UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
+                realm.addUserFederationMapper(mapperModel);
+
+            } else {
+                if (editMode == UserFederationProvider.EditMode.WRITABLE) {
+
+                    // For AD deployments with "sAMAccountName" as username and writable, we need to map "cn" as username as well (this is needed so we can register new users from KC into LDAP) and we will map "givenName" to first name.
+                    mapperModel = KeycloakModelUtils.createUserFederationMapperModel("first name", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
+                            UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, UserModel.FIRST_NAME,
+                            UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, LDAPConstants.GIVENNAME,
+                            UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
+                    realm.addUserFederationMapper(mapperModel);
+
+                    mapperModel = KeycloakModelUtils.createUserFederationMapperModel("username-cn", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
+                            UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, UserModel.USERNAME,
+                            UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, LDAPConstants.CN,
+                            UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
+                    realm.addUserFederationMapper(mapperModel);
+                } else {
+
+                    // For read-only LDAP, we map "cn" as full name
+                    mapperModel = KeycloakModelUtils.createUserFederationMapperModel("full name", newProviderModel.getId(), FullNameLDAPFederationMapperFactory.PROVIDER_ID,
+                            FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, LDAPConstants.CN,
+                            UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
+                    realm.addUserFederationMapper(mapperModel);
+                }
+            }
         } else {
             mapperModel = KeycloakModelUtils.createUserFederationMapperModel("first name", newProviderModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
                     UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, UserModel.FIRST_NAME,

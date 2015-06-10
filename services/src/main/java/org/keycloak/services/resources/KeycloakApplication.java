@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
+import org.keycloak.offlineconfig.AdminRecovery;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -88,6 +89,7 @@ public class KeycloakApplication extends Application {
         importRealms(context);
         migrateModel();
 
+        AdminRecovery.recover(sessionFactory);
 
         setupScheduledTasks(sessionFactory);
     }

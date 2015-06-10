@@ -20,6 +20,8 @@ package org.keycloak.models;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+
 /**
  * <p>A model type representing the configuration for identity providers. It provides some common properties and also a {@link org.keycloak.models.IdentityProviderModel#config}
  * for configuration options and properties specifics to a identity provider.</p>
@@ -43,7 +45,15 @@ public class IdentityProviderModel {
 
     private boolean enabled;
 
-    private boolean updateProfileFirstLogin = true;
+    /**
+     * For possible values see {@link IdentityProviderRepresentation#getUpdateProfileFirstLoginMode()}
+     * @see IdentityProviderRepresentation#UPFLM_ON
+     * @see IdentityProviderRepresentation#UPFLM_MISSING
+     * @see IdentityProviderRepresentation#UPFLM_OFF
+     */
+    protected String updateProfileFirstLoginMode = IdentityProviderRepresentation.UPFLM_ON;
+    
+    private boolean trustEmail;
 
     private boolean storeToken;
 
@@ -68,7 +78,8 @@ public class IdentityProviderModel {
         this.alias = model.getAlias();
         this.config = new HashMap<String, String>(model.getConfig());
         this.enabled = model.isEnabled();
-        this.updateProfileFirstLogin = model.isUpdateProfileFirstLogin();
+        this.updateProfileFirstLoginMode = model.getUpdateProfileFirstLoginMode();
+        this.trustEmail = model.isTrustEmail();
         this.storeToken = model.isStoreToken();
         this.authenticateByDefault = model.isAuthenticateByDefault();
         this.addReadTokenRoleOnCreate = model.addReadTokenRoleOnCreate;
@@ -106,12 +117,18 @@ public class IdentityProviderModel {
         this.enabled = enabled;
     }
 
-    public boolean isUpdateProfileFirstLogin() {
-        return this.updateProfileFirstLogin;
+    /**
+     * @see IdentityProviderRepresentation#getUpdateProfileFirstLoginMode() 
+     */
+    public String getUpdateProfileFirstLoginMode() {
+        return updateProfileFirstLoginMode;
     }
 
-    public void setUpdateProfileFirstLogin(boolean updateProfileFirstLogin) {
-        this.updateProfileFirstLogin = updateProfileFirstLogin;
+    /**
+     * @see IdentityProviderRepresentation#setUpdateProfileFirstLoginMode(String) 
+     */
+    public void setUpdateProfileFirstLoginMode(String updateProfileFirstLoginMode) {
+        this.updateProfileFirstLoginMode = updateProfileFirstLoginMode;
     }
 
     public boolean isStoreToken() {
@@ -145,4 +162,13 @@ public class IdentityProviderModel {
     public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
         this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
     }
+
+    public boolean isTrustEmail() {
+        return trustEmail;
+    }
+
+    public void setTrustEmail(boolean trustEmail) {
+        this.trustEmail = trustEmail;
+    }
+    
 }

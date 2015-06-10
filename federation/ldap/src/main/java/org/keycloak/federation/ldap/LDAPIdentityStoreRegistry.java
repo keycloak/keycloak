@@ -24,7 +24,7 @@ public class LDAPIdentityStoreRegistry {
         // Ldap config might have changed for the realm. In this case, we must re-initialize
         Map<String, String> config = model.getConfig();
         if (context == null || !config.equals(context.config)) {
-            logLDAPConfig(model.getId(), config);
+            logLDAPConfig(model.getDisplayName(), config);
 
             LDAPIdentityStore store = createLdapIdentityStore(config);
             context = new LDAPIdentityStoreContext(config, store);
@@ -34,10 +34,10 @@ public class LDAPIdentityStoreRegistry {
     }
 
     // Don't log LDAP password
-    private void logLDAPConfig(String fedProviderId, Map<String, String> ldapConfig) {
+    private void logLDAPConfig(String fedProviderDisplayName, Map<String, String> ldapConfig) {
         Map<String, String> copy = new HashMap<String, String>(ldapConfig);
         copy.remove(LDAPConstants.BIND_CREDENTIAL);
-        logger.infof("Creating new LDAP based partition manager for the Federation provider: " + fedProviderId + ", LDAP Configuration: " + copy);
+        logger.infof("Creating new LDAP based partition manager for the Federation provider: " + fedProviderDisplayName + ", LDAP Configuration: " + copy);
     }
 
     /**
@@ -54,23 +54,6 @@ public class LDAPIdentityStoreRegistry {
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.timeout", "300000");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.protocol", "plain");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.debug", "off");
-
-        /*String ldapLoginNameMapping = ldapConfig.get(LDAPConstants.USERNAME_LDAP_ATTRIBUTE);
-        if (ldapLoginNameMapping == null) {
-            ldapLoginNameMapping = activeDirectory ? LDAPConstants.CN : LDAPConstants.UID;
-        }
-
-        String ldapFirstNameMapping = activeDirectory ?  "givenName" : LDAPConstants.CN;
-        String createTimestampMapping = activeDirectory ? "whenCreated" : LDAPConstants.CREATE_TIMESTAMP;
-        String modifyTimestampMapping = activeDirectory ? "whenChanged" : LDAPConstants.MODIFY_TIMESTAMP;
-        String[] userObjectClasses = getUserObjectClasses(ldapConfig);  */
-
-
-/*        if (activeDirectory && ldapLoginNameMapping.equals("sAMAccountName")) {
-            ldapUserMappingConfig.setBindingDnPropertyName("fullName");
-            ldapUserMappingConfig.addAttributeMapping("fullName", LDAPConstants.CN);
-            logger.infof("Using 'cn' attribute for DN of user and 'sAMAccountName' for username");
-        }    */
 
         return new LDAPIdentityStore(cfg);
     }

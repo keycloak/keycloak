@@ -19,7 +19,7 @@
             <column name="AUTH_USER_ID" type="VARCHAR(255)"/>
             <column name="IP_ADDRESS" type="VARCHAR(255)"/>
             <column name="RESOURCE_PATH" type="VARCHAR(2550)"/>
-            <column name="REPRESENTATION" type="BLOB(25500)"/>
+            <column name="REPRESENTATION" type="TEXT(25500)"/>
             <column name="ERROR" type="VARCHAR(255)"/>
         </createTable>
         <createTable tableName="AUTHENTICATOR">
@@ -28,7 +28,7 @@
             </column>
             <column name="ALIAS" type="VARCHAR(255)"/>
             <column name="REALM_ID" type="VARCHAR(36)"/>
-            <column name="PROVIDER_ID" type="VARCHAR(36)"/>
+            <column name="PROVIDER_ID" type="VARCHAR(255)"/>
         </createTable>
         <createTable tableName="AUTHENTICATION_FLOW">
             <column name="ID" type="VARCHAR(36)">
@@ -94,6 +94,9 @@
             <column name="ADMIN_EVENTS_DETAILS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
             </column>
+            <column name="EDIT_USERNAME_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
         </addColumn>
         <createTable tableName="CLIENT_SESSION_AUTH_STATUS">
             <column name="AUTHENTICATOR" type="VARCHAR(36)">
@@ -107,6 +110,19 @@
         <addColumn tableName="CLIENT_SESSION">
             <column name="AUTH_USER_ID" type="VARCHAR(36)"/>
         </addColumn>
+        <addColumn tableName="IDENTITY_PROVIDER">
+            <column name="TRUST_EMAIL" type="BOOLEAN" defaultValueBoolean="false"/>
+            <column name="UPDATE_PROFILE_FIRST_LGN_MD" type="VARCHAR(10)" defaultValue="on">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <!-- migrate value from UPDATE_PROFILE_FIRST_LOGIN to UPDATE_PROFILE_FIRST_LGN_MD then drop it -->
+        <update tableName="IDENTITY_PROVIDER">
+            <column name="UPDATE_PROFILE_FIRST_LGN_MD" value="off"/>
+            <where>UPDATE_PROFILE_FIRST_LOGIN = false</where>
+        </update>
+        <dropColumn tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LOGIN"/>
+        
         <addColumn tableName="USER_REQUIRED_ACTION">
             <column name="REQUIRED_ACTION" type="VARCHAR(36)">
                 <constraints nullable="false"/>
@@ -147,5 +163,7 @@
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="USER_FEDERATION_MAPPER" constraintName="FK_FEDMAPPERPM_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
         <addForeignKeyConstraint baseColumnNames="FEDERATION_PROVIDER_ID" baseTableName="USER_FEDERATION_MAPPER" constraintName="FK_FEDMAPPERPM_FEDPRV" referencedColumnNames="ID" referencedTableName="USER_FEDERATION_PROVIDER"/>
         <addForeignKeyConstraint baseColumnNames="USER_FEDERATION_MAPPER_ID" baseTableName="USER_FEDERATION_MAPPER_CONFIG" constraintName="FK_FEDMAPPER_CFG" referencedColumnNames="ID" referencedTableName="USER_FEDERATION_MAPPER"/>
+
+        <dropColumn tableName="REALM" columnName="PASSWORD_CRED_GRANT_ALLOWED"/>
     </changeSet>
 </databaseChangeLog>

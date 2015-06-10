@@ -18,12 +18,14 @@ public class RealmRepresentation {
     protected Integer accessCodeLifespanLogin;
     protected Boolean enabled;
     protected String sslRequired;
+    @Deprecated
     protected Boolean passwordCredentialGrantAllowed;
     protected Boolean registrationAllowed;
     protected Boolean registrationEmailAsUsername;
     protected Boolean rememberMe;
     protected Boolean verifyEmail;
     protected Boolean resetPasswordAllowed;
+    protected Boolean editUsernameAllowed;
 
     protected Boolean userCacheEnabled;
     protected Boolean realmCacheEnabled;
@@ -268,10 +270,6 @@ public class RealmRepresentation {
         return passwordCredentialGrantAllowed;
     }
 
-    public void setPasswordCredentialGrantAllowed(Boolean passwordCredentialGrantAllowed) {
-        this.passwordCredentialGrantAllowed = passwordCredentialGrantAllowed;
-    }
-
     public Boolean isRegistrationAllowed() {
         return registrationAllowed;
     }
@@ -326,6 +324,14 @@ public class RealmRepresentation {
 
     public void setResetPasswordAllowed(Boolean resetPassword) {
         this.resetPasswordAllowed = resetPassword;
+    }
+
+    public Boolean isEditUsernameAllowed() {
+        return editUsernameAllowed;
+    }
+
+    public void setEditUsernameAllowed(Boolean editUsernameAllowed) {
+        this.editUsernameAllowed = editUsernameAllowed;
     }
 
     @Deprecated

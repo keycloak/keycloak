@@ -24,11 +24,9 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.keycloak.subsystem.server.extension.authserver.AuthServerDefinition;
-import org.keycloak.subsystem.server.logging.KeycloakLogger;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.keycloak.subsystem.server.logging.KeycloakLogger.ROOT_LOGGER;
 
 
 /**
@@ -38,17 +36,16 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
  */
 public class KeycloakExtension implements Extension {
 
-    public static final String SUBSYSTEM_NAME = "keycloak-server";
-    public static final String NAMESPACE = "urn:jboss:domain:keycloak-server:1.1";
-    private static final KeycloakSubsystemParser PARSER = new KeycloakSubsystemParser();
+    static final String SUBSYSTEM_NAME = "keycloak-server";
+    static final String NAMESPACE = "urn:jboss:domain:keycloak-server:1.1";
     static final PathElement PATH_SUBSYSTEM = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
-    private static final String RESOURCE_NAME = KeycloakExtension.class.getPackage().getName() + ".LocalDescriptions";
-    private static final ModelVersion MGMT_API_VERSION = ModelVersion.create(1,1,0);
-    static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
-    private static final ResourceDefinition KEYCLOAK_SUBSYSTEM_RESOURCE = new KeycloakSubsystemDefinition();
-    static final AuthServerDefinition AUTH_SERVER_DEFINITION = new AuthServerDefinition();
 
-    public static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
+    private static final String RESOURCE_NAME = KeycloakExtension.class.getPackage().getName() + ".LocalDescriptions";
+    private static final ResourceDefinition KEYCLOAK_SUBSYSTEM_RESOURCE = new KeycloakSubsystemDefinition();
+    private static final KeycloakSubsystemParser PARSER = new KeycloakSubsystemParser();
+    private static final ModelVersion MGMT_API_VERSION = ModelVersion.create(1,1,0);
+
+    static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
         StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
         for (String kp : keyPrefix) {
             prefix.append('.').append(kp);
@@ -61,7 +58,7 @@ public class KeycloakExtension implements Extension {
      */
     @Override
     public void initializeParsers(final ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, KeycloakExtension.NAMESPACE, PARSER);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE, PARSER);
     }
 
     /**
@@ -69,11 +66,10 @@ public class KeycloakExtension implements Extension {
      */
     @Override
     public void initialize(final ExtensionContext context) {
-        KeycloakLogger.ROOT_LOGGER.debug("Activating Keycloak Extension");
+        ROOT_LOGGER.debug("Activating Keycloak Extension");
         final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, MGMT_API_VERSION);
 
-        ManagementResourceRegistration registration = subsystem.registerSubsystemModel(KEYCLOAK_SUBSYSTEM_RESOURCE);
-        registration.registerSubModel(AUTH_SERVER_DEFINITION);
+        subsystem.registerSubsystemModel(KEYCLOAK_SUBSYSTEM_RESOURCE);
         subsystem.registerXMLElementWriter(PARSER);
     }
 }

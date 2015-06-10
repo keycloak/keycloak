@@ -39,11 +39,9 @@
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
             <subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
-                <auth-server name="main-auth-server">
-                    <enabled>true</enabled>
-                    <web-context>auth</web-context>
-                </auth-server>
+                <web-context>auth</web-context>
             </subsystem>
+            <subsystem xmlns="urn:jboss:domain:keycloak:1.1"/>
         </xsl:copy>
     </xsl:template>
 

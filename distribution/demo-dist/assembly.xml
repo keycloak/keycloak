@@ -14,7 +14,6 @@
             <outputDirectory>keycloak</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
-                <exclude>standalone/configuration/standalone-keycloak.xml</exclude>
             </excludes>
         </fileSet>
         <fileSet>
@@ -26,6 +25,20 @@
             <fileMode>0755</fileMode>
         </fileSet>
         <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-server-overlay-${project.version}</directory>
+            <outputDirectory>keycloak</outputDirectory>
+            <excludes>
+                <exclude>standalone/configuration/standalone-keycloak.xml</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-wf9-adapter-${project.version}</directory>
+            <outputDirectory>keycloak</outputDirectory>
+            <excludes>
+                <exclude>standalone/configuration/standalone-keycloak.xml</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
             <directory>${project.build.directory}/unpacked/keycloak-docs-${project.version}</directory>
             <outputDirectory>docs</outputDirectory>
         </fileSet>
@@ -34,5 +47,11 @@
             <outputDirectory>examples</outputDirectory>
         </fileSet>
     </fileSets>
+    <files>
+        <file>
+            <source>${project.build.directory}/unpacked/standalone.xml</source>
+            <outputDirectory>keycloak/standalone/configuration</outputDirectory>
+        </file>
+    </files>
 
 </assembly>

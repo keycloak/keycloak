@@ -20,6 +20,7 @@ package org.keycloak.testsuite.broker;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.adapter.CustomerDatabaseServlet;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 
@@ -34,8 +35,16 @@ public class BrokerKeyCloakRule extends AbstractKeycloakRule {
     protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
         server.importRealm(getClass().getResourceAsStream("/broker-test/test-realm-with-broker.json"));
         URL url = getClass().getResource("/broker-test/test-app-keycloak.json");
-        deployApplication("test-app", "/test-app", UserSessionStatusServlet.class, url.getPath(), "manager");
-        deployApplication("test-app-allowed-providers", "/test-app-allowed-providers", UserSessionStatusServlet.class, url.getPath(), "manager");
+
+        createApplicationDeployment()
+                .name("test-app").contextPath("/test-app")
+                .servletClass(UserSessionStatusServlet.class).adapterConfigPath(url.getPath())
+                .role("manager").deployApplication();
+
+        createApplicationDeployment()
+                .name("test-app-allowed-providers").contextPath("/test-app-allowed-providers")
+                .servletClass(UserSessionStatusServlet.class).adapterConfigPath(url.getPath())
+                .role("manager").deployApplication();
     }
 
     @Override

@@ -84,7 +84,7 @@
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
         <wildfly.plugin.version>1.0.1.Final</wildfly.plugin.version>
         <minify.plugin.version>1.7.2</minify.plugin.version>
-        <embedmongo.plugin.version>0.1.10</embedmongo.plugin.version>
+        <embedmongo.plugin.version>0.1.12</embedmongo.plugin.version>
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
     </properties>
@@ -1103,6 +1103,12 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wf9-modules</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-wf9-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>

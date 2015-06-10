@@ -48,21 +48,50 @@ public class AdapterTest {
             realmPublicKey = realm.getPublicKey();
 
             URL url = getClass().getResource("/adapter-test/cust-app-keycloak.json");
-            deployApplication("customer-portal", "/customer-portal", CustomerServlet.class, url.getPath(), "user");
+            createApplicationDeployment()
+                    .name("customer-portal").contextPath("/customer-portal")
+                    .servletClass(CustomerServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
+
             url = getClass().getResource("/adapter-test/secure-portal-keycloak.json");
-            deployApplication("secure-portal", "/secure-portal", CallAuthenticatedServlet.class, url.getPath(), "user", false);
+            createApplicationDeployment()
+                    .name("secure-portal").contextPath("/secure-portal")
+                    .servletClass(CallAuthenticatedServlet.class).adapterConfigPath(url.getPath())
+                    .role("user")
+                    .isConstrained(false).deployApplication();
+
             url = getClass().getResource("/adapter-test/customer-db-keycloak.json");
-            deployApplication("customer-db", "/customer-db", CustomerDatabaseServlet.class, url.getPath(), "user");
+            createApplicationDeployment()
+                    .name("customer-db").contextPath("/customer-db")
+                    .servletClass(CustomerDatabaseServlet.class).adapterConfigPath(url.getPath())
+                    .role("user")
+                    .errorPage(null).deployApplication();
+
+            createApplicationDeployment()
+                    .name("customer-db-error-page").contextPath("/customer-db-error-page")
+                    .servletClass(CustomerDatabaseServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
+
             url = getClass().getResource("/adapter-test/product-keycloak.json");
-            deployApplication("product-portal", "/product-portal", ProductServlet.class, url.getPath(), "user");
+            createApplicationDeployment()
+                    .name("product-portal").contextPath("/product-portal")
+                    .servletClass(ProductServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
 
             // Test that replacing system properties works for adapters
             System.setProperty("app.server.base.url", "http://localhost:8081");
             System.setProperty("my.host.name", "localhost");
             url = getClass().getResource("/adapter-test/session-keycloak.json");
-            deployApplication("session-portal", "/session-portal", SessionServlet.class, url.getPath(), "user");
+            createApplicationDeployment()
+                    .name("session-portal").contextPath("/session-portal")
+                    .servletClass(SessionServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
+
             url = getClass().getResource("/adapter-test/input-keycloak.json");
-            deployApplication("input-portal", "/input-portal", InputServlet.class, url.getPath(), "user", true, null, "/secured/*");
+            createApplicationDeployment()
+                    .name("input-portal").contextPath("/input-portal")
+                    .servletClass(InputServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").constraintUrl("/secured/*").deployApplication();
         }
     };
 
@@ -107,6 +136,15 @@ public class AdapterTest {
     @Test
     public void testNullBearerToken() throws Exception {
         testStrategy.testNullBearerToken();
+    }
+
+    /**
+     * KEYCLOAK-1368
+     * @throws Exception
+     */
+    @Test
+    public void testNullBearerTokenCustomErrorPage() throws Exception {
+        testStrategy.testNullBearerTokenCustomErrorPage();
     }
 
     /**

@@ -29,7 +29,7 @@ public class IdentityProviderSpi implements Spi {
     public static final String IDENTITY_PROVIDER_SPI_NAME = "identity_provider";
 
     @Override
-    public boolean isPrivate() {
+    public boolean isInternal() {
         return false;
     }
 

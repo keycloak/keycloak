@@ -1,11 +1,28 @@
 package org.keycloak.email.freemarker;
 
+import java.text.MessageFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+
+import javax.mail.Message;
+import javax.mail.Multipart;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
+
 import org.jboss.logging.Logger;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.email.freemarker.beans.EventBean;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
+import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.LocaleHelper;
 import org.keycloak.freemarker.Theme;
@@ -14,14 +31,6 @@ import org.keycloak.freemarker.beans.MessageFormatterMethod;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-
-import javax.mail.Message;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
-import java.text.MessageFormat;
-import java.util.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -93,16 +102,29 @@ public class FreeMarkerEmailProvider implements EmailProvider {
             Properties rb = theme.getMessages(locale);
             attributes.put("msg", new MessageFormatterMethod(locale, rb));
             String subject = new MessageFormat(rb.getProperty(subjectKey,subjectKey),locale).format(new Object[0]);
-            String body = freeMarker.processTemplate(attributes, template, theme);
+            String textTemplate = String.format("text/%s", template);
+            String textBody;
+            try {
+            	textBody = freeMarker.processTemplate(attributes, textTemplate, theme);
+            } catch (final FreeMarkerException e ) {
+            	textBody = null;
+            }
+            String htmlTemplate = String.format("html/%s", template);
+            String htmlBody;
+            try {
+            	htmlBody = freeMarker.processTemplate(attributes, htmlTemplate, theme);
+            } catch (final FreeMarkerException e ) {
+            	htmlBody = null;
+            }
 
-            send(subject, body);
+            send(subject, textBody, htmlBody);
         } catch (Exception e) {
             throw new EmailException("Failed to template email", e);
         }
     }
 
 
-    private void send(String subject, String body) throws EmailException {
+    private void send(String subject, String textBody, String htmlBody) throws EmailException {
         try {
             String address = user.getEmail();
             Map<String, String> config = realm.getSmtpConfig();
@@ -135,11 +157,25 @@ public class FreeMarkerEmailProvider implements EmailProvider {
 
             Session session = Session.getInstance(props);
 
+            Multipart multipart = new MimeMultipart("alternative");
+            
+            if(textBody != null) {
+            	MimeBodyPart textPart = new MimeBodyPart();
+            	textPart.setText(textBody, "UTF-8");
+            	multipart.addBodyPart(textPart);
+            }
+            
+            if(htmlBody != null) {
+            	MimeBodyPart htmlPart = new MimeBodyPart();
+            	htmlPart.setContent(htmlBody, "text/html; charset=UTF-8");
+            	multipart.addBodyPart(htmlPart);
+            }
+            
             Message msg = new MimeMessage(session);
             msg.setFrom(new InternetAddress(from));
             msg.setHeader("To", address);
             msg.setSubject(subject);
-            msg.setText(body);
+            msg.setContent(multipart);
             msg.saveChanges();
             msg.setSentDate(new Date());
 

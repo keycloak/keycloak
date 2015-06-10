@@ -71,11 +71,12 @@ public class LDAPIdentityStore implements IdentityStore {
     public void add(LDAPObject ldapObject) {
         // id will be assigned by the ldap server
         if (ldapObject.getUuid() != null) {
-            throw new IllegalStateException("Can't add object with already assigned uuid");
+            throw new ModelException("Can't add object with already assigned uuid");
         }
 
         String entryDN = ldapObject.getDn().toString();
-        this.operationManager.createSubContext(entryDN, extractAttributes(ldapObject, true));
+        BasicAttributes ldapAttributes = extractAttributes(ldapObject, true);
+        this.operationManager.createSubContext(entryDN, ldapAttributes);
         ldapObject.setUuid(getEntryIdentifier(ldapObject));
 
         if (logger.isTraceEnabled()) {
@@ -108,20 +109,20 @@ public class LDAPIdentityStore implements IdentityStore {
 
     @Override
     public List<LDAPObject> fetchQueryResults(LDAPIdentityQuery identityQuery) {
+        if (identityQuery.getSorting() != null && !identityQuery.getSorting().isEmpty()) {
+            throw new ModelException("LDAP Identity Store does not yet support sorted queries.");
+        }
+
         List<LDAPObject> results = new ArrayList<>();
 
         try {
-            if (identityQuery.getSorting() != null && !identityQuery.getSorting().isEmpty()) {
-                throw new ModelException("LDAP Identity Store does not yet support sorted queries.");
-            }
-
             String baseDN = identityQuery.getSearchDn();
 
             for (Condition condition : identityQuery.getConditions()) {
 
                 // Check if we are searching by ID
                 String uuidAttrName = getConfig().getUuidLDAPAttributeName();
-                if (condition.getParameter() != null && condition.getParameter().getName().equals(uuidAttrName)) {
+                if (condition.getParameter() != null && condition.getParameter().getName().equalsIgnoreCase(uuidAttrName)) {
                     if (EqualCondition.class.isInstance(condition)) {
                         EqualCondition equalCondition = (EqualCondition) condition;
                         SearchResult search = this.operationManager
@@ -147,7 +148,7 @@ public class LDAPIdentityStore implements IdentityStore {
             }
 
             for (SearchResult result : search) {
-                if (!result.getNameInNamespace().equals(baseDN)) {
+                if (!result.getNameInNamespace().equalsIgnoreCase(baseDN)) {
                     results.add(populateAttributedType(result, identityQuery.getReturningReadOnlyLdapAttributes()));
                 }
             }
@@ -180,8 +181,8 @@ public class LDAPIdentityStore implements IdentityStore {
     public boolean validatePassword(LDAPObject user, String password) {
         String userDN = user.getDn().toString();
 
-        if (logger.isDebugEnabled()) {
-            logger.debugf("Using DN [%s] for authentication of user", userDN);
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Using DN [%s] for authentication of user", userDN);
         }
 
         if (operationManager.authenticate(userDN, password)) {
@@ -258,7 +259,9 @@ public class LDAPIdentityStore implements IdentityStore {
         filter.append(getObjectClassesFilter(identityQuery.getObjectClasses()));
         filter.append(")");
 
-        logger.infof("Using filter for LDAP search: %s", filter);
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Using filter for LDAP search: %s . Searching in DN: %s", filter, identityQuery.getSearchDn());
+        }
         return filter;
     }
 
@@ -278,7 +281,7 @@ public class LDAPIdentityStore implements IdentityStore {
 
         QueryParameter queryParameter = condition.getParameter();
 
-        if (!getConfig().getUuidLDAPAttributeName().equals(queryParameter.getName())) {
+        if (!getConfig().getUuidLDAPAttributeName().equalsIgnoreCase(queryParameter.getName())) {
             String attributeName = queryParameter.getName();
 
             if (attributeName != null) {
@@ -377,10 +380,6 @@ public class LDAPIdentityStore implements IdentityStore {
             ldapObject.setDn(dn);
             ldapObject.setRdnAttributeName(dn.getFirstRdnAttrName());
 
-            if (logger.isTraceEnabled()) {
-                logger.tracef("Populating LDAP Object from DN [%s]", entryDN);
-            }
-
             NamingEnumeration<? extends Attribute> ldapAttributes = attributes.getAll();
 
             // Exact name of attributes might be different
@@ -400,7 +399,7 @@ public class LDAPIdentityStore implements IdentityStore {
 
                 String ldapAttributeName = ldapAttribute.getID();
 
-                if (ldapAttributeName.toLowerCase().equals(getConfig().getUuidLDAPAttributeName().toLowerCase())) {
+                if (ldapAttributeName.equalsIgnoreCase(getConfig().getUuidLDAPAttributeName())) {
                     Object uuidValue = ldapAttribute.get();
                     ldapObject.setUuid(this.operationManager.decodeEntryUUID(uuidValue));
                 } else {
@@ -411,12 +410,9 @@ public class LDAPIdentityStore implements IdentityStore {
                         attrValues.add(attrVal);
                     }
 
-                    if (ldapAttributeName.toLowerCase().equals(LDAPConstants.OBJECT_CLASS)) {
+                    if (ldapAttributeName.equalsIgnoreCase(LDAPConstants.OBJECT_CLASS)) {
                         ldapObject.setObjectClasses(attrValues);
                     } else {
-                        if (logger.isTraceEnabled()) {
-                            logger.tracef("Populating ldap attribute [%s] with value [%s] for DN [%s].", ldapAttributeName, attrValues.toString(), entryDN);
-                        }
                         if (attrValues.size() == 1) {
                             ldapObject.setAttribute(ldapAttributeName, attrValues.iterator().next());
                         } else {
@@ -430,6 +426,9 @@ public class LDAPIdentityStore implements IdentityStore {
                 }
             }
 
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Found ldap object [%s] and populated with the attributes [%s]. Read-only attributes are [%s]", ldapObject.getDn().toString(), ldapObject.getAttributes(), ldapObject.getReadOnlyAttributeNames());
+            }
             return ldapObject;
 
         } catch (Exception e) {
@@ -444,7 +443,7 @@ public class LDAPIdentityStore implements IdentityStore {
         for (Map.Entry<String, Object> attrEntry : ldapObject.getAttributes().entrySet()) {
             String attrName = attrEntry.getKey();
             Object attrValue = attrEntry.getValue();
-            if (!ldapObject.getReadOnlyAttributeNames().contains(attrName) && (isCreate || !ldapObject.getRdnAttributeName().equals(attrName))) {
+            if (!ldapObject.getReadOnlyAttributeNames().contains(attrName) && (isCreate || !ldapObject.getRdnAttributeName().equalsIgnoreCase(attrName))) {
 
                 if (String.class.isInstance(attrValue)) {
                     if (attrValue.toString().trim().length() == 0) {
@@ -461,7 +460,7 @@ public class LDAPIdentityStore implements IdentityStore {
                 } else if (attrValue == null || attrValue.toString().trim().length() == 0) {
                     entryAttributes.put(attrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
                 } else {
-                    throw new IllegalArgumentException("Unexpected type of value of argument " + attrName + ". Value is " + attrValue);
+                    throw new ModelException("Unexpected type of value of argument " + attrName + ". Value is " + attrValue);
                 }
             }
         }
@@ -473,10 +472,10 @@ public class LDAPIdentityStore implements IdentityStore {
             for (String objectClassValue : ldapObject.getObjectClasses()) {
                 objectClassAttribute.add(objectClassValue);
 
-                if (objectClassValue.equals(LDAPConstants.GROUP_OF_NAMES)
-                        || objectClassValue.equals(LDAPConstants.GROUP_OF_ENTRIES)
-                        || objectClassValue.equals(LDAPConstants.GROUP_OF_UNIQUE_NAMES)) {
-                    entryAttributes.put(LDAPConstants.MEMBER, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
+                if (objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_NAMES)
+                        || objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_ENTRIES)
+                        || objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_UNIQUE_NAMES)) {
+                    entryAttributes.put(LDAPConstants.MEMBER, LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE);
                 }
             }
 

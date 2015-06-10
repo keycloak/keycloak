@@ -10,7 +10,7 @@ import org.keycloak.provider.Spi;
 public class EventStoreSpi implements Spi {
 
     @Override
-    public boolean isPrivate() {
+    public boolean isInternal() {
         return true;
     }
 

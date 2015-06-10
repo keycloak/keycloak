@@ -316,7 +316,7 @@ public class LoginActionsService {
             return ErrorPage.error(session, Messages.UNKNOWN_LOGIN_REQUESTER);
         }
         if (!client.isEnabled()) {
-            event.error(Errors.CLIENT_NOT_FOUND);
+            event.error(Errors.CLIENT_DISABLED);
             return ErrorPage.error(session, Messages.LOGIN_REQUESTER_NOT_ENABLED);
         }
 
@@ -443,7 +443,7 @@ public class LoginActionsService {
             return ErrorPage.error(session, Messages.UNKNOWN_LOGIN_REQUESTER);
         }
         if (!client.isEnabled()) {
-            event.error(Errors.CLIENT_NOT_FOUND);
+            event.error(Errors.CLIENT_DISABLED);
             return ErrorPage.error(session, Messages.LOGIN_REQUESTER_NOT_ENABLED);
         }
 
@@ -741,6 +741,7 @@ public class LoginActionsService {
         }
         user.updateConsent(grantedConsent);
 
+        event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
         event.success();
 
         return authManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, clientConnection);
@@ -829,7 +830,7 @@ public class LoginActionsService {
         String totpSecret = formData.getFirst("totpSecret");
 
         LoginFormsProvider loginForms = session.getProvider(LoginFormsProvider.class).setUser(user);
-        if (Validation.isEmpty(totp)) {
+        if (Validation.isBlank(totp)) {
             return loginForms.setError(Messages.MISSING_TOTP)
                     .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.CONFIGURE_TOTP);
@@ -875,7 +876,7 @@ public class LoginActionsService {
 
         LoginFormsProvider loginForms = session.getProvider(LoginFormsProvider.class)
                 .setUser(user);
-        if (Validation.isEmpty(passwordNew)) {
+        if (Validation.isBlank(passwordNew)) {
             return loginForms.setError(Messages.MISSING_PASSWORD)
                     .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.UPDATE_PASSWORD);

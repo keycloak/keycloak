@@ -5,6 +5,8 @@ package org.keycloak.models;
  */
 public class LDAPConstants {
 
+    public static final String LDAP_PROVIDER = "ldap";
+
     public static final String VENDOR = "vendor";
     public static final String VENDOR_RHDS = "rhds";
     public static final String VENDOR_ACTIVE_DIRECTORY = "ad";
@@ -19,6 +21,7 @@ public class LDAPConstants {
 
     public static final String CONNECTION_URL = "connectionUrl";
     public static final String SECURITY_PROTOCOL = "securityProtocol";
+    public static final String BASE_DN = "baseDn"; // used for tests only
     public static final String USERS_DN = "usersDn";
     public static final String BIND_DN = "bindDn";
     public static final String BIND_CREDENTIAL = "bindCredential";
@@ -51,7 +54,7 @@ public class LDAPConstants {
     public static final String CONFIG_DIVIDER = ":::";
 
     // Those are forked from Picketlink
-    public static final String GIVENNAME = "givenname";
+    public static final String GIVENNAME = "givenName";
     public static final String CN = "cn";
     public static final String SN = "sn";
     public static final String SAM_ACCOUNT_NAME = "sAMAccountName";
@@ -62,6 +65,7 @@ public class LDAPConstants {
     public static final String OBJECT_CLASS = "objectclass";
     public static final String UID = "uid";
     public static final String USER_PASSWORD_ATTRIBUTE = "userpassword";
+    public static final String GROUP = "group";
     public static final String GROUP_OF_NAMES = "groupOfNames";
     public static final String GROUP_OF_ENTRIES = "groupOfEntries";
     public static final String GROUP_OF_UNIQUE_NAMES = "groupOfUniqueNames";
@@ -69,6 +73,7 @@ public class LDAPConstants {
     public static final String COMMA = ",";
     public static final String EQUAL = "=";
     public static final String EMPTY_ATTRIBUTE_VALUE = " ";
+    public static final String EMPTY_MEMBER_ATTRIBUTE_VALUE = "";
 
     public static final String CUSTOM_ATTRIBUTE_ENABLED = "enabled";
     public static final String CUSTOM_ATTRIBUTE_CREATE_DATE = "createDate";
@@ -77,4 +82,21 @@ public class LDAPConstants {
     public static final String OBJECT_GUID = "objectGUID";
     public static final String CREATE_TIMESTAMP = "createTimestamp";
     public static final String MODIFY_TIMESTAMP = "modifyTimestamp";
+
+    public static String getUuidAttributeName(String vendor) {
+        if (vendor != null) {
+            switch (vendor) {
+                case VENDOR_RHDS:
+                    return "nsuniqueid";
+                case VENDOR_TIVOLI:
+                    return "uniqueidentifier";
+                case VENDOR_NOVELL_EDIRECTORY:
+                    return "guid";
+                case VENDOR_ACTIVE_DIRECTORY:
+                    return OBJECT_GUID;
+            }
+        }
+
+        return ENTRY_UUID;
+    }
 }

@@ -35,23 +35,35 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.*;
+import org.keycloak.models.AccountRoles;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelReadOnlyException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.Urls;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
@@ -73,7 +85,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Variant;
-
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.HashSet;
@@ -414,13 +425,16 @@ public class AccountService {
 
         UserModel user = auth.getUser();
 
-        List<FormMessage> errors = Validation.validateUpdateProfileForm(formData);
+        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm, formData);
         if (errors != null && !errors.isEmpty()) {
             setReferrerOnPage();
             return account.setErrors(errors).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
         }
 
         try {
+            if (realm.isEditUsernameAllowed()) {
+                user.setUsername(formData.getFirst("username"));
+            }
             user.setFirstName(formData.getFirst("firstName"));
             user.setLastName(formData.getFirst("lastName"));
 
@@ -566,7 +580,7 @@ public class AccountService {
         String totp = formData.getFirst("totp");
         String totpSecret = formData.getFirst("totpSecret");
 
-        if (Validation.isEmpty(totp)) {
+        if (Validation.isBlank(totp)) {
             setReferrerOnPage();
             return account.setError(Messages.MISSING_TOTP).createResponse(AccountPages.TOTP);
         } else if (!new TimeBasedOTP().validate(totp, totpSecret.getBytes())) {
@@ -626,7 +640,7 @@ public class AccountService {
         String passwordConfirm = formData.getFirst("password-confirm");
 
         if (requireCurrent) {
-            if (Validation.isEmpty(password)) {
+            if (Validation.isBlank(password)) {
                 setReferrerOnPage();
                 return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
             }

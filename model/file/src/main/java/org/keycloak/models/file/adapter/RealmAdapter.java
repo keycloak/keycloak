@@ -30,6 +30,7 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationMapperEventImpl;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderCreationEventImpl;
 import org.keycloak.models.UserFederationProviderModel;
@@ -136,16 +137,6 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setSslRequired(SslRequired sslRequired) {
         realm.setSslRequired(sslRequired.name());
-    }
-
-    @Override
-    public boolean isPasswordCredentialGrantAllowed() {
-        return realm.isPasswordCredentialGrantAllowed();
-    }
-
-    @Override
-    public void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed) {
-        realm.setPasswordCredentialGrantAllowed(passwordCredentialGrantAllowed);
     }
 
     @Override
@@ -268,6 +259,16 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setResetPasswordAllowed(boolean resetPassword) {
         realm.setResetPasswordAllowed(resetPassword);
+    }
+
+    @Override
+    public boolean isEditUsernameAllowed() {
+        return realm.isEditUsernameAllowed();
+    }
+
+    @Override
+    public void setEditUsernameAllowed(boolean editUsernameAllowed) {
+        realm.setEditUsernameAllowed(editUsernameAllowed);
     }
 
     @Override
@@ -837,7 +838,9 @@ public class RealmAdapter implements RealmModel {
         realm.getUserFederationProviders().add(entity);
 
         UserFederationProviderModel providerModel = new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
+
         session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, providerModel));
+
         return providerModel;
     }
 
@@ -935,6 +938,7 @@ public class RealmAdapter implements RealmModel {
             entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
             entity.setLastSync(model.getLastSync());
             entities.add(entity);
+
             session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, model));
         }
 
@@ -1283,7 +1287,7 @@ public class RealmAdapter implements RealmModel {
         model.setPriority(entity.getPriority());
         model.setAuthenticator(entity.getAuthenticator());
         model.setParentFlow(entity.getParentFlow());
-        model.setAutheticatorFlow(entity.isAutheticatorFlow());
+        model.setAutheticatorFlow(entity.isAuthenticatorFlow());
         return model;
     }
 
@@ -1313,7 +1317,7 @@ public class RealmAdapter implements RealmModel {
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
-        entity.setAutheticatorFlow(model.isAutheticatorFlow());
+        entity.setAuthenticatorFlow(model.isAutheticatorFlow());
         AuthenticationFlowEntity flow = getFlowEntity(model.getId());
         flow.getExecutions().add(entity);
         model.setId(entity.getId());
@@ -1331,7 +1335,7 @@ public class RealmAdapter implements RealmModel {
             }
         }
         if (entity == null) return;
-        entity.setAutheticatorFlow(model.isAutheticatorFlow());
+        entity.setAuthenticatorFlow(model.isAutheticatorFlow());
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
@@ -1459,7 +1463,11 @@ public class RealmAdapter implements RealmModel {
         entity.setConfig(model.getConfig());
 
         this.realm.getUserFederationMappers().add(entity);
-        return entityToModel(entity);
+        UserFederationMapperModel mapperModel = entityToModel(entity);
+
+        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapperModel, this, session));
+
+        return mapperModel;
     }
 
     protected UserFederationMapperEntity getUserFederationMapperEntity(String id) {
@@ -1511,6 +1519,8 @@ public class RealmAdapter implements RealmModel {
             entity.getConfig().clear();
             entity.getConfig().putAll(mapper.getConfig());
         }
+
+        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapper, this, session));
     }
 
     @Override

@@ -34,7 +34,17 @@ public class HtmlUtils {
         for (int i = 0; i < value.length(); i++) {
             char chr = value.charAt(i);
 
-            if (chr != '\'' && chr != '"' && chr != '<' && chr != '>' && chr != '/') {
+            if (chr == '<') {
+                escaped.append("&lt;");
+            } else if (chr == '>') {
+                escaped.append("&gt;");
+            } else if (chr == '"') {
+                escaped.append("&quot;");
+            } else if (chr == '\'') {
+                escaped.append("&apos;");
+            } else if (chr == '&') {
+                escaped.append("&amp;");
+            } else {
                 escaped.append(chr);
             }
         }

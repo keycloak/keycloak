@@ -59,7 +59,7 @@ public class ModelVersion {
         if (major < version.major) return true;
         if (minor < version.minor) return true;
         if (micro < version.micro) return true;
-        if (qualifier == version.qualifier) return false;
+        if (qualifier != null && qualifier.equals(version.qualifier)) return false;
         if (qualifier == null) return false;
         if (version.qualifier == null) return true;
         int comp = qualifier.compareTo(version.qualifier);

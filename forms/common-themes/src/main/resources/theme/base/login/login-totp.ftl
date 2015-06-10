@@ -11,7 +11,7 @@
 
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="totp" class="${properties.kcLabelClass!}">${msg("doLogIn")}</label>
+                    <label for="totp" class="${properties.kcLabelClass!}">${msg("loginTotpOneTime")}</label>
                 </div>
 
                 <div class="${properties.kcInputWrapperClass!}">

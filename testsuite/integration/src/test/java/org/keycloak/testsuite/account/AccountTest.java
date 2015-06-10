@@ -24,11 +24,9 @@ package org.keycloak.testsuite.account;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.account.freemarker.model.ApplicationsBean;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
@@ -155,6 +153,9 @@ public class AccountTest {
             @Override
             public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
                 UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
+                user.setFirstName("Tom");
+                user.setLastName("Brady");
+                user.setEmail("test-user@localhost");
 
                 UserCredentialModel cred = new UserCredentialModel();
                 cred.setType(CredentialRepresentation.PASSWORD);
@@ -241,7 +242,9 @@ public class AccountTest {
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().session((String) null).error("invalid_user_credentials").assertEvent();
+        events.expectLogin().session((String) null).error("invalid_user_credentials")
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "new-password");
@@ -391,6 +394,61 @@ public class AccountTest {
 
         events.expectAccount(EventType.UPDATE_PROFILE).assertEvent();
         events.expectAccount(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+    }
+
+    @Test
+    public void changeUsername() {
+        // allow to edit the username in realm
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setEditUsernameAllowed(true);
+            }
+        });
+
+        try {
+            profilePage.open();
+            loginPage.login("test-user@localhost", "password");
+
+            events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT).assertEvent();
+
+            Assert.assertEquals("test-user@localhost", profilePage.getUsername());
+            Assert.assertEquals("Tom", profilePage.getFirstName());
+            Assert.assertEquals("Brady", profilePage.getLastName());
+            Assert.assertEquals("test-user@localhost", profilePage.getEmail());
+
+            // All fields are required, so there should be an error when something is missing.
+            profilePage.updateProfile("", "New first", "New last", "new@email.com");
+
+            Assert.assertEquals("Please specify username.", profilePage.getError());
+            Assert.assertEquals("", profilePage.getUsername());
+            Assert.assertEquals("New first", profilePage.getFirstName());
+            Assert.assertEquals("New last", profilePage.getLastName());
+            Assert.assertEquals("new@email.com", profilePage.getEmail());
+
+            events.assertEmpty();
+
+            profilePage.updateProfile("test-user-new@localhost", "New first", "New last", "new@email.com");
+
+            Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
+            Assert.assertEquals("test-user-new@localhost", profilePage.getUsername());
+            Assert.assertEquals("New first", profilePage.getFirstName());
+            Assert.assertEquals("New last", profilePage.getLastName());
+            Assert.assertEquals("new@email.com", profilePage.getEmail());
+
+        } finally {
+            // reset user for other tests
+            profilePage.updateProfile("test-user@localhost", "Tom", "Brady", "test-user@localhost");
+            events.clear();
+
+            // reset realm
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setEditUsernameAllowed(false);
+                }
+            });
+        }
     }
 
     @Test
