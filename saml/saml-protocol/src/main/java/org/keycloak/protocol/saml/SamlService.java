@@ -374,11 +374,21 @@ public class SamlService {
                 for (String sessionIndex : logoutRequest.getSessionIndex()) {
                     ClientSessionModel clientSession = session.sessions().getClientSession(realm, sessionIndex);
                     if (clientSession == null) continue;
+                    UserSessionModel userSession = clientSession.getUserSession();
                     if (clientSession.getClient().getClientId().equals(client.getClientId())) {
                         // remove requesting client from logout
                         clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
+
+                        // Remove also other clientSessions of this client as there could be more in this UserSession
+                        if (userSession != null) {
+                            for (ClientSessionModel clientSession2 : userSession.getClientSessions()) {
+                                if (clientSession2.getClient().getId().equals(client.getId())) {
+                                    clientSession2.setAction(ClientSessionModel.Action.LOGGED_OUT);
+                                }
+                            }
+                        }
                     }
-                    UserSessionModel userSession = clientSession.getUserSession();
+
                     try {
                         authManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
                     } catch (Exception e) {
