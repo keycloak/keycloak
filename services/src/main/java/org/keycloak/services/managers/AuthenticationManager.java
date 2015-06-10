@@ -6,6 +6,9 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.authentication.RequiredActionContext;
+import org.keycloak.authentication.RequiredActionFactory;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
@@ -28,6 +31,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -433,15 +437,70 @@ public class AuthenticationManager {
 
     }
 
-    public static Response actionRequired(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession,
-                                                         ClientConnection clientConnection,
-                                                         HttpRequest request, UriInfo uriInfo, EventBuilder event) {
-        RealmModel realm = clientSession.getRealm();
-        UserModel user = userSession.getUser();
+    public static Response actionRequired(final KeycloakSession session, final UserSessionModel userSession, final ClientSessionModel clientSession,
+                                                         final ClientConnection clientConnection,
+                                                         final HttpRequest request, final UriInfo uriInfo, final EventBuilder event) {
+        final RealmModel realm = clientSession.getRealm();
+        final UserModel user = userSession.getUser();
+        /*
         isForcePasswordUpdateRequired(realm, user);
         isTotpConfigurationRequired(realm, user);
         isEmailVerificationRequired(realm, user);
-        ClientModel client = clientSession.getClient();
+        */
+        final ClientModel client = clientSession.getClient();
+
+        RequiredActionContext context = new RequiredActionContext() {
+            @Override
+            public EventBuilder getEvent() {
+                return event;
+            }
+
+            @Override
+            public UserModel getUser() {
+                return user;
+            }
+
+            @Override
+            public RealmModel getRealm() {
+                return realm;
+            }
+
+            @Override
+            public ClientSessionModel getClientSession() {
+                return clientSession;
+            }
+
+            @Override
+            public UserSessionModel getUserSession() {
+                return userSession;
+            }
+
+            @Override
+            public ClientConnection getConnection() {
+                return clientConnection;
+            }
+
+            @Override
+            public UriInfo getUriInfo() {
+                return uriInfo;
+            }
+
+            @Override
+            public KeycloakSession getSession() {
+                return session;
+            }
+
+            @Override
+            public HttpRequest getHttpRequest() {
+                return request;
+            }
+        };
+
+        // see if any required actions need triggering, i.e. an expired password
+        for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(RequiredActionProvider.class)) {
+            RequiredActionProvider provider = ((RequiredActionFactory)factory).create(session);
+            provider.evaluateTriggers(context);
+        }
 
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
 
@@ -450,38 +509,19 @@ public class AuthenticationManager {
         event.detail(Details.CODE_ID, clientSession.getId());
 
         Set<String> requiredActions = user.getRequiredActions();
-        if (!requiredActions.isEmpty()) {
-            Iterator<String> i = user.getRequiredActions().iterator();
-            String action = i.next();
-            
-            if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL.name()) && Validation.isBlank(user.getEmail())) {
-                if (i.hasNext())
-                    action = i.next();
-                else
-                    action = null;
-            }
+        for (String action : requiredActions) {
+            RequiredActionProvider actionProvider = session.getProvider(RequiredActionProvider.class, action);
+            Response challenge = actionProvider.invokeRequiredAction(context);
+            if (challenge != null) return challenge;
 
-            if (action != null) {
-                accessCode.setRequiredAction(RequiredAction.valueOf(action));
-
-                LoginFormsProvider loginFormsProvider = session.getProvider(LoginFormsProvider.class).setClientSessionCode(accessCode.getCode())
-                        .setUser(user);
-                if (action.equals(UserModel.RequiredAction.VERIFY_EMAIL.name())) {
-                    event.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail()).success();
-                    LoginActionsService.createActionCookie(realm, uriInfo, clientConnection, userSession.getId());
-                }
-
-                return loginFormsProvider.createResponse(RequiredAction.valueOf(action));
-            }
         }
-
         if (client.isConsentRequired()) {
             accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT.name());
 
             UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
 
-            List<RoleModel> realmRoles = new LinkedList<RoleModel>();
-            MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<String, RoleModel>();
+            List<RoleModel> realmRoles = new LinkedList<>();
+            MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<>();
             for (RoleModel r : accessCode.getRequestedRoles()) {
 
                 // Consent already granted by user
@@ -496,7 +536,7 @@ public class AuthenticationManager {
                 }
             }
 
-            List<ProtocolMapperModel> protocolMappers = new LinkedList<ProtocolMapperModel>();
+            List<ProtocolMapperModel> protocolMappers = new LinkedList<>();
             for (ProtocolMapperModel protocolMapper : accessCode.getRequestedProtocolMappers()) {
                 if (protocolMapper.isConsentRequired() && protocolMapper.getConsentText() != null) {
                     if (grantedConsent == null || !grantedConsent.isProtocolMapperGranted(protocolMapper)) {

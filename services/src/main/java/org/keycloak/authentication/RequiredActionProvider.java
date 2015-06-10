@@ -9,6 +9,7 @@ import javax.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public interface RequiredActionProvider extends Provider {
+    void evaluateTriggers(RequiredActionContext context);
     Response invokeRequiredAction(RequiredActionContext context);
-    Object jaxrsService();
+    Object jaxrsService(RequiredActionContext context);
 }

@@ -773,7 +773,7 @@ public class LoginActionsService {
             event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
         }
 
-        return redirectOauth(user, accessCode, clientSession, userSession);
+        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
     }
 
     @Path("totp")
@@ -818,7 +818,7 @@ public class LoginActionsService {
 
         event.clone().event(EventType.UPDATE_TOTP).success();
 
-        return redirectOauth(user, accessCode, clientSession, userSession);
+        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
     }
 
     @Path("password")
@@ -880,7 +880,7 @@ public class LoginActionsService {
 
         event = event.clone().event(EventType.LOGIN);
 
-        return redirectOauth(user, accessCode, clientSession, userSession);
+        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
     }
 
 
@@ -913,7 +913,7 @@ public class LoginActionsService {
 
             event = event.clone().removeDetail(Details.EMAIL).event(EventType.LOGIN);
 
-            return redirectOauth(user, accessCode, clientSession, userSession);
+            return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
         } else {
             Checks checks = new Checks();
             if (!checks.check(code, ClientSessionModel.Action.VERIFY_EMAIL.name())) {
@@ -1055,10 +1055,6 @@ public class LoginActionsService {
 
     public static void createActionCookie(RealmModel realm, UriInfo uriInfo, ClientConnection clientConnection, String sessionId) {
         CookieHelper.addCookie(ACTION_COOKIE, sessionId, AuthenticationManager.getRealmCookiePath(realm, uriInfo), null, null, -1, realm.getSslRequired().isRequired(clientConnection), true);
-    }
-
-    private Response redirectOauth(UserModel user, ClientSessionCode accessCode, ClientSessionModel clientSession, UserSessionModel userSession) {
-        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
     }
 
     private void initEvent(ClientSessionModel clientSession) {
