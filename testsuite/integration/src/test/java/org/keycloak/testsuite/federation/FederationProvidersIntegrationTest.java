@@ -247,7 +247,7 @@ public class FederationProvidersIntegrationTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "email2@check.cz", "registerUserSuccess2", "Password1", "Password1", "non-LDAP-Mapped street", null, null, "78910", null);
+        registerPage.register("firstName", "lastName", "email2@check.cz", "registerUserSuccess2", "Password1", "Password1");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         KeycloakSession session = keycloakRule.startSession();
@@ -257,8 +257,6 @@ public class FederationProvidersIntegrationTest {
             Assert.assertNotNull(user);
             Assert.assertNotNull(user.getFederationLink());
             Assert.assertEquals(user.getFederationLink(), ldapModel.getId());
-            Assert.assertEquals("78910", user.getAttribute("postal_code"));
-            Assert.assertEquals("non-LDAP-Mapped street", user.getAttribute("street"));
         } finally {
             keycloakRule.stopSession(session, false);
         }
