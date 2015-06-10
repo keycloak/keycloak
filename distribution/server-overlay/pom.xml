@@ -10,69 +10,12 @@
 
     <artifactId>keycloak-server-overlay</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak Server Overlay Distribution</name>
+    <name>Keycloak Server Overlay Distributions</name>
     <description/>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-dist</artifactId>
-            <type>zip</type>
-        </dependency>
-    </dependencies>
 
-    <build>
-        <finalName>keycloak-overlay-${project.version}</finalName>
-
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>unpack-server-dist</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-dist</artifactId>
-                                    <type>zip</type>
-                                    <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>assemble</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>assembly.xml</descriptor>
-                            </descriptors>
-                            <recompressZippedFiles>true</recompressZippedFiles>
-                            <finalName>${project.build.finalName}</finalName>
-                            <appendAssemblyId>false</appendAssemblyId>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <workDirectory>${project.build.directory}/assembly/work</workDirectory>
-                            <tarLongFileMode>gnu</tarLongFileMode>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-
+    <modules>
+        <module>wf9-server-overlay</module>
+        <module>eap6</module>
+    </modules>
 </project>

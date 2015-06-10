@@ -884,6 +884,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-as7-server-subsystem</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wf8-subsystem</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -893,6 +898,10 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-wf9-server-subsystem</artifactId>
+                <version>${project.version}</version>
+            </dependency>            <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-subsystem</artifactId>
                 <version>${project.version}</version>
@@ -1084,7 +1093,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jboss-modules</artifactId>
+                <artifactId>keycloak-eap6-server-modules</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
@@ -1114,7 +1123,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-server-overlay</artifactId>
+                <artifactId>keycloak-wf9-server-overlay</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
