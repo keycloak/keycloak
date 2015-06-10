@@ -26,10 +26,11 @@ import java.util.HashMap;
 import org.codehaus.jackson.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
+import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.oidc.util.JsonSimpleHttp;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.social.SocialIdentityProvider;
 
 /**
@@ -37,8 +38,7 @@ import org.keycloak.social.SocialIdentityProvider;
  * 
  * @author Vlastimil Elias (velias at redhat dot com)
  */
-public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvider<StackOverflowIdentityProviderConfig>
-		implements SocialIdentityProvider<StackOverflowIdentityProviderConfig> {
+public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvider<StackOverflowIdentityProviderConfig> implements SocialIdentityProvider<StackOverflowIdentityProviderConfig> {
 
 	private static final Logger log = Logger.getLogger(StackoverflowIdentityProvider.class);
 
@@ -54,8 +54,6 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 		config.setUserInfoUrl(PROFILE_URL);
 	}
 
-
-
 	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		log.debug("doGetFederatedIdentity()");
@@ -67,18 +65,19 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 			}
 			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(URL)).get("items").get(0);
 
-            BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "user_id"));
+			BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "user_id"));
 
-            String username = extractUsernameFromProfileURL(getJsonProperty(profile, "link"));
-            user.setUsername(username);
+			String username = extractUsernameFromProfileURL(getJsonProperty(profile, "link"));
+			user.setUsername(username);
 			user.setName(unescapeHtml3(getJsonProperty(profile, "display_name")));
 			// email is not provided
 			// user.setEmail(getJsonProperty(profile, "email"));
-            user.setIdpConfig(getConfig());
-            user.setIdp(this);
+			user.setIdpConfig(getConfig());
+			user.setIdp(this);
 
+			AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
 
-            return user;
+			return user;
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Could not obtain user profile from Stackoverflow: " + e.getMessage(), e);
 		}
