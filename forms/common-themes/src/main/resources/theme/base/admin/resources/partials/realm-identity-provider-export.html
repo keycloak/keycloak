@@ -4,8 +4,8 @@
         <li>{{identityProvider.alias}}</li>
     </ol>
 
-    <h1 data-ng-hide="create"><strong>Identity Provider</strong> {{identityProvider.alias|capitalize}}</h1>
-    <h1 data-ng-show="create"><strong>Add OpenID Connect Identity Provider</strong></h1>
+    <h1 data-ng-hide="create">{{identityProvider.alias|capitalize}}</h1>
+    <h1 data-ng-show="create">Add OpenID Connect Identity Provider</h1>
 
     <ul class="nav nav-tabs" data-ng-hide="newIdentityProvider">
         <li><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">Settings</a></li>
