@@ -8,8 +8,8 @@
         <li class="active" data-ng-hide="create">{{mapper.name}}</li>
     </ol>
 
-    <h1 data-ng-show="create"><strong>Create Protocol Mapper</strong></h1>
-    <h1 data-ng-hide="create"><strong>Protocol Mapper</strong> {{mapper.name}}</h1>
+    <h1 data-ng-show="create">Create Protocol Mapper</h1>
+    <h1 data-ng-hide="create">{{mapper.name|capitalize}}</h1>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
 

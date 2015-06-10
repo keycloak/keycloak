@@ -4,11 +4,11 @@
         <li><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{identityProvider.alias}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers">Identity Provider Mappers</a></li>
         <li class="active" data-ng-show="create">Create IdentityProvider Mapper</li>
-        <li class="active" data-ng-hide="create">{{mapper.name}}</li>
+        <li class="active" data-ng-hide="create">{{mapper.name|capitalize}}</li>
     </ol>
 
-    <h1 data-ng-hide="create"><strong>Identity Provider Mapper</strong> {{mapper.name}}</h1>
-    <h1 data-ng-show="create"><strong>Add Identity Provider Mapper</strong></h1>
+    <h1 data-ng-hide="create">{{mapper.name|capitalize}}</h1>
+    <h1 data-ng-show="create">Add Identity Provider Mapper</h1>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
         <fieldset>
