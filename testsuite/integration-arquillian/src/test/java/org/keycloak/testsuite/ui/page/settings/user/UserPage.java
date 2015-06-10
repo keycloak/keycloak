@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.ui.page.settings;
+package org.keycloak.testsuite.ui.page.settings.user;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.testsuite.ui.model.User;

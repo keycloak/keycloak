@@ -17,7 +17,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.keycloak.testsuite.ui.AbstractKeyCloakTest;
 import org.keycloak.testsuite.ui.fragment.FlashMessage;
-import org.keycloak.testsuite.ui.page.settings.UserPage;
+import org.keycloak.testsuite.ui.page.settings.user.UserPage;
 import static org.openqa.selenium.By.id;
 import org.openqa.selenium.support.ui.Select;
 
