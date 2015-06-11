@@ -5,20 +5,19 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.testsuite.ui.AbstractKeyCloakTest;
 import org.keycloak.testsuite.ui.fragment.FlashMessage;
 import org.keycloak.testsuite.ui.model.User;
 import org.keycloak.testsuite.ui.page.settings.user.RoleMappingsPage;
 import org.keycloak.testsuite.ui.page.settings.user.UserPage;
 
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.testsuite.ui.AbstractKeyCloakUITest;
 import static org.openqa.selenium.By.linkText;
 
 /**
  * Created by fkiss.
  */
-public class RoleMappingsTest extends AbstractKeyCloakTest<RoleMappingsPage> {
+public class RoleMappingsTest extends AbstractKeyCloakUITest<RoleMappingsPage> {
 
     @Page
     private UserPage userPage;
