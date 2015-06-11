@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.ui.fragment;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
@@ -33,9 +32,9 @@ import org.openqa.selenium.WebElement;
  * @author Petr Mensik
  */
 public class Navigation {
-	
-	@Drone
-	private WebDriver driver;
+
+    @Drone
+    private WebDriver driver;
 
     @FindByJQuery("a:contains('Settings')")
     private WebElement settingsLink;
@@ -54,8 +53,8 @@ public class Navigation {
 
     @FindByJQuery("a:contains('Tokens')")
     private WebElement tokensLink;
-	
-	@FindByJQuery("a:contains('Sessions')")
+
+    @FindByJQuery("a:contains('Sessions')")
     private WebElement sessionLink;
 
     @FindByJQuery("a:contains('Security Defenses')")
@@ -63,32 +62,32 @@ public class Navigation {
 
     @FindByJQuery("a:contains('Events')")
     private WebElement eventsLink;
-	
-	@FindByJQuery("a:contains('Login')")
+
+    @FindByJQuery("a:contains('Login')")
     private WebElement loginLink;
 
     @FindByJQuery("a:contains('Themes')")
     private WebElement themesLink;
 
-	@FindByJQuery("a:contains('Role Mappings')")
+    @FindByJQuery("a:contains('Role Mappings')")
     private WebElement usersRoleMappings;
-	
-	@FindByJQuery("a:contains('Add Realm')")
+
+    @FindByJQuery("a:contains('Add Realm')")
     private WebElement addRealm;
-	
-	@FindByJQuery("a:contains('Credentials')")
+
+    @FindByJQuery("a:contains('Credentials')")
     private WebElement credentials;
-	
-	@FindByJQuery("a:contains('Attributes')")
+
+    @FindByJQuery("a:contains('Attributes')")
     private WebElement attributes;
-	
+
     @FindBy(css = "div h1")
     private WebElement currentHeader;
 
-	public void selectRealm(String realmName) {
-		driver.findElement(By.linkText(realmName)).click();
-	}
-	
+    public void selectRealm(String realmName) {
+        driver.findElement(By.linkText(realmName)).click();
+    }
+
     public void settings() {
         openPage(settingsLink, "Settings");
     }
@@ -104,7 +103,7 @@ public class Navigation {
     public void clients() {
         openPage(clientsLink, "Clients");
     }
-	
+
     public void oauth() {
         openPage(oauthLink, "OAuth Clients");
     }
@@ -112,10 +111,10 @@ public class Navigation {
     public void tokens() {
         openPage(tokensLink, "Settings");
     }
-	
-	public void sessions() {
-		openPage(sessionLink, "Sessions");
-	}
+
+    public void sessions() {
+        openPage(sessionLink, "Sessions");
+    }
 
     public void security() {
         openPage(securityLink, "Settings");
@@ -124,30 +123,32 @@ public class Navigation {
     public void events() {
         openPage(eventsLink, "Events");
     }
-	
-	public void login() {
-		openPage(loginLink, "Settings");
-	}
 
-    public void themes() { 
-		openPage(themesLink, "Settings"); 
-	}
+    public void login() {
+        openPage(loginLink, "Settings");
+    }
 
-    public void roleMappings() {
-		openPage(usersRoleMappings, "User");
-	}
-	
-	public void addRealm() {
-		openPage(addRealm, "Add Realm");
-	}
-	
-	public void credentials() {
-		openPage(credentials, "Settings");
-	}
-	
-	public void attributes() {
-		openPage(attributes, "Attributes");
-	}
+    public void themes() {
+        openPage(themesLink, "Settings");
+    }
+
+    public void roleMappings(String username) {
+        String usernameCapitalized = Character.toUpperCase(username.charAt(0))
+                + username.substring(1);
+        openPage(usersRoleMappings, usernameCapitalized);
+    }
+
+    public void addRealm() {
+        openPage(addRealm, "Add Realm");
+    }
+
+    public void credentials() {
+        openPage(credentials, "Settings");
+    }
+
+    public void attributes() {
+        openPage(attributes, "Attributes");
+    }
 
     private void openPage(WebElement page, String headerText) {
         waitGuiForElement(page);
