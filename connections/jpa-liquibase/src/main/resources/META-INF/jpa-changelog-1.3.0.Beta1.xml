@@ -124,6 +124,7 @@
                 <param valueBoolean="false" />
             </whereParams>
         </update>
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LOGIN" />
         <dropColumn tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LOGIN"/>
         
         <addColumn tableName="USER_REQUIRED_ACTION">
@@ -167,6 +168,7 @@
         <addForeignKeyConstraint baseColumnNames="FEDERATION_PROVIDER_ID" baseTableName="USER_FEDERATION_MAPPER" constraintName="FK_FEDMAPPERPM_FEDPRV" referencedColumnNames="ID" referencedTableName="USER_FEDERATION_PROVIDER"/>
         <addForeignKeyConstraint baseColumnNames="USER_FEDERATION_MAPPER_ID" baseTableName="USER_FEDERATION_MAPPER_CONFIG" constraintName="FK_FEDMAPPER_CFG" referencedColumnNames="ID" referencedTableName="USER_FEDERATION_MAPPER"/>
 
+        <dropDefaultValue tableName="REALM" columnName="PASSWORD_CRED_GRANT_ALLOWED" />
         <dropColumn tableName="REALM" columnName="PASSWORD_CRED_GRANT_ALLOWED"/>
     </changeSet>
 </databaseChangeLog>
