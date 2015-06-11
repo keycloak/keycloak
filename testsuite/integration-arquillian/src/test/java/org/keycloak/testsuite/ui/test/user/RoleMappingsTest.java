@@ -3,6 +3,7 @@ package org.keycloak.testsuite.ui.test.user;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.ui.AbstractKeyCloakTest;
 import org.keycloak.testsuite.ui.fragment.FlashMessage;
@@ -48,6 +49,7 @@ public class RoleMappingsTest extends AbstractKeyCloakTest<RoleMappingsPage> {
         userPage.deleteUser(testUsername);
     }
 
+    @Ignore
     @Test
     public void addAndRemoveUserAndAssignRole() {
         String testUsername = "tester2";
