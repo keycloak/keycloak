@@ -87,6 +87,12 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     }
 
     @Override
+    public String getDisplayText() {
+        return "Update Password";
+    }
+
+
+    @Override
     public String getId() {
         return UserModel.RequiredAction.UPDATE_PASSWORD.name();
     }

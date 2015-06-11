@@ -2,3 +2,4 @@ org.keycloak.authentication.actions.UpdatePassword
 org.keycloak.authentication.actions.UpdateProfile
 org.keycloak.authentication.actions.UpdateTotp
 org.keycloak.authentication.actions.VerifyEmail
+org.keycloak.authentication.actions.TermsAndConditions

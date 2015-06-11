@@ -25,6 +25,8 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.RequiredActionContext;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.events.Details;
@@ -67,7 +69,9 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
@@ -303,12 +307,8 @@ public class LoginActionsService {
         event.detail(Details.CODE_ID, clientSession.getId());
 
         if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE.name()) || clientSession.getUserSession() != null) {
-            clientCode.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
             event.client(clientSession.getClient()).error(Errors.EXPIRED_CODE);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.EXPIRED_CODE)
-                    .setClientSessionCode(clientCode.getCode())
-                    .createLogin();
+            return ErrorPage.error(session, Messages.EXPIRED_CODE);
         }
 
         ClientModel client = clientSession.getClient();
@@ -685,11 +685,11 @@ public class LoginActionsService {
         }
         event.session(userSession);
 
-        LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
-        protocol.setRealm(realm)
-                .setHttpHeaders(headers)
-                .setUriInfo(uriInfo);
         if (formData.containsKey("cancel")) {
+            LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
+            protocol.setRealm(realm)
+                    .setHttpHeaders(headers)
+                    .setUriInfo(uriInfo);
             event.error(Errors.REJECTED_BY_USER);
             return protocol.consentDenied(clientSession);
         }
@@ -1075,4 +1075,111 @@ public class LoginActionsService {
             }
         }
     }
+
+    @Path("required-actions/{action}")
+    public Object requiredAction(@QueryParam("code") String code,
+                                 @PathParam("action") String action) {
+        event.event(EventType.LOGIN);
+        if (!checkSsl()) {
+            event.error(Errors.SSL_REQUIRED);
+            throw new WebApplicationException(ErrorPage.error(session, Messages.HTTPS_REQUIRED));
+        }
+
+        if (!realm.isEnabled()) {
+            event.error(Errors.REALM_DISABLED);
+            return ErrorPage.error(session, Messages.REALM_NOT_ENABLED);
+        }
+        ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
+        if (clientCode == null) {
+            event.error(Errors.INVALID_CODE);
+            throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
+        }
+
+        final ClientSessionModel clientSession = clientCode.getClientSession();
+        event.detail(Details.CODE_ID, clientSession.getId());
+
+        /*
+        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE.name()) || clientSession.getUserSession() != null) {
+            event.client(clientSession.getClient()).error(Errors.EXPIRED_CODE);
+            throw new WebApplicationException(ErrorPage.error(session, Messages.EXPIRED_CODE));
+        }
+        */
+
+        ClientModel client = clientSession.getClient();
+        if (client == null) {
+            event.error(Errors.CLIENT_NOT_FOUND);
+            throw new WebApplicationException( ErrorPage.error(session, Messages.UNKNOWN_LOGIN_REQUESTER));
+        }
+        session.getContext().setClient(client);
+
+        if (!client.isEnabled()) {
+            event.error(Errors.CLIENT_NOT_FOUND);
+            throw new WebApplicationException( ErrorPage.error(session, Messages.LOGIN_REQUESTER_NOT_ENABLED));
+        }
+
+        if (action == null) {
+            logger.error("required action was null");
+            event.error(Errors.INVALID_CODE);
+            throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
+
+        }
+
+        RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, action);
+        if (provider == null) {
+            logger.error("required action provider was null");
+            event.error(Errors.INVALID_CODE);
+            throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
+        }
+        RequiredActionContext context = new RequiredActionContext() {
+            @Override
+            public EventBuilder getEvent() {
+                return event;
+            }
+
+            @Override
+            public UserModel getUser() {
+                return getUserSession().getUser();
+            }
+
+            @Override
+            public RealmModel getRealm() {
+                return realm;
+            }
+
+            @Override
+            public ClientSessionModel getClientSession() {
+                return clientSession;
+            }
+
+            @Override
+            public UserSessionModel getUserSession() {
+                return clientSession.getUserSession();
+            }
+
+            @Override
+            public ClientConnection getConnection() {
+                return clientConnection;
+            }
+
+            @Override
+            public UriInfo getUriInfo() {
+                return uriInfo;
+            }
+
+            @Override
+            public KeycloakSession getSession() {
+                return session;
+            }
+
+            @Override
+            public HttpRequest getHttpRequest() {
+                return request;
+            }
+        };
+        return provider.jaxrsService(context);
+
+
+
+    }
+
 }

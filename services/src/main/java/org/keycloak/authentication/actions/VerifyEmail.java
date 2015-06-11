@@ -97,6 +97,12 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     }
 
     @Override
+    public String getDisplayText() {
+        return "Verify Email";
+    }
+
+
+    @Override
     public String getId() {
         return UserModel.RequiredAction.VERIFY_EMAIL.name();
     }

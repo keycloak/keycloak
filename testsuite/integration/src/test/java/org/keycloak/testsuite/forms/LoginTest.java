@@ -40,6 +40,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.rule.KeycloakRule;
@@ -98,6 +99,9 @@ public class LoginTest {
 
     @WebResource
     protected LoginPage loginPage;
+
+    @WebResource
+    protected ErrorPage errorPage;
     
     @WebResource
     protected LoginPasswordUpdatePage updatePasswordPage;
@@ -424,8 +428,10 @@ public class LoginTest {
             Time.setOffset(5000);
             loginPage.login("login@test.com", "password");
 
-            loginPage.assertCurrent();
-            Assert.assertEquals("Login timeout. Please login again.", loginPage.getError());
+            //loginPage.assertCurrent();
+            errorPage.assertCurrent();
+
+            //Assert.assertEquals("Login timeout. Please login again.", loginPage.getError());
 
             events.expectLogin().user((String) null).session((String) null).error("expired_code").clearDetails().detail(Details.CODE_ID, AssertEvents.isCodeId()).assertEvent();
 

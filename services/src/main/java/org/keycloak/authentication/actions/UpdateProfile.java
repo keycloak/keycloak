@@ -69,6 +69,12 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
     }
 
     @Override
+    public String getDisplayText() {
+        return "Update Profile";
+    }
+
+
+    @Override
     public String getId() {
         return UserModel.RequiredAction.UPDATE_PROFILE.name();
     }

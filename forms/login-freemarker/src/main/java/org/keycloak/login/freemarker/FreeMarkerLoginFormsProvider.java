@@ -27,6 +27,7 @@ import org.keycloak.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.login.freemarker.model.ProfileBean;
 import org.keycloak.login.freemarker.model.RealmBean;
 import org.keycloak.login.freemarker.model.RegisterBean;
+import org.keycloak.login.freemarker.model.RequiredActionUrlFormatterMethod;
 import org.keycloak.login.freemarker.model.TotpBean;
 import org.keycloak.login.freemarker.model.UrlBean;
 import org.keycloak.models.ClientModel;
@@ -205,6 +206,7 @@ import java.util.concurrent.TimeUnit;
             uriBuilder.replaceQuery(null);
         }
         URI baseUri = uriBuilder.build();
+        attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
 
         if (realm != null) {
             attributes.put("realm", new RealmBean(realm));
@@ -271,6 +273,98 @@ import java.util.concurrent.TimeUnit;
             return Response.serverError().build();
         }
     }
+
+    @Override
+    public Response createForm(String form, Map<String, Object> attributes) {
+        RealmModel realm = session.getContext().getRealm();
+        ClientModel client = session.getContext().getClient();
+        UriInfo uriInfo = session.getContext().getUri();
+
+        MultivaluedMap<String, String> queryParameterMap = queryParams != null ? queryParams : new MultivaluedMapImpl<String, String>();
+
+        String requestURI = uriInfo.getBaseUri().getPath();
+        UriBuilder uriBuilder = UriBuilder.fromUri(requestURI);
+
+        for (String k : queryParameterMap.keySet()) {
+
+            Object[] objects = queryParameterMap.get(k).toArray();
+            if (objects.length == 1 && objects[0] == null) continue; //
+            uriBuilder.replaceQueryParam(k, objects);
+        }
+        if (accessCode != null) {
+            uriBuilder.replaceQueryParam(OAuth2Constants.CODE, accessCode);
+        }
+        URI baseUri = uriBuilder.build();
+
+        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
+        Theme theme;
+        try {
+            theme = themeProvider.getTheme(realm.getLoginTheme(), Theme.Type.LOGIN);
+        } catch (IOException e) {
+            logger.error("Failed to create theme", e);
+            return Response.serverError().build();
+        }
+
+        try {
+            attributes.put("properties", theme.getProperties());
+        } catch (IOException e) {
+            logger.warn("Failed to load properties", e);
+        }
+
+        Properties messagesBundle;
+        Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, session.getContext().getRequestHeaders());
+        try {
+            messagesBundle = theme.getMessages(locale);
+            attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
+        } catch (IOException e) {
+            logger.warn("Failed to load messages", e);
+            messagesBundle = new Properties();
+        }
+
+        MessagesPerFieldBean messagesPerField = new MessagesPerFieldBean();
+        if (messages != null) {
+            MessageBean wholeMessage = new MessageBean(null, messageType);
+            for (FormMessage message : this.messages) {
+                String formattedMessageText = formatMessage(message, messagesBundle, locale);
+                if (formattedMessageText != null) {
+                    wholeMessage.appendSummaryLine(formattedMessageText);
+                    messagesPerField.addMessage(message.getField(), formattedMessageText, messageType);
+                }
+            }
+            attributes.put("message", wholeMessage);
+        }
+        attributes.put("messagesPerField", messagesPerField);
+
+        if (status == null) {
+            status = Response.Status.OK;
+        }
+
+        if (realm != null) {
+            attributes.put("realm", new RealmBean(realm));
+            attributes.put("social", new IdentityProviderBean(realm, baseUri, uriInfo));
+            attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
+            attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
+
+            if (realm.isInternationalizationEnabled()) {
+                UriBuilder b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
+                attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
+            }
+        }
+        try {
+            String result = freeMarker.processTemplate(attributes, form, theme);
+            Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML).entity(result);
+            BrowserSecurityHeaderSetup.headers(builder, realm);
+            for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
+                builder.header(entry.getKey(), entry.getValue());
+            }
+            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, Urls.localeCookiePath(baseUri, realm.getName()));
+            return builder.build();
+        } catch (FreeMarkerException e) {
+            logger.error("Failed to process template", e);
+            return Response.serverError().build();
+        }
+    }
+
 
     public Response createLogin() {
         return createResponse(LoginFormsPages.LOGIN);

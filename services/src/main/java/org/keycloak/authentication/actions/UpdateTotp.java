@@ -77,6 +77,12 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     }
 
     @Override
+    public String getDisplayText() {
+        return "Configure Totp";
+    }
+
+
+    @Override
     public String getId() {
         return UserModel.RequiredAction.CONFIGURE_TOTP.name();
     }

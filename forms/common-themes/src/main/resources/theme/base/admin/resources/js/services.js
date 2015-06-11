@@ -186,6 +186,12 @@ module.factory('RealmAdminEvents', function($resource) {
     });
 });
 
+module.factory('RequiredActions', function($resource) {
+    return $resource(authUrl + '/admin/realms/:id/required-actions', {
+        id : '@realm'
+    });
+});
+
 module.factory('RealmLDAPConnectionTester', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/testLDAPConnection');
 });
