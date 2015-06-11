@@ -3,6 +3,7 @@ package org.keycloak.connections.jpa.updater.liquibase.custom;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import liquibase.datatype.DataTypeFactory;
 import liquibase.exception.CustomChangeException;
 import liquibase.statement.core.InsertStatement;
 import liquibase.structure.core.Table;
@@ -17,7 +18,9 @@ public class JpaUpdate1_2_0_CR1 extends CustomKeycloakTask {
         String realmClientTableName = database.correctObjectName("REALM_CLIENT", Table.class);
 
         try {
-            PreparedStatement statement = jdbcConnection.prepareStatement("select CLIENT.REALM_ID, CLIENT.ID CLIENT_ID from CLIENT where CLIENT.CONSENT_REQUIRED = true");
+            String trueValue = DataTypeFactory.getInstance().getTrueBooleanValue(database);
+            PreparedStatement statement = jdbcConnection.prepareStatement("select CLIENT.REALM_ID, CLIENT.ID CLIENT_ID from CLIENT where CLIENT.CONSENT_REQUIRED = " + trueValue);
+
             try {
                 ResultSet resultSet = statement.executeQuery();
                 try {
