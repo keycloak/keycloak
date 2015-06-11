@@ -25,6 +25,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -335,14 +336,8 @@ public class SamlService {
                     return buildRedirectToIdentityProvider(identityProvider.getAlias(), new ClientSessionCode(realm, clientSession).getCode() );
                 }
             }
-
-            String flowId = null;
-            for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
-                if (flow.getAlias().equals("browser")) {
-                    flowId = flow.getId();
-                    break;
-                }
-            }
+            AuthenticationFlowModel flow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+            String flowId = flow.getId();
             AuthenticationProcessor processor = new AuthenticationProcessor();
             processor.setClientSession(clientSession)
                     .setFlowId(flowId)

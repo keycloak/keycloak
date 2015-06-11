@@ -21,6 +21,7 @@ import java.net.URI;
 public class AbstractFormAuthenticator {
 
     public static final String LOGIN_FORM_ACTION = "login_form";
+    public static final String REGISTRATION_FORM_ACTION = "registration_form";
     public static final String ACTION = "action";
 
     protected boolean isAction(AuthenticatorContext context, String action) {

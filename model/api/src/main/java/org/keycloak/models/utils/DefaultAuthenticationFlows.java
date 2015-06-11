@@ -90,7 +90,7 @@ public class DefaultAuthenticationFlows {
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator(password.getId());
         execution.setPriority(11);
-        execution.setUserSetupAllowed(false);
+        execution.setUserSetupAllowed(true);
         execution.setAutheticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 

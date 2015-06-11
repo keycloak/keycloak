@@ -1244,6 +1244,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return models;
     }
 
+    @Override
+    public AuthenticationFlowModel getFlowByAlias(String alias) {
+        for (AuthenticationFlowModel flow : getAuthenticationFlows()) {
+            if (flow.getAlias().equals(alias)) {
+                return flow;
+            }
+        }
+        return null;
+    }
+
+
     protected AuthenticationFlowModel entityToModel(AuthenticationFlowEntity entity) {
         AuthenticationFlowModel model = new AuthenticationFlowModel();
         model.setId(entity.getId());

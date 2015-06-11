@@ -187,6 +187,7 @@ public interface RealmModel extends RoleContainerModel {
     void setSmtpConfig(Map<String, String> smtpConfig);
 
     List<AuthenticationFlowModel> getAuthenticationFlows();
+    AuthenticationFlowModel getFlowByAlias(String alias);
     AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model);
     AuthenticationFlowModel getAuthenticationFlowById(String id);
     void removeAuthenticationFlow(AuthenticationFlowModel model);

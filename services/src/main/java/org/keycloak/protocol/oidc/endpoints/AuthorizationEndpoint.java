@@ -19,6 +19,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -259,13 +260,8 @@ public class AuthorizationEndpoint {
         }
         clientSession.setNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
 
-        String flowId = null;
-        for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
-            if (flow.getAlias().equals("browser")) {
-                flowId = flow.getId();
-                break;
-            }
-        }
+        AuthenticationFlowModel flow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+        String flowId = flow.getId();
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setClientSession(clientSession)
                 .setFlowId(flowId)
