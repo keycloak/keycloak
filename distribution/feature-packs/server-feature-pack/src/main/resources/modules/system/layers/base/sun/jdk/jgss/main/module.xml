@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<module xmlns="urn:jboss:module:1.1" name="sun.jdk.jgss">
+    <resources>
+        <!-- Insert resources here -->
+    </resources>
+    <dependencies>
+        <system export="true">
+            <paths>
+                <path name="sun/security/jgss" />
+                <path name="sun/security/jgss/spi" />
+                <path name="sun/security/jgss/krb5" />
+            </paths>
+        </system>
+    </dependencies>
+
+</module>

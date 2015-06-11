@@ -25,10 +25,11 @@ import org.codehaus.jackson.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
+import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.oidc.util.JsonSimpleHttp;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.social.SocialIdentityProvider;
 
 /**
@@ -58,18 +59,20 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider imp
 		try {
 			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken));
 
-            BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
+			BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
 
-            String username = extractUsernameFromProfileURL(getJsonProperty(profile, "publicProfileUrl"));
-            user.setUsername(username);
+			String username = extractUsernameFromProfileURL(getJsonProperty(profile, "publicProfileUrl"));
+			user.setUsername(username);
 			user.setName(getJsonProperty(profile, "formattedName"));
 			user.setEmail(getJsonProperty(profile, "emailAddress"));
-            user.setIdpConfig(getConfig());
-            user.setIdp(this);
+			user.setIdpConfig(getConfig());
+			user.setIdp(this);
 
-            return user;
+			AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
+
+			return user;
 		} catch (Exception e) {
-			throw new IdentityBrokerException("Could not obtain user profile from github.", e);
+			throw new IdentityBrokerException("Could not obtain user profile from linkedIn.", e);
 		}
 	}
 

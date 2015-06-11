@@ -6,8 +6,8 @@
         <li data-ng-hide="create">{{client.clientId}}</li>
     </ol>
 
-    <h1 data-ng-show="create"><strong>Add Client</strong></h1>
-    <h1 data-ng-hide="create"><strong>Client</strong> {{client.clientId|capitalize}}</h1>
+    <h1 data-ng-show="create">Add Client</h1>
+    <h1 data-ng-hide="create">{{client.clientId|capitalize}}</h1>
 
     <kc-tabs-client></kc-tabs-client>
 

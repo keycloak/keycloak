@@ -121,11 +121,6 @@
     display: block;
 }
 
-#kc-login {
-    float: right;
-    margin-left: 10px;
-}
-
 #kc-feedback-wrapper {
     display: inline-block;
     width: auto;

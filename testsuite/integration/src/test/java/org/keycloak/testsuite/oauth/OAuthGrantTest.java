@@ -36,7 +36,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.RealmManager;
@@ -51,7 +50,6 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
-import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -104,7 +102,10 @@ public class OAuthGrantTest {
 
         Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
 
-        Event loginEvent = events.expectLogin().client("third-party").assertEvent();
+        Event loginEvent = events.expectLogin()
+                .client("third-party")
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                .assertEvent();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String sessionId = loginEvent.getSessionId();
 
@@ -147,7 +148,11 @@ public class OAuthGrantTest {
         Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.ERROR));
         assertEquals("access_denied", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
 
-        events.expectLogin().client("third-party").error("rejected_by_user").assertEvent();
+        events.expectLogin()
+                .client("third-party")
+                .error("rejected_by_user")
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
     }
 
     @Test
@@ -159,7 +164,10 @@ public class OAuthGrantTest {
         grantPage.assertCurrent();
         grantPage.accept();
 
-        events.expectLogin().client("third-party").assertEvent();
+        events.expectLogin()
+                .client("third-party")
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                .assertEvent();
 
         // Assert permissions granted on Account mgmt. applications page
         accountAppsPage.open();
@@ -172,7 +180,11 @@ public class OAuthGrantTest {
         // Open login form and assert grantPage not shown
         oauth.openLoginForm();
         appPage.assertCurrent();
-        events.expectLogin().detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).client("third-party").assertEvent();
+        events.expectLogin()
+                .detail(Details.AUTH_METHOD, "sso")
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
+                .removeDetail(Details.USERNAME)
+                .client("third-party").assertEvent();
 
         // Revoke grant in account mgmt.
         accountAppsPage.open();
@@ -219,7 +231,10 @@ public class OAuthGrantTest {
         // Confirm grant page
         grantPage.assertCurrent();
         grantPage.accept();
-        events.expectLogin().client("third-party").assertEvent();
+        events.expectLogin()
+                .client("third-party")
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                .assertEvent();
 
         // Assert new role and protocol mapper not in account mgmt.
         accountAppsPage.open();
@@ -235,7 +250,10 @@ public class OAuthGrantTest {
         Assert.assertTrue(driver.getPageSource().contains("new-role"));
         Assert.assertTrue(driver.getPageSource().contains(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME));
         grantPage.accept();
-        events.expectLogin().client("third-party").assertEvent();
+        events.expectLogin()
+                .client("third-party")
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                .assertEvent();
 
         // Go to account mgmt. Everything is granted now
         accountAppsPage.open();

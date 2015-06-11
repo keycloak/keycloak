@@ -1,5 +1,5 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
-    <h1><strong>Roles</strong> {{realm.realm|capitalize}}</h1>
+    <h1>Roles</h1>
 
     <ul class="nav nav-tabs">
         <li class="active"><a href="#/realms/{{realm.realm}}/roles">Realm Roles</a></li>
@@ -33,7 +33,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr ng-repeat="role in roles | filter:{name: searchQuery}">
+        <tr ng-repeat="role in roles | orderBy:'name' | filter:{name: searchQuery}">
             <td><a href="#/realms/{{realm.realm}}/roles/{{role.id}}">{{role.name}}</a></td>
             <td>{{role.composite}}</td>
             <td>{{role.description}}</td>

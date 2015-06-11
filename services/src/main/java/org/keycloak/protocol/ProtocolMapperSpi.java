@@ -10,8 +10,8 @@ import org.keycloak.provider.Spi;
 public class ProtocolMapperSpi implements Spi {
 
     @Override
-    public boolean isPrivate() {
-        return false;
+    public boolean isInternal() {
+        return true;
     }
 
     @Override

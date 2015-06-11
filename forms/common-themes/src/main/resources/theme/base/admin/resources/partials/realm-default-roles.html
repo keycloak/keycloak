@@ -1,5 +1,5 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
-    <h1><strong>Roles</strong> {{realm.realm|capitalize}}</h1>
+    <h1>Roles</h1>
 
     <ul class="nav nav-tabs">
         <li><a href="#/realms/{{realm.realm}}/roles">Realm Roles</a></li>
@@ -17,7 +17,7 @@
                         <select id="available" class="form-control" multiple size="5"
                                 ng-multiple="true"
                                 ng-model="selectedRealmRoles"
-                                ng-options="r for r in availableRealmRoles">
+                                ng-options="r for r in availableRealmRoles | orderBy:'toString()'">
                         </select>
                         <button class="btn btn-default" type="submit" ng-click="addRealmDefaultRole()" tooltip="Assign role" tooltip-placement="right">
                             Add selected <i class="fa fa-angle-double-right"></i>
@@ -29,7 +29,7 @@
                         <select id="assigned" class="form-control" multiple size=5
                                 ng-multiple="true"
                                 ng-model="selectedRealmDefRoles"
-                                ng-options="r for r in realm.defaultRoles">
+                                ng-options="r for r in realm.defaultRoles | orderBy:'toString()'">
                         </select>
                         <button class="btn btn-default" type="submit" ng-click="deleteRealmDefaultRole()" tooltip="Unassign role" tooltip-placement="left">
                             <i class="fa fa-angle-double-left"></i> Remove selected
@@ -55,7 +55,7 @@
                         <select id="available-client" class="form-control" multiple size="5"
                                 ng-multiple="true"
                                 ng-model="selectedClientRoles"
-                                ng-options="r for r in availableClientRoles">
+                                ng-options="r for r in availableClientRoles | orderBy:'toString()'">
                         </select>
                         <button class="btn btn-default" type="submit" ng-click="addClientDefaultRole()" tooltip="Assign role" tooltip-placement="right">
                             Add selected <i class="fa fa-angle-double-right"></i>
@@ -67,7 +67,7 @@
                         <select id="assigned-client" class="form-control" multiple size=5
                                 ng-multiple="true"
                                 ng-model="selectedClientDefRoles"
-                                ng-options="r for r in client.defaultRoles">
+                                ng-options="r for r in client.defaultRoles | orderBy:'toString()'">
                         </select>
                         <button class="btn btn-default" type="submit" ng-click="rmClientDefaultRole()" tooltip="Unassign role" tooltip-placement="left">
                             <i class="fa fa-angle-double-left"></i> Remove selected

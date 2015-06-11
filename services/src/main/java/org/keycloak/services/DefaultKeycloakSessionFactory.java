@@ -4,8 +4,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
@@ -66,7 +64,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
                 Config.Scope scope = Config.scope(spi.getName(), provider);
                 factory.init(scope);
 
-                if (spi.isPrivate() && !isInternal(factory)) {
+                if (spi.isInternal() && !isInternal(factory)) {
                     log.warnv("{0} ({1}) is implementing the internal SPI {2}. This SPI is internal and may change without notice", factory.getId(), factory.getClass().getName(), spi.getName());
                 }
 
@@ -78,7 +76,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
                     Config.Scope scope = Config.scope(spi.getName(), factory.getId());
                     factory.init(scope);
 
-                    if (spi.isPrivate() && !isInternal(factory)) {
+                    if (spi.isInternal() && !isInternal(factory)) {
                         log.warnv("{0} ({1}) is implementing the internal SPI {2}. This SPI is internal and may change without notice", factory.getId(), factory.getClass().getName(), spi.getName());
                     }
 

@@ -113,7 +113,7 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
     }
 
     public ExpectedEvent expectRequiredAction(EventType event) {
-        return expectLogin().event(event).session(isUUID());
+        return expectLogin().event(event).removeDetail(Details.CONSENT).session(isUUID());
     }
 
     public ExpectedEvent expectLogin() {
@@ -123,6 +123,7 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.AUTH_METHOD, "form")
                 .detail(Details.REDIRECT_URI, DEFAULT_REDIRECT_URI)
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
                 .session(isUUID());
     }
 

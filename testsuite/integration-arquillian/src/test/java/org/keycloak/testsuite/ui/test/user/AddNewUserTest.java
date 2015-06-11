@@ -22,7 +22,7 @@ import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.junit.Test;
 import org.keycloak.testsuite.ui.fragment.FlashMessage;
 import org.keycloak.testsuite.ui.model.User;
-import org.keycloak.testsuite.ui.page.settings.UserPage;
+import org.keycloak.testsuite.ui.page.settings.user.UserPage;
 
 
 import static org.junit.Assert.*;
@@ -100,13 +100,16 @@ public class AddNewUserTest extends AbstractKeyCloakUITest<UserPage> {
 
     @Test
     public void addDisabledUser() {
-        page.addUser(TEST_USER1);
+        User disabledUser = new User(TEST_USER1);
+		disabledUser.setUserEnabled(false);
+		disabledUser.setUserName("disabled_user");
+        page.addUser(disabledUser);
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 		navigation.users();
-        page.deleteUser(TEST_USER1.getUserName());
+        page.deleteUser(disabledUser.getUserName());
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(page.findUser(TEST_USER1.getUserName()));
+        assertNull(page.findUser(disabledUser.getUserName()));
     }
 
     

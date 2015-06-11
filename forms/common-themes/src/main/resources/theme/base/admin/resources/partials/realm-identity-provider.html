@@ -1,5 +1,5 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
-    <h1><strong>Identity Providers</strong> {{realm.realm|capitalize}}</h1>
+    <h1>Identity Providers</h1>
 
     <form name="realmForm" novalidate class="form-horizontal">
         <fieldset>
@@ -8,7 +8,7 @@
                     <caption class="hidden">Table of identity providers</caption>
                     <thead>
                     <tr>
-                        <th colspan="3" class="kc-table-actions">
+                        <th colspan="4" class="kc-table-actions">
                             <div class="dropdown pull-right">
                                 <select class="form-control" ng-model="provider"
                                         ng-options="p.name group by p.groupName for p in allProviders track by p.id"
@@ -21,6 +21,7 @@
                     <tr ng-show="configuredProviders.length > 0">
                         <th>Name</th>
                         <th>Provider</th>
+                        <th>Enabled</th>
                         <th width="15%">GUI order</th>
                     </tr>
                     </thead>
@@ -30,6 +31,7 @@
                             <a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{identityProvider.alias}}</a>
                         </td>
                         <td>{{identityProvider.providerId}}</td>
+                        <td>{{identityProvider.enabled}}</td>
                         <td>{{identityProvider.config.guiOrder}}</td>
                     </tr>
                     </tbody>

@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.keycloak.testsuite.ui.fragment.FlashMessage;
 import org.keycloak.testsuite.ui.model.User;
 import org.keycloak.testsuite.ui.page.RegisterPage;
-import org.keycloak.testsuite.ui.page.settings.UserPage;
+import org.keycloak.testsuite.ui.page.settings.user.UserPage;
 
 import static org.junit.Assert.*;
 import org.junit.Before;

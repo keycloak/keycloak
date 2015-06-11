@@ -4,8 +4,8 @@
         <li>{{identityProvider.alias}}</li>
     </ol>
 
-    <h1 data-ng-hide="create"><strong>Identity Provider</strong> {{identityProvider.alias|capitalize}}</h1>
-    <h1 data-ng-show="create"><strong>Add SAML Identity Provider</strong></h1>
+    <h1 data-ng-hide="create">{{identityProvider.alias|capitalize}}</h1>
+    <h1 data-ng-show="create">Add SAML Identity Provider</h1>
 
     <ul class="nav nav-tabs" data-ng-hide="newIdentityProvider">
         <li class="active"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">Settings</a></li>
@@ -60,11 +60,24 @@
                 <kc-tooltip>Enable/disable new users can read any stored tokens.  This assigns the broker.read-token role.</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="updateProfileFirstLogin">Update Profile on First Login</label>
-                <div class="col-md-6">
-                    <input ng-model="identityProvider.updateProfileFirstLogin" name="identityProvider.updateProfileFirstLogin" id="updateProfileFirstLogin" onoffswitch />
+                <label class="col-md-2 control-label" for="updateProfileFirstLoginMode">Update Profile on First Login</label>
+                <div class="col-md-2">
+                		<div>
+                        <select id="updateProfileFirstLoginMode" ng-model="identityProvider.updateProfileFirstLoginMode" class="form-control">
+                            <option value="on">On</option>
+                            <option value="missing">On missing info</option>
+                            <option value="off">Off</option>
+                        </select>
+                    </div>
                 </div>
-                <kc-tooltip>Indicates if user must update his profile right after the first login.</kc-tooltip>
+                <kc-tooltip>Define under which conditions must user update his profile right after the first login.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="trustEmail">Trust email</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.trustEmail" name="identityProvider.trustEmail" id="trustEmail" onoffswitch />
+                </div>
+                <kc-tooltip>If enabled then email provided by this provider is not verified even if verification is enabled for the realm.</kc-tooltip>
             </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="guiOrder">GUI order</label>

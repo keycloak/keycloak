@@ -19,6 +19,7 @@ package org.keycloak.broker.oidc;
 
 import org.codehaus.jackson.JsonNode;
 import org.jboss.logging.Logger;
+import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.oidc.util.JsonSimpleHttp;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.AuthenticationRequest;
@@ -50,6 +51,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+
 import java.io.IOException;
 import java.security.PublicKey;
 
@@ -224,7 +226,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 name = getJsonProperty(userInfo, "name");
                 preferredUsername = getJsonProperty(userInfo, "preferred_username");
                 email = getJsonProperty(userInfo, "email");
-                identity.getContextData().put(USER_INFO, userInfo);
+                AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
             }
             identity.getContextData().put(FEDERATED_ACCESS_TOKEN_RESPONSE, tokenResponse);
             identity.getContextData().put(VALIDATED_ID_TOKEN, idToken);

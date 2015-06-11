@@ -128,8 +128,8 @@ public class LDAPOperationManager {
             execute(new LdapOperation<SearchResult>() {
                 @Override
                 public SearchResult execute(LdapContext context) throws NamingException {
-                    if (logger.isDebugEnabled()) {
-                        logger.debugf("Removing entry with DN [%s]", entryDn);
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("Removing entry with DN [%s]", entryDn);
                     }
                     destroySubcontext(context, entryDn);
                     return null;
@@ -357,8 +357,8 @@ public class LDAPOperationManager {
 
     public void modifyAttributes(final String dn, final ModificationItem[] mods) {
         try {
-            if (logger.isDebugEnabled()) {
-                logger.debugf("Modifying attributes for entry [%s]: [", dn);
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Modifying attributes for entry [%s]: [", dn);
 
                 for (ModificationItem item : mods) {
                     Object values;
@@ -369,10 +369,10 @@ public class LDAPOperationManager {
                         values = "No values";
                     }
 
-                    logger.debugf("  Op [%s]: %s = %s", item.getModificationOp(), item.getAttribute().getID(), values);
+                    logger.tracef("  Op [%s]: %s = %s", item.getModificationOp(), item.getAttribute().getID(), values);
                 }
 
-                logger.debugf("]");
+                logger.tracef("]");
             }
 
             execute(new LdapOperation<Void>() {
@@ -389,18 +389,18 @@ public class LDAPOperationManager {
 
     public void createSubContext(final String name, final Attributes attributes) {
         try {
-            if (logger.isDebugEnabled()) {
-                logger.debugf("Creating entry [%s] with attributes: [", name);
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Creating entry [%s] with attributes: [", name);
 
                 NamingEnumeration<? extends Attribute> all = attributes.getAll();
 
                 while (all.hasMore()) {
                     Attribute attribute = all.next();
 
-                    logger.debugf("  %s = %s", attribute.getID(), attribute.get());
+                    logger.tracef("  %s = %s", attribute.getID(), attribute.get());
                 }
 
-                logger.debugf("]");
+                logger.tracef("]");
             }
 
             execute(new LdapOperation<Void>() {
@@ -513,7 +513,6 @@ public class LDAPOperationManager {
             context = createLdapContext();
             return operation.execute(context);
         } catch (NamingException ne) {
-            logger.error("Could not create Ldap context or operation execution error.", ne);
             throw ne;
         } finally {
             if (context != null) {

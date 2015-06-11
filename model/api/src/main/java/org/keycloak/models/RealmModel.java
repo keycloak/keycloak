@@ -29,6 +29,12 @@ public interface RealmModel extends RoleContainerModel {
         RealmModel getRealm();
     }
 
+    interface UserFederationMapperEvent extends ProviderEvent {
+        UserFederationMapperModel getFederationMapper();
+        RealmModel getRealm();
+        KeycloakSession getSession();
+    }
+
     String getId();
 
     String getName();
@@ -47,17 +53,17 @@ public interface RealmModel extends RoleContainerModel {
 
     void setRegistrationAllowed(boolean registrationAllowed);
 
-    public boolean isRegistrationEmailAsUsername();
+    boolean isRegistrationEmailAsUsername();
 
-    public void setRegistrationEmailAsUsername(boolean registrationEmailAsUsername);
-
-    boolean isPasswordCredentialGrantAllowed();
-
-    void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed);
+    void setRegistrationEmailAsUsername(boolean registrationEmailAsUsername);
 
     boolean isRememberMe();
 
     void setRememberMe(boolean rememberMe);
+
+    boolean isEditUsernameAllowed();
+
+    void setEditUsernameAllowed(boolean editUsernameAllowed);
 
     //--- brute force settings
     boolean isBruteForceProtected();

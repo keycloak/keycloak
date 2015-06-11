@@ -186,6 +186,9 @@ public class UsersResource {
     }
 
     private void updateUserFromRep(UserModel user, UserRepresentation rep, Set<String> attrsToRemove) {
+        if (realm.isEditUsernameAllowed()) {
+            user.setUsername(rep.getUsername());
+        }
         user.setEmail(rep.getEmail());
         user.setFirstName(rep.getFirstName());
         user.setLastName(rep.getLastName());

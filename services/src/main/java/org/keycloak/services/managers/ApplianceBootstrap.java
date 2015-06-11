@@ -61,11 +61,15 @@ public class ApplianceBootstrap {
         KeycloakModelUtils.generateRealmKeys(realm);
 
         UserModel adminUser = session.users().addUser(realm, "admin");
+        setupAdminUser(session, realm, adminUser, "admin");
+    }
+
+    public static void setupAdminUser(KeycloakSession session, RealmModel realm, UserModel adminUser, String password) {
         adminUser.setEnabled(true);
-        UserCredentialModel password = new UserCredentialModel();
-        password.setType(UserCredentialModel.PASSWORD);
-        password.setValue("admin");
-        session.users().updateCredential(realm, adminUser, password);
+        UserCredentialModel usrCredModel = new UserCredentialModel();
+        usrCredModel.setType(UserCredentialModel.PASSWORD);
+        usrCredModel.setValue(password);
+        session.users().updateCredential(realm, adminUser, usrCredModel);
         adminUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);

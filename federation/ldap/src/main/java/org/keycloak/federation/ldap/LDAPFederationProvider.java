@@ -308,8 +308,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
-        // complete I don't think we have to do anything here
-        // TODO: requires implementation... Maybe mappers callback to ensure role deletion propagated to LDAP by RoleLDAPFederationMapper
+        // TODO: Maybe mappers callback to ensure role deletion propagated to LDAP by RoleLDAPFederationMapper?
     }
 
     public boolean validPassword(RealmModel realm, UserModel user, String password) {

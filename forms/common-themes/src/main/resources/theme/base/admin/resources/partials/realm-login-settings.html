@@ -1,5 +1,5 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
-    <h1><strong>Settings</strong> {{realm.realm|capitalize}}</h1>
+    <h1>Settings</h1>
 
     <kc-tabs-realm></kc-tabs-realm>
 
@@ -18,6 +18,13 @@
                     <input ng-model="realm.registrationEmailAsUsername" name="registrationEmailAsUsername" id="registrationEmailAsUsername" onoffswitch />
                 </div>
                 <kc-tooltip>If enabled then username field is hidden from registration form and email is used as username for new user.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label for="editUsernameAllowed" class="col-md-2 control-label">Edit username</label>
+                <div class="col-md-6">
+                    <input ng-model="realm.editUsernameAllowed" name="editUsernameAllowed" id="editUsernameAllowed" onoffswitch />
+                </div>
+                <kc-tooltip>If enabled, the username field is editable, readonly otherwise.</kc-tooltip>
             </div>
             <div class="form-group">
                 <label for="resetPasswordAllowed" class="col-md-2 control-label">Forget password</label>
@@ -39,13 +46,6 @@
                     <input ng-model="realm.verifyEmail" name="verifyEmail" id="verifyEmail" onoffswitch />
                 </div>
                 <kc-tooltip>Require the user to verify their email address the first time they login.</kc-tooltip>
-            </div>
-            <div class="form-group">
-                <label for="passwordCredentialGrantAllowed" class="col-md-2 control-label">Direct Grant API</label>
-                <div class="col-md-6">
-                    <input ng-model="realm.passwordCredentialGrantAllowed" name="passwordCredentialGrantAllowed" id="passwordCredentialGrantAllowed" onoffswitch />
-                </div>
-                <kc-tooltip>Enable/disable REST API for login/token grant access</kc-tooltip>
             </div>
             <div class="form-group">
                 <label for="sslRequired" class="col-md-2 control-label">Require SSL</label>

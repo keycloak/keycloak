@@ -39,7 +39,7 @@ public class AuthorizeClientUtil {
         if (client_id == null) {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, "invalid_client");
-            error.put(OAuth2Constants.ERROR_DESCRIPTION, "Could not find client");
+            error.put(OAuth2Constants.ERROR_DESCRIPTION, "Missing client_id parameter");
             throw new BadRequestException("Could not find client", Response.status(Response.Status.BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build());
         }
 

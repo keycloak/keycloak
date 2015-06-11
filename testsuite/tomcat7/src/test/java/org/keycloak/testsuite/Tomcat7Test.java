@@ -65,6 +65,7 @@ public class Tomcat7Test {
         File base = new File(dir.getFile()).getParentFile();
         tomcat.addWebapp("/customer-portal", new File(base, "customer-portal").toString());
         tomcat.addWebapp("/customer-db", new File(base, "customer-db").toString());
+        tomcat.addWebapp("/customer-db-error-page", new File(base, "customer-db-error-page").toString());
         tomcat.addWebapp("/product-portal", new File(base, "product-portal").toString());
         tomcat.addWebapp("/secure-portal", new File(base, "secure-portal").toString());
         tomcat.addWebapp("/session-portal", new File(base, "session-portal").toString());
@@ -123,6 +124,16 @@ public class Tomcat7Test {
     public void testNullBearerToken() throws Exception {
         testStrategy.testNullBearerToken();
     }
+
+    /**
+     * KEYCLOAK-1368
+     * @throws Exception
+     */
+    @Test
+    public void testNullBearerTokenCustomErrorPage() throws Exception {
+        testStrategy.testNullBearerTokenCustomErrorPage();
+    }
+
 
     /**
      * KEYCLOAK-518

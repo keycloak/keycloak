@@ -95,6 +95,8 @@ public class SamlBindingTest {
 
     public static class SamlSPFacade extends HttpServlet {
         public static String samlResponse;
+        public static String RELAY_STATE = "http://test.com/foo/bar";
+        public static String sentRelayState;
 
         @Override
         protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -111,11 +113,16 @@ public class SamlBindingTest {
             if (req.getParameterMap().isEmpty()) {
                 System.out.println("redirecting");
                 resp.setStatus(302);
-                resp.setHeader("Location", "http://localhost:8081/auth/realms/demo/protocol/saml?SAMLRequest=jVJbT8IwFP4rS99HuwluNIwEIUYSLwugD76Y2h2kSdfOng7l31uGRn0ATfrQ9HznfJfTEYpaN3zS%2Bo1ZwGsL6KP3WhvkXaEgrTPcClTIjagBuZd8Obm55mmP8cZZb6XV5NByGiwQwXllDYkmX9epNdjW4JbgtkrC%2FeK6IBvvG06ptlLojUXPc5YnFOpG2x0AJdEsaFRG7PuPoUWwQx0IXSOtoLb0SynduyLRpXUSOs8FWQuNQKL5rCDz2VO%2FymEgIY2zlJ3H%2FSx9jkU%2BzOK0ys8yNmSSsUEAYxnsqC18tyO2MDfohfEFSVkyiNlZzM5XacrDSbJePug%2Fkqj8FHKhTKXMy%2BnIng8g5FerVRmXd8sViR7AYec8AMh4tPfDO3L3Y2%2F%2F3cT4j7BH9Mf8A1nDb8PA%2Bay0WsldNNHavk1D1D5k4V0LXbi18MclJL2ke1FVvO6gvDXYgFRrBRWh4wPp7z85%2FgA%3D");
+                // Redirect
+                // UriBuilder builder = UriBuilder.fromUri("http://localhost:8081/auth/realms/demo/protocol/saml?SAMLRequest=jVLRTsIwFP2Vpe%2BjG4wxG0YyWYxL0BBAH3wx3XYnTbp29nYof%2B8YEvEBNOlD03vOveec2ynyWjYsae1WreC9BbTOZy0Vsr4Qk9YopjkKZIrXgMwWbJ08LNhw4LHGaKsLLcmRch3MEcFYoRVxktN1rhW2NZg1mJ0o4Gm1iMnW2oZRKnXB5VajZZEX%2BRTqRuo9ACVO2mkUih%2F4l9C8s0MNcFkjLaHW9KSUHlwR506bAnrPMam4RCBOlsYkS1%2BD3MvLcDJxAx9KN4jCkXszrG5cP%2BCVH4y8IM8PYFx2dsQOfuiILWQKLVc2JkPPH7te6HrRxh%2BzUdidwSSIXoiz%2FBZyK1Qp1Nv1yPIjCNn9ZrN0V1AKA4UlzjMY7N13IDKbHjyxXoA5291%2FtzH7I%2FApPet%2FHNawx65hli61FMXeSaTUH%2FMubtvlYU0LfcA1t5cl%2BAO%2FfxGlW%2FVQ1ipsoBCVgJLQ2XHo7385%2BwI%3D");
+                UriBuilder builder = UriBuilder.fromUri("http://localhost:8081/auth/realms/demo/protocol/saml?SAMLRequest=jVJbT8IwFP4rS99HuwluNIwEIUYSLwugD76Y2h2kSdfOng7l31uGRn0ATfrQ9HznfJfTEYpaN3zS%2Bo1ZwGsL6KP3WhvkXaEgrTPcClTIjagBuZd8Obm55mmP8cZZb6XV5NByGiwQwXllDYkmX9epNdjW4JbgtkrC%2FeK6IBvvG06ptlLojUXPc5YnFOpG2x0AJdEsaFRG7PuPoUWwQx0IXSOtoLb0SynduyLRpXUSOs8FWQuNQKL5rCDz2VO%2FymEgIY2zlJ3H%2FSx9jkU%2BzOK0ys8yNmSSsUEAYxnsqC18tyO2MDfohfEFSVkyiNlZzM5XacrDSbJePug%2Fkqj8FHKhTKXMy%2BnIng8g5FerVRmXd8sViR7AYec8AMh4tPfDO3L3Y2%2F%2F3cT4j7BH9Mf8A1nDb8PA%2Bay0WsldNNHavk1D1D5k4V0LXbi18MclJL2ke1FVvO6gvDXYgFRrBRWh4wPp7z85%2FgA%3D");
+                builder.queryParam("RelayState", RELAY_STATE);
+                resp.setHeader("Location", builder.build().toString());
                 return;
             }
             System.out.println("received response");
             samlResponse = req.getParameter("SAMLResponse");
+            sentRelayState = req.getParameter("RelayState");
         }
     }
 
@@ -195,6 +202,21 @@ public class SamlBindingTest {
         Assert.assertTrue(driver.getPageSource().contains("principal=bburke@redhat.com"));
         driver.navigate().to("http://localhost:8081/sales-post-sig-email?GLO=true");
         checkLoggedOut("http://localhost:8081/sales-post-sig-email/");
+
+    }
+
+    @Test
+    public void testRelayStateEncoding() throws Exception {
+        // this test has a hardcoded SAMLRequest and we hack a SP face servlet to get the SAMLResponse so we can look
+        // at the relay state
+        SamlSPFacade.samlResponse = null;
+        driver.navigate().to("http://localhost:8081/employee/");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+        System.out.println(driver.getCurrentUrl());
+        loginPage.login("bburke", "password");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/employee/");
+        Assert.assertEquals(SamlSPFacade.sentRelayState, SamlSPFacade.RELAY_STATE);
+        Assert.assertNotNull(SamlSPFacade.samlResponse);
 
     }
 

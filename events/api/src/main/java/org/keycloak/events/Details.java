@@ -24,5 +24,12 @@ public interface Details {
     String NODE_HOST = "node_host";
     String REASON = "reason";
     String REVOKED_CLIENT = "revoked_client";
+    String CLIENT_SESSION_STATE = "client_session_state";
+    String CLIENT_SESSION_HOST = "client_session_host";
+
+    String CONSENT = "consent";
+    String CONSENT_VALUE_NO_CONSENT_REQUIRED = "no_consent_required"; // No consent is required by client
+    String CONSENT_VALUE_CONSENT_GRANTED = "consent_granted";         // Consent granted by user
+    String CONSENT_VALUE_PERSISTED_CONSENT = "persistent_consent";    // Persistent consent used (was already granted by user before)
 
 }

@@ -39,10 +39,7 @@ public class GeneralSettingsPage extends AbstractPage {
     
     @FindBy(id = "updateProfileOnInitialSocialLogin")
     private WebElement updateProfileOnInitialSocialLogin;
-    
-    @FindBy(id = "passwordCredentialGrantAllowed")
-    private WebElement passwordCredentialGrantAllowed;
-    
+
     @FindBy(id = "loginTheme")
     private Select loginThemeSelect;
     

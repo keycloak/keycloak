@@ -16,7 +16,12 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-dist</artifactId>
+            <artifactId>keycloak-wf9-server-overlay</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-wf9-adapter-dist</artifactId>
             <type>zip</type>
         </dependency>
         <dependency>
@@ -63,7 +68,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>unpack-server-overlay</id>
+                        <id>unpack-server</id>
                         <phase>prepare-package</phase>
                         <goals>
                             <goal>unpack</goal>
@@ -72,9 +77,26 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-overlay</artifactId>
+                                    <artifactId>keycloak-wf9-server-overlay</artifactId>
                                     <type>zip</type>
-                                    <outputDirectory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/unpacked/keycloak-server-overlay-${project.version}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>unpack-adapter</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-wf9-adapter-dist</artifactId>
+                                    <type>zip</type>
+                                    <outputDirectory>${project.build.directory}/unpacked/keycloak-wf9-adapter-${project.version}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -134,7 +156,7 @@
                                     <includes>
                                         <include>standalone.xml</include>
                                     </includes>
-                                    <outputDir>${project.build.directory}/unpacked/wildfly-${wildfly.version}/standalone/configuration</outputDir>
+                                    <outputDir>${project.build.directory}/unpacked/</outputDir>
                                 </transformationSet>
                             </transformationSets>
                         </configuration>

@@ -559,7 +559,7 @@ function roleControl($scope, realm, role, roles, clients,
                         $scope.realmMappings.push(role);
                     }
                 }
-                $scope.selectRealmRoles = [];
+                $scope.selectedRealmRoles = [];
             });
     };
 

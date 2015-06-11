@@ -6,8 +6,8 @@
         <li data-ng-show="create">Add Role</li>
     </ol>
 
-    <h1 data-ng-hide="create"><strong>Role</strong> {{role.name}}</h1>
-    <h1 data-ng-show="create"><strong>Add Role</strong></h1>
+    <h1 data-ng-hide="create">{{role.name|capitalize}}</h1>
+    <h1 data-ng-show="create">Add Role</h1>
 
     <form class="form-horizontal clearfix" name="realmForm" novalidate kc-read-only="!access.manageRealm">
         <fieldset>
@@ -64,7 +64,7 @@
                             <select id="available" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedRealmRoles"
-                                    ng-options="r.name for r in realmRoles">
+                                    ng-options="r.name for r in realmRoles | orderBy:'name'">
                             </select>
                             <button class="btn btn-default" type="submit" ng-click="addRealmRole()" tooltip="Associate role" tooltip-placement="right">
                                 Add selected <i class="fa fa-angle-double-right"></i>
@@ -76,7 +76,7 @@
                             <select id="assigned" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedRealmMappings"
-                                    ng-options="r.name for r in realmMappings">
+                                    ng-options="r.name for r in realmMappings | orderBy:'name'">
                             </select>
                             <button class="btn btn-default" type="submit" ng-click="deleteRealmRole()" tooltip="Disassociate role" tooltip-placement="left">
                                 <i class="fa fa-angle-double-left"></i> Remove selected
@@ -103,7 +103,7 @@
                             <select id="available-client" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedClientRoles"
-                                    ng-options="r.name for r in clientRoles">
+                                    ng-options="r.name for r in clientRoles | orderBy:'name'">
                             </select>
                             <button class="btn btn-default" type="submit" ng-click="addClientRole()" tooltip="Associate role" tooltip-placement="right">
                                 Add selected <i class="fa fa-angle-right"></i>
@@ -115,7 +115,7 @@
                             <select id="assigned-client" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedClientMappings"
-                                    ng-options="r.name for r in clientMappings">
+                                    ng-options="r.name for r in clientMappings | orderBy:'name'">
                             </select>
                             <button class="btn btn-default" type="submit" ng-click="deleteClientRole()" tooltip="Disassociate role" tooltip-placement="left">
                                 <i class="fa fa-angle-left"></i> Remove selected

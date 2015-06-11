@@ -1,13 +1,10 @@
 package org.keycloak.federation.ldap.mappers;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-
-import javax.naming.directory.SearchControls;
 
 import org.jboss.logging.Logger;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
@@ -82,8 +79,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
                 RoleContainerModel roleContainer = getTargetRoleContainer(mapperModel, realm);
                 RoleModel role = roleContainer.getRole(roleName);
 
-                // TODO: debug
-                logger.infof("Granting role [%s] to user [%s] during import from LDAP", roleName, user.getUsername());
+                logger.debugf("Granting role [%s] to user [%s] during import from LDAP", roleName, user.getUsername());
                 user.grantRole(role);
             }
         }
@@ -97,6 +93,8 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
     // Sync roles from LDAP tree and create them in local Keycloak DB (if they don't exist here yet)
     protected void syncRolesFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, RealmModel realm) {
         if (!rolesSyncedModels.contains(mapperModel.getId())) {
+            logger.debugf("Syncing roles from LDAP into Keycloak DB. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getDisplayName());
+
             LDAPIdentityQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
 
             // Send query
@@ -108,7 +106,6 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
                 String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
 
                 if (roleContainer.getRole(roleName) == null) {
-                    // TODO: rather change to debug
                     logger.infof("Syncing role [%s] from LDAP to keycloak DB", roleName);
                     roleContainer.addRole(roleName);
                 }
@@ -127,7 +124,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         String rolesDn = getRolesDn(mapperModel);
         ldapQuery.setSearchDn(rolesDn);
 
-        Collection<String> roleObjectClasses = getRoleObjectClasses(mapperModel);
+        Collection<String> roleObjectClasses = getRoleObjectClasses(mapperModel, ldapProvider);
         ldapQuery.addObjectClasses(roleObjectClasses);
 
         String rolesRdnAttr = getRoleNameLdapAttribute(mapperModel);
@@ -145,11 +142,11 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         } else {
             String clientId = mapperModel.getConfig().get(CLIENT_ID);
             if (clientId == null) {
-                throw new IllegalStateException("Using client roles mapping is requested, but parameter client.id not found!");
+                throw new ModelException("Using client roles mapping is requested, but parameter client.id not found!");
             }
             ClientModel client = realm.getClientByClientId(clientId);
             if (client == null) {
-                throw new IllegalStateException("Can't found requested client with clientId: " + clientId);
+                throw new ModelException("Can't found requested client with clientId: " + clientId);
             }
             return client;
         }
@@ -158,7 +155,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
     protected String getRolesDn(UserFederationMapperModel mapperModel) {
         String rolesDn = mapperModel.getConfig().get(ROLES_DN);
         if (rolesDn == null) {
-            throw new IllegalStateException("Roles DN is null! Check your configuration");
+            throw new ModelException("Roles DN is null! Check your configuration");
         }
         return rolesDn;
     }
@@ -173,10 +170,11 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         return membershipAttrName!=null ? membershipAttrName : LDAPConstants.MEMBER;
     }
 
-    protected Collection<String> getRoleObjectClasses(UserFederationMapperModel mapperModel) {
+    protected Collection<String> getRoleObjectClasses(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider) {
         String objectClasses = mapperModel.getConfig().get(ROLE_OBJECT_CLASSES);
         if (objectClasses == null) {
-            objectClasses = "groupOfNames";
+            // For Active directory, the default is 'group' . For other servers 'groupOfNames'
+            objectClasses = ldapProvider.getLdapIdentityStore().getConfig().isActiveDirectory() ? LDAPConstants.GROUP : LDAPConstants.GROUP_OF_NAMES;
         }
         String[] objClasses = objectClasses.split(",");
 
@@ -192,26 +190,25 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     private Mode getMode(UserFederationMapperModel mapperModel) {
         String modeString = mapperModel.getConfig().get(MODE);
-        if (modeString == null || modeString.trim().length() == 0) {
-            return Mode.LDAP_ONLY;
+        if (modeString == null || modeString.isEmpty()) {
+            throw new ModelException("Mode is missing! Check your configuration");
         }
 
         return Enum.valueOf(Mode.class, modeString.toUpperCase());
     }
 
-    protected LDAPObject createLDAPRole(UserFederationMapperModel mapperModel, String roleName, LDAPFederationProvider ldapProvider) {
+    public LDAPObject createLDAPRole(UserFederationMapperModel mapperModel, String roleName, LDAPFederationProvider ldapProvider) {
         LDAPObject ldapObject = new LDAPObject();
         String roleNameAttribute = getRoleNameLdapAttribute(mapperModel);
         ldapObject.setRdnAttributeName(roleNameAttribute);
-        ldapObject.setObjectClasses(getRoleObjectClasses(mapperModel));
+        ldapObject.setObjectClasses(getRoleObjectClasses(mapperModel, ldapProvider));
         ldapObject.setAttribute(roleNameAttribute, roleName);
 
         LDAPDn roleDn = LDAPDn.fromString(getRolesDn(mapperModel));
         roleDn.addFirst(roleNameAttribute, roleName);
         ldapObject.setDn(roleDn);
 
-        // TODO: debug
-        logger.infof("Creating role to [%s] to LDAP with DN [%s]", roleName, roleDn.toString());
+        logger.infof("Creating role [%s] to LDAP with DN [%s]", roleName, roleDn.toString());
         ldapProvider.getLdapIdentityStore().add(ldapObject);
         return ldapObject;
     }
@@ -233,9 +230,9 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         Set<String> memberships = getExistingMemberships(mapperModel, ldapRole);
         memberships.remove(ldapUser.getDn().toString());
 
-        // Some membership placeholder needs to be always here as "member" is mandatory attribute on some LDAP servers
-        if (memberships.size() == 0) {
-            memberships.add(LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
+        // Some membership placeholder needs to be always here as "member" is mandatory attribute on some LDAP servers. But on active directory! (Empty membership is not allowed here)
+        if (memberships.size() == 0 && !ldapProvider.getLdapIdentityStore().getConfig().isActiveDirectory()) {
+            memberships.add(LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE);
         }
 
         ldapRole.setAttribute(getMembershipLdapAttribute(mapperModel), memberships);
@@ -280,23 +277,6 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         return ldapQuery.getResultList();
     }
 
-    protected Set<RoleModel> getLDAPRoleMappingsConverted(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, RoleContainerModel roleContainer) {
-        List<LDAPObject> ldapRoles = getLDAPRoleMappings(mapperModel, ldapProvider, ldapUser);
-
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        String roleNameLdapAttr = getRoleNameLdapAttribute(mapperModel);
-        for (LDAPObject role : ldapRoles) {
-            String roleName = role.getAttributeAsString(roleNameLdapAttr);
-            RoleModel modelRole = roleContainer.getRole(roleName);
-            if (modelRole == null) {
-                // Add role to local DB
-                modelRole = roleContainer.addRole(roleName);
-            }
-            roles.add(modelRole);
-        }
-        return roles;
-    }
-
     @Override
     public UserModel proxy(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
         final Mode mode = getMode(mapperModel);
@@ -322,6 +302,9 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         private final LDAPObject ldapUser;
         private final RealmModel realm;
         private final Mode mode;
+
+        // Avoid loading role mappings from LDAP more times per-request
+        private Set<RoleModel> cachedLDAPRoleMappings;
 
         public LDAPRoleMappingsUserDelegate(UserModel user, UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser,
                                             RealmModel realm, Mode mode) {
@@ -387,6 +370,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
                 if (role.getContainer().equals(roleContainer)) {
 
                     // We need to create new role mappings in LDAP
+                    cachedLDAPRoleMappings = null;
                     addRoleMappingInLDAP(mapperModel, role.getName(), ldapProvider, ldapUser);
                 } else {
                     super.grantRole(role);
@@ -417,6 +401,30 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
             return modelRoleMappings;
         }
 
+        protected Set<RoleModel> getLDAPRoleMappingsConverted(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, RoleContainerModel roleContainer) {
+            if (cachedLDAPRoleMappings != null) {
+                return new HashSet<>(cachedLDAPRoleMappings);
+            }
+
+            List<LDAPObject> ldapRoles = getLDAPRoleMappings(mapperModel, ldapProvider, ldapUser);
+
+            Set<RoleModel> roles = new HashSet<RoleModel>();
+            String roleNameLdapAttr = getRoleNameLdapAttribute(mapperModel);
+            for (LDAPObject role : ldapRoles) {
+                String roleName = role.getAttributeAsString(roleNameLdapAttr);
+                RoleModel modelRole = roleContainer.getRole(roleName);
+                if (modelRole == null) {
+                    // Add role to local DB
+                    modelRole = roleContainer.addRole(roleName);
+                }
+                roles.add(modelRole);
+            }
+
+            cachedLDAPRoleMappings = new HashSet<>(roles);
+
+            return roles;
+        }
+
         @Override
         public void deleteRoleMapping(RoleModel role) {
             RoleContainerModel roleContainer = getTargetRoleContainer(mapperModel, realm);
@@ -440,6 +448,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
                         throw new ModelException("Not possible to delete LDAP role mappings as mapper mode is READ_ONLY");
                     } else {
                         // Delete ldap role mappings
+                        cachedLDAPRoleMappings = null;
                         deleteRoleMappingInLDAP(mapperModel, ldapProvider, ldapUser, ldapRole);
                     }
                 }

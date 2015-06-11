@@ -42,7 +42,11 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             URL url = getClass().getResource("/kerberos-test/kerberos-app-keycloak.json");
-            keycloakRule.deployApplication("kerberos-portal", "/kerberos-portal", KerberosCredDelegServlet.class, url.getPath(), "user");
+            keycloakRule.createApplicationDeployment()
+                    .name("kerberos-portal").contextPath("/kerberos-portal")
+                    .servletClass(KerberosCredDelegServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
+
 
             Map<String,String> kerberosConfig = kerberosRule.getConfig();
             kerberosModel = appRealm.addUserFederationProvider(KerberosFederationProviderFactory.PROVIDER_NAME, kerberosConfig, 0, "kerberos-standalone", -1, -1, 0);

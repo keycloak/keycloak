@@ -1,6 +1,6 @@
 <PicketLink xmlns="urn:picketlink:identity-federation:config:2.1">
 	<PicketLinkSP xmlns="urn:picketlink:identity-federation:config:2.1"
-		ServerEnvironment="tomcat" BindingType="REDIRECT" SupportsSignatures="true">
+		ServerEnvironment="tomcat" BindingType="REDIRECT" SupportsSignatures="true" IDPUsesPostBinding="false">
 		<IdentityURL>${idp-sig.url::http://localhost:8081/auth/realms/demo/protocol/saml}
 		</IdentityURL>
 		<ServiceURL>${employee-sig.url::http://localhost:8081/employee-sig/}

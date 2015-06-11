@@ -6,6 +6,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.KeycloakServer;
@@ -44,15 +45,20 @@ public class SAMLKeyCloakServerBrokerWithSignatureTest extends AbstractIdentityP
         }
     };
 
+    // @Test
+    public void testSleep() throws Exception {
+        Thread.sleep(100000000);
+    }
+
     @Override
     protected String getProviderId() {
         return "kc-saml-signed-idp";
     }
 
     @Override
-    protected void doAssertFederatedUser(UserModel federatedUser, IdentityProviderModel identityProviderModel, String expectedEmail) {
-        if (identityProviderModel.isUpdateProfileFirstLogin()) {
-            super.doAssertFederatedUser(federatedUser, identityProviderModel, expectedEmail);
+    protected void doAssertFederatedUser(UserModel federatedUser, IdentityProviderModel identityProviderModel, String expectedEmail, boolean isProfileUpdateExpected) {
+        if (isProfileUpdateExpected) {
+            super.doAssertFederatedUser(federatedUser, identityProviderModel, expectedEmail, isProfileUpdateExpected);
         } else {
             if (expectedEmail == null) {
                 // Need to handle differences for various databases (like Oracle)
@@ -101,5 +107,10 @@ public class SAMLKeyCloakServerBrokerWithSignatureTest extends AbstractIdentityP
     @Test
     public void testAccountManagementLinkIdentity() {
         super.testAccountManagementLinkIdentity();
+    }
+
+    @Test
+    public void testSuccessfulAuthenticationUpdateProfileOnMissing_nothingMissing() {
+        // skip this test as this provider do not return name and surname so something is missing always
     }
 }

@@ -44,10 +44,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
@@ -71,6 +71,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -278,11 +279,15 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             try {
                 federatedUser = createUser(context);
 
-                if (identityProviderConfig.isUpdateProfileFirstLogin()) {
+                if (IdentityProviderRepresentation.UPFLM_ON.equals(identityProviderConfig.getUpdateProfileFirstLoginMode()) 
+                        || (IdentityProviderRepresentation.UPFLM_MISSING.equals(identityProviderConfig.getUpdateProfileFirstLoginMode()) && !Validation.validateUserMandatoryFields(realmModel, federatedUser))) {
                     if (isDebugEnabled()) {
                         LOGGER.debugf("Identity provider requires update profile action.", federatedUser);
                     }
                     federatedUser.addRequiredAction(UPDATE_PROFILE);
+                }
+                if(identityProviderConfig.isTrustEmail() && !Validation.isBlank(federatedUser.getEmail())){
+                    federatedUser.setEmailVerified(true);
                 }
             } catch (Exception e) {
                 return redirectToLoginPage(e, clientCode);
@@ -506,7 +511,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         String username = context.getModelUsername();
         if (username == null) {
             username = context.getUsername();
-            if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isEmpty(context.getEmail())) {
+            if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isBlank(context.getEmail())) {
                 username = context.getEmail();
             } else if (username == null) {
                 username = context.getIdpConfig().getAlias() + "." + context.getId();

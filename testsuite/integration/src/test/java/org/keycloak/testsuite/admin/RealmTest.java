@@ -71,6 +71,7 @@ public class RealmTest extends AbstractClientTest {
         rep.setAccessCodeLifespanLogin(1234);
         rep.setRegistrationAllowed(true);
         rep.setRegistrationEmailAsUsername(true);
+        rep.setEditUsernameAllowed(true);
 
         realm.update(rep);
 
@@ -81,16 +82,19 @@ public class RealmTest extends AbstractClientTest {
         assertEquals(1234, rep.getAccessCodeLifespanLogin().intValue());
         assertEquals(Boolean.TRUE, rep.isRegistrationAllowed());
         assertEquals(Boolean.TRUE, rep.isRegistrationEmailAsUsername());
+        assertEquals(Boolean.TRUE, rep.isEditUsernameAllowed());
 
         // second change
         rep.setRegistrationAllowed(false);
         rep.setRegistrationEmailAsUsername(false);
+        rep.setEditUsernameAllowed(false);
 
         realm.update(rep);
 
         rep = realm.toRepresentation();
         assertEquals(Boolean.FALSE, rep.isRegistrationAllowed());
         assertEquals(Boolean.FALSE, rep.isRegistrationEmailAsUsername());
+        assertEquals(Boolean.FALSE, rep.isEditUsernameAllowed());
     }
 
     @Test

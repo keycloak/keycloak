@@ -5,7 +5,7 @@
         <li data-ng-show="create">Add User</li>
     </ol>
 
-    <h1 data-ng-hide="create"><strong>User</strong> {{user.username|capitalize}}</h1>
+    <h1 data-ng-hide="create">{{user.username|capitalize}}</h1>
     <h1 data-ng-show="create">Add User</h1>
 
     <kc-tabs-user></kc-tabs-user>
@@ -25,9 +25,10 @@
                 <div class="col-md-6">
                     <!-- Characters >,<,/,\ are forbidden in username -->
                     <input class="form-control" type="text" id="username" name="username" data-ng-model="user.username" autofocus
-                           required ng-pattern="/^[^\<\>\\\/]*$/" data-ng-readonly="!create">
+                           required ng-pattern="/^[^\<\>\\\/]*$/" data-ng-readonly="!editUsername">
                 </div>
             </div>
+
 
             <div class="form-group">
                 <label class="col-md-2 control-label" for="email">Email</label>

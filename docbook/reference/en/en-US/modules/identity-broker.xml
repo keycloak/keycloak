@@ -299,10 +299,22 @@
                         </entry>
                         <entry>
                             Allows you to force users to update their profile right after the authentication finishes and
-                            before the account is actually created in Keycloak. When enabled, users will be presented with the
+                            before the account is actually created in Keycloak. When "On", users will be always presented with the
                             <emphasis>update profile page</emphasis> asking for additional information in order to federate their identities.
-                            If disabled, the account will be created with the minimal information obtained from the identity provider
+                            When "On missing info", users will be presented with the <emphasis>update profile page</emphasis> only if some 
+                            mandatory information (email, first name, last name) is not provided by identity provider.
+                            If "Off", the account will be created with the minimal information obtained from the identity provider
                             during the authentication process.
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
+                            <literal>Trust email</literal>
+                        </entry>
+                        <entry>
+                            Allows you to trust email address returned from the social provider. If enabled then email address returned by the provider 
+                            is marked as 'verified' in the Keycloak user profile. This means that email verification step is skipped even 
+                            if "Verify email" feature is enabled in realm settings.
                         </entry>
                     </row>
                     <row>
@@ -1232,6 +1244,24 @@ keycloak.createLoginUrl({
             Broker mappers can import SAML attributes or OIDC ID/Access token claims into user attributes.  You can assign
             a role mapping to a user if a claim or external role exists.  There's a bunch of options here so just mouse over
             the tool tips to see what each mapper can do for you.
+        </para>
+    </section>
+    
+    <section>
+        <title>Mapping/Importing User profile data from Social Identity Provider</title>
+        <para>
+            You can import user profile data provided by social identity providers like Google, GitHub, LinkedIn, Stackoverflow and Facebook 
+            into new Keycloak user created from given social accounts. After you configure a broker, you'll see a <literal>Mappers</literal>
+            button appear. Click on that and you'll get to the list of mappers that are assigned to this broker. There is a
+            <literal>Create</literal> button on this page. Clicking on this create button allows you to create a broker mapper.
+            "Attribute Importer" mapper allows you to define path in JSON user profile data provided by the provider to get value from. 
+            You can use dot notation for nesting and square brackets to access fields in array by index. For example 'contact.address[0].country'. 
+            Then you can define name of Keycloak's user profile attribute this value is stored into.
+				</para>
+				<para>             
+            To investigate structure of user profile JSON data provided by social providers you can enable <literal>DEBUG</literal> level for 
+            logger <literal>org.keycloak.social.user_profile_dump</literal> and login using given provider. Then you can find user profile 
+            JSON structure in Keycloak log file. 
         </para>
     </section>
 

@@ -1,6 +1,10 @@
 package org.keycloak.testsuite.oauth;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,7 +37,6 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             ClientModel app = appRealm.addClient("resource-owner");
             app.setSecret("secret");
-            appRealm.setPasswordCredentialGrantAllowed(true);
 
             UserModel user = session.users().addUser(appRealm, "direct-login");
             user.setEmail("direct-login@localhost");
@@ -90,6 +93,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .detail(Details.USERNAME, login)
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
                 .assertEvent();
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
@@ -103,33 +107,6 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
         events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).user(userId).client("resource-owner").assertEvent();
-    }
-
-    @Test
-    public void grantAccessTokenNotEnabled() throws Exception {
-        try {
-            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setPasswordCredentialGrantAllowed(false);
-                }
-            });
-
-            oauth.clientId("resource-owner");
-
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "password");
-
-            assertEquals(403, response.getStatusCode());
-            assertEquals("not_enabled", response.getError());
-
-        } finally {
-            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setPasswordCredentialGrantAllowed(true);
-                }
-            });
-        }
     }
 
     @Test
@@ -152,6 +129,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
                 .assertEvent();
 
         HttpResponse logoutResponse = oauth.doLogout(response.getRefreshToken(), "secret");
@@ -204,6 +182,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .detail(Details.RESPONSE_TYPE, "token")
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
                 .error(Errors.INVALID_USER_CREDENTIALS)
                 .assertEvent();
     }
@@ -227,8 +206,27 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .detail(Details.USERNAME, "invalid")
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
                 .error(Errors.INVALID_USER_CREDENTIALS)
                 .assertEvent();
+    }
+
+    @Test
+    public void grantAccessTokenMissingGrantType() throws Exception {
+        oauth.clientId("resource-owner");
+
+        DefaultHttpClient client = new DefaultHttpClient();
+        try {
+            HttpPost post = new HttpPost(oauth.getResourceOwnerPasswordCredentialGrantUrl());
+            OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(client.execute(post));
+
+            assertEquals(400, response.getStatusCode());
+
+            assertEquals("invalid_request", response.getError());
+            assertEquals("Missing form parameter: grant_type", response.getErrorDescription());
+        } finally {
+            client.close();
+        }
     }
 
 }

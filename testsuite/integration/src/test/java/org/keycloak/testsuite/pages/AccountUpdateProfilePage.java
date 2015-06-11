@@ -35,6 +35,9 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
 
     public static String PATH = RealmsResource.accountUrl(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT)).build("test").toString();
 
+    @FindBy(id = "username")
+    private WebElement usernameInput;
+
     @FindBy(id = "firstName")
     private WebElement firstNameInput;
 
@@ -74,10 +77,27 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
         submitButton.click();
     }
 
+    public void updateProfile(String username, String firstName, String lastName, String email) {
+        usernameInput.clear();
+        usernameInput.sendKeys(username);
+        firstNameInput.clear();
+        firstNameInput.sendKeys(firstName);
+        lastNameInput.clear();
+        lastNameInput.sendKeys(lastName);
+        emailInput.clear();
+        emailInput.sendKeys(email);
+
+        submitButton.click();
+    }
+
     public void clickCancel() {
         cancelButton.click();
     }
 
+
+    public String getUsername() {
+        return usernameInput.getAttribute("value");
+    }
 
     public String getFirstName() {
         return firstNameInput.getAttribute("value");

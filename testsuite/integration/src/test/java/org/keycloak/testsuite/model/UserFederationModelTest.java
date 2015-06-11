@@ -1,5 +1,9 @@
 package org.keycloak.testsuite.model;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -95,6 +99,43 @@ public class UserFederationModelTest extends AbstractModelTest {
         realmManager.removeRealm(realm);
 
         commit();
+    }
+
+    @Test
+    public void federationProvidersSetTest() {
+        RealmModel realm = realmManager.createRealm("test-realm");
+        UserFederationProviderModel ldapProvider = new UserFederationProviderModel(null, "ldap", new TreeMap<String, String>(), 1, "my-cool-provider", -1, -1, 0);
+        realm.setUserFederationProviders(Arrays.asList(ldapProvider));
+
+        commit();
+
+        realm = realmManager.getRealmByName("test-realm");
+        List<UserFederationProviderModel> fedProviders = realm.getUserFederationProviders();
+        Assert.assertEquals(1, fedProviders.size());
+        ldapProvider = fedProviders.get(0);
+        Set<UserFederationMapperModel> fedMappers = realmManager.getRealmByName("test-realm").getUserFederationMappersByFederationProvider(ldapProvider.getId());
+
+        UserFederationProviderModel dummyProvider = new UserFederationProviderModel(null, "dummy", new TreeMap<String, String>(), 1, "my-cool-provider", -1, -1, 0);
+        try {
+            realm.setUserFederationProviders(Arrays.asList(ldapProvider, dummyProvider));
+            commit();
+            Assert.fail("Don't expect to end here");
+        } catch (ModelDuplicateException expected) {
+        }
+
+        dummyProvider.setDisplayName("my-cool-provider2");
+        realm.setUserFederationProviders(Arrays.asList(ldapProvider, dummyProvider));
+
+        commit();
+
+        realm = realmManager.getRealmByName("test-realm");
+        Assert.assertEquals(fedMappers.size(), realm.getUserFederationMappersByFederationProvider(ldapProvider.getId()).size());
+        realm.setUserFederationProviders(new ArrayList<UserFederationProviderModel>());
+
+        commit();
+
+        realm = realmManager.getRealmByName("test-realm");
+        Assert.assertTrue(realm.getUserFederationMappersByFederationProvider(ldapProvider.getId()).isEmpty());
     }
 
     private UserFederationMapperModel createMapper(String name, String fedProviderId, String... config) {

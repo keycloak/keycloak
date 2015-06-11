@@ -24,7 +24,8 @@
     <section>
         <title>LDAP and Active Directory Plugin</title>
         <para>
-            Keycloak comes with a built-in LDAP/AD plugin.  Currently it is set up only to import username, email, first and last name.
+            Keycloak comes with a built-in LDAP/AD plugin.  By default, it is set up only to import username, email, first and last name, but you are free
+            to configure <link linkend='ldap_mappers'>mappers</link> and add more attributes or delete default ones.
             It supports password validation via LDAP/AD protocols and different user metadata synchronization modes.  To configure
             a federated LDAP store go to the admin console.  Click on the <literal>Users</literal> menu option to get you
             to the user management page.  Then click on the <literal>Federation</literal> submenu option.  When
@@ -41,7 +42,7 @@
                         <term>READONLY</term>
                         <listitem>
                             <para>
-                                Username, email, first and last name will be unchangable.  Keycloak will show an error
+                                Username, email, first and last name and other mapped attributes will be unchangeable.  Keycloak will show an error
                                 anytime anybody tries to update these fields.  Also, password updates will not be supported.
                             </para>
                         </listitem>
@@ -50,7 +51,7 @@
                         <term>WRITABLE</term>
                         <listitem>
                             <para>
-                                Username, email, first and last name, and passwords can all be updated and will
+                                Username, email, first and last name, other mapped attributes and passwords can all be updated and will
                                 be synchronized automatically with your LDAP store.
                             </para>
                         </listitem>
@@ -157,6 +158,56 @@
             Also you may want to trigger full sync again after some longer time or setup periodic full sync as well.
         </para>
         <para>In admin console, you can trigger sync directly or you can enable periodic changed or full sync.</para>
+    </section>
+    <section id="ldap_mappers">
+        <title>LDAP/Federation mappers</title>
+        <para>
+            LDAP mappers are <literal>listeners</literal>, which are triggered by LDAP Federation provider at various points and provide
+            another extension point to LDAP integration. They are triggered during import LDAP user into Keycloak, registration Keycloak user back to LDAP or when querying LDAP user from Keycloak.
+            When you create LDAP Federation provider, Keycloak will automatically provide set of builtin <literal>mappers</literal> for this provider.
+            You are free to change this set and create new mapper or update/delete existing ones.
+        </para>
+        <para>
+            By default, we have those implementation of LDAP federation mapper:
+            <variablelist>
+                <varlistentry>
+                    <term>User Attribute Mapper</term>
+                    <listitem>
+                        <para>
+                            This allows to specify which LDAP attribute is mapped to which attribute of Keycloak User. So for example you can configure
+                            that LDAP attribute <literal>mail</literal> is supposed to be mapped to the UserModel attribute <literal>email</literal> in Keycloak database.
+                            For this mapper implementation, there is always one-to-one mapping (one LDAP attribute mapped to one Keycloak UserModel attribute)
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>FullName Mapper</term>
+                    <listitem>
+                        <para>
+                            This allows to specify that fullname of user, which is saved in some LDAP attribute (usualy <literal>cn</literal> ) will be mapped to
+                            <literal>firstName</literal> and <literal>lastname</literal> attributes of UserModel. Having <literal>cn</literal> to contain full name of user
+                            is common case for some LDAP deployments.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Role Mapper</term>
+                    <listitem>
+                        <para>
+                            This allows to configure role mappings from LDAP into Keycloak role mappings. One Role mapper can be used to map LDAP roles
+                            (usually groups from particular branch of LDAP tree) into roles corresponding to either realm roles or client roles of specified client.
+                            It's not a problem to configure more Role mappers for same LDAP provider. So for example you can specify that role mappings from groups under
+                            <literal>ou=main,dc=example,dc=org</literal> will be mapped to realm role mappings and role mappings from
+                            groups under <literal>ou=finance,dc=example,dc=org</literal> will be mapped to client role mappings of client <literal>finance</literal> .
+                        </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </para>
+        <para>By default, there is set of User Attribute mappers to map basic UserModel attributes username, first name, lastname and email to corresponding LDAP attributes. You are free to extend this and provide
+            more attribute mappings (For example to street, postalCode etc), delete firstName/lastname mapper and put fullName mapper instead, add role mappers etc.
+            Admin console provides tooltips, which should help on how to configure corresponding mappers.
+        </para>
     </section>
     <section>
         <title>Writing your own User Federation Provider</title>

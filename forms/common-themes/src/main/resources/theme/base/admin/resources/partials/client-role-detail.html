@@ -8,8 +8,8 @@
         <li data-ng-hide="create">{{role.name}}</li>
     </ol>
 
-    <h1 data-ng-show="create"><strong>Add Role</strong></h1>
-    <h1 data-ng-hide="create"><strong>Role</strong> {{role.name}}</h1>
+    <h1 data-ng-show="create">Add Role</h1>
+    <h1 data-ng-hide="create">{{role.name|capitalize}}</h1>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients">
 

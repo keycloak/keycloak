@@ -49,8 +49,6 @@ public class RealmEntity {
     protected boolean registrationAllowed;
     @Column(name = "REG_EMAIL_AS_USERNAME")
     protected boolean registrationEmailAsUsername;
-    @Column(name="PASSWORD_CRED_GRANT_ALLOWED")
-    protected boolean passwordCredentialGrantAllowed;
     @Column(name="VERIFY_EMAIL")
     protected boolean verifyEmail;
     @Column(name="RESET_PASSWORD_ALLOWED")
@@ -59,6 +57,8 @@ public class RealmEntity {
     protected boolean rememberMe;
     @Column(name="PASSWORD_POLICY")
     protected String passwordPolicy;
+    @Column(name="EDIT_USERNAME_ALLOWED")
+    protected boolean editUsernameAllowed;
 
     @Column(name="SSO_IDLE_TIMEOUT")
     private int ssoSessionIdleTimeout;
@@ -206,14 +206,6 @@ public class RealmEntity {
         this.sslRequired = sslRequired;
     }
 
-    public boolean isPasswordCredentialGrantAllowed() {
-        return passwordCredentialGrantAllowed;
-    }
-
-    public void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed) {
-        this.passwordCredentialGrantAllowed = passwordCredentialGrantAllowed;
-    }
-
     public boolean isRegistrationAllowed() {
         return registrationAllowed;
     }
@@ -252,6 +244,14 @@ public class RealmEntity {
 
     public void setResetPasswordAllowed(boolean resetPasswordAllowed) {
         this.resetPasswordAllowed = resetPasswordAllowed;
+    }
+
+    public boolean isEditUsernameAllowed() {
+        return editUsernameAllowed;
+    }
+
+    public void setEditUsernameAllowed(boolean editUsernameAllowed) {
+        this.editUsernameAllowed = editUsernameAllowed;
     }
 
     public int getSsoSessionIdleTimeout() {
