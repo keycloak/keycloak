@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>arquillian-integration</artifactId>
-    <name>KeyCloak Admin UI TestSuite</name>
+    <name>Keycloak Integration TestSuite - Arquillian</name>
 
     <properties>
         <browser>phantomjs</browser>
