@@ -30,23 +30,9 @@
 
     <resources>
         <resource-root path="."/>
-        <artifact name="${org.keycloak:keycloak-wildfly-server-subsystem}"/>
     </resources>
 
     <dependencies>
-        <module name="javax.api"/>
-        <module name="org.jboss.staxmapper"/>
-        <module name="org.jboss.as.controller"/>
-        <module name="org.jboss.as.ee"/>
-        <module name="org.jboss.as.server"/>
-        <module name="org.jboss.modules"/>
-        <module name="org.jboss.msc"/>
-        <module name="org.jboss.logging"/>
-        <module name="org.jboss.vfs"/>
-        <module name="org.jboss.as.web-common" optional="true"/>
-        <module name="org.jboss.as.web" optional="true"/>
-        <module name="org.jboss.as.version" optional="true"/>
-        <module name="org.keycloak.keycloak-wildfly-adapter" optional="true"/>
-        <module name="org.jboss.metadata"/>
+        <module name="org.keycloak.keycloak-wf9-server-subsystem" services="export" export="true"/>
     </dependencies>
 </module>
