@@ -6,7 +6,7 @@
         <version>1.3.0.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <name>Model Parent</name>
+    <name>Keycloak Model Parent</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
