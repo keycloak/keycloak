@@ -28,8 +28,8 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
-        UserModel user = session.userStorage().addUser(realm, id, username.toLowerCase(), addDefaultRoles);
+    public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
+        UserModel user = session.userStorage().addUser(realm, id, username.toLowerCase(), addDefaultRoles, addDefaultRequiredActions);
         return registerWithFederation(realm, user);
     }
 

@@ -44,7 +44,7 @@ public class JpaUserProvider implements UserProvider {
     }
 
     @Override
-    public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
+    public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
         if (id == null) {
             id = KeycloakModelUtils.generateId();
         }
@@ -68,13 +68,18 @@ public class JpaUserProvider implements UserProvider {
                 }
             }
         }
+        if (addDefaultRequiredActions) {
+            for (String r : realm.getDefaultRequiredActions()) {
+                userModel.addRequiredAction(r);
+            }
+        }
 
         return userModel;
     }
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        return addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true);
+        return addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true, true);
     }
 
     @Override

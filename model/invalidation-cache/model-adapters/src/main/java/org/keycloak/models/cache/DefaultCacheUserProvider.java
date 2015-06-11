@@ -250,8 +250,8 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
-    public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
-        return getDelegate().addUser(realm, id, username, addDefaultRoles);
+    public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
+        return getDelegate().addUser(realm, id, username, addDefaultRoles, addDefaultRequiredActions);
     }
 
     @Override
