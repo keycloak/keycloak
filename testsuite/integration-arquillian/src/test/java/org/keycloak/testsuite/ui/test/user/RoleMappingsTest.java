@@ -40,7 +40,7 @@ public class RoleMappingsTest extends AbstractKeyCloakTest<RoleMappingsPage> {
         navigation.users();
         userPage.findUser(testUsername);
         driver.findElement(linkText(testUsername)).click();
-        navigation.roleMappings();
+        navigation.roleMappings(testUsername);
 
         page.addAvailableRole("create-realm");
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
@@ -58,7 +58,7 @@ public class RoleMappingsTest extends AbstractKeyCloakTest<RoleMappingsPage> {
         navigation.users();
         userPage.findUser(testUsername);
         driver.findElement(linkText(testUsername)).click();
-        navigation.roleMappings();
+        navigation.roleMappings(testUsername);
 
         page.addAvailableRole("create-realm");
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
