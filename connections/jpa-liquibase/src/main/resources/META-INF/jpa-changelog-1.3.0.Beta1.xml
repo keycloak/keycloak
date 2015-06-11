@@ -112,14 +112,17 @@
         </addColumn>
         <addColumn tableName="IDENTITY_PROVIDER">
             <column name="TRUST_EMAIL" type="BOOLEAN" defaultValueBoolean="false"/>
-            <column name="UPDATE_PROFILE_FIRST_LGN_MD" type="VARCHAR(10)" defaultValue="on">
+            <column name="UPDATE_PROFILE_FIRST_LGN_MD" type="VARCHAR(255)" defaultValue="on">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
         <!-- migrate value from UPDATE_PROFILE_FIRST_LOGIN to UPDATE_PROFILE_FIRST_LGN_MD then drop it -->
         <update tableName="IDENTITY_PROVIDER">
             <column name="UPDATE_PROFILE_FIRST_LGN_MD" value="off"/>
-            <where>UPDATE_PROFILE_FIRST_LOGIN = false</where>
+            <where>UPDATE_PROFILE_FIRST_LOGIN = :value</where>
+            <whereParams>
+                <param valueBoolean="false" />
+            </whereParams>
         </update>
         <dropColumn tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LOGIN"/>
         
@@ -145,10 +148,10 @@
             <column name="REQUIRED_ACTION" value="UPDATE_PASSWORD"/>
             <where>ACTION = 3</where>
         </update>
-        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_AUTHENTICATOR_PK" tableName="AUTHENTICATOR"/>
-        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_AUTHENTICATION_FLOW_PK" tableName="AUTHENTICATION_FLOW"/>
-        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_AUTHENTICATION_EXECUTION_PK" tableName="AUTHENTICATION_EXECUTION"/>
-        <addPrimaryKey columnNames="AUTHENTICATOR_ID, NAME" constraintName="CONSTRAINT_AUTHENTICATOR_CONFIG_PK" tableName="AUTHENTICATOR_CONFIG"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_AUTH_PK" tableName="AUTHENTICATOR"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_AUTH_FLOW_PK" tableName="AUTHENTICATION_FLOW"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_AUTH_EXEC_PK" tableName="AUTHENTICATION_EXECUTION"/>
+        <addPrimaryKey columnNames="AUTHENTICATOR_ID, NAME" constraintName="CONSTRAINT_AUTH_CFG_PK" tableName="AUTHENTICATOR_CONFIG"/>
         <dropPrimaryKey constraintName="CONSTRAINT_2" tableName="USER_REQUIRED_ACTION"/>
         <dropColumn tableName="USER_REQUIRED_ACTION" columnName="ACTION"/>
         <addPrimaryKey columnNames="REQUIRED_ACTION, USER_ID" constraintName="CONSTRAINT_REQUIRED_ACTION" tableName="USER_REQUIRED_ACTION"/>
@@ -156,10 +159,10 @@
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_FEDMAPPERPM" tableName="USER_FEDERATION_MAPPER"/>
         <addPrimaryKey columnNames="USER_FEDERATION_MAPPER_ID, NAME" constraintName="CONSTRAINT_FEDMAPPER_CFG_PM" tableName="USER_FEDERATION_MAPPER_CONFIG"/>
         <addForeignKeyConstraint baseColumnNames="CLIENT_SESSION" baseTableName="CLIENT_SESSION_AUTH_STATUS" constraintName="AUTH_STATUS_CONSTRAINT" referencedColumnNames="ID" referencedTableName="CLIENT_SESSION"/>
-        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="AUTHENTICATOR" constraintName="FK_AUTHENTICATOR_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
-        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="AUTHENTICATION_FLOW" constraintName="FK_AUTHENTICATION_FLOW_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
-        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="AUTHENTICATION_EXECUTION" constraintName="FK_AUTHENTICATION_EXECUTION_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
-        <addForeignKeyConstraint baseColumnNames="FLOW_ID" baseTableName="AUTHENTICATION_EXECUTION" constraintName="FK_AUTHENTICATION_EXECUTION_FLOW" referencedColumnNames="ID" referencedTableName="AUTHENTICATION_FLOW"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="AUTHENTICATOR" constraintName="FK_AUTH_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="AUTHENTICATION_FLOW" constraintName="FK_AUTH_FLOW_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="AUTHENTICATION_EXECUTION" constraintName="FK_AUTH_EXEC_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="FLOW_ID" baseTableName="AUTHENTICATION_EXECUTION" constraintName="FK_AUTH_EXEC_FLOW" referencedColumnNames="ID" referencedTableName="AUTHENTICATION_FLOW"/>
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="USER_FEDERATION_MAPPER" constraintName="FK_FEDMAPPERPM_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
         <addForeignKeyConstraint baseColumnNames="FEDERATION_PROVIDER_ID" baseTableName="USER_FEDERATION_MAPPER" constraintName="FK_FEDMAPPERPM_FEDPRV" referencedColumnNames="ID" referencedTableName="USER_FEDERATION_PROVIDER"/>
         <addForeignKeyConstraint baseColumnNames="USER_FEDERATION_MAPPER_ID" baseTableName="USER_FEDERATION_MAPPER_CONFIG" constraintName="FK_FEDMAPPER_CFG" referencedColumnNames="ID" referencedTableName="USER_FEDERATION_MAPPER"/>
