@@ -91,6 +91,13 @@ public class UsernameLoginFailureEntity {
         this.realmId = realmId;
     }
 
+    public void clearFailures() {
+        setFailedLoginNotBefore(0);
+        setLastFailure(0);
+        setLastIPFailure(null);
+        setNumFailures(0);
+    }
+
     public static class Key implements Serializable {
 
         private String realmId;
