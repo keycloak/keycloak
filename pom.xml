@@ -26,8 +26,8 @@
         <jackson.version>1.9.9</jackson.version>
         <apache.httpcomponents.version>4.3.6</apache.httpcomponents.version>
         <apache.httpcomponents.httpcore.version>4.3.3</apache.httpcomponents.httpcore.version>
-        <resteasy.version>3.0.10.Final</resteasy.version>
-        <resteasy.version.latest>3.0.10.Final</resteasy.version.latest>
+        <resteasy.version>2.3.7.Final</resteasy.version>
+        <resteasy.latest.version>3.0.9.Final</resteasy.latest.version>
         <joda-time.version>2.7</joda-time.version>
         <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
         <!-- <undertow.version>1.1.0.Final</undertow.version> -->
@@ -255,18 +255,12 @@
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-client</artifactId>
-                <version>${resteasy.version}</version>
+                <version>${resteasy.latest.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-undertow</artifactId>
-                <version>${resteasy.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>async-http-servlet-3.0</artifactId>
-                <version>${resteasy.version}</version>
+                <version>${resteasy.latest.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
