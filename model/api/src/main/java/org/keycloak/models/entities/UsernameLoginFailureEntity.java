@@ -60,4 +60,11 @@ public class UsernameLoginFailureEntity extends AbstractIdentifiableEntity {
     public void setRealmId(String realmId) {
         this.realmId = realmId;
     }
+
+    public void clearFailures() {
+        this.numFailures = 0;
+        this.lastFailure = 0;
+        this.lastIPFailure = null;
+        this.failedLoginNotBefore = 0;
+    }
 }

@@ -51,7 +51,7 @@ public class UsernameLoginFailureAdapter implements UsernameLoginFailureModel {
 
     @Override
     public void clearFailures() {
-        entity.setNumFailures(0);
+        entity.clearFailures();
         update();
     }
 

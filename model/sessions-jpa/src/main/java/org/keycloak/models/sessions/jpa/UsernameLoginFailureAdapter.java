@@ -43,7 +43,7 @@ public class UsernameLoginFailureAdapter implements UsernameLoginFailureModel
 
    @Override
    public void clearFailures() {
-      user.setNumFailures(0);
+      user.clearFailures();
    }
 
    @Override
