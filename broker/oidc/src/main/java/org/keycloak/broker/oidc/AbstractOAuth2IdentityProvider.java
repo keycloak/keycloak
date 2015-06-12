@@ -58,6 +58,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public static final String FEDERATED_ACCESS_TOKEN = "FEDERATED_ACCESS_TOKEN";
     public static final String FEDERATED_REFRESH_TOKEN = "FEDERATED_REFRESH_TOKEN";
     public static final String FEDERATED_TOKEN_EXPIRATION = "FEDERATED_TOKEN_EXPIRATION";
+    public static final String ACCESS_DENIED = "access_denied";
     protected static ObjectMapper mapper = new ObjectMapper();
 
     public static final String OAUTH2_PARAMETER_ACCESS_TOKEN = "access_token";
@@ -213,9 +214,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                                      @QueryParam(OAuth2Constants.ERROR) String error) {
             if (error != null) {
                 //logger.error("Failed " + getConfig().getAlias() + " broker login: " + error);
-                event.event(EventType.LOGIN);
-                event.error(error);
-                return ErrorPage.error(session, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                if (error.equals(ACCESS_DENIED)) {
+                    return callback.cancelled(state);
+                } else {
+                    return callback.error(state, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                }
             }
 
             try {
