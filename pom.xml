@@ -70,7 +70,7 @@
         <sun.xsom.version>20140925</sun.xsom.version>
         <javax.mail.version>1.4.5</javax.mail.version>
         <infinispan.version>6.0.2.Final</infinispan.version>
-        <liquibase.version>3.3.2</liquibase.version>
+        <liquibase.version>3.3.5</liquibase.version>
         <jetty9.version>9.1.0.v20131115</jetty9.version>
         <osgi.version>4.2.0</osgi.version>
         <pax.web.version>3.1.2</pax.web.version>

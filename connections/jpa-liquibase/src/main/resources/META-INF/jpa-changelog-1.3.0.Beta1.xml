@@ -48,8 +48,12 @@
             <column name="FLOW_ID" type="VARCHAR(36)"/>
             <column name="REQUIREMENT" type="INT"/>
             <column name="PRIORITY" type="INT"/>
-            <column name="USER_SETUP_ALLOWED" type="BOOLEAN" defaultValueBoolean="false"/>
-            <column name="AUTHENTICATOR_FLOW" type="BOOLEAN" defaultValueBoolean="false"/>
+            <column name="USER_SETUP_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="AUTHENTICATOR_FLOW" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
         <createTable tableName="AUTHENTICATOR_CONFIG">
             <column name="AUTHENTICATOR_ID" type="VARCHAR(36)">
@@ -111,7 +115,9 @@
             <column name="AUTH_USER_ID" type="VARCHAR(36)"/>
         </addColumn>
         <addColumn tableName="IDENTITY_PROVIDER">
-            <column name="TRUST_EMAIL" type="BOOLEAN" defaultValueBoolean="false"/>
+            <column name="TRUST_EMAIL" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
             <column name="UPDATE_PROFILE_FIRST_LGN_MD" type="VARCHAR(255)" defaultValue="on">
                 <constraints nullable="false"/>
             </column>
@@ -128,7 +134,7 @@
         <dropColumn tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LOGIN"/>
         
         <addColumn tableName="USER_REQUIRED_ACTION">
-            <column name="REQUIRED_ACTION" type="VARCHAR(36)">
+            <column name="REQUIRED_ACTION" type="VARCHAR(255)" defaultValue="">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
@@ -170,5 +176,12 @@
 
         <dropDefaultValue tableName="REALM" columnName="PASSWORD_CRED_GRANT_ALLOWED" />
         <dropColumn tableName="REALM" columnName="PASSWORD_CRED_GRANT_ALLOWED"/>
+
+        <!-- Sybase specific hacks -->
+        <modifySql dbms="sybase">
+            <replace replace="DROP PRIMARY KEY" with="DROP CONSTRAINT CONSTRAINT_2" />
+            <regExpReplace replace=".*(SET DEFAULT NULL)" with="SELECT 1" />
+        </modifySql>
+
     </changeSet>
 </databaseChangeLog>
