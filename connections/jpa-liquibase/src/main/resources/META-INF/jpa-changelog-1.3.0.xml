@@ -134,7 +134,7 @@
         <dropColumn tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LOGIN"/>
         
         <addColumn tableName="USER_REQUIRED_ACTION">
-            <column name="REQUIRED_ACTION" type="VARCHAR(255)" defaultValue="">
+            <column name="REQUIRED_ACTION" type="VARCHAR(255)" defaultValue=" ">
                 <constraints nullable="false"/>
             </column>
         </addColumn>

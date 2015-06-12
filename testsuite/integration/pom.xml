@@ -381,6 +381,8 @@
                                 <keycloak.user.provider>jpa</keycloak.user.provider>
                                 <keycloak.eventsStore.provider>jpa</keycloak.eventsStore.provider>
                                 <keycloak.userSessions.provider>jpa</keycloak.userSessions.provider>
+
+                                <keycloak.liquibase.logging.level>trace</keycloak.liquibase.logging.level>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
