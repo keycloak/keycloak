@@ -160,7 +160,7 @@ public class RequiredActionEmailVerificationTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        Event sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail("username", "verifyEmail").detail("email", "email@mail.com").assertEvent();
+        Event sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail("username", "verifyemail").detail("email", "email@mail.com").assertEvent();
         String sessionId = sendEvent.getSessionId();
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
@@ -171,9 +171,9 @@ public class RequiredActionEmailVerificationTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectRequiredAction(EventType.VERIFY_EMAIL).user(userId).session(sessionId).detail("username", "verifyEmail").detail("email", "email@mail.com").detail(Details.CODE_ID, mailCodeId).assertEvent();
+        events.expectRequiredAction(EventType.VERIFY_EMAIL).user(userId).session(sessionId).detail("username", "verifyemail").detail("email", "email@mail.com").detail(Details.CODE_ID, mailCodeId).assertEvent();
 
-        events.expectLogin().user(userId).session(sessionId).detail("username", "verifyEmail").detail(Details.CODE_ID, mailCodeId).assertEvent();
+        events.expectLogin().user(userId).session(sessionId).detail("username", "verifyemail").detail(Details.CODE_ID, mailCodeId).assertEvent();
     }
 
     @Test

@@ -43,6 +43,7 @@
                 </div>
             </div>
 
+            <#if passwordRequired>
             <div class="${properties.kcFormGroupClass!} ${messagesPerField.printIfExists('password',properties.kcFormGroupErrorClass!)}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
@@ -60,7 +61,7 @@
                     <input type="password" id="password-confirm" class="${properties.kcInputClass!}" name="password-confirm" />
                 </div>
             </div>
-
+            </#if>
             <div class="form-group">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="user.attributes.street" class="${properties.kcLabelClass!}">${msg("street")}</label>

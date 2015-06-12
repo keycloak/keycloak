@@ -71,6 +71,8 @@ public interface LoginFormsProvider extends Provider {
 
     public LoginFormsProvider setFormData(MultivaluedMap<String, String> formData);
 
+    LoginFormsProvider setAttribute(String name, Object value);
+
     public LoginFormsProvider setStatus(Response.Status status);
 
     LoginFormsProvider setActionUri(URI requestUri);

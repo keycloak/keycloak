@@ -27,7 +27,7 @@ public class LoginFormPasswordAuthenticator extends LoginFormUsernameAuthenticat
 
     @Override
     public void authenticate(AuthenticatorContext context) {
-        if (!isAction(context, LOGIN_FORM_ACTION)) {
+        if (!isAction(context, LOGIN_FORM_ACTION) && !isAction(context, REGISTRATION_FORM_ACTION)) {
             context.failure(AuthenticationProcessor.Error.INTERNAL_ERROR);
             return;
         }
@@ -35,7 +35,7 @@ public class LoginFormPasswordAuthenticator extends LoginFormUsernameAuthenticat
     }
 
     public void validatePassword(AuthenticatorContext context) {
-        MultivaluedMap<String, String> inputData = context.getHttpRequest().getFormParameters();
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
         if (password == null) {

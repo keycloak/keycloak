@@ -25,8 +25,11 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.authenticators.AbstractFormAuthenticator;
+import org.keycloak.authentication.authenticators.LoginFormPasswordAuthenticatorFactory;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.events.Details;
@@ -35,6 +38,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -49,10 +53,12 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.PasswordToken;
@@ -273,6 +279,7 @@ public class LoginActionsService {
 
         return session.getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(clientSessionCode.getCode())
+                .setAttribute("passwordRequired", isPasswordRequired())
                 .createRegistration();
     }
 
@@ -490,14 +497,13 @@ public class LoginActionsService {
      * Registration
      *
      * @param code
-     * @param formData
      * @return
      */
     @Path("request/registration")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processRegister(@QueryParam("code") String code,
-                                    final MultivaluedMap<String, String> formData) {
+    public Response processRegister(@QueryParam("code") String code) {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
         event.event(EventType.REGISTER);
         if (!checkSsl()) {
             event.error(Errors.SSL_REQUIRED);
@@ -553,13 +559,15 @@ public class LoginActionsService {
 
         session.getContext().setClient(client);
 
-        List<String> requiredCredentialTypes = new LinkedList<String>();
-        for (RequiredCredentialModel m : realm.getRequiredCredentials()) {
-            requiredCredentialTypes.add(m.getType());
+        List<String> requiredCredentialTypes = new LinkedList<>();
+        boolean passwordRequired = isPasswordRequired();
+        if (passwordRequired) {
+            requiredCredentialTypes.add(CredentialRepresentation.PASSWORD);
         }
 
         // Validate here, so user is not created if password doesn't validate to passwordPolicy of current realm
         List<FormMessage> errors = Validation.validateRegistrationForm(realm, formData, requiredCredentialTypes, realm.getPasswordPolicy());
+
 
         if (errors != null && !errors.isEmpty()) {
             event.error(Errors.INVALID_REGISTRATION);
@@ -567,6 +575,7 @@ public class LoginActionsService {
                     .setErrors(errors)
                     .setFormData(formData)
                     .setClientSessionCode(clientCode.getCode())
+                    .setAttribute("passwordRequired", isPasswordRequired())
                     .createRegistration();
         }
 
@@ -577,6 +586,7 @@ public class LoginActionsService {
                     .setError(Messages.USERNAME_EXISTS)
                     .setFormData(formData)
                     .setClientSessionCode(clientCode.getCode())
+                    .setAttribute("passwordRequired", isPasswordRequired())
                     .createRegistration();
         }
 
@@ -587,6 +597,7 @@ public class LoginActionsService {
                     .setError(Messages.EMAIL_EXISTS)
                     .setFormData(formData)
                     .setClientSessionCode(clientCode.getCode())
+                    .setAttribute("passwordRequired", isPasswordRequired())
                     .createRegistration();
         }
 
@@ -597,7 +608,7 @@ public class LoginActionsService {
 
         user.setEmail(email);
 
-        if (requiredCredentialTypes.contains(CredentialRepresentation.PASSWORD)) {
+        if (passwordRequired) {
             UserCredentialModel credentials = new UserCredentialModel();
             credentials.setType(CredentialRepresentation.PASSWORD);
             credentials.setValue(formData.getFirst("password"));
@@ -626,13 +637,35 @@ public class LoginActionsService {
                         .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             }
         }
-
+        clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
         AttributeFormDataProcessor.process(formData, realm, user);
 
         event.user(user).success();
         event = new EventBuilder(realm, session, clientConnection);
+        clientSession.setAuthenticatedUser(user);
+        AuthenticationFlowModel flow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+        AuthenticationProcessor processor = new AuthenticationProcessor();
+        processor.setClientSession(clientSession)
+                .setFlowId(flow.getId())
+                .setConnection(clientConnection)
+                .setEventBuilder(event)
+                .setProtector(authManager.getProtector())
+                .setRealm(realm)
+                .setAction(AbstractFormAuthenticator.REGISTRATION_FORM_ACTION)
+                .setSession(session)
+                .setUriInfo(uriInfo)
+                .setRequest(request);
 
-        return processLogin(code, formData);
+        try {
+            return processor.authenticate();
+        } catch (Exception e) {
+            return processor.handleBrowserException(e);
+        }
+    }
+
+    public boolean isPasswordRequired() {
+        AuthenticationFlowModel browserFlow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+        return AuthenticatorUtil.isRequired(realm, browserFlow.getId(), LoginFormPasswordAuthenticatorFactory.PROVIDER_ID);
     }
 
     /**

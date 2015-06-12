@@ -109,11 +109,11 @@ public class RequiredActionTotpSetupTest {
 
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp").assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp").assertEvent().getSessionId();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setupTotp").assertEvent();
+        events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setuptotp").assertEvent();
     }
 
     @Test
@@ -165,9 +165,9 @@ public class RequiredActionTotpSetupTest {
         // After totp config, user should be on the app page
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
 
-        Event loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+        Event loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
 
         // Logout
         oauth.openLogout();

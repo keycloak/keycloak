@@ -33,6 +33,7 @@ public class AbstractFormAuthenticator {
         code.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
         URI action = getActionUrl(context, code, LOGIN_FORM_ACTION);
         return context.getSession().getProvider(LoginFormsProvider.class)
+                    .setUser(context.getUser())
                     .setActionUri(action)
                     .setClientSessionCode(code.getCode());
     }

@@ -51,7 +51,6 @@ public class LoginFormUsernameAuthenticator extends AbstractFormAuthenticator im
                     formData.add("rememberMe", "on");
                 }
             }
-            if (loginHint != null) formData.add(AuthenticationManager.FORM_USERNAME, loginHint);
             Response challengeResponse = challenge(context, formData);
             context.challenge(challengeResponse);
             return;

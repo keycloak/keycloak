@@ -95,6 +95,7 @@ public class TermsAndConditions implements RequiredActionProvider, RequiredActio
     public Response invokeRequiredAction(RequiredActionContext context) {
         return context.getSession().getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(new ClientSessionCode(context.getRealm(), context.getClientSession()).getCode())
+                .setUser(context.getUser())
                 .createForm("terms.ftl", new HashMap<String, Object>());
     }
 

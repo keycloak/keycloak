@@ -3,6 +3,7 @@ package org.keycloak.login.freemarker;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
@@ -85,6 +86,7 @@ import java.util.concurrent.TimeUnit;
     private UserModel user;
 
     private ClientSessionModel clientSession;
+    private final Map<String, Object> attributes = new HashMap<String, Object>();
 
     public FreeMarkerLoginFormsProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
@@ -160,8 +162,6 @@ import java.util.concurrent.TimeUnit;
             uriBuilder.replaceQueryParam(OAuth2Constants.CODE, accessCode);
         }
 
-        Map<String, Object> attributes = new HashMap<String, Object>();
-
         ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
         Theme theme;
         try {
@@ -207,6 +207,9 @@ import java.util.concurrent.TimeUnit;
         }
         URI baseUri = uriBuilder.build();
         attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
+        if (realm != null && user != null && session != null) {
+            attributes.put("authenticatorConfigured", new AuthenticatorConfiguredMethod(realm, user, session));
+        }
 
         if (realm != null) {
             attributes.put("realm", new RealmBean(realm));
@@ -275,7 +278,8 @@ import java.util.concurrent.TimeUnit;
     }
 
     @Override
-    public Response createForm(String form, Map<String, Object> attributes) {
+    public Response createForm(String form, Map<String, Object> extraAttributes) {
+
         RealmModel realm = session.getContext().getRealm();
         ClientModel client = session.getContext().getClient();
         UriInfo uriInfo = session.getContext().getUri();
@@ -350,6 +354,9 @@ import java.util.concurrent.TimeUnit;
                 attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
             }
         }
+        if (realm != null && user != null && session != null) {
+            attributes.put("authenticatorConfigured", new AuthenticatorConfiguredMethod(realm, user, session));
+        }
         try {
             String result = freeMarker.processTemplate(attributes, form, theme);
             Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML).entity(result);
@@ -392,6 +399,7 @@ import java.util.concurrent.TimeUnit;
         }
         return createResponse(LoginFormsPages.ERROR);
     }
+
 
     public Response createOAuthGrant(ClientSessionModel clientSession) {
         this.clientSession = clientSession;
@@ -472,6 +480,12 @@ import java.util.concurrent.TimeUnit;
     @Override
     public LoginFormsProvider setAccessRequest(String accessRequestMessage) {
         this.accessRequestMessage = accessRequestMessage;
+        return this;
+    }
+
+    @Override
+    public LoginFormsProvider setAttribute(String name, Object value) {
+        this.attributes.put(name, value);
         return this;
     }
 
