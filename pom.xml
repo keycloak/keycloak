@@ -290,11 +290,6 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-undertow-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.undertow</groupId>
                 <artifactId>undertow-servlet</artifactId>
                 <version>${undertow.version}</version>
@@ -534,18 +529,13 @@
            </dependency>
            <dependency>
                <groupId>org.apache.httpcomponents</groupId>
-               <artifactId>httpmime</artifactId>
-               <version>${apache.httpcomponents.version}</version>
-           </dependency>
-           <dependency>
-               <groupId>org.apache.httpcomponents</groupId>
                <artifactId>httpcore</artifactId>
                <version>${apache.httpcomponents.httpcore.version}</version>
            </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpmime</artifactId>
-                <version>${keycloak.apache.httpcomponents.version}</version>
+                <version>${apache.httpcomponents.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>commons-logging</groupId>

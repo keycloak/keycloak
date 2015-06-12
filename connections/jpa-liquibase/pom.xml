@@ -54,7 +54,7 @@
                 <configuration>
                     <changeLogFile>META-INF/jpa-changelog-master.xml</changeLogFile>
 
-                    <url>${url}</url>
+                    <url>${project.url}</url>
                     <driver>${driver}</driver>
                     <username>${username}</username>
                     <password>${password}</password>
