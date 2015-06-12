@@ -10,11 +10,11 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class Update1_3_0_Beta1 extends Update {
+public class Update1_3_0 extends Update {
 
     @Override
     public String getId() {
-        return "1.3.0.Beta1";
+        return "1.3.0";
     }
 
     @Override
