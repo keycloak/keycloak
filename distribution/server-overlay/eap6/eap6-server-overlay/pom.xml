@@ -19,40 +19,16 @@
             <artifactId>keycloak-eap6-server-modules</artifactId>
             <type>zip</type>
         </dependency>
-        <dependency>
-            <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-dist</artifactId>
-            <type>zip</type>
-            <version>${jboss.version}</version>
-        </dependency>
     </dependencies>
 
     <build>
-        <finalName>keycloak-eap6-overlay-${project.version}</finalName>
+        <finalName>keycloak-overlay-eap6-${project.version}</finalName>
 
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
-                    <execution>
-                        <id>unpack-standalone-xml</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.jboss.as</groupId>
-                                    <artifactId>jboss-as-dist</artifactId>
-                                    <type>zip</type>
-                                    <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                            <includes>*/standalone/configuration/standalone.xml</includes>
-                        </configuration>
-                    </execution>
                     <execution>
                         <id>unpack-jboss-modules</id>
                         <phase>prepare-package</phase>
@@ -86,7 +62,7 @@
                         <configuration>
                             <transformationSets>
                                 <transformationSet>
-                                    <dir>${project.build.directory}/unpacked/jboss-eap-6.4/standalone/configuration</dir>
+                                    <dir>src/main</dir>
                                     <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
                                     <includes>
                                         <include>standalone.xml</include>
