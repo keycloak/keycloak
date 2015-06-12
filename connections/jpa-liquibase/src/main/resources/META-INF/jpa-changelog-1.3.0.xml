@@ -177,9 +177,22 @@
         <dropDefaultValue tableName="REALM" columnName="PASSWORD_CRED_GRANT_ALLOWED" />
         <dropColumn tableName="REALM" columnName="PASSWORD_CRED_GRANT_ALLOWED"/>
 
+        <!-- KEYCLOAK-1298 Change constraint names to be upper-cased -->
+        <dropForeignKeyConstraint baseTableName="PROTOCOL_MAPPER_CONFIG" constraintName="FK_PMConfig" />
+        <dropPrimaryKey constraintName="CONSTRAINT_PMConfig" tableName="PROTOCOL_MAPPER_CONFIG"/>
+        <addPrimaryKey columnNames="PROTOCOL_MAPPER_ID, NAME" constraintName="CONSTRAINT_PMCONFIG" tableName="PROTOCOL_MAPPER_CONFIG"/>
+        <addForeignKeyConstraint baseColumnNames="PROTOCOL_MAPPER_ID" baseTableName="PROTOCOL_MAPPER_CONFIG" constraintName="FK_PMCONFIG" referencedColumnNames="ID" referencedTableName="PROTOCOL_MAPPER"/>
+
+        <dropForeignKeyConstraint baseTableName="IDP_MAPPER_CONFIG" constraintName="FK_IDPMConfig" />
+        <dropPrimaryKey constraintName="CONSTRAINT_IDPMConfig" tableName="IDP_MAPPER_CONFIG"/>
+        <addPrimaryKey columnNames="IDP_MAPPER_ID, NAME" constraintName="CONSTRAINT_IDPMCONFIG" tableName="IDP_MAPPER_CONFIG"/>
+        <addForeignKeyConstraint baseColumnNames="IDP_MAPPER_ID" baseTableName="IDP_MAPPER_CONFIG" constraintName="FK_IDPMCONFIG" referencedColumnNames="ID" referencedTableName="IDENTITY_PROVIDER_MAPPER"/>
+
         <!-- Sybase specific hacks -->
         <modifySql dbms="sybase">
-            <replace replace="DROP PRIMARY KEY" with="DROP CONSTRAINT CONSTRAINT_2" />
+            <replace replace="[USER_REQUIRED_ACTION] DROP PRIMARY KEY" with="[USER_REQUIRED_ACTION] DROP CONSTRAINT CONSTRAINT_2" />
+            <replace replace="[PROTOCOL_MAPPER_CONFIG] DROP PRIMARY KEY" with="[PROTOCOL_MAPPER_CONFIG] DROP CONSTRAINT CONSTRAINT_PMConfig" />
+            <replace replace="[IDP_MAPPER_CONFIG] DROP PRIMARY KEY" with="[IDP_MAPPER_CONFIG] DROP CONSTRAINT CONSTRAINT_IDPMConfig" />
             <regExpReplace replace=".*(SET DEFAULT NULL)" with="SELECT 1" />
         </modifySql>
 
