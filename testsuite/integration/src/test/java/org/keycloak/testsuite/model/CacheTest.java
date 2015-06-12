@@ -5,10 +5,10 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.*;
 import org.keycloak.testsuite.rule.KeycloakRule;
+
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -26,7 +26,7 @@ public class CacheTest {
             KeycloakSession session = kc.startSession();
             RealmModel realm = session.realms().getRealmByName("test");
             ClientModel testApp = realm.getClientByClientId("test-app");
-            Assert.assertNotNull(testApp);
+            assertNotNull(testApp);
             appId = testApp.getId();
             Assert.assertTrue(testApp.isEnabled());
             kc.stopSession(session, true);
@@ -48,7 +48,7 @@ public class CacheTest {
             Assert.assertTrue(realm instanceof org.keycloak.models.cache.RealmAdapter);
             realm.setAccessCodeLifespanLogin(200);
             ClientModel testApp = realm.getClientByClientId("test-app");
-            Assert.assertNotNull(testApp);
+            assertNotNull(testApp);
             testApp.setEnabled(false);
             kc.stopSession(session, true);
         }
@@ -65,4 +65,27 @@ public class CacheTest {
 
 
     }
+
+    @Test
+    public void testAddUserNotAddedToCache() {
+        KeycloakSession session = kc.startSession();
+        try {
+            RealmModel realm = session.realms().getRealmByName("test");
+
+            UserModel user = session.users().addUser(realm, "testAddUserNotAddedToCache");
+            user.setFirstName("firstName");
+            user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
+
+            UserSessionModel userSession = session.sessions().createUserSession(realm, user, "testAddUserNotAddedToCache", "127.0.0.1", "auth", false, null, null);
+            UserModel user2 = userSession.getUser();
+
+            user.setLastName("lastName");
+
+            assertNotNull(user2.getLastName());
+        } finally {
+            session.getTransaction().commit();
+            session.close();
+        }
+    }
+
 }
