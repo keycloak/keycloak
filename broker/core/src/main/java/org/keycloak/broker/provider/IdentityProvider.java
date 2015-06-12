@@ -36,7 +36,7 @@ import javax.ws.rs.core.UriInfo;
  */
 public interface IdentityProvider<C extends IdentityProviderModel> extends Provider {
 
-    public interface AuthenticationCallback {
+    interface AuthenticationCallback {
         /**
          * This method should be called by provider after the JAXRS callback endpoint has finished authentication
          * with the remote IDP
@@ -44,7 +44,11 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
          * @param context
          * @return
          */
-        public Response authenticated(BrokeredIdentityContext context);
+        Response authenticated(BrokeredIdentityContext context);
+
+        Response cancelled(String code);
+
+        Response error(String code, String message);
     }
 
 
