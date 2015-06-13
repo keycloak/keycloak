@@ -13,7 +13,7 @@ Managed mode
 
 You need to pass two arguments to Maven, first is location of your Wildfly server with embedded Keycloak and the other is name of the profile.
 
-    mvn verify -Pwildfly-8-managed -DjbossHome=/your/server/location
+    mvn verify -Pkeycloak-managed -DjbossHome=/your/server/location
 
 Browser
 -------

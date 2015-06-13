@@ -42,7 +42,7 @@ public class CustomerServlet extends HttpServlet {
         try {
             String appBase = System.getProperty("app.server.base.url", "http://localhost:8081");
             WebTarget target = client.target(appBase + "/customer-db/");
-            Response response = target.request().get();
+            Response response = target.request().get(); // tkyjovsk: doesn't work in WF
             Assert.assertEquals(401, response.getStatus());
             response.close();
             String html = target.request()

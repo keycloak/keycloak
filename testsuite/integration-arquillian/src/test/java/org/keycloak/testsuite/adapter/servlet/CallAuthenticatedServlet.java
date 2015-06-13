@@ -24,7 +24,7 @@ public class CallAuthenticatedServlet extends HttpServlet {
         }
 
         KeycloakSecurityContext sc = (KeycloakSecurityContext)req.getAttribute(KeycloakSecurityContext.class.getName());
-        Assert.assertNotNull(sc);
+        Assert.assertNotNull(sc); // tkyjovsk: doesn't work in WF
         resp.setContentType("text/html");
         PrintWriter pw = resp.getWriter();
         pw.printf("<html><head><title>%s</title></head><body>", "Customer Portal");

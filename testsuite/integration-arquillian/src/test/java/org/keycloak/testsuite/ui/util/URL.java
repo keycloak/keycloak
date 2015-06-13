@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.ui.util;
 
 /**
@@ -23,12 +22,17 @@ package org.keycloak.testsuite.ui.util;
  * @author Petr Mensik
  */
 public class URL {
-    
-    public static final String BASE_URL = "http://localhost:8080/auth/admin/master/console/index.html";
-    
-    public static String SETTINGS_GENERAL_SETTINGS = BASE_URL + "#/realms/%s";
-    public static String SETTINGS_ROLES = BASE_URL + "#/realms/%s/roles";
-    public static String SETTINGS_LOGIN = BASE_URL + "#/realms/%s/login-settings";
-    public static String SETTINGS_SOCIAL = BASE_URL + "#/realms/%s/social-settings";
-    
+
+    public static final int KEYCLOAK_SERVER_PORT = 8080 + Integer.parseInt(System.getProperty("keycloak.port.offset", "0"));
+    public static final String ADMIN_CONSOLE_BASE_URL = "http://localhost:" + KEYCLOAK_SERVER_PORT + "/auth";
+    public static final String ADMIN_CONSOLE_INDEX_URL = ADMIN_CONSOLE_BASE_URL + "/admin/master/console/index.html";
+
+    public static String SETTINGS_GENERAL_SETTINGS = ADMIN_CONSOLE_INDEX_URL + "#/realms/%s";
+    public static String SETTINGS_ROLES = ADMIN_CONSOLE_INDEX_URL + "#/realms/%s/roles";
+    public static String SETTINGS_LOGIN = ADMIN_CONSOLE_INDEX_URL + "#/realms/%s/login-settings";
+    public static String SETTINGS_SOCIAL = ADMIN_CONSOLE_INDEX_URL + "#/realms/%s/social-settings";
+
+    public static final int KEYCLOAK_ADAPTER_SERVER_PORT = 8080 + Integer.parseInt(System.getProperty("keycloak.adapter.port.offset", "0"));
+    public static final String KEYCLOAK_ADAPTER_SERVER_BASE_URL = "http://localhost:" + KEYCLOAK_ADAPTER_SERVER_PORT;
+
 }

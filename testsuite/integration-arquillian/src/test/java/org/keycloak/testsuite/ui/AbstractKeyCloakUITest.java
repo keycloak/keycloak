@@ -15,71 +15,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.ui;
 
-import org.keycloak.testsuite.AbstractTest;
+import org.keycloak.testsuite.AbstractKeycloakTest;
 import java.util.concurrent.TimeUnit;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
-import org.keycloak.testsuite.ui.fragment.MenuPage;
 import org.keycloak.testsuite.ui.fragment.Navigation;
 import org.keycloak.testsuite.ui.page.AbstractPage;
-import org.keycloak.testsuite.ui.page.LoginPage;
-import org.keycloak.testsuite.ui.page.account.PasswordPage;
-import static org.keycloak.testsuite.ui.util.Constants.ADMIN_PSSWD;
-import static org.keycloak.testsuite.ui.util.URL.BASE_URL;
+import org.keycloak.testsuite.ui.util.URL;
 
 /**
  *
  * @author Petr Mensik
  * @param <P>
  */
-public abstract class AbstractKeyCloakUITest<P extends AbstractPage> extends AbstractTest {
+public abstract class AbstractKeyCloakUITest<P extends AbstractPage> extends AbstractKeycloakTest {
 
-	private static boolean firstAdminLogin = Boolean.parseBoolean(
-            System.getProperty("firstAdminLogin", "true"));
-	
     @Page
     protected P page;
-	
-	@Page
-    protected LoginPage loginPage;
-
-    @Page
-    protected PasswordPage passwordPage;
-
-    @Page
-    protected MenuPage menuPage;
 
     @Page
     protected Navigation navigation;
-	
-	@Before
-	public void before() {
+
+    @Before
+    public void before() {
         driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
-		driver.manage().window().maximize();
-		loginAsAdmin();
-	}
-	
-	@After
-	public void after() {
-		logOut();
-	}
-	
-	public void logOut() {
+        driver.manage().window().maximize();
+        updateAdminPassword();
+    }
+
+    @After
+    @Override
+    public void after() {
+        logOut();
+    }
+
+    public void logOut() {
         menuPage.logOut();
     }
 
     public void loginAsAdmin() {
-        driver.get(BASE_URL);
+        driver.get(URL.ADMIN_CONSOLE_INDEX_URL);
         loginPage.loginAsAdmin();
-        if (firstAdminLogin) {
-            passwordPage.confirmNewPassword(ADMIN_PSSWD);
-            passwordPage.submit();
-            firstAdminLogin = false;
-        }
     }
+    
 }
- 

@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.ui.page;
 
 import static org.keycloak.testsuite.ui.util.Constants.ADMIN_PSSWD;
@@ -31,23 +30,23 @@ public class LoginPage extends AbstractPage {
 
     @FindBy(id = "username")
     private WebElement usernameInput;
-    
+
     @FindBy(id = "password")
     private WebElement passwordInput;
 
     @FindBy(linkText = "Register")
     private WebElement registerLink;
 
-	@FindBy(id = "kc-header")
-	private WebElement loginPageHeader;
+    @FindBy(id = "kc-header")
+    private WebElement loginPageHeader;
 
-	public void login(String username, String password) {
-		waitGuiForElement(usernameInput, "Login form should be visible");
+    public void login(String username, String password) {
+        waitGuiForElement(usernameInput, "Login form should be visible");
         usernameInput.sendKeys(username);
         passwordInput.sendKeys(password);
         passwordInput.submit();
     }
-    
+
     public void loginAsAdmin() {
         login("admin", ADMIN_PSSWD);
     }
@@ -56,12 +55,12 @@ public class LoginPage extends AbstractPage {
         waitGuiForElement(usernameInput, "Login form should be visible");
         registerLink.click();
     }
-	
-	public String getLoginPageHeaderText() {
-		return loginPageHeader.getText();
-	}
-	
-	public WebElement getLoginPageHeader() {
-		return loginPageHeader;
-	}
+
+    public String getLoginPageHeaderText() {
+        return loginPageHeader.getText();
+    }
+
+    public WebElement getLoginPageHeader() {
+        return loginPageHeader;
+    }
 }

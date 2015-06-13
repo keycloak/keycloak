@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.ui.util;
 
 import static org.jboss.arquillian.graphene.Graphene.waitAjax;
@@ -47,21 +46,21 @@ public final class SeleniumUtils {
     }
 
     public static void waitGuiForElement(By element, String message) {
-		waitGui().until(message)
+        waitGui().until(message)
                 .element(element)
                 .is()
                 .present();
-	}
+    }
 
     public static void waitGuiForElement(By element) {
-		waitGuiForElement(element, null);
-	}
+        waitGuiForElement(element, null);
+    }
 
     public static void waitGuiForElement(WebElement element) {
-		waitGuiForElement(element, null);
-	}
+        waitGuiForElement(element, null);
+    }
 
-	public static void waitGuiForElement(WebElement element, String message) {
+    public static void waitGuiForElement(WebElement element, String message) {
         waitGui().until(message)
                 .element(element)
                 .is()

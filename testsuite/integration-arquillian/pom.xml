@@ -22,9 +22,8 @@
         <arquillian-graphene.version>2.1.0.Alpha2</arquillian-graphene.version>
         <arquillian-wildfly-container.version>8.1.0.Final</arquillian-wildfly-container.version>
         
-        <!-- Used in profile "wildfly-8-remote".
-        Set to "false" if admin password has already been updated after first login. -->
-        <firstAdminLogin>true</firstAdminLogin>
+        <!-- Set to "true" if admin password has already been updated after first login. -->
+        <adminPasswordUpdated>false</adminPasswordUpdated>
     </properties>
 
     <dependencyManagement>
@@ -64,10 +63,10 @@
     </dependencyManagement>
 
     <dependencies>
-		<dependency>
-			<groupId>org.keycloak</groupId>
-			<artifactId>keycloak-core</artifactId>
-		</dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -78,6 +77,13 @@
             <artifactId>arquillian-junit-container</artifactId>
             <scope>test</scope>
         </dependency>
+<!--        <dependency>
+            <groupId>org.jboss.arquillian.showcase</groupId>
+            <artifactId>arquillian-showcase-extension-systemproperties</artifactId>
+            <scope>test</scope>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>-->
+        
         <dependency>
             <groupId>org.jboss.arquillian.graphene</groupId>
             <artifactId>graphene-webdriver</artifactId>
@@ -85,20 +91,42 @@
             <type>pom</type>
             <scope>test</scope>
         </dependency>
-		<dependency>
-			<groupId>org.jboss.arquillian.protocol</groupId>
-			<artifactId>arquillian-protocol-servlet</artifactId>
-		</dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.protocol</groupId>
+            <artifactId>arquillian-protocol-servlet</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.jboss.arquillian.extension</groupId>
             <artifactId>arquillian-phantom-driver</artifactId>
             <scope>test</scope>
         </dependency>
-		<dependency>
+        <dependency>
             <groupId>org.jboss.spec.javax.servlet</groupId>
             <artifactId>jboss-servlet-api_3.0_spec</artifactId>
         </dependency>
-		<dependency>
+        
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>jaxrs-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>async-http-servlet-3.0</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>
             <exclusions>
@@ -116,11 +144,49 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-undertow</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-multipart-provider</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jackson-provider</artifactId>
+        </dependency>        
+        
+        
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-wf9-server-overlay</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-wf9-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-examples-dist</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+            <type>jar</type>
+        </dependency>
     </dependencies>
 
     <profiles>
         <profile>
-            <id>wildfly-8-remote</id>
+            <id>keycloak-remote</id>
             <dependencies>
                 <dependency>
                     <groupId>org.wildfly</groupId>
@@ -136,9 +202,9 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <shouldDeploy>false</shouldDeploy>
-                                <arquillian.launch>wildfly-8-remote</arquillian.launch>
+                                <arquillian.launch>keycloak-remote</arquillian.launch>
                                 <browser>${browser}</browser>
-                                <firstAdminLogin>${first.login}</firstAdminLogin>
+                                <adminPasswordUpdated>${adminPasswordUpdated}</adminPasswordUpdated>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
@@ -147,7 +213,7 @@
         </profile>
 		
         <profile>
-            <id>wildfly-8-managed</id>
+            <id>keycloak-managed</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
@@ -160,7 +226,7 @@
             </dependencies>
             <properties>
                 <install.directory>${project.build.directory}/install</install.directory>
-                <jbossHome>${install.directory}/keycloak-${project.version}</jbossHome>
+                <keycloak.home>${install.directory}/keycloak-${project.version}</keycloak.home>
             </properties>
             <build>
                 <plugins>
@@ -198,14 +264,131 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <shouldDeploy>false</shouldDeploy>
-                                <container-name>wildfly-8-managed</container-name>
+                                <keycloak.server>keycloak-managed</keycloak.server>
                                 <browser>${browser}</browser>
-                                <jbossHome>${jbossHome}</jbossHome>
+                                <keycloak.home>${keycloak.home}</keycloak.home>
+                                <keycloak.port.offset>100</keycloak.port.offset>
+                                <keycloak.management.port>10090</keycloak.management.port>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
+        
+        <profile>
+            <id>adapter-wildfly</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <install.directory>${project.build.directory}/install</install.directory>
+                <wildfly.home>${install.directory}/wildfly-${wildfly.version}</wildfly.home>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>2.10</version>
+                        <executions>
+                            <execution>
+                                <id>unpack-wildfly</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.wildfly</groupId>
+                                            <artifactId>wildfly-dist</artifactId>
+                                            <type>zip</type>
+                                            <outputDirectory>${install.directory}</outputDirectory>
+                                            <overWrite>false</overWrite>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>unpack-original-standalone-xml</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.wildfly</groupId>
+                                            <artifactId>wildfly-dist</artifactId>
+                                            <type>zip</type>
+                                            <outputDirectory>${install.directory}</outputDirectory>
+                                            <includes>*/standalone/configuration/standalone.xml</includes>
+                                            <overWrite>true</overWrite>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>unpack-wildfly-adapter</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>keycloak-wf9-adapter-dist</artifactId>
+                                            <type>zip</type>
+                                            <outputDirectory>${wildfly.home}</outputDirectory>
+                                            <overWrite>true</overWrite>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <version>1.0</version>
+                        <executions>
+                            <execution>
+                                <id>configure-wildfly-adapter</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${wildfly.home}/standalone/configuration</dir>
+                                            <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
+                                            <includes>
+                                                <include>standalone.xml</include>
+                                            </includes>
+                                            <outputDir>${wildfly.home}/standalone/configuration</outputDir>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <wildfly.home>${wildfly.home}</wildfly.home>
+                                <keycloak.adapter.port.offset>200</keycloak.adapter.port.offset>
+                                <keycloak.adapter.management.port>10190</keycloak.adapter.management.port>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
     </profiles>
 </project>
