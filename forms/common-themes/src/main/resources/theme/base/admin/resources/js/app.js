@@ -1045,6 +1045,16 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ProtocolListCtrl'
         })
+        .when('/realms/:realm/authentication', {
+            templateUrl : resourceUrl + '/partials/authentication-flows.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'AuthenticationFlowsCtrl'
+        })
+
         .when('/server-info', {
             templateUrl : resourceUrl + '/partials/server-info.html'
         })

@@ -45,7 +45,7 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
 
-            CredentialHelper.setRequiredCredential(CredentialRepresentation.KERBEROS, appRealm);
+            CredentialHelper.setAlternativeCredential(CredentialRepresentation.KERBEROS, appRealm);
             URL url = getClass().getResource("/kerberos-test/kerberos-app-keycloak.json");
             keycloakRule.createApplicationDeployment()
                     .name("kerberos-portal").contextPath("/kerberos-portal")
@@ -104,6 +104,11 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
         assertUser("hnelson", "hnelson@keycloak.org", null, null, false);
     }
 
+    @Test
+    @Override
+    public void usernamePasswordLoginTest() throws Exception {
+        super.usernamePasswordLoginTest();
+    }
 
     @Test
     public void updateProfileEnabledTest() throws Exception {

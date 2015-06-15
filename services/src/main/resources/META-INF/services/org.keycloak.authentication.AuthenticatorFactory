@@ -4,4 +4,3 @@ org.keycloak.authentication.authenticators.LoginFormPasswordAuthenticatorFactory
 org.keycloak.authentication.authenticators.LoginFormUsernameAuthenticatorFactory
 org.keycloak.authentication.authenticators.OTPFormAuthenticatorFactory
 org.keycloak.authentication.authenticators.SpnegoAuthenticatorFactory
-org.keycloak.authentication.authenticators.SetRequiredActionAuthenticatorFactory

@@ -128,6 +128,8 @@ public class Messages {
 
     public static final String COULD_NOT_SEND_AUTHENTICATION_REQUEST = "couldNotSendAuthenticationRequestMessage";
 
+    public static final String KERBEROS_NOT_ENABLED="kerberosNotSetUp";
+
     public static final String UNEXPECTED_ERROR_HANDLING_REQUEST = "unexpectedErrorHandlingRequestMessage";
 
     public static final String INVALID_ACCESS_CODE = "invalidAccessCodeMessage";

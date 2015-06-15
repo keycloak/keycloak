@@ -1,9 +1,7 @@
 package org.keycloak.testsuite.utils;
 
 import org.keycloak.authentication.authenticators.LoginFormPasswordAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.OTPFormAuthenticator;
 import org.keycloak.authentication.authenticators.OTPFormAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.SpnegoAuthenticator;
 import org.keycloak.authentication.authenticators.SpnegoAuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -19,18 +17,28 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 public class CredentialHelper {
 
     public static void setRequiredCredential(String type, RealmModel realm) {
+        AuthenticationExecutionModel.Requirement requirement = AuthenticationExecutionModel.Requirement.REQUIRED;
+        setCredentialRequirement(type, realm, requirement);
+    }
+
+    public static void setAlternativeCredential(String type, RealmModel realm) {
+        AuthenticationExecutionModel.Requirement requirement = AuthenticationExecutionModel.Requirement.ALTERNATIVE;
+        setCredentialRequirement(type, realm, requirement);
+    }
+
+    public static void setCredentialRequirement(String type, RealmModel realm, AuthenticationExecutionModel.Requirement requirement) {
         if (type.equals(CredentialRepresentation.TOTP)) {
             String providerId = OTPFormAuthenticatorFactory.PROVIDER_ID;
             String flowAlias = DefaultAuthenticationFlows.FORMS_FLOW;
-            requireAuthentication(realm, providerId, flowAlias);
+            authenticationRequirement(realm, providerId, flowAlias, requirement);
         } else if (type.equals(CredentialRepresentation.KERBEROS)) {
             String providerId = SpnegoAuthenticatorFactory.PROVIDER_ID;
             String flowAlias = DefaultAuthenticationFlows.BROWSER_FLOW;
-            alternativeAuthentication(realm, providerId, flowAlias);
+            authenticationRequirement(realm, providerId, flowAlias, requirement);
         } else if (type.equals(CredentialRepresentation.PASSWORD)) {
             String providerId = LoginFormPasswordAuthenticatorFactory.PROVIDER_ID;
             String flowAlias = DefaultAuthenticationFlows.FORMS_FLOW;
-            requireAuthentication(realm, providerId, flowAlias);
+            authenticationRequirement(realm, providerId, flowAlias, requirement);
         }
     }
 
@@ -40,11 +48,6 @@ public class CredentialHelper {
         AuthenticationExecutionModel execution = findExecutionByAuthenticator(realm, flow.getId(), authenticator.getId());
         return execution.getRequirement();
 
-    }
-
-    public static void requireAuthentication(RealmModel realm, String authenticatorProviderId, String flowAlias) {
-        AuthenticationExecutionModel.Requirement requirement = AuthenticationExecutionModel.Requirement.REQUIRED;
-        authenticationRequirement(realm, authenticatorProviderId, flowAlias, requirement);
     }
 
     public static void alternativeAuthentication(RealmModel realm, String authenticatorProviderId, String flowAlias) {

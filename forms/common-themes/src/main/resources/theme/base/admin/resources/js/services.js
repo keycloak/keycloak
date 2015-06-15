@@ -1073,3 +1073,15 @@ module.factory('IdentityProviderMapper', function($resource) {
     });
 });
 
+module.factory('AuthenticationExecutions', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication-flows/flow/:alias/executions', {
+        realm : '@realm',
+        alias : '@alias'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+

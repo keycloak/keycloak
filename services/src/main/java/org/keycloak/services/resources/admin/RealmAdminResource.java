@@ -238,6 +238,15 @@ public class RealmAdminResource {
         return fed;
     }
 
+    @Path("authentication-flows")
+    public AuthenticationFlowResource flows() {
+        AuthenticationFlowResource resource = new AuthenticationFlowResource(realm, session, auth, adminEvent);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        //resourceContext.initResource(resource);
+        return resource;
+
+    }
+
     /**
      * Path for managing all realm-level or client-level roles defined in this realm by it's id.
      *

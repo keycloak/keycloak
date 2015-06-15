@@ -1572,6 +1572,45 @@ module.controller('IdentityProviderMapperCreateCtrl', function($scope, realm, id
 
 });
 
+module.controller('AuthenticationFlowsCtrl', function($scope, realm, AuthenticationExecutions, Notifications, Dialog, $location) {
+    $scope.realm = realm;
+    var setupForm = function() {
+        AuthenticationExecutions.query({realm: realm.realm, alias: 'browser'}, function(data) {
+            $scope.executions = data;
+            $scope.flowmax = 0;
+            for (var i = 0; i < $scope.executions.length; i++ ) {
+                execution = $scope.executions[i];
+                if (execution.requirementChoices.length > $scope.flowmax) {
+                    $scope.flowmax = execution.requirementChoices.length;
+                }
+            }
+            for (var i = 0; i < $scope.executions.length; i++ ) {
+                execution = $scope.executions[i];
+                execution.empties = [];
+                for (j = 0; j < $scope.flowmax - execution.requirementChoices.length; j++) {
+                    execution.empties.push(j);
+                }
+            }
+        })
+    };
+
+    $scope.updateExecution = function(execution) {
+        var copy = angular.copy(execution);
+        delete copy.empties;
+        AuthenticationExecutions.update({realm: realm.realm, alias: 'browser'}, copy, function() {
+            Notifications.success("Auth requirement updated");
+            setupForm();
+        });
+
+    };
+
+
+    setupForm();
+
+
+});
+
+
 
 
 

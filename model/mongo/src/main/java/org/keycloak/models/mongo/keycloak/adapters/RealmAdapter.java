@@ -1319,6 +1319,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             AuthenticationExecutionModel model = entityToModel(entity);
             executions.add(model);
         }
+        Collections.sort(executions, AuthenticationExecutionModel.ExecutionComparator.SINGLETON);
         return executions;
     }
 

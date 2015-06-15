@@ -44,7 +44,7 @@ public class KerberosLdapTest extends AbstractKerberosTest {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            CredentialHelper.setRequiredCredential(CredentialRepresentation.KERBEROS, appRealm);
+            CredentialHelper.setAlternativeCredential(CredentialRepresentation.KERBEROS, appRealm);
             URL url = getClass().getResource("/kerberos-test/kerberos-app-keycloak.json");
             keycloakRule.createApplicationDeployment()
                     .name("kerberos-portal").contextPath("/kerberos-portal")
@@ -109,6 +109,10 @@ public class KerberosLdapTest extends AbstractKerberosTest {
 
         // Login with username/password from kerberos
         changePasswordPage.open();
+        // Only needed if you are providing a click thru to bypass kerberos.  Currently there is a javascript
+        // to forward the user if kerberos isn't enabled.
+        //bypassPage.isCurrent();
+        //bypassPage.clickContinue();
         loginPage.assertCurrent();
         loginPage.login("jduke", "theduke");
         changePasswordPage.assertCurrent();
@@ -117,6 +121,11 @@ public class KerberosLdapTest extends AbstractKerberosTest {
         changePasswordPage.changePassword("theduke", "newPass", "newPass");
         Assert.assertTrue(driver.getPageSource().contains("Your password has been updated."));
         changePasswordPage.logout();
+
+        // Only needed if you are providing a click thru to bypass kerberos.  Currently there is a javascript
+        // to forward the user if kerberos isn't enabled.
+        //bypassPage.isCurrent();
+        //bypassPage.clickContinue();
 
         // Login with old password doesn't work, but with new password works
         loginPage.login("jduke", "theduke");
@@ -139,6 +148,11 @@ public class KerberosLdapTest extends AbstractKerberosTest {
 
         // Change password back
         changePasswordPage.open();
+        // Only needed if you are providing a click thru to bypass kerberos.  Currently there is a javascript
+        // to forward the user if kerberos isn't enabled.
+        //bypassPage.isCurrent();
+        //bypassPage.clickContinue();
+
         loginPage.login("jduke", "newPass");
         changePasswordPage.assertCurrent();
         changePasswordPage.changePassword("newPass", "theduke", "theduke");

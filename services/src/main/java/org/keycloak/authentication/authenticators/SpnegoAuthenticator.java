@@ -8,22 +8,31 @@ import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.constants.KerberosConstants;
 import org.keycloak.events.Errors;
 import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.net.URI;
+import java.util.HashMap;
 import java.util.Map;
+
+import static org.keycloak.util.HtmlUtils.escapeAttribute;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Authenticator{
+    public static final String KERBEROS_DISABLED = "kerberos_disabled";
     protected static Logger logger = Logger.getLogger(SpnegoAuthenticator.class);
 
     @Override
@@ -41,7 +50,10 @@ public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Au
     public void authenticate(AuthenticatorContext context) {
         HttpRequest request = context.getHttpRequest();
         String authHeader = request.getHttpHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-
+        if (isAction(context, KERBEROS_DISABLED)) {
+            context.attempted();
+            return;
+        }
         // Case when we don't yet have any Negotiate header
         if (authHeader == null) {
             if (isAlreadyChallenged(context)) {
@@ -49,7 +61,7 @@ public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Au
                 return;
             }
             Response challenge = challengeNegotiation(context, null);
-            context.challenge(challenge);
+            context.forceChallenge(challenge);
             return;
         }
 
@@ -98,11 +110,68 @@ public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Au
         if (logger.isTraceEnabled()) {
             logger.trace("Sending back " + HttpHeaders.WWW_AUTHENTICATE + ": " + negotiateHeader);
         }
-        LoginFormsProvider loginForm = loginForm(context);
+        if (context.getExecution().isRequired()) {
+            return context.getSession().getProvider(LoginFormsProvider.class)
+                    .setStatus(Response.Status.UNAUTHORIZED)
+                    .setResponseHeader(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader)
+                    .setError(Messages.KERBEROS_NOT_ENABLED).createErrorPage();
+        } else {
+            return optionalChallengeRedirect(context, negotiateHeader);
+        }
+    }
 
-        loginForm.setStatus(Response.Status.UNAUTHORIZED);
-        loginForm.setResponseHeader(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader);
-        return loginForm.createLogin();
+    // This is used for testing only.  Selenium will execute the HTML challenge sent back which results in the javascript
+    // redirecting.  Our old Selenium tests expect that the current URL will be the original openid redirect.
+    public static boolean bypassChallengeJavascript = false;
+
+    /**
+     * 401 challenge sent back that bypasses
+     * @param context
+     * @param negotiateHeader
+     * @return
+     */
+    protected Response optionalChallengeRedirect(AuthenticatorContext context, String negotiateHeader) {
+        ClientSessionCode code = new ClientSessionCode(context.getRealm(), context.getClientSession());
+        code.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+        URI action = getActionUrl(context, code, KERBEROS_DISABLED);
+
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("<HTML>");
+        builder.append("<HEAD>");
+
+        builder.append("<TITLE>Kerberos Unsupported</TITLE>");
+        builder.append("</HEAD>");
+        if (bypassChallengeJavascript) {
+            builder.append("<BODY>");
+
+        } else {
+            builder.append("<BODY Onload=\"document.forms[0].submit()\">");
+        }
+        builder.append("<FORM METHOD=\"POST\" ACTION=\"" + action.toString() + "\">");
+        builder.append("<NOSCRIPT>");
+        builder.append("<P>JavaScript is disabled. We strongly recommend to enable it. You were unable to login via Kerberos.  Click the button below to login via an alternative method .</P>");
+        builder.append("<INPUT name=\"continue\" TYPE=\"SUBMIT\" VALUE=\"CONTINUE\" />");
+        builder.append("</NOSCRIPT>");
+
+        builder.append("</FORM></BODY></HTML>");
+        return Response.status(Response.Status.UNAUTHORIZED)
+                .header(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader)
+                .type(MediaType.TEXT_HTML_TYPE)
+                .entity(builder.toString()).build();
+    }
+
+    protected Response formChallenge(AuthenticatorContext context, String negotiateHeader) {
+        ClientSessionCode code = new ClientSessionCode(context.getRealm(), context.getClientSession());
+        code.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+        URI action = getActionUrl(context, code, KERBEROS_DISABLED);
+        return context.getSession().getProvider(LoginFormsProvider.class)
+                .setClientSessionCode(new ClientSessionCode(context.getRealm(), context.getClientSession()).getCode())
+                .setActionUri(action)
+                .setStatus(Response.Status.UNAUTHORIZED)
+                .setResponseHeader(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader)
+                .setUser(context.getUser())
+                .createForm("bypass_kerberos.ftl", new HashMap<String, Object>());
     }
 
 

@@ -314,6 +314,9 @@ import java.util.concurrent.TimeUnit;
         } catch (IOException e) {
             logger.warn("Failed to load properties", e);
         }
+        if (client != null) {
+            attributes.put("client", new ClientBean(client));
+        }
 
         Properties messagesBundle;
         Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, session.getContext().getRequestHeaders());

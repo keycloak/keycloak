@@ -10,11 +10,30 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class AuthenticatorUtil {
+
+    public static List<AuthenticationExecutionModel> getEnabledExecutionsRecursively(RealmModel realm, String flowId) {
+        List<AuthenticationExecutionModel> executions = new LinkedList<>();
+        recurseExecutions(realm, flowId, executions);
+        return executions;
+
+    }
+
+    public static void recurseExecutions(RealmModel realm, String flowId, List<AuthenticationExecutionModel> executions) {
+        for (AuthenticationExecutionModel model : realm.getAuthenticationExecutions(flowId)) {
+            executions.add(model);
+            if (model.isAutheticatorFlow() && model.isEnabled()) {
+                recurseExecutions(realm, model.getAuthenticator(), executions);
+            }
+        }
+    }
 
     public static AuthenticationExecutionModel findExecutionByAuthenticator(RealmModel realm, String flowId, String authProviderId) {
         for (AuthenticationExecutionModel model : realm.getAuthenticationExecutions(flowId)) {

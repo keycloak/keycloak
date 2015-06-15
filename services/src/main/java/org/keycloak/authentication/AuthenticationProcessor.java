@@ -49,6 +49,7 @@ public class AuthenticationProcessor {
     public static enum Status {
         SUCCESS,
         CHALLENGE,
+        FORCE_CHALLENGE,
         FAILURE_CHALLENGE,
         FAILED,
         ATTEMPTED
@@ -212,6 +213,12 @@ public class AuthenticationProcessor {
         @Override
         public void challenge(Response challenge) {
             this.status = Status.CHALLENGE;
+            this.challenge = challenge;
+
+        }
+        @Override
+        public void forceChallenge(Response challenge) {
+            this.status = Status.FORCE_CHALLENGE;
             this.challenge = challenge;
 
         }
@@ -437,7 +444,6 @@ public class AuthenticationProcessor {
         }
         List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(flowId);
         if (executions == null) return null;
-        Collections.sort(executions, AuthenticationExecutionModel.ExecutionComparator.SINGLETON);
         Response alternativeChallenge = null;
         AuthenticationExecutionModel challengedAlternativeExecution = null;
         boolean alternativeSuccessful = false;
@@ -513,6 +519,9 @@ public class AuthenticationProcessor {
                 clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.FAILED);
                 if (context.challenge != null) return context.challenge;
                 throw new AuthException(context.error);
+            } else if (result == Status.FORCE_CHALLENGE) {
+                clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.CHALLENGED);
+                return context.challenge;
             } else if (result == Status.CHALLENGE) {
                 logger.debugv("authenticator CHALLENGE: {0}", authenticatorModel.getProviderId());
                 if (model.isRequired() || (model.isOptional() && configuredFor)) {

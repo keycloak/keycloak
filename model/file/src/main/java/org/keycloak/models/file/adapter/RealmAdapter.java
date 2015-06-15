@@ -1289,6 +1289,7 @@ public class RealmAdapter implements RealmModel {
             AuthenticationExecutionModel model = entityToModel(entity);
             executions.add(model);
         }
+        Collections.sort(executions, AuthenticationExecutionModel.ExecutionComparator.SINGLETON);
         return executions;
     }
 

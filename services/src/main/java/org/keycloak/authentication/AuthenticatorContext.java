@@ -61,6 +61,9 @@ public interface AuthenticatorContext {
     void failure(AuthenticationProcessor.Error error);
     void failure(AuthenticationProcessor.Error error, Response response);
     void challenge(Response challenge);
+
+    void forceChallenge(Response challenge);
+
     void failureChallenge(AuthenticationProcessor.Error error, Response challenge);
     void attempted();
 }
