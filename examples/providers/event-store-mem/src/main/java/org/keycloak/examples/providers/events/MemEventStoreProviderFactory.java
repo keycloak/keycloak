@@ -34,6 +34,7 @@ public class MemEventStoreProviderFactory implements EventStoreProviderFactory {
     @Override
     public void init(Config.Scope config) {
         events = Collections.synchronizedList(new LinkedList<Event>());
+        adminEvents = Collections.synchronizedList(new LinkedList<AdminEvent>());
 
         String excludes = config.get("excludes");
         if (excludes != null) {
