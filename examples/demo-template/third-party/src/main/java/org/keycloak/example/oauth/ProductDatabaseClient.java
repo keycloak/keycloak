@@ -4,6 +4,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.servlet.ServletOAuthClient;
@@ -76,7 +77,7 @@ public class ProductDatabaseClient {
         // and obtain the ServletOAuthClient.  I actually suggest downloading the ServletOAuthClient code
         // and take a look how it works. You can also take a look at third-party-cdi example
         ServletOAuthClient oAuthClient = (ServletOAuthClient) request.getServletContext().getAttribute(ServletOAuthClient.class.getName());
-        HttpClient client = oAuthClient.getClient();
+        HttpClient client = new DefaultHttpClient();
 
         HttpGet get = new HttpGet(getBaseUrl(oAuthClient, request) + "/database/products");
         get.addHeader("Authorization", "Bearer " + accessToken);

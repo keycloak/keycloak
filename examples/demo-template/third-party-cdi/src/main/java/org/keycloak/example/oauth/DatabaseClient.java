@@ -4,6 +4,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.servlet.ServletOAuthClient;
 import org.keycloak.util.JsonSerialization;
@@ -69,7 +70,7 @@ public class DatabaseClient {
     }
 
     protected List<String> sendRequestToDBApplication(String dbUri) {
-        HttpClient client = oauthClient.getClient();
+        HttpClient client = new DefaultHttpClient();
         HttpGet get = new HttpGet(dbUri);
         try {
 
