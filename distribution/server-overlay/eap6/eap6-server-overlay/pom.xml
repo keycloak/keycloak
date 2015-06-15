@@ -8,15 +8,15 @@
         <relativePath>../../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-eap6-server-overlay</artifactId>
+    <artifactId>keycloak-server-overlay-eap6</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak EAP 6 Server Overlay Distribution</name>
+    <name>Keycloak Server Overlay EAP 6 Distribution</name>
     <description/>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-eap6-server-modules</artifactId>
+            <artifactId>keycloak-server-modules-eap6</artifactId>
             <type>zip</type>
         </dependency>
     </dependencies>
@@ -39,7 +39,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-eap6-server-modules</artifactId>
+                                    <artifactId>keycloak-server-modules-eap6</artifactId>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked/modules</outputDirectory>
                                 </artifactItem>
