@@ -183,7 +183,7 @@ public class OAuthGrantTest {
         oauth.openLoginForm();
         appPage.assertCurrent();
         events.expectLogin()
-                .detail(Details.AUTH_METHOD, "sso")
+                .detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
                 .removeDetail(Details.USERNAME)
                 .client("third-party").assertEvent();

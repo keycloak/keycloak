@@ -246,7 +246,6 @@ public class AccountTest {
         events.expectLogin().session((String) null).error("invalid_user_credentials")
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
-        events.expectLogin().session((String) null).user(userId).error("invalid_user_credentials").assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "new-password");

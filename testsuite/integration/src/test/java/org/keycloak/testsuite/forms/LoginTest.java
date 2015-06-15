@@ -154,7 +154,7 @@ public class LoginTest {
 
             Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
 
-            events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
+            events.expectLogin().user(userId).session((String) null).error("user_disabled")
                     .detail(Details.USERNAME, "login-test")
                     .removeDetail(Details.CONSENT)
                     .assertEvent();

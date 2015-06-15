@@ -131,6 +131,7 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
         if (cached == null) {
             UserModel model = getDelegate().getUserById(id, realm);
             if (model == null) return null;
+            if (managedUsers.containsKey(id)) return managedUsers.get(id);
             if (userInvalidations.containsKey(id)) return model;
             cached = new CachedUser(realm, model);
             cache.addCachedUser(realm.getId(), cached);
@@ -155,6 +156,7 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
         if (cached == null) {
             UserModel model = getDelegate().getUserByUsername(username, realm);
             if (model == null) return null;
+            if (managedUsers.containsKey(model.getId())) return managedUsers.get(model.getId());
             if (userInvalidations.containsKey(model.getId())) return model;
             cached = new CachedUser(realm, model);
             cache.addCachedUser(realm.getId(), cached);
