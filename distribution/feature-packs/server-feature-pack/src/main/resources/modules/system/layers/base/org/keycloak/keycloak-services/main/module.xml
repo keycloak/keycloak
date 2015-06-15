@@ -60,6 +60,7 @@
         <module name="org.keycloak.keycloak-social-stackoverflow" services="import"/>
         <module name="org.keycloak.keycloak-timer-api" services="import"/>
         <module name="org.keycloak.keycloak-timer-basic" services="import"/>
+        <module name="org.keycloak.keycloak-wildfly-extensions" services="import"/>
 
         <module name="javax.ws.rs.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
