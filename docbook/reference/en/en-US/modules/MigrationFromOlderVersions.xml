@@ -122,6 +122,10 @@
                     </itemizedlist>
                     Make sure you grab the correct one.
                 </para>
+                <para>
+                    You also need to update standalone.xml as the extension module and subsystem definition has changed.
+                    See <link linkend="jboss-adapter-installation">Adapter Installation</link> for details.
+                </para>
             </simplesect>
         </section>
         <section>
