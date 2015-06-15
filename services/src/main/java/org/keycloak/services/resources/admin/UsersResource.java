@@ -71,6 +71,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.services.managers.BruteForceProtector;
 
 /**
  * Base resource for managing users
@@ -84,9 +86,9 @@ public class UsersResource {
     protected RealmModel realm;
 
     private RealmAuth auth;
-    
+
     private AdminEventBuilder adminEvent;
-    
+
     @Context
     protected ClientConnection clientConnection;
 
@@ -98,6 +100,9 @@ public class UsersResource {
 
     @Context
     protected HttpHeaders headers;
+
+    @Context
+    protected BruteForceProtector protector;
 
     public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager, AdminEventBuilder adminEvent) {
         this.auth = auth;
@@ -132,6 +137,13 @@ public class UsersResource {
                 attrsToRemove.removeAll(rep.getAttributes().keySet());
             } else {
                 attrsToRemove = Collections.emptySet();
+            }
+
+            if (rep.isEnabled()) {
+                UsernameLoginFailureModel failureModel = session.sessions().getUserLoginFailure(realm, rep.getUsername());
+                if (failureModel != null) {
+                    failureModel.clearFailures();
+                }
             }
 
             updateUserFromRep(user, rep, attrsToRemove);
@@ -172,13 +184,13 @@ public class UsersResource {
             UserModel user = session.users().addUser(realm, rep.getUsername());
             Set<String> emptySet = Collections.emptySet();
             updateUserFromRep(user, rep, emptySet);
-            
+
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, user.getId()).representation(rep).success();
-            
+
             if (session.getTransaction().isActive()) {
                 session.getTransaction().commit();
             }
-            
+
             return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             if (session.getTransaction().isActive()) {
@@ -244,7 +256,7 @@ public class UsersResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        
+
         UserRepresentation rep = ModelToRepresentation.toRepresentation(user);
 
         if (realm.isIdentityFederationEnabled()) {
@@ -256,6 +268,10 @@ public class UsersResource {
                 }
                 rep.setFederatedIdentities(reps);
             }
+        }
+
+        if ((protector != null) && protector.isTemporarilyDisabled(session, realm, rep.getUsername())) {
+            rep.setEnabled(false);
         }
 
         return rep;
@@ -696,7 +712,7 @@ public class UsersResource {
                 adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo, role.getId()).representation(roles).success();
             }
         }
-        
+
     }
 
     @Path("{id}/role-mappings/clients/{client}")
@@ -710,7 +726,7 @@ public class UsersResource {
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
-        
+
         return new UserClientRoleMappingsResource(uriInfo, realm, auth, user, clientModel, adminEvent);
 
     }
@@ -744,7 +760,7 @@ public class UsersResource {
             throw new BadRequestException("Can't reset password as account is read only");
         }
         if (pass.isTemporary()) user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-        
+
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }
 

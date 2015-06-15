@@ -3,7 +3,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.3.0.Final-SNAPSHOT</version>
+        <version>1.4.0.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -28,13 +28,12 @@
 
     <modules>
         <module>adapters</module>
-        <!--<module>demo-dist</module>-->
+        <module>demo-dist</module>
         <module>docs-dist</module>
         <module>examples-dist</module>
-        <module>modules</module>
         <module>proxy-dist</module>
         <module>server-dist</module>
-        <!--<module>server-overlay</module>-->
+        <module>server-overlay</module>
         <module>src-dist</module>
         <module>subsystem-war</module>
         <module>feature-packs</module>

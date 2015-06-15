@@ -45,6 +45,11 @@ public class SAMLKeyCloakServerBrokerWithSignatureTest extends AbstractIdentityP
         }
     };
 
+    // @Test
+    public void testSleep() throws Exception {
+        Thread.sleep(100000000);
+    }
+
     @Override
     protected String getProviderId() {
         return "kc-saml-signed-idp";

@@ -2,6 +2,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
@@ -38,7 +39,6 @@ import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.timer.TimerProvider;
 
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -196,8 +196,9 @@ public class RealmAdminResource {
         } catch (PatternSyntaxException e) {
             return ErrorResponse.error("Specified regex pattern(s) is invalid.", Response.Status.BAD_REQUEST);
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Realm " + rep.getRealm() + " already exists.");
-        }  catch (Exception e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error(e);
             return ErrorResponse.error("Failed to update " + rep.getRealm() + " Realm.", Response.Status.INTERNAL_SERVER_ERROR);
         }
     }

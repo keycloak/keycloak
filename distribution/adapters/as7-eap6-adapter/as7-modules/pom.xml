@@ -8,7 +8,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.3.0.Final-SNAPSHOT</version>
+        <version>1.4.0.Final-SNAPSHOT</version>
         <relativePath>../../../../pom.xml</relativePath>
     </parent>
 
@@ -56,7 +56,6 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
-            <version>${bouncycastle.crypto.version}</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>

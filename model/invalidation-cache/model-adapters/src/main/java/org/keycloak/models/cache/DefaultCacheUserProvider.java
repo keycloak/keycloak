@@ -31,9 +31,9 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     protected boolean transactionActive;
     protected boolean setRollbackOnly;
 
-    protected Map<String, String> userInvalidations = new HashMap<String, String>();
-    protected Set<String> realmInvalidations = new HashSet<String>();
-    protected Map<String, UserModel> managedUsers = new HashMap<String, UserModel>();
+    protected Map<String, String> userInvalidations = new HashMap<>();
+    protected Set<String> realmInvalidations = new HashSet<>();
+    protected Map<String, UserModel> managedUsers = new HashMap<>();
 
     protected boolean clearAll;
 
@@ -251,12 +251,16 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
 
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
-        return getDelegate().addUser(realm, id, username, addDefaultRoles, addDefaultRequiredActions);
+        UserModel user = getDelegate().addUser(realm, id, username, addDefaultRoles, addDefaultRoles);
+        managedUsers.put(user.getId(), user);
+        return user;
     }
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        return getDelegate().addUser(realm, username);
+        UserModel user = getDelegate().addUser(realm, username);
+        managedUsers.put(user.getId(), user);
+        return user;
     }
 
     @Override

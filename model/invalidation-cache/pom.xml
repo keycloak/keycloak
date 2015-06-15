@@ -3,10 +3,10 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.3.0.Final-SNAPSHOT</version>
+        <version>1.4.0.Final-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <name>Model Parent</name>
+    <name>Keycloak Model Invalidation Cache Parent</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 

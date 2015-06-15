@@ -79,8 +79,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
                 RoleContainerModel roleContainer = getTargetRoleContainer(mapperModel, realm);
                 RoleModel role = roleContainer.getRole(roleName);
 
-                // TODO: debug
-                logger.infof("Granting role [%s] to user [%s] during import from LDAP", roleName, user.getUsername());
+                logger.debugf("Granting role [%s] to user [%s] during import from LDAP", roleName, user.getUsername());
                 user.grantRole(role);
             }
         }
@@ -94,8 +93,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
     // Sync roles from LDAP tree and create them in local Keycloak DB (if they don't exist here yet)
     protected void syncRolesFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, RealmModel realm) {
         if (!rolesSyncedModels.contains(mapperModel.getId())) {
-            // TODO: debug
-            logger.infof("Syncing roles from LDAP into Keycloak DB. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getDisplayName());
+            logger.debugf("Syncing roles from LDAP into Keycloak DB. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getDisplayName());
 
             LDAPIdentityQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
 
@@ -108,7 +106,6 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
                 String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
 
                 if (roleContainer.getRole(roleName) == null) {
-                    // TODO: debug
                     logger.infof("Syncing role [%s] from LDAP to keycloak DB", roleName);
                     roleContainer.addRole(roleName);
                 }

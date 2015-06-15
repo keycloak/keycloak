@@ -20,7 +20,7 @@ public class UserFederationManager implements UserProvider {
 
     protected KeycloakSession session;
 
-    // Set of already validated/proxied users during this session. Key is user ID
+    // Set of already validated/proxied federation users during this session. Key is user ID
     private Map<String, UserModel> managedUsers = new HashMap<>();
 
     public UserFederationManager(KeycloakSession session) {

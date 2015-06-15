@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>feature-packs-parent</artifactId>
-        <version>1.3.0.Final-SNAPSHOT</version>
+        <version>1.4.0.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -34,30 +34,21 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-dependencies-server-all</artifactId>
-            <version>${project.version}</version>
             <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.keycloak.subsystem</groupId>
             <artifactId>keycloak-server</artifactId>
-            <version>${project.version}</version>
             <type>war</type>
         </dependency>   
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wildfly-server-subsystem</artifactId>
-            <version>${project.version}</version>
-        </dependency>      
+            <artifactId>keycloak-wf9-server-subsystem</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-feature-pack</artifactId>
             <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak.subsystem</groupId>
-            <artifactId>keycloak-server</artifactId>
-            <type>war</type>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
@@ -123,10 +114,9 @@
                                 <artifactItem>
                                     <groupId>org.keycloak.subsystem</groupId>
                                     <artifactId>keycloak-server</artifactId>
-                                    <version>${project.version}</version>
                                     <type>war</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/base/org/keycloak/keycloak-server-subsystem/main/auth-server</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/base/org/keycloak/keycloak-server-subsystem/main/server-war</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>

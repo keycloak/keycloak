@@ -4,7 +4,7 @@
 
 <module xmlns="urn:jboss:module:1.1" name="de.idyl.winzipaes">
     <resources>
-        <!-- Insert resources here -->
+        <artifact name="${de.idyl:winzipaes}"/>
     </resources>
     <dependencies>
         <module name="javax.api"/>

@@ -141,6 +141,7 @@ public class AuthorizationCodeTest {
 
         events.expectLogin().error("rejected_by_user").user((String) null).session((String) null)
                 .removeDetail(Details.USERNAME)
+                .removeDetail(Details.CONSENT)
                 .detail(Details.REDIRECT_URI, "http://localhost:8081/auth/realms/test/protocol/openid-connect/oauth/oob")
                 .assertEvent().getDetails().get(Details.CODE_ID);
 

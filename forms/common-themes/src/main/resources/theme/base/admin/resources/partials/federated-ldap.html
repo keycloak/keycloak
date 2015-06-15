@@ -5,8 +5,8 @@
         <li data-ng-show="create">Add User Federation Provider</li>
     </ol>
 
-    <h1 data-ng-hide="create"><strong>LDAP User Federation Provider</strong> {{instance.displayName|capitalize}}</h1>
-    <h1 data-ng-show="create"><strong>Add LDAP User Federation Provider</strong></h1>
+    <h1 data-ng-hide="create">LDAP</h1>
+    <h1 data-ng-show="create">Add LDAP User Federation Provider</h1>
 
     <ul class="nav nav-tabs" data-ng-hide="create">
         <li class="active"><a href="#/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">Settings</a></li>

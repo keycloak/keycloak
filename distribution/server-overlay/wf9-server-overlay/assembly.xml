@@ -1,0 +1,67 @@
+<assembly>
+    <id>server-dist</id>
+
+    <formats>
+        <format>zip</format>
+        <format>tar.gz</format>
+    </formats>
+
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/modules/system/layers/base</directory>
+            <outputDirectory>modules/system/layers/base</outputDirectory>
+            <includes>
+                <include>com/google/zxing/**</include>
+                <include>de/idyl/winzipaes/**</include>
+                <include>net/iharder/**</include>
+                <include>org/freemarker/**</include>
+                <include>org/keycloak/**</include>
+                <include>org/liquibase/**</include>
+                <include>org/mongodb/**</include>
+                <include>org/twitter4j/**</include>
+                <include>sun/jdk/jgss/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/content</directory>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/themes</directory>
+            <outputDirectory>standalone/configuration/themes</outputDirectory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/providers</directory>
+            <outputDirectory>standalone/configuration/providers</outputDirectory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>../../</directory>
+            <includes>
+                <include>License.html</include>
+            </includes>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+
+    </fileSets>
+
+    <files>
+        <file>
+            <source>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/standalone.xml</source>
+            <outputDirectory>standalone/configuration</outputDirectory>
+            <destName>standalone-keycloak.xml</destName>
+        </file>
+        <file>
+            <source>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/keycloak-server.json</source>
+            <outputDirectory>standalone/configuration</outputDirectory>
+        </file>
+    </files>
+
+</assembly>

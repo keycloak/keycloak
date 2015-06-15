@@ -1,7 +1,7 @@
 package org.keycloak.migration;
 
 import org.jboss.logging.Logger;
-import org.keycloak.migration.migrators.MigrateTo1_3_0_Beta1;
+import org.keycloak.migration.migrators.MigrateTo1_3_0;
 import org.keycloak.migration.migrators.MigrationTo1_2_0_CR1;
 import org.keycloak.models.KeycloakSession;
 
@@ -17,19 +17,21 @@ public class MigrationModelManager {
         String storedVersion = model.getStoredVersion();
         if (MigrationModel.LATEST_VERSION.equals(storedVersion)) return;
         ModelVersion stored = null;
-        if (storedVersion != null) new ModelVersion(storedVersion);
+        if (storedVersion != null) {
+            stored = new ModelVersion(storedVersion);
+        }
 
         if (stored == null || stored.lessThan(MigrationTo1_2_0_CR1.VERSION)) {
             if (stored != null) {
-                logger.debug("Migrating older model to 1.2.0.RC1 updates");
+                logger.debug("Migrating older model to 1.2.0.CR1 updates");
             }
             new MigrationTo1_2_0_CR1().migrate(session);
         }
-        if (stored == null || stored.lessThan(MigrateTo1_3_0_Beta1.VERSION)) {
+        if (stored == null || stored.lessThan(MigrateTo1_3_0.VERSION)) {
             if (stored != null) {
-                logger.debug("Migrating older model to 1.3.0.Beta1 updates");
+                logger.debug("Migrating older model to 1.3.0 updates");
             }
-            new MigrateTo1_3_0_Beta1().migrate(session);
+            new MigrateTo1_3_0().migrate(session);
         }
 
         model.setStoredVersion(MigrationModel.LATEST_VERSION);

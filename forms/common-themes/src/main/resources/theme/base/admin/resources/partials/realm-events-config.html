@@ -1,6 +1,6 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <h1>
-        <span><strong>Events Config</strong> {{realm.realm|capitalize}}</span>
+        <span>Events Config</span>
         <kc-tooltip>Displays configuration options to enable persistence of user and admin events.</kc-tooltip>
     </h1>
 
@@ -10,7 +10,7 @@
         <li data-ng-class="(path[2] == 'events-settings') && 'active'"><a href="#/realms/{{realm.realm}}/events-settings">Config</a></li>
     </ul>
     <div id="content">
-        <h2><span>{{realm.realm}}</span> Events Config</h2>
+        <h2>Events Config</h2>
 
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageEvents">
 

@@ -27,7 +27,7 @@
     <script src="${resourceUrl}/lib/fileupload/angular-file-upload.min.js"></script>
     <script src="${resourceUrl}/lib/filesaver/FileSaver.js"></script>
 
-    <script src="/auth/js/${resourceVersion}/keycloak.js" type="text/javascript"></script>
+    <script src="${authUrl}/js/${resourceVersion}/keycloak.js" type="text/javascript"></script>
 
     <script src="${resourceUrl}/js/app.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/controllers/realm.js" type="text/javascript"></script>

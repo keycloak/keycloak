@@ -131,7 +131,10 @@ public class LoginTest {
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials").detail(Details.USERNAME, "login-test").assertEvent();
+        events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
+                .detail(Details.USERNAME, "login-test")
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
     }
 
     @Test
@@ -151,7 +154,10 @@ public class LoginTest {
 
             Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
 
-            events.expectLogin().user(userId).session((String) null).error("user_disabled").detail(Details.USERNAME, "login-test").assertEvent();
+            events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
+                    .detail(Details.USERNAME, "login-test")
+                    .removeDetail(Details.CONSENT)
+                    .assertEvent();
         } finally {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
@@ -179,7 +185,10 @@ public class LoginTest {
 
             Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
 
-            events.expectLogin().user(userId).session((String) null).error("user_disabled").detail(Details.USERNAME, "login-test").assertEvent();
+            events.expectLogin().user(userId).session((String) null).error("user_disabled")
+                    .detail(Details.USERNAME, "login-test")
+                    .removeDetail(Details.CONSENT)
+                    .assertEvent();
         } finally {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
@@ -199,7 +208,10 @@ public class LoginTest {
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().user((String) null).session((String) null).error("user_not_found").detail(Details.USERNAME, "invalid").assertEvent();
+        events.expectLogin().user((String) null).session((String) null).error("user_not_found")
+                .detail(Details.USERNAME, "invalid")
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
     }
 
     @Test
@@ -417,7 +429,10 @@ public class LoginTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertEquals("access_denied", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
 
-        events.expectLogin().error("rejected_by_user").user((String) null).session((String) null).removeDetail(Details.USERNAME).assertEvent();
+        events.expectLogin().error("rejected_by_user").user((String) null).session((String) null)
+                .removeDetail(Details.USERNAME)
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
     }
 
     // KEYCLOAK-1037
@@ -433,7 +448,10 @@ public class LoginTest {
 
             //Assert.assertEquals("Login timeout. Please login again.", loginPage.getError());
 
-            events.expectLogin().user((String) null).session((String) null).error("expired_code").clearDetails().detail(Details.CODE_ID, AssertEvents.isCodeId()).assertEvent();
+            events.expectLogin().user((String) null).session((String) null).error("expired_code").clearDetails()
+                    .detail(Details.CODE_ID, AssertEvents.isCodeId())
+                    .removeDetail(Details.CONSENT)
+                    .assertEvent();
 
         } finally {
             Time.setOffset(0);

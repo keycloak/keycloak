@@ -315,6 +315,16 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 this.uriInfo, event);
     }
 
+    @Override
+    public Response cancelled(String code) {
+        return session.getProvider(LoginFormsProvider.class).setClientSessionCode(code).createLogin();
+    }
+
+    @Override
+    public Response error(String code, String message) {
+        return session.getProvider(LoginFormsProvider.class).setClientSessionCode(code).setError(message).createLogin();
+    }
+
     private Response performAccountLinking(ClientSessionModel clientSession, BrokeredIdentityContext context, FederatedIdentityModel federatedIdentityModel, UserModel federatedUser) {
         this.event.event(EventType.IDENTITY_PROVIDER_ACCCOUNT_LINKING);
 

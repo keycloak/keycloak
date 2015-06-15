@@ -55,23 +55,6 @@ public class LDAPIdentityStoreRegistry {
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.protocol", "plain");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.debug", "off");
 
-        /*String ldapLoginNameMapping = ldapConfig.get(LDAPConstants.USERNAME_LDAP_ATTRIBUTE);
-        if (ldapLoginNameMapping == null) {
-            ldapLoginNameMapping = activeDirectory ? LDAPConstants.CN : LDAPConstants.UID;
-        }
-
-        String ldapFirstNameMapping = activeDirectory ?  "givenName" : LDAPConstants.CN;
-        String createTimestampMapping = activeDirectory ? "whenCreated" : LDAPConstants.CREATE_TIMESTAMP;
-        String modifyTimestampMapping = activeDirectory ? "whenChanged" : LDAPConstants.MODIFY_TIMESTAMP;
-        String[] userObjectClasses = getUserObjectClasses(ldapConfig);  */
-
-
-/*        if (activeDirectory && ldapLoginNameMapping.equals("sAMAccountName")) {
-            ldapUserMappingConfig.setBindingDnPropertyName("fullName");
-            ldapUserMappingConfig.addAttributeMapping("fullName", LDAPConstants.CN);
-            logger.infof("Using 'cn' attribute for DN of user and 'sAMAccountName' for username");
-        }    */
-
         return new LDAPIdentityStore(cfg);
     }
 
