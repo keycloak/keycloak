@@ -161,7 +161,7 @@ public class RealmsResource {
     public IdentityBrokerService getBrokerService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
 
-        IdentityBrokerService brokerService = new IdentityBrokerService(realm);
+        IdentityBrokerService brokerService = new IdentityBrokerService(realm, protector);
         ResteasyProviderFactory.getInstance().injectProperties(brokerService);
 
         brokerService.init();

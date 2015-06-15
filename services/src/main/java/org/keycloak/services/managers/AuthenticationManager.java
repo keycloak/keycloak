@@ -379,22 +379,6 @@ public class AuthenticationManager {
         return authResult;
     }
 
-    public Response checkNonFormAuthentication(KeycloakSession session, ClientSessionModel clientSession, RealmModel realm, UriInfo uriInfo,
-                                               HttpRequest request,
-                                               ClientConnection clientConnection, HttpHeaders headers,
-                                               EventBuilder event) {
-        AuthResult authResult = authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, true);
-        if (authResult != null) {
-            UserModel user = authResult.getUser();
-            UserSessionModel userSession = authResult.getSession();
-            TokenManager.attachClientSession(userSession, clientSession);
-            event.user(user).session(userSession).detail(Details.AUTH_METHOD, "sso");
-            return nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
-        }
-        return null;
-    }
-
-
 
     public static Response redirectAfterSuccessfulFlow(KeycloakSession session, RealmModel realm, UserSessionModel userSession,
                                                 ClientSessionModel clientSession,
@@ -442,11 +426,6 @@ public class AuthenticationManager {
                                                          final HttpRequest request, final UriInfo uriInfo, final EventBuilder event) {
         final RealmModel realm = clientSession.getRealm();
         final UserModel user = userSession.getUser();
-        /*
-        isForcePasswordUpdateRequired(realm, user);
-        isTotpConfigurationRequired(realm, user);
-        isEmailVerificationRequired(realm, user);
-        */
         final ClientModel client = clientSession.getClient();
 
         RequiredActionContext context = new RequiredActionContext() {
@@ -494,6 +473,13 @@ public class AuthenticationManager {
             public HttpRequest getHttpRequest() {
                 return request;
             }
+
+            @Override
+            public String generateAccessCode(String action) {
+                ClientSessionCode code = new ClientSessionCode(getRealm(), getClientSession());
+                code.setAction(action);
+                return code.getCode();
+            }
         };
 
         // see if any required actions need triggering, i.e. an expired password
@@ -502,7 +488,6 @@ public class AuthenticationManager {
             provider.evaluateTriggers(context);
         }
 
-        ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
 
         logger.debugv("processAccessCode: go to oauth page?: {0}", client.isConsentRequired());
 
@@ -512,7 +497,9 @@ public class AuthenticationManager {
         for (String action : requiredActions) {
             RequiredActionProvider actionProvider = session.getProvider(RequiredActionProvider.class, action);
             Response challenge = actionProvider.invokeRequiredAction(context);
-            if (challenge != null) return challenge;
+            if (challenge != null) {
+                return challenge;
+            }
 
         }
         if (client.isConsentRequired()) {
@@ -521,6 +508,7 @@ public class AuthenticationManager {
 
             List<RoleModel> realmRoles = new LinkedList<>();
             MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<>();
+            ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
             for (RoleModel r : accessCode.getRequestedRoles()) {
 
                 // Consent already granted by user
@@ -563,47 +551,6 @@ public class AuthenticationManager {
 
     }
 
-
-
-    private static void isForcePasswordUpdateRequired(RealmModel realm, UserModel user) {
-        int daysToExpirePassword = realm.getPasswordPolicy().getDaysToExpirePassword();
-        if(daysToExpirePassword != -1) {
-            for (UserCredentialValueModel entity : user.getCredentialsDirectly()) {
-                if (entity.getType().equals(UserCredentialModel.PASSWORD)) {
-                    
-                    if(entity.getCreatedDate() == null) {
-                        user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                        logger.debug("User is required to update password");
-                    } else {
-                        long timeElapsed = Time.toMillis(Time.currentTime()) - entity.getCreatedDate();
-                        long timeToExpire = TimeUnit.DAYS.toMillis(daysToExpirePassword);
-                    
-                        if(timeElapsed > timeToExpire) {
-                            user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                            logger.debug("User is required to update password");
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-    }
-
-    protected static void isTotpConfigurationRequired(RealmModel realm, UserModel user) {
-        for (RequiredCredentialModel c : realm.getRequiredCredentials()) {
-            if (c.getType().equals(CredentialRepresentation.TOTP) && !user.isTotp()) {
-                user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
-                logger.debug("User is required to configure totp");
-            }
-        }
-    }
-
-    protected static void isEmailVerificationRequired(RealmModel realm, UserModel user) {
-        if (realm.isVerifyEmail() && !user.isEmailVerified()) {
-            user.addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
-            logger.debug("User is required to verify email");
-        }
-    }
 
     protected static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, String tokenString, HttpHeaders headers) {
         try {

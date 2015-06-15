@@ -40,10 +40,8 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
     @Override
     public Response invokeRequiredAction(RequiredActionContext context) {
-        ClientSessionCode accessCode = new ClientSessionCode(context.getRealm(), context.getClientSession());
-        accessCode.setAction(ClientSessionModel.Action.CONFIGURE_TOTP.name());
-
-        LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class).setClientSessionCode(accessCode.getCode())
+         LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class)
+                 .setClientSessionCode(context.generateAccessCode(getProviderId()))
                 .setUser(context.getUser());
         return loginFormsProvider.createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
     }
@@ -86,5 +84,11 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     public String getId() {
         return UserModel.RequiredAction.CONFIGURE_TOTP.name();
     }
+
+    @Override
+    public String getProviderId() {
+        return getId();
+    }
+
 
 }

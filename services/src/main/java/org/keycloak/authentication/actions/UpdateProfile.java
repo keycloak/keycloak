@@ -32,10 +32,8 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
 
     @Override
     public Response invokeRequiredAction(RequiredActionContext context) {
-        ClientSessionCode accessCode = new ClientSessionCode(context.getRealm(), context.getClientSession());
-        accessCode.setAction(ClientSessionModel.Action.UPDATE_PROFILE.name());
-
-        LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class).setClientSessionCode(accessCode.getCode())
+        LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class)
+                .setClientSessionCode(context.generateAccessCode(getProviderId()))
                 .setUser(context.getUser());
         return loginFormsProvider.createResponse(UserModel.RequiredAction.UPDATE_PROFILE);
     }
@@ -78,4 +76,10 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
     public String getId() {
         return UserModel.RequiredAction.UPDATE_PROFILE.name();
     }
+
+    @Override
+    public String getProviderId() {
+        return getId();
+    }
+
 }
