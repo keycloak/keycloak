@@ -40,6 +40,9 @@ public class LoginPage extends AbstractPage {
     @FindBy(id = "kc-header")
     private WebElement loginPageHeader;
 
+    @FindBy(name = "cancel")
+    private WebElement cancelButton;    
+    
     public void login(String username, String password) {
         waitGuiForElement(usernameInput, "Login form should be visible");
         usernameInput.sendKeys(username);
@@ -63,4 +66,8 @@ public class LoginPage extends AbstractPage {
     public WebElement getLoginPageHeader() {
         return loginPageHeader;
     }
+    
+    public void cancel() {
+        cancelButton.click();
+    }    
 }

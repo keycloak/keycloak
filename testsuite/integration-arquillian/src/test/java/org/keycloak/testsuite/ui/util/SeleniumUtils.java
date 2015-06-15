@@ -28,28 +28,19 @@ import org.openqa.selenium.WebElement;
  */
 public final class SeleniumUtils {
 
-    private SeleniumUtils() {
-    }
-
     public static void waitAjaxForElement(By element) {
         waitAjax().until()
-                .element(element)
-                .is()
-                .present();
+                .element(element).is().present();
     }
 
     public static void waitAjaxForElement(WebElement element) {
         waitAjax().until()
-                .element(element)
-                .is()
-                .present();
+                .element(element).is().present();
     }
 
     public static void waitGuiForElement(By element, String message) {
         waitGui().until(message)
-                .element(element)
-                .is()
-                .present();
+                .element(element).is().present();
     }
 
     public static void waitGuiForElement(By element) {
@@ -62,16 +53,11 @@ public final class SeleniumUtils {
 
     public static void waitGuiForElement(WebElement element, String message) {
         waitGui().until(message)
-                .element(element)
-                .is()
-                .present();
+                .element(element).is().present();
     }
 
     public static void waitGuiForElementNotPresent(WebElement element) {
         waitGui().until()
-                .element(element)
-                .is()
-                .not()
-                .present();
+                .element(element).is().not().present();
     }
 }

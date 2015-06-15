@@ -1,19 +1,33 @@
 package org.keycloak.testsuite.adapter;
 
 import java.net.URL;
+import java.util.List;
+import java.util.Map;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
+import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.testsuite.adapter.servlet.CallAuthenticatedServlet;
 import org.keycloak.testsuite.adapter.servlet.CustomerDatabaseServlet;
 import org.keycloak.testsuite.adapter.servlet.CustomerServlet;
 import org.keycloak.testsuite.adapter.servlet.ErrorServlet;
+import org.keycloak.testsuite.adapter.servlet.InputServlet;
 import org.keycloak.testsuite.adapter.servlet.ProductServlet;
 import org.keycloak.testsuite.adapter.servlet.SessionServlet;
+import org.keycloak.testsuite.ui.application.page.InputPage;
 import static org.keycloak.testsuite.ui.util.URL.*;
 
 public class BasicKeycloakAdapterTest extends AbstractKeycloakAdapterTest {
@@ -25,6 +39,29 @@ public class BasicKeycloakAdapterTest extends AbstractKeycloakAdapterTest {
     public static final String PRODUCT_PORTAL = "product-portal";
     public static final String SESSION_PORTAL = "session-portal";
     public static final String INPUT_PORTAL = "input-portal";
+
+    @Page
+    private InputPage inputPage;
+
+    public static final String LOGIN_URL = OIDCLoginProtocolService.authUrl(
+            UriBuilder.fromUri(AUTH_SERVER_BASE_URL)).build("demo").toString();
+
+    private static boolean demoInitialized = false;
+
+    @Before
+    public void initializeDemo() {
+        if (!demoInitialized) {
+            importRealm("/adapter-test/demorealm.json");
+            deployer.deploy(CUSTOMER_PORTAL);
+            deployer.deploy(SECURE_PORTAL);
+            deployer.deploy(CUSTOMER_DB);
+            deployer.deploy(CUSTOMER_DB_ERROR_PAGE);
+            deployer.deploy(PRODUCT_PORTAL);
+            deployer.deploy(SESSION_PORTAL);
+            deployer.deploy(INPUT_PORTAL);
+            demoInitialized = true;
+        }
+    }
 
     protected static WebArchive adapterDeployment(String name, Class... servletClasses) {
         return adapterDeployment(name, "keycloak.json", servletClasses);
@@ -43,7 +80,7 @@ public class BasicKeycloakAdapterTest extends AbstractKeycloakAdapterTest {
         if (jbossDeploymentStructure != null) {
             deployment = deployment.addAsWebInfResource(jbossDeploymentStructure, "jboss-deployment-structure.xml");
         }
-        
+
         return deployment;
     }
 
@@ -86,8 +123,9 @@ public class BasicKeycloakAdapterTest extends AbstractKeycloakAdapterTest {
     @Deployment(name = INPUT_PORTAL, managed = false, testable = false)
     @TargetsContainer(KEYCLOAK_ADAPTER_SERVER)
     private static WebArchive inputPortal() {
-        return adapterDeployment(INPUT_PORTAL, ProductServlet.class);
+        return adapterDeployment(INPUT_PORTAL, InputServlet.class);
     }
+    private final String slash = "";
 
 //    @Before
 //    public void setSystemProperties() {
@@ -95,25 +133,132 @@ public class BasicKeycloakAdapterTest extends AbstractKeycloakAdapterTest {
 //        System.setProperty("app.server.base.url", "http://localhost:8081");
 //        System.setProperty("my.host.name", "localhost");
 //    }
-    @Before
-    public void importDemoRealm() {
-        importRealm("/adapter-test/demorealm.json");
+    
+    @Test
+    @RunAsClient
+    public void testSavedPostRequest() throws Exception {
+        // test login to customer-portal which does a bearer request to customer-db
+        driver.navigate().to(APP_SERVER_BASE_URL + "/input-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/input-portal" + slash);
+        inputPage.execute("hello");
+
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/input-portal/secured/post");
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("parameter=hello"));
+
+        // test logout
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_BASE_URL))
+                .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/customer-portal").build("demo").toString();
+        driver.navigate().to(logoutUri);
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        driver.navigate().to(APP_SERVER_BASE_URL + "/product-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+
+        // test unsecured POST KEYCLOAK-901
+        Client client = ClientBuilder.newClient();
+        Form form = new Form();
+        form.param("parameter", "hello");
+        String text = client.target(APP_SERVER_BASE_URL + "/input-portal/unsecured").request().post(Entity.form(form), String.class);
+        Assert.assertTrue(text.contains("parameter=hello"));
+        client.close();
     }
 
     @Test
     @RunAsClient
-    public void test1() throws InterruptedException {
+    public void testLoginSSOAndLogout() throws Exception {
+        // test login to customer-portal which does a bearer request to customer-db
+        driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/customer-portal" + slash);
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
-        deployer.deploy(CUSTOMER_PORTAL);
-        deployer.deploy(SECURE_PORTAL);
-        deployer.deploy(CUSTOMER_DB);
-        deployer.deploy(CUSTOMER_DB_ERROR_PAGE);
-        deployer.deploy(PRODUCT_PORTAL);
-//        deployer.deploy(SESSION_PORTAL);
-//        deployer.deploy(INPUT_PORTAL);
+        // test SSO
+        driver.navigate().to(APP_SERVER_BASE_URL + "/product-portal");
+        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/product-portal" + slash);
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
-        driver.get(KEYCLOAK_ADAPTER_SERVER_BASE_URL + "/" + CUSTOMER_PORTAL);
-        Thread.sleep(300000);
+        // View stats
+        List<Map<String, String>> stats = Keycloak.getInstance(AUTH_SERVER_BASE_URL, 
+                "master", "admin", "admin", "security-admin-console").realm("demo").getClientSessionStats();
+        Map<String, String> customerPortalStats = null;
+        Map<String, String> productPortalStats = null;
+        for (Map<String, String> s : stats) {
+            if (s.get("clientId").equals("customer-portal")) {
+                customerPortalStats = s;
+            } else if (s.get("clientId").equals("product-portal")) {
+                productPortalStats = s;
+            }
+        }
+        Assert.assertEquals(1, Integer.parseInt(customerPortalStats.get("active")));
+        Assert.assertEquals(1, Integer.parseInt(productPortalStats.get("active")));
+
+        // test logout
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_BASE_URL))
+                .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/customer-portal").build("demo").toString();
+        driver.navigate().to(logoutUri);
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        driver.navigate().to(APP_SERVER_BASE_URL + "/product-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.cancel();
+        System.out.println(driver.getPageSource());
+        Assert.assertTrue(driver.getPageSource().contains("Error Page"));
+    }
+
+    @Test
+    @RunAsClient
+    public void testServletRequestLogout() throws Exception {
+        // test login to customer-portal which does a bearer request to customer-db
+        driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/customer-portal" + slash);
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+
+        // test SSO
+        driver.navigate().to(APP_SERVER_BASE_URL + "/product-portal");
+        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/product-portal" + slash);
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
+
+        // back
+        driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/customer-portal" + slash);
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+        // test logout
+
+        driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal/logout");
+        Assert.assertTrue(driver.getPageSource().contains("servlet logout ok"));
+
+        driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
+        String currentUrl = driver.getCurrentUrl();
+        Assert.assertTrue(currentUrl.startsWith(LOGIN_URL));
+        driver.navigate().to(APP_SERVER_BASE_URL + "/product-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+
     }
 
 }

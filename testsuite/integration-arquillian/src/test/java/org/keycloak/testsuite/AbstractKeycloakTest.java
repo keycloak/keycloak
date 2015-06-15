@@ -2,6 +2,7 @@ package org.keycloak.testsuite;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.drone.api.annotation.Drone;
@@ -16,11 +17,11 @@ import org.openqa.selenium.WebDriver;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.ui.fragment.MenuPage;
+import org.keycloak.testsuite.ui.fragment.Navigation;
 import org.keycloak.testsuite.ui.page.LoginPage;
 import org.keycloak.testsuite.ui.page.account.PasswordPage;
 import static org.keycloak.testsuite.ui.util.Constants.ADMIN_PSSWD;
 import org.keycloak.testsuite.ui.util.URL;
-import static org.keycloak.testsuite.ui.util.URL.ADMIN_CONSOLE_INDEX_URL;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -44,22 +45,29 @@ public abstract class AbstractKeycloakTest {
 
     @Drone
     protected WebDriver driver;
+
     @Page
     protected LoginPage loginPage;
     @Page
     protected PasswordPage passwordPage;
     @Page
     protected MenuPage menuPage;
+    @Page
+    protected Navigation navigation;
 
-    public void updateAdminPassword() {
+    public void loginAsAdmin() {
+        driver.get(URL.ADMIN_CONSOLE_URL);
+        loginPage.loginAsAdmin();
         if (!adminPasswordUpdated) {
-            driver.get(ADMIN_CONSOLE_INDEX_URL);
-            loginPage.loginAsAdmin();
             passwordPage.confirmNewPassword(ADMIN_PSSWD);
             passwordPage.submit();
-            menuPage.logOut();
             adminPasswordUpdated = true;
         }
+    }
+
+    public void logOut() {
+        driver.get(URL.ADMIN_CONSOLE_URL);
+        menuPage.logOut();
     }
 
     public static <T> T loadJson(InputStream is, Class<T> type) {
@@ -75,19 +83,26 @@ public abstract class AbstractKeycloakTest {
         RealmRepresentation realm = loadJson(
                 getClass().getResourceAsStream(realmConfig),
                 RealmRepresentation.class);
-        keycloak.realms().create(realm);
+        keycloak.realms().create(realm); // TODO - fix 409 conflict when creating existing realm
+    }
+
+    protected void driverSettings() {
+        driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
+        driver.manage().window().maximize();
     }
 
     @Before
-    public void startKeycloakServer() {
+    public void setUp() {
         controller.start(KEYCLOAK_SERVER);
-        updateAdminPassword();
-        keycloak = Keycloak.getInstance(URL.ADMIN_CONSOLE_BASE_URL,
+        driverSettings();
+        loginAsAdmin();
+        keycloak = Keycloak.getInstance(URL.AUTH_SERVER_BASE_URL,
                 "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
     }
 
     @After
-    public void after() {
+    public void tearDown() {
+        logOut();
         keycloak.close();
     }
 

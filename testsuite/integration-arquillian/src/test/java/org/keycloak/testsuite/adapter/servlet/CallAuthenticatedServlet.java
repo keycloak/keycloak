@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.adapter.servlet;
 
-import org.junit.Assert;
 import org.keycloak.KeycloakSecurityContext;
 
 import javax.servlet.ServletException;
@@ -15,7 +14,9 @@ import java.io.PrintWriter;
  * @version $Revision: 1 $
  */
 public class CallAuthenticatedServlet extends HttpServlet {
+
     private static final String LINK = "<a href=\"%s\" id=\"%s\">%s</a>";
+    private static final long serialVersionUID = 1L;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -23,8 +24,10 @@ public class CallAuthenticatedServlet extends HttpServlet {
             return;
         }
 
-        KeycloakSecurityContext sc = (KeycloakSecurityContext)req.getAttribute(KeycloakSecurityContext.class.getName());
-        Assert.assertNotNull(sc); // tkyjovsk: doesn't work in WF
+        KeycloakSecurityContext sc = (KeycloakSecurityContext) req.getAttribute(KeycloakSecurityContext.class.getName());
+        if (sc == null) { // assert sc not null
+            throw new AssertionError("Keycloak security context is null.");
+        }
         resp.setContentType("text/html");
         PrintWriter pw = resp.getWriter();
         pw.printf("<html><head><title>%s</title></head><body>", "Customer Portal");
@@ -32,8 +35,6 @@ public class CallAuthenticatedServlet extends HttpServlet {
         pw.println("Bill Burke");
         pw.print("</body></html>");
         pw.flush();
-
-
 
     }
 }

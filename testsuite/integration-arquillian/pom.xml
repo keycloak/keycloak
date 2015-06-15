@@ -77,13 +77,7 @@
             <artifactId>arquillian-junit-container</artifactId>
             <scope>test</scope>
         </dependency>
-<!--        <dependency>
-            <groupId>org.jboss.arquillian.showcase</groupId>
-            <artifactId>arquillian-showcase-extension-systemproperties</artifactId>
-            <scope>test</scope>
-            <version>1.0.0-SNAPSHOT</version>
-        </dependency>-->
-        
+
         <dependency>
             <groupId>org.jboss.arquillian.graphene</groupId>
             <artifactId>graphene-webdriver</artifactId>
@@ -174,14 +168,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-examples-dist</artifactId>
-            <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client</artifactId>
             <type>jar</type>
         </dependency>
+        
     </dependencies>
 
     <profiles>
@@ -284,6 +274,7 @@
             <properties>
                 <install.directory>${project.build.directory}/install</install.directory>
                 <wildfly.home>${install.directory}/wildfly-${wildfly.version}</wildfly.home>
+                <examples.home>${project.build.directory}/generated-resources/examples</examples.home>
             </properties>
             <build>
                 <plugins>
@@ -347,6 +338,30 @@
                                     </artifactItems>
                                 </configuration>
                             </execution>
+                            
+<!--                            <execution>
+                                <id>examples</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>product-portal-example</artifactId>        
+                                            <type>war</type>
+                                            <outputDirectory>${examples.home}</outputDirectory>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>customer-portal-example</artifactId>        
+                                            <type>war</type>
+                                            <outputDirectory>${examples.home}</outputDirectory>
+                                        </artifactItem>                                        
+                                    </artifactItems>
+                                </configuration>
+                            </execution>                            -->
                         </executions>
                     </plugin>
                     <plugin>

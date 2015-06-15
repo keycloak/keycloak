@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.adapter.servlet;
 
-import org.junit.Assert;
 import org.keycloak.KeycloakSecurityContext;
 
 import javax.servlet.ServletException;
@@ -23,11 +22,12 @@ import javax.servlet.annotation.WebServlet;
 @WebServlet("/customer-portal")
 public class CustomerServlet extends HttpServlet {
     private static final String LINK = "<a href=\"%s\" id=\"%s\">%s</a>";
+    private static final long serialVersionUID = 1L;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         PrintWriter pw = resp.getWriter();
-        if (req.getRequestURI().toString().endsWith("logout")) {
+        if (req.getRequestURI().endsWith("logout")) {
             resp.setStatus(200);
             pw.println("servlet logout ok");
 
@@ -40,10 +40,12 @@ public class CustomerServlet extends HttpServlet {
         Client client = ClientBuilder.newClient();
 
         try {
-            String appBase = System.getProperty("app.server.base.url", "http://localhost:8081");
+            String appBase = System.getProperty("app.server.base.url", "http://localhost:8280");
             WebTarget target = client.target(appBase + "/customer-db/");
-            Response response = target.request().get(); // tkyjovsk: doesn't work in WF
-            Assert.assertEquals(401, response.getStatus());
+            Response response = target.request().get();
+            if (response.getStatus() != 401) { // assert response status == 401
+                throw new AssertionError("Response status code is not 401.");
+            }
             response.close();
             String html = target.request()
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + context.getTokenString())
@@ -54,7 +56,5 @@ public class CustomerServlet extends HttpServlet {
         } finally {
             client.close();
         }
-
-
     }
 }

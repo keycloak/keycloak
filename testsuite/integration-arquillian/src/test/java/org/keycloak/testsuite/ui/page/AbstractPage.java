@@ -32,21 +32,20 @@ public class AbstractPage {
 
     @Drone
     protected WebDriver driver;
-	
-	@FindBy(css = ".btn-danger")
-	protected WebElement dangerButton;
-	
-	//@FindByJQuery(".btn-primary:visible")
+
+    @FindBy(css = ".btn-danger")
+    protected WebElement dangerButton;
+
+    //@FindByJQuery(".btn-primary:visible")
     @FindBy(css = ".btn-primary")
     protected WebElement primaryButton;
-	
-	    @FindBy(css = ".btn-primary")
+
+    @FindBy(css = ".btn-primary")
     protected List<WebElement> primaryButtons;
 
-	
-	@FindBy(css = ".ng-binding.btn.btn-danger")
-	protected WebElement deleteConfirmationButton;
-	
+    @FindBy(css = ".ng-binding.btn.btn-danger")
+    protected WebElement deleteConfirmationButton;
+
     public void goToPage(String page) {
         driver.get(String.format(page, Constants.CURRENT_REALM));
     }
