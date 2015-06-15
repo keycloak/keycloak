@@ -23,7 +23,7 @@ package org.keycloak.testsuite.ui.util;
  */
 public class URL {
 
-    public static final int KEYCLOAK_SERVER_PORT = 8080 + Integer.parseInt(System.getProperty("keycloak.port.offset", "0"));
+    public static final int KEYCLOAK_SERVER_PORT = Integer.parseInt(System.getProperty("keycloak.http.port", "8080"));
     public static final String AUTH_SERVER_BASE_URL = "http://localhost:" + KEYCLOAK_SERVER_PORT + "/auth";
     public static final String ADMIN_CONSOLE_URL = AUTH_SERVER_BASE_URL + "/admin/master/console/index.html";
 
@@ -32,7 +32,7 @@ public class URL {
     public static String SETTINGS_LOGIN = ADMIN_CONSOLE_URL + "#/realms/%s/login-settings";
     public static String SETTINGS_SOCIAL = ADMIN_CONSOLE_URL + "#/realms/%s/social-settings";
 
-    public static final int KEYCLOAK_ADAPTER_SERVER_PORT = 8080 + Integer.parseInt(System.getProperty("keycloak.adapter.port.offset", "0"));
+    public static final int KEYCLOAK_ADAPTER_SERVER_PORT = Integer.parseInt(System.getProperty("keycloak.adapter.http.port", "8080"));
     public static final String APP_SERVER_BASE_URL = "http://localhost:" + KEYCLOAK_ADAPTER_SERVER_PORT;
 
 }

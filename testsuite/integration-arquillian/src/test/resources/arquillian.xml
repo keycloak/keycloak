@@ -11,7 +11,7 @@
         <container qualifier="keycloak-managed" mode="manual" default="true">
             <configuration>
                 <property name="jbossHome">${keycloak.home}</property>
-                <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${keycloak.port.offset}</property>
+                <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${keycloak.port.offset} -Dapp.server.base.url=http://localhost:${keycloak.adapter.http.port} -Dmy.host.name=localhost</property>
                 <property name="managementPort">${keycloak.management.port}</property>
             </configuration>
         </container>

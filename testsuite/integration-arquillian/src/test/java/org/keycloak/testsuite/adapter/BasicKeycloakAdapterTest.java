@@ -118,12 +118,14 @@ public class BasicKeycloakAdapterTest extends AbstractKeycloakAdapterTest {
     @TargetsContainer(KEYCLOAK_ADAPTER_SERVER)
     private static WebArchive sessionPortal() {
         return adapterDeployment(SESSION_PORTAL, SessionServlet.class);
+//        return adapterDeployment(SESSION_PORTAL, "keycloak-sysprop.json", SessionServlet.class);
     }
 
     @Deployment(name = INPUT_PORTAL, managed = false, testable = false)
     @TargetsContainer(KEYCLOAK_ADAPTER_SERVER)
     private static WebArchive inputPortal() {
-        return adapterDeployment(INPUT_PORTAL, InputServlet.class);
+        return adapterDeployment(SESSION_PORTAL, SessionServlet.class);
+//        return adapterDeployment(SESSION_PORTAL, "keycloak-sysprop.json", SessionServlet.class);
     }
     private final String slash = "";
 

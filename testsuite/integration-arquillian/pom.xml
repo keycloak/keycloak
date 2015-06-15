@@ -258,6 +258,7 @@
                                 <browser>${browser}</browser>
                                 <keycloak.home>${keycloak.home}</keycloak.home>
                                 <keycloak.port.offset>100</keycloak.port.offset>
+                                <keycloak.http.port>8180</keycloak.http.port>
                                 <keycloak.management.port>10090</keycloak.management.port>
                             </systemPropertyVariables>
                         </configuration>
@@ -397,6 +398,7 @@
                             <systemPropertyVariables>
                                 <wildfly.home>${wildfly.home}</wildfly.home>
                                 <keycloak.adapter.port.offset>200</keycloak.adapter.port.offset>
+                                <keycloak.adapter.http.port>8280</keycloak.adapter.http.port>
                                 <keycloak.adapter.management.port>10190</keycloak.adapter.management.port>
                             </systemPropertyVariables>
                         </configuration>
