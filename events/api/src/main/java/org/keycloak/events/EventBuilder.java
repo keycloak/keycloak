@@ -140,7 +140,9 @@ public class EventBuilder {
     }
 
     public void error(String error) {
-        event.setType(EventType.valueOf(event.getType().name() + "_ERROR"));
+        if (!event.getType().name().endsWith("_ERROR")) {
+            event.setType(EventType.valueOf(event.getType().name() + "_ERROR"));
+        }
         event.setError(error);
         send();
     }

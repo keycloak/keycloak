@@ -2,11 +2,13 @@ package org.keycloak.authentication.authenticators;
 
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.AuthenticatorContext;
+import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -25,31 +27,32 @@ public class LoginFormPasswordAuthenticator extends LoginFormUsernameAuthenticat
 
     @Override
     public void authenticate(AuthenticatorContext context) {
-        if (!isActionUrl(context)) {
+        if (!isAction(context, LOGIN_FORM_ACTION) && !isAction(context, REGISTRATION_FORM_ACTION)) {
             context.failure(AuthenticationProcessor.Error.INTERNAL_ERROR);
             return;
         }
         validatePassword(context);
     }
 
-    protected Response badPassword(AuthenticatorContext context) {
-        return loginForm(context).setError(Messages.INVALID_USER).createLogin();
-    }
-
-
     public void validatePassword(AuthenticatorContext context) {
-        MultivaluedMap<String, String> inputData = context.getHttpRequest().getFormParameters();
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
         if (password == null) {
-            Response challengeResponse = badPassword(context);
+            if (context.getUser() != null) {
+                context.getEvent().user(context.getUser());
+            }
+            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
+            Response challengeResponse = invalidCredentials(context);
             context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
         credentials.add(UserCredentialModel.password(password));
         boolean valid = context.getSession().users().validCredentials(context.getRealm(), context.getUser(), credentials);
         if (!valid) {
-            Response challengeResponse = badPassword(context);
+            context.getEvent().user(context.getUser());
+            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
+            Response challengeResponse = invalidCredentials(context);
             context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
@@ -62,8 +65,8 @@ public class LoginFormPasswordAuthenticator extends LoginFormUsernameAuthenticat
     }
 
     @Override
-    public boolean configuredFor(UserModel user) {
-        return user.configuredForCredentialType(UserCredentialModel.PASSWORD);
+    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
+        return session.users().configuredForCredentialType(UserCredentialModel.PASSWORD, realm, user);
     }
 
     @Override

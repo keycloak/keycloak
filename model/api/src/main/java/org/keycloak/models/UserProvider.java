@@ -13,7 +13,7 @@ import java.util.Set;
 public interface UserProvider extends Provider {
     // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
 
-    UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles);
+    UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions);
     UserModel addUser(RealmModel realm, String username);
     boolean removeUser(RealmModel realm, UserModel user);
 

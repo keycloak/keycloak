@@ -130,7 +130,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         ClientSessionModel clientSession = accessCode.getClientSession();
         String redirect = clientSession.getRedirectUri();
         String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
-        accessCode.setAction(ClientSessionModel.Action.CODE_TO_TOKEN);
+        accessCode.setAction(ClientSessionModel.Action.CODE_TO_TOKEN.name());
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.CODE, accessCode.getCode());
         log.debugv("redirectAccessCode: state: {0}", state);
         if (state != null)

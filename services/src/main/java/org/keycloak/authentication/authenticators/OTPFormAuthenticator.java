@@ -1,18 +1,18 @@
 package org.keycloak.authentication.authenticators;
 
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorContext;
+import org.keycloak.events.Errors;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -24,7 +24,8 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OTPFormAuthenticator implements Authenticator {
+public class OTPFormAuthenticator extends AbstractFormAuthenticator implements Authenticator {
+    public static final String TOTP_FORM_ACTION = "totp";
     protected AuthenticatorModel model;
 
     public OTPFormAuthenticator(AuthenticatorModel model) {
@@ -33,9 +34,8 @@ public class OTPFormAuthenticator implements Authenticator {
 
     @Override
     public void authenticate(AuthenticatorContext context) {
-        URI expected = LoginActionsService.authenticationFormProcessor(context.getUriInfo()).build(context.getRealm().getName());
-        if (!expected.getPath().equals(context.getUriInfo().getPath())) {
-            Response challengeResponse = challenge(context);
+        if (!isAction(context, TOTP_FORM_ACTION)) {
+            Response challengeResponse = challenge(context, null);
             context.challenge(challengeResponse);
             return;
         }
@@ -43,47 +43,45 @@ public class OTPFormAuthenticator implements Authenticator {
     }
 
     public void validateOTP(AuthenticatorContext context) {
-        MultivaluedMap<String, String> inputData = context.getHttpRequest().getFormParameters();
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.TOTP);
         if (password == null) {
-            Response challengeResponse = challenge(context);
-            context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
+            Response challengeResponse = challenge(context, null);
+            context.challenge(challengeResponse);
             return;
         }
         credentials.add(UserCredentialModel.totp(password));
         boolean valid = context.getSession().users().validCredentials(context.getRealm(), context.getUser(), credentials);
         if (!valid) {
-            Response challengeResponse = challenge(context);
+            context.getEvent().user(context.getUser())
+                    .error(Errors.INVALID_USER_CREDENTIALS);
+            Response challengeResponse = challenge(context, Messages.INVALID_TOTP);
             context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
         context.success();
     }
 
-
     @Override
     public boolean requiresUser() {
         return true;
     }
 
-    protected Response challenge(AuthenticatorContext context, MultivaluedMap<String, String> formData) {
+    protected Response challenge(AuthenticatorContext context, String error) {
+        ClientSessionCode clientSessionCode = new ClientSessionCode(context.getRealm(), context.getClientSession());
+        URI action = AbstractFormAuthenticator.getActionUrl(context, clientSessionCode, TOTP_FORM_ACTION);
         LoginFormsProvider forms = context.getSession().getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(new ClientSessionCode(context.getRealm(), context.getClientSession()).getCode());
-
-        if (formData.size() > 0) forms.setFormData(formData);
+                .setActionUri(action)
+                .setClientSessionCode(clientSessionCode.getCode());
+        if (error != null) forms.setError(error);
 
         return forms.createLoginTotp();
     }
 
-    public Response challenge(AuthenticatorContext context) {
-        MultivaluedMap<String, String> formData = new MultivaluedMapImpl<>();
-        return challenge(context, formData);
-    }
-
     @Override
-    public boolean configuredFor(UserModel user) {
-        return user.configuredForCredentialType(UserCredentialModel.TOTP);
+    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
+        return session.users().configuredForCredentialType(UserCredentialModel.TOTP, realm, user) && user.isTotp();
     }
 
     @Override

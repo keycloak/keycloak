@@ -217,8 +217,9 @@ public class AccountTest {
         changePasswordPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        String sessionId = events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent().getSessionId();
-
+        Event event = events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
+        String sessionId = event.getSessionId();
+        String userId = event.getUserId();
         changePasswordPage.changePassword("", "new-password", "new-password");
 
         Assert.assertEquals("Please specify password.", profilePage.getError());

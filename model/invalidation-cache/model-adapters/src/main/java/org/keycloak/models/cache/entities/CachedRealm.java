@@ -98,6 +98,7 @@ public class CachedRealm {
     private Set<String> supportedLocales = new HashSet<String>();
     private String defaultLocale;
     private MultivaluedHashMap<String, IdentityProviderMapperModel> identityProviderMappers = new MultivaluedHashMap<>();
+    private Set<String> defaultRequiredActions = new HashSet<>();
 
     public CachedRealm() {
     }
@@ -200,6 +201,7 @@ public class CachedRealm {
         for (AuthenticatorModel authenticator : model.getAuthenticators()) {
             authenticators.put(authenticator.getId(), authenticator);
         }
+        this.defaultRequiredActions.addAll(model.getDefaultRequiredActions());
 
     }
 
@@ -437,5 +439,9 @@ public class CachedRealm {
 
     public Map<String, AuthenticationExecutionModel> getExecutionsById() {
         return executionsById;
+    }
+
+    public Set<String> getDefaultRequiredActions() {
+        return defaultRequiredActions;
     }
 }

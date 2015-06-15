@@ -4,3 +4,4 @@ org.keycloak.exportimport.ClientImportSpi
 org.keycloak.wellknown.WellKnownSpi
 org.keycloak.messages.MessagesSpi
 org.keycloak.authentication.AuthenticatorSpi
+org.keycloak.authentication.RequiredActionSpi

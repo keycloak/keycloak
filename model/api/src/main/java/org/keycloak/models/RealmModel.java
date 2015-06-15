@@ -156,6 +156,13 @@ public interface RealmModel extends RoleContainerModel {
 
     void updateDefaultRoles(String[] defaultRoles);
 
+    Set<String> getDefaultRequiredActions();
+
+    void addDefaultRequiredAction(String action);
+    void removeDefaultRequiredAction(String action);
+
+    void setDefaultRequiredActions(Set<String> action);
+
     // Key is clientId
     Map<String, ClientModel> getClientNameMap();
 
@@ -180,6 +187,7 @@ public interface RealmModel extends RoleContainerModel {
     void setSmtpConfig(Map<String, String> smtpConfig);
 
     List<AuthenticationFlowModel> getAuthenticationFlows();
+    AuthenticationFlowModel getFlowByAlias(String alias);
     AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model);
     AuthenticationFlowModel getAuthenticationFlowById(String id);
     void removeAuthenticationFlow(AuthenticationFlowModel model);

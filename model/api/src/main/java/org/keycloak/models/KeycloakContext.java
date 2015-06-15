@@ -1,5 +1,7 @@
 package org.keycloak.models;
 
+import org.keycloak.ClientConnection;
+
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
 
@@ -19,5 +21,9 @@ public interface KeycloakContext {
     ClientModel getClient();
 
     void setClient(ClientModel client);
+
+    ClientConnection getConnection();
+
+    void setConnection(ClientConnection connection);
 
 }

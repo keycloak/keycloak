@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="bburke@redhat.com" id="1.4.0">
+        <delete tableName="CLIENT_SESSION_AUTH_STATUS"/>
+        <delete tableName="CLIENT_SESSION_PROT_MAPPER"/>
+        <delete tableName="CLIENT_SESSION_NOTE"/>
+        <delete tableName="CLIENT_SESSION"/>
+        <delete tableName="USER_SESSION_NOTE"/>
+        <delete tableName="USER_SESSION"/>
+        <createTable tableName="DEFAULT_REQUIRED_ACTIONS">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(36)"/>
+        </createTable>
+        <addColumn tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <!-- OAUTH_GRANT,
+        CODE_TO_TOKEN,
+        VERIFY_EMAIL,
+        UPDATE_PROFILE,
+        CONFIGURE_TOTP,
+        UPDATE_PASSWORD,
+        RECOVER_PASSWORD,
+        AUTHENTICATE,
+        SOCIAL_CALLBACK,
+        LOGGED_OUT -->
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="OAUTH_GRANT"/>
+            <where>ACTION = 0</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="CODE_TO_TOKEN"/>
+            <where>ACTION = 1</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="VERIFY_EMAIL"/>
+            <where>ACTION = 2</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="UPDATE_PROFILE"/>
+            <where>ACTION = 3</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="CONFIGURE_TOTP"/>
+            <where>ACTION = 4</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="UPDATE_PASSWORD"/>
+            <where>ACTION = 5</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="RECOVER_PASSWORD"/>
+            <where>ACTION = 6</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="AUTHENTICATE"/>
+            <where>ACTION = 7</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="SOCIAL_CALLBACK"/>
+            <where>ACTION = 8</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="LOGGED_OUT"/>
+            <where>ACTION = 9</where>
+        </update>
+
+        <createTable tableName="CLIENT_USER_SESSION_NOTE">
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+            <column name="CLIENT_SESSION" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="CLIENT_SESSION, NAME" constraintName="CONSTR_CL_USR_SES_NOTE" tableName="CLIENT_USER_SESSION_NOTE"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_SESSION" baseTableName="CLIENT_USER_SESSION_NOTE" constraintName="FK_CL_USR_SES_NOTE" referencedColumnNames="ID" referencedTableName="CLIENT_SESSION"/>
+        <dropColumn tableName="CLIENT_SESSION" columnName="ACTION"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="DEFAULT_REQUIRED_ACTIONS" constraintName="FK_DEF_REQ_ACTS_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+    </changeSet>
+</databaseChangeLog>

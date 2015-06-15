@@ -1,6 +1,7 @@
 package org.keycloak.services.filters;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
@@ -26,11 +27,29 @@ public class KeycloakSessionServletFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        HttpServletRequest request = (HttpServletRequest)servletRequest;
+        final HttpServletRequest request = (HttpServletRequest)servletRequest;
 
         KeycloakSessionFactory sessionFactory = (KeycloakSessionFactory) servletRequest.getServletContext().getAttribute(KeycloakSessionFactory.class.getName());
         KeycloakSession session = sessionFactory.create();
         ResteasyProviderFactory.pushContext(KeycloakSession.class, session);
+        ClientConnection connection = new ClientConnection() {
+            @Override
+            public String getRemoteAddr() {
+                return request.getRemoteAddr();
+            }
+
+            @Override
+            public String getRemoteHost() {
+                return request.getRemoteHost();
+            }
+
+            @Override
+            public int getReportPort() {
+                return request.getRemotePort();
+            }
+        };
+        session.getContext().setConnection(connection);
+        ResteasyProviderFactory.pushContext(ClientConnection.class, connection);
 
         KeycloakTransaction tx = session.getTransaction();
         ResteasyProviderFactory.pushContext(KeycloakTransaction.class, tx);

@@ -54,8 +54,8 @@ public class ClientSessionEntity {
     @Column(name="AUTH_METHOD")
     protected String authMethod;
 
-    @Column(name="ACTION")
-    protected ClientSessionModel.Action action;
+    @Column(name="CURRENT_ACTION")
+    protected String action;
 
     @Column(name="AUTH_USER_ID")
     protected String userId;
@@ -68,6 +68,9 @@ public class ClientSessionEntity {
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="clientSession")
     protected Collection<ClientSessionNoteEntity> notes = new ArrayList<ClientSessionNoteEntity>();
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="clientSession")
+    protected Collection<ClientUserSessionNoteEntity> userSessionNotes = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="clientSession")
     protected Collection<ClientSessionAuthStatusEntity> authanticatorStatus = new ArrayList<>();
@@ -120,11 +123,11 @@ public class ClientSessionEntity {
         this.redirectUri = redirectUri;
     }
 
-    public ClientSessionModel.Action getAction() {
+    public String getAction() {
         return action;
     }
 
-    public void setAction(ClientSessionModel.Action action) {
+    public void setAction(String action) {
         this.action = action;
     }
 
@@ -174,5 +177,13 @@ public class ClientSessionEntity {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public Collection<ClientUserSessionNoteEntity> getUserSessionNotes() {
+        return userSessionNotes;
+    }
+
+    public void setUserSessionNotes(Collection<ClientUserSessionNoteEntity> userSessionNotes) {
+        this.userSessionNotes = userSessionNotes;
     }
 }

@@ -123,7 +123,7 @@ public class LogoutTest {
 
         // Check session 1 logged-in
         oauth.openLoginForm();
-        events.expectLogin().session(sessionId).detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).assertEvent();
+        events.expectLogin().session(sessionId).removeDetail(Details.USERNAME).assertEvent();
 
          //  Logout session 1 by redirect
         driver.navigate().to(oauth.getLogoutUrl(AppPage.baseUrl, null));
@@ -140,7 +140,7 @@ public class LogoutTest {
 
         // Check session 3 logged-in
         oauth.openLoginForm();
-        events.expectLogin().session(sessionId3).detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).assertEvent();
+        events.expectLogin().session(sessionId3).removeDetail(Details.USERNAME).assertEvent();
     }
 
 }

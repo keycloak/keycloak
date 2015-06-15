@@ -93,12 +93,12 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
-    public ClientSessionModel.Action getAction() {
+    public String getAction() {
         return entity.getAction();
     }
 
     @Override
-    public void setAction(ClientSessionModel.Action action) {
+    public void setAction(String action) {
         entity.setAction(action);
     }
 
@@ -132,6 +132,16 @@ public class ClientSessionAdapter implements ClientSessionModel {
     public void removeNote(String name) {
         entity.getNotes().remove(name);
 
+    }
+
+    @Override
+    public void setUserSessionNote(String name, String value) {
+        entity.getUserSessionNotes().put(name, value);
+    }
+
+    @Override
+    public Map<String, String> getUserSessionNotes() {
+        return entity.getUserSessionNotes();
     }
 
     @Override

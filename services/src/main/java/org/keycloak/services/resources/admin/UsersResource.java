@@ -5,6 +5,8 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
+import org.keycloak.authentication.RequiredActionFactory;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.events.admin.OperationType;
@@ -27,6 +29,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -212,11 +215,15 @@ public class UsersResource {
         List<String> reqActions = rep.getRequiredActions();
 
         if (reqActions != null) {
-            for (UserModel.RequiredAction ra : UserModel.RequiredAction.values()) {
-                if (reqActions.contains(ra.name())) {
-                    user.addRequiredAction(ra);
+            Set<String> allActions = new HashSet<>();
+            for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(RequiredActionProvider.class)) {
+                allActions.add(factory.getId());
+            }
+            for (String action : allActions) {
+                if (reqActions.contains(action)) {
+                    user.addRequiredAction(action);
                 } else {
-                    user.removeRequiredAction(ra);
+                    user.removeRequiredAction(action);
                 }
             }
         }
@@ -804,7 +811,7 @@ public class UsersResource {
 
         ClientSessionModel clientSession = createClientSession(user, redirectUri, clientId);
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
-        accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD);
+        accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD.name());
 
         try {
             UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
@@ -854,7 +861,7 @@ public class UsersResource {
         ClientSessionModel clientSession = createClientSession(user, redirectUri, clientId);
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
 
-        accessCode.setAction(ClientSessionModel.Action.VERIFY_EMAIL);
+        accessCode.setAction(ClientSessionModel.Action.VERIFY_EMAIL.name());
 
         try {
             UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());

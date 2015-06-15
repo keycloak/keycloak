@@ -132,15 +132,6 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public boolean configuredForCredentialType(String type) {
-        List<UserCredentialValueModel> creds = getCredentialsDirectly();
-        for (UserCredentialValueModel cred : creds) {
-            if (cred.getType().equals(type)) return true;
-        }
-        return false;
-    }
-
-    @Override
     public String getFirstName() {
         if (updated != null) return updated.getFirstName();
         return cached.getFirstName();

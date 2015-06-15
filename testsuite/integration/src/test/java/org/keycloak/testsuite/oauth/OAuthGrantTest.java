@@ -36,6 +36,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.RealmManager;
@@ -50,6 +51,7 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
+import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -181,7 +183,7 @@ public class OAuthGrantTest {
         oauth.openLoginForm();
         appPage.assertCurrent();
         events.expectLogin()
-                .detail(Details.AUTH_METHOD, "sso")
+                .detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
                 .removeDetail(Details.USERNAME)
                 .client("third-party").assertEvent();

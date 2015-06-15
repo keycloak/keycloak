@@ -69,14 +69,6 @@ public interface UserModel {
 
     void updateCredentialDirectly(UserCredentialValueModel cred);
 
-    /**
-     * Is the use configured to use this credential type
-     *
-     * @param type
-     * @return
-     */
-    boolean configuredForCredentialType(String type);
-
     Set<RoleModel> getRealmRoleMappings();
     Set<RoleModel> getClientRoleMappings(ClientModel app);
     boolean hasRole(RoleModel role);

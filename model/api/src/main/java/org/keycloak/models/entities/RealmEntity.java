@@ -2,8 +2,10 @@ package org.keycloak.models.entities;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -76,6 +78,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private List<IdentityProviderMapperEntity> identityProviderMappers = new ArrayList<IdentityProviderMapperEntity>();
     private List<AuthenticationFlowEntity> authenticationFlows = new ArrayList<>();
     private List<AuthenticatorEntity> authenticators = new ArrayList<>();
+    private List<String> defaultRequiredActions = new ArrayList<>();
 
 
     public String getName() {
@@ -499,6 +502,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setAuthenticators(List<AuthenticatorEntity> authenticators) {
         this.authenticators = authenticators;
+    }
+
+    public List<String> getDefaultRequiredActions() {
+        return defaultRequiredActions;
+    }
+
+    public void setDefaultRequiredActions(List<String> defaultRequiredActions) {
+        this.defaultRequiredActions = defaultRequiredActions;
     }
 }
 

@@ -6,7 +6,6 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.authenticators.AuthenticationFlow;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -20,6 +19,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -44,6 +44,7 @@ import java.util.List;
 public class AuthorizationEndpoint {
 
     private static final Logger logger = Logger.getLogger(AuthorizationEndpoint.class);
+    public static final String CODE_AUTH_TYPE = "code";
 
     private enum Action {
         REGISTER, CODE
@@ -220,7 +221,7 @@ public class AuthorizationEndpoint {
         clientSession = session.sessions().createClientSession(realm, client);
         clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
         clientSession.setRedirectUri(redirectUri);
-        clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
+        clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
         clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
         clientSession.setNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, responseType);
         clientSession.setNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUriParam);
@@ -247,17 +248,20 @@ public class AuthorizationEndpoint {
             return buildRedirectToIdentityProvider(idpHint, accessCode);
         }
 
-        return oldBrowserAuthentication(accessCode);
+        return newBrowserAuthentication(accessCode);
     }
 
     protected Response newBrowserAuthentication(String accessCode) {
-        String flowId = null;
-        for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
-            if (flow.getAlias().equals("browser")) {
-                flowId = flow.getId();
-                break;
+        List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
+        for (IdentityProviderModel identityProvider : identityProviders) {
+            if (identityProvider.isAuthenticateByDefault()) {
+                return buildRedirectToIdentityProvider(identityProvider.getAlias(), accessCode);
             }
         }
+        clientSession.setNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
+
+        AuthenticationFlowModel flow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+        String flowId = flow.getId();
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setClientSession(clientSession)
                 .setFlowId(flowId)
@@ -269,7 +273,26 @@ public class AuthorizationEndpoint {
                 .setUriInfo(uriInfo)
                 .setRequest(request);
 
-        return processor.authenticate();
+        Response challenge = null;
+        try {
+            challenge = processor.authenticateOnly();
+        } catch (Exception e) {
+            return processor.handleBrowserException(e);
+        }
+
+        if (challenge != null && prompt != null && prompt.equals("none")) {
+            if (processor.isUserSessionCreated()) {
+                session.sessions().removeUserSession(realm, processor.getUserSession());
+            }
+            OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo, headers, event);
+            return oauth.cancelLogin(clientSession);
+        }
+
+        if (challenge == null) {
+            return processor.finishAuthentication();
+        } else {
+            return challenge;
+        }
     }
 
     protected Response oldBrowserAuthentication(String accessCode) {

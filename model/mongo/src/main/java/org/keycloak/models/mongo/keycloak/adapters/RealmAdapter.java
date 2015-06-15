@@ -1290,6 +1290,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return models;
     }
 
+    @Override
+    public AuthenticationFlowModel getFlowByAlias(String alias) {
+        for (AuthenticationFlowModel flow : getAuthenticationFlows()) {
+            if (flow.getAlias().equals(alias)) {
+                return flow;
+            }
+        }
+        return null;
+    }
+
+
     protected AuthenticationFlowModel entityToModel(AuthenticationFlowEntity entity) {
         AuthenticationFlowModel model = new AuthenticationFlowModel();
         model.setId(entity.getId());
@@ -1354,6 +1365,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             AuthenticationExecutionModel model = entityToModel(entity);
             executions.add(model);
         }
+        Collections.sort(executions, AuthenticationExecutionModel.ExecutionComparator.SINGLETON);
         return executions;
     }
 
@@ -1636,4 +1648,32 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         mapper.setConfig(config);
         return mapper;
     }
+
+    @Override
+    public Set<String> getDefaultRequiredActions() {
+        Set<String> result = new HashSet<String>();
+        result.addAll(realm.getDefaultRequiredActions());
+        return result;
+    }
+
+
+
+    @Override
+    public void setDefaultRequiredActions(Set<String> actions) {
+        List<String> result = new ArrayList<String>();
+        result.addAll(actions);
+        getMongoEntity().setDefaultRequiredActions(result);
+        updateMongoEntity();
+    }
+
+    @Override
+    public void addDefaultRequiredAction(String action) {
+        getMongoStore().pushItemToList(getMongoEntity(), "defaultRequiredActions", action, true, invocationContext);
+    }
+
+    @Override
+    public void removeDefaultRequiredAction(String action) {
+        getMongoStore().pullItemFromList(getMongoEntity(), "defaultRequiredActions", action, invocationContext);
+    }
+
 }

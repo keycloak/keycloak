@@ -221,17 +221,6 @@ public class UserAdapter implements UserModel, Comparable {
     }
 
     @Override
-    public boolean configuredForCredentialType(String type) {
-        List<UserCredentialValueModel> creds = getCredentialsDirectly();
-        for (UserCredentialValueModel cred : creds) {
-            if (cred.getType().equals(type)) return true;
-        }
-        return false;
-    }
-
-
-
-    @Override
     public boolean isTotp() {
         return user.isTotp();
     }

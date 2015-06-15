@@ -25,6 +25,11 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.AuthenticatorUtil;
+import org.keycloak.authentication.RequiredActionContext;
+import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.authenticators.AbstractFormAuthenticator;
+import org.keycloak.authentication.authenticators.LoginFormPasswordAuthenticatorFactory;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.events.Details;
@@ -33,6 +38,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -47,10 +53,12 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.PasswordToken;
@@ -67,7 +75,9 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
@@ -166,7 +176,7 @@ public class LoginActionsService {
         ClientSessionCode clientCode;
         Response response;
 
-        boolean check(String code, ClientSessionModel.Action requiredAction) {
+        boolean check(String code, String requiredAction) {
             if (!check(code)) {
                 return false;
             } else if (!clientCode.isValid(requiredAction)) {
@@ -178,7 +188,7 @@ public class LoginActionsService {
             }
         }
 
-        boolean check(String code, ClientSessionModel.Action requiredAction, ClientSessionModel.Action alternativeRequiredAction) {
+        boolean check(String code, String requiredAction, String alternativeRequiredAction) {
             if (!check(code)) {
                 return false;
             } else if (!(clientCode.isValid(requiredAction) || clientCode.isValid(alternativeRequiredAction))) {
@@ -231,9 +241,9 @@ public class LoginActionsService {
         ClientSessionCode clientSessionCode = checks.clientCode;
         ClientSessionModel clientSession = clientSessionCode.getClientSession();
 
-        if (clientSession.getAction().equals(ClientSessionModel.Action.RECOVER_PASSWORD)) {
+        if (clientSession.getAction().equals(ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
             TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
-            clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
+            clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
         }
 
         return session.getProvider(LoginFormsProvider.class)
@@ -269,6 +279,7 @@ public class LoginActionsService {
 
         return session.getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(clientSessionCode.getCode())
+                .setAttribute("passwordRequired", isPasswordRequired())
                 .createRegistration();
     }
 
@@ -281,7 +292,8 @@ public class LoginActionsService {
     @Path("auth-form")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response authForm(@QueryParam("code") String code) {
+    public Response authForm(@QueryParam("code") String code,
+                             @QueryParam("action") String action) {
         event.event(EventType.LOGIN);
         if (!checkSsl()) {
             event.error(Errors.SSL_REQUIRED);
@@ -301,13 +313,9 @@ public class LoginActionsService {
         ClientSessionModel clientSession = clientCode.getClientSession();
         event.detail(Details.CODE_ID, clientSession.getId());
 
-        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE) || clientSession.getUserSession() != null) {
-            clientCode.setAction(ClientSessionModel.Action.AUTHENTICATE);
+        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE.name()) || clientSession.getUserSession() != null) {
             event.client(clientSession.getClient()).error(Errors.EXPIRED_CODE);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.EXPIRED_CODE)
-                    .setClientSessionCode(clientCode.getCode())
-                    .createLogin();
+            return ErrorPage.error(session, Messages.EXPIRED_CODE);
         }
 
         ClientModel client = clientSession.getClient();
@@ -315,6 +323,8 @@ public class LoginActionsService {
             event.error(Errors.CLIENT_NOT_FOUND);
             return ErrorPage.error(session, Messages.UNKNOWN_LOGIN_REQUESTER);
         }
+        session.getContext().setClient(client);
+
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
             return ErrorPage.error(session, Messages.LOGIN_REQUESTER_NOT_ENABLED);
@@ -336,50 +346,15 @@ public class LoginActionsService {
                 .setRealm(realm)
                 .setSession(session)
                 .setUriInfo(uriInfo)
+                .setAction(action)
                 .setRequest(request);
 
         try {
             return processor.authenticate();
-        } catch (AuthenticationProcessor.AuthException e) {
-            return handleError(e, code);
         } catch (Exception e) {
-            logger.error("failed authentication", e);
-            return ErrorPage.error(session, Messages.UNEXPECTED_ERROR_HANDLING_RESPONSE);
-
+            return processor.handleBrowserException(e);
         }
 
-    }
-
-    protected Response handleError(AuthenticationProcessor.AuthException e, String code) {
-        logger.error("failed authentication: " + e.getError().toString(), e);
-        if (e.getError() == AuthenticationProcessor.Error.INVALID_USER) {
-            event.error(Errors.USER_NOT_FOUND);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.INVALID_USER)
-                    .setClientSessionCode(code)
-                    .createLogin();
-
-        } else if (e.getError() == AuthenticationProcessor.Error.USER_DISABLED) {
-            event.error(Errors.USER_DISABLED);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.ACCOUNT_DISABLED)
-                    .setClientSessionCode(code)
-                    .createLogin();
-
-        } else if (e.getError() == AuthenticationProcessor.Error.USER_TEMPORARILY_DISABLED) {
-            event.error(Errors.USER_TEMPORARILY_DISABLED);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.ACCOUNT_TEMPORARILY_DISABLED)
-                    .setClientSessionCode(code)
-                    .createLogin();
-
-        } else {
-            event.error(Errors.INVALID_USER_CREDENTIALS);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.INVALID_USER)
-                    .setClientSessionCode(code)
-                    .createLogin();
-        }
     }
 
     /**
@@ -413,8 +388,8 @@ public class LoginActionsService {
         ClientSessionModel clientSession = clientCode.getClientSession();
         event.detail(Details.CODE_ID, clientSession.getId());
 
-        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE) || clientSession.getUserSession() != null) {
-            clientCode.setAction(ClientSessionModel.Action.AUTHENTICATE);
+        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE.name()) || clientSession.getUserSession() != null) {
+            clientCode.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
             event.client(clientSession.getClient()).error(Errors.EXPIRED_CODE);
             return session.getProvider(LoginFormsProvider.class)
                     .setError(Messages.EXPIRED_CODE)
@@ -522,14 +497,13 @@ public class LoginActionsService {
      * Registration
      *
      * @param code
-     * @param formData
      * @return
      */
     @Path("request/registration")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processRegister(@QueryParam("code") String code,
-                                    final MultivaluedMap<String, String> formData) {
+    public Response processRegister(@QueryParam("code") String code) {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
         event.event(EventType.REGISTER);
         if (!checkSsl()) {
             event.error(Errors.SSL_REQUIRED);
@@ -549,7 +523,7 @@ public class LoginActionsService {
             event.error(Errors.INVALID_CODE);
             return ErrorPage.error(session, Messages.INVALID_CODE);
         }
-        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE)) {
+        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE.name())) {
             event.error(Errors.INVALID_CODE);
             return ErrorPage.error(session, Messages.INVALID_CODE);
         }
@@ -585,13 +559,15 @@ public class LoginActionsService {
 
         session.getContext().setClient(client);
 
-        List<String> requiredCredentialTypes = new LinkedList<String>();
-        for (RequiredCredentialModel m : realm.getRequiredCredentials()) {
-            requiredCredentialTypes.add(m.getType());
+        List<String> requiredCredentialTypes = new LinkedList<>();
+        boolean passwordRequired = isPasswordRequired();
+        if (passwordRequired) {
+            requiredCredentialTypes.add(CredentialRepresentation.PASSWORD);
         }
 
         // Validate here, so user is not created if password doesn't validate to passwordPolicy of current realm
         List<FormMessage> errors = Validation.validateRegistrationForm(realm, formData, requiredCredentialTypes, realm.getPasswordPolicy());
+
 
         if (errors != null && !errors.isEmpty()) {
             event.error(Errors.INVALID_REGISTRATION);
@@ -599,6 +575,7 @@ public class LoginActionsService {
                     .setErrors(errors)
                     .setFormData(formData)
                     .setClientSessionCode(clientCode.getCode())
+                    .setAttribute("passwordRequired", isPasswordRequired())
                     .createRegistration();
         }
 
@@ -609,6 +586,7 @@ public class LoginActionsService {
                     .setError(Messages.USERNAME_EXISTS)
                     .setFormData(formData)
                     .setClientSessionCode(clientCode.getCode())
+                    .setAttribute("passwordRequired", isPasswordRequired())
                     .createRegistration();
         }
 
@@ -619,6 +597,7 @@ public class LoginActionsService {
                     .setError(Messages.EMAIL_EXISTS)
                     .setFormData(formData)
                     .setClientSessionCode(clientCode.getCode())
+                    .setAttribute("passwordRequired", isPasswordRequired())
                     .createRegistration();
         }
 
@@ -629,7 +608,7 @@ public class LoginActionsService {
 
         user.setEmail(email);
 
-        if (requiredCredentialTypes.contains(CredentialRepresentation.PASSWORD)) {
+        if (passwordRequired) {
             UserCredentialModel credentials = new UserCredentialModel();
             credentials.setType(CredentialRepresentation.PASSWORD);
             credentials.setValue(formData.getFirst("password"));
@@ -658,13 +637,35 @@ public class LoginActionsService {
                         .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             }
         }
-
+        clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
         AttributeFormDataProcessor.process(formData, realm, user);
 
         event.user(user).success();
         event = new EventBuilder(realm, session, clientConnection);
+        clientSession.setAuthenticatedUser(user);
+        AuthenticationFlowModel flow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+        AuthenticationProcessor processor = new AuthenticationProcessor();
+        processor.setClientSession(clientSession)
+                .setFlowId(flow.getId())
+                .setConnection(clientConnection)
+                .setEventBuilder(event)
+                .setProtector(authManager.getProtector())
+                .setRealm(realm)
+                .setAction(AbstractFormAuthenticator.REGISTRATION_FORM_ACTION)
+                .setSession(session)
+                .setUriInfo(uriInfo)
+                .setRequest(request);
 
-        return processLogin(code, formData);
+        try {
+            return processor.authenticate();
+        } catch (Exception e) {
+            return processor.handleBrowserException(e);
+        }
+    }
+
+    public boolean isPasswordRequired() {
+        AuthenticationFlowModel browserFlow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+        return AuthenticatorUtil.isRequired(realm, browserFlow.getId(), LoginFormPasswordAuthenticatorFactory.PROVIDER_ID);
     }
 
     /**
@@ -687,7 +688,7 @@ public class LoginActionsService {
         String code = formData.getFirst("code");
 
         ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
-        if (accessCode == null || !accessCode.isValid(ClientSessionModel.Action.OAUTH_GRANT)) {
+        if (accessCode == null || !accessCode.isValid(ClientSessionModel.Action.OAUTH_GRANT.name())) {
             event.error(Errors.INVALID_CODE);
             return ErrorPage.error(session, Messages.INVALID_ACCESS_CODE);
         }
@@ -717,11 +718,11 @@ public class LoginActionsService {
         }
         event.session(userSession);
 
-        LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
-        protocol.setRealm(realm)
-                .setHttpHeaders(headers)
-                .setUriInfo(uriInfo);
         if (formData.containsKey("cancel")) {
+            LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
+            protocol.setRealm(realm)
+                    .setHttpHeaders(headers)
+                    .setUriInfo(uriInfo);
             event.error(Errors.REJECTED_BY_USER);
             return protocol.consentDenied(clientSession);
         }
@@ -754,7 +755,7 @@ public class LoginActionsService {
                                   final MultivaluedMap<String, String> formData) {
         event.event(EventType.UPDATE_PROFILE);
         Checks checks = new Checks();
-        if (!checks.check(code, ClientSessionModel.Action.UPDATE_PROFILE)) {
+        if (!checks.check(code, ClientSessionModel.Action.UPDATE_PROFILE.name())) {
             return checks.response;
         }
         ClientSessionCode accessCode = checks.clientCode;
@@ -806,7 +807,7 @@ public class LoginActionsService {
             event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
         }
 
-        return redirectOauth(user, accessCode, clientSession, userSession);
+        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
     }
 
     @Path("totp")
@@ -816,7 +817,7 @@ public class LoginActionsService {
                                final MultivaluedMap<String, String> formData) {
         event.event(EventType.UPDATE_TOTP);
         Checks checks = new Checks();
-        if (!checks.check(code, ClientSessionModel.Action.CONFIGURE_TOTP)) {
+        if (!checks.check(code, ClientSessionModel.Action.CONFIGURE_TOTP.name())) {
             return checks.response;
         }
         ClientSessionCode accessCode = checks.clientCode;
@@ -851,7 +852,7 @@ public class LoginActionsService {
 
         event.clone().event(EventType.UPDATE_TOTP).success();
 
-        return redirectOauth(user, accessCode, clientSession, userSession);
+        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
     }
 
     @Path("password")
@@ -861,7 +862,7 @@ public class LoginActionsService {
                                    final MultivaluedMap<String, String> formData) {
         event.event(EventType.UPDATE_PASSWORD);
         Checks checks = new Checks();
-        if (!checks.check(code, ClientSessionModel.Action.UPDATE_PASSWORD, ClientSessionModel.Action.RECOVER_PASSWORD)) {
+        if (!checks.check(code, ClientSessionModel.Action.UPDATE_PASSWORD.name(), ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
             return checks.response;
         }
         ClientSessionCode accessCode = checks.clientCode;
@@ -902,7 +903,7 @@ public class LoginActionsService {
 
         event.event(EventType.UPDATE_PASSWORD).success();
 
-        if (clientSession.getAction().equals(ClientSessionModel.Action.RECOVER_PASSWORD)) {
+        if (clientSession.getAction().equals(ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
             String actionCookieValue = getActionCookie();
             if (actionCookieValue == null || !actionCookieValue.equals(userSession.getId())) {
                 return session.getProvider(LoginFormsProvider.class)
@@ -913,7 +914,7 @@ public class LoginActionsService {
 
         event = event.clone().event(EventType.LOGIN);
 
-        return redirectOauth(user, accessCode, clientSession, userSession);
+        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
     }
 
 
@@ -923,7 +924,7 @@ public class LoginActionsService {
         event.event(EventType.VERIFY_EMAIL);
         if (key != null) {
             Checks checks = new Checks();
-            if (!checks.check(key, ClientSessionModel.Action.VERIFY_EMAIL)) {
+            if (!checks.check(key, ClientSessionModel.Action.VERIFY_EMAIL.name())) {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
@@ -946,10 +947,10 @@ public class LoginActionsService {
 
             event = event.clone().removeDetail(Details.EMAIL).event(EventType.LOGIN);
 
-            return redirectOauth(user, accessCode, clientSession, userSession);
+            return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
         } else {
             Checks checks = new Checks();
-            if (!checks.check(code, ClientSessionModel.Action.VERIFY_EMAIL)) {
+            if (!checks.check(code, ClientSessionModel.Action.VERIFY_EMAIL.name())) {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
@@ -972,7 +973,7 @@ public class LoginActionsService {
         event.event(EventType.RESET_PASSWORD);
         if (key != null) {
             Checks checks = new Checks();
-            if (!checks.check(key, ClientSessionModel.Action.RECOVER_PASSWORD)) {
+            if (!checks.check(key, ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
@@ -1050,7 +1051,7 @@ public class LoginActionsService {
             event.session(userSession);
             TokenManager.attachClientSession(userSession, clientSession);
 
-            accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD);
+            accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD.name());
 
             try {
                 UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
@@ -1090,10 +1091,6 @@ public class LoginActionsService {
         CookieHelper.addCookie(ACTION_COOKIE, sessionId, AuthenticationManager.getRealmCookiePath(realm, uriInfo), null, null, -1, realm.getSslRequired().isRequired(clientConnection), true);
     }
 
-    private Response redirectOauth(UserModel user, ClientSessionCode accessCode, ClientSessionModel clientSession, UserSessionModel userSession) {
-        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
-    }
-
     private void initEvent(ClientSessionModel clientSession) {
         event.event(EventType.LOGIN).client(clientSession.getClient())
                 .user(clientSession.getUserSession().getUser())
@@ -1112,4 +1109,111 @@ public class LoginActionsService {
             }
         }
     }
+
+    @Path("required-actions/{action}")
+    public Object requiredAction(@QueryParam("code") String code,
+                                 @PathParam("action") String action) {
+        event.event(EventType.LOGIN);
+        if (!checkSsl()) {
+            event.error(Errors.SSL_REQUIRED);
+            throw new WebApplicationException(ErrorPage.error(session, Messages.HTTPS_REQUIRED));
+        }
+
+        if (!realm.isEnabled()) {
+            event.error(Errors.REALM_DISABLED);
+            return ErrorPage.error(session, Messages.REALM_NOT_ENABLED);
+        }
+        ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
+        if (clientCode == null) {
+            event.error(Errors.INVALID_CODE);
+            throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
+        }
+
+        final ClientSessionModel clientSession = clientCode.getClientSession();
+        event.detail(Details.CODE_ID, clientSession.getId());
+
+        /*
+        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE.name()) || clientSession.getUserSession() != null) {
+            event.client(clientSession.getClient()).error(Errors.EXPIRED_CODE);
+            throw new WebApplicationException(ErrorPage.error(session, Messages.EXPIRED_CODE));
+        }
+        */
+
+        ClientModel client = clientSession.getClient();
+        if (client == null) {
+            event.error(Errors.CLIENT_NOT_FOUND);
+            throw new WebApplicationException( ErrorPage.error(session, Messages.UNKNOWN_LOGIN_REQUESTER));
+        }
+        session.getContext().setClient(client);
+
+        if (!client.isEnabled()) {
+            event.error(Errors.CLIENT_NOT_FOUND);
+            throw new WebApplicationException( ErrorPage.error(session, Messages.LOGIN_REQUESTER_NOT_ENABLED));
+        }
+
+        if (action == null) {
+            logger.error("required action was null");
+            event.error(Errors.INVALID_CODE);
+            throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
+
+        }
+
+        RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, action);
+        if (provider == null) {
+            logger.error("required action provider was null");
+            event.error(Errors.INVALID_CODE);
+            throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
+        }
+        RequiredActionContext context = new RequiredActionContext() {
+            @Override
+            public EventBuilder getEvent() {
+                return event;
+            }
+
+            @Override
+            public UserModel getUser() {
+                return getUserSession().getUser();
+            }
+
+            @Override
+            public RealmModel getRealm() {
+                return realm;
+            }
+
+            @Override
+            public ClientSessionModel getClientSession() {
+                return clientSession;
+            }
+
+            @Override
+            public UserSessionModel getUserSession() {
+                return clientSession.getUserSession();
+            }
+
+            @Override
+            public ClientConnection getConnection() {
+                return clientConnection;
+            }
+
+            @Override
+            public UriInfo getUriInfo() {
+                return uriInfo;
+            }
+
+            @Override
+            public KeycloakSession getSession() {
+                return session;
+            }
+
+            @Override
+            public HttpRequest getHttpRequest() {
+                return request;
+            }
+        };
+        return provider.jaxrsService(context);
+
+
+
+    }
+
 }

@@ -24,11 +24,12 @@ public class ClientSessionEntity extends SessionEntity {
 
     private int timestamp;
 
-    private ClientSessionModel.Action action;
+    private String action;
 
     private Set<String> roles;
     private Set<String> protocolMappers;
     private Map<String, String> notes;
+    private Map<String, String> userSessionNotes;
     private Map<String, UserSessionModel.AuthenticatorStatus> authenticatorStatus = new HashMap<>();
     private String authUserId;
 
@@ -80,11 +81,11 @@ public class ClientSessionEntity extends SessionEntity {
         this.timestamp = timestamp;
     }
 
-    public ClientSessionModel.Action getAction() {
+    public String getAction() {
         return action;
     }
 
-    public void setAction(ClientSessionModel.Action action) {
+    public void setAction(String action) {
         this.action = action;
     }
 
@@ -126,5 +127,13 @@ public class ClientSessionEntity extends SessionEntity {
 
     public void setAuthUserId(String authUserId) {
         this.authUserId = authUserId;
+    }
+
+    public Map<String, String> getUserSessionNotes() {
+        return userSessionNotes;
+    }
+
+    public void setUserSessionNotes(Map<String, String> userSessionNotes) {
+        this.userSessionNotes = userSessionNotes;
     }
 }

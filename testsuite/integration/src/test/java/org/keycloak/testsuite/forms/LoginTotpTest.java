@@ -110,9 +110,11 @@ public class LoginTotpTest {
         loginTotpPage.assertCurrent();
 
         loginTotpPage.login("123456");
+        loginTotpPage.assertCurrent();
+        Assert.assertEquals("Invalid authenticator code.", loginPage.getError());
 
-        loginPage.assertCurrent();
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        //loginPage.assertCurrent();  // Invalid authenticator code.
+        //Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
         events.expectLogin().error("invalid_user_credentials").session((String) null)
                 .removeDetail(Details.CONSENT)
@@ -146,29 +148,4 @@ public class LoginTotpTest {
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
     }
-
-    @Test
-    public void loginWithTotpExpiredPasswordToken() throws Exception {
-        try {
-            loginPage.open();
-            loginPage.login("test-user@localhost", "password");
-
-            loginTotpPage.assertCurrent();
-
-            Time.setOffset(350);
-
-            loginTotpPage.login(totp.generate("totpSecret"));
-
-            loginPage.assertCurrent();
-            Assert.assertEquals("Invalid username or password.", loginPage.getError());
-
-            AssertEvents.ExpectedEvent expectedEvent = events.expectLogin().error("invalid_user_credentials")
-                    .session((String) null)
-                    .removeDetail(Details.CONSENT);
-            expectedEvent.assertEvent();
-        } finally {
-            Time.setOffset(0);
-        }
-    }
-
 }

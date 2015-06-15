@@ -80,8 +80,8 @@ public class ClientSessionCode {
         return clientSession;
     }
 
-    public boolean isValid(ClientSessionModel.Action requestedAction) {
-        ClientSessionModel.Action action = clientSession.getAction();
+    public boolean isValid(String requestedAction) {
+        String action = clientSession.getAction();
         if (action == null) {
             return false;
         }
@@ -93,18 +93,14 @@ public class ClientSessionCode {
         }
 
         int lifespan;
-        switch (action) {
-            case CODE_TO_TOKEN:
-                lifespan = realm.getAccessCodeLifespan();
-                break;
-            case AUTHENTICATE:
-                lifespan = realm.getAccessCodeLifespanLogin() > 0 ? realm.getAccessCodeLifespanLogin() : realm.getAccessCodeLifespanUserAction();
-                break;
-            default:
-                lifespan = realm.getAccessCodeLifespanUserAction();
-                break;
-        }
+        if (action.equals(ClientSessionModel.Action.CODE_TO_TOKEN.name())) {
+            lifespan = realm.getAccessCodeLifespan();
 
+        } else if (action.equals(ClientSessionModel.Action.AUTHENTICATE.name())) {
+            lifespan = realm.getAccessCodeLifespanLogin() > 0 ? realm.getAccessCodeLifespanLogin() : realm.getAccessCodeLifespanUserAction();
+        } else {
+            lifespan = realm.getAccessCodeLifespanUserAction();
+        }
         return timestamp + lifespan > Time.currentTime();
     }
 
@@ -132,7 +128,7 @@ public class ClientSessionCode {
         return requestedProtocolMappers;
     }
 
-    public void setAction(ClientSessionModel.Action action) {
+    public void setAction(String action) {
         clientSession.setAction(action);
         clientSession.setNote(ACTION_KEY, UUID.randomUUID().toString());
         clientSession.setTimestamp(Time.currentTime());
@@ -142,16 +138,16 @@ public class ClientSessionCode {
         setAction(convertToAction(requiredAction));
     }
 
-    private ClientSessionModel.Action convertToAction(RequiredAction requiredAction) {
+    private String convertToAction(RequiredAction requiredAction) {
         switch (requiredAction) {
             case CONFIGURE_TOTP:
-                return ClientSessionModel.Action.CONFIGURE_TOTP;
+                return ClientSessionModel.Action.CONFIGURE_TOTP.name();
             case UPDATE_PASSWORD:
-                return ClientSessionModel.Action.UPDATE_PASSWORD;
+                return ClientSessionModel.Action.UPDATE_PASSWORD.name();
             case UPDATE_PROFILE:
-                return ClientSessionModel.Action.UPDATE_PROFILE;
+                return ClientSessionModel.Action.UPDATE_PROFILE.name();
             case VERIFY_EMAIL:
-                return ClientSessionModel.Action.VERIFY_EMAIL;
+                return ClientSessionModel.Action.VERIFY_EMAIL.name();
             default:
                 throw new IllegalArgumentException("Unknown required action " + requiredAction);
         }

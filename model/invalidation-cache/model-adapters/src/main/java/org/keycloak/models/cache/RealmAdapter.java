@@ -1025,6 +1025,16 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public AuthenticationFlowModel getFlowByAlias(String alias) {
+        for (AuthenticationFlowModel flow : getAuthenticationFlows()) {
+            if (flow.getAlias().equals(alias)) {
+                return flow;
+            }
+        }
+        return null;
+    }
+
+    @Override
     public AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model) {
         getDelegateForUpdate();
         return updated.addAuthenticationFlow(model);
@@ -1115,5 +1125,31 @@ public class RealmAdapter implements RealmModel {
     public AuthenticatorModel getAuthenticatorById(String id) {
         if (updated != null) return updated.getAuthenticatorById(id);
         return cached.getAuthenticators().get(id);
+    }
+
+    @Override
+    public Set<String> getDefaultRequiredActions() {
+        return cached.getDefaultRequiredActions();
+    }
+
+    @Override
+    public void addDefaultRequiredAction(String action) {
+        getDelegateForUpdate();
+        updated.addDefaultRequiredAction(action);
+
+    }
+
+    @Override
+    public void removeDefaultRequiredAction(String action) {
+        getDelegateForUpdate();
+        updated.removeDefaultRequiredAction(action);
+
+    }
+
+    @Override
+    public void setDefaultRequiredActions(Set<String> action) {
+        getDelegateForUpdate();
+        updated.setDefaultRequiredActions(action);
+
     }
 }

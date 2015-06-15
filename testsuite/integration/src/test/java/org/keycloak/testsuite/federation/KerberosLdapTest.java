@@ -18,12 +18,14 @@ import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.adapter.CustomerServlet;
 import org.keycloak.testsuite.rule.KerberosRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.testsuite.utils.CredentialHelper;
 
 /**
  * Test of LDAPFederationProvider (Kerberos backed by LDAP)
@@ -42,6 +44,7 @@ public class KerberosLdapTest extends AbstractKerberosTest {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+            CredentialHelper.setAlternativeCredential(CredentialRepresentation.KERBEROS, appRealm);
             URL url = getClass().getResource("/kerberos-test/kerberos-app-keycloak.json");
             keycloakRule.createApplicationDeployment()
                     .name("kerberos-portal").contextPath("/kerberos-portal")
@@ -106,6 +109,10 @@ public class KerberosLdapTest extends AbstractKerberosTest {
 
         // Login with username/password from kerberos
         changePasswordPage.open();
+        // Only needed if you are providing a click thru to bypass kerberos.  Currently there is a javascript
+        // to forward the user if kerberos isn't enabled.
+        //bypassPage.isCurrent();
+        //bypassPage.clickContinue();
         loginPage.assertCurrent();
         loginPage.login("jduke", "theduke");
         changePasswordPage.assertCurrent();
@@ -114,6 +121,11 @@ public class KerberosLdapTest extends AbstractKerberosTest {
         changePasswordPage.changePassword("theduke", "newPass", "newPass");
         Assert.assertTrue(driver.getPageSource().contains("Your password has been updated."));
         changePasswordPage.logout();
+
+        // Only needed if you are providing a click thru to bypass kerberos.  Currently there is a javascript
+        // to forward the user if kerberos isn't enabled.
+        //bypassPage.isCurrent();
+        //bypassPage.clickContinue();
 
         // Login with old password doesn't work, but with new password works
         loginPage.login("jduke", "theduke");
@@ -130,12 +142,17 @@ public class KerberosLdapTest extends AbstractKerberosTest {
                 .client("kerberos-app")
                 .user(keycloakRule.getUser("test", "jduke").getId())
                 .detail(Details.REDIRECT_URI, KERBEROS_APP_URL)
-                .detail(Details.AUTH_METHOD, "spnego")
+                //.detail(Details.AUTH_METHOD, "spnego")
                 .detail(Details.USERNAME, "jduke")
                 .assertEvent();
 
         // Change password back
         changePasswordPage.open();
+        // Only needed if you are providing a click thru to bypass kerberos.  Currently there is a javascript
+        // to forward the user if kerberos isn't enabled.
+        //bypassPage.isCurrent();
+        //bypassPage.clickContinue();
+
         loginPage.login("jduke", "newPass");
         changePasswordPage.assertCurrent();
         changePasswordPage.changePassword("newPass", "theduke", "theduke");

@@ -18,11 +18,14 @@ import org.keycloak.constants.KerberosConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.rule.KerberosRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.testsuite.utils.CredentialHelper;
+import org.picketlink.idm.credential.util.CredentialUtils;
 
 /**
  * Test of KerberosFederationProvider (Kerberos not backed by LDAP)
@@ -41,6 +44,8 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+
+            CredentialHelper.setAlternativeCredential(CredentialRepresentation.KERBEROS, appRealm);
             URL url = getClass().getResource("/kerberos-test/kerberos-app-keycloak.json");
             keycloakRule.createApplicationDeployment()
                     .name("kerberos-portal").contextPath("/kerberos-portal")
@@ -99,6 +104,11 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
         assertUser("hnelson", "hnelson@keycloak.org", null, null, false);
     }
 
+    @Test
+    @Override
+    public void usernamePasswordLoginTest() throws Exception {
+        super.usernamePasswordLoginTest();
+    }
 
     @Test
     public void updateProfileEnabledTest() throws Exception {
@@ -135,4 +145,6 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
             keycloakRule.stopSession(session, true);
         }
     }
+
+
 }

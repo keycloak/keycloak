@@ -1213,6 +1213,19 @@ public class RealmAdapter implements RealmModel {
         return models;
     }
 
+
+
+    @Override
+    public AuthenticationFlowModel getFlowByAlias(String alias) {
+        for (AuthenticationFlowModel flow : getAuthenticationFlows()) {
+            if (flow.getAlias().equals(alias)) {
+                return flow;
+            }
+        }
+        return null;
+    }
+
+
     protected AuthenticationFlowModel entityToModel(AuthenticationFlowEntity entity) {
         AuthenticationFlowModel model = new AuthenticationFlowModel();
         model.setId(entity.getId());
@@ -1276,6 +1289,7 @@ public class RealmAdapter implements RealmModel {
             AuthenticationExecutionModel model = entityToModel(entity);
             executions.add(model);
         }
+        Collections.sort(executions, AuthenticationExecutionModel.ExecutionComparator.SINGLETON);
         return executions;
     }
 
@@ -1547,5 +1561,38 @@ public class RealmAdapter implements RealmModel {
         if (entity.getConfig() != null) config.putAll(entity.getConfig());
         mapper.setConfig(config);
         return mapper;
+    }
+
+    @Override
+    public Set<String> getDefaultRequiredActions() {
+        Set<String> result = new HashSet<String>();
+        if (realm.getDefaultRequiredActions() != null) {
+            result.addAll(realm.getDefaultRequiredActions());
+        }
+        return result;
+    }
+
+    @Override
+    public void addDefaultRequiredAction(String action) {
+        Set<String> actions = getDefaultRequiredActions();
+        actions.add(action);
+        setDefaultRequiredActions(actions);
+
+    }
+
+    @Override
+    public void removeDefaultRequiredAction(String action) {
+        Set<String> actions = getDefaultRequiredActions();
+        actions.remove(action);
+        setDefaultRequiredActions(actions);
+
+    }
+
+    @Override
+    public void setDefaultRequiredActions(Set<String> action) {
+        List<String> result = new ArrayList<String>();
+        result.addAll(action);
+        realm.setDefaultRequiredActions(result);
+
     }
 }

@@ -26,11 +26,6 @@
     </listener>
 
     <filter>
-        <filter-name>Keycloak Client Connection Filter</filter-name>
-        <filter-class>org.keycloak.services.filters.ClientConnectionFilter</filter-class>
-    </filter>
-
-    <filter>
         <filter-name>Keycloak Session Management</filter-name>
         <filter-class>org.keycloak.services.filters.KeycloakSessionServletFilter</filter-class>
     </filter>

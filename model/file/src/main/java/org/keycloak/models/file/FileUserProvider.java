@@ -266,7 +266,7 @@ public class FileUserProvider implements UserProvider {
     }
 
     @Override
-    public UserAdapter addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
+    public UserAdapter addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
         if (inMemoryModel.hasUserWithUsername(realm.getId(), username.toLowerCase()))
             throw new ModelDuplicateException("User with username " + username + " already exists in realm.");
 
@@ -283,6 +283,13 @@ public class FileUserProvider implements UserProvider {
                 }
             }
         }
+
+        if (addDefaultRequiredActions) {
+            for (String r : realm.getDefaultRequiredActions()) {
+                userModel.addRequiredAction(r);
+            }
+        }
+
 
         return userModel;
     }
@@ -358,7 +365,7 @@ public class FileUserProvider implements UserProvider {
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        return this.addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true);
+        return this.addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true, true);
     }
 
     @Override

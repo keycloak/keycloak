@@ -114,6 +114,12 @@ public class RealmEntity {
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     @ElementCollection
+    @Column(name="VALUE")
+    @CollectionTable(name = "DEFAULT_REQUIRED_ACTIONS", joinColumns={ @JoinColumn(name="REALM_ID") })
+    protected Set<String> defaultRequiredActions = new HashSet<String>();
+
+
+    @ElementCollection
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
     @CollectionTable(name="REALM_SMTP_CONFIG", joinColumns={ @JoinColumn(name="REALM_ID") })
@@ -567,6 +573,14 @@ public class RealmEntity {
 
     public void setAuthenticationFlows(Collection<AuthenticationFlowEntity> authenticationFlows) {
         this.authenticationFlows = authenticationFlows;
+    }
+
+    public Set<String> getDefaultRequiredActions() {
+        return defaultRequiredActions;
+    }
+
+    public void setDefaultRequiredActions(Set<String> defaultRequiredActions) {
+        this.defaultRequiredActions = defaultRequiredActions;
     }
 }
 

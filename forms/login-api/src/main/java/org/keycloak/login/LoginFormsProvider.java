@@ -2,6 +2,7 @@ package org.keycloak.login;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
@@ -23,6 +24,8 @@ import org.keycloak.provider.Provider;
 public interface LoginFormsProvider extends Provider {
 
     public Response createResponse(UserModel.RequiredAction action);
+
+    Response createForm(String form, Map<String, Object> attributes);
 
     public Response createLogin();
 
@@ -67,6 +70,8 @@ public interface LoginFormsProvider extends Provider {
     public LoginFormsProvider setResponseHeader(String headerName, String headerValue);
 
     public LoginFormsProvider setFormData(MultivaluedMap<String, String> formData);
+
+    LoginFormsProvider setAttribute(String name, Object value);
 
     public LoginFormsProvider setStatus(Response.Status status);
 

@@ -22,9 +22,9 @@ public interface ClientSessionModel {
 
     public void setTimestamp(int timestamp);
 
-    public Action getAction();
+    public String getAction();
 
-    public void setAction(Action action);
+    public void setAction(String action);
 
     public Set<String> getRoles();
     public void setRoles(Set<String> roles);
@@ -51,6 +51,21 @@ public interface ClientSessionModel {
     public String getNote(String name);
     public void setNote(String name, String value);
     public void removeNote(String name);
+
+    /**
+     * These are notes you want applied to the UserSessionModel when the client session is attached to it.
+     *
+     * @param name
+     * @param value
+     */
+    public void setUserSessionNote(String name, String value);
+
+    /**
+     * These are notes you want applied to the UserSessionModel when the client session is attached to it.
+     *
+     * @return
+     */
+    public Map<String, String> getUserSessionNotes();
 
     public static enum Action {
         OAUTH_GRANT,

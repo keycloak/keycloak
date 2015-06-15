@@ -186,6 +186,12 @@ module.factory('RealmAdminEvents', function($resource) {
     });
 });
 
+module.factory('RequiredActions', function($resource) {
+    return $resource(authUrl + '/admin/realms/:id/required-actions', {
+        id : '@realm'
+    });
+});
+
 module.factory('RealmLDAPConnectionTester', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/testLDAPConnection');
 });
@@ -1066,4 +1072,16 @@ module.factory('IdentityProviderMapper', function($resource) {
         }
     });
 });
+
+module.factory('AuthenticationExecutions', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication-flows/flow/:alias/executions', {
+        realm : '@realm',
+        alias : '@alias'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
 

@@ -40,6 +40,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.rule.KeycloakRule;
@@ -98,6 +99,9 @@ public class LoginTest {
 
     @WebResource
     protected LoginPage loginPage;
+
+    @WebResource
+    protected ErrorPage errorPage;
     
     @WebResource
     protected LoginPasswordUpdatePage updatePasswordPage;
@@ -148,9 +152,9 @@ public class LoginTest {
 
             loginPage.assertCurrent();
 
-            Assert.assertEquals("Invalid username or password.", loginPage.getError());
+            Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
 
-            events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
+            events.expectLogin().user(userId).session((String) null).error("user_disabled")
                     .detail(Details.USERNAME, "login-test")
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
@@ -237,7 +241,7 @@ public class LoginTest {
         driver.navigate().to(oauth.getLoginFormUrl().toString() + "&prompt=none");
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).removeDetail(Details.USERNAME).detail(Details.AUTH_METHOD, "sso").assertEvent();
+        events.expectLogin().user(userId).removeDetail(Details.USERNAME).assertEvent();
     }
     
     @Test
@@ -371,7 +375,7 @@ public class LoginTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
+        events.expectLogin().user(userId).assertEvent();
     }
 
     @Test
@@ -439,8 +443,10 @@ public class LoginTest {
             Time.setOffset(5000);
             loginPage.login("login@test.com", "password");
 
-            loginPage.assertCurrent();
-            Assert.assertEquals("Login timeout. Please login again.", loginPage.getError());
+            //loginPage.assertCurrent();
+            errorPage.assertCurrent();
+
+            //Assert.assertEquals("Login timeout. Please login again.", loginPage.getError());
 
             events.expectLogin().user((String) null).session((String) null).error("expired_code").clearDetails()
                     .detail(Details.CODE_ID, AssertEvents.isCodeId())

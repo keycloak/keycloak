@@ -28,8 +28,8 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
-        UserModel user = session.userStorage().addUser(realm, id, username.toLowerCase(), addDefaultRoles);
+    public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
+        UserModel user = session.userStorage().addUser(realm, id, username.toLowerCase(), addDefaultRoles, addDefaultRequiredActions);
         return registerWithFederation(realm, user);
     }
 
@@ -385,6 +385,25 @@ public class UserFederationManager implements UserProvider {
         }
         return session.userStorage().validCredentials(realm, user, input);
     }
+
+    /**
+     * Is the user configured to use this credential type
+     *
+     * @return
+     */
+    public boolean configuredForCredentialType(String type, RealmModel realm, UserModel user) {
+        UserFederationProvider link = getFederationLink(realm, user);
+        if (link != null) {
+            Set<String> supportedCredentialTypes = link.getSupportedCredentialTypes(user);
+            if (supportedCredentialTypes.contains(type)) return true;
+        }
+        List<UserCredentialValueModel> creds = user.getCredentialsDirectly();
+        for (UserCredentialValueModel cred : creds) {
+            if (cred.getType().equals(type)) return true;
+        }
+        return false;
+    }
+
 
     @Override
     public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
