@@ -42,12 +42,8 @@
             <artifactId>keycloak-as7-subsystem</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpmime</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-servlet-oauth-client</artifactId>
         </dependency>
         <dependency>
             <groupId>net.iharder</groupId>
