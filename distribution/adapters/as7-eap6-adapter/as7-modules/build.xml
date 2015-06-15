@@ -38,12 +38,6 @@
 
         <!-- server min dependencies -->
 
-        <module-def name="org.apache.httpcomponents" slot="4.3">
-            <maven-resource group="org.apache.httpcomponents" artifact="httpclient"/>
-            <maven-resource group="org.apache.httpcomponents" artifact="httpcore"/>
-            <maven-resource group="org.apache.httpcomponents" artifact="httpmime"/>
-        </module-def>
-
         <module-def name="org.keycloak.keycloak-core">
             <maven-resource group="org.keycloak" artifact="keycloak-core"/>
         </module-def>
@@ -74,6 +68,10 @@
 
         <module-def name="org.keycloak.keycloak-as7-subsystem">
             <maven-resource group="org.keycloak" artifact="keycloak-as7-subsystem"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-servlet-oauth-client">
+            <maven-resource group="org.keycloak" artifact="keycloak-servlet-oauth-client"/>
         </module-def>
 
     </target>

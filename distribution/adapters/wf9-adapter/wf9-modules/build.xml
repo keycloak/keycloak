@@ -69,6 +69,10 @@
             <maven-resource group="org.keycloak" artifact="keycloak-wf9-subsystem"/>
         </module-def>
 
+        <module-def name="org.keycloak.keycloak-servlet-oauth-client">
+            <maven-resource group="org.keycloak" artifact="keycloak-servlet-oauth-client"/>
+        </module-def>
+
     </target>
 
     <target name="clean-target">
