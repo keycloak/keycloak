@@ -30,7 +30,7 @@ import org.keycloak.testsuite.adapter.servlet.SessionServlet;
 import org.keycloak.testsuite.ui.application.page.InputPage;
 import static org.keycloak.testsuite.ui.util.URL.*;
 
-public class BasicKeycloakAdapterTest extends AbstractKeycloakAdapterTest {
+public class KeycloakAdapterTest extends AbstractKeycloakAdapterTest {
 
     public static final String CUSTOMER_PORTAL = "customer-portal";
     public static final String SECURE_PORTAL = "secure-portal";
@@ -44,7 +44,7 @@ public class BasicKeycloakAdapterTest extends AbstractKeycloakAdapterTest {
     private InputPage inputPage;
 
     public static final String LOGIN_URL = OIDCLoginProtocolService.authUrl(
-            UriBuilder.fromUri(AUTH_SERVER_BASE_URL)).build("demo").toString();
+            UriBuilder.fromUri(AUTH_SERVER_URL)).build("demo").toString();
 
     private static boolean demoInitialized = false;
 
@@ -69,14 +69,14 @@ public class BasicKeycloakAdapterTest extends AbstractKeycloakAdapterTest {
 
     protected static WebArchive adapterDeployment(String name, String adapterConfig, Class... servletClasses) {
         String webInfPath = "/adapter-test/" + name + "/WEB-INF/";
-        URL keycloakJSON = BasicKeycloakAdapterTest.class.getResource(webInfPath + adapterConfig);
-        URL webXML = BasicKeycloakAdapterTest.class.getResource(webInfPath + "web.xml");
+        URL keycloakJSON = KeycloakAdapterTest.class.getResource(webInfPath + adapterConfig);
+        URL webXML = KeycloakAdapterTest.class.getResource(webInfPath + "web.xml");
         WebArchive deployment = ShrinkWrap.create(WebArchive.class, name + ".war")
                 .addClasses(servletClasses)
                 .addAsWebInfResource(webXML, "web.xml")
                 .addAsWebInfResource(keycloakJSON, "keycloak.json");
 
-        URL jbossDeploymentStructure = BasicKeycloakAdapterTest.class.getResource(webInfPath + "jboss-deployment-structure.xml");
+        URL jbossDeploymentStructure = KeycloakAdapterTest.class.getResource(webInfPath + "jboss-deployment-structure.xml");
         if (jbossDeploymentStructure != null) {
             deployment = deployment.addAsWebInfResource(jbossDeploymentStructure, "jboss-deployment-structure.xml");
         }
@@ -117,25 +117,19 @@ public class BasicKeycloakAdapterTest extends AbstractKeycloakAdapterTest {
     @Deployment(name = SESSION_PORTAL, managed = false, testable = false)
     @TargetsContainer(KEYCLOAK_ADAPTER_SERVER)
     private static WebArchive sessionPortal() {
-        return adapterDeployment(SESSION_PORTAL, SessionServlet.class);
-//        return adapterDeployment(SESSION_PORTAL, "keycloak-sysprop.json", SessionServlet.class);
+//        return adapterDeployment(SESSION_PORTAL, SessionServlet.class);
+        return adapterDeployment(SESSION_PORTAL, "keycloak-sysprop.json", SessionServlet.class);
     }
 
     @Deployment(name = INPUT_PORTAL, managed = false, testable = false)
     @TargetsContainer(KEYCLOAK_ADAPTER_SERVER)
     private static WebArchive inputPortal() {
-        return adapterDeployment(SESSION_PORTAL, SessionServlet.class);
-//        return adapterDeployment(SESSION_PORTAL, "keycloak-sysprop.json", SessionServlet.class);
+//        return adapterDeployment(SESSION_PORTAL, SessionServlet.class);
+        return adapterDeployment(INPUT_PORTAL, "keycloak-sysprop.json", InputServlet.class);
     }
+    
     private final String slash = "";
 
-//    @Before
-//    public void setSystemProperties() {
-//        // Test that replacing system properties works for adapters
-//        System.setProperty("app.server.base.url", "http://localhost:8081");
-//        System.setProperty("my.host.name", "localhost");
-//    }
-    
     @Test
     @RunAsClient
     public void testSavedPostRequest() throws Exception {
@@ -154,7 +148,7 @@ public class BasicKeycloakAdapterTest extends AbstractKeycloakAdapterTest {
         Assert.assertTrue(pageSource.contains("parameter=hello"));
 
         // test logout
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_BASE_URL))
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
                 .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/customer-portal").build("demo").toString();
         driver.navigate().to(logoutUri);
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
@@ -194,22 +188,25 @@ public class BasicKeycloakAdapterTest extends AbstractKeycloakAdapterTest {
         Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
         // View stats
-        List<Map<String, String>> stats = Keycloak.getInstance(AUTH_SERVER_BASE_URL, 
+        List<Map<String, String>> stats = Keycloak.getInstance(AUTH_SERVER_URL, 
                 "master", "admin", "admin", "security-admin-console").realm("demo").getClientSessionStats();
         Map<String, String> customerPortalStats = null;
         Map<String, String> productPortalStats = null;
         for (Map<String, String> s : stats) {
-            if (s.get("clientId").equals("customer-portal")) {
-                customerPortalStats = s;
-            } else if (s.get("clientId").equals("product-portal")) {
-                productPortalStats = s;
+            switch (s.get("clientId")) {
+                case "customer-portal":
+                    customerPortalStats = s;
+                    break;
+                case "product-portal":
+                    productPortalStats = s;
+                    break;
             }
         }
         Assert.assertEquals(1, Integer.parseInt(customerPortalStats.get("active")));
         Assert.assertEquals(1, Integer.parseInt(productPortalStats.get("active")));
 
         // test logout
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_BASE_URL))
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
                 .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/customer-portal").build("demo").toString();
         driver.navigate().to(logoutUri);
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));

@@ -24,8 +24,9 @@ package org.keycloak.testsuite.ui.util;
 public class URL {
 
     public static final int KEYCLOAK_SERVER_PORT = Integer.parseInt(System.getProperty("keycloak.http.port", "8080"));
-    public static final String AUTH_SERVER_BASE_URL = "http://localhost:" + KEYCLOAK_SERVER_PORT + "/auth";
-    public static final String ADMIN_CONSOLE_URL = AUTH_SERVER_BASE_URL + "/admin/master/console/index.html";
+    public static final String AUTH_SERVER_BASE_URL = "http://localhost:" + KEYCLOAK_SERVER_PORT;
+    public static final String AUTH_SERVER_URL = AUTH_SERVER_BASE_URL + "/auth";
+    public static final String ADMIN_CONSOLE_URL = AUTH_SERVER_URL + "/admin/master/console/index.html";
 
     public static String SETTINGS_GENERAL_SETTINGS = ADMIN_CONSOLE_URL + "#/realms/%s";
     public static String SETTINGS_ROLES = ADMIN_CONSOLE_URL + "#/realms/%s/roles";

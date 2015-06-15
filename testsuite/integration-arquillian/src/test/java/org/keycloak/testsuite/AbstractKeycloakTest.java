@@ -3,6 +3,7 @@ package org.keycloak.testsuite;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
+import javax.ws.rs.NotFoundException;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.drone.api.annotation.Drone;
@@ -13,6 +14,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -31,9 +33,9 @@ import org.keycloak.util.JsonSerialization;
 @RunWith(Arquillian.class)
 public abstract class AbstractKeycloakTest {
 
-    private static final String KEYCLOAK_SERVER = System.getProperty("keycloak.server", "keycloak-managed");
+    public static final String KEYCLOAK_SERVER = "keycloak-managed";
 
-    private static boolean adminPasswordUpdated = Boolean.parseBoolean(System.getProperty("adminPasswordUpdated", "false"));
+    protected static boolean adminPasswordUpdated = Boolean.parseBoolean(System.getProperty("adminPasswordUpdated", "false"));
 
     @ArquillianResource
     protected ContainerController controller;
@@ -78,12 +80,29 @@ public abstract class AbstractKeycloakTest {
         }
     }
 
+    public void importRealm(InputStream is) {
+        RealmRepresentation newRealm = loadJson(is, RealmRepresentation.class);
+        System.out.println("importing realm: " + newRealm.getRealm());
+
+//        System.out.println("list of existing realms:");
+//        for (RealmRepresentation r : keycloak.realms().findAll()) {
+//            System.out.println("id: " + r.getId() + ", name: " + r.getRealm());
+//        }
+
+        try { // TODO - figure out a way how to do this without try-catch
+            RealmResource rResource = keycloak.realms().realm(newRealm.getId());
+            RealmRepresentation rRep = rResource.toRepresentation();
+            System.out.println("removing existing realm: " + rRep.getRealm());
+            rResource.remove();
+        } catch (NotFoundException nfe) {
+            System.out.println("realm " + newRealm.getRealm() + " not found");
+        }
+        System.out.println("importing realm");
+        keycloak.realms().create(newRealm);
+    }
+
     public void importRealm(String realmConfig) {
-        System.out.println("importing realm: " + realmConfig);
-        RealmRepresentation realm = loadJson(
-                getClass().getResourceAsStream(realmConfig),
-                RealmRepresentation.class);
-        keycloak.realms().create(realm); // TODO - fix 409 conflict when creating existing realm
+        importRealm(getClass().getResourceAsStream(realmConfig));
     }
 
     protected void driverSettings() {
@@ -96,14 +115,14 @@ public abstract class AbstractKeycloakTest {
         controller.start(KEYCLOAK_SERVER);
         driverSettings();
         loginAsAdmin();
-        keycloak = Keycloak.getInstance(URL.AUTH_SERVER_BASE_URL,
+        keycloak = Keycloak.getInstance(URL.AUTH_SERVER_URL,
                 "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
     }
 
     @After
     public void tearDown() {
-        logOut();
         keycloak.close();
+        logOut();
     }
 
 }
