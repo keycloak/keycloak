@@ -85,11 +85,11 @@ public class KeycloakExamplesTest extends AbstractKeycloakAdapterTest {
                     + "/keycloak-examples-" + EXAMPLES_VERSION_SUFFIX
                     + "/preconfigured-demo/testrealm.json");
             
-            // replace relative redirectUris in testrealm.json with APP_SERVER_BASE_URL-based URIs
+            // replace relative redirectUris in testrealm.json with APP_SERVER_BASE_URL URIs
             String testRealmContent = IOUtils.toString(testRealmFile.toURI());
             FileUtils.writeStringToFile(testRealmFile, testRealmContent
                     .replaceAll("(/.*/\\*)", URL.APP_SERVER_BASE_URL + "$1"));
-
+            
             importRealm(new FileInputStream(testRealmFile));
 
             deployer.deploy(CUSTOMER_PORTAL);

@@ -90,7 +90,7 @@ public abstract class AbstractKeycloakTest {
 //        }
 
         try { // TODO - figure out a way how to do this without try-catch
-            RealmResource rResource = keycloak.realms().realm(newRealm.getId());
+            RealmResource rResource = keycloak.realms().realm(newRealm.getRealm());
             RealmRepresentation rRep = rResource.toRepresentation();
             System.out.println("removing existing realm: " + rRep.getRealm());
             rResource.remove();
