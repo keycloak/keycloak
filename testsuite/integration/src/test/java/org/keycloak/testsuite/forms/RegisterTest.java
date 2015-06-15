@@ -277,6 +277,7 @@ public class RegisterTest {
             Assert.assertNotNull(user.getCreatedTimestamp());
             // test that timestamp is current with 10s tollerance
             Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
+
         } finally {
             configureRelamRegistrationEmailAsUsername(false);
         }

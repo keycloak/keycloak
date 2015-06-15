@@ -1,20 +1,20 @@
 package org.keycloak.models.cache;
 
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.cache.entities.CachedUser;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.entities.CachedUser;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -38,18 +38,22 @@ public class UserAdapter implements UserModel {
         if (updated == null) {
             userProviderCache.registerUserInvalidation(realm, getId());
             updated = userProviderCache.getDelegate().getUserById(getId(), realm);
-            if (updated == null) throw new IllegalStateException("Not found in database");
+            if (updated == null)
+                throw new IllegalStateException("Not found in database");
         }
     }
+
     @Override
     public String getId() {
-        if (updated != null) return updated.getId();
+        if (updated != null)
+            return updated.getId();
         return cached.getId();
     }
 
     @Override
     public String getUsername() {
-        if (updated != null) return updated.getUsername();
+        if (updated != null)
+            return updated.getUsername();
         return cached.getUsername();
     }
 
@@ -72,13 +76,15 @@ public class UserAdapter implements UserModel {
 
     @Override
     public boolean isEnabled() {
-        if (updated != null) return updated.isEnabled();
+        if (updated != null)
+            return updated.isEnabled();
         return cached.isEnabled();
     }
 
     @Override
     public boolean isTotp() {
-        if (updated != null) return updated.isTotp();
+        if (updated != null)
+            return updated.isTotp();
         return cached.isTotp();
     }
 
@@ -102,19 +108,22 @@ public class UserAdapter implements UserModel {
 
     @Override
     public String getAttribute(String name) {
-        if (updated != null) return updated.getAttribute(name);
+        if (updated != null)
+            return updated.getAttribute(name);
         return cached.getAttributes().get(name);
     }
 
     @Override
     public Map<String, String> getAttributes() {
-        if (updated != null) return updated.getAttributes();
+        if (updated != null)
+            return updated.getAttributes();
         return cached.getAttributes();
     }
 
     @Override
     public Set<String> getRequiredActions() {
-        if (updated != null) return updated.getRequiredActions();
+        if (updated != null)
+            return updated.getRequiredActions();
         return cached.getRequiredActions();
     }
 
@@ -144,7 +153,8 @@ public class UserAdapter implements UserModel {
 
     @Override
     public String getFirstName() {
-        if (updated != null) return updated.getFirstName();
+        if (updated != null)
+            return updated.getFirstName();
         return cached.getFirstName();
     }
 
@@ -156,7 +166,8 @@ public class UserAdapter implements UserModel {
 
     @Override
     public String getLastName() {
-        if (updated != null) return updated.getLastName();
+        if (updated != null)
+            return updated.getLastName();
         return cached.getLastName();
     }
 
@@ -168,7 +179,8 @@ public class UserAdapter implements UserModel {
 
     @Override
     public String getEmail() {
-        if (updated != null) return updated.getEmail();
+        if (updated != null)
+            return updated.getEmail();
         return cached.getEmail();
     }
 
@@ -180,7 +192,8 @@ public class UserAdapter implements UserModel {
 
     @Override
     public boolean isEmailVerified() {
-        if (updated != null) return updated.isEmailVerified();
+        if (updated != null)
+            return updated.isEmailVerified();
         return cached.isEmailVerified();
     }
 
@@ -204,7 +217,8 @@ public class UserAdapter implements UserModel {
 
     @Override
     public List<UserCredentialValueModel> getCredentialsDirectly() {
-        if (updated != null) return updated.getCredentialsDirectly();
+        if (updated != null)
+            return updated.getCredentialsDirectly();
         return cached.getCredentials();
     }
 
@@ -216,7 +230,8 @@ public class UserAdapter implements UserModel {
 
     @Override
     public String getFederationLink() {
-        if (updated != null) return updated.getFederationLink();
+        if (updated != null)
+            return updated.getFederationLink();
         return cached.getFederationLink();
     }
 
@@ -224,11 +239,12 @@ public class UserAdapter implements UserModel {
     public void setFederationLink(String link) {
         getDelegateForUpdate();
         updated.setFederationLink(link);
-   }
+    }
 
     @Override
     public Set<RoleModel> getRealmRoleMappings() {
-        if (updated != null) return updated.getRealmRoleMappings();
+        if (updated != null)
+            return updated.getRealmRoleMappings();
         Set<RoleModel> roleMappings = getRoleMappings();
         Set<RoleModel> realmMappings = new HashSet<RoleModel>();
         for (RoleModel role : roleMappings) {
@@ -244,7 +260,8 @@ public class UserAdapter implements UserModel {
 
     @Override
     public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        if (updated != null) return updated.getClientRoleMappings(app);
+        if (updated != null)
+            return updated.getClientRoleMappings(app);
         Set<RoleModel> roleMappings = getRoleMappings();
         Set<RoleModel> appMappings = new HashSet<RoleModel>();
         for (RoleModel role : roleMappings) {
@@ -260,12 +277,15 @@ public class UserAdapter implements UserModel {
 
     @Override
     public boolean hasRole(RoleModel role) {
-        if (updated != null) return updated.hasRole(role);
-        if (cached.getRoleMappings().contains(role.getId())) return true;
+        if (updated != null)
+            return updated.hasRole(role);
+        if (cached.getRoleMappings().contains(role.getId()))
+            return true;
 
         Set<RoleModel> mappings = getRoleMappings();
-        for (RoleModel mapping: mappings) {
-           if (mapping.hasRole(role)) return true;
+        for (RoleModel mapping : mappings) {
+            if (mapping.hasRole(role))
+                return true;
         }
         return false;
     }
@@ -278,7 +298,8 @@ public class UserAdapter implements UserModel {
 
     @Override
     public Set<RoleModel> getRoleMappings() {
-        if (updated != null) return updated.getRoleMappings();
+        if (updated != null)
+            return updated.getRoleMappings();
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (String id : cached.getRoleMappings()) {
             RoleModel roleById = keycloakSession.realms().getRoleById(id, realm);
