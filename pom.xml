@@ -1077,7 +1077,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-eap6-server-modules</artifactId>
+                <artifactId>keycloak-server-modules-eap6</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>

@@ -12,7 +12,7 @@
         <relativePath>../../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-eap6-server-modules</artifactId>
+    <artifactId>keycloak-server-modules-eap6</artifactId>
 
     <name>Keycloak EAP 6 Server Modules</name>
     <packaging>pom</packaging>

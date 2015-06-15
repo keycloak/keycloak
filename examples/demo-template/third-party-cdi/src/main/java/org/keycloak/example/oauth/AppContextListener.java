@@ -41,6 +41,7 @@ public class AppContextListener implements ServletContextListener {
         }
         ServletOAuthClientBuilder.build(is, oauthClient);
         logger.info("OAuth client configured and started");
+        oauthClient.start();
     }
 
     @Override
