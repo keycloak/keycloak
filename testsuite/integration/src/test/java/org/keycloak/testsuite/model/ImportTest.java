@@ -117,6 +117,8 @@ public class ImportTest extends AbstractModelTest {
 
         // Test role mappings
         UserModel admin =  session.users().getUserByUsername("admin", realm);
+        // user without creation timestamp in import
+        Assert.assertNull(admin.getCreatedTimestamp());
         Set<RoleModel> allRoles = admin.getRoleMappings();
         Assert.assertEquals(3, allRoles.size());
         Assert.assertTrue(allRoles.contains(realm.getRole("admin")));
@@ -124,6 +126,8 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(allRoles.contains(otherApp.getRole("otherapp-admin")));
 
         UserModel wburke =  session.users().getUserByUsername("wburke", realm);
+        // user with creation timestamp in import
+        Assert.assertEquals(new Long(123654), wburke.getCreatedTimestamp());
         allRoles = wburke.getRoleMappings();
         Assert.assertEquals(2, allRoles.size());
         Assert.assertFalse(allRoles.contains(realm.getRole("admin")));
@@ -131,6 +135,10 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(allRoles.contains(otherApp.getRole("otherapp-user")));
 
         Assert.assertEquals(0, wburke.getRealmRoleMappings().size());
+
+        UserModel loginclient = session.users().getUserByUsername("loginclient", realm);
+        // user with creation timestamp as string in import
+        Assert.assertEquals(new Long(123655), loginclient.getCreatedTimestamp());
 
         Set<RoleModel> realmRoles = admin.getRealmRoleMappings();
         Assert.assertEquals(1, realmRoles.size());

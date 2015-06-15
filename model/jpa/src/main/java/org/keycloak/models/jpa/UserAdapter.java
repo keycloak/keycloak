@@ -77,6 +77,16 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
+    public Long getCreatedTimestamp() {
+        return user.getCreatedTimestamp();
+    }
+
+    @Override
+    public void setCreatedTimestamp(Long timestamp) {
+        user.setCreatedTimestamp(timestamp);
+    }
+
+    @Override
     public boolean isEnabled() {
         return user.isEnabled();
     }

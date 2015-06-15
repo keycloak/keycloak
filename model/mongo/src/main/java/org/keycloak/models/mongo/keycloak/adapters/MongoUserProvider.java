@@ -3,6 +3,7 @@ package org.keycloak.models.mongo.keycloak.adapters;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
@@ -274,6 +275,7 @@ public class MongoUserProvider implements UserProvider {
         MongoUserEntity userEntity = new MongoUserEntity();
         userEntity.setId(id);
         userEntity.setUsername(username);
+        userEntity.setCreatedTimestamp(System.currentTimeMillis());
         // Compatibility with JPA model, which has user disabled by default
         // userEntity.setEnabled(true);
         userEntity.setRealmId(realm.getId());

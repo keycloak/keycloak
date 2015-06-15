@@ -20,6 +20,13 @@ public interface UserModel {
     String getUsername();
 
     void setUsername(String username);
+    
+    /**
+     * Get timestamp of user creation. May be null for old users created before this feature introduction.
+     */
+    Long getCreatedTimestamp();
+    
+    void setCreatedTimestamp(Long timestamp);
 
     boolean isEnabled();
 

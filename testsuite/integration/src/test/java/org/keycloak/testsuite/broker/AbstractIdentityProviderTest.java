@@ -686,6 +686,9 @@ public abstract class AbstractIdentityProviderTest {
         UserModel federatedUser = getFederatedUser();
 
         assertNotNull(federatedUser);
+        assertNotNull(federatedUser.getCreatedTimestamp());
+        // test that timestamp is current with 10s tollerance
+        Assert.assertTrue((System.currentTimeMillis() - federatedUser.getCreatedTimestamp()) < 10000);
 
         doAssertFederatedUser(federatedUser, identityProviderModel, expectedEmail, isProfileUpdateExpected);
 

@@ -50,6 +50,7 @@ public class ModelToRepresentation {
         UserRepresentation rep = new UserRepresentation();
         rep.setId(user.getId());
         rep.setUsername(user.getUsername());
+        rep.setCreatedTimestamp(user.getCreatedTimestamp());
         rep.setLastName(user.getLastName());
         rep.setFirstName(user.getFirstName());
         rep.setEmail(user.getEmail());

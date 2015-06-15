@@ -13,6 +13,7 @@ public class UserRepresentation {
 
     protected String self; // link
     protected String id;
+    protected Long createdTimestamp;
     protected String username;
     protected boolean enabled;
     protected boolean totp;
@@ -48,6 +49,14 @@ public class UserRepresentation {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public void setCreatedTimestamp(Long createdTimestamp) {
+        this.createdTimestamp = createdTimestamp;
     }
 
     public String getFirstName() {
