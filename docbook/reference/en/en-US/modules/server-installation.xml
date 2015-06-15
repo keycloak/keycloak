@@ -43,9 +43,9 @@
 
 
         <section id="overlay_install">
-            <title>Install on existing WildFly 8.2.0.Final</title>
+            <title>Install on existing WildFly 9.0.0.CR2</title>
             <para>
-                Keycloak can be installed into an existing WildFly 8.2.0.Final server. To do this download
+                Keycloak can be installed into an existing WildFly 9.0.0.CR2 server. To do this download
                 <literal>keycloak-overlay-&project.version;.zip</literal> or  <literal>keycloak-overlay-&project.version;.tar.gz</literal>.
                 Once downloaded extract into the root directory of your WildFly installation. To start WildFly with Keycloak
                 run:
@@ -72,32 +72,9 @@
             </para>
         </section>
         <section>
-            <title>Install on existing EAP 6.4.0.GA</title>
+            <title>Install on existing JBoss EAP 6.4.0.GA</title>
             <para>
-                Keycloak can be installed into an existing EAP 6.4.0.GA server. To do this download
-                <literal>keycloak-overlay-&project.version;.zip</literal> or  <literal>keycloak-overlay-&project.version;.tar.gz</literal>.
-                Once downloaded extract into the root directory of your EAP installation.
-            </para>
-            <para>
-                To add Keycloak to the a EAP sever configurations (standalone.xml, standalone-ha.xml, etc.) open
-                <literal>standalone/configuration/standalone-keycloak.xml</literal> and the configuration you want to add it
-                to, for example <literal>standalone/configuration/standalone.xml</literal>. From <literal>standalone-keycloak.xml</literal>
-                you need to copy 3 elements:
-                <itemizedlist>
-                    <listitem><literal>&lt;extension module="org.keycloak.keycloak-subsystem"/&gt;</literal></listitem>
-                    <listitem><literal>&lt;datasource jndi-name="java:jboss/datasources/KeycloakDS" ...&gt;</literal></listitem>
-                    <listitem><literal>&lt;subsystem xmlns="urn:jboss:domain:keycloak:1.0" ...&gt;</literal></listitem>
-                </itemizedlist>
-                <note>
-                    <literal>standalone-keycloak.xml</literal> is aimed at WildFly and won't work with EAP so you need to
-                    copy the required configuration
-                </note>
-            </para>
-            <para>
-                Once the server is started log into the admin console at
-                <ulink url="http://localhost:8080/auth/admin/index.html">http://localhost:8080/auth/admin/index.html</ulink>
-                (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
-                enter in a new password.
+                Same procedure as JBoss EAP 6.4.0.GA, but download <literal>keycloak-overlay-eap6-&project.version;.zip</literal> or  <literal>keycloak-overlay-eap6-&project.version;.tar.gz</literal>.
             </para>
         </section>
         <section>
@@ -107,7 +84,7 @@
                 To install it first download <literal>keycloak-demo-&project.version;.zip</literal> or
                 <literal>keycloak-demo-&project.version;.tar.gz</literal>. Once downloaded extract it inside
                 <literal>keycloak-demo-&project.version;</literal> you'll find <literal>keycloak</literal> which contains
-                a full WildFly 8.2.0.Final server with Keycloak Server and Adapters included. You'll also find <literal>docs</literal>
+                a full WildFly 9.0.0.CR2 server with Keycloak Server and Adapters included. You'll also find <literal>docs</literal>
                 and <literal>examples</literal> which contains everything you need to get started developing applications that use Keycloak.
             </para>
             <para>
