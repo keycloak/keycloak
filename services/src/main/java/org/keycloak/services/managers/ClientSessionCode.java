@@ -81,28 +81,36 @@ public class ClientSessionCode {
     }
 
     public boolean isValid(String requestedAction) {
-        String action = clientSession.getAction();
-        if (action == null) {
-            return false;
-        }
+        if (!isValidAction(requestedAction)) return false;
+        return isActionActive(requestedAction);
+    }
 
+    public boolean isActionActive(String requestedAction) {
         int timestamp = clientSession.getTimestamp();
 
-        if (!action.equals(requestedAction)) {
-            return false;
-        }
-
         int lifespan;
-        if (action.equals(ClientSessionModel.Action.CODE_TO_TOKEN.name())) {
+        if (requestedAction.equals(ClientSessionModel.Action.CODE_TO_TOKEN.name())) {
             lifespan = realm.getAccessCodeLifespan();
 
-        } else if (action.equals(ClientSessionModel.Action.AUTHENTICATE.name())) {
+        } else if (requestedAction.equals(ClientSessionModel.Action.AUTHENTICATE.name())) {
             lifespan = realm.getAccessCodeLifespanLogin() > 0 ? realm.getAccessCodeLifespanLogin() : realm.getAccessCodeLifespanUserAction();
         } else {
             lifespan = realm.getAccessCodeLifespanUserAction();
         }
         return timestamp + lifespan > Time.currentTime();
     }
+
+    public boolean isValidAction(String requestedAction) {
+        String action = clientSession.getAction();
+        if (action == null) {
+            return false;
+        }
+        if (!action.equals(requestedAction)) {
+            return false;
+        }
+        return true;
+    }
+
 
     public Set<RoleModel> getRequestedRoles() {
         Set<RoleModel> requestedRoles = new HashSet<RoleModel>();

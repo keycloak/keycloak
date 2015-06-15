@@ -178,7 +178,7 @@ public class ResetPasswordTest {
 
         loginPage.login("login@test.com", "password");
 
-        Event loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
+        Event loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
 
         String code = oauth.getCurrentQuery().get("code");
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
@@ -372,7 +372,7 @@ public class ResetPasswordTest {
 
             assertEquals("An error occurred, please login again through your application.", errorPage.getError());
 
-            events.expectRequiredAction(EventType.RESET_PASSWORD).error("invalid_code").client((String) null).user((String) null).session((String) null).clearDetails().assertEvent();
+            events.expectRequiredAction(EventType.RESET_PASSWORD).error("expired_code").client("test-app").user((String) null).session((String) null).clearDetails().assertEvent();
         } finally {
             Time.setOffset(0);
         }

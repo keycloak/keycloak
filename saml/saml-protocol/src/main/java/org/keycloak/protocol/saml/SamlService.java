@@ -1,7 +1,6 @@
 package org.keycloak.protocol.saml;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.ClientConnection;
@@ -17,7 +16,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -30,14 +28,11 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.managers.HttpAuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.util.StreamUtil;
@@ -52,13 +47,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
@@ -289,36 +281,6 @@ public class SamlService {
             }
 
             return newBrowserAuthentication(clientSession);
-        }
-
-        private Response oldBrowserAuthentication(ClientSessionModel clientSession) {
-            Response response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);
-            if (response != null) return response;
-
-            // SPNEGO/Kerberos authentication TODO: This should be somehow pluggable instead of hardcoded this way (Authentication interceptors?)
-            HttpAuthenticationManager httpAuthManager = new HttpAuthenticationManager(session, clientSession, realm, uriInfo, request, clientConnection, event);
-            HttpAuthenticationManager.HttpAuthOutput httpAuthOutput = httpAuthManager.spnegoAuthenticate(headers);
-            if (httpAuthOutput.getResponse() != null) return httpAuthOutput.getResponse();
-
-            LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class)
-                    .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode());
-
-            // Attach state from SPNEGO authentication
-            if (httpAuthOutput.getChallenge() != null) {
-                httpAuthOutput.getChallenge().sendChallenge(forms);
-            }
-
-            String rememberMeUsername = AuthenticationManager.getRememberMeUsername(realm, headers);
-
-            if (rememberMeUsername != null) {
-                MultivaluedMap<String, String> formData = new MultivaluedMapImpl<String, String>();
-                formData.add(AuthenticationManager.FORM_USERNAME, rememberMeUsername);
-                formData.add("rememberMe", "on");
-
-                forms.setFormData(formData);
-            }
-
-            return forms.createLogin();
         }
 
         private Response buildRedirectToIdentityProvider(String providerId, String accessCode) {

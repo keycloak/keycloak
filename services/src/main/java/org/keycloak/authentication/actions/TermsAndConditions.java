@@ -1,37 +1,25 @@
 package org.keycloak.authentication.actions;
 
 import org.keycloak.Config;
-import org.keycloak.Version;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.events.Errors;
-import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
 import org.keycloak.freemarker.FreeMarkerException;
-import org.keycloak.freemarker.FreeMarkerUtil;
-import org.keycloak.freemarker.Theme;
-import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.ClientSessionCode;
 
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -86,6 +74,14 @@ public class TermsAndConditions implements RequiredActionProvider, RequiredActio
         return PROVIDER_ID;
     }
 
+
+    @Override
+    public String getProviderId() {
+        return getId();
+    }
+
+
+
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
 
@@ -94,7 +90,7 @@ public class TermsAndConditions implements RequiredActionProvider, RequiredActio
     @Override
     public Response invokeRequiredAction(RequiredActionContext context) {
         return context.getSession().getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(new ClientSessionCode(context.getRealm(), context.getClientSession()).getCode())
+                .setClientSessionCode(context.generateAccessCode(getProviderId()))
                 .setUser(context.getUser())
                 .createForm("terms.ftl", new HashMap<String, Object>());
     }

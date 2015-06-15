@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -31,7 +32,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -44,6 +45,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
@@ -51,6 +53,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.ErrorResponse;
@@ -112,11 +115,13 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private EventBuilder event;
 
-    public IdentityBrokerService(RealmModel realmModel) {
+    private BruteForceProtector protector;
+
+    public IdentityBrokerService(RealmModel realmModel, BruteForceProtector protector) {
         if (realmModel == null) {
             throw new IllegalArgumentException("Realm can not be null.");
         }
-
+        this.protector = protector;
         this.realmModel = realmModel;
     }
 
@@ -317,12 +322,21 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     @Override
     public Response cancelled(String code) {
-        return session.getProvider(LoginFormsProvider.class).setClientSessionCode(code).createLogin();
+        ClientSessionCode clientCode = ClientSessionCode.parse(code, this.session, this.realmModel);
+        if (clientCode.getClientSession() == null || !clientCode.isValid(AUTHENTICATE.name())) {
+            return redirectToErrorPage(Messages.INVALID_CODE);
+        }
+
+        return browserAuthentication(clientCode.getClientSession(), null);
     }
 
     @Override
     public Response error(String code, String message) {
-        return session.getProvider(LoginFormsProvider.class).setClientSessionCode(code).setError(message).createLogin();
+        ClientSessionCode clientCode = ClientSessionCode.parse(code, this.session, this.realmModel);
+        if (clientCode.getClientSession() == null || !clientCode.isValid(AUTHENTICATE.name())) {
+            return redirectToErrorPage(Messages.INVALID_CODE);
+        }
+        return browserAuthentication(clientCode.getClientSession(), message);
     }
 
     private Response performAccountLinking(ClientSessionModel clientSession, BrokeredIdentityContext context, FederatedIdentityModel federatedIdentityModel, UserModel federatedUser) {
@@ -448,11 +462,31 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         fireErrorEvent(message);
-        return session.getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(clientCode.getCode())
-                .setError(message)
-                .createLogin();
+        return browserAuthentication(clientCode.getClientSession(), message);
     }
+
+    protected Response browserAuthentication(ClientSessionModel clientSession, String errorMessage) {
+        AuthenticationFlowModel flow = realmModel.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+        String flowId = flow.getId();
+        AuthenticationProcessor processor = new AuthenticationProcessor();
+        processor.setClientSession(clientSession)
+                .setFlowId(flowId)
+                .setConnection(clientConnection)
+                .setEventBuilder(event)
+                .setProtector(protector)
+                .setRealm(realmModel)
+                .setSession(session)
+                .setUriInfo(uriInfo)
+                .setRequest(request);
+        if (errorMessage != null) processor.setForwardedErrorMessage(errorMessage);
+
+        try {
+            return processor.authenticate();
+        } catch (Exception e) {
+            return processor.handleBrowserException(e);
+        }
+    }
+
 
     private Response badRequest(String message) {
         fireErrorEvent(message);

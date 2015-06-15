@@ -43,6 +43,12 @@ public class AuthenticationProcessor {
     protected HttpRequest request;
     protected String flowId;
     protected String action;
+    /**
+     * This could be an error message forwarded from brokering when the broker failed authentication
+     * and we want to continue authentication locally.  forwardedErrorMessage can then be displayed by
+     * whatever form is challenging.
+     */
+    protected String forwardedErrorMessage;
     protected boolean userSessionCreated;
 
 
@@ -56,6 +62,7 @@ public class AuthenticationProcessor {
 
     }
     public static enum Error {
+        INVALID_CLIENT_SESSION,
         INVALID_USER,
         INVALID_CREDENTIALS,
         CREDENTIAL_SETUP_REQUIRED,
@@ -141,6 +148,11 @@ public class AuthenticationProcessor {
 
     public AuthenticationProcessor setAction(String action) {
         this.action = action;
+        return this;
+    }
+
+    public AuthenticationProcessor setForwardedErrorMessage(String forwardedErrorMessage) {
+        this.forwardedErrorMessage = forwardedErrorMessage;
         return this;
     }
 
@@ -300,6 +312,11 @@ public class AuthenticationProcessor {
         public EventBuilder getEvent() {
             return AuthenticationProcessor.this.event;
         }
+
+        @Override
+        public String getForwardedErrorMessage() {
+            return AuthenticationProcessor.this.forwardedErrorMessage;
+        }
     }
 
     public static class AuthException extends RuntimeException {
@@ -367,7 +384,11 @@ public class AuthenticationProcessor {
                 event.error(Errors.USER_TEMPORARILY_DISABLED);
                 return ErrorPage.error(session, Messages.ACCOUNT_TEMPORARILY_DISABLED);
 
-            } else {
+            } else if (e.getError() == Error.INVALID_CLIENT_SESSION) {
+                event.error(Errors.INVALID_CODE);
+                return ErrorPage.error(session, Messages.INVALID_CODE);
+
+            }else {
                 event.error(Errors.INVALID_USER_CREDENTIALS);
                 return ErrorPage.error(session, Messages.INVALID_USER);
             }
@@ -382,6 +403,9 @@ public class AuthenticationProcessor {
 
 
     public Response authenticate() throws AuthException {
+        if (!ClientSessionModel.Action.AUTHENTICATE.name().equals(clientSession.getAction())) {
+            throw new AuthException(Error.INVALID_CLIENT_SESSION);
+        }
         logger.debug("AUTHENTICATE");
         event.event(EventType.LOGIN);
         event.client(clientSession.getClient().getClientId())
@@ -402,6 +426,9 @@ public class AuthenticationProcessor {
     }
 
     public Response authenticateOnly() throws AuthException {
+        if (!ClientSessionModel.Action.AUTHENTICATE.name().equals(clientSession.getAction())) {
+            throw new AuthException(Error.INVALID_CLIENT_SESSION);
+        }
         event.event(EventType.LOGIN);
         event.client(clientSession.getClient().getClientId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
@@ -585,11 +612,6 @@ public class AuthenticationProcessor {
              .detail(Details.USERNAME, username)
              .session(userSession);
 
-        return processRequiredActions();
-
-    }
-
-    public Response processRequiredActions() {
         return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, connection, request, uriInfo, event);
 
     }

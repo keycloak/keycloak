@@ -66,4 +66,11 @@ public interface AuthenticatorContext {
 
     void failureChallenge(AuthenticationProcessor.Error error, Response challenge);
     void attempted();
+
+    /**
+     * This could be an error message forwarded from brokering when the broker failed authentication
+     * and we want to continue authentication locally.  forwardedErrorMessage can then be displayed by
+     * whatever form is challenging.
+     */
+    String getForwardedErrorMessage();
 }

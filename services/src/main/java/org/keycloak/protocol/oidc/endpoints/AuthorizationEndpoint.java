@@ -1,7 +1,6 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
@@ -18,7 +17,6 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -26,7 +24,6 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.managers.HttpAuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.Urls;
 
@@ -248,10 +245,10 @@ public class AuthorizationEndpoint {
             return buildRedirectToIdentityProvider(idpHint, accessCode);
         }
 
-        return newBrowserAuthentication(accessCode);
+        return browserAuthentication(accessCode);
     }
 
-    protected Response newBrowserAuthentication(String accessCode) {
+    protected Response browserAuthentication(String accessCode) {
         List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
         for (IdentityProviderModel identityProvider : identityProviders) {
             if (identityProvider.isAuthenticateByDefault()) {
@@ -293,65 +290,6 @@ public class AuthorizationEndpoint {
         } else {
             return challenge;
         }
-    }
-
-    protected Response oldBrowserAuthentication(String accessCode) {
-        Response response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);
-        if (response != null) return response;
-
-        // SPNEGO/Kerberos authentication TODO: This should be somehow pluggable instead of hardcoded this way (Authentication interceptors?)
-        HttpAuthenticationManager httpAuthManager = new HttpAuthenticationManager(session, clientSession, realm, uriInfo, request, clientConnection, event);
-        HttpAuthenticationManager.HttpAuthOutput httpAuthOutput = httpAuthManager.spnegoAuthenticate(headers);
-        if (httpAuthOutput.getResponse() != null) return httpAuthOutput.getResponse();
-
-        if (prompt != null && prompt.equals("none")) {
-            OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo, headers, event);
-            return oauth.cancelLogin(clientSession);
-        }
-
-        List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
-        for (IdentityProviderModel identityProvider : identityProviders) {
-            if (identityProvider.isAuthenticateByDefault()) {
-                return buildRedirectToIdentityProvider(identityProvider.getAlias(), accessCode);
-            }
-        }
-
-        List<RequiredCredentialModel> requiredCredentials = realm.getRequiredCredentials();
-        if (requiredCredentials.isEmpty()) {
-            if (!identityProviders.isEmpty()) {
-                if (identityProviders.size() == 1) {
-                    return buildRedirectToIdentityProvider(identityProviders.get(0).getAlias(), accessCode);
-                }
-
-                return session.getProvider(LoginFormsProvider.class).setError(Messages.IDENTITY_PROVIDER_NOT_UNIQUE, realm.getName()).createErrorPage();
-            }
-
-            return session.getProvider(LoginFormsProvider.class).setError(Messages.REALM_SUPPORTS_NO_CREDENTIALS, realm.getName()).createErrorPage();
-        }
-
-        LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class).setClientSessionCode(accessCode);
-
-        // Attach state from SPNEGO authentication
-        if (httpAuthOutput.getChallenge() != null) {
-            httpAuthOutput.getChallenge().sendChallenge(forms);
-        }
-
-        String rememberMeUsername = AuthenticationManager.getRememberMeUsername(realm, headers);
-
-        if (loginHint != null || rememberMeUsername != null) {
-            MultivaluedMap<String, String> formData = new MultivaluedMapImpl<String, String>();
-
-            if (loginHint != null) {
-                formData.add(AuthenticationManager.FORM_USERNAME, loginHint);
-            } else {
-                formData.add(AuthenticationManager.FORM_USERNAME, rememberMeUsername);
-                formData.add("rememberMe", "on");
-            }
-
-            forms.setFormData(formData);
-        }
-
-        return forms.createLogin();
     }
 
     private Response buildRegister() {

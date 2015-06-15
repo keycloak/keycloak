@@ -152,20 +152,6 @@ public class AccessTokenPerfTest {
             return b.build(realm).toString();
         }
 
-        public String getProcessLoginUrl(String state) {
-            UriBuilder b = LoginActionsService.processLoginUrl(UriBuilder.fromUri(baseUrl));
-            if (clientId != null) {
-                b.queryParam(OAuth2Constants.CLIENT_ID, clientId);
-            }
-            if (redirectUri != null) {
-                b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
-            }
-            if (state != null) {
-                b.queryParam(OAuth2Constants.STATE, state);
-            }
-            return b.build(realm).toString();
-        }
-
         static Pattern actionParser = Pattern.compile("action=\"([^\"]+)\"");
 
         public void run() {

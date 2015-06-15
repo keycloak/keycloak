@@ -32,10 +32,14 @@ public class AbstractFormAuthenticator {
         ClientSessionCode code = new ClientSessionCode(context.getRealm(), context.getClientSession());
         code.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
         URI action = getActionUrl(context, code, LOGIN_FORM_ACTION);
-        return context.getSession().getProvider(LoginFormsProvider.class)
+        LoginFormsProvider provider = context.getSession().getProvider(LoginFormsProvider.class)
                     .setUser(context.getUser())
                     .setActionUri(action)
                     .setClientSessionCode(code.getCode());
+        if (context.getForwardedErrorMessage() != null) {
+            provider.setError(context.getForwardedErrorMessage());
+        }
+        return provider;
     }
 
     public static URI getActionUrl(AuthenticatorContext context, ClientSessionCode code, String action) {

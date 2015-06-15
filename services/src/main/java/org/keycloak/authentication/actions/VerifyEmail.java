@@ -59,12 +59,11 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
             return null;
         }
 
-        ClientSessionCode accessCode = new ClientSessionCode(context.getRealm(), context.getClientSession());
-        accessCode.setAction(ClientSessionModel.Action.VERIFY_EMAIL.name());
         context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, context.getUser().getEmail()).success();
         LoginActionsService.createActionCookie(context.getRealm(), context.getUriInfo(), context.getConnection(), context.getUserSession().getId());
 
-        LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class).setClientSessionCode(accessCode.getCode())
+        LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class)
+                .setClientSessionCode(context.generateAccessCode(getProviderId()))
                 .setUser(context.getUser());
         return loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
     }
@@ -106,5 +105,11 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     public String getId() {
         return UserModel.RequiredAction.VERIFY_EMAIL.name();
     }
+
+    @Override
+    public String getProviderId() {
+        return getId();
+    }
+
 
 }

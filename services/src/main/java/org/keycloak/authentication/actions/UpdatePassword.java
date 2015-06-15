@@ -51,10 +51,9 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
 
     @Override
     public Response invokeRequiredAction(RequiredActionContext context) {
-        ClientSessionCode accessCode = new ClientSessionCode(context.getRealm(), context.getClientSession());
-        accessCode.setAction(ClientSessionModel.Action.UPDATE_PASSWORD.name());
-
-        LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class).setClientSessionCode(accessCode.getCode())
+        LoginFormsProvider loginFormsProvider = context.getSession()
+                .getProvider(LoginFormsProvider.class)
+                .setClientSessionCode(context.generateAccessCode(getProviderId()))
                 .setUser(context.getUser());
         return loginFormsProvider.createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
     }
@@ -96,4 +95,10 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     public String getId() {
         return UserModel.RequiredAction.UPDATE_PASSWORD.name();
     }
+
+    @Override
+    public String getProviderId() {
+        return getId();
+    }
+
 }
