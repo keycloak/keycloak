@@ -87,13 +87,8 @@ public class RealmManager {
         setupAccountManagement(realm);
         setupBrokerService(realm);
         setupAdminConsole(realm);
-        setupAuthenticationFlows(realm);
 
         return realm;
-    }
-
-    protected void setupAuthenticationFlows(RealmModel realm) {
-        if (realm.getAuthenticationFlows().size() == 0) DefaultAuthenticationFlows.addFlows(realm);
     }
 
     protected void setupAdminConsole(RealmModel realm) {
@@ -259,8 +254,6 @@ public class RealmManager {
         if (!hasAdminConsoleClient(rep)) setupAdminConsole(realm);
 
         RepresentationToModel.importRealm(session, rep, realm);
-
-        setupAuthenticationFlows(realm);
 
         // Refresh periodic sync tasks for configured federationProviders
         List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
