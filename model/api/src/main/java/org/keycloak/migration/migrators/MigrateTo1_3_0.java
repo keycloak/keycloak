@@ -9,7 +9,6 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.utils.DefaultAuthenticationFlows;
 
 import java.util.List;
 import java.util.Map;
@@ -28,10 +27,6 @@ public class MigrateTo1_3_0 {
     public void migrate(KeycloakSession session) {
         List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
-            if (realm.getAuthenticationFlows().size() == 0) {
-                DefaultAuthenticationFlows.addFlows(realm);
-            }
-
             migrateLDAPProviders(session, realm);
         }
 
