@@ -1,12 +1,12 @@
 Login, Distributed SSO, Distributed Logout, and OAuth Token Grant Examples
 ===================================
-The following examples requires Wildfly 8.0.0, JBoss EAP 6.x, or JBoss AS 7.1.1.  Here's the highlights of the examples
+The following examples require Wildfly 8.x / 9.x, JBoss EAP 6.x, or JBoss AS 7.1.1.  Here's the highlights of the examples
 * Delegating authentication of a web app to the remote authentication server via OAuth 2 protocols
 * Distributed Single-Sign-On and Single-Logout
 * Transferring identity and role mappings via a special bearer token (Skeleton Key Token).
 * Bearer token authentication and authorization of JAX-RS services
 * Obtaining bearer tokens via the OAuth2 protocol
-* Interact with the Keycloak Admin REST Api
+* Interact with the Keycloak Admin REST API
 
 There are multiple WAR projects.  These will all run on the same WildFly instance, but pretend each one is running on a different
 machine on the network or Internet.
@@ -27,103 +27,110 @@ _This demo is meant to run on the same server instance as the Keycloak Server!_
 
 Step 1: Make sure you've set up the Keycloak Server
 --------------------------------------
-The Keycloak Appliance Distribution comes with a preconfigured Keycloak server (based on Wildfly).  You can use it out of
+The Keycloak Demo distribution comes with a preconfigured Keycloak server (based on Wildfly 9).  You can use it out of
 the box to run these demos.  So, if you're using this, you can head to Step 2.
 
-Alternatively, you can install the Keycloak Server onto any EAP 6.x, or Wildfly 8.x server, but there is
-a few steps you must follow. You need to obtain latest keycloak-war-dist-all.zip.  This distro is used to install Keycloak onto an existing JBoss installation.
-This installs the server using a WAR file.
+Alternatively, you can install the Keycloak Server onto any EAP 6.x, or Wildfly 9.x server, but there is
+a few steps you must follow. You need to obtain the latest Keycloak Overlay distribution. That distribution is used to install Keycloak onto an existing EAP / Wildfly installation
+by providing all the necessary Keycloak Server modules, and configurations.
 
-    $ cd ${jboss.as7.home}/standalone
-    $ cp -r ${keycloak-war-dist-all}/deployments .
-
-To be able to run the demos you also need to install the Keycloak client adapter. For Wildfly:
+For Wildfly 9:
 
     $ cd ${wildfly.home}
-    $ unzip ${keycloak-war-dist-all}/adapters/keycloak-wildfly-adapter-dist.zip
+    $ unzip ${keycloak-overlay.zip}
+
+For JBoss EAP 6.x:
+
+    $ cd ${jboss.eap6.home}
+    $ unzip ${keycloak-overlay-eap6.zip}
+
+
+
+To be able to run the demos you also need to install the Keycloak Adapter which extends your app server with KEYCLOAK authentication mechanism.
+
+
+For Wildfly 9:
+
+    $ cd ${wildfly.home}
+    $ unzip ${keycloak-wf9-adapter-dist.zip}
 
 For JBoss EAP 6.x
 
-    $ cd ${eap.home}
-    $ unzip ${keycloak-war-dist-all}/adapters/keycloak-eap6-adapter-dist.zip
+    $ cd ${jboss.eap6.home}
+    $ unzip ${keycloak-eap6-adapter-dist.zip}
 
 For JBoss AS 7.1.1:
 
     $ cd ${as7.home}
-    $ unzip ${keycloak-war-dist-all}/adapters/keycloak-as7-adapter-dist.zip
+    $ unzip ${keycloak-as7-adapter-dist.zip}
 
-WARNING: Note that we don't officially support Keycloak auth-server running on JBoss AS 7.1.1. You can still test examples running on AS 7.1.1,
-but then you may need to do few additional changes in examples to point them into external Keycloak server running on WildFly or EAP 6.x.
-This is especially changing "auth-server-url" in keycloak.json files to be non-relative as examples and auth-server will run on different server!
 
-Unzipping the adapter ZIP only installs the JAR files.  You must also add the Keycloak Subsystem to the server's
-configuration (standalone/configuration/standalone.xml).
+In addition to unzipping the adapter .zip we also have to add the keycloak-adapter-subsystem to the app server's configuration file.
+If you install into the same app server you installed Keycloak Overlay into then use standalone/configuration/standalone-keycloak.xml.
+Otherwise use standalone/configuration/standalone.xml.
 
-For WildFly and JBoss EAP 6.x
     <server xmlns="urn:jboss:domain:1.4">
 
         <extensions>
-            <extension module="org.keycloak.keycloak-subsystem"/>
             ...
+            <extension module="org.keycloak.keycloak-adapter-subsystem"/>
         </extensions>
 
         <profile>
-            <subsystem xmlns="urn:jboss:domain:keycloak:1.0">
-                <auth-server name="main-auth-server">
-                    <enabled>true</enabled>
-                    <web-context>auth</web-context>
-                </auth-server>
-            </subsystem>
             ...
+            <subsystem xmlns="urn:jboss:domain:keycloak:1.1"/>
         </profile>
+        
+        ...
+    </server>
 
-For AS 7.1.1:
-    <server xmlns="urn:jboss:domain:1.4">
 
-        <extensions>
-            <extension module="org.keycloak.keycloak-as7-subsystem"/>
-            ...
-        </extensions>
+WARNING: Note that we only target Wildfly 9, and EAP 6.4 for Keycloak Server. While you can still test examples running on AS 7.1.1, you may need to do a few additional changes in examples to point them to external Keycloak Server running on Wildfly 9 or EAP 6.4.
+Specifically, "auth-server-url" attribute in keycloak.json files has to be set to an absolute URL since examples will run on a different app server than Keycloak Server.
 
-        <profile>
-            <subsystem xmlns="urn:jboss:domain:keycloak:1.0"/>
-            ...
-        </profile>
 
-Step 2: Boot Keycloak Server
+Step 2: Start up the Keycloak Server
 ---------------------------------------
-Where you go to start up the Keycloak Server depends on which distro you installed.
 
-From appliance:
+The exact command to start up the server depends on the installation method chosen in Step 1.
 
-```
-$ cd keycloak/bin
-$ ./standalone.sh
-```
-
-
-From existing Wildfly/EAP6/AS7 distro
+For Keycloak Demo distribution - which includes Keycloak Server, and Keycloak Adapter:
 
 ```
-$ cd ${wildfly.jboss.home}/bin
-$ ./standalone.sh
+$ cd keycloak-demo
+$ bin/standalone.sh
 ```
 
+
+For Keycloak Server deployed to existing Wildfly 9 / EAP 6 server using Keycloak Overlay distribution:
+
+```
+$ cd ${jboss.home}
+$ bin/standalone.sh -c standalone-keycloak.xml
+```
+
+For AS 7 / EAP 6 / Wildfly server containing example applications only - without the Keycloak Server:
+
+```
+$ cd ${jboss.home}
+$ bin/standalone.sh
+```
+  
 
 Step 3: Import the Test Realm
 ---------------------------------------
-Next thing you have to do is import the test realm for the demo.  Clicking on the below link will bring you to the
-create realm page in the Admin UI.  The username/password is admin/admin to login in.  Keycloak will ask you to
-create a new admin password before you can go to the create realm page.
+Next thing to do is to import the test realm for the demo.  Clicking on the below link will bring you to the
+Create Realm page in the Admin UI.  The username/password is admin/admin.  Keycloak will ask you to
+create a new admin password the first time you try to log in. You can simply re-enter admin/admin.
 
 [http://localhost:8080/auth/admin/master/console/#/create/realm](http://localhost:8080/auth/admin/master/console/#/create/realm)
 
-Import the testrealm.json file that is in the preconfigured-demo/ example directory.
+Import the testrealm.json file from examples/preconfigured-demo directory.
 
 
 Step 4: Build and deploy
 ---------------------------------------
-next you must build and deploy
+Next, we build and deploy
 
 ```
 cd preconfigured-demo
@@ -149,25 +156,25 @@ Try going to the customer app and view customer data:
 
 [http://localhost:8080/customer-portal/customers/view.jsp](http://localhost:8080/customer-portal/customers/view.jsp)
 
-This should take you to the auth-server login screen.  Enter username: bburke@redhat.com and password: password.
+This should take you to the Keycloak Server login screen.  Enter username: bburke@redhat.com and password: password.
 
-If you click on the products link, you'll be taken to the products app and show a product listing.  The redirects
-are still happening, but the auth-server knows you are already logged in so the login is bypassed.
+If you click on the products link, you'll be taken to the products app and see a product listing.  The redirects
+are still happening, but the Keycloak Server knows you are already logged in so the login is bypassed.
 
-If you click on the logout link of either of the product or customer app, you'll be logged out of all the applications.
+If you click on the logout link of either the product or customer app, you'll be logged out of all the applications.
 
 If you click on [http://localhost:8080/customer-portal-js](http://localhost:8080/customer-portal-js) you can invoke
-on the pure HTML/Javascript application.
+the pure HTML/Javascript application.
 
 Step 6: Traditional OAuth2 Example
 ----------------------------------
-The customer and product apps are logins.  The third-party app is the traditional OAuth2 usecase of a client wanting
-to get permission to access a user's data. To run this example open
+The customer and product apps use web forms for login.  The third-party app is the traditional OAuth2 usecase of a client wanting
+to get permission to access user's data. To run this example open:
 
 [http://localhost:8080/oauth-client](http://localhost:8080/oauth-client)
 
-If you are already logged in, you will not be asked for a username and password, but you will be redirected to
-an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
+If you are already logged in, you will not be asked for a username and password, but will be redirected to
+an oauth grant page. The page asks you if you want to grant certain permissions to the third-part app.
 
 Step 7: Try the CLI Example
 ---------------------------
@@ -176,39 +183,40 @@ To try the CLI example run the following commands:
 $ cd customer-app-cli
 $ mvn exec:java
 
-This will open a shell that lets you specify a few different commands. For example type 'login' and press enter to login. Pressing enter with a blank line will display the available commands.
+That will open a shell which lets you specify a few different commands. For example, type 'login' and press enter to login. Pressing enter with a blank line will display the available commands.
 
-The CLI example has two alternative methods for login. When a browser is available the CLI opens the login form in a browser, and will automatically retrieve the return code by starting a 
-temporary web server on a free port. If a browser is not available the URL to login is displayed on the CLI. The user can copy this URL to another computer that has a browser available. The code
-is displayed to the user after login and the user has to copy this code back to the application.
+The CLI example has two alternative methods for login. When a browser is available the CLI opens the login form in a browser, and automatically retrieves the return code by starting a 
+temporary web server on an available port. If there is no browser available, the login URL is printed in console. User can copy this URL to another computer that has a browser available. After successful login
+the code is displayed which the user has to copy back to the application.
 
 Step 8: Admin REST API
 ----------------------------------
-Keycloak has a Admin REST API.  This example shows an application making a remove direct login to Keycloak to obtain a token
-then using that token to access the Admin REST API.
+Keycloak comes with an Admin REST API. This example demonstrates how an application remotely logs into Keycloak to obtain a token
+which it then uses to access the Admin REST API.
 
 [http://localhost:8080/admin-access](http://localhost:8080/admin-access)
 
-If you are already logged in, you will not be asked for a username and password, but you will be redirected to
-an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
+If you are already logged in, you will not be asked for a username and password, and will be redirected straight to
+an oauth grant page.  The page asks you to grant certain permissions to the third-part app.
 
 Step 9: Angular JS Example
 ----------------------------------
-An Angular JS example using Keycloak to secure it.
+An example shows how to secure an Angular JS application using Keycloak.
 
 [http://localhost:8080/angular-product](http://localhost:8080/angular-product)
 
-If you are already logged in, you will not be asked for a username and password, but you will be redirected to
-an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
+If you are already logged in, you will not be asked for a username and password, and will be redirected straight to
+an oauth grant page.  The page asks you to grant certain permissions to the third-part app.
+
 
 Step 9: Pure HTML5/Javascript Example
 ----------------------------------
-An pure HTML5/Javascript example using Keycloak to secure it.
+A pure HTML5/Javascript example secured by Keycloak.
 
 [http://localhost:8080/customer-portal-js](http://localhost:8080/customer-portal-js)
 
-If you are already logged in, you will not be asked for a username and password, but you will be redirected to
-an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
+If you are already logged in, you will not be asked for a username and password, and will be redirected straight to
+an oauth grant page.  The page asks you to grant certain permissions to the third-part app.
 
 Admin Console
 ==========================
