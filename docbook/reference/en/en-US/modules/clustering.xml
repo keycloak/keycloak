@@ -57,31 +57,7 @@
             cache.
         </para>
         <para>
-            To configure the required Infinspan caches open <literal>standalone/configuration/standalone-ha.xml</literal> and add:
-<programlisting>
-<![CDATA[
-<subsystem xmlns="urn:jboss:domain:infinispan:2.0">
-    <cache-container name="keycloak" jndi-name="infinispan/Keycloak" start="EAGER">
-        <transport lock-timeout="60000"/>
-        <invalidation-cache name="realms" mode="SYNC" start="EAGER"/>
-        <invalidation-cache name="users" mode="SYNC" start="EAGER"/>
-        <distributed-cache name="sessions" mode="SYNC" owners="1" start="EAGER"/>
-        <distributed-cache name="loginFailures" mode="SYNC" owners="1" start="EAGER"/>
-    </cache-container>
-    ...
-</subsystem>
-]]>
-</programlisting>
-        </para>
-        <para>
-            For more advanced options refer to the
-            <ulink url="http://docs.jboss.org/author/display/WFLY8/Infinispan+Subsystem">Infinispan Subsystem</ulink>
-            and
-            <ulink url="http://www.infinispan.org/docs/6.0.x/user_guide/user_guide.html">Infinispan</ulink>
-            documentation.
-        </para>
-        <para>
-            Next open <literal>standalone/configuration/keycloak-server.json</literal> and add:
+            To enable clustering in Keycloak open <literal>standalone/configuration/keycloak-server.json</literal> and add:
 <programlisting>
 "connectionsInfinispan": {
     "default" : {
