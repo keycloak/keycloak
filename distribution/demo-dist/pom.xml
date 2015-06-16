@@ -16,7 +16,7 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wf9-server-overlay</artifactId>
+            <artifactId>keycloak-server-overlay</artifactId>
             <type>zip</type>
         </dependency>
         <dependency>
