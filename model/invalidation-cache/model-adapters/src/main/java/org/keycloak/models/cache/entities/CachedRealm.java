@@ -10,6 +10,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
@@ -81,6 +82,7 @@ public class CachedRealm {
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, AuthenticationFlowModel> authenticationFlows = new HashMap<>();
     private Map<String, AuthenticatorModel> authenticators = new HashMap<>();
+    private Map<String, RequiredActionProviderModel> requiredActionProviders = new HashMap<>();
     private MultivaluedHashMap<String, AuthenticationExecutionModel> authenticationExecutions = new MultivaluedHashMap<>();
     private Map<String, AuthenticationExecutionModel> executionsById = new HashMap<>();
 
@@ -98,7 +100,6 @@ public class CachedRealm {
     private Set<String> supportedLocales = new HashSet<String>();
     private String defaultLocale;
     private MultivaluedHashMap<String, IdentityProviderMapperModel> identityProviderMappers = new MultivaluedHashMap<>();
-    private Set<String> defaultRequiredActions = new HashSet<>();
 
     public CachedRealm() {
     }
@@ -201,7 +202,9 @@ public class CachedRealm {
         for (AuthenticatorModel authenticator : model.getAuthenticators()) {
             authenticators.put(authenticator.getId(), authenticator);
         }
-        this.defaultRequiredActions.addAll(model.getDefaultRequiredActions());
+        for (RequiredActionProviderModel action : model.getRequiredActionProviders()) {
+            requiredActionProviders.put(action.getId(), action);
+        }
 
     }
 
@@ -441,7 +444,7 @@ public class CachedRealm {
         return executionsById;
     }
 
-    public Set<String> getDefaultRequiredActions() {
-        return defaultRequiredActions;
+    public Map<String, RequiredActionProviderModel> getRequiredActionProviders() {
+        return requiredActionProviders;
     }
 }

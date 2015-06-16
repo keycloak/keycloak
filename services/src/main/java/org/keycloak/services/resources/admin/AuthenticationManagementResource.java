@@ -26,17 +26,17 @@ import java.util.List;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 /**
- * @author Pedro Igor
+ * @author Bill Burke
  */
-public class AuthenticationFlowResource {
+public class AuthenticationManagementResource {
 
     private final RealmModel realm;
     private final KeycloakSession session;
     private RealmAuth auth;
     private AdminEventBuilder adminEvent;
-    private static Logger logger = Logger.getLogger(AuthenticationFlowResource.class);
+    private static Logger logger = Logger.getLogger(AuthenticationManagementResource.class);
 
-    public AuthenticationFlowResource(RealmModel realm, KeycloakSession session, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public AuthenticationManagementResource(RealmModel realm, KeycloakSession session, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.session = session;
         this.auth = auth;
@@ -176,5 +176,4 @@ public class AuthenticationFlowResource {
             realm.updateAuthenticatorExecution(model);
         }
     }
-
 }

@@ -1610,6 +1610,19 @@ module.controller('AuthenticationFlowsCtrl', function($scope, realm, Authenticat
 
 });
 
+module.controller('RequiredActionsCtrl', function($scope, realm, RequiredActions, Notifications, Dialog, $location) {
+    $scope.realm = realm;
+
+
+});
+
+module.controller('DefaultRequiredActionsCtrl', function($scope, realm, RequiredActions, Notifications, Dialog, $location) {
+    $scope.realm = realm;
+
+
+});
+
+
 
 
 

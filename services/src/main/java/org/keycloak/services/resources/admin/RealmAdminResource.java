@@ -56,7 +56,6 @@ import javax.ws.rs.core.UriInfo;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -239,9 +238,9 @@ public class RealmAdminResource {
         return fed;
     }
 
-    @Path("authentication-flows")
-    public AuthenticationFlowResource flows() {
-        AuthenticationFlowResource resource = new AuthenticationFlowResource(realm, session, auth, adminEvent);
+    @Path("authentication")
+    public AuthenticationManagementResource flows() {
+        AuthenticationManagementResource resource = new AuthenticationManagementResource(realm, session, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         //resourceContext.initResource(resource);
         return resource;

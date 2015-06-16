@@ -17,7 +17,7 @@ public interface AuthenticatorFactory extends ProviderFactory<Authenticator>, Co
     String getDisplayType();
 
     /**
-     * General authenticator type, i.e. totp, password, cert
+     * General authenticator type, i.e. totp, password, cert.
      *
      * @return null if not a referencable type
      */
@@ -26,8 +26,7 @@ public interface AuthenticatorFactory extends ProviderFactory<Authenticator>, Co
     boolean isConfigurable();
 
     /**
-     * What requirement settings are allowed.  For example, KERBEROS can only be required because of the way its challenges
-     * work.
+     * What requirement settings are allowed.
      *
      * @return
      */

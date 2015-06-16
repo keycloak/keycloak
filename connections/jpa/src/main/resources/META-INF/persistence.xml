@@ -28,6 +28,7 @@
         <class>org.keycloak.models.jpa.entities.AuthenticationFlowEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticationExecutionEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticatorEntity</class>
+        <class>org.keycloak.models.jpa.entities.RequiredActionProviderEntity</class>
 
         <!-- JpaUserSessionProvider -->
         <class>org.keycloak.models.sessions.jpa.entities.ClientSessionEntity</class>
