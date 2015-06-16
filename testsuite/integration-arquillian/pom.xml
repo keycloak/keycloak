@@ -155,10 +155,9 @@
             <artifactId>resteasy-jackson-provider</artifactId>
         </dependency>        
         
-        
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wf9-server-overlay</artifactId>
+            <artifactId>keycloak-server-dist</artifactId>
             <type>zip</type>
         </dependency>
         <dependency>
@@ -171,6 +170,7 @@
             <artifactId>keycloak-admin-client</artifactId>
             <type>jar</type>
         </dependency>
+        
     </dependencies>
 
     <profiles>
