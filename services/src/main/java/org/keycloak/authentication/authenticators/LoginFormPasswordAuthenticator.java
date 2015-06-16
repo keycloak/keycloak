@@ -70,8 +70,11 @@ public class LoginFormPasswordAuthenticator extends LoginFormUsernameAuthenticat
     }
 
     @Override
-    public String getRequiredAction() {
-        return UserModel.RequiredAction.UPDATE_PASSWORD.name();
+    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+        if (!user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_PASSWORD.name())) {
+            user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+        }
+
     }
 
     @Override

@@ -111,8 +111,7 @@ public class LoginFormUsernameAuthenticator extends AbstractFormAuthenticator im
     }
 
     @Override
-    public String getRequiredAction() {
-        return null;
+    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
     }
 
     @Override

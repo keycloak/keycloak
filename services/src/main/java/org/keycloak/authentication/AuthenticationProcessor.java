@@ -19,6 +19,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.Response;
@@ -317,6 +318,13 @@ public class AuthenticationProcessor {
         public String getForwardedErrorMessage() {
             return AuthenticationProcessor.this.forwardedErrorMessage;
         }
+
+        @Override
+        public String generateAccessCode() {
+            ClientSessionCode accessCode = new ClientSessionCode(getRealm(), getClientSession());
+            accessCode.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+            return accessCode.getCode();
+        }
     }
 
     public static class AuthException extends RuntimeException {
@@ -518,10 +526,7 @@ public class AuthenticationProcessor {
                         if (model.isUserSetupAllowed()) {
                             logger.debugv("authenticator SETUP_REQUIRED: {0}", authenticatorModel.getProviderId());
                             clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.SETUP_REQUIRED);
-                            String requiredAction = authenticator.getRequiredAction();
-                            if (!authUser.getRequiredActions().contains(requiredAction)) {
-                                authUser.addRequiredAction(requiredAction);
-                            }
+                            authenticator.setRequiredActions(session, realm, clientSession.getAuthenticatedUser());
                             continue;
                         } else {
                             throw new AuthException(Error.CREDENTIAL_SETUP_REQUIRED);

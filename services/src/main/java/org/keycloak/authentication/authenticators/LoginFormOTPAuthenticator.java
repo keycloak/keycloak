@@ -68,8 +68,11 @@ public class LoginFormOTPAuthenticator extends LoginFormUsernameAuthenticator {
     }
 
     @Override
-    public String getRequiredAction() {
-        return UserModel.RequiredAction.CONFIGURE_TOTP.name();
+    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+        if (!user.getRequiredActions().contains(UserModel.RequiredAction.CONFIGURE_TOTP.name())) {
+            user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+        }
+
     }
 
     @Override

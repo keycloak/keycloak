@@ -5,9 +5,7 @@ import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.events.Errors;
 import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 
@@ -29,22 +27,21 @@ public class AbstractFormAuthenticator {
     }
 
     protected LoginFormsProvider loginForm(AuthenticatorContext context) {
-        ClientSessionCode code = new ClientSessionCode(context.getRealm(), context.getClientSession());
-        code.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-        URI action = getActionUrl(context, code, LOGIN_FORM_ACTION);
+        String accessCode = context.generateAccessCode();
+        URI action = getActionUrl(context, accessCode, LOGIN_FORM_ACTION);
         LoginFormsProvider provider = context.getSession().getProvider(LoginFormsProvider.class)
                     .setUser(context.getUser())
                     .setActionUri(action)
-                    .setClientSessionCode(code.getCode());
+                    .setClientSessionCode(accessCode);
         if (context.getForwardedErrorMessage() != null) {
             provider.setError(context.getForwardedErrorMessage());
         }
         return provider;
     }
 
-    public static URI getActionUrl(AuthenticatorContext context, ClientSessionCode code, String action) {
+    public static URI getActionUrl(AuthenticatorContext context, String code, String action) {
         return LoginActionsService.authenticationFormProcessor(context.getUriInfo())
-                .queryParam(OAuth2Constants.CODE, code.getCode())
+                .queryParam(OAuth2Constants.CODE, code)
                 .queryParam(ACTION, action)
                     .build(context.getRealm().getName());
     }
@@ -52,25 +49,21 @@ public class AbstractFormAuthenticator {
     protected Response invalidUser(AuthenticatorContext context) {
         return loginForm(context)
                 .setError(Messages.INVALID_USER)
-                .setClientSessionCode(new ClientSessionCode(context.getRealm(), context.getClientSession()).getCode())
                 .createLogin();
     }
 
     protected Response disabledUser(AuthenticatorContext context) {
         return loginForm(context)
-                .setClientSessionCode(new ClientSessionCode(context.getRealm(), context.getClientSession()).getCode())
                 .setError(Messages.ACCOUNT_DISABLED).createLogin();
     }
 
     protected Response temporarilyDisabledUser(AuthenticatorContext context) {
         return loginForm(context)
-                .setClientSessionCode(new ClientSessionCode(context.getRealm(), context.getClientSession()).getCode())
                 .setError(Messages.ACCOUNT_TEMPORARILY_DISABLED).createLogin();
     }
 
     protected Response invalidCredentials(AuthenticatorContext context) {
         return loginForm(context)
-                .setClientSessionCode(new ClientSessionCode(context.getRealm(), context.getClientSession()).getCode())
                 .setError(Messages.INVALID_USER).createLogin();
     }
 
