@@ -958,7 +958,7 @@ public class LoginActionsService {
                                  @PathParam("action") String action) {
         event.event(EventType.LOGIN);
         if (action == null) {
-            logger.error("required action was null");
+            logger.error("required action query param was null");
             event.error(Errors.INVALID_CODE);
             throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
 

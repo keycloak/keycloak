@@ -63,6 +63,7 @@ public class AuthenticationProcessor {
 
     }
     public static enum Error {
+        EXPIRED_CODE,
         INVALID_CLIENT_SESSION,
         INVALID_USER,
         INVALID_CREDENTIALS,
@@ -396,6 +397,10 @@ public class AuthenticationProcessor {
                 event.error(Errors.INVALID_CODE);
                 return ErrorPage.error(session, Messages.INVALID_CODE);
 
+            }  else if (e.getError() == Error.EXPIRED_CODE) {
+                event.error(Errors.EXPIRED_CODE);
+                return ErrorPage.error(session, Messages.INVALID_CODE);
+
             }else {
                 event.error(Errors.INVALID_USER_CREDENTIALS);
                 return ErrorPage.error(session, Messages.INVALID_USER);
@@ -411,9 +416,7 @@ public class AuthenticationProcessor {
 
 
     public Response authenticate() throws AuthException {
-        if (!ClientSessionModel.Action.AUTHENTICATE.name().equals(clientSession.getAction())) {
-            throw new AuthException(Error.INVALID_CLIENT_SESSION);
-        }
+        checkClientSession();
         logger.debug("AUTHENTICATE");
         event.event(EventType.LOGIN);
         event.client(clientSession.getClient().getClientId())
@@ -433,10 +436,18 @@ public class AuthenticationProcessor {
         return authenticationComplete();
     }
 
-    public Response authenticateOnly() throws AuthException {
-        if (!ClientSessionModel.Action.AUTHENTICATE.name().equals(clientSession.getAction())) {
+    public void checkClientSession() {
+        ClientSessionCode code = new ClientSessionCode(realm, clientSession);
+        if (!code.isValidAction(ClientSessionModel.Action.AUTHENTICATE.name())) {
             throw new AuthException(Error.INVALID_CLIENT_SESSION);
         }
+        if (!code.isActionActive(ClientSessionModel.Action.AUTHENTICATE.name())) {
+            throw new AuthException(Error.EXPIRED_CODE);
+        }
+    }
+
+    public Response authenticateOnly() throws AuthException {
+        checkClientSession();
         event.event(EventType.LOGIN);
         event.client(clientSession.getClient().getClientId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
