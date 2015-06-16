@@ -62,4 +62,11 @@ public class UsernameLoginFailureEntity {
         this.lastIpFailure = lastIpFailure;
     }
 
+    public void clearFailures() {
+        this.failedLoginNotBefore = new AtomicInteger();
+        this.lastFailure = new AtomicLong();
+        this.lastIpFailure = new AtomicReference<String>();
+        this.numFailures = new AtomicInteger();
+    }
+
 }

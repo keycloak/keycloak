@@ -14,6 +14,7 @@
             <outputDirectory>keycloak</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
+                <exclude>**/standalone.xml</exclude>
             </excludes>
         </fileSet>
         <fileSet>

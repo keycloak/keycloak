@@ -27,7 +27,7 @@ public class DefaultMongoUpdaterProvider implements MongoUpdaterProvider {
             Update1_1_0_Beta1.class,
             Update1_2_0_Beta1.class,
             Update1_2_0_CR1.class,
-            Update1_3_0_Beta1.class
+            Update1_3_0.class
     };
 
     @Override

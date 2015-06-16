@@ -3,10 +3,12 @@ package org.keycloak.servlet;
 import org.apache.http.client.HttpClient;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.KeycloakUriBuilder;
 import org.keycloak.util.UriUtils;
 
@@ -22,8 +24,10 @@ import java.net.URI;
  */
 public class ServletOAuthClient extends AbstractOAuthClient {
     protected HttpClient client;
+    protected AdapterConfig adapterConfig;
 
     public void start() {
+        client = new HttpClientBuilder().build(adapterConfig);
     }
 
     /**
@@ -31,13 +35,6 @@ public class ServletOAuthClient extends AbstractOAuthClient {
      */
     public void stop() {
         client.getConnectionManager().shutdown();
-    }
-    public HttpClient getClient() {
-        return client;
-    }
-
-    public void setClient(HttpClient client) {
-        this.client = client;
     }
 
     private AccessTokenResponse resolveBearerToken(HttpServletRequest request, String redirectUri, String code) throws IOException, ServerRequest.HttpFailure {
@@ -171,4 +168,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
         }
     }
 
+    public void setAdapterConfig(AdapterConfig adapterConfig) {
+        this.adapterConfig = adapterConfig;
+    }
 }

@@ -14,10 +14,17 @@
         the Keycloak download site.  They are also available as a maven artifact.
     </para>
     <para>
-        Install on Wildfly:
+        Install on Wildfly 9:
 <programlisting>
 $ cd $WILDFLY_HOME
-$ unzip keycloak-wildfly-adapter-dist.zip
+$ unzip keycloak-wf9-adapter-dist.zip
+</programlisting>
+    </para>
+    <para>
+        Install on Wildfly 8:
+<programlisting>
+$ cd $WILDFLY_HOME
+$ unzip keycloak-wf8-adapter-dist.zip
 </programlisting>
     </para>
     <para>
@@ -46,17 +53,16 @@ $ unzip keycloak-as7-adapter-dist.zip
 <server xmlns="urn:jboss:domain:1.4">
 
     <extensions>
-        <extension module="org.keycloak.keycloak-subsystem"/>
+        <extension module="org.keycloak.keycloak-adapter-subsystem"/>
           ...
     </extensions>
 
     <profile>
-        <subsystem xmlns="urn:jboss:domain:keycloak:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:keycloak:1.1"/>
          ...
     </profile>
 ]]>
 </programlisting>
-<note>For AS7, the extension module is org.keycloak.keycloak-as7-subsystem.</note>
     </para>
         <para>
             Finally, you must specify a shared keycloak security domain.

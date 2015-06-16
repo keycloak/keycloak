@@ -15,6 +15,18 @@
     <name>Keycloak Subsystem Server WAR</name>
     <description/>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.msc</groupId>
+            <artifactId>jboss-msc</artifactId>
+            <version>1.2.6.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <finalName>auth-server</finalName>
         <plugins>

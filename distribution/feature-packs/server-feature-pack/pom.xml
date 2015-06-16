@@ -40,7 +40,11 @@
             <groupId>org.keycloak.subsystem</groupId>
             <artifactId>keycloak-server</artifactId>
             <type>war</type>
-        </dependency>   
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-wildfly-extensions</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-wf9-server-subsystem</artifactId>
@@ -49,11 +53,6 @@
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-feature-pack</artifactId>
             <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak.subsystem</groupId>
-            <artifactId>keycloak-server</artifactId>
-            <type>war</type>
         </dependency>
     </dependencies>
 
