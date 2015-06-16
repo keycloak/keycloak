@@ -8,9 +8,9 @@
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-wf9-server-overlay</artifactId>
+    <artifactId>keycloak-server-overlay</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak Wildfly 9 Server Overlay Distribution</name>
+    <name>Keycloak Server Overlay Distribution</name>
     <description/>
 
     <dependencies>

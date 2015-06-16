@@ -8,6 +8,7 @@
                 exclude-result-prefixes="xalan j ds k sec">
 
     <xsl:param name="config"/>
+    <xsl:variable name="log" select="'urn:jboss:domain:logging:'"/>
 
     <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes" xalan:indent-amount="4" standalone="no"/>
     <xsl:strip-space elements="*"/>
@@ -56,6 +57,15 @@
                     <login-module code="org.picketlink.identity.federation.bindings.wildfly.SAML2LoginModule" flag="required"/>
                 </authentication>
             </security-domain>
+        </xsl:copy>
+    </xsl:template>
+
+    <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $log)]">
+        <xsl:copy>
+            <xsl:apply-templates select="node()|@*"/>
+            <logger category="org.jboss.resteasy.resteasy_jaxrs.i18n">
+                <level name="ERROR"/>
+            </logger>
         </xsl:copy>
     </xsl:template>
 
