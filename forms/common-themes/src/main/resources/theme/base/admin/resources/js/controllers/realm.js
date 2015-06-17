@@ -1625,9 +1625,8 @@ module.controller('RequiredActionsCtrl', function($scope, realm, RequiredActions
     };
 
     $scope.updateRequiredAction = function(action) {
-        RequiredActions.update({realm: realm.realm, alias: action.alias}, action, function() {
-            Notifications.success("Auth requirement updated");
-            setupForm();
+        RequiredActions.update({id: realm.realm, alias: action.alias}, action, function() {
+            Notifications.success("Required action updated");
             setupRequiredActionsForm();
         });
     }

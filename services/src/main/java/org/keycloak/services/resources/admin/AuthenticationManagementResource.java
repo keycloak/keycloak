@@ -276,7 +276,7 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Failed to find required action: " + alias);
         }
         RequiredActionProviderModel update = new RequiredActionProviderModel();
-        update.setId(update.getId());
+        update.setId(model.getId());
         update.setName(rep.getName());
         update.setAlias(rep.getAlias());
         update.setProviderId(model.getProviderId());

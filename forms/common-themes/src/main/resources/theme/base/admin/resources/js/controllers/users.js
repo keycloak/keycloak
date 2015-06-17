@@ -229,8 +229,10 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
         $scope.userReqActionList = [];
         for (var i = 0; i < data.length; i++) {
             console.log("listed required action: " + data[i].name);
-            item = data[i];
-            $scope.userReqActionList.push(item);
+            if (data[i].enabled) {
+                var item = data[i];
+                $scope.userReqActionList.push(item);
+            }
         }
 
     });
