@@ -11,12 +11,8 @@ import org.keycloak.testsuite.ui.model.Role;
 import org.keycloak.testsuite.ui.model.User;
 import org.keycloak.testsuite.ui.page.settings.RolesPage;
 import org.keycloak.testsuite.ui.page.settings.user.UserPage;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
 
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.ui.util.SeleniumUtils.waitGuiForElement;
-import static org.openqa.selenium.By.linkText;
 
 /**
  * Created by fkiss.
@@ -36,9 +32,6 @@ public class DefaultRolesTest extends AbstractKeyCloakTest<RolesPage> {
     public void beforeDefaultRolesTest() {
         navigation.roles();
     }
-
-    @FindBy(css = "tr[ng-repeat='user in users']")
-    private WebElement dataTable;
 
     @Test
     public void testSetDefaultRole() {

@@ -11,7 +11,6 @@ import org.keycloak.testsuite.ui.model.User;
 import org.keycloak.testsuite.ui.fragment.RoleMappings;
 import org.keycloak.testsuite.ui.page.settings.user.UserPage;
 
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.openqa.selenium.By.linkText;
 
@@ -49,7 +48,7 @@ public class RoleMappingsTest extends AbstractKeyCloakTest<RoleMappings> {
         userPage.deleteUser(testUsername);
     }
 
-    //@Ignore
+    @Ignore
     @Test
     public void addAndRemoveUserAndAssignRole() {
         String testUsername = "tester2";
@@ -63,29 +62,9 @@ public class RoleMappingsTest extends AbstractKeyCloakTest<RoleMappings> {
         navigation.roleMappings(testUsername);
 
         page.addAvailableRole("create-realm");
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         page.removeAssignedRole("create-realm");
-        //assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         navigation.users();
         userPage.deleteUser(testUsername);
     }
