@@ -1,11 +1,13 @@
 package org.keycloak.models;
 
+import java.io.Serializable;
+
 /**
  * Used just in cases when we want to "directly" update or retrieve the hash or salt of user credential (For example during export/import)
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UserCredentialValueModel {
+public class UserCredentialValueModel implements Serializable {
 
     private String type;
     private String value;
