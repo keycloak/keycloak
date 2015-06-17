@@ -7,6 +7,7 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.RealmCache;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -19,7 +20,9 @@ import java.util.TreeMap;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedClient {
+public class CachedClient implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String id;
     private String clientId;
     private String name;
