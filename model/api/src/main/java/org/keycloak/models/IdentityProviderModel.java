@@ -17,6 +17,7 @@
  */
 package org.keycloak.models;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +29,8 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
  *
  * @author Pedro Igor
  */
-public class IdentityProviderModel {
+public class IdentityProviderModel implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private String internalId;
 

@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -7,7 +8,8 @@ import java.util.Map;
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
 * @version $Revision: 1 $
 */
-public class AuthenticatorModel {
+public class AuthenticatorModel implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private String id;
     private String alias;
