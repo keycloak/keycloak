@@ -110,7 +110,7 @@ public class InfinispanRealmCache implements RealmCache {
     @Override
     public void invalidateRole(CachedRole role) {
         logger.tracev("Removing role {0}", role.getId());
-        cache.remove(role);
+        cache.remove(role.getId());
     }
 
     @Override

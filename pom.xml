@@ -1107,7 +1107,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-wf9-server-overlay</artifactId>
+                <artifactId>keycloak-server-overlay</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
