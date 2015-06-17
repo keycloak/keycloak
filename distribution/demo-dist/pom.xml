@@ -16,7 +16,7 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wf9-server-overlay</artifactId>
+            <artifactId>keycloak-server-overlay</artifactId>
             <type>zip</type>
         </dependency>
         <dependency>
@@ -77,7 +77,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-wf9-server-overlay</artifactId>
+                                    <artifactId>keycloak-server-overlay</artifactId>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked/keycloak-server-overlay-${project.version}</outputDirectory>
                                 </artifactItem>
