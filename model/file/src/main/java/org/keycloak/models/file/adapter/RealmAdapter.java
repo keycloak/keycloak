@@ -1449,6 +1449,7 @@ public class RealmAdapter implements RealmModel {
         RequiredActionProviderEntity auth = new RequiredActionProviderEntity();
         auth.setId(KeycloakModelUtils.generateId());
         auth.setAlias(model.getAlias());
+        auth.setName(model.getName());
         auth.setProviderId(model.getProviderId());
         auth.setConfig(model.getConfig());
         auth.setEnabled(model.isEnabled());
@@ -1477,6 +1478,7 @@ public class RealmAdapter implements RealmModel {
         model.setId(entity.getId());
         model.setProviderId(entity.getProviderId());
         model.setAlias(entity.getAlias());
+        model.setName(entity.getName());
         model.setEnabled(entity.isEnabled());
         model.setDefaultAction(entity.isDefaultAction());
         Map<String, String> config = new HashMap<>();
@@ -1492,6 +1494,7 @@ public class RealmAdapter implements RealmModel {
         entity.setAlias(model.getAlias());
         entity.setProviderId(model.getProviderId());
         entity.setEnabled(model.isEnabled());
+        entity.setName(model.getName());
         entity.setDefaultAction(model.isDefaultAction());
         if (entity.getConfig() == null) {
             entity.setConfig(model.getConfig());
@@ -1520,6 +1523,15 @@ public class RealmAdapter implements RealmModel {
         }
         return entity;
     }
+
+    @Override
+    public RequiredActionProviderModel getRequiredActionProviderByAlias(String alias) {
+        for (RequiredActionProviderModel action : getRequiredActionProviders()) {
+            if (action.getAlias().equals(alias)) return action;
+        }
+        return null;
+    }
+
 
 
 

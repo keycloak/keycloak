@@ -1611,16 +1611,32 @@ module.controller('AuthenticationFlowsCtrl', function($scope, realm, Authenticat
 });
 
 module.controller('RequiredActionsCtrl', function($scope, realm, RequiredActions, Notifications, Dialog, $location) {
+    console.log('RequiredActionsCtrl');
     $scope.realm = realm;
+    $scope.requiredActions = [];
+    var setupRequiredActionsForm = function() {
+        console.log('setupRequiredActionsForm');
+        RequiredActions.query({id: realm.realm}, function(data) {
+            $scope.requiredActions = [];
+            for (var i = 0; i < data.length; i++) {
+                $scope.requiredActions.push(data[i]);
+            }
+        });
+    };
+
+    $scope.updateRequiredAction = function(action) {
+        RequiredActions.update({realm: realm.realm, alias: action.alias}, action, function() {
+            Notifications.success("Auth requirement updated");
+            setupForm();
+            setupRequiredActionsForm();
+        });
+    }
+
+    setupRequiredActionsForm();
 
 
 });
 
-module.controller('DefaultRequiredActionsCtrl', function($scope, realm, RequiredActions, Notifications, Dialog, $location) {
-    $scope.realm = realm;
-
-
-});
 
 
 

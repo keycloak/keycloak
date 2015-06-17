@@ -1607,6 +1607,15 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return entity;
     }
 
+    @Override
+    public RequiredActionProviderModel getRequiredActionProviderByAlias(String alias) {
+        for (RequiredActionProviderModel action : getRequiredActionProviders()) {
+            if (action.getAlias().equals(alias)) return action;
+        }
+        return null;
+    }
+
+
 
 
 

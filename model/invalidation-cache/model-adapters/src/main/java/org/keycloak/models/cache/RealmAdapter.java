@@ -1161,4 +1161,10 @@ public class RealmAdapter implements RealmModel {
         if (updated != null) return updated.getRequiredActionProviderById(id);
         return cached.getRequiredActionProviders().get(id);
     }
+
+    @Override
+    public RequiredActionProviderModel getRequiredActionProviderByAlias(String alias) {
+        if (updated != null) return updated.getRequiredActionProviderByAlias(alias);
+        return cached.getRequiredActionProvidersByAlias().get(alias);
+    }
 }

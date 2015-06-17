@@ -2,6 +2,25 @@
     <h1>Authentication</h1>
 
     <kc-tabs-authentication></kc-tabs-authentication>
+    <table class="table table-striped table-bordered">
+        <thead>
+        <tr data-ng-hide="requiredActions.length == 0">
+            <th>Required Action</th>
+            <th>Enabled</th>
+            <th>Default Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="requiredAction in requiredActions" data-ng-show="requiredActions.length > 0">
+            <td>{{requiredAction.name}}</td>
+            <td>{{requiredAction.enabled}}</td>
+            <td>{{requiredAction.defaultAction}}</td>
+        </tr>
+        <tr data-ng-show="requiredActions.length == 0">
+            <td>No required actions configured</td>
+        </tr>
+        </tbody>
+    </table>
 
 </div>
 

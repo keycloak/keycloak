@@ -9,6 +9,7 @@ import java.util.Map;
 public class RequiredActionProviderEntity {
     protected String id;
     protected String alias;
+    protected String name;
     protected String providerId;
     protected boolean enabled;
     protected boolean defaultAction;
@@ -28,6 +29,14 @@ public class RequiredActionProviderEntity {
 
     public void setAlias(String alias) {
         this.alias = alias;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public boolean isEnabled() {

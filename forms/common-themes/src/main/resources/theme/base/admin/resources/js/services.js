@@ -187,8 +187,13 @@ module.factory('RealmAdminEvents', function($resource) {
 });
 
 module.factory('RequiredActions', function($resource) {
-    return $resource(authUrl + '/admin/realms/:id/required-actions', {
-        id : '@realm'
+    return $resource(authUrl + '/admin/realms/:id/authentication/required-actions/:alias', {
+        realm : '@realm',
+        alias : '@alias'
+    }, {
+        update : {
+            method : 'PUT'
+        }
     });
 });
 

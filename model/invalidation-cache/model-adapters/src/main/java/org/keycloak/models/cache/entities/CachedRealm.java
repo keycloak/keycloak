@@ -83,6 +83,7 @@ public class CachedRealm {
     private Map<String, AuthenticationFlowModel> authenticationFlows = new HashMap<>();
     private Map<String, AuthenticatorModel> authenticators = new HashMap<>();
     private Map<String, RequiredActionProviderModel> requiredActionProviders = new HashMap<>();
+    private Map<String, RequiredActionProviderModel> requiredActionProvidersByAlias = new HashMap<>();
     private MultivaluedHashMap<String, AuthenticationExecutionModel> authenticationExecutions = new MultivaluedHashMap<>();
     private Map<String, AuthenticationExecutionModel> executionsById = new HashMap<>();
 
@@ -204,6 +205,7 @@ public class CachedRealm {
         }
         for (RequiredActionProviderModel action : model.getRequiredActionProviders()) {
             requiredActionProviders.put(action.getId(), action);
+            requiredActionProvidersByAlias.put(action.getAlias(), action);
         }
 
     }
@@ -446,5 +448,9 @@ public class CachedRealm {
 
     public Map<String, RequiredActionProviderModel> getRequiredActionProviders() {
         return requiredActionProviders;
+    }
+
+    public Map<String, RequiredActionProviderModel> getRequiredActionProvidersByAlias() {
+        return requiredActionProvidersByAlias;
     }
 }

@@ -4,6 +4,7 @@ import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.DefaultRequiredActions;
 
 import java.util.List;
 
@@ -20,6 +21,7 @@ public class MigrateTo1_4_0 {
         for (RealmModel realm : realms) {
             if (realm.getAuthenticationFlows().size() == 0) {
                 DefaultAuthenticationFlows.addFlows(realm);
+                DefaultRequiredActions.addActions(realm);
             }
 
         }

@@ -11,6 +11,7 @@ public class RequiredActionProviderModel {
 
     private String id;
     private String alias;
+    private String name;
     private String providerId;
     private boolean enabled;
     private boolean defaultAction;
@@ -31,6 +32,20 @@ public class RequiredActionProviderModel {
 
     public void setAlias(String alias) {
         this.alias = alias;
+    }
+
+    /**
+     * Used for display purposes.  Probably should clean this code up and make alias and name the same, but
+     * the old code references an Enum and the admin console creates a "friendly" name for each enum.
+     *
+     * @return
+     */
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public boolean isEnabled() {

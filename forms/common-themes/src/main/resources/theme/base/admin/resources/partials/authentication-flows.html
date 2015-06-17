@@ -27,7 +27,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr ng-repeat="execution in executions">
+        <tr ng-repeat="execution in executions" data-ng-show="executions.length > 0">
             <td ng-show="execution.subFlow"></td>
             <td><h2>{{execution.referenceType}}</h2></td>
             <td ng-hide="execution.subFlow"></td>

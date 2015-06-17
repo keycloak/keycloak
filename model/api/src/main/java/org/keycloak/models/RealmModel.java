@@ -204,6 +204,7 @@ public interface RealmModel extends RoleContainerModel {
     void updateRequiredActionProvider(RequiredActionProviderModel model);
     void removeRequiredActionProvider(RequiredActionProviderModel model);
     RequiredActionProviderModel getRequiredActionProviderById(String id);
+    RequiredActionProviderModel getRequiredActionProviderByAlias(String alias);
 
     List<IdentityProviderModel> getIdentityProviders();
     IdentityProviderModel getIdentityProviderByAlias(String alias);

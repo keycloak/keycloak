@@ -565,18 +565,4 @@ public class RealmAdminResource {
         return new IdentityProvidersResource(realm, session, this.auth, adminEvent);
     }
 
-    @Path("required-actions")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<Map<String, String>> getRequiredActions() {
-        List<Map<String, String>> list = new LinkedList<>();
-        for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(RequiredActionProvider.class)) {
-            RequiredActionFactory actionFactory = (RequiredActionFactory)factory;
-            Map<String, String> data = new HashMap<>();
-            data.put("id", actionFactory.getId());
-            data.put("text", actionFactory.getDisplayText());
-            list.add(data);
-        }
-        return list;
-    }
 }

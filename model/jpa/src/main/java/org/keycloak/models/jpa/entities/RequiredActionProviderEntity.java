@@ -30,6 +30,9 @@ public class RequiredActionProviderEntity {
     @Column(name="ALIAS")
     protected String alias;
 
+    @Column(name="NAME")
+    protected String name;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "REALM_ID")
     protected RealmEntity realm;
@@ -103,5 +106,13 @@ public class RequiredActionProviderEntity {
 
     public void setConfig(Map<String, String> config) {
         this.config = config;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

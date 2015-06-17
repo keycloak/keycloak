@@ -77,6 +77,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="ALIAS" type="VARCHAR(255)"/>
+            <column name="NAME" type="VARCHAR(255)"/>
             <column name="REALM_ID" type="VARCHAR(36)"/>
             <column name="ENABLED" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>

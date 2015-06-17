@@ -228,8 +228,8 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
     RequiredActions.query({id: realm.realm}, function(data) {
         $scope.userReqActionList = [];
         for (var i = 0; i < data.length; i++) {
-            console.log("listed required action: " + data[i].text);
-            item = { id: data[i].id, text: data[i].text };
+            console.log("listed required action: " + data[i].name);
+            item = data[i];
             $scope.userReqActionList.push(item);
         }
 
