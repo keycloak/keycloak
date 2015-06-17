@@ -59,6 +59,12 @@ class WrappedHttpServletRequest implements Request {
     @Override
     public Cookie getCookie(String cookieName) {
 
+        javax.servlet.http.Cookie[] cookies = request.getCookies();
+
+        if (cookies == null) {
+            return null;
+        }
+
         for (javax.servlet.http.Cookie cookie : request.getCookies()) {
             if (cookie.getName().equals(cookieName)) {
                 return new Cookie(cookie.getName(), cookie.getValue(), cookie.getVersion(), cookie.getDomain(), cookie.getPath());
