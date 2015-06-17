@@ -77,6 +77,12 @@
             <artifactId>arquillian-junit-container</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.arquillian.extension</groupId>
+            <artifactId>arquillian-droidium-multiple-containers</artifactId>
+            <version>1.0.0.Final</version>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.jboss.arquillian.graphene</groupId>
@@ -267,7 +273,7 @@
         </profile>
         
         <profile>
-            <id>adapter-wildfly</id>
+            <id>adapters-wildfly</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>

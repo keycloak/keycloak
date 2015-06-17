@@ -6,13 +6,14 @@
     <defaultProtocol type="Servlet 3.0" />
 	
     <container qualifier="keycloak-remote" />
-	
-    <group qualifier="wildfly-adapter-group" default="true">
+
+    <group qualifier="default-group" default="true" >
         <container qualifier="keycloak-managed" mode="manual" default="true">
             <configuration>
                 <property name="jbossHome">${keycloak.home}</property>
                 <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${keycloak.port.offset}</property>
                 <property name="managementPort">${keycloak.management.port}</property>
+                <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             </configuration>
         </container>
         <container qualifier="keycloak-adapter-managed" mode="manual" >
@@ -20,6 +21,7 @@
                 <property name="jbossHome">${wildfly.home}</property>
                 <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${keycloak.adapter.port.offset} -Dapp.server.base.url=http://localhost:${keycloak.adapter.http.port} -Dmy.host.name=localhost</property>
                 <property name="managementPort">${keycloak.adapter.management.port}</property>
+                <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             </configuration>
         </container>
     </group>
@@ -27,11 +29,6 @@
     <extension qualifier="webdriver">
         <property name="browser">${browser}</property>
     </extension>
-    
-<!--    <extension qualifier="systemproperties">
-        <property name="app.server.base.url">http://localhost:8280</property>
-        <property name="my.host.name">localhost</property>
-    </extension>-->
     
     <engine>
         <property name="deploymentExportPath">target/deployments</property>
