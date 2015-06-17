@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.NotFoundException;
-import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -18,12 +17,13 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.ContainersController;
+import org.keycloak.testsuite.arquillian.ControlsContainers;
 import org.keycloak.testsuite.ui.fragment.MenuPage;
 import org.keycloak.testsuite.ui.fragment.Navigation;
 import org.keycloak.testsuite.ui.page.LoginPage;
 import org.keycloak.testsuite.ui.page.account.PasswordPage;
 import static org.keycloak.testsuite.ui.util.Constants.ADMIN_PSSWD;
-import org.keycloak.testsuite.ui.util.URL;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -31,14 +31,19 @@ import org.keycloak.util.JsonSerialization;
  * @author tkyjovsk
  */
 @RunWith(Arquillian.class)
-public abstract class AbstractKeycloakTest {
-
-    public static final String KEYCLOAK_SERVER = "keycloak-managed";
+@ControlsContainers({"keycloak-managed"})
+public abstract class AbstractKeycloakTest extends ContainersController {
 
     protected static boolean adminPasswordUpdated = Boolean.parseBoolean(System.getProperty("adminPasswordUpdated", "false"));
 
-    @ArquillianResource
-    protected ContainerController controller;
+    public static String AUTH_SERVER_BASE_URL;
+    public static String AUTH_SERVER_URL;
+    public static String ADMIN_CONSOLE_URL;
+
+    public static String SETTINGS_GENERAL_SETTINGS;
+    public static String SETTINGS_ROLES;
+    public static String SETTINGS_LOGIN;
+    public static String SETTINGS_SOCIAL;
 
     @ArquillianResource
     protected Deployer deployer;
@@ -57,8 +62,24 @@ public abstract class AbstractKeycloakTest {
     @Page
     protected Navigation navigation;
 
+    public AbstractKeycloakTest() {
+        this("http://localhost:" + Integer.parseInt(
+                System.getProperty("keycloak.http.port", "8080")));
+    }
+
+    public AbstractKeycloakTest(String authServerBaseURL) {
+        AUTH_SERVER_BASE_URL = authServerBaseURL;
+        AUTH_SERVER_URL = AUTH_SERVER_BASE_URL + "/auth";
+        ADMIN_CONSOLE_URL = AUTH_SERVER_URL + "/admin/master/console/index.html";
+
+        SETTINGS_GENERAL_SETTINGS = ADMIN_CONSOLE_URL + "#/realms/%s";
+        SETTINGS_ROLES = ADMIN_CONSOLE_URL + "#/realms/%s/roles";
+        SETTINGS_LOGIN = ADMIN_CONSOLE_URL + "#/realms/%s/login-settings";
+        SETTINGS_SOCIAL = ADMIN_CONSOLE_URL + "#/realms/%s/social-settings";
+    }
+
     public void loginAsAdmin() {
-        driver.get(URL.ADMIN_CONSOLE_URL);
+        driver.get(ADMIN_CONSOLE_URL);
         loginPage.loginAsAdmin();
         if (!adminPasswordUpdated) {
             passwordPage.confirmNewPassword(ADMIN_PSSWD);
@@ -68,7 +89,7 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void logOut() {
-        driver.get(URL.ADMIN_CONSOLE_URL);
+        driver.get(ADMIN_CONSOLE_URL);
         menuPage.logOut();
     }
 
@@ -88,7 +109,6 @@ public abstract class AbstractKeycloakTest {
 //        for (RealmRepresentation r : keycloak.realms().findAll()) {
 //            System.out.println("id: " + r.getId() + ", name: " + r.getRealm());
 //        }
-
         try { // TODO - figure out a way how to do this without try-catch
             RealmResource rResource = keycloak.realms().realm(newRealm.getRealm());
             RealmRepresentation rRep = rResource.toRepresentation();
@@ -112,10 +132,9 @@ public abstract class AbstractKeycloakTest {
 
     @Before
     public void setUp() {
-        controller.start(KEYCLOAK_SERVER);
         driverSettings();
         loginAsAdmin();
-        keycloak = Keycloak.getInstance(URL.AUTH_SERVER_URL,
+        keycloak = Keycloak.getInstance(AUTH_SERVER_URL,
                 "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
     }
 

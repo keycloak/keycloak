@@ -31,5 +31,4 @@ public abstract class AbstractKeyCloakUITest<P extends AbstractPage> extends Abs
     @Page
     protected P page;
 
-
 }

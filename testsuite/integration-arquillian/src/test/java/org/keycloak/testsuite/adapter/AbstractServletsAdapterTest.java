@@ -10,7 +10,6 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -28,9 +27,9 @@ import org.keycloak.testsuite.adapter.servlet.InputServlet;
 import org.keycloak.testsuite.adapter.servlet.ProductServlet;
 import org.keycloak.testsuite.adapter.servlet.SessionServlet;
 import org.keycloak.testsuite.ui.application.page.InputPage;
-import static org.keycloak.testsuite.ui.util.URL.*;
 
-public class KeycloakAdapterTest extends AbstractKeycloakAdapterTest {
+@RunAsClient
+public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
     public static final String CUSTOMER_PORTAL = "customer-portal";
     public static final String SECURE_PORTAL = "secure-portal";
@@ -43,24 +42,8 @@ public class KeycloakAdapterTest extends AbstractKeycloakAdapterTest {
     @Page
     private InputPage inputPage;
 
-    public static final String LOGIN_URL = OIDCLoginProtocolService.authUrl(
-            UriBuilder.fromUri(AUTH_SERVER_URL)).build("demo").toString();
-
-    private static boolean demoInitialized = false;
-
-    @Before
-    public void initializeDemo() {
-        if (!demoInitialized) {
-            importRealm("/adapter-test/demorealm.json");
-            deployer.deploy(CUSTOMER_PORTAL);
-            deployer.deploy(SECURE_PORTAL);
-            deployer.deploy(CUSTOMER_DB);
-            deployer.deploy(CUSTOMER_DB_ERROR_PAGE);
-            deployer.deploy(PRODUCT_PORTAL);
-            deployer.deploy(SESSION_PORTAL);
-            deployer.deploy(INPUT_PORTAL);
-            demoInitialized = true;
-        }
+    public AbstractServletsAdapterTest(String appServerBaseURL) {
+        super(appServerBaseURL);
     }
 
     protected static WebArchive adapterDeployment(String name, Class... servletClasses) {
@@ -69,14 +52,14 @@ public class KeycloakAdapterTest extends AbstractKeycloakAdapterTest {
 
     protected static WebArchive adapterDeployment(String name, String adapterConfig, Class... servletClasses) {
         String webInfPath = "/adapter-test/" + name + "/WEB-INF/";
-        URL keycloakJSON = KeycloakAdapterTest.class.getResource(webInfPath + adapterConfig);
-        URL webXML = KeycloakAdapterTest.class.getResource(webInfPath + "web.xml");
+        URL keycloakJSON = AbstractServletsAdapterTest.class.getResource(webInfPath + adapterConfig);
+        URL webXML = AbstractServletsAdapterTest.class.getResource(webInfPath + "web.xml");
         WebArchive deployment = ShrinkWrap.create(WebArchive.class, name + ".war")
                 .addClasses(servletClasses)
                 .addAsWebInfResource(webXML, "web.xml")
                 .addAsWebInfResource(keycloakJSON, "keycloak.json");
 
-        URL jbossDeploymentStructure = KeycloakAdapterTest.class.getResource(webInfPath + "jboss-deployment-structure.xml");
+        URL jbossDeploymentStructure = AbstractServletsAdapterTest.class.getResource(webInfPath + "jboss-deployment-structure.xml");
         if (jbossDeploymentStructure != null) {
             deployment = deployment.addAsWebInfResource(jbossDeploymentStructure, "jboss-deployment-structure.xml");
         }
@@ -85,53 +68,43 @@ public class KeycloakAdapterTest extends AbstractKeycloakAdapterTest {
     }
 
     @Deployment(name = CUSTOMER_PORTAL, managed = false, testable = false)
-    @TargetsContainer(KEYCLOAK_ADAPTER_SERVER)
     private static WebArchive customerPortal() {
         return adapterDeployment(CUSTOMER_PORTAL, CustomerServlet.class, ErrorServlet.class);
     }
 
     @Deployment(name = SECURE_PORTAL, managed = false, testable = false)
-    @TargetsContainer(KEYCLOAK_ADAPTER_SERVER)
     private static WebArchive securePortal() {
         return adapterDeployment(SECURE_PORTAL, CallAuthenticatedServlet.class);
     }
 
     @Deployment(name = CUSTOMER_DB, managed = false, testable = false)
-    @TargetsContainer(KEYCLOAK_ADAPTER_SERVER)
     private static WebArchive customerDb() {
         return adapterDeployment(CUSTOMER_DB, CustomerDatabaseServlet.class);
     }
 
     @Deployment(name = CUSTOMER_DB_ERROR_PAGE, managed = false, testable = false)
-    @TargetsContainer(KEYCLOAK_ADAPTER_SERVER)
     private static WebArchive customerDbErrorPage() {
         return adapterDeployment(CUSTOMER_DB_ERROR_PAGE, CustomerDatabaseServlet.class, ErrorServlet.class);
     }
 
     @Deployment(name = PRODUCT_PORTAL, managed = false, testable = false)
-    @TargetsContainer(KEYCLOAK_ADAPTER_SERVER)
     private static WebArchive productPortal() {
         return adapterDeployment(PRODUCT_PORTAL, ProductServlet.class);
     }
 
     @Deployment(name = SESSION_PORTAL, managed = false, testable = false)
-    @TargetsContainer(KEYCLOAK_ADAPTER_SERVER)
     private static WebArchive sessionPortal() {
-//        return adapterDeployment(SESSION_PORTAL, SessionServlet.class);
-        return adapterDeployment(SESSION_PORTAL, "keycloak-sysprop.json", SessionServlet.class);
+        return adapterDeployment(SESSION_PORTAL, "keycloak.json", SessionServlet.class);
     }
 
     @Deployment(name = INPUT_PORTAL, managed = false, testable = false)
-    @TargetsContainer(KEYCLOAK_ADAPTER_SERVER)
     private static WebArchive inputPortal() {
-//        return adapterDeployment(SESSION_PORTAL, SessionServlet.class);
-        return adapterDeployment(INPUT_PORTAL, "keycloak-sysprop.json", InputServlet.class);
+        return adapterDeployment(INPUT_PORTAL, "keycloak.json", InputServlet.class);
     }
-    
+
     private final String slash = "";
 
     @Test
-    @RunAsClient
     public void testSavedPostRequest() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/input-portal");
@@ -167,7 +140,6 @@ public class KeycloakAdapterTest extends AbstractKeycloakAdapterTest {
     }
 
     @Test
-    @RunAsClient
     public void testLoginSSOAndLogout() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
@@ -188,7 +160,7 @@ public class KeycloakAdapterTest extends AbstractKeycloakAdapterTest {
         Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
         // View stats
-        List<Map<String, String>> stats = Keycloak.getInstance(AUTH_SERVER_URL, 
+        List<Map<String, String>> stats = Keycloak.getInstance(AUTH_SERVER_URL,
                 "master", "admin", "admin", "security-admin-console").realm("demo").getClientSessionStats();
         Map<String, String> customerPortalStats = null;
         Map<String, String> productPortalStats = null;
@@ -220,7 +192,6 @@ public class KeycloakAdapterTest extends AbstractKeycloakAdapterTest {
     }
 
     @Test
-    @RunAsClient
     public void testServletRequestLogout() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");

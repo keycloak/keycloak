@@ -10,10 +10,6 @@ import org.openqa.selenium.WebElement;
  */
 public class CustomerPortalPage extends ExampleAppPage {
 
-    public CustomerPortalPage() {
-        super("/customer-portal");
-    }
-    
     @FindByJQuery("h1:contains('Customer Portal')")
     private WebElement title;
 

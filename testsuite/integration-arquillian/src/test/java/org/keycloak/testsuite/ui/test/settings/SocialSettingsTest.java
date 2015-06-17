@@ -26,7 +26,6 @@ import org.keycloak.testsuite.ui.AbstractKeyCloakUITest;
 import org.keycloak.testsuite.ui.fragment.FlashMessage;
 import org.keycloak.testsuite.ui.model.Provider;
 import org.keycloak.testsuite.ui.model.SocialProvider;
-import org.keycloak.testsuite.ui.util.URL;
 
 /**
  *
@@ -51,7 +50,7 @@ public class SocialSettingsTest extends AbstractKeyCloakUITest<SocialSettingsPag
 	
 //	@Test
 	public void testEditProvider() {
-		page.goToPage(URL.SETTINGS_SOCIAL);
+		page.goToPage(SETTINGS_SOCIAL);
 		page.editProvider(SocialProvider.FACEBOOK, new Provider(SocialProvider.FACEBOOK, "abc", "def"));
 	}
 	

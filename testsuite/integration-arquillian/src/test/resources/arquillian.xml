@@ -11,16 +11,16 @@
         <container qualifier="keycloak-managed" mode="manual" default="true">
             <configuration>
                 <property name="jbossHome">${keycloak.home}</property>
-                <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${keycloak.port.offset}</property>
+                <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${keycloak.port.offset} -Dapp.server.base.url=http://localhost:${wildfly.http.port} -Dmy.host.name=localhost</property>
                 <property name="managementPort">${keycloak.management.port}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             </configuration>
         </container>
-        <container qualifier="keycloak-adapter-managed" mode="manual" >
+        <container qualifier="wildfly-adapter-managed" mode="manual" >
             <configuration>
                 <property name="jbossHome">${wildfly.home}</property>
-                <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${keycloak.adapter.port.offset} -Dapp.server.base.url=http://localhost:${keycloak.adapter.http.port} -Dmy.host.name=localhost</property>
-                <property name="managementPort">${keycloak.adapter.management.port}</property>
+                <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${wildfly.port.offset} -Dapp.server.base.url=http://localhost:${wildfly.http.port} -Dmy.host.name=localhost</property>
+                <property name="managementPort">${wildfly.management.port}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             </configuration>
         </container>
