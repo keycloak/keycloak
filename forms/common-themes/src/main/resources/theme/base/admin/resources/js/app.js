@@ -1045,7 +1045,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ProtocolListCtrl'
         })
-        .when('/realms/:realm/authentication', {
+        .when('/realms/:realm/authentication/flows', {
             templateUrl : resourceUrl + '/partials/authentication-flows.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -1054,7 +1054,15 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'AuthenticationFlowsCtrl'
         })
-
+        .when('/realms/:realm/authentication/required-actions', {
+            templateUrl : resourceUrl + '/partials/required-actions.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RequiredActionsCtrl'
+        })
         .when('/server-info', {
             templateUrl : resourceUrl + '/partials/server-info.html'
         })
@@ -1499,6 +1507,15 @@ module.directive('kcTabsRealm', function () {
         restrict: 'E',
         replace: true,
         templateUrl: resourceUrl + '/templates/kc-tabs-realm.html'
+    }
+});
+
+module.directive('kcTabsAuthentication', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-authentication.html'
     }
 });
 

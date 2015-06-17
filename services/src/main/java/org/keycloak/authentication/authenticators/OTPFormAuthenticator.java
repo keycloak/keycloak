@@ -11,7 +11,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -69,11 +68,11 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
     }
 
     protected Response challenge(AuthenticatorContext context, String error) {
-        ClientSessionCode clientSessionCode = new ClientSessionCode(context.getRealm(), context.getClientSession());
-        URI action = AbstractFormAuthenticator.getActionUrl(context, clientSessionCode, TOTP_FORM_ACTION);
+        String accessCode = context.generateAccessCode();
+        URI action = AbstractFormAuthenticator.getActionUrl(context, accessCode, TOTP_FORM_ACTION);
         LoginFormsProvider forms = context.getSession().getProvider(LoginFormsProvider.class)
                 .setActionUri(action)
-                .setClientSessionCode(clientSessionCode.getCode());
+                .setClientSessionCode(accessCode);
         if (error != null) forms.setError(error);
 
         return forms.createLoginTotp();
@@ -85,8 +84,11 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
     }
 
     @Override
-    public String getRequiredAction() {
-        return UserModel.RequiredAction.CONFIGURE_TOTP.name();
+    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+        if (!user.getRequiredActions().contains(UserModel.RequiredAction.CONFIGURE_TOTP.name())) {
+            user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+        }
+
     }
 
     @Override

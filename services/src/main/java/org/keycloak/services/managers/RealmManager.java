@@ -17,6 +17,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -88,12 +89,17 @@ public class RealmManager {
         setupBrokerService(realm);
         setupAdminConsole(realm);
         setupAuthenticationFlows(realm);
+        setupRequiredActions(realm);
 
         return realm;
     }
 
     protected void setupAuthenticationFlows(RealmModel realm) {
         if (realm.getAuthenticationFlows().size() == 0) DefaultAuthenticationFlows.addFlows(realm);
+    }
+
+    protected void setupRequiredActions(RealmModel realm) {
+        if (realm.getRequiredActionProviders().size() == 0) DefaultRequiredActions.addActions(realm);
     }
 
     protected void setupAdminConsole(RealmModel realm) {
@@ -261,6 +267,7 @@ public class RealmManager {
         RepresentationToModel.importRealm(session, rep, realm);
 
         setupAuthenticationFlows(realm);
+        setupRequiredActions(realm);
 
         // Refresh periodic sync tasks for configured federationProviders
         List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();

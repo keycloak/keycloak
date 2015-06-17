@@ -13,7 +13,12 @@ public interface Authenticator extends Provider {
     boolean requiresUser();
     void authenticate(AuthenticatorContext context);
     boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user);
-    String getRequiredAction();
+
+    /**
+     * Set actions to configure authenticator
+     *
+     */
+    void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user);
 
 
 }

@@ -56,7 +56,6 @@ import javax.ws.rs.core.UriInfo;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -239,9 +238,9 @@ public class RealmAdminResource {
         return fed;
     }
 
-    @Path("authentication-flows")
-    public AuthenticationFlowResource flows() {
-        AuthenticationFlowResource resource = new AuthenticationFlowResource(realm, session, auth, adminEvent);
+    @Path("authentication")
+    public AuthenticationManagementResource flows() {
+        AuthenticationManagementResource resource = new AuthenticationManagementResource(realm, session, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         //resourceContext.initResource(resource);
         return resource;
@@ -566,18 +565,4 @@ public class RealmAdminResource {
         return new IdentityProvidersResource(realm, session, this.auth, adminEvent);
     }
 
-    @Path("required-actions")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<Map<String, String>> getRequiredActions() {
-        List<Map<String, String>> list = new LinkedList<>();
-        for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(RequiredActionProvider.class)) {
-            RequiredActionFactory actionFactory = (RequiredActionFactory)factory;
-            Map<String, String> data = new HashMap<>();
-            data.put("id", actionFactory.getId());
-            data.put("text", actionFactory.getDisplayText());
-            list.add(data);
-        }
-        return list;
-    }
 }

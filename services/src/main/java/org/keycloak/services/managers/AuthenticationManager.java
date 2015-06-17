@@ -17,6 +17,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -483,8 +484,9 @@ public class AuthenticationManager {
         };
 
         // see if any required actions need triggering, i.e. an expired password
-        for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(RequiredActionProvider.class)) {
-            RequiredActionProvider provider = ((RequiredActionFactory)factory).create(session);
+        for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
+            if (!model.isEnabled()) continue;
+            RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
             provider.evaluateTriggers(context);
         }
 
@@ -495,7 +497,8 @@ public class AuthenticationManager {
 
         Set<String> requiredActions = user.getRequiredActions();
         for (String action : requiredActions) {
-            RequiredActionProvider actionProvider = session.getProvider(RequiredActionProvider.class, action);
+            RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
+            RequiredActionProvider actionProvider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
             Response challenge = actionProvider.invokeRequiredAction(context);
             if (challenge != null) {
                 return challenge;

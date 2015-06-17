@@ -370,7 +370,7 @@ public class ResetPasswordTest {
 
             errorPage.assertCurrent();
 
-            assertEquals("An error occurred, please login again through your application.", errorPage.getError());
+            assertEquals("Login timeout. Please login again.", errorPage.getError());
 
             events.expectRequiredAction(EventType.RESET_PASSWORD).error("expired_code").client("test-app").user((String) null).session((String) null).clearDetails().assertEvent();
         } finally {

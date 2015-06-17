@@ -11,6 +11,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperEventImpl;
@@ -25,6 +26,7 @@ import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
+import org.keycloak.models.jpa.entities.RequiredActionProviderEntity;
 import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.UserFederationMapperEntity;
@@ -1726,29 +1728,86 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public Set<String> getDefaultRequiredActions() {
-        Set<String> result = new HashSet<String>();
-        result.addAll(realm.getDefaultRequiredActions());
-        return result;
+    public RequiredActionProviderModel addRequiredActionProvider(RequiredActionProviderModel model) {
+        RequiredActionProviderEntity auth = new RequiredActionProviderEntity();
+        auth.setId(KeycloakModelUtils.generateId());
+        auth.setAlias(model.getAlias());
+        auth.setName(model.getName());
+        auth.setRealm(realm);
+        auth.setProviderId(model.getProviderId());
+        auth.setConfig(model.getConfig());
+        auth.setEnabled(model.isEnabled());
+        auth.setDefaultAction(model.isDefaultAction());
+        realm.getRequiredActionProviders().add(auth);
+        em.persist(auth);
+        em.flush();
+        model.setId(auth.getId());
+        return model;
     }
-
-
 
     @Override
-    public void setDefaultRequiredActions(Set<String> actions) {
-        realm.setDefaultRequiredActions(actions);
+    public void removeRequiredActionProvider(RequiredActionProviderModel model) {
+        RequiredActionProviderEntity entity = em.find(RequiredActionProviderEntity.class, model.getId());
+        if (entity == null) return;
+        em.remove(entity);
+        em.flush();
+
     }
 
     @Override
-    public void addDefaultRequiredAction(String action) {
-        realm.getDefaultRequiredActions().add(action);
+    public RequiredActionProviderModel getRequiredActionProviderById(String id) {
+        RequiredActionProviderEntity entity = em.find(RequiredActionProviderEntity.class, id);
+        if (entity == null) return null;
+        return entityToModel(entity);
+    }
+
+    public RequiredActionProviderModel entityToModel(RequiredActionProviderEntity entity) {
+        RequiredActionProviderModel model = new RequiredActionProviderModel();
+        model.setId(entity.getId());
+        model.setProviderId(entity.getProviderId());
+        model.setAlias(entity.getAlias());
+        model.setEnabled(entity.isEnabled());
+        model.setDefaultAction(entity.isDefaultAction());
+        model.setName(entity.getName());
+        Map<String, String> config = new HashMap<>();
+        if (entity.getConfig() != null) config.putAll(entity.getConfig());
+        model.setConfig(config);
+        return model;
     }
 
     @Override
-    public void removeDefaultRequiredAction(String action) {
-        realm.getDefaultRequiredActions().remove(action);
+    public void updateRequiredActionProvider(RequiredActionProviderModel model) {
+        RequiredActionProviderEntity entity = em.find(RequiredActionProviderEntity.class, model.getId());
+        if (entity == null) return;
+        entity.setAlias(model.getAlias());
+        entity.setProviderId(model.getProviderId());
+        entity.setEnabled(model.isEnabled());
+        entity.setDefaultAction(model.isDefaultAction());
+        entity.setName(model.getName());
+        if (entity.getConfig() == null) {
+            entity.setConfig(model.getConfig());
+        } else {
+            entity.getConfig().clear();
+            entity.getConfig().putAll(model.getConfig());
+        }
+        em.flush();
+
     }
 
+    @Override
+    public List<RequiredActionProviderModel> getRequiredActionProviders() {
+        List<RequiredActionProviderModel> actions = new LinkedList<>();
+        for (RequiredActionProviderEntity entity : realm.getRequiredActionProviders()) {
+            actions.add(entityToModel(entity));
+        }
+        return actions;
+    }
 
-
+    @Override
+    public RequiredActionProviderModel getRequiredActionProviderByAlias(String alias) {
+        for (RequiredActionProviderModel action : getRequiredActionProviders()) {
+            if (action.getAlias().equals(alias)) return action;
+        }
+        return null;
+    }
 }

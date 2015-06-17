@@ -19,6 +19,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.Response;
@@ -62,6 +63,7 @@ public class AuthenticationProcessor {
 
     }
     public static enum Error {
+        EXPIRED_CODE,
         INVALID_CLIENT_SESSION,
         INVALID_USER,
         INVALID_CREDENTIALS,
@@ -317,6 +319,13 @@ public class AuthenticationProcessor {
         public String getForwardedErrorMessage() {
             return AuthenticationProcessor.this.forwardedErrorMessage;
         }
+
+        @Override
+        public String generateAccessCode() {
+            ClientSessionCode accessCode = new ClientSessionCode(getRealm(), getClientSession());
+            accessCode.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+            return accessCode.getCode();
+        }
     }
 
     public static class AuthException extends RuntimeException {
@@ -388,6 +397,10 @@ public class AuthenticationProcessor {
                 event.error(Errors.INVALID_CODE);
                 return ErrorPage.error(session, Messages.INVALID_CODE);
 
+            }  else if (e.getError() == Error.EXPIRED_CODE) {
+                event.error(Errors.EXPIRED_CODE);
+                return ErrorPage.error(session, Messages.EXPIRED_CODE);
+
             }else {
                 event.error(Errors.INVALID_USER_CREDENTIALS);
                 return ErrorPage.error(session, Messages.INVALID_USER);
@@ -403,9 +416,7 @@ public class AuthenticationProcessor {
 
 
     public Response authenticate() throws AuthException {
-        if (!ClientSessionModel.Action.AUTHENTICATE.name().equals(clientSession.getAction())) {
-            throw new AuthException(Error.INVALID_CLIENT_SESSION);
-        }
+        checkClientSession();
         logger.debug("AUTHENTICATE");
         event.event(EventType.LOGIN);
         event.client(clientSession.getClient().getClientId())
@@ -425,10 +436,18 @@ public class AuthenticationProcessor {
         return authenticationComplete();
     }
 
-    public Response authenticateOnly() throws AuthException {
-        if (!ClientSessionModel.Action.AUTHENTICATE.name().equals(clientSession.getAction())) {
+    public void checkClientSession() {
+        ClientSessionCode code = new ClientSessionCode(realm, clientSession);
+        if (!code.isValidAction(ClientSessionModel.Action.AUTHENTICATE.name())) {
             throw new AuthException(Error.INVALID_CLIENT_SESSION);
         }
+        if (!code.isActionActive(ClientSessionModel.Action.AUTHENTICATE.name())) {
+            throw new AuthException(Error.EXPIRED_CODE);
+        }
+    }
+
+    public Response authenticateOnly() throws AuthException {
+        checkClientSession();
         event.event(EventType.LOGIN);
         event.client(clientSession.getClient().getClientId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
@@ -518,10 +537,7 @@ public class AuthenticationProcessor {
                         if (model.isUserSetupAllowed()) {
                             logger.debugv("authenticator SETUP_REQUIRED: {0}", authenticatorModel.getProviderId());
                             clientSession.setAuthenticatorStatus(model.getId(), UserSessionModel.AuthenticatorStatus.SETUP_REQUIRED);
-                            String requiredAction = authenticator.getRequiredAction();
-                            if (!authUser.getRequiredActions().contains(requiredAction)) {
-                                authUser.addRequiredAction(requiredAction);
-                            }
+                            authenticator.setRequiredActions(session, realm, clientSession.getAuthenticatedUser());
                             continue;
                         } else {
                             throw new AuthException(Error.CREDENTIAL_SETUP_REQUIRED);

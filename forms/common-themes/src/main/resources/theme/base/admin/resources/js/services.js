@@ -187,8 +187,13 @@ module.factory('RealmAdminEvents', function($resource) {
 });
 
 module.factory('RequiredActions', function($resource) {
-    return $resource(authUrl + '/admin/realms/:id/required-actions', {
-        id : '@realm'
+    return $resource(authUrl + '/admin/realms/:id/authentication/required-actions/:alias', {
+        realm : '@realm',
+        alias : '@alias'
+    }, {
+        update : {
+            method : 'PUT'
+        }
     });
 });
 
@@ -1074,7 +1079,7 @@ module.factory('IdentityProviderMapper', function($resource) {
 });
 
 module.factory('AuthenticationExecutions', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/authentication-flows/flow/:alias/executions', {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/flow/:alias/executions', {
         realm : '@realm',
         alias : '@alias'
     }, {

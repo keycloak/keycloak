@@ -114,12 +114,6 @@ public class RealmEntity {
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     @ElementCollection
-    @Column(name="VALUE")
-    @CollectionTable(name = "DEFAULT_REQUIRED_ACTIONS", joinColumns={ @JoinColumn(name="REALM_ID") })
-    protected Set<String> defaultRequiredActions = new HashSet<String>();
-
-
-    @ElementCollection
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
     @CollectionTable(name="REALM_SMTP_CONFIG", joinColumns={ @JoinColumn(name="REALM_ID") })
@@ -162,6 +156,9 @@ public class RealmEntity {
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<AuthenticatorEntity> authenticators = new ArrayList<>();
+
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    Collection<RequiredActionProviderEntity> requiredActionProviders = new ArrayList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<AuthenticationFlowEntity> authenticationFlows = new ArrayList<>();
@@ -567,6 +564,14 @@ public class RealmEntity {
         this.authenticators = authenticators;
     }
 
+    public Collection<RequiredActionProviderEntity> getRequiredActionProviders() {
+        return requiredActionProviders;
+    }
+
+    public void setRequiredActionProviders(Collection<RequiredActionProviderEntity> requiredActionProviders) {
+        this.requiredActionProviders = requiredActionProviders;
+    }
+
     public Collection<AuthenticationFlowEntity> getAuthenticationFlows() {
         return authenticationFlows;
     }
@@ -575,12 +580,5 @@ public class RealmEntity {
         this.authenticationFlows = authenticationFlows;
     }
 
-    public Set<String> getDefaultRequiredActions() {
-        return defaultRequiredActions;
-    }
-
-    public void setDefaultRequiredActions(Set<String> defaultRequiredActions) {
-        this.defaultRequiredActions = defaultRequiredActions;
-    }
 }
 

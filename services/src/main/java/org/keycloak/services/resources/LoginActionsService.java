@@ -172,7 +172,7 @@ public class LoginActionsService {
             } else if (!clientCode.isActionActive(requiredAction)) {
                 event.client(clientCode.getClientSession().getClient());
                 event.error(Errors.EXPIRED_CODE);
-                response = ErrorPage.error(session, Messages.INVALID_CODE);
+                response = ErrorPage.error(session, Messages.EXPIRED_CODE);
                 return false;
             } else {
                 return true;
@@ -190,7 +190,7 @@ public class LoginActionsService {
             } else if (!(clientCode.isActionActive(requiredAction) || clientCode.isActionActive(alternativeRequiredAction))) {
                 event.client(clientCode.getClientSession().getClient());
                 event.error(Errors.EXPIRED_CODE);
-                response = ErrorPage.error(session, Messages.INVALID_CODE);
+                response = ErrorPage.error(session, Messages.EXPIRED_CODE);
                 return false;
             } else {
                 return true;
@@ -958,7 +958,7 @@ public class LoginActionsService {
                                  @PathParam("action") String action) {
         event.event(EventType.LOGIN);
         if (action == null) {
-            logger.error("required action was null");
+            logger.error("required action query param was null");
             event.error(Errors.INVALID_CODE);
             throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
 

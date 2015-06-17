@@ -1,5 +1,7 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
-    <h1><strong>Authentication Flows</strong> {{realm.realm|capitalize}}</h1>
+    <h1>Authentication</h1>
+
+    <kc-tabs-authentication></kc-tabs-authentication>
 
     <table class="table table-striped table-bordered">
         <thead>
@@ -25,7 +27,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr ng-repeat="execution in executions">
+        <tr ng-repeat="execution in executions" data-ng-show="executions.length > 0">
             <td ng-show="execution.subFlow"></td>
             <td><h2>{{execution.referenceType}}</h2></td>
             <td ng-hide="execution.subFlow"></td>

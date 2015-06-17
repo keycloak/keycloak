@@ -15,7 +15,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -131,9 +130,8 @@ public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Au
      * @return
      */
     protected Response optionalChallengeRedirect(AuthenticatorContext context, String negotiateHeader) {
-        ClientSessionCode code = new ClientSessionCode(context.getRealm(), context.getClientSession());
-        code.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-        URI action = getActionUrl(context, code, KERBEROS_DISABLED);
+        String accessCode = context.generateAccessCode();
+        URI action = getActionUrl(context, accessCode, KERBEROS_DISABLED);
 
         StringBuilder builder = new StringBuilder();
 
@@ -162,11 +160,10 @@ public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Au
     }
 
     protected Response formChallenge(AuthenticatorContext context, String negotiateHeader) {
-        ClientSessionCode code = new ClientSessionCode(context.getRealm(), context.getClientSession());
-        code.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-        URI action = getActionUrl(context, code, KERBEROS_DISABLED);
+        String accessCode = context.generateAccessCode();
+        URI action = getActionUrl(context, accessCode, KERBEROS_DISABLED);
         return context.getSession().getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(new ClientSessionCode(context.getRealm(), context.getClientSession()).getCode())
+                .setClientSessionCode(accessCode)
                 .setActionUri(action)
                 .setStatus(Response.Status.UNAUTHORIZED)
                 .setResponseHeader(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader)
@@ -181,8 +178,7 @@ public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Au
     }
 
     @Override
-    public String getRequiredAction() {
-        return null;
+    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
     }
 
     @Override

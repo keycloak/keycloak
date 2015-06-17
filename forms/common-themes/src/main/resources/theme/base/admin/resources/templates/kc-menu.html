@@ -16,7 +16,7 @@
             <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'roles' || path[2] == 'default-roles' || (path[1] == 'role' && path[3] != 'clients')) && 'active'"><a href="#/realms/{{realm.realm}}/roles">Roles</a></li>
             <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'identity-provider-settings' || path[2] == 'identity-provider-mappers') && 'active'"><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
             <li data-ng-show="access.viewRealm" data-ng-class="(path[1] == 'user-federation' || path[2] == 'user-federation') && 'active'"><a href="#/realms/{{realm.realm}}/user-federation">User Federation</a></li>
-            <li data-ng-show="access.viewRealm" data-ng-class="(path[1] == 'authentication' || path[2] == 'authentication') && 'active'"><a href="#/realms/{{realm.realm}}/authentication">Authentication</a></li>
+            <li data-ng-show="access.viewRealm" data-ng-class="(path[1] == 'authentication' || path[2] == 'authentication') && 'active'"><a href="#/realms/{{realm.realm}}/authentication/flows">Authentication</a></li>
         </ul>
     </div>
 

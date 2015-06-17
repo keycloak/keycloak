@@ -73,4 +73,11 @@ public interface AuthenticatorContext {
      * whatever form is challenging.
      */
     String getForwardedErrorMessage();
+
+    /**
+     * Generates access code and updates clientsession timestamp
+     *
+     * @return
+     */
+    String generateAccessCode();
 }

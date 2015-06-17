@@ -156,13 +156,6 @@ public interface RealmModel extends RoleContainerModel {
 
     void updateDefaultRoles(String[] defaultRoles);
 
-    Set<String> getDefaultRequiredActions();
-
-    void addDefaultRequiredAction(String action);
-    void removeDefaultRequiredAction(String action);
-
-    void setDefaultRequiredActions(Set<String> action);
-
     // Key is clientId
     Map<String, ClientModel> getClientNameMap();
 
@@ -205,6 +198,13 @@ public interface RealmModel extends RoleContainerModel {
     void updateAuthenticator(AuthenticatorModel model);
     void removeAuthenticator(AuthenticatorModel model);
     AuthenticatorModel getAuthenticatorById(String id);
+
+    List<RequiredActionProviderModel> getRequiredActionProviders();
+    RequiredActionProviderModel addRequiredActionProvider(RequiredActionProviderModel model);
+    void updateRequiredActionProvider(RequiredActionProviderModel model);
+    void removeRequiredActionProvider(RequiredActionProviderModel model);
+    RequiredActionProviderModel getRequiredActionProviderById(String id);
+    RequiredActionProviderModel getRequiredActionProviderByAlias(String alias);
 
     List<IdentityProviderModel> getIdentityProviders();
     IdentityProviderModel getIdentityProviderByAlias(String alias);

@@ -10,6 +10,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
@@ -1128,28 +1129,42 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public Set<String> getDefaultRequiredActions() {
-        return cached.getDefaultRequiredActions();
+    public List<RequiredActionProviderModel> getRequiredActionProviders() {
+        if (updated != null) return updated.getRequiredActionProviders();
+        List<RequiredActionProviderModel> models = new ArrayList<>();
+        models.addAll(cached.getRequiredActionProviders().values());
+        return models;
     }
 
     @Override
-    public void addDefaultRequiredAction(String action) {
+    public RequiredActionProviderModel addRequiredActionProvider(RequiredActionProviderModel model) {
         getDelegateForUpdate();
-        updated.addDefaultRequiredAction(action);
+        return updated.addRequiredActionProvider(model);
+    }
+
+    @Override
+    public void updateRequiredActionProvider(RequiredActionProviderModel model) {
+        getDelegateForUpdate();
+        updated.updateRequiredActionProvider(model);
 
     }
 
     @Override
-    public void removeDefaultRequiredAction(String action) {
+    public void removeRequiredActionProvider(RequiredActionProviderModel model) {
         getDelegateForUpdate();
-        updated.removeDefaultRequiredAction(action);
+        updated.removeRequiredActionProvider(model);
 
     }
 
     @Override
-    public void setDefaultRequiredActions(Set<String> action) {
-        getDelegateForUpdate();
-        updated.setDefaultRequiredActions(action);
+    public RequiredActionProviderModel getRequiredActionProviderById(String id) {
+        if (updated != null) return updated.getRequiredActionProviderById(id);
+        return cached.getRequiredActionProviders().get(id);
+    }
 
+    @Override
+    public RequiredActionProviderModel getRequiredActionProviderByAlias(String alias) {
+        if (updated != null) return updated.getRequiredActionProviderByAlias(alias);
+        return cached.getRequiredActionProvidersByAlias().get(alias);
     }
 }

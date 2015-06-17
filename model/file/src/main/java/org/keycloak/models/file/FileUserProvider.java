@@ -25,6 +25,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
@@ -285,8 +286,10 @@ public class FileUserProvider implements UserProvider {
         }
 
         if (addDefaultRequiredActions) {
-            for (String r : realm.getDefaultRequiredActions()) {
-                userModel.addRequiredAction(r);
+            for (RequiredActionProviderModel r : realm.getRequiredActionProviders()) {
+                if (r.isEnabled() && r.isDefaultAction()) {
+                    userModel.addRequiredAction(r.getAlias());
+                }
             }
         }
 

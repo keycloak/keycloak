@@ -63,6 +63,14 @@ module.factory('UserListLoader', function(Loader, User, $route, $q) {
     });
 });
 
+module.factory('RequiredActionsListLoader', function(Loader, RequiredActions, $route, $q) {
+    return Loader.query(RequiredActions, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
 module.factory('RealmSessionStatsLoader', function(Loader, RealmSessionStats, $route, $q) {
     return Loader.get(RealmSessionStats, function() {
         return {

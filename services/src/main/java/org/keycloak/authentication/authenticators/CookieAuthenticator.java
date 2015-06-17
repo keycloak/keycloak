@@ -38,8 +38,7 @@ public class CookieAuthenticator implements Authenticator {
     }
 
     @Override
-    public String getRequiredAction() {
-        return null;
+    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
     }
 
     @Override
