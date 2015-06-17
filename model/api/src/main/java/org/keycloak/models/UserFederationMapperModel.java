@@ -1,11 +1,13 @@
 package org.keycloak.models;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UserFederationMapperModel {
+public class UserFederationMapperModel implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     protected String id;
     protected String name;
