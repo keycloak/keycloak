@@ -68,8 +68,13 @@ public class SpringSecurityTokenStore implements AdapterTokenStore {
             return false;
         }
 
-        if (keycloakSecurityContext.getToken().isExpired()) {
-            logger.warn("Security token expired ... not returning from cache");
+        try {
+            if (keycloakSecurityContext.getToken().isExpired()) {
+                logger.warn("Security token expired ... not returning from cache");
+                return false;
+            }
+        } catch (NullPointerException ex) {
+            logger.warn("Security keycloakSecurityContext.getToken().isExpired() threw an exception; returning false");
             return false;
         }
 
