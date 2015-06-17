@@ -172,7 +172,7 @@ public class LoginActionsService {
             } else if (!clientCode.isActionActive(requiredAction)) {
                 event.client(clientCode.getClientSession().getClient());
                 event.error(Errors.EXPIRED_CODE);
-                response = ErrorPage.error(session, Messages.INVALID_CODE);
+                response = ErrorPage.error(session, Messages.EXPIRED_CODE);
                 return false;
             } else {
                 return true;
@@ -190,7 +190,7 @@ public class LoginActionsService {
             } else if (!(clientCode.isActionActive(requiredAction) || clientCode.isActionActive(alternativeRequiredAction))) {
                 event.client(clientCode.getClientSession().getClient());
                 event.error(Errors.EXPIRED_CODE);
-                response = ErrorPage.error(session, Messages.INVALID_CODE);
+                response = ErrorPage.error(session, Messages.EXPIRED_CODE);
                 return false;
             } else {
                 return true;

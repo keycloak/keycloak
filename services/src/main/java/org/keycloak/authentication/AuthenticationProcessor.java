@@ -399,7 +399,7 @@ public class AuthenticationProcessor {
 
             }  else if (e.getError() == Error.EXPIRED_CODE) {
                 event.error(Errors.EXPIRED_CODE);
-                return ErrorPage.error(session, Messages.INVALID_CODE);
+                return ErrorPage.error(session, Messages.EXPIRED_CODE);
 
             }else {
                 event.error(Errors.INVALID_USER_CREDENTIALS);
