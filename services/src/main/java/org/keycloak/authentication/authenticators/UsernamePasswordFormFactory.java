@@ -16,13 +16,13 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class LoginFormUsernameAuthenticatorFactory implements AuthenticatorFactory {
+public class UsernamePasswordFormFactory implements AuthenticatorFactory {
 
-    public static final String PROVIDER_ID = "auth-login-form-username";
+    public static final String PROVIDER_ID = "auth-username-password-form";
 
     @Override
     public Authenticator create(AuthenticatorModel model) {
-        return new LoginFormUsernameAuthenticator(model);
+        return new UsernamePasswordForm(model);
     }
 
     @Override
@@ -52,37 +52,30 @@ public class LoginFormUsernameAuthenticatorFactory implements AuthenticatorFacto
 
     @Override
     public String getReferenceType() {
-        return null;
+        return UserCredentialModel.PASSWORD;
     }
 
     @Override
     public boolean isConfigurable() {
-        return false;
+        return true;
     }
-
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.ALTERNATIVE,
-            AuthenticationExecutionModel.Requirement.DISABLED};
+            AuthenticationExecutionModel.Requirement.REQUIRED
+    };
 
     @Override
     public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
         return REQUIREMENT_CHOICES;
     }
 
-
-    @Override
-    public String getDisplayCategory() {
-        return "User Validation";
-    }
-
     @Override
     public String getDisplayType() {
-        return "Login Form Username";
+        return "Username Password Form";
     }
 
     @Override
     public String getHelpText() {
-        return "Validates a username that is specified on the login page.";
+        return "Validates a username and password from login form.";
     }
 
     @Override

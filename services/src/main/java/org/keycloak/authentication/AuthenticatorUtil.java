@@ -1,14 +1,8 @@
 package org.keycloak.authentication;
 
-import org.keycloak.authentication.authenticators.LoginFormPasswordAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.OTPFormAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.SpnegoAuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.DefaultAuthenticationFlows;
-import org.keycloak.representations.idm.CredentialRepresentation;
 
 import java.util.LinkedList;
 import java.util.List;

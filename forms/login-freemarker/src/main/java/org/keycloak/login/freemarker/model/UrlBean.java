@@ -48,7 +48,7 @@ public class UrlBean {
         if (this.actionuri != null) {
             return this.actionuri.toString();
         }
-        return Urls.realmLoginAction(baseURI, realm).toString();
+        throw new RuntimeException("action URI not set");
     }
 
     public String getLoginUrl() {

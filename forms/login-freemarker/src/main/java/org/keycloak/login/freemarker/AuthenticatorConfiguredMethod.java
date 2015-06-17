@@ -3,15 +3,10 @@ package org.keycloak.login.freemarker;
 import freemarker.template.TemplateMethodModelEx;
 import freemarker.template.TemplateModelException;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.AuthenticatorUtil;
-import org.keycloak.authentication.authenticators.LoginFormPasswordAuthenticatorFactory;
-import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.Urls;
 
-import java.net.URI;
 import java.util.List;
 
 /**

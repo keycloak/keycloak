@@ -29,7 +29,7 @@ import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.authenticators.AbstractFormAuthenticator;
-import org.keycloak.authentication.authenticators.LoginFormPasswordAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.UsernamePasswordFormFactory;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.events.Details;
@@ -125,21 +125,11 @@ public class LoginActionsService {
     }
 
     public static UriBuilder authenticationFormProcessor(UriInfo uriInfo) {
-        return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "authForm");
+        return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "authenticateForm");
     }
 
     public static UriBuilder loginActionsBaseUrl(UriBuilder baseUriBuilder) {
         return baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getLoginActionsService");
-    }
-
-    public static UriBuilder processOAuthUrl(UriInfo uriInfo) {
-        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
-        return processOAuthUrl(baseUriBuilder);
-    }
-
-    public static UriBuilder processOAuthUrl(UriBuilder baseUriBuilder) {
-        UriBuilder uriBuilder = loginActionsBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OIDCLoginProtocolService.class, "processOAuth");
     }
 
     public LoginActionsService(RealmModel realm, AuthenticationManager authManager, EventBuilder event) {
@@ -241,9 +231,10 @@ public class LoginActionsService {
      * @param code
      * @return
      */
-    @Path("login")
+    @Path("authenticate")
     @GET
-    public Response loginPage(@QueryParam("code") String code) {
+    public Response authenticate(@QueryParam("code") String code,
+                                 @QueryParam("action") String action) {
         event.event(EventType.LOGIN);
         Checks checks = new Checks();
         if (!checks.check(code)) {
@@ -266,6 +257,7 @@ public class LoginActionsService {
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
                 .setProtector(authManager.getProtector())
+                .setAction(action)
                 .setRealm(realm)
                 .setSession(session)
                 .setUriInfo(uriInfo)
@@ -316,10 +308,10 @@ public class LoginActionsService {
      * @param code
      * @return
      */
-    @Path("auth-form")
+    @Path("authenticate")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response authForm(@QueryParam("code") String code,
+    public Response authenticateForm(@QueryParam("code") String code,
                              @QueryParam("action") String action) {
         event.event(EventType.LOGIN);
         Checks checks = new Checks();
@@ -523,7 +515,7 @@ public class LoginActionsService {
 
     public boolean isPasswordRequired() {
         AuthenticationFlowModel browserFlow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
-        return AuthenticatorUtil.isRequired(realm, browserFlow.getId(), LoginFormPasswordAuthenticatorFactory.PROVIDER_ID);
+        return AuthenticatorUtil.isRequired(realm, browserFlow.getId(), UsernamePasswordFormFactory.PROVIDER_ID);
     }
 
     /**

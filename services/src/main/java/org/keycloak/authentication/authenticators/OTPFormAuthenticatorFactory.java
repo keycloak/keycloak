@@ -69,10 +69,6 @@ public class OTPFormAuthenticatorFactory implements AuthenticatorFactory {
     public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
         return REQUIREMENT_CHOICES;
     }
-    @Override
-    public String getDisplayCategory() {
-        return "Credential Validation";
-    }
 
     @Override
     public String getDisplayType() {

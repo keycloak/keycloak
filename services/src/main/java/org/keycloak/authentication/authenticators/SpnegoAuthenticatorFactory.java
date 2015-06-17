@@ -72,11 +72,6 @@ public class SpnegoAuthenticatorFactory implements AuthenticatorFactory {
     }
 
     @Override
-    public String getDisplayCategory() {
-        return "Complete Authenticator";
-    }
-
-    @Override
     public String getDisplayType() {
         return "SPNEGO";
     }

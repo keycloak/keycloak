@@ -10,24 +10,27 @@ import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticatorModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class LoginFormUsernameAuthenticator extends AbstractFormAuthenticator implements Authenticator {
-    public static final String FORM_USERNAME = "FORM_USERNAME";
+public class UsernamePasswordForm extends AbstractFormAuthenticator implements Authenticator {
     protected AuthenticatorModel model;
 
-    public LoginFormUsernameAuthenticator(AuthenticatorModel model) {
+    public UsernamePasswordForm(AuthenticatorModel model) {
         this.model = model;
     }
 
@@ -67,7 +70,14 @@ public class LoginFormUsernameAuthenticator extends AbstractFormAuthenticator im
             return;
         }
 
-        validateUser(context, formData);
+        if (!validateUser(context, formData)) {
+            return;
+        }
+        if (!validatePassword(context, formData)) {
+            return;
+        }
+        context.success();
+
     }
 
     @Override
@@ -83,35 +93,16 @@ public class LoginFormUsernameAuthenticator extends AbstractFormAuthenticator im
         return forms.createLogin();
     }
 
-    public void validateUser(AuthenticatorContext context, MultivaluedMap<String, String> inputData) {
-        String username = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
-        if (username == null) {
-            context.getEvent().error(Errors.USER_NOT_FOUND);
-            Response challengeResponse = invalidUser(context);
-            context.failureChallenge(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
-            return;
-        }
-        context.getEvent().detail(Details.USERNAME, username);
-        context.getClientSession().setNote(FORM_USERNAME, username);
-        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
-        if (invalidUser(context, user)) return;
-        String rememberMe = inputData.getFirst("rememberMe");
-        boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
-        if (remember) {
-            context.getClientSession().setNote(Details.REMEMBER_ME, "true");
-            context.getEvent().detail(Details.REMEMBER_ME, "true");
-        }
-        context.setUser(user);
-        context.success();
-    }
 
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
+        // never called
         return true;
     }
 
     @Override
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+        // never called
     }
 
     @Override
