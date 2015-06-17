@@ -3,14 +3,22 @@ package org.keycloak.authentication.authenticators;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.AuthenticatorContext;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -21,6 +29,7 @@ public class AbstractFormAuthenticator {
     public static final String LOGIN_FORM_ACTION = "login_form";
     public static final String REGISTRATION_FORM_ACTION = "registration_form";
     public static final String ACTION = "action";
+    public static final String FORM_USERNAME = "FORM_USERNAME";
 
     protected boolean isAction(AuthenticatorContext context, String action) {
         return action.equals(context.getAction());
@@ -91,5 +100,51 @@ public class AbstractFormAuthenticator {
             }
         }
         return false;
+    }
+
+    public boolean validateUser(AuthenticatorContext context, MultivaluedMap<String, String> inputData) {
+        String username = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
+        if (username == null) {
+            context.getEvent().error(Errors.USER_NOT_FOUND);
+            Response challengeResponse = invalidUser(context);
+            context.failureChallenge(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
+            return false;
+        }
+        context.getEvent().detail(Details.USERNAME, username);
+        context.getClientSession().setNote(AbstractFormAuthenticator.FORM_USERNAME, username);
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
+        if (invalidUser(context, user)) return false;
+        String rememberMe = inputData.getFirst("rememberMe");
+        boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
+        if (remember) {
+            context.getClientSession().setNote(Details.REMEMBER_ME, "true");
+            context.getEvent().detail(Details.REMEMBER_ME, "true");
+        }
+        context.setUser(user);
+        return true;
+    }
+
+    public boolean validatePassword(AuthenticatorContext context, MultivaluedMap<String, String> inputData) {
+        List<UserCredentialModel> credentials = new LinkedList<>();
+        String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
+        if (password == null) {
+            if (context.getUser() != null) {
+                context.getEvent().user(context.getUser());
+            }
+            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
+            Response challengeResponse = invalidCredentials(context);
+            context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
+            return false;
+        }
+        credentials.add(UserCredentialModel.password(password));
+        boolean valid = context.getSession().users().validCredentials(context.getRealm(), context.getUser(), credentials);
+        if (!valid) {
+            context.getEvent().user(context.getUser());
+            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
+            Response challengeResponse = invalidCredentials(context);
+            context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
+            return false;
+        }
+        return true;
     }
 }

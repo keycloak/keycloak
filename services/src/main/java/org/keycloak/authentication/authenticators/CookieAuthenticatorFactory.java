@@ -67,13 +67,8 @@ public class CookieAuthenticatorFactory implements AuthenticatorFactory {
     }
 
     @Override
-    public String getDisplayCategory() {
-        return "Complete Authenticator";
-    }
-
-    @Override
     public String getDisplayType() {
-        return "Cookie Authenticator";
+        return "Cookie";
     }
 
     @Override

@@ -176,12 +176,8 @@ public class Urls {
         return UriBuilder.fromUri(baseUri).path(RealmsResource.class);
     }
 
-    public static URI realmLoginAction(URI baseUri, String realmId) {
-        return loginActionsBase(baseUri).path(LoginActionsService.class, "processLogin").build(realmId);
-    }
-
     public static URI realmLoginPage(URI baseUri, String realmId) {
-        return loginActionsBase(baseUri).path(LoginActionsService.class, "loginPage").build(realmId);
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "authenticate").build(realmId);
     }
 
     private static UriBuilder realmLogout(URI baseUri) {

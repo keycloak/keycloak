@@ -13,7 +13,6 @@ import java.util.List;
 */
 public interface AuthenticatorFactory extends ProviderFactory<Authenticator>, ConfiguredProvider {
     Authenticator create(AuthenticatorModel model);
-    String getDisplayCategory();
     String getDisplayType();
 
     /**

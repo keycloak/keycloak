@@ -1,8 +1,8 @@
 package org.keycloak.testsuite.utils;
 
-import org.keycloak.authentication.authenticators.LoginFormPasswordAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.SpnegoAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.UsernamePasswordFormFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorModel;
@@ -36,7 +36,7 @@ public class CredentialHelper {
             String flowAlias = DefaultAuthenticationFlows.BROWSER_FLOW;
             authenticationRequirement(realm, providerId, flowAlias, requirement);
         } else if (type.equals(CredentialRepresentation.PASSWORD)) {
-            String providerId = LoginFormPasswordAuthenticatorFactory.PROVIDER_ID;
+            String providerId = UsernamePasswordFormFactory.PROVIDER_ID;
             String flowAlias = DefaultAuthenticationFlows.FORMS_FLOW;
             authenticationRequirement(realm, providerId, flowAlias, requirement);
         }
