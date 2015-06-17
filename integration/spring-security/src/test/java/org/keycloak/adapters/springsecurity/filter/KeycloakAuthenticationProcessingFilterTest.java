@@ -13,11 +13,15 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
@@ -36,6 +40,8 @@ import static org.mockito.Mockito.*;
  */
 public class KeycloakAuthenticationProcessingFilterTest {
 
+    private static final String LOGIN_PATH = "/sso/login";
+
     private KeycloakAuthenticationProcessingFilter filter;
 
     @Mock
@@ -48,8 +54,6 @@ public class KeycloakAuthenticationProcessingFilterTest {
     private FilterChain chain;
 
     private MockHttpServletRequest request;
-
-    @Mock
     private HttpServletResponse response;
 
     @Mock
@@ -75,7 +79,10 @@ public class KeycloakAuthenticationProcessingFilterTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        request = spy(new MockHttpServletRequest());
+        SecurityContextHolder.clearContext();
+
+        request = new MockHttpServletRequest();
+        response = spy(new MockHttpServletResponse());
         filter = new KeycloakAuthenticationProcessingFilter(authenticationManager);
 
         filter.setApplicationContext(applicationContext);
@@ -96,6 +103,50 @@ public class KeycloakAuthenticationProcessingFilterTest {
         assertFalse(filter.isBearerTokenRequest(request));
         this.setAuthHeader(request);
         assertTrue(filter.isBearerTokenRequest(request));
+    }
+
+    @Test
+    public void testRequiresAuthentication() throws Exception {
+        assertFalse(filter.requiresAuthentication(request, response));
+    }
+
+    @Test
+    public void testRequiresAuthenticationByHeader() throws Exception {
+        request.addHeader(KeycloakAuthenticationProcessingFilter.AUTHORIZATION_HEADER, "Bearer " + UUID.randomUUID().toString());
+        assertTrue(filter.requiresAuthentication(request, response));
+    }
+
+    @Test
+    public void testRequiresAuthenticationByUrl() throws Exception {
+        request.setServletPath(LOGIN_PATH);
+        assertTrue(filter.requiresAuthentication(request, response));
+    }
+
+    @Test
+    public void testRequiresAuthenticationByUrlAnonymousAuthentication() throws Exception {
+        AnonymousAuthenticationToken token = mock(AnonymousAuthenticationToken.class);
+        when(token.isAuthenticated()).thenReturn(true);
+        SecurityContextHolder.getContext().setAuthentication(token);
+        request.setServletPath(LOGIN_PATH);
+        assertTrue(filter.requiresAuthentication(request, response));
+    }
+
+    @Test
+    public void testRequiresAuthenticationByUrlAnonymousAuthenticationNotAuthenticated() throws Exception {
+        AnonymousAuthenticationToken token = mock(AnonymousAuthenticationToken.class);
+        when(token.isAuthenticated()).thenReturn(false);
+        SecurityContextHolder.getContext().setAuthentication(token);
+        request.setServletPath(LOGIN_PATH);
+        assertTrue(filter.requiresAuthentication(request, response));
+    }
+
+    @Test
+    public void testRequiresAuthenticationByUrlAlreadyAuthenticated() throws Exception {
+        UsernamePasswordAuthenticationToken token = mock(UsernamePasswordAuthenticationToken.class);
+        when(token.isAuthenticated()).thenReturn(true);
+        SecurityContextHolder.getContext().setAuthentication(token);
+        request.setServletPath(LOGIN_PATH);
+        assertFalse(filter.requiresAuthentication(request, response));
     }
 
     @Test

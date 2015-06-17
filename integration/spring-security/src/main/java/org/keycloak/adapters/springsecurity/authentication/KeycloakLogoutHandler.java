@@ -33,7 +33,7 @@ public class KeycloakLogoutHandler implements LogoutHandler {
     @Override
     public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
 
-        if (!KeycloakAuthenticationToken.class.isAssignableFrom(authentication.getClass())) {
+        if (authentication == null || !KeycloakAuthenticationToken.class.isAssignableFrom(authentication.getClass())) {
             log.warn("Cannot log out a non-Keycloak authentication: {}", authentication);
             return;
         }

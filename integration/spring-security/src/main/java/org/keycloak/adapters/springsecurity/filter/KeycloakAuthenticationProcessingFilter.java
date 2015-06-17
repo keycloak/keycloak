@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.event.InteractiveAuthenticationSuccessEvent;
 import org.springframework.security.core.Authentication;
@@ -129,6 +130,13 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
         }
 
         return null;
+    }
+
+    @Override
+    protected boolean requiresAuthentication(HttpServletRequest request, HttpServletResponse response) {
+        boolean requestMatches = super.requiresAuthentication(request, response);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return requestMatches && (auth == null || auth instanceof AnonymousAuthenticationToken || !auth.isAuthenticated());
     }
 
     /**
