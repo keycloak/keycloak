@@ -1,12 +1,15 @@
 package org.keycloak.models;
 
 import java.util.Comparator;
+import java.io.Serializable;
 
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
 * @version $Revision: 1 $
 */
-public class AuthenticationExecutionModel {
+public class AuthenticationExecutionModel implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public static class ExecutionComparator implements Comparator<AuthenticationExecutionModel> {
         public static final ExecutionComparator SINGLETON = new ExecutionComparator();
 

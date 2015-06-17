@@ -14,6 +14,8 @@ public enum SslRequired {
     EXTERNAL,
     NONE;
 
+    private static final long serialVersionUID = 1L;
+
     public boolean isRequired(ClientConnection connection) {
         return isRequired(connection.getRemoteAddr());
     }

@@ -5,6 +5,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -16,7 +17,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedUser {
+public class CachedUser implements Serializable {
     private String id;
     private String realm;
     private String username;
