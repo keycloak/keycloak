@@ -45,6 +45,9 @@ public class Navigation {
     @FindByJQuery("a:contains('Roles')")
     private WebElement rolesLink;
 
+    @FindByJQuery("a:contains('Default Roles')")
+    private WebElement defaultRolesLink;
+
     @FindByJQuery("a:contains('Clients')")
     private WebElement clientsLink;
 
@@ -96,13 +99,11 @@ public class Navigation {
         openPage(usersLink, "Users");
     }
 
-    public void roles() {
-        openPage(rolesLink, "Roles");
-    }
+    public void roles() { openPage(rolesLink, "Roles"); }
 
-    public void clients() {
-        openPage(clientsLink, "Clients");
-    }
+    public void defaultRoles() { openPage(defaultRolesLink, "Roles"); }
+
+    public void clients() { openPage(clientsLink, "Clients"); }
 
     public void oauth() {
         openPage(oauthLink, "OAuth Clients");

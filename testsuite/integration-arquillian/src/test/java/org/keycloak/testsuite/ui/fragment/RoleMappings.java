@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.ui.page.settings.user;
+package org.keycloak.testsuite.ui.fragment;
 
 import org.keycloak.testsuite.ui.page.AbstractPage;
 import org.openqa.selenium.By;
@@ -6,12 +6,14 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
+import java.util.List;
+
 import static org.keycloak.testsuite.ui.util.SeleniumUtils.waitGuiForElement;
 
 /**
  * Created by fkiss.
  */
-public class RoleMappingsPage extends AbstractPage {
+public class RoleMappings extends AbstractPage {
 
     @FindBy(id = "available")
     private Select availableRolesSelect;
@@ -46,10 +48,20 @@ public class RoleMappingsPage extends AbstractPage {
         addSelected.click();
     }
 
-    public void removeAssignedRole(String client){
+    public void removeAssignedRole(String role){
         waitGuiForElement(By.id("assigned"));
-        assignedRolesSelect.selectByVisibleText(client);
+        assignedRolesSelect.selectByVisibleText(role);
         removeSelectedButton.click();
+    }
+
+    public boolean isAssignedRole(String role){
+        waitGuiForElement(By.id("assigned"));
+        try {
+            assignedRolesSelect.selectByVisibleText(role);
+        } catch (Exception ex){
+            return false;
+        }
+        return true;
     }
 
     public void selectClientRole(String client){

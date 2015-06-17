@@ -30,6 +30,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import org.keycloak.testsuite.ui.model.UserAction;
 import static org.keycloak.testsuite.ui.util.SeleniumUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.ui.util.SeleniumUtils.waitGuiForElement;
 import static org.openqa.selenium.By.*;
 import org.openqa.selenium.support.ui.Select;
 
@@ -75,6 +76,9 @@ public class UserPage extends AbstractPage {
 	@FindBy(css = "table[class*='table']")
 	private WebElement dataTable;
 
+    @FindBy(css = "tr[ng-repeat='user in users']")
+    private WebElement tableRow;
+
 	@FindByJQuery("button[kc-cancel] ")
 	private WebElement cancel;
 	
@@ -110,7 +114,12 @@ public class UserPage extends AbstractPage {
 		waitAjaxForElement(searchInput);
 		searchInput.sendKeys(username);
 		searchButton.click();
-		List<User> users = getAllRows();
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        List<User> users = getAllRows();
 		if (users.isEmpty()) {
 			return null;
 
@@ -136,9 +145,8 @@ public class UserPage extends AbstractPage {
 	}
 
 	public void deleteUser(String username) {
-		searchInput.sendKeys(username);
-		searchButton.click();
-		driver.findElement(linkText(username)).click();
+		findUser(username);
+        goToUser(username);
 		waitAjaxForElement(dangerButton);
 		dangerButton.click();
 		waitAjaxForElement(deleteConfirmationButton);
@@ -154,7 +162,8 @@ public class UserPage extends AbstractPage {
 	}
 
 	public void goToUser(User user) {
-		dataTable.findElement(linkText(user.getUserName())).click();
+        waitAjaxForElement(tableRow);
+        dataTable.findElement(linkText(user.getUserName())).click();
 	}
 
 	public void goToUser(String name) {

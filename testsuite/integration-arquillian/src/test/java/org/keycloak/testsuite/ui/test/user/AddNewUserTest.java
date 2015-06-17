@@ -44,7 +44,7 @@ public class AddNewUserTest extends AbstractKeyCloakTest<UserPage> {
 	public void beforeAddNewUserTest() {
 		navigation.users();
 	}
-	
+
     @Test
     public void addUserWithInvalidEmailTest() {
         String testUsername = "testUserInvEmail";
@@ -56,7 +56,6 @@ public class AddNewUserTest extends AbstractKeyCloakTest<UserPage> {
         navigation.users();
         assertNull(page.findUser(testUsername));
     }
-
     @Test
     public void addUserWithNoUsernameTest() {
         User testUser = new User();
