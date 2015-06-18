@@ -24,6 +24,13 @@
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             </configuration>
         </container>
+        <container qualifier="embedded-undertow-adapter-managed" mode="manual" >
+            <configuration>
+                <property name="bindAddress">localhost</property>
+		<property name="bindHttpPort">${undertow.http.port}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.EmbeddedUndertowContainer</property>
+            </configuration>
+        </container>
     </group>
     
     <extension qualifier="webdriver">
