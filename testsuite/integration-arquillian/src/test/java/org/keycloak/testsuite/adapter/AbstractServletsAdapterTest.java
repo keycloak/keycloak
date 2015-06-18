@@ -229,5 +229,9 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
     }
+    
+
+    // TODO remaining adapter tests here
+    
 
 }

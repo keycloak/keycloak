@@ -11,7 +11,6 @@ import org.keycloak.representations.adapters.config.BaseAdapterConfig;
 import static org.keycloak.testsuite.AbstractKeycloakTest.AUTH_SERVER_URL;
 import static org.keycloak.testsuite.AbstractKeycloakTest.REALM_KEY;
 import static org.keycloak.testsuite.AbstractKeycloakTest.loadJson;
-import org.keycloak.testsuite.adapter.Relative;
 import org.keycloak.util.JsonSerialization;
 
 /**

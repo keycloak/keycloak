@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.adapter;
 
+import org.keycloak.testsuite.arquillian.Relative;
 import javax.ws.rs.core.UriBuilder;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.testsuite.AbstractKeycloakTest;

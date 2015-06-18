@@ -2,7 +2,7 @@ package org.keycloak.testsuite.adapter.example;
 
 import java.io.IOException;
 import org.junit.Before;
-import org.keycloak.testsuite.adapter.Relative;
+import org.keycloak.testsuite.arquillian.Relative;
 import static org.keycloak.testsuite.adapter.example.AbstractExamplesAdapterTest.CUSTOMER_PORTAL;
 import static org.keycloak.testsuite.adapter.example.AbstractExamplesAdapterTest.DATABASE_SERVICE;
 import static org.keycloak.testsuite.adapter.example.AbstractExamplesAdapterTest.PRODUCT_PORTAL;

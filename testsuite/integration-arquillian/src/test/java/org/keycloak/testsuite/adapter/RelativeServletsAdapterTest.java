@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.adapter;
 
+import org.keycloak.testsuite.arquillian.Relative;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.UriBuilder;
