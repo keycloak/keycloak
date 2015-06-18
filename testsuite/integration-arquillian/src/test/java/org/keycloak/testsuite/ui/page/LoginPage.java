@@ -28,46 +28,50 @@ import org.openqa.selenium.support.FindBy;
  */
 public class LoginPage extends AbstractPage {
 
-    @FindBy(id = "username")
-    private WebElement usernameInput;
+	@FindBy(id = "username")
+	private WebElement usernameInput;
 
-    @FindBy(id = "password")
-    private WebElement passwordInput;
+	@FindBy(id = "password")
+	private WebElement passwordInput;
 
-    @FindBy(linkText = "Register")
-    private WebElement registerLink;
+	@FindBy(linkText = "Register")
+	private WebElement registerLink;
 
-    @FindBy(id = "kc-header")
-    private WebElement loginPageHeader;
+	@FindBy(id = "kc-header")
+	private WebElement loginPageHeader;
 
-    @FindBy(name = "cancel")
-    private WebElement cancelButton;    
-    
-    public void login(String username, String password) {
-        waitGuiForElement(usernameInput, "Login form should be visible");
-        usernameInput.sendKeys(username);
-        passwordInput.sendKeys(password);
-        passwordInput.submit();
-    }
+	@FindBy(name = "cancel")
+	private WebElement cancelButton;
 
-    public void loginAsAdmin() {
-        login("admin", ADMIN_PSSWD);
-    }
+	public void login(String username, String password) {
+		waitGuiForElement(usernameInput, "Login form should be visible");
+		usernameInput.sendKeys(username);
+		passwordInput.sendKeys(password);
+		passwordInput.submit();
+	}
 
-    public void goToUserRegistration() {
-        waitGuiForElement(usernameInput, "Login form should be visible");
-        registerLink.click();
-    }
+	public void loginAsAdmin() {
+		login("admin", ADMIN_PSSWD);
+	}
 
-    public String getLoginPageHeaderText() {
-        return loginPageHeader.getText();
-    }
+	public void goToUserRegistration() {
+		waitGuiForElement(usernameInput, "Login form should be visible");
+		registerLink.click();
+	}
 
-    public WebElement getLoginPageHeader() {
-        return loginPageHeader;
-    }
-    
-    public void cancel() {
-        cancelButton.click();
-    }    
+	public String getLoginPageHeaderText() {
+		return loginPageHeader.getText();
+	}
+
+	public WebElement getLoginPageHeader() {
+		return loginPageHeader;
+	}
+
+	public void cancel() {
+		cancelButton.click();
+	}
+
+	public WebElement getUsernameInput() {
+		return usernameInput;
+	}
 }

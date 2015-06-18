@@ -17,39 +17,35 @@
  */
 package org.keycloak.testsuite.ui.page.account;
 
-import org.keycloak.testsuite.ui.model.Account;
+import java.util.LinkedList;
+import java.util.List;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**
  *
- * @author Petr Mensik
+ * @author <a href="mailto:pmensik@redhat.com">Petr Mensik</a>
  */
-public class AccountPage extends AbstractAccountPage {
+public class AccountSessionsPage extends AbstractAccountPage {
 
-	@FindBy(id = "username")
-	private WebElement username;
+	@FindBy(id = "logout-all-sessions")
+	private WebElement logoutAllLink;
 
-	@FindBy(id = "email")
-	private WebElement email;
-
-	@FindBy(id = "lastName")
-	private WebElement lastName;
-
-	@FindBy(id = "firstName")
-	private WebElement firstName;
-
-	public Account getAccount() {
-		return new Account(username.getAttribute("value"), email.getAttribute("value"), lastName.getAttribute("value"), firstName.getAttribute("value"));
+	public void logoutAll() {
+		logoutAllLink.click();
 	}
 
-	public void setAccount(Account account) {
-		email.clear();
-		email.sendKeys(account.getEmail());
-		lastName.clear();
-		lastName.sendKeys(account.getLastName());
-		firstName.clear();
-		firstName.sendKeys(account.getFirstName());
+	public List<List<String>> getSessions() {
+		List<List<String>> table = new LinkedList<List<String>>();
+		for (WebElement r : driver.findElements(By.tagName("tr"))) {
+			List<String> row = new LinkedList<String>();
+			for (WebElement col : r.findElements(By.tagName("td"))) {
+				row.add(col.getText());
+			}
+			table.add(row);
+		}
+		table.remove(0);
+		return table;
 	}
-
 }
