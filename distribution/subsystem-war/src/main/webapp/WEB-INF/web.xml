@@ -35,11 +35,6 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
-    <filter-mapping>
-        <filter-name>Keycloak Client Connection Filter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
-
     <servlet-mapping>
         <servlet-name>Keycloak REST Interface</servlet-name>
         <url-pattern>/*</url-pattern>
