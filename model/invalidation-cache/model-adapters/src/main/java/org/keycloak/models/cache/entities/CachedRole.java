@@ -3,6 +3,7 @@ package org.keycloak.models.cache.entities;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -10,7 +11,10 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedRole {
+public class CachedRole implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     final protected String id;
     final protected String name;
     final protected String realm;

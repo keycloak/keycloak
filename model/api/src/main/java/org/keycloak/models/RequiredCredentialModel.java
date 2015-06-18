@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,7 +9,9 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RequiredCredentialModel {
+public class RequiredCredentialModel implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     protected String type;
     protected boolean input;
     protected boolean secret;

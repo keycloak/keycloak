@@ -8,6 +8,9 @@ import org.keycloak.models.RoleModel;
  * @version $Revision: 1 $
  */
 public class CachedClientRole extends CachedRole {
+
+    private static final long serialVersionUID = 1L;
+
     private final String idClient;
 
     public CachedClientRole(String idClient, RoleModel model, RealmModel realm) {

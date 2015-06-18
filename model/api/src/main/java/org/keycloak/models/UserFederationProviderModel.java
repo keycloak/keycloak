@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,7 +10,8 @@ import java.util.Map;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
-public class UserFederationProviderModel {
+public class UserFederationProviderModel implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private String id;
     private String providerName;

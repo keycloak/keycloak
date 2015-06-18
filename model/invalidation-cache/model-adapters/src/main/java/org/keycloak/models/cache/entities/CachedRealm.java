@@ -17,6 +17,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.RealmCache;
 import org.keycloak.util.MultivaluedHashMap;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,7 +30,8 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedRealm {
+public class CachedRealm implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private String id;
     private String name;
