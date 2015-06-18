@@ -1,5 +1,6 @@
 package org.keycloak.testsuite;
 
+import org.keycloak.testsuite.arquillian.AuthServerContainer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
@@ -7,18 +8,14 @@ import javax.ws.rs.NotFoundException;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.ContainersController;
-import org.keycloak.testsuite.arquillian.ControlsContainers;
 import org.keycloak.testsuite.ui.fragment.MenuPage;
 import org.keycloak.testsuite.ui.fragment.Navigation;
 import org.keycloak.testsuite.ui.page.LoginPage;
@@ -30,9 +27,8 @@ import org.keycloak.util.JsonSerialization;
  *
  * @author tkyjovsk
  */
-@RunWith(Arquillian.class)
-@ControlsContainers({"keycloak-managed"})
-public abstract class AbstractKeycloakTest extends ContainersController {
+@AuthServerContainer("auth-server-wildfly")
+public abstract class AbstractKeycloakTest extends KeycloakContainersManager {
 
     protected static boolean adminPasswordUpdated = Boolean.parseBoolean(System.getProperty("adminPasswordUpdated", "false"));
 

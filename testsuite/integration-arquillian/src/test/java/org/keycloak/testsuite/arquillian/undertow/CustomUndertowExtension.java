@@ -5,8 +5,9 @@ import org.jboss.arquillian.core.spi.LoadableExtension;
 
 public class CustomUndertowExtension implements LoadableExtension {
 
+    @Override
     public void register(ExtensionBuilder builder) {
-        builder.service(DeployableContainer.class, EmbeddedUndertowContainer.class);
+        builder.service(DeployableContainer.class, CustomEmbeddedUndertowContainer.class);
     }
 
 }

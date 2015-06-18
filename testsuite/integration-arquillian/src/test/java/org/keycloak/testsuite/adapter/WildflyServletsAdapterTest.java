@@ -8,24 +8,22 @@ import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.INPUT_P
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.PRODUCT_PORTAL;
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.SECURE_PORTAL;
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.SESSION_PORTAL;
-import org.keycloak.testsuite.arquillian.ControlsContainers;
-import org.keycloak.testsuite.arquillian.TargetsContainer;
+import org.keycloak.testsuite.arquillian.AppServerContainer;
+import org.keycloak.testsuite.arquillian.AuthServerContainer;
 
 /**
  *
  * @author tkyjovsk
  */
-@ControlsContainers({
-    "keycloak-managed",
-    "wildfly-adapter-managed"})
-@TargetsContainer("wildfly-adapter-managed")
+@AuthServerContainer("auth-server-wildfly")
+@AppServerContainer("app-server-wildfly")
 public class WildflyServletsAdapterTest extends AbstractServletsAdapterTest {
 
     public WildflyServletsAdapterTest() {
         super("http://localhost:" + Integer.parseInt(
                 System.getProperty("wildfly.http.port", "8080")));
     }
-    
+
     private static boolean servletsDeployed = false;
 
     @Before
@@ -42,5 +40,5 @@ public class WildflyServletsAdapterTest extends AbstractServletsAdapterTest {
             servletsDeployed = true;
         }
     }
-    
+
 }

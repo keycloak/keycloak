@@ -12,8 +12,8 @@ public class CustomExtension implements LoadableExtension {
 
     @Override
     public void register(ExtensionBuilder builder) {
-        builder.service(DeploymentScenarioGenerator.class, CustomDeploymentScenarioGenerator.class)
-                .service(ApplicationArchiveProcessor.class, ArchiveProcessor.class);
+        builder.service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)
+                .service(ApplicationArchiveProcessor.class, DeploymentArchiveProcessor.class);
     }
 
 }

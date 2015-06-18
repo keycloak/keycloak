@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.adapter;
 
-import org.keycloak.testsuite.arquillian.Relative;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.UriBuilder;
@@ -13,22 +12,19 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.CUSTOMER_PORTAL;
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.PRODUCT_PORTAL;
-import org.keycloak.testsuite.arquillian.ControlsContainers;
-import org.keycloak.testsuite.arquillian.TargetsContainer;
+import org.keycloak.testsuite.arquillian.AuthServerContainer;
 
 /**
  *
  * @author tkyjovsk
  */
-@ControlsContainers({"keycloak-managed"})
-@TargetsContainer("keycloak-managed")
-@Relative
+@AuthServerContainer("auth-server-wildfly")
 @Ignore("doesn't work yet")
-public class RelativeServletsAdapterTest extends AbstractServletsAdapterTest {
+public class WildflyRelativeServletsAdapterTest extends AbstractServletsAdapterTest {
 
     private static boolean servletsDeployed = false;
 
-    public RelativeServletsAdapterTest() {
+    public WildflyRelativeServletsAdapterTest() {
         super(AUTH_SERVER_BASE_URL);
     }
 
@@ -46,8 +42,7 @@ public class RelativeServletsAdapterTest extends AbstractServletsAdapterTest {
             servletsDeployed = true;
         }
     }
-    
-    
+
     @Test
     @Override
     public void testLoginSSOAndLogout() throws Exception {
@@ -122,5 +117,5 @@ public class RelativeServletsAdapterTest extends AbstractServletsAdapterTest {
     @Ignore
     public void testSavedPostRequest() throws Exception {
     }
-    
+
 }

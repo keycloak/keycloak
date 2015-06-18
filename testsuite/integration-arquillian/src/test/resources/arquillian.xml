@@ -5,10 +5,9 @@
 
     <defaultProtocol type="Servlet 3.0" />
 	
-    <container qualifier="keycloak-remote" />
-
     <group qualifier="default-group" default="true" >
-        <container qualifier="keycloak-managed" mode="manual" default="true">
+        <!-- KEYCLOAK/AUTH SERVERS -->
+        <container qualifier="auth-server-wildfly" mode="manual" default="true">
             <configuration>
                 <property name="jbossHome">${keycloak.home}</property>
                 <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${keycloak.port.offset} -Dapp.server.base.url=http://localhost:${wildfly.http.port} -Dmy.host.name=localhost</property>
@@ -16,19 +15,20 @@
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             </configuration>
         </container>
-        <container qualifier="wildfly-adapter-managed" mode="manual" >
+        <container qualifier="auth-server-undertow" mode="manual" >
+            <configuration>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${undertow.http.port}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.CustomEmbeddedUndertowContainer</property>
+            </configuration>
+        </container>
+        <!-- ADAPTER / APP SERVERS for non-relative test scenarios -->
+        <container qualifier="app-server-wildfly" mode="manual" >
             <configuration>
                 <property name="jbossHome">${wildfly.home}</property>
                 <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${wildfly.port.offset} -Dapp.server.base.url=http://localhost:${wildfly.http.port} -Dmy.host.name=localhost</property>
                 <property name="managementPort">${wildfly.management.port}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            </configuration>
-        </container>
-        <container qualifier="embedded-undertow-adapter-managed" mode="manual" >
-            <configuration>
-                <property name="bindAddress">localhost</property>
-		<property name="bindHttpPort">${undertow.http.port}</property>
-                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.EmbeddedUndertowContainer</property>
             </configuration>
         </container>
     </group>

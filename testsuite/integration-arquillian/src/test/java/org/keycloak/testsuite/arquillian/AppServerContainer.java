@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RUNTIME)
 @Target({ElementType.TYPE})
-public @interface TargetsContainer 
+public @interface AppServerContainer 
 {
    String value();
 }

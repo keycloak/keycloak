@@ -20,7 +20,7 @@
         <examples.home>${project.build.directory}/examples</examples.home>
 
         <keycloak.dist.groupId>org.keycloak</keycloak.dist.groupId>
-        <!--        <keycloak.dist.artifactId>keycloak-server-dist</keycloak.dist.artifactId>
+        <!--        <keycloak.dist.artifactId>auth-server-dist</keycloak.dist.artifactId>
         <keycloak.home>${containers.home}/keycloak-${project.version}</keycloak.home>-->
 
         <keycloak.dist.artifactId>keycloak-demo-dist</keycloak.dist.artifactId>
@@ -183,15 +183,22 @@
         
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-dist</artifactId>
-            <type>zip</type>
+            <artifactId>keycloak-admin-client</artifactId>
+            <scope>test</scope>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client</artifactId>
+            <artifactId>keycloak-model-api</artifactId>
+            <scope>test</scope>
             <type>jar</type>
         </dependency>
-        
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-services</artifactId>
+            <scope>test</scope>
+            <type>jar</type>
+        </dependency>
     </dependencies>
 
     <profiles>
@@ -255,7 +262,7 @@
         </profile>-->
 	
         <profile>
-            <id>keycloak-managed</id>
+            <id>auth-server-wildfly</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
@@ -380,7 +387,7 @@
         </profile>
         
         <profile>
-            <id>adapters-wildfly</id>
+            <id>app-server-wildfly</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>

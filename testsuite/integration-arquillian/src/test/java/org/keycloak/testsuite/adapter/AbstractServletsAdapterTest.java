@@ -9,7 +9,6 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -27,7 +26,6 @@ import org.keycloak.testsuite.adapter.servlet.ProductServlet;
 import org.keycloak.testsuite.adapter.servlet.SessionServlet;
 import org.keycloak.testsuite.ui.application.page.InputPage;
 
-@RunAsClient
 public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
     public static final String CUSTOMER_PORTAL = "customer-portal";
@@ -102,6 +100,14 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     }
 
     private final String slash = "";
+
+//    @Test
+//    @InSequence(-1)
+//    @OperateOnDeployment(CUSTOMER_PORTAL)
+//    public void testCustomerPortalURLInjection(@InitialPage CustomerPortalPage customerPortalPage) throws InterruptedException {
+//        customerPortalPage.customerListing();
+//        Thread.sleep(60000);
+//    }
 
     @Test
     public void testSavedPostRequest() throws Exception {
@@ -229,9 +235,6 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
     }
-    
 
     // TODO remaining adapter tests here
-    
-
 }

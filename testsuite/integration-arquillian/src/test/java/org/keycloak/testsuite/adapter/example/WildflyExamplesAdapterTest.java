@@ -2,20 +2,18 @@ package org.keycloak.testsuite.adapter.example;
 
 import java.io.IOException;
 import org.junit.Before;
+import org.keycloak.testsuite.arquillian.AppServerContainer;
 import static org.keycloak.testsuite.adapter.example.AbstractExamplesAdapterTest.CUSTOMER_PORTAL;
 import static org.keycloak.testsuite.adapter.example.AbstractExamplesAdapterTest.DATABASE_SERVICE;
 import static org.keycloak.testsuite.adapter.example.AbstractExamplesAdapterTest.PRODUCT_PORTAL;
-import org.keycloak.testsuite.arquillian.ControlsContainers;
-import org.keycloak.testsuite.arquillian.TargetsContainer;
+import org.keycloak.testsuite.arquillian.AuthServerContainer;
 
 /**
  *
  * @author tkyjovsk
  */
-@ControlsContainers({
-    "keycloak-managed",
-    "wildfly-adapter-managed"})
-@TargetsContainer("wildfly-adapter-managed")
+@AuthServerContainer("auth-server-wildfly")
+@AppServerContainer("app-server-wildfly")
 public class WildflyExamplesAdapterTest extends AbstractExamplesAdapterTest {
 
     public WildflyExamplesAdapterTest() {
