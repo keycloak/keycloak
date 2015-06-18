@@ -17,13 +17,13 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
     public List<DeploymentDescription> generate(TestClass testClass) {
         List<DeploymentDescription> deployments = super.generate(testClass);
 
-        String keycloakAdapterServerQualifier = getAppServerQualifier(
+        String appServerQualifier = getAppServerQualifier(
                 testClass.getJavaClass());
 
-        if (keycloakAdapterServerQualifier != null && !keycloakAdapterServerQualifier.isEmpty()) {
+        if (appServerQualifier != null && !appServerQualifier.isEmpty()) {
             for (DeploymentDescription deployment : deployments) {
-                if (deployment.getTarget() == null || !deployment.getTarget().getName().equals(keycloakAdapterServerQualifier)) {
-                    deployment.setTarget(new TargetDescription(keycloakAdapterServerQualifier));
+                if (deployment.getTarget() == null || !deployment.getTarget().getName().equals(appServerQualifier)) {
+                    deployment.setTarget(new TargetDescription(appServerQualifier));
                 }
             }
         }

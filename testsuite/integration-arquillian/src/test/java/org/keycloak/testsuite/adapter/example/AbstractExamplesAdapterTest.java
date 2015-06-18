@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.FileUtils;
+import java.util.ArrayList;
+import java.util.List;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.graphene.page.Page;
@@ -13,6 +13,8 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractAdapterTest;
 import org.keycloak.testsuite.ui.page.example.CustomerPortalPage;
 
@@ -63,19 +65,33 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
         return exampleDeployment("database-service");
     }
 
+    protected void replaceRedirectUris(RealmRepresentation realm, String regex, String replacement) {
+        for (ClientRepresentation client : realm.getClients()) {
+            List<String> redirectUris = client.getRedirectUris();
+            if (redirectUris != null) {
+                List<String> newRedirectUris = new ArrayList<>();
+                for (String uri : redirectUris) {
+                    newRedirectUris.add(uri.replaceAll(regex, replacement));
+                }
+                client.setRedirectUris(newRedirectUris);
+            }
+        }
+    }
+
     protected void importRealm() throws FileNotFoundException, IOException {
         File testRealmFile = new File(EXAMPLES_HOME
                 + "/keycloak-examples-" + EXAMPLES_VERSION_SUFFIX
                 + "/preconfigured-demo/testrealm.json");
 
-        if (!isRelative()) {
-            // replace relative redirectUris in testrealm.json with APP_SERVER_BASE_URL URIs
-            String testRealmContent = IOUtils.toString(testRealmFile.toURI());
-            FileUtils.writeStringToFile(testRealmFile, testRealmContent
-                    .replaceAll("(/.*/\\*)", APP_SERVER_BASE_URL + "$1"));
+        RealmRepresentation realm = loadJson(new FileInputStream(testRealmFile), RealmRepresentation.class);
+
+        if (isRelative()) {
+            replaceRedirectUris(realm, APP_SERVER_BASE_URL, "");
+        } else {
+            replaceRedirectUris(realm, "(/.*/\\*)", APP_SERVER_BASE_URL + "$1");
         }
 
-        importRealm(new FileInputStream(testRealmFile));
+        importRealm(realm);
     }
 
     @Test

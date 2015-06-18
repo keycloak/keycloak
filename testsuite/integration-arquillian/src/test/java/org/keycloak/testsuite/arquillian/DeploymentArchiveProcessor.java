@@ -12,6 +12,7 @@ import static org.keycloak.testsuite.AbstractKeycloakTest.AUTH_SERVER_URL;
 import static org.keycloak.testsuite.AbstractKeycloakTest.REALM_KEY;
 import static org.keycloak.testsuite.AbstractKeycloakTest.loadJson;
 import org.keycloak.testsuite.KeycloakContainersManager;
+import static org.keycloak.testsuite.KeycloakContainersManager.isRelative;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -30,22 +31,23 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
     }
 
     protected void modifyAdapterConfig(Archive<?> archive, TestClass testClass) {
-        if (testClass.getJavaClass().isAssignableFrom(KeycloakContainersManager.class)) {
+        System.out.println("Modifying adapter config for " + archive.getName() + ", testClass: " + testClass.getJavaClass().getSimpleName());
+        if (KeycloakContainersManager.class.isAssignableFrom(testClass.getJavaClass())) {
             try {
-                KeycloakContainersManager kcm = (KeycloakContainersManager) testClass.getJavaClass().cast(KeycloakContainersManager.class);
-
-                BaseAdapterConfig adapterDConfig = loadJson(archive.get(ADAPTER_CONFIG_PATH)
+                BaseAdapterConfig adapterConfig = loadJson(archive.get(ADAPTER_CONFIG_PATH)
                         .getAsset().openStream(), BaseAdapterConfig.class);
 
-                if (kcm.isRelative()) {
-                    adapterDConfig.setAuthServerUrl("/auth");
+                boolean relative = isRelative(testClass.getJavaClass());
+                System.out.println(" - setting " + (relative ? "" : "non-") + "relative auth-server-url");
+                if (relative) {
+                    adapterConfig.setAuthServerUrl("/auth");
 //                ac.setRealmKey(null); // TODO verify if realm key is required for relative scneario
                 } else {
-                    adapterDConfig.setAuthServerUrl(AUTH_SERVER_URL);
-                    adapterDConfig.setRealmKey(REALM_KEY);
+                    adapterConfig.setAuthServerUrl(AUTH_SERVER_URL);
+                    adapterConfig.setRealmKey(REALM_KEY);
                 }
 
-                archive.add(new StringAsset(JsonSerialization.writeValueAsPrettyString(adapterDConfig)),
+                archive.add(new StringAsset(JsonSerialization.writeValueAsPrettyString(adapterConfig)),
                         ADAPTER_CONFIG_PATH);
 
             } catch (IOException ex) {

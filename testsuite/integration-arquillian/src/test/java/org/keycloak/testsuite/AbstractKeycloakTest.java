@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.NotFoundException;
 import org.jboss.arquillian.container.test.api.Deployer;
+import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -27,6 +28,7 @@ import org.keycloak.util.JsonSerialization;
  *
  * @author tkyjovsk
  */
+@RunAsClient
 @AuthServerContainer("auth-server-wildfly")
 public abstract class AbstractKeycloakTest extends KeycloakContainersManager {
 
@@ -85,31 +87,34 @@ public abstract class AbstractKeycloakTest extends KeycloakContainersManager {
         }
     }
 
+    public void importRealm(String realmConfig) {
+        System.out.println("importing realm from config: " + realmConfig);
+        importRealm(getClass().getResourceAsStream(realmConfig));
+    }
+
     public void importRealm(InputStream is) {
-        RealmRepresentation newRealm = loadJson(is, RealmRepresentation.class);
-        System.out.println("importing realm: " + newRealm.getRealm());
+        importRealm(loadJson(is, RealmRepresentation.class));
+    }
+
+    public void importRealm(RealmRepresentation realm) {
+        System.out.println("importing realm: " + realm.getRealm());
 
 //        System.out.println("list of existing realms:");
 //        for (RealmRepresentation r : keycloak.realms().findAll()) {
 //            System.out.println("id: " + r.getId() + ", name: " + r.getRealm());
 //        }
         try { // TODO - figure out a way how to do this without try-catch
-            RealmResource rResource = keycloak.realms().realm(newRealm.getRealm());
-            RealmRepresentation rRep = rResource.toRepresentation();
+            RealmResource realmResource = keycloak.realms().realm(realm.getRealm());
+            RealmRepresentation rRep = realmResource.toRepresentation();
             System.out.println("removing existing realm: " + rRep.getRealm());
-            rResource.remove();
+            realmResource.remove();
         } catch (NotFoundException nfe) {
-            System.out.println("realm " + newRealm.getRealm() + " not found");
+            System.out.println("realm " + realm.getRealm() + " not found");
         }
         System.out.println("importing realm");
-        keycloak.realms().create(newRealm);
+        keycloak.realms().create(realm);
     }
-
-    public void importRealm(String realmConfig) {
-        System.out.println("importing realm from config: " + realmConfig);
-        importRealm(getClass().getResourceAsStream(realmConfig));
-    }
-
+    
     protected void driverSettings() {
         driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
         driver.manage().window().maximize();
