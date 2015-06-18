@@ -21,6 +21,9 @@ package org.keycloak.testsuite.ui.page.settings;
 import java.util.ArrayList;
 import java.util.List;
 import static org.junit.Assert.assertEquals;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.testsuite.ui.fragment.RoleMappings;
 import org.keycloak.testsuite.ui.page.AbstractPage;
 import org.keycloak.testsuite.ui.model.Role;
 import static org.openqa.selenium.By.cssSelector;
@@ -35,6 +38,9 @@ import static org.keycloak.testsuite.ui.util.SeleniumUtils.*;
  */
 public class RolesPage extends AbstractPage {
 
+    @Page
+    private RoleMappings roleMappings;
+
     @FindBy(css = "input[class*='search']")
     private WebElement searchInput;
 
@@ -47,9 +53,8 @@ public class RolesPage extends AbstractPage {
     @FindBy(id = "description")
     private WebElement descriptionInput;
 
-    @FindBy(id = "compositeSwitch")
+    @FindBy(className = "onoffswitch-switch")
     private WebElement compositeSwitchToggle;
-	
 
     public boolean isRoleComposite(String roleName) {
         return findRole(roleName).isComposite();
@@ -59,12 +64,14 @@ public class RolesPage extends AbstractPage {
 		primaryButton.click();
 		waitAjaxForElement(nameInput);
         nameInput.sendKeys(role.getName());
-        if (role.isComposite()) {
-            compositeSwitchToggle.click();
-        }
         descriptionInput.sendKeys(role.getDescription());
 		primaryButton.click();
 	}
+
+    public void addRole(Role role, String... roles) {
+        addRole(role);
+        setCompositeRole(role, roles);
+    }
 
     public Role findRole(String roleName) {
         searchInput.sendKeys(roleName);
@@ -90,10 +97,27 @@ public class RolesPage extends AbstractPage {
 		dangerButton.click();
 		deleteConfirmationButton.click();
     }
+
+    public void goToRole(Role role) {
+        waitAjaxForElement(dataTable);
+        dataTable.findElement(linkText(role.getName())).click();
+    }
+
+    public void goToRole(String name) {
+        goToRole(new Role(name));
+    }
 	
 	public void deleteRole(String name) {
 		deleteRole(new Role(name));
 	}
+
+    public void setCompositeRole(Role role, String... roles){
+        if (role.isComposite()) {
+            waitAjaxForElement(compositeSwitchToggle);
+            compositeSwitchToggle.click();
+            roleMappings.addAvailableRole(roles);
+        }
+    }
 
     private List<Role> getAllRows() {
         List<Role> rows = new ArrayList<Role>();

@@ -1,10 +1,14 @@
 package org.keycloak.testsuite.ui.fragment;
 
+import org.keycloak.testsuite.ui.model.Role;
 import org.keycloak.testsuite.ui.page.AbstractPage;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.keycloak.testsuite.ui.util.SeleniumUtils.waitGuiForElement;
 
@@ -77,5 +81,25 @@ public class RoleMappings extends AbstractPage {
         waitGuiForElement(By.id("assigned-client"));
         assignedClientRolesSelect.selectByVisibleText(client);
         removeSelectedButton.click();
+    }
+
+    public void addAvailableRole(String... roles){
+        waitGuiForElement(By.id("available"));
+        for(String role : roles) {
+            availableRolesSelect.selectByVisibleText(role);
+            addSelected.click();
+        }
+    }
+
+    public boolean checkIfEffectiveRolesAreComplete(List<Role> roles){
+        List<String> roleNames = new ArrayList<>();
+        for (Role role : roles){
+            roleNames.add(role.getName());
+        }
+        for (WebElement role : effectiveRolesSelect.getOptions()){
+            roleNames.contains(role.getText());
+            roleNames.remove(role.getText());
+        }
+        return roleNames.isEmpty();
     }
 }

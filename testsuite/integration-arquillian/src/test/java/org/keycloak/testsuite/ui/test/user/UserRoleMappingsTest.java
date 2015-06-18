@@ -17,7 +17,7 @@ import static org.openqa.selenium.By.linkText;
 /**
  * Created by fkiss.
  */
-public class RoleMappingsTest extends AbstractKeyCloakTest<RoleMappings> {
+public class UserRoleMappingsTest extends AbstractKeyCloakTest<RoleMappings> {
 
     @Page
     private UserPage userPage;
