@@ -2,7 +2,6 @@ package org.keycloak.testsuite.adapter.example;
 
 import java.io.IOException;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.keycloak.testsuite.adapter.Relative;
 import static org.keycloak.testsuite.adapter.example.AbstractExamplesAdapterTest.CUSTOMER_PORTAL;
 import static org.keycloak.testsuite.adapter.example.AbstractExamplesAdapterTest.DATABASE_SERVICE;
@@ -17,7 +16,6 @@ import org.keycloak.testsuite.arquillian.TargetsContainer;
 @ControlsContainers({"keycloak-managed"})
 @TargetsContainer("keycloak-managed")
 @Relative
-@Ignore("doesn't work yet")
 public class RelativeExamplesAdapterTest extends AbstractExamplesAdapterTest {
 
     public RelativeExamplesAdapterTest() {

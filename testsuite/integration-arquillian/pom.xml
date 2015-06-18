@@ -98,6 +98,11 @@
             <version>1.0.0.Final</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.arquillian.container</groupId>
+            <artifactId>arquillian-droidium-container-spi</artifactId>
+            <version>1.0.0.Final</version>
+        </dependency>
 
         <dependency>
             <groupId>org.jboss.arquillian.graphene</groupId>

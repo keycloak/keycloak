@@ -10,7 +10,6 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
@@ -45,33 +44,22 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
     }
 
     protected static WebArchive exampleDeployment(String name) throws IOException {
-        WebArchive exampleDeployment = ShrinkWrap.createFromZipFile(WebArchive.class,
+        return ShrinkWrap.createFromZipFile(WebArchive.class,
                 new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".war"));
-
-        String keycloakJSONContent = IOUtils.toString(
-                exampleDeployment.get("/WEB-INF/keycloak.json")
-                .getAsset().openStream(), "UTF-8");
-
-        // replace relative /auth URL with AUTH_SERVER_BASE_URL
-        exampleDeployment.add(new StringAsset(
-                keycloakJSONContent.replace("/auth", AUTH_SERVER_URL)),
-                "/WEB-INF/keycloak.json");
-
-        return exampleDeployment;
     }
 
-    @Deployment(name = CUSTOMER_PORTAL, managed = false, testable = false)
-    protected static WebArchive customerPortalExample() throws IOException {
+    @Deployment(name = CUSTOMER_PORTAL, managed = false)
+    private static WebArchive customerPortalExample() throws IOException {
         return exampleDeployment("customer-portal-example");
     }
 
-    @Deployment(name = PRODUCT_PORTAL, managed = false, testable = false)
-    protected static WebArchive productPortalExample() throws IOException {
+    @Deployment(name = PRODUCT_PORTAL, managed = false)
+    private static WebArchive productPortalExample() throws IOException {
         return exampleDeployment("product-portal-example");
     }
 
-    @Deployment(name = DATABASE_SERVICE, managed = false, testable = false)
-    protected static WebArchive databaseServiceExample() throws IOException {
+    @Deployment(name = DATABASE_SERVICE, managed = false)
+    private static WebArchive databaseServiceExample() throws IOException {
         return exampleDeployment("database-service");
     }
 
@@ -92,12 +80,12 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
 
     @Test
     public void simpleCustomerPortalTest() throws InterruptedException {
-        driver.get(APP_SERVER_BASE_URL + "/" + CUSTOMER_PORTAL);
+        driver.get(APP_SERVER_BASE_URL + "/customer-portal");
 
         customerPortalPage.customerListing();
         loginPage.login("bburke@redhat.com", "password");
 
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(APP_SERVER_BASE_URL + "/" + CUSTOMER_PORTAL));
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(APP_SERVER_BASE_URL + "/customer-portal"));
         customerPortalPage.waitForCustomerListingHeader();
 
         Assert.assertTrue(driver.getPageSource().contains("Username: bburke@redhat.com"));

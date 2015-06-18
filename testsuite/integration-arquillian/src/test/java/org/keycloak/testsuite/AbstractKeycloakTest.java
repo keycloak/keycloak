@@ -36,14 +36,18 @@ public abstract class AbstractKeycloakTest extends ContainersController {
 
     protected static boolean adminPasswordUpdated = Boolean.parseBoolean(System.getProperty("adminPasswordUpdated", "false"));
 
-    public static String AUTH_SERVER_BASE_URL;
-    public static String AUTH_SERVER_URL;
-    public static String ADMIN_CONSOLE_URL;
+    public static final String AUTH_SERVER_BASE_URL = "http://localhost:" + Integer.parseInt(
+            System.getProperty("keycloak.http.port", "8080"));
 
-    public static String SETTINGS_GENERAL_SETTINGS;
-    public static String SETTINGS_ROLES;
-    public static String SETTINGS_LOGIN;
-    public static String SETTINGS_SOCIAL;
+    public static final String AUTH_SERVER_URL = AUTH_SERVER_BASE_URL + "/auth";
+    public static final String ADMIN_CONSOLE_URL = AUTH_SERVER_URL + "/admin/master/console/index.html";
+
+    public static final String SETTINGS_GENERAL_SETTINGS = ADMIN_CONSOLE_URL + "#/realms/%s";
+    public static final String SETTINGS_ROLES = ADMIN_CONSOLE_URL + "#/realms/%s/roles";
+    public static final String SETTINGS_LOGIN = ADMIN_CONSOLE_URL + "#/realms/%s/login-settings";
+    public static final String SETTINGS_SOCIAL = ADMIN_CONSOLE_URL + "#/realms/%s/social-settings";
+
+    public static final String REALM_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
 
     @ArquillianResource
     protected Deployer deployer;
@@ -61,22 +65,6 @@ public abstract class AbstractKeycloakTest extends ContainersController {
     protected MenuPage menuPage;
     @Page
     protected Navigation navigation;
-
-    public AbstractKeycloakTest() {
-        this("http://localhost:" + Integer.parseInt(
-                System.getProperty("keycloak.http.port", "8080")));
-    }
-
-    public AbstractKeycloakTest(String authServerBaseURL) {
-        AUTH_SERVER_BASE_URL = authServerBaseURL;
-        AUTH_SERVER_URL = AUTH_SERVER_BASE_URL + "/auth";
-        ADMIN_CONSOLE_URL = AUTH_SERVER_URL + "/admin/master/console/index.html";
-
-        SETTINGS_GENERAL_SETTINGS = ADMIN_CONSOLE_URL + "#/realms/%s";
-        SETTINGS_ROLES = ADMIN_CONSOLE_URL + "#/realms/%s/roles";
-        SETTINGS_LOGIN = ADMIN_CONSOLE_URL + "#/realms/%s/login-settings";
-        SETTINGS_SOCIAL = ADMIN_CONSOLE_URL + "#/realms/%s/social-settings";
-    }
 
     public void loginAsAdmin() {
         driver.get(ADMIN_CONSOLE_URL);
@@ -122,6 +110,7 @@ public abstract class AbstractKeycloakTest extends ContainersController {
     }
 
     public void importRealm(String realmConfig) {
+        System.out.println("importing realm from config: " + realmConfig);
         importRealm(getClass().getResourceAsStream(realmConfig));
     }
 

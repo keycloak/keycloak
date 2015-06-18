@@ -14,7 +14,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
@@ -67,37 +66,37 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         return deployment;
     }
 
-    @Deployment(name = CUSTOMER_PORTAL, managed = false, testable = false)
+    @Deployment(name = CUSTOMER_PORTAL, managed = false)
     private static WebArchive customerPortal() {
         return adapterDeployment(CUSTOMER_PORTAL, CustomerServlet.class, ErrorServlet.class);
     }
 
-    @Deployment(name = SECURE_PORTAL, managed = false, testable = false)
+    @Deployment(name = SECURE_PORTAL, managed = false)
     private static WebArchive securePortal() {
         return adapterDeployment(SECURE_PORTAL, CallAuthenticatedServlet.class);
     }
 
-    @Deployment(name = CUSTOMER_DB, managed = false, testable = false)
+    @Deployment(name = CUSTOMER_DB, managed = false)
     private static WebArchive customerDb() {
         return adapterDeployment(CUSTOMER_DB, CustomerDatabaseServlet.class);
     }
 
-    @Deployment(name = CUSTOMER_DB_ERROR_PAGE, managed = false, testable = false)
+    @Deployment(name = CUSTOMER_DB_ERROR_PAGE, managed = false)
     private static WebArchive customerDbErrorPage() {
         return adapterDeployment(CUSTOMER_DB_ERROR_PAGE, CustomerDatabaseServlet.class, ErrorServlet.class);
     }
 
-    @Deployment(name = PRODUCT_PORTAL, managed = false, testable = false)
+    @Deployment(name = PRODUCT_PORTAL, managed = false)
     private static WebArchive productPortal() {
         return adapterDeployment(PRODUCT_PORTAL, ProductServlet.class);
     }
 
-    @Deployment(name = SESSION_PORTAL, managed = false, testable = false)
+    @Deployment(name = SESSION_PORTAL, managed = false)
     private static WebArchive sessionPortal() {
         return adapterDeployment(SESSION_PORTAL, "keycloak.json", SessionServlet.class);
     }
 
-    @Deployment(name = INPUT_PORTAL, managed = false, testable = false)
+    @Deployment(name = INPUT_PORTAL, managed = false)
     private static WebArchive inputPortal() {
         return adapterDeployment(INPUT_PORTAL, "keycloak.json", InputServlet.class);
     }
