@@ -14,13 +14,13 @@ import org.junit.runner.RunWith;
  */
 @RunWith(Arquillian.class)
 public abstract class KeycloakContainersManager {
-
+    
     @ArquillianResource
     protected ContainerController controller;
-
+    
     private final String authServerQualifier;
     private final String appServerQualifier;
-
+    
     public KeycloakContainersManager() {
         this.authServerQualifier = getAuthServerQualifier(this.getClass());
         this.appServerQualifier = getAppServerQualifier(this.getClass());
@@ -44,7 +44,7 @@ public abstract class KeycloakContainersManager {
         }
         return authServerQualifier;
     }
-
+    
     public static String getAppServerQualifier(Class clazz) {
         Class<? extends KeycloakContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(clazz, AppServerContainer.class);
         
@@ -55,7 +55,7 @@ public abstract class KeycloakContainersManager {
                 ? getAuthServerQualifier(clazz) // app server == auth server
                 : appServerQualifier;
     }
-
+    
     public static boolean isRelative(Class clazz) {
         return getAppServerQualifier(clazz).equals(getAuthServerQualifier(clazz));
     }
@@ -66,19 +66,21 @@ public abstract class KeycloakContainersManager {
                 : (clazz.equals(Object.class) || clazz.equals(KeycloakContainersManager.class) ? null // stop recursion
                         : getNearestSuperclassWithAnnotation(clazz.getSuperclass(), annotationClass)); // continue recursion
     }
-
+    
     public boolean isRelative() {
         return appServerQualifier.equals(authServerQualifier);
     }
-
+    
     @Before
     public void startContainers() {
-        System.out.println("Starting Auth server: " + authServerQualifier);
-        controller.start(authServerQualifier);
-        if (!isRelative()) {
+        if (!controller.isStarted(authServerQualifier)) {
+            System.out.println("Starting Auth server: " + authServerQualifier);
+            controller.start(authServerQualifier);
+        }
+        if (!controller.isStarted(appServerQualifier)) {
             System.out.println("Starting App server: " + appServerQualifier);
             controller.start(appServerQualifier);
         }
     }
-
+    
 }
