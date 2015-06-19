@@ -371,8 +371,8 @@ module.controller('RealmCacheCtrl', function($scope, Current, Realm, realm, serv
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/cache-settings");
 });
 
-module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications, PasswordPolicy) {
-    console.log('RealmRequiredCredentialsCtrl');
+module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications, PasswordPolicy) {
+    console.log('RealmPasswordPolicyCtrl');
 
     $scope.realm = realm;
 
@@ -395,12 +395,6 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
         $scope.policy.splice(index, 1);
     }
 
-    $scope.userCredentialOptions = {
-        'multiple' : true,
-        'simple_tags' : true,
-        'tags' : ['password', 'totp', 'cert', 'kerberos']
-    };
-
     $scope.changed = false;
 
     $scope.$watch('realm', function() {
@@ -420,7 +414,7 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
         $scope.changed = false;
 
         Realm.update($scope.realm, function () {
-            $location.url("/realms/" + realm.realm + "/required-credentials");
+            $location.url("/realms/" + realm.realm + "/authentication/password-policy");
             Notifications.success("Your changes have been saved to the realm.");
             oldCopy = angular.copy($scope.realm);
             oldPolicy = angular.copy($scope.policy);
