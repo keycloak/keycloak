@@ -2,6 +2,7 @@ package org.keycloak.authentication.authenticators;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -24,20 +25,25 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class AbstractFormAuthenticator {
+public abstract class AbstractFormAuthenticator implements Authenticator {
 
-    public static final String LOGIN_FORM_ACTION = "login_form";
     public static final String REGISTRATION_FORM_ACTION = "registration_form";
-    public static final String ACTION = "action";
-    public static final String FORM_USERNAME = "FORM_USERNAME";
+    public static final String EXECUTION = "execution";
+    public static final String ATTEMPTED_USERNAME = "ATTEMPTED_USERNAME";
 
-    protected boolean isAction(AuthenticatorContext context, String action) {
-        return action.equals(context.getAction());
+    @Override
+    public void action(AuthenticatorContext context) {
+
+    }
+
+    @Override
+    public void close() {
+
     }
 
     protected LoginFormsProvider loginForm(AuthenticatorContext context) {
         String accessCode = context.generateAccessCode();
-        URI action = getActionUrl(context, accessCode, LOGIN_FORM_ACTION);
+        URI action = getActionUrl(context, accessCode);
         LoginFormsProvider provider = context.getSession().getProvider(LoginFormsProvider.class)
                     .setUser(context.getUser())
                     .setActionUri(action)
@@ -48,10 +54,10 @@ public class AbstractFormAuthenticator {
         return provider;
     }
 
-    public static URI getActionUrl(AuthenticatorContext context, String code, String action) {
+    public URI getActionUrl(AuthenticatorContext context, String code) {
         return LoginActionsService.authenticationFormProcessor(context.getUriInfo())
                 .queryParam(OAuth2Constants.CODE, code)
-                .queryParam(ACTION, action)
+                .queryParam(EXECUTION, context.getExecution().getId())
                     .build(context.getRealm().getName());
     }
 
@@ -111,7 +117,7 @@ public class AbstractFormAuthenticator {
             return false;
         }
         context.getEvent().detail(Details.USERNAME, username);
-        context.getClientSession().setNote(AbstractFormAuthenticator.FORM_USERNAME, username);
+        context.getClientSession().setNote(AbstractFormAuthenticator.ATTEMPTED_USERNAME, username);
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
         if (invalidUser(context, user)) return false;
         String rememberMe = inputData.getFirst("rememberMe");
@@ -119,6 +125,8 @@ public class AbstractFormAuthenticator {
         if (remember) {
             context.getClientSession().setNote(Details.REMEMBER_ME, "true");
             context.getEvent().detail(Details.REMEMBER_ME, "true");
+        } else {
+            context.getClientSession().removeNote(Details.REMEMBER_ME);
         }
         context.setUser(user);
         return true;

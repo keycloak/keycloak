@@ -32,9 +32,9 @@ public interface ClientSessionModel {
     public Set<String> getProtocolMappers();
     public void setProtocolMappers(Set<String> protocolMappers);
 
-    public Map<String, UserSessionModel.AuthenticatorStatus> getAuthenticators();
-    public void setAuthenticatorStatus(String authenticator, UserSessionModel.AuthenticatorStatus status);
-    public void setAuthenticatorStatus(Map<String, UserSessionModel.AuthenticatorStatus> status);
+    public Map<String, ExecutionStatus> getExecutionStatus();
+    public void setExecutionStatus(String authenticator, ExecutionStatus status);
+    public void clearExecutionStatus();
     public UserModel getAuthenticatedUser();
     public void setAuthenticatedUser(UserModel user);
 
@@ -67,6 +67,8 @@ public interface ClientSessionModel {
      */
     public Map<String, String> getUserSessionNotes();
 
+    public void clearUserSessionNotes();
+
     public static enum Action {
         OAUTH_GRANT,
         CODE_TO_TOKEN,
@@ -80,4 +82,12 @@ public interface ClientSessionModel {
         LOGGED_OUT
     }
 
+    public enum ExecutionStatus {
+        FAILED,
+        SUCCESS,
+        SETUP_REQUIRED,
+        ATTEMPTED,
+        SKIPPED,
+        CHALLENGED
+    }
 }

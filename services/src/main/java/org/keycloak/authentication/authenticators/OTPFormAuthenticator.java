@@ -32,13 +32,14 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
     }
 
     @Override
-    public void authenticate(AuthenticatorContext context) {
-        if (!isAction(context, TOTP_FORM_ACTION)) {
-            Response challengeResponse = challenge(context, null);
-            context.challenge(challengeResponse);
-            return;
-        }
+    public void action(AuthenticatorContext context) {
         validateOTP(context);
+    }
+
+    @Override
+    public void authenticate(AuthenticatorContext context) {
+        Response challengeResponse = challenge(context, null);
+        context.challenge(challengeResponse);
     }
 
     public void validateOTP(AuthenticatorContext context) {
@@ -69,7 +70,7 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
 
     protected Response challenge(AuthenticatorContext context, String error) {
         String accessCode = context.generateAccessCode();
-        URI action = AbstractFormAuthenticator.getActionUrl(context, accessCode, TOTP_FORM_ACTION);
+        URI action = getActionUrl(context, accessCode);
         LoginFormsProvider forms = context.getSession().getProvider(LoginFormsProvider.class)
                 .setActionUri(action)
                 .setClientSessionCode(accessCode);
@@ -90,6 +91,8 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
         }
 
     }
+
+
 
     @Override
     public void close() {

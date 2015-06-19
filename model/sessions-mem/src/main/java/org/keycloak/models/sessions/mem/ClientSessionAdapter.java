@@ -155,19 +155,24 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
-    public Map<String, UserSessionModel.AuthenticatorStatus> getAuthenticators() {
+    public Map<String, ExecutionStatus> getExecutionStatus() {
         return entity.getAuthenticatorStatus();
     }
 
     @Override
-    public void setAuthenticatorStatus(String authenticator, UserSessionModel.AuthenticatorStatus status) {
+    public void setExecutionStatus(String authenticator, ExecutionStatus status) {
         entity.getAuthenticatorStatus().put(authenticator, status);
 
     }
 
     @Override
-    public void setAuthenticatorStatus(Map<String, UserSessionModel.AuthenticatorStatus> status) {
-        entity.setAuthenticatorStatus(status);
+    public void clearExecutionStatus() {
+        entity.getAuthenticatorStatus().clear();
+    }
+
+    @Override
+    public void clearUserSessionNotes() {
+        entity.getUserSessionNotes().clear();
     }
 
     @Override

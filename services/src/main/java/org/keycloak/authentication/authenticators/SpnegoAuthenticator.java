@@ -39,26 +39,17 @@ public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Au
         return false;
     }
 
-    protected boolean isAlreadyChallenged(AuthenticatorContext context) {
-        UserSessionModel.AuthenticatorStatus status = context.getClientSession().getAuthenticators().get(context.getExecution().getId());
-        if (status == null) return false;
-        return status == UserSessionModel.AuthenticatorStatus.CHALLENGED;
+    @Override
+    public void action(AuthenticatorContext context) {
+        context.attempted();
+        return;
     }
 
     @Override
     public void authenticate(AuthenticatorContext context) {
         HttpRequest request = context.getHttpRequest();
         String authHeader = request.getHttpHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if (isAction(context, KERBEROS_DISABLED)) {
-            context.attempted();
-            return;
-        }
-        // Case when we don't yet have any Negotiate header
         if (authHeader == null) {
-            if (isAlreadyChallenged(context)) {
-                context.attempted();
-                return;
-            }
             Response challenge = challengeNegotiation(context, null);
             context.forceChallenge(challenge);
             return;
@@ -131,7 +122,7 @@ public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Au
      */
     protected Response optionalChallengeRedirect(AuthenticatorContext context, String negotiateHeader) {
         String accessCode = context.generateAccessCode();
-        URI action = getActionUrl(context, accessCode, KERBEROS_DISABLED);
+        URI action = getActionUrl(context, accessCode);
 
         StringBuilder builder = new StringBuilder();
 
@@ -157,18 +148,6 @@ public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Au
                 .header(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader)
                 .type(MediaType.TEXT_HTML_TYPE)
                 .entity(builder.toString()).build();
-    }
-
-    protected Response formChallenge(AuthenticatorContext context, String negotiateHeader) {
-        String accessCode = context.generateAccessCode();
-        URI action = getActionUrl(context, accessCode, KERBEROS_DISABLED);
-        return context.getSession().getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(accessCode)
-                .setActionUri(action)
-                .setStatus(Response.Status.UNAUTHORIZED)
-                .setResponseHeader(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader)
-                .setUser(context.getUser())
-                .createForm("bypass_kerberos.ftl", new HashMap<String, Object>());
     }
 
 

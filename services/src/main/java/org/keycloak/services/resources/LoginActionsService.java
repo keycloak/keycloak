@@ -23,6 +23,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.InternalServerErrorException;
 import org.keycloak.ClientConnection;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.AuthenticatorUtil;
@@ -65,6 +66,7 @@ import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -234,7 +236,7 @@ public class LoginActionsService {
     @Path("authenticate")
     @GET
     public Response authenticate(@QueryParam("code") String code,
-                                 @QueryParam("action") String action) {
+                                 @QueryParam("execution") String execution) {
         event.event(EventType.LOGIN);
         Checks checks = new Checks();
         if (!checks.check(code)) {
@@ -249,26 +251,56 @@ public class LoginActionsService {
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
         }
 
-        AuthenticationFlowModel flow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
-        String flowId = flow.getId();
+        return processAuthentication(execution, clientSession);
+    }
+
+    protected Response processAuthentication(String execution, ClientSessionModel clientSession) {
+        String flowAlias = DefaultAuthenticationFlows.BROWSER_FLOW;
+        AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setClientSession(clientSession)
-                .setFlowId(flowId)
+                .setFlowId(flow.getId())
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
                 .setProtector(authManager.getProtector())
-                .setAction(action)
                 .setRealm(realm)
                 .setSession(session)
                 .setUriInfo(uriInfo)
                 .setRequest(request);
 
         try {
-            return processor.authenticate();
+            if (execution != null) {
+                return processor.authenticationAction(execution);
+            } else {
+                return processor.authenticate();
+            }
         } catch (Exception e) {
             return processor.handleBrowserException(e);
         }
     }
+
+    /**
+     * URL called after login page.  YOU SHOULD NEVER INVOKE THIS DIRECTLY!
+     *
+     * @param code
+     * @return
+     */
+    @Path("authenticate")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response authenticateForm(@QueryParam("code") String code,
+                                     @QueryParam("execution") String execution) {
+        event.event(EventType.LOGIN);
+        Checks checks = new Checks();
+        if (!checks.check(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+            return checks.response;
+        }
+        final ClientSessionCode clientCode = checks.clientCode;
+        final ClientSessionModel clientSession = clientCode.getClientSession();
+
+        return processAuthentication(execution, clientSession);
+    }
+
 
     /**
      * protocol independent registration page entry point
@@ -302,46 +334,6 @@ public class LoginActionsService {
                 .createRegistration();
     }
 
-    /**
-     * URL called after login page.  YOU SHOULD NEVER INVOKE THIS DIRECTLY!
-     *
-     * @param code
-     * @return
-     */
-    @Path("authenticate")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response authenticateForm(@QueryParam("code") String code,
-                             @QueryParam("action") String action) {
-        event.event(EventType.LOGIN);
-        Checks checks = new Checks();
-        if (!checks.check(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
-            return checks.response;
-        }
-        final ClientSessionCode clientCode = checks.clientCode;
-        final ClientSessionModel clientSession = clientCode.getClientSession();
-
-        String flowAlias = DefaultAuthenticationFlows.BROWSER_FLOW;
-        AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
-        AuthenticationProcessor processor = new AuthenticationProcessor();
-        processor.setClientSession(clientSession)
-                .setFlowId(flow.getId())
-                .setConnection(clientConnection)
-                .setEventBuilder(event)
-                .setProtector(authManager.getProtector())
-                .setRealm(realm)
-                .setSession(session)
-                .setUriInfo(uriInfo)
-                .setAction(action)
-                .setRequest(request);
-
-        try {
-            return processor.authenticate();
-        } catch (Exception e) {
-            return processor.handleBrowserException(e);
-        }
-
-    }
 
     /**
      * Registration
@@ -946,7 +938,7 @@ public class LoginActionsService {
     }
 
     @Path("required-actions/{action}")
-    public Object requiredAction(@QueryParam("code") String code,
+    public Object requiredAction(@QueryParam("code") final String code,
                                  @PathParam("action") String action) {
         event.event(EventType.LOGIN);
         if (action == null) {
@@ -1024,6 +1016,11 @@ public class LoginActionsService {
 
             @Override
             public String generateAccessCode(String action) {
+                String clientSessionAction = clientSession.getAction();
+                if (action.equals(clientSessionAction)) {
+                    clientSession.setTimestamp(Time.currentTime());
+                    return code;
+                }
                 ClientSessionCode code = new ClientSessionCode(getRealm(), getClientSession());
                 code.setAction(action);
                 return code.getCode();

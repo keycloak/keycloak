@@ -20,5 +20,7 @@ public interface Authenticator extends Provider {
      */
     void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user);
 
+    void action(AuthenticatorContext context);
+
 
 }
