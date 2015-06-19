@@ -532,7 +532,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 	}
 
 	/**
-	 * KEYCLOAK-1216
+	 * KEYCLOAK-1216 KEYCLOAK-1485
 	 */
 	@Test
 	@Ignore
