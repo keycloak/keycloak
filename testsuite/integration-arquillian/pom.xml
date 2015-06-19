@@ -185,19 +185,16 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client</artifactId>
             <scope>test</scope>
-            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-api</artifactId>
             <scope>test</scope>
-            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-services</artifactId>
             <scope>test</scope>
-            <type>jar</type>
         </dependency>
     </dependencies>
 

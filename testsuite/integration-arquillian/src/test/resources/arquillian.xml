@@ -37,6 +37,15 @@
         <property name="browser">${browser}</property>
     </extension>
     
+    <extension qualifier="graphene-secondbrowser">
+        <property name="browser">${browser}</property>
+    </extension>
+    
+<!--    <extension qualifier="systemproperties">
+        <property name="app.server.base.url">http://localhost:8280</property>
+        <property name="my.host.name">localhost</property>
+    </extension>-->
+    
     <engine>
         <property name="deploymentExportPath">target/deployments</property>
     </engine>
