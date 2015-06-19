@@ -1,6 +1,6 @@
 package org.keycloak.models.sessions.jpa.entities;
 
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.ClientSessionModel;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -39,7 +39,7 @@ public class ClientSessionAuthStatusEntity {
     @Column(name = "AUTHENTICATOR")
     protected String authenticator;
     @Column(name = "STATUS")
-    protected UserSessionModel.AuthenticatorStatus status;
+    protected ClientSessionModel.ExecutionStatus status;
 
     public String getAuthenticator() {
         return authenticator;
@@ -49,11 +49,11 @@ public class ClientSessionAuthStatusEntity {
         this.authenticator = authenticator;
     }
 
-    public UserSessionModel.AuthenticatorStatus getStatus() {
+    public ClientSessionModel.ExecutionStatus getStatus() {
         return status;
     }
 
-    public void setStatus(UserSessionModel.AuthenticatorStatus status) {
+    public void setStatus(ClientSessionModel.ExecutionStatus status) {
         this.status = status;
     }
 

@@ -4,24 +4,18 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorContext;
-import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticatorModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -34,30 +28,8 @@ public class UsernamePasswordForm extends AbstractFormAuthenticator implements A
         this.model = model;
     }
 
-    @Override
-    public void authenticate(AuthenticatorContext context) {
-        if (isAction(context, REGISTRATION_FORM_ACTION) && context.getUser() != null) {
-            context.success();
-            return;
-        }
-        if (!isAction(context, LOGIN_FORM_ACTION)) {
-            MultivaluedMap<String, String> formData = new MultivaluedMapImpl<>();
-            String loginHint = context.getClientSession().getNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
-
-            String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getRealm(), context.getHttpRequest().getHttpHeaders());
-
-            if (loginHint != null || rememberMeUsername != null) {
-                if (loginHint != null) {
-                    formData.add(AuthenticationManager.FORM_USERNAME, loginHint);
-                } else {
-                    formData.add(AuthenticationManager.FORM_USERNAME, rememberMeUsername);
-                    formData.add("rememberMe", "on");
-                }
-            }
-            Response challengeResponse = challenge(context, formData);
-            context.challenge(challengeResponse);
-            return;
-        }
+   @Override
+    public void action(AuthenticatorContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         if (formData.containsKey("cancel")) {
             context.getEvent().error(Errors.REJECTED_BY_USER);
@@ -66,10 +38,9 @@ public class UsernamePasswordForm extends AbstractFormAuthenticator implements A
                     .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
                     .setUriInfo(context.getUriInfo());
             Response response = protocol.cancelLogin(context.getClientSession());
-            context.challenge(response);
+            context.forceChallenge(response);
             return;
         }
-
         if (!validateUser(context, formData)) {
             return;
         }
@@ -77,7 +48,30 @@ public class UsernamePasswordForm extends AbstractFormAuthenticator implements A
             return;
         }
         context.success();
+    }
 
+    @Override
+    public void authenticate(AuthenticatorContext context) {
+        if (REGISTRATION_FORM_ACTION.equals(context.getAction()) && context.getUser() != null) {
+            context.success();
+            return;
+        }
+        MultivaluedMap<String, String> formData = new MultivaluedMapImpl<>();
+        String loginHint = context.getClientSession().getNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+
+        String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getRealm(), context.getHttpRequest().getHttpHeaders());
+
+        if (loginHint != null || rememberMeUsername != null) {
+            if (loginHint != null) {
+                formData.add(AuthenticationManager.FORM_USERNAME, loginHint);
+            } else {
+                formData.add(AuthenticationManager.FORM_USERNAME, rememberMeUsername);
+                formData.add("rememberMe", "on");
+            }
+        }
+        Response challengeResponse = challenge(context, formData);
+        context.getClientSession().setNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, context.getExecution().getId());
+        context.challenge(challengeResponse);
     }
 
     @Override

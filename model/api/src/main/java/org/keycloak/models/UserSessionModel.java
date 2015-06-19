@@ -37,15 +37,6 @@ public interface UserSessionModel {
 
     List<ClientSessionModel> getClientSessions();
 
-    public static enum AuthenticatorStatus {
-        FAILED,
-        SUCCESS,
-        SETUP_REQUIRED,
-        ATTEMPTED,
-        SKIPPED,
-        CHALLENGED
-    }
-
     public String getNote(String name);
     public void setNote(String name, String value);
     public void removeNote(String name);

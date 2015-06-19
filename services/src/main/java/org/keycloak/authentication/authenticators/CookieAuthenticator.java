@@ -33,6 +33,11 @@ public class CookieAuthenticator implements Authenticator {
     }
 
     @Override
+    public void action(AuthenticatorContext context) {
+
+    }
+
+    @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
         return true;
     }

@@ -142,25 +142,6 @@ public class ClientSessionCode {
         clientSession.setTimestamp(Time.currentTime());
     }
 
-    public void setRequiredAction(RequiredAction requiredAction) {
-        setAction(convertToAction(requiredAction));
-    }
-
-    private String convertToAction(RequiredAction requiredAction) {
-        switch (requiredAction) {
-            case CONFIGURE_TOTP:
-                return ClientSessionModel.Action.CONFIGURE_TOTP.name();
-            case UPDATE_PASSWORD:
-                return ClientSessionModel.Action.UPDATE_PASSWORD.name();
-            case UPDATE_PROFILE:
-                return ClientSessionModel.Action.UPDATE_PROFILE.name();
-            case VERIFY_EMAIL:
-                return ClientSessionModel.Action.VERIFY_EMAIL.name();
-            default:
-                throw new IllegalArgumentException("Unknown required action " + requiredAction);
-        }
-    }
-
     public String getCode() {
         return generateCode(realm, clientSession);
     }

@@ -1,7 +1,6 @@
 package org.keycloak.models.sessions.infinispan.entities;
 
 import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.UserSessionModel;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +29,7 @@ public class ClientSessionEntity extends SessionEntity {
     private Set<String> protocolMappers;
     private Map<String, String> notes;
     private Map<String, String> userSessionNotes;
-    private Map<String, UserSessionModel.AuthenticatorStatus> authenticatorStatus = new HashMap<>();
+    private Map<String, ClientSessionModel.ExecutionStatus> authenticatorStatus = new HashMap<>();
     private String authUserId;
 
     public String getClient() {
@@ -113,11 +112,11 @@ public class ClientSessionEntity extends SessionEntity {
         this.notes = notes;
     }
 
-    public Map<String, UserSessionModel.AuthenticatorStatus> getAuthenticatorStatus() {
+    public Map<String, ClientSessionModel.ExecutionStatus> getAuthenticatorStatus() {
         return authenticatorStatus;
     }
 
-    public void setAuthenticatorStatus(Map<String, UserSessionModel.AuthenticatorStatus> authenticatorStatus) {
+    public void setAuthenticatorStatus(Map<String, ClientSessionModel.ExecutionStatus> authenticatorStatus) {
         this.authenticatorStatus = authenticatorStatus;
     }
 
