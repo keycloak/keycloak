@@ -135,4 +135,6 @@ public class ClientSessionEntity extends SessionEntity {
     public void setUserSessionNotes(Map<String, String> userSessionNotes) {
         this.userSessionNotes = userSessionNotes;
     }
+
+
 }

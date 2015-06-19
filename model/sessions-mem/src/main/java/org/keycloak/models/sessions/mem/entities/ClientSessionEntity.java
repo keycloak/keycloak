@@ -132,4 +132,21 @@ public class ClientSessionEntity {
     public Map<String, String> getUserSessionNotes() {
         return userSessionNotes;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ClientSessionEntity)) return false;
+
+        ClientSessionEntity that = (ClientSessionEntity) o;
+
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
+    }
 }

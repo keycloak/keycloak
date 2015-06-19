@@ -459,7 +459,8 @@ public class AuthenticationProcessor {
         return authenticationComplete();
     }
 
-    protected void resetFlow() {
+    public static  void resetFlow(ClientSessionModel clientSession) {
+        clientSession.setAuthenticatedUser(null);
         clientSession.clearExecutionStatus();
         clientSession.clearUserSessionNotes();
         clientSession.removeNote(CURRENT_AUTHENTICATION_EXECUTION);
@@ -471,14 +472,14 @@ public class AuthenticationProcessor {
         if (!execution.equals(current)) {
             logger.debug("Current execution does not equal executed execution.  Might be a page refresh");
             logFailure();
-            resetFlow();
+            resetFlow(clientSession);
             return authenticate();
         }
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
             logger.debug("Cannot find execution, reseting flow");
             logFailure();
-            resetFlow();
+            resetFlow(clientSession);
             return authenticate();
         }
         event.event(EventType.LOGIN);

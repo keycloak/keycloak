@@ -137,6 +137,7 @@ public class ResetPasswordTest {
 
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
 
+        String src = driver.getPageSource();
         resetPasswordPage.backToLogin();
 
         assertTrue(loginPage.isCurrent());

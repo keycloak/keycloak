@@ -182,7 +182,15 @@ public class LoginActionsService {
             } else if (!(clientCode.isActionActive(requiredAction) || clientCode.isActionActive(alternativeRequiredAction))) {
                 event.client(clientCode.getClientSession().getClient());
                 event.error(Errors.EXPIRED_CODE);
-                response = ErrorPage.error(session, Messages.EXPIRED_CODE);
+                if (clientCode.getClientSession().getAction().equals(ClientSessionModel.Action.AUTHENTICATE.name())) {
+                    AuthenticationProcessor.resetFlow(clientCode.getClientSession());
+                    response = processAuthentication(null, clientCode.getClientSession());
+                } else {
+                    if (clientCode.getClientSession().getUserSession() == null) {
+                        session.sessions().removeClientSession(realm, clientCode.getClientSession());
+                    }
+                    response = ErrorPage.error(session, Messages.EXPIRED_CODE);
+                }
                 return false;
             } else {
                 return true;
@@ -207,21 +215,26 @@ public class LoginActionsService {
                 return false;
             }
             ClientSessionModel clientSession = clientCode.getClientSession();
+            if (clientSession == null) {
+                event.error(Errors.INVALID_CODE);
+                response = ErrorPage.error(session, Messages.INVALID_CODE);
+                return false;
+            }
             event.detail(Details.CODE_ID, clientSession.getId());
             ClientModel client = clientSession.getClient();
             if (client == null) {
                 event.error(Errors.CLIENT_NOT_FOUND);
                 response = ErrorPage.error(session, Messages.UNKNOWN_LOGIN_REQUESTER);
+                session.sessions().removeClientSession(realm, clientSession);
                 return false;
             }
-            session.getContext().setClient(client);
-
             if (!client.isEnabled()) {
                 event.error(Errors.CLIENT_NOT_FOUND);
                 response = ErrorPage.error(session, Messages.LOGIN_REQUESTER_NOT_ENABLED);
+                session.sessions().removeClientSession(realm, clientSession);
                 return false;
             }
-            session.getContext().setClient(clientCode.getClientSession().getClient());
+            session.getContext().setClient(client);
             return true;
         }
     }
@@ -239,7 +252,7 @@ public class LoginActionsService {
                                  @QueryParam("execution") String execution) {
         event.event(EventType.LOGIN);
         Checks checks = new Checks();
-        if (!checks.check(code)) {
+        if (!checks.check(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
             return checks.response;
         }
         event.detail(Details.CODE_ID, code);
