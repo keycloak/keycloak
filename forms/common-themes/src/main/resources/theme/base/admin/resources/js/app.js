@@ -273,15 +273,6 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmDefaultRolesCtrl'
         })
-        .when('/realms/:realm/required-credentials', {
-            templateUrl : resourceUrl + '/partials/realm-credentials.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return RealmLoader();
-                }
-            },
-            controller : 'RealmRequiredCredentialsCtrl'
-        })
         .when('/realms/:realm/smtp-settings', {
             templateUrl : resourceUrl + '/partials/realm-smtp.html',
             resolve : {
@@ -1062,6 +1053,15 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'RequiredActionsCtrl'
+        })
+        .when('/realms/:realm/authentication/password-policy', {
+            templateUrl : resourceUrl + '/partials/password-policy.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmPasswordPolicyCtrl'
         })
         .when('/server-info', {
             templateUrl : resourceUrl + '/partials/server-info.html'

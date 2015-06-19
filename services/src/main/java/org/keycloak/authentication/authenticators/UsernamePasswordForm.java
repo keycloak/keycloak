@@ -41,13 +41,14 @@ public class UsernamePasswordForm extends AbstractFormAuthenticator implements A
             context.forceChallenge(response);
             return;
         }
-        if (!validateUser(context, formData)) {
-            return;
-        }
-        if (!validatePassword(context, formData)) {
+        if (!validateForm(context, formData)) {
             return;
         }
         context.success();
+    }
+
+    protected boolean validateForm(AuthenticatorContext context, MultivaluedMap<String, String> formData) {
+        return validateUser(context, formData) && validatePassword(context, formData);
     }
 
     @Override

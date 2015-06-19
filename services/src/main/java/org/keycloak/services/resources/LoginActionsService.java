@@ -358,37 +358,24 @@ public class LoginActionsService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processRegister(@QueryParam("code") String code) {
-        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
         event.event(EventType.REGISTER);
-        if (!checkSsl()) {
-            event.error(Errors.SSL_REQUIRED);
-            return ErrorPage.error(session, Messages.HTTPS_REQUIRED);
+        Checks checks = new Checks();
+        if (!checks.check(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+            return checks.response;
         }
-
-        if (!realm.isEnabled()) {
-            event.error(Errors.REALM_DISABLED);
-            return ErrorPage.error(session, Messages.REALM_NOT_ENABLED);
-        }
-        if (!realm.isRegistrationAllowed()) {
+         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
             return ErrorPage.error(session, Messages.REGISTRATION_NOT_ALLOWED);
         }
-        ClientSessionCode clientCode = ClientSessionCode.parse(code, session, realm);
-        if (clientCode == null) {
-            event.error(Errors.INVALID_CODE);
-            return ErrorPage.error(session, Messages.INVALID_CODE);
-        }
-        if (!clientCode.isValid(ClientSessionModel.Action.AUTHENTICATE.name())) {
-            event.error(Errors.INVALID_CODE);
-            return ErrorPage.error(session, Messages.INVALID_CODE);
-        }
 
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
         String username = formData.getFirst(Validation.FIELD_USERNAME);
         String email = formData.getFirst(Validation.FIELD_EMAIL);
         if (realm.isRegistrationEmailAsUsername()) {
             username = email;
             formData.putSingle(AuthenticationManager.FORM_USERNAME, username);
         }
+        ClientSessionCode clientCode = checks.clientCode;
         ClientSessionModel clientSession = clientCode.getClientSession();
         event.client(clientSession.getClient())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
@@ -396,23 +383,6 @@ public class LoginActionsService {
                 .detail(Details.USERNAME, username)
                 .detail(Details.EMAIL, email)
                 .detail(Details.REGISTER_METHOD, "form");
-
-        if (!realm.isEnabled()) {
-            event.error(Errors.REALM_DISABLED);
-            return ErrorPage.error(session, Messages.REALM_NOT_ENABLED);
-        }
-        ClientModel client = clientSession.getClient();
-        if (client == null) {
-            event.error(Errors.CLIENT_NOT_FOUND);
-            return ErrorPage.error(session, Messages.UNKNOWN_LOGIN_REQUESTER);
-        }
-
-        if (!client.isEnabled()) {
-            event.error(Errors.CLIENT_DISABLED);
-            return ErrorPage.error(session, Messages.LOGIN_REQUESTER_NOT_ENABLED);
-        }
-
-        session.getContext().setClient(client);
 
         List<String> requiredCredentialTypes = new LinkedList<>();
         boolean passwordRequired = isPasswordRequired();
