@@ -122,6 +122,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         if (state != null) {
             redirectUri.queryParam(OAuth2Constants.STATE, state);
         }
+        session.sessions().removeClientSession(realm, clientSession);
         return Response.status(302).location(redirectUri.build()).build();
     }
 

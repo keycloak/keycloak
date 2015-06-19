@@ -128,6 +128,10 @@ public class ClientSessionAdapter implements ClientSessionModel {
         return realm.getClientById(entity.getClientId());
     }
 
+    public ClientSessionEntity getEntity() {
+        return entity;
+    }
+
     @Override
     public void setUserSession(UserSessionModel userSession) {
         if (userSession == null) {

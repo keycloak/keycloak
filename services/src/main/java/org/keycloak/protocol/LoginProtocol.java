@@ -28,7 +28,6 @@ public interface LoginProtocol extends Provider {
     LoginProtocol setEventBuilder(EventBuilder event);
 
     Response cancelLogin(ClientSessionModel clientSession);
-    Response invalidSessionError(ClientSessionModel clientSession);
     Response authenticated(UserSessionModel userSession, ClientSessionCode accessCode);
     Response consentDenied(ClientSessionModel clientSession);
 

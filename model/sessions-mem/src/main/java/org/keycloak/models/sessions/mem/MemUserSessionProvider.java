@@ -59,6 +59,17 @@ public class MemUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
+    public void removeClientSession(RealmModel realm, ClientSessionModel clientSession) {
+        ClientSessionEntity entity = ((ClientSessionAdapter)clientSession).getEntity();
+        UserSessionModel userSession = clientSession.getUserSession();
+        if (userSession != null) {
+            UserSessionEntity userSessionEntity = ((UserSessionAdapter)userSession).getEntity();
+            userSessionEntity.getClientSessions().remove(entity);
+        }
+        clientSessions.remove(clientSession.getId());
+    }
+
+    @Override
     public ClientSessionModel getClientSession(RealmModel realm, String id) {
         ClientSessionEntity entity = clientSessions.get(id);
         return entity != null ? new ClientSessionAdapter(session, this, realm, entity) : null;

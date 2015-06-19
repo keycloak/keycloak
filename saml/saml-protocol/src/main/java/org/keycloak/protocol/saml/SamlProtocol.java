@@ -134,12 +134,9 @@ public class SamlProtocol implements LoginProtocol {
 
     @Override
     public Response cancelLogin(ClientSessionModel clientSession) {
-        return getErrorResponse(clientSession, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
-    }
-
-    @Override
-    public Response invalidSessionError(ClientSessionModel clientSession) {
-        return getErrorResponse(clientSession, JBossSAMLURIConstants.STATUS_AUTHNFAILED.get());
+        Response error = getErrorResponse(clientSession, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
+        session.sessions().removeClientSession(realm, clientSession);
+        return error;
     }
 
     protected String getResponseIssuer(RealmModel realm) {
