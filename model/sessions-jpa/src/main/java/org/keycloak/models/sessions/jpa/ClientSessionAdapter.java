@@ -82,6 +82,16 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
+    public Map<String, String> getNotes() {
+        Map<String, String> copy = new HashMap<>();
+        for (ClientSessionNoteEntity attr : entity.getNotes()) {
+            copy.put(attr.getName(), attr.getValue());
+        }
+
+        return copy;
+    }
+
+    @Override
     public void setUserSessionNote(String name, String value) {
         for (ClientUserSessionNoteEntity attr : entity.getUserSessionNotes()) {
             if (attr.getName().equals(name)) {

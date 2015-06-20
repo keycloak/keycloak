@@ -9,6 +9,8 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.mem.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.mem.entities.UserSessionEntity;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -135,6 +137,14 @@ public class ClientSessionAdapter implements ClientSessionModel {
         entity.getNotes().remove(name);
 
     }
+
+    @Override
+    public Map<String, String> getNotes() {
+        if (entity.getNotes() == null || entity.getNotes().isEmpty()) return Collections.emptyMap();
+        Map<String, String> copy = new HashMap<>();
+        copy.putAll(entity.getNotes());
+        return copy;
+   }
 
     @Override
     public void setUserSessionNote(String name, String value) {
