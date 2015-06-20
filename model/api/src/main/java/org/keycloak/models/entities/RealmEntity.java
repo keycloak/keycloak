@@ -2,10 +2,8 @@ package org.keycloak.models.entities;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -77,7 +75,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private String defaultLocale;
     private List<IdentityProviderMapperEntity> identityProviderMappers = new ArrayList<IdentityProviderMapperEntity>();
     private List<AuthenticationFlowEntity> authenticationFlows = new ArrayList<>();
-    private List<AuthenticatorEntity> authenticators = new ArrayList<>();
+    private List<AuthenticatorConfigEntity> authenticatorConfigs = new ArrayList<>();
     private List<RequiredActionProviderEntity> requiredActionProviders = new ArrayList<>();
 
 
@@ -496,12 +494,12 @@ public class RealmEntity extends AbstractIdentifiableEntity {
         this.authenticationFlows = authenticationFlows;
     }
 
-    public List<AuthenticatorEntity> getAuthenticators() {
-        return authenticators;
+    public List<AuthenticatorConfigEntity> getAuthenticatorConfigs() {
+        return authenticatorConfigs;
     }
 
-    public void setAuthenticators(List<AuthenticatorEntity> authenticators) {
-        this.authenticators = authenticators;
+    public void setAuthenticatorConfigs(List<AuthenticatorConfigEntity> authenticators) {
+        this.authenticatorConfigs = authenticators;
     }
 
     public List<RequiredActionProviderEntity> getRequiredActionProviders() {

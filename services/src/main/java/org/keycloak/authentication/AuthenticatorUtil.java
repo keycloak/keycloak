@@ -1,7 +1,7 @@
 package org.keycloak.authentication;
 
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
 
 import java.util.LinkedList;
@@ -36,8 +36,7 @@ public class AuthenticatorUtil {
                 if (recurse != null) return recurse;
 
             }
-            AuthenticatorModel authenticator = realm.getAuthenticatorById(model.getAuthenticator());
-            if (authenticator.getProviderId().equals(authProviderId)) {
+            if (model.getAuthenticator().equals(authProviderId)) {
                 return model;
             }
         }

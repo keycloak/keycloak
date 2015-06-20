@@ -193,11 +193,11 @@ public interface RealmModel extends RoleContainerModel {
     void removeAuthenticatorExecution(AuthenticationExecutionModel model);
 
 
-    List<AuthenticatorModel> getAuthenticators();
-    AuthenticatorModel addAuthenticator(AuthenticatorModel model);
-    void updateAuthenticator(AuthenticatorModel model);
-    void removeAuthenticator(AuthenticatorModel model);
-    AuthenticatorModel getAuthenticatorById(String id);
+    List<AuthenticatorConfigModel> getAuthenticatorConfigs();
+    AuthenticatorConfigModel addAuthenticatorConfig(AuthenticatorConfigModel model);
+    void updateAuthenticatorConfig(AuthenticatorConfigModel model);
+    void removeAuthenticatorConfig(AuthenticatorConfigModel model);
+    AuthenticatorConfigModel getAuthenticatorConfigById(String id);
 
     List<RequiredActionProviderModel> getRequiredActionProviders();
     RequiredActionProviderModel addRequiredActionProvider(RequiredActionProviderModel model);

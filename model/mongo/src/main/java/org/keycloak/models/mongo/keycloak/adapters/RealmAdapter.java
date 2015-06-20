@@ -7,7 +7,7 @@ import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -25,7 +25,7 @@ import org.keycloak.models.UserFederationProviderCreationEventImpl;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.entities.AuthenticationExecutionEntity;
 import org.keycloak.models.entities.AuthenticationFlowEntity;
-import org.keycloak.models.entities.AuthenticatorEntity;
+import org.keycloak.models.entities.AuthenticatorConfigEntity;
 import org.keycloak.models.entities.IdentityProviderEntity;
 import org.keycloak.models.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.entities.RequiredActionProviderEntity;
@@ -1453,46 +1453,45 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public List<AuthenticatorModel> getAuthenticators() {
-        List<AuthenticatorModel> authenticators = new LinkedList<>();
-        for (AuthenticatorEntity entity : getMongoEntity().getAuthenticators()) {
+    public List<AuthenticatorConfigModel> getAuthenticatorConfigs() {
+        List<AuthenticatorConfigModel> authenticators = new LinkedList<>();
+        for (AuthenticatorConfigEntity entity : getMongoEntity().getAuthenticatorConfigs()) {
             authenticators.add(entityToModel(entity));
         }
         return authenticators;
     }
 
     @Override
-    public AuthenticatorModel addAuthenticator(AuthenticatorModel model) {
-        AuthenticatorEntity auth = new AuthenticatorEntity();
+    public AuthenticatorConfigModel addAuthenticatorConfig(AuthenticatorConfigModel model) {
+        AuthenticatorConfigEntity auth = new AuthenticatorConfigEntity();
         auth.setId(KeycloakModelUtils.generateId());
         auth.setAlias(model.getAlias());
-        auth.setProviderId(model.getProviderId());
         auth.setConfig(model.getConfig());
-        realm.getAuthenticators().add(auth);
+        realm.getAuthenticatorConfigs().add(auth);
         model.setId(auth.getId());
         updateMongoEntity();
         return model;
     }
 
     @Override
-    public void removeAuthenticator(AuthenticatorModel model) {
-        AuthenticatorEntity entity = getAuthenticatorEntity(model.getId());
+    public void removeAuthenticatorConfig(AuthenticatorConfigModel model) {
+        AuthenticatorConfigEntity entity = getAuthenticatorConfigEntity(model.getId());
         if (entity == null) return;
-        getMongoEntity().getAuthenticators().remove(entity);
+        getMongoEntity().getAuthenticatorConfigs().remove(entity);
         updateMongoEntity();
 
     }
 
     @Override
-    public AuthenticatorModel getAuthenticatorById(String id) {
-        AuthenticatorEntity entity = getAuthenticatorEntity(id);
+    public AuthenticatorConfigModel getAuthenticatorConfigById(String id) {
+        AuthenticatorConfigEntity entity = getAuthenticatorConfigEntity(id);
         if (entity == null) return null;
         return entityToModel(entity);
     }
 
-    public AuthenticatorEntity getAuthenticatorEntity(String id) {
-        AuthenticatorEntity entity = null;
-        for (AuthenticatorEntity auth : getMongoEntity().getAuthenticators()) {
+    public AuthenticatorConfigEntity getAuthenticatorConfigEntity(String id) {
+        AuthenticatorConfigEntity entity = null;
+        for (AuthenticatorConfigEntity auth : getMongoEntity().getAuthenticatorConfigs()) {
             if (auth.getId().equals(id)) {
                 entity = auth;
                 break;
@@ -1501,10 +1500,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return entity;
     }
 
-    public AuthenticatorModel entityToModel(AuthenticatorEntity entity) {
-        AuthenticatorModel model = new AuthenticatorModel();
+    public AuthenticatorConfigModel entityToModel(AuthenticatorConfigEntity entity) {
+        AuthenticatorConfigModel model = new AuthenticatorConfigModel();
         model.setId(entity.getId());
-        model.setProviderId(entity.getProviderId());
         model.setAlias(entity.getAlias());
         Map<String, String> config = new HashMap<>();
         if (entity.getConfig() != null) config.putAll(entity.getConfig());
@@ -1513,11 +1511,10 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public void updateAuthenticator(AuthenticatorModel model) {
-        AuthenticatorEntity entity = getAuthenticatorEntity(model.getId());
+    public void updateAuthenticatorConfig(AuthenticatorConfigModel model) {
+        AuthenticatorConfigEntity entity = getAuthenticatorConfigEntity(model.getId());
         if (entity == null) return;
         entity.setAlias(model.getAlias());
-        entity.setProviderId(model.getProviderId());
         if (entity.getConfig() == null) {
             entity.setConfig(model.getConfig());
         } else {

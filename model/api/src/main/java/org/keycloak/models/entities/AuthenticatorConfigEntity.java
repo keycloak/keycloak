@@ -6,10 +6,9 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class AuthenticatorEntity {
+public class AuthenticatorConfigEntity {
     protected String id;
     protected String alias;
-    protected String providerId;
     private Map<String, String> config;
 
     public String getId() {
@@ -26,14 +25,6 @@ public class AuthenticatorEntity {
 
     public void setAlias(String alias) {
         this.alias = alias;
-    }
-
-    public String getProviderId() {
-        return providerId;
-    }
-
-    public void setProviderId(String providerId) {
-        this.providerId = providerId;
     }
 
     public Map<String, String> getConfig() {
