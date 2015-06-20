@@ -2,7 +2,7 @@ package org.keycloak.models.utils;
 
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
 
 /**
@@ -15,26 +15,6 @@ public class DefaultAuthenticationFlows {
     public static final String FORMS_FLOW = "forms";
 
     public static void addFlows(RealmModel realm) {
-        AuthenticatorModel model = new AuthenticatorModel();
-        model.setProviderId("auth-cookie");
-        model.setAlias("Cookie");
-        AuthenticatorModel cookieAuth = realm.addAuthenticator(model);
-
-        model = new AuthenticatorModel();
-        model.setProviderId("auth-username-password-form");
-        model.setAlias("Username Password Form");
-        AuthenticatorModel usernamePasswordForm = realm.addAuthenticator(model);
-
-        model = new AuthenticatorModel();
-        model.setProviderId("auth-otp-form");
-        model.setAlias("Single OTP Form");
-        AuthenticatorModel otpForm = realm.addAuthenticator(model);
-
-        model = new AuthenticatorModel();
-        model.setProviderId("auth-spnego");
-        model.setAlias("Kerberos");
-        AuthenticatorModel kerberos = realm.addAuthenticator(model);
-
         AuthenticationFlowModel browser = new AuthenticationFlowModel();
         browser.setAlias(BROWSER_FLOW);
         browser.setDescription("browser based authentication");
@@ -42,7 +22,7 @@ public class DefaultAuthenticationFlows {
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
         execution.setParentFlow(browser.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
-        execution.setAuthenticator(cookieAuth.getId());
+        execution.setAuthenticator("auth-cookie");
         execution.setPriority(10);
         execution.setUserSetupAllowed(false);
         execution.setAutheticatorFlow(false);
@@ -50,7 +30,7 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(browser.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
-        execution.setAuthenticator(kerberos.getId());
+        execution.setAuthenticator("auth-spnego");
         execution.setPriority(20);
         execution.setUserSetupAllowed(false);
         execution.setAutheticatorFlow(false);
@@ -75,7 +55,7 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(forms.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator(usernamePasswordForm.getId());
+        execution.setAuthenticator("auth-username-password-form");
         execution.setPriority(10);
         execution.setUserSetupAllowed(false);
         execution.setAutheticatorFlow(false);
@@ -85,7 +65,7 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(forms.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.OPTIONAL);
-        execution.setAuthenticator(otpForm.getId());
+        execution.setAuthenticator("auth-otp-form");
         execution.setPriority(20);
         execution.setUserSetupAllowed(true);
         execution.setAutheticatorFlow(false);

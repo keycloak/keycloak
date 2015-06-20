@@ -4,7 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -1095,37 +1095,37 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public List<AuthenticatorModel> getAuthenticators() {
-        if (updated != null) return updated.getAuthenticators();
-        List<AuthenticatorModel> models = new ArrayList<>();
-        models.addAll(cached.getAuthenticators().values());
+    public List<AuthenticatorConfigModel> getAuthenticatorConfigs() {
+        if (updated != null) return updated.getAuthenticatorConfigs();
+        List<AuthenticatorConfigModel> models = new ArrayList<>();
+        models.addAll(cached.getAuthenticatorConfigs().values());
         return models;
     }
 
     @Override
-    public AuthenticatorModel addAuthenticator(AuthenticatorModel model) {
+    public AuthenticatorConfigModel addAuthenticatorConfig(AuthenticatorConfigModel model) {
         getDelegateForUpdate();
-        return updated.addAuthenticator(model);
+        return updated.addAuthenticatorConfig(model);
     }
 
     @Override
-    public void updateAuthenticator(AuthenticatorModel model) {
+    public void updateAuthenticatorConfig(AuthenticatorConfigModel model) {
         getDelegateForUpdate();
-        updated.updateAuthenticator(model);
-
-    }
-
-    @Override
-    public void removeAuthenticator(AuthenticatorModel model) {
-        getDelegateForUpdate();
-        updated.removeAuthenticator(model);
+        updated.updateAuthenticatorConfig(model);
 
     }
 
     @Override
-    public AuthenticatorModel getAuthenticatorById(String id) {
-        if (updated != null) return updated.getAuthenticatorById(id);
-        return cached.getAuthenticators().get(id);
+    public void removeAuthenticatorConfig(AuthenticatorConfigModel model) {
+        getDelegateForUpdate();
+        updated.removeAuthenticatorConfig(model);
+
+    }
+
+    @Override
+    public AuthenticatorConfigModel getAuthenticatorConfigById(String id) {
+        if (updated != null) return updated.getAuthenticatorConfigById(id);
+        return cached.getAuthenticatorConfigs().get(id);
     }
 
     @Override

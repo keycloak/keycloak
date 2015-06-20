@@ -20,6 +20,7 @@ public class AuthenticationExecutionModel implements Serializable {
     }
 
     private String id;
+    private String authenticatorConfig;
     private String authenticator;
     private boolean autheticatorFlow;
     private Requirement requirement;
@@ -33,6 +34,14 @@ public class AuthenticationExecutionModel implements Serializable {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getAuthenticatorConfig() {
+        return authenticatorConfig;
+    }
+
+    public void setAuthenticatorConfig(String authenticatorConfig) {
+        this.authenticatorConfig = authenticatorConfig;
     }
 
     public String getAuthenticator() {

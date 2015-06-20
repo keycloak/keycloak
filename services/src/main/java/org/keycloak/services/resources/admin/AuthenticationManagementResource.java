@@ -6,15 +6,12 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.AuthenticatorUtil;
-import org.keycloak.authentication.RequiredActionFactory;
-import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
-import org.keycloak.provider.ProviderFactory;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -141,8 +138,7 @@ public class AuthenticationManagementResource {
                 if (!flow.getId().equals(execution.getParentFlow())) {
                     rep.setSubFlow(true);
                 }
-                AuthenticatorModel authenticator = realm.getAuthenticatorById(execution.getAuthenticator());
-                AuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, authenticator.getProviderId());
+                AuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, execution.getAuthenticator());
                 if (factory.getReferenceType() == null) continue;
                 rep.setReferenceType(factory.getReferenceType());
                 rep.setConfigurable(factory.isConfigurable());

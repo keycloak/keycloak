@@ -4,7 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserCredentialModel;
@@ -21,7 +21,7 @@ public class SpnegoAuthenticatorFactory implements AuthenticatorFactory {
     public static final String PROVIDER_ID = "auth-spnego";
 
     @Override
-    public Authenticator create(AuthenticatorModel model) {
+    public Authenticator create() {
         return new SpnegoAuthenticator();
     }
 

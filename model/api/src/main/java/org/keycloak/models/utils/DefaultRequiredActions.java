@@ -1,8 +1,5 @@
 package org.keycloak.models.utils;
 
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;

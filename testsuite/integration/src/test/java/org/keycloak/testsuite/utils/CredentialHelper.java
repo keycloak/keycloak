@@ -5,7 +5,7 @@ import org.keycloak.authentication.authenticators.SpnegoAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.UsernamePasswordFormFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -43,9 +43,8 @@ public class CredentialHelper {
     }
 
     public static AuthenticationExecutionModel.Requirement getRequirement(RealmModel realm, String authenticatorProviderId, String flowAlias) {
-        AuthenticatorModel authenticator = findAuthenticatorByProviderId(realm, authenticatorProviderId);
         AuthenticationFlowModel flow =  findAuthenticatorFlowByAlias(realm, flowAlias);
-        AuthenticationExecutionModel execution = findExecutionByAuthenticator(realm, flow.getId(), authenticator.getId());
+        AuthenticationExecutionModel execution = findExecutionByAuthenticator(realm, flow.getId(), authenticatorProviderId);
         return execution.getRequirement();
 
     }
@@ -56,21 +55,12 @@ public class CredentialHelper {
     }
 
     public static void authenticationRequirement(RealmModel realm, String authenticatorProviderId, String flowAlias, AuthenticationExecutionModel.Requirement requirement) {
-        AuthenticatorModel authenticator = findAuthenticatorByProviderId(realm, authenticatorProviderId);
         AuthenticationFlowModel flow =  findAuthenticatorFlowByAlias(realm, flowAlias);
-        AuthenticationExecutionModel execution = findExecutionByAuthenticator(realm, flow.getId(), authenticator.getId());
+        AuthenticationExecutionModel execution = findExecutionByAuthenticator(realm, flow.getId(), authenticatorProviderId);
         execution.setRequirement(requirement);
         realm.updateAuthenticatorExecution(execution);
     }
 
-    public static AuthenticatorModel findAuthenticatorByProviderId(RealmModel realm, String providerId) {
-        for (AuthenticatorModel model : realm.getAuthenticators()) {
-            if (model.getProviderId().equals(providerId)) {
-                return model;
-            }
-        }
-        return null;
-    }
     public static AuthenticationFlowModel findAuthenticatorFlowByAlias(RealmModel realm, String alias) {
         for (AuthenticationFlowModel model : realm.getAuthenticationFlows()) {
             if (model.getAlias().equals(alias)) {

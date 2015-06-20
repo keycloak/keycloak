@@ -5,7 +5,7 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.events.Errors;
 import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -25,11 +25,6 @@ import java.util.List;
  */
 public class OTPFormAuthenticator extends AbstractFormAuthenticator implements Authenticator {
     public static final String TOTP_FORM_ACTION = "totp";
-    protected AuthenticatorModel model;
-
-    public OTPFormAuthenticator(AuthenticatorModel model) {
-        this.model = model;
-    }
 
     @Override
     public void action(AuthenticatorContext context) {

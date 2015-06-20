@@ -6,7 +6,7 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.events.Errors;
 import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -22,11 +22,6 @@ import javax.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public class UsernamePasswordForm extends AbstractFormAuthenticator implements Authenticator {
-    protected AuthenticatorModel model;
-
-    public UsernamePasswordForm(AuthenticatorModel model) {
-        this.model = model;
-    }
 
    @Override
     public void action(AuthenticatorContext context) {
