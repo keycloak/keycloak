@@ -9,7 +9,8 @@
     </ol>
 
     <h1 data-ng-show="create">Add Role</h1>
-    <h1 data-ng-hide="create">{{role.name|capitalize}}</h1>
+    <h1 data-ng-hide="create">{{role.name|capitalize}}<i style="padding-left: 20px" class="pficon pficon-delete" data-ng-show="!create && access.manageClients" 
+    	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients">
 
@@ -50,7 +51,6 @@
             <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageClients">
                 <button kc-save  data-ng-show="changed">Save</button>
                 <button kc-reset data-ng-show="changed">Cancel</button>
-                <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>
             </div>
         </div>
 
