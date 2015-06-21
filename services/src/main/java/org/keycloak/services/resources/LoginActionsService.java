@@ -300,7 +300,6 @@ public class LoginActionsService {
      */
     @Path("authenticate")
     @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response authenticateForm(@QueryParam("code") String code,
                                      @QueryParam("execution") String execution) {
         event.event(EventType.LOGIN);
