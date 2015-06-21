@@ -325,6 +325,16 @@ public class AuthenticationProcessor {
             clientSession.setTimestamp(Time.currentTime());
             return accessCode.getCode();
         }
+
+        @Override
+        public Response getChallenge() {
+            return challenge;
+        }
+
+        @Override
+        public Error getError() {
+            return error;
+        }
     }
 
     public static class AuthException extends RuntimeException {
@@ -370,15 +380,6 @@ public class AuthenticationProcessor {
 
             }
         }
-    }
-
-    protected boolean isProcessed(AuthenticationExecutionModel model) {
-        if (model.isDisabled()) return true;
-        ClientSessionModel.ExecutionStatus status = clientSession.getExecutionStatus().get(model.getId());
-        if (status == null) return false;
-        return status == ClientSessionModel.ExecutionStatus.SUCCESS || status == ClientSessionModel.ExecutionStatus.SKIPPED
-                || status == ClientSessionModel.ExecutionStatus.ATTEMPTED
-                || status == ClientSessionModel.ExecutionStatus.SETUP_REQUIRED;
     }
 
     public boolean isSuccessful(AuthenticationExecutionModel model) {
@@ -486,13 +487,9 @@ public class AuthenticationProcessor {
         if (authType != null) {
             event.detail(Details.AUTH_TYPE, authType);
         }
-        AuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
-        Authenticator authenticator = factory.create();
-        Result context = new Result(model, authenticator);
-        authenticator.action(context);
 
         FlowExecution flowExecution = createFlowExecution(this.flowId);
-        Response challenge = flowExecution.action(execution, context);
+        Response challenge = flowExecution.action(execution);
         if (challenge != null) return challenge;
         if (clientSession.getAuthenticatedUser() == null) {
             throw new AuthException(Error.UNKNOWN_USER);
@@ -585,7 +582,17 @@ public class AuthenticationProcessor {
         boolean alternativeSuccessful = false;
         Iterator<AuthenticationExecutionModel> executions;
 
-        public Response action(String actionExecution, Result actionResult) {
+         protected boolean isProcessed(AuthenticationExecutionModel model) {
+             if (model.isDisabled()) return true;
+             ClientSessionModel.ExecutionStatus status = clientSession.getExecutionStatus().get(model.getId());
+             if (status == null) return false;
+             return status == ClientSessionModel.ExecutionStatus.SUCCESS || status == ClientSessionModel.ExecutionStatus.SKIPPED
+                     || status == ClientSessionModel.ExecutionStatus.ATTEMPTED
+                     || status == ClientSessionModel.ExecutionStatus.SETUP_REQUIRED;
+         }
+
+
+         public Response action(String actionExecution) {
             while (executions.hasNext()) {
                 AuthenticationExecutionModel model = executions.next();
                 if (isProcessed(model)) {
@@ -596,12 +603,16 @@ public class AuthenticationProcessor {
                 if (!model.getId().equals(actionExecution)) {
                     if (model.isAutheticatorFlow()) {
                         FlowExecution flowExecution = createFlowExecution(model.getAuthenticator());
-                        return flowExecution.action(actionExecution, actionResult);
+                        return flowExecution.action(actionExecution);
                     } else {
                         throw new AuthException("action is not current execution", Error.INTERNAL_ERROR);
                     }
                 } else { // we found the action
-                    Response response = processResult(actionResult);
+                    AuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
+                    Authenticator authenticator = factory.create();
+                    Result result = new Result(model, authenticator);
+                    authenticator.action(result);
+                    Response response = processResult(result);
                     if (response == null) return processFlow();
                     else return response;
                 }
@@ -674,7 +685,7 @@ public class AuthenticationProcessor {
         }
 
 
-        public Response processResult(Result result) {
+        public Response processResult(AuthenticatorContext result) {
             AuthenticationExecutionModel execution = result.getExecution();
             Status status = result.getStatus();
             if (status == Status.SUCCESS){
@@ -686,10 +697,10 @@ public class AuthenticationProcessor {
                 logger.debugv("authenticator FAILED: {0}", execution.getAuthenticator());
                 logFailure();
                 clientSession.setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.FAILED);
-                if (result.challenge != null) {
+                if (result.getChallenge() != null) {
                     return sendChallenge(result, execution);
                 }
-                throw new AuthException(result.error);
+                throw new AuthException(result.getError());
             } else if (status == Status.FORCE_CHALLENGE) {
                 clientSession.setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
                 return sendChallenge(result, execution);
@@ -705,7 +716,7 @@ public class AuthenticationProcessor {
                     return sendChallenge(result, execution);
                 }
                 if (execution.isAlternative()) {
-                    alternativeChallenge = result.challenge;
+                    alternativeChallenge = result.getChallenge();
                     challengedAlternativeExecution = execution;
                 } else {
                     clientSession.setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
@@ -731,9 +742,9 @@ public class AuthenticationProcessor {
 
         }
 
-         public Response sendChallenge(Result result, AuthenticationExecutionModel execution) {
+         public Response sendChallenge(AuthenticatorContext result, AuthenticationExecutionModel execution) {
              clientSession.setNote(CURRENT_AUTHENTICATION_EXECUTION, execution.getId());
-             return result.challenge;
+             return result.getChallenge();
          }
 
 

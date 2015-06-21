@@ -77,4 +77,8 @@ public interface AuthenticatorContext {
      * @return
      */
     String generateAccessCode();
+
+    Response getChallenge();
+
+    AuthenticationProcessor.Error getError();
 }
