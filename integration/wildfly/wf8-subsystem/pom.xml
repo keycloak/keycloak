@@ -31,7 +31,6 @@
 
     <properties>
         <wildfly.version>8.2.0.Final</wildfly.version>
-        <wildfly.core.version>8.2.0.Final</wildfly.core.version>
     </properties>
 
     <build>
@@ -78,7 +77,6 @@
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging-annotations</artifactId>
-            <version>${jboss-logging-tools.version}</version>
             <!-- This is a compile-time dependency of this project, but is not needed at compile or runtime by other
             projects that depend on this project.-->
             <scope>provided</scope>
@@ -88,7 +86,6 @@
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging-processor</artifactId>
-            <version>${jboss-logging-tools.version}</version>
             <!-- This is a compile-time dependency of this project, but is not needed at compile or runtime by other
             projects that depend on this project.-->
             <scope>provided</scope>

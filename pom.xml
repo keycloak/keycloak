@@ -20,62 +20,33 @@
     <properties>
         <apacheds.version>2.0.0-M17</apacheds.version>
         <apacheds.codec.version>1.0.0-M23</apacheds.codec.version>
-        <org.apache.james.apache-mime4j.version>0.6</org.apache.james.apache-mime4j.version>
         <base64.version>2.3.8</base64.version>
-        <bouncycastle.crypto.version>1.50</bouncycastle.crypto.version>
-        <jackson.version>1.9.9</jackson.version>
-        <apache.httpcomponents.version>4.3.6</apache.httpcomponents.version>
-        <apache.httpcomponents.httpcore.version>4.3.3</apache.httpcomponents.httpcore.version>
-        <resteasy.version>2.3.7.Final</resteasy.version>
         <resteasy.latest.version>3.0.9.Final</resteasy.latest.version>
-        <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
         <undertow.version>1.1.1.Final</undertow.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
         <mongo.driver.version>2.11.3</mongo.driver.version>
-        <jboss.logging.version>3.1.4.GA</jboss.logging.version>
-        <syslog4j.version>0.9.30</syslog4j.version>
-        <jboss-logging-tools.version>1.2.0.Beta1</jboss-logging-tools.version>
-        <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>1.0.4.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>
-        <io.netty.version>4.0.26.Final</io.netty.version> 
-        <xnio.netty.netty-xnio-transport.version>0.1.1.Final</xnio.netty.netty-xnio-transport.version>
-        <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
-        <hibernate.entitymanager.version>4.3.10.Final</hibernate.entitymanager.version>
-        <h2.version>1.4.187</h2.version>
         <mysql.version>5.1.29</mysql.version>
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
-        <dom4j.version>1.6.1</dom4j.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <slf4j.version>1.7.7</slf4j.version>
-        <wildfly.version>9.0.1.Final</wildfly.version>
-        <wildfly.core.version>1.0.1.Final</wildfly.core.version>
-        <wildfly.build-tools.version>1.0.0.Final</wildfly.build-tools.version>
+        <wildfly.parent.version>9.0.1.Final</wildfly.parent.version>
 
         <!-- this is EAP 6.4 alpha, publicly available -->
         <jboss.version>7.5.0.Final-redhat-15</jboss.version>
 
-        <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <google.zxing.version>2.2</google.zxing.version>
         <google.client.version>1.14.1-beta</google.client.version>
-        <github.relaxng.version>2011.1</github.relaxng.version>
         <winzipaes.version>1.0.1</winzipaes.version>
         <freemarker.version>2.3.20</freemarker.version>
         <twitter4j.version>3.0.5</twitter4j.version>
         <selenium.version>2.35.0</selenium.version>
-        <sun.istack.version>2.21</sun.istack.version>
-        <sun.jaxb.version>2.2.11</sun.jaxb.version>
-        <sun.xsom.version>20140925</sun.xsom.version>
-        <javax.mail.version>1.4.5</javax.mail.version>
-        <infinispan.version>6.0.2.Final</infinispan.version>
         <liquibase.version>3.3.5</liquibase.version>
         <jetty9.version>9.1.0.v20131115</jetty9.version>
         <osgi.version>4.2.0</osgi.version>
         <pax.web.version>3.1.2</pax.web.version>
         <jmeter.version>2.10</jmeter.version>
-        <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
-        <log4j.version>1.2.17</log4j.version>
         <greenmail.version>1.3.1b</greenmail.version>
-        <xmlsec.version>1.5.1</xmlsec.version>
 
         <enforcer.plugin.version>1.4</enforcer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
@@ -85,6 +56,15 @@
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
         <osgi.bundle.plugin.version>2.3.7</osgi.bundle.plugin.version>
+
+        <!-- WF-parent has excluded the commons-logging -->
+        <commons-logging.version>1.1.3</commons-logging.version>
+
+        <!-- Synchronize version with WF-parent -->
+        <bouncycastle.crypto.version>1.52</bouncycastle.crypto.version>
+        <jackson.version>1.9.13</jackson.version>
+        <jboss.logging.version>3.2.1.Final</jboss.logging.version>
+        <apache.httpcomponents.version>4.3.6</apache.httpcomponents.version>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -156,40 +136,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Wildfly parent as a BOM -->
             <dependency>
-                <groupId>com.github.relaxng</groupId>
-                <artifactId>relaxngDatatype</artifactId>
-                <version>${github.relaxng.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.istack</groupId>
-                <artifactId>istack-commons-runtime</artifactId>
-                <version>${sun.istack.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.istack</groupId>
-                <artifactId>istack-commons-tools</artifactId>
-                <version>${sun.istack.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind.external</groupId>
-                <artifactId>rngom</artifactId>
-                <version>${sun.jaxb.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xsom</groupId>
-                <artifactId>xsom</artifactId>
-                <version>${sun.xsom.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <version>${bouncycastle.crypto.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
-                <version>${bouncycastle.crypto.version}</version>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-parent</artifactId>
+                <version>${wildfly.parent.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>net.iharder</groupId>
@@ -197,55 +150,10 @@
                 <version>${base64.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.mail</groupId>
-                <artifactId>mail</artifactId>
-                <version>${javax.mail.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>jaxrs-api</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jaxrs</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-multipart-provider</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jackson-provider</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-client</artifactId>
-                <version>${resteasy.latest.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-undertow</artifactId>
                 <version>${resteasy.latest.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.xml.bind</groupId>
-                <artifactId>jboss-jaxb-api_2.2_spec</artifactId>
-                <version>${jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-all</artifactId>
-                <version>${io.netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.xnio.netty</groupId>
-                <artifactId>netty-xnio-transport</artifactId>
-                <version>${xnio.netty.netty-xnio-transport.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
@@ -263,55 +171,9 @@
                 <version>${undertow.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-core-asl</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-mapper-asl</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-xc</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-jaxrs</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.servlet</groupId>
-                <artifactId>jboss-servlet-api_3.0_spec</artifactId>
-                <version>${servlet.api.30.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.picketlink</groupId>
                 <artifactId>picketlink-wildfly-common</artifactId>
                 <version>${picketlink.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${jboss.logging.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.syslog4j</groupId>
-                <artifactId>syslog4j</artifactId>
-                <version>${syslog4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>${log4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -321,42 +183,9 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.hibernate.javax.persistence</groupId>
-                <artifactId>hibernate-jpa-2.1-api</artifactId>
-                <version>${hibernate.javax.persistence.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>${h2.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-entitymanager</artifactId>
-                <version>${hibernate.entitymanager.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
                 <version>${freemarker.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.santuario</groupId>
-                <artifactId>xmlsec</artifactId>
-                <version>${xmlsec.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.servlet</groupId>
-                        <artifactId>servlet-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-dist</artifactId>
-                <version>${wildfly.version}</version>
-                <type>zip</type>
             </dependency>
 
             <!-- Twitter -->
@@ -440,12 +269,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>dom4j</groupId>
-                <artifactId>dom4j</artifactId>
-                <version>${dom4j.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>xml-apis</groupId>
                 <artifactId>xml-apis</artifactId>
                 <version>${xml-apis.version}</version>
@@ -471,115 +294,9 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${apache.httpcomponents.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpcore</artifactId>
-                <version>${apache.httpcomponents.httpcore.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpmime</artifactId>
-                <version>${apache.httpcomponents.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.james</groupId>
-                <artifactId>apache-mime4j</artifactId>
-                <version>${org.apache.james.apache-mime4j.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-controller</artifactId>
-                <version>${wildfly.core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-server</artifactId>
-                <version>${wildfly.core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-ee</artifactId>
-                <version>${wildfly.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-feature-pack</artifactId>
-                <version>${wildfly.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-web-feature-pack</artifactId>
-                <version>${wildfly.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-subsystem-test</artifactId>
-                <version>${wildfly.core.version}</version>
-                <type>pom</type>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-undertow</artifactId>
-                <version>${wildfly.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-subsystem-test-framework</artifactId>
-                <version>${wildfly.core.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-feature-pack</artifactId>
-                <type>pom</type>
-                <version>${wildfly.core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-feature-pack</artifactId>
-                <type>zip</type>
-                <version>${wildfly.core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-version</artifactId>
-                <version>${wildfly.core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-web-common</artifactId>
-                <version>${wildfly.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging-processor</artifactId>
-                <version>${jboss-logging-tools.version}</version>
-                <scope>compile</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>${infinispan.version}</version>
+                <artifactId>commons-logging</artifactId>
+                <groupId>commons-logging</groupId>
+                <version>${commons-logging.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.liquibase</groupId>
@@ -1222,16 +939,6 @@
                     <groupId>org.liquibase</groupId>
                     <artifactId>liquibase-maven-plugin</artifactId>
                     <version>${liquibase.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.wildfly.build</groupId>
-                    <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
-                    <version>${wildfly.build-tools.version}</version>
-                </plugin> 
-                <plugin>
-                    <groupId>org.wildfly.build</groupId>
-                    <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
-                    <version>${wildfly.build-tools.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
