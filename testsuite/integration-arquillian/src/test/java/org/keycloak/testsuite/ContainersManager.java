@@ -13,7 +13,7 @@ import org.junit.runner.RunWith;
  * @author tkyjovsk
  */
 @RunWith(Arquillian.class)
-public abstract class KeycloakContainersManager {
+public abstract class ContainersManager {
     
     @ArquillianResource
     protected ContainerController controller;
@@ -21,10 +21,10 @@ public abstract class KeycloakContainersManager {
     private final String authServerQualifier;
     private final String appServerQualifier;
     
-    public KeycloakContainersManager() {
+    public ContainersManager() {
         this.authServerQualifier = getAuthServerQualifier(this.getClass());
         this.appServerQualifier = getAppServerQualifier(this.getClass());
-        System.out.println("Containers for: " + this.getClass().getSimpleName());
+        System.out.println(this.getClass().getSimpleName());
         System.out.println("Auth server: " + authServerQualifier);
         System.out.println("App server:  " + appServerQualifier);
         if (appServerQualifier.equals(authServerQualifier)) {
@@ -32,8 +32,15 @@ public abstract class KeycloakContainersManager {
         }
     }
 
+    public static Class<? extends ContainersManager>
+            getNearestSuperclassWithAnnotation(Class clazz, Class annotationClass) {
+        return clazz.isAnnotationPresent(annotationClass) ? clazz
+                : (clazz.equals(Object.class) || clazz.equals(ContainersManager.class) ? null // stop recursion
+                        : getNearestSuperclassWithAnnotation(clazz.getSuperclass(), annotationClass)); // continue recursion
+    }
+    
     public static String getAuthServerQualifier(Class clazz) {
-        Class<? extends KeycloakContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(clazz, AuthServerContainer.class);
+        Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(clazz, AuthServerContainer.class);
         if (annotatedClass == null) {
             throw new IllegalStateException("Couldn't find @AuthServerContainer on the test class or any of its superclasses.");
         }
@@ -46,7 +53,7 @@ public abstract class KeycloakContainersManager {
     }
     
     public static String getAppServerQualifier(Class clazz) {
-        Class<? extends KeycloakContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(clazz, AppServerContainer.class);
+        Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(clazz, AppServerContainer.class);
         
         String appServerQualifier = (annotatedClass == null ? null
                 : annotatedClass.getAnnotation(AppServerContainer.class).value());
@@ -58,13 +65,6 @@ public abstract class KeycloakContainersManager {
     
     public static boolean isRelative(Class clazz) {
         return getAppServerQualifier(clazz).equals(getAuthServerQualifier(clazz));
-    }
-    
-    public static Class<? extends KeycloakContainersManager>
-            getNearestSuperclassWithAnnotation(Class clazz, Class annotationClass) {
-        return clazz.isAnnotationPresent(annotationClass) ? clazz
-                : (clazz.equals(Object.class) || clazz.equals(KeycloakContainersManager.class) ? null // stop recursion
-                        : getNearestSuperclassWithAnnotation(clazz.getSuperclass(), annotationClass)); // continue recursion
     }
     
     public boolean isRelative() {

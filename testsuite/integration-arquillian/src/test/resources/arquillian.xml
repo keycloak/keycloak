@@ -19,7 +19,7 @@
             <configuration>
                 <property name="bindAddress">localhost</property>
                 <property name="bindHttpPort">${undertow.http.port}</property>
-                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.CustomEmbeddedUndertowContainer</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.CustomUndertowContainer</property>
             </configuration>
         </container>
         <!-- ADAPTER / APP SERVERS for non-relative test scenarios -->

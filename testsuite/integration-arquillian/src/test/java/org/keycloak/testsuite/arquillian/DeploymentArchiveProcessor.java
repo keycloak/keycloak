@@ -11,8 +11,8 @@ import org.keycloak.representations.adapters.config.BaseAdapterConfig;
 import static org.keycloak.testsuite.AbstractKeycloakTest.AUTH_SERVER_URL;
 import static org.keycloak.testsuite.AbstractKeycloakTest.REALM_KEY;
 import static org.keycloak.testsuite.AbstractKeycloakTest.loadJson;
-import org.keycloak.testsuite.KeycloakContainersManager;
-import static org.keycloak.testsuite.KeycloakContainersManager.isRelative;
+import org.keycloak.testsuite.ContainersManager;
+import static org.keycloak.testsuite.ContainersManager.isRelative;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -32,7 +32,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
     protected void modifyAdapterConfig(Archive<?> archive, TestClass testClass) {
         System.out.println("Modifying adapter config for " + archive.getName() + ", testClass: " + testClass.getJavaClass().getSimpleName());
-        if (KeycloakContainersManager.class.isAssignableFrom(testClass.getJavaClass())) {
+        if (ContainersManager.class.isAssignableFrom(testClass.getJavaClass())) {
             try {
                 BaseAdapterConfig adapterConfig = loadJson(archive.get(ADAPTER_CONFIG_PATH)
                         .getAsset().openStream(), BaseAdapterConfig.class);

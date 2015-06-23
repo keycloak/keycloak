@@ -30,7 +30,7 @@ import org.keycloak.util.JsonSerialization;
  */
 @RunAsClient
 @AuthServerContainer("auth-server-wildfly")
-public abstract class AbstractKeycloakTest extends KeycloakContainersManager {
+public abstract class AbstractKeycloakTest extends ContainersManager {
 
 	protected static boolean adminPasswordUpdated = Boolean.parseBoolean(System.getProperty("adminPasswordUpdated", "false"));
 
