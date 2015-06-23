@@ -19,43 +19,43 @@ import static org.keycloak.testsuite.arquillian.jira.JBossJiraParser.isIssueClos
  */
 public class JiraTestExecutionDecider implements TestExecutionDecider {
 
-	private static Map<String, Boolean> cache = new HashMap<String, Boolean>();
+    private static Map<String, Boolean> cache = new HashMap<String, Boolean>();
 
-	@Override
-	public ExecutionDecision decide(Method method) {
-		Jira jiraAnnotation = method.getAnnotation(Jira.class);
-		if (jiraAnnotation != null) {
-			boolean executeTest = true;
-			String[] issueIds = getIssuesId(jiraAnnotation.value());
-			for (String issueId : issueIds) {
-				if (cache.containsKey(issueId)) {
-					executeTest = cache.get(issueId);
-				} else {
-					if (isIssueClosed(issueId)) {
-						cache.put(issueId, true);
-					} else {
-						executeTest = false;
-						cache.put(issueId, false);
-					}
-				}
-			}
+    @Override
+    public ExecutionDecision decide(Method method) {
+        Jira jiraAnnotation = method.getAnnotation(Jira.class);
+        if (jiraAnnotation != null) {
+            boolean executeTest = true;
+            String[] issueIds = getIssuesId(jiraAnnotation.value());
+            for (String issueId : issueIds) {
+                if (cache.containsKey(issueId)) {
+                    executeTest = cache.get(issueId);
+                } else {
+                    if (isIssueClosed(issueId)) {
+                        cache.put(issueId, true);
+                    } else {
+                        executeTest = false;
+                        cache.put(issueId, false);
+                    }
+                }
+            }
 
-			if (executeTest) {
-				return ExecutionDecision.execute();
-			} else {
-				return ExecutionDecision.dontExecute("Issue is still opened, therefore skipping the test " + method.getName());
-			}
-		}
-		return ExecutionDecision.execute();
-	}
+            if (executeTest) {
+                return ExecutionDecision.execute();
+            } else {
+                return ExecutionDecision.dontExecute("Issue is still opened, therefore skipping the test " + method.getName());
+            }
+        }
+        return ExecutionDecision.execute();
+    }
 
-	private String[] getIssuesId(String value) {
-		return value.replaceAll("\\s+", "").split(",");
-	}
+    private String[] getIssuesId(String value) {
+        return value.replaceAll("\\s+", "").split(",");
+    }
 
-	@Override
-	public int precedence() {
-		return 0;
-	}
+    @Override
+    public int precedence() {
+        return 0;
+    }
 
 }

@@ -19,20 +19,20 @@ import javax.ws.rs.core.MediaType;
  */
 public class JBossJiraParser {
 
-	private static final String JBOSS_TRACKER_REST_URL = "https://issues.jboss.org/rest/api/latest/issue/";
+    private static final String JBOSS_TRACKER_REST_URL = "https://issues.jboss.org/rest/api/latest/issue/";
 
-	public static boolean isIssueClosed(String issueId) {
-		Status issueStatus = getIssueStatus(issueId);
-		return issueStatus == Status.CLOSED || issueStatus == Status.RESOLVED;
-	}
+    public static boolean isIssueClosed(String issueId) {
+        Status issueStatus = getIssueStatus(issueId);
+        return issueStatus == Status.CLOSED || issueStatus == Status.RESOLVED;
+    }
 
-	private static Status getIssueStatus(String issueId) {
-		Client client = ClientBuilder.newClient();
-		WebTarget target = client.target(JBOSS_TRACKER_REST_URL);
-		String json = target.path(issueId).request().accept(MediaType.APPLICATION_JSON_TYPE).get(String.class);
-		JsonObject jsonObject = new Gson().fromJson(json, JsonElement.class).getAsJsonObject();
-		String status = jsonObject.getAsJsonObject("fields").getAsJsonObject("status").get("name").getAsString();
-		client.close();
-		return Status.getByStatus(status);
-	}
+    private static Status getIssueStatus(String issueId) {
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(JBOSS_TRACKER_REST_URL);
+        String json = target.path(issueId).request().accept(MediaType.APPLICATION_JSON_TYPE).get(String.class);
+        JsonObject jsonObject = new Gson().fromJson(json, JsonElement.class).getAsJsonObject();
+        String status = jsonObject.getAsJsonObject("fields").getAsJsonObject("status").get("name").getAsString();
+        client.close();
+        return Status.getByStatus(status);
+    }
 }

@@ -6,6 +6,8 @@ import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArch
 import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
+import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
+import org.keycloak.testsuite.arquillian.jira.JiraTestExecutionDecider;
 import org.keycloak.testsuite.arquillian.undertow.CustomUndertowContainer;
 
 /**
@@ -16,7 +18,7 @@ public class CustomExtension implements LoadableExtension {
 
     @Override
     public void register(ExtensionBuilder builder) {
-        
+
         builder
                 .service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)
                 .service(ApplicationArchiveProcessor.class, DeploymentArchiveProcessor.class)
@@ -24,7 +26,10 @@ public class CustomExtension implements LoadableExtension {
 
         builder
                 .service(DeployableContainer.class, CustomUndertowContainer.class);
-        
+
+        builder
+                .service(TestExecutionDecider.class, JiraTestExecutionDecider.class);
+
     }
 
 }
