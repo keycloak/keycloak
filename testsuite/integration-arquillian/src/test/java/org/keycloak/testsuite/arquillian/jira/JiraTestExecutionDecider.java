@@ -6,19 +6,20 @@
 package org.keycloak.testsuite.arquillian.jira;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 import org.jboss.arquillian.test.spi.execution.ExecutionDecision;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
 
 import static org.keycloak.testsuite.arquillian.jira.JBossJiraParser.isIssueClosed;
-import static org.keycloak.testsuite.arquillian.jira.IssueCache.containsIssue;
-import static org.keycloak.testsuite.arquillian.jira.IssueCache.shouldExecute;
-import static org.keycloak.testsuite.arquillian.jira.IssueCache.put;
 
 /**
  *
  * @author <a href="mailto:pmensik@redhat.com">Petr Mensik</a>
  */
 public class JiraTestExecutionDecider implements TestExecutionDecider {
+
+	private static Map<String, Boolean> cache = new HashMap<String, Boolean>();
 
 	@Override
 	public ExecutionDecision decide(Method method) {
@@ -27,14 +28,14 @@ public class JiraTestExecutionDecider implements TestExecutionDecider {
 			boolean executeTest = true;
 			String[] issueIds = getIssuesId(jiraAnnotation.value());
 			for (String issueId : issueIds) {
-				if (containsIssue(issueId)) {
-					executeTest = shouldExecute(issueId);
+				if (cache.containsKey(issueId)) {
+					executeTest = cache.get(issueId);
 				} else {
 					if (isIssueClosed(issueId)) {
-						put(issueId, true);
+						cache.put(issueId, true);
 					} else {
 						executeTest = false;
-						put(issueId, false);
+						cache.put(issueId, false);
 					}
 				}
 			}
