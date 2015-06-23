@@ -219,6 +219,12 @@
                                 <keycloak.http.port>8180</keycloak.http.port>
                                 <keycloak.management.port>10090</keycloak.management.port>
                             </systemPropertyVariables>
+                            <properties>
+                                <property>
+                                    <name>listener</name>
+                                    <value>org.keycloak.testsuite.util.TestConsoleLogger</value>
+                                </property>
+                            </properties>
                         </configuration>
                     </plugin>
                 </plugins>
