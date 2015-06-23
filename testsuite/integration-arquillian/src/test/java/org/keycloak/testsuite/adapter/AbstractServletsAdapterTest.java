@@ -33,12 +33,12 @@ import org.keycloak.testsuite.adapter.servlet.SessionServlet;
 import org.keycloak.testsuite.ui.application.page.InputPage;
 import org.keycloak.testsuite.ui.page.account.AccountSessionsPage;
 import static org.junit.Assert.*;
-import org.junit.Ignore;
 import org.keycloak.Version;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.jira.Jira;
 import org.keycloak.testsuite.ui.page.LoginPage;
 import org.keycloak.testsuite.ui.util.SeleniumUtils;
 import org.keycloak.testsuite.util.ApiUtil;
@@ -274,9 +274,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 	}
 
 	@Test
-	@Ignore
-	/* Waiting for KEYCLOAK-1478 */
-	public void testLoginSSOIdleRemoveExpiredUserSessions() throws Exception {
+	@Jira("KEYCLOAK-1478")
+	public void testLoginSSOIdleRemoveExpiredUserSessions() {
 		// test login to customer-portal which does a bearer request to customer-db
 		driver.get(CUSTOMER_PORTAL_URL);
 		SeleniumUtils.waitGuiForElement(loginPage.getUsernameInput());
@@ -318,9 +317,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 		keycloak.realm("demo").update(demoRealm);
 	}
 
-	/**
-	 * KEYCLOAK-518
-	 */
+	@Jira("KEYCLOAK-518")
 	@Test
 	public void testNullBearerToken() {
 		Client client = ClientBuilder.newClient();
@@ -334,9 +331,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 		client.close();
 	}
 
-	/**
-	 * KEYCLOAK-1368
-	 */
+	@Jira("KEYCLOAK-1368")
 	@Test
 	public void testNullBearerTokenCustomErrorPage() {
 		Client client = ClientBuilder.newClient();
@@ -369,9 +364,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 		client.close();
 	}
 
-	/**
-	 * KEYCLOAK-518
-	 */
+	@Jira("KEYCLOAK-518")
 	@Test
 	public void testBadUser() {
 		Client client = ClientBuilder.newClient();
@@ -432,11 +425,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 		assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 	}
 
-	/**
-	 * KEYCLOAK-732
-	 *
-	 * @param driver2
-	 */
+	@Jira("KEYCLOAK-732")
 	@Test
 	public void testSingleSessionInvalidated(@Drone @SecondBrowser WebDriver driver2) {
 
@@ -476,11 +465,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 		assertTrue(driver2.getCurrentUrl().startsWith(LOGIN_URL));
 	}
 
-	/**
-	 * KEYCLOAK-741
-	 */
 	@Test
-	@Ignore
+	@Jira("KEYCLOAK-741, KEYCLOAK-1485")
 	public void testSessionInvalidatedAfterFailedRefresh() {
 		RealmResource demoRealm = keycloak.realm("demo");
 		RealmRepresentation demoRealmRep = demoRealm.toRepresentation();
@@ -512,10 +498,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 		demoRealm.update(demoRealmRep);
 	}
 
-	/**
-	 * KEYCLOAK-942
-	 */
 	@Test
+	@Jira("KEYCLOAK-942")
 	public void testAdminApplicationLogout() {
 		// login as bburke
 		loginAndCheckSession(driver, loginPage);
@@ -531,11 +515,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 		driver.get(logoutUri);
 	}
 
-	/**
-	 * KEYCLOAK-1216 KEYCLOAK-1485
-	 */
 	@Test
-	@Ignore
+	@Jira("KEYCLOAK-1216, KEYCLOAK-1485")
 	public void testAccountManagementSessionsLogout() {
 		// login as bburke
 		loginAndCheckSession(driver, loginPage);
