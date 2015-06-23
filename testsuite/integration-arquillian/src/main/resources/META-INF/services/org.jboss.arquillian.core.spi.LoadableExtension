@@ -1,2 +1,3 @@
 org.keycloak.testsuite.arquillian.CustomExtension
 org.keycloak.testsuite.arquillian.undertow.CustomUndertowExtension
+org.keycloak.testsuite.arquillian.jira.JiraExtension
