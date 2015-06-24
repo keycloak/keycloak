@@ -24,7 +24,7 @@ Skip this step if you installed demo already.
 sshRealm=keycloak
 ```
 
-3) Copy file from Keycloak fuse examples `examples/fuse/fuse-admin/keycloak-direct-access.json` to `$FUSE_HOME/etc/` directory. 
+3) Copy file from Keycloak fuse examples `keycloak-examples-<VERSION>/fuse/fuse-admin/keycloak-direct-access.json` to `$FUSE_HOME/etc/` directory.
 This file contains configuration of the client application, which is used by JAAS DirectAccessGrantsLoginModule from `keycloak` JAAS realm for SSH authentication.
  
 4) Start Fuse and install `keycloak` JAAS realm into Fuse. This could be done easily by installing `keycloak-jaas` feature, which has JAAS realm predefined 
@@ -36,7 +36,7 @@ features:addurl mvn:org.keycloak/keycloak-osgi-features/1.2.0.Beta1/xml/features
 features:install keycloak-jaas
 ```
 
-5) Now let's type this from your terminal:
+5) Now let's type this from your terminal to login via SSH as `admin` user:
 
 ```
 ssh -o PubkeyAuthentication=no -p 8101 admin@localhost
@@ -51,11 +51,10 @@ JMX authentication with keycloak credentials on JBoss Fuse 6.1
 This may be needed in case if you really want to use jconsole or other external tool to perform remote connection to JMX through RMI. Otherwise it may 
 be better to use just hawt.io/jolokia as jolokia agent is installed in hawt.io by default.
  
-1) In file `$FUSE_HOME/etc/org.apache.karaf.management.cfg` you can change these 2 properties:
+1) In file `$FUSE_HOME/etc/org.apache.karaf.management.cfg` you can change this property:
 
 ```
 jmxRealm=keycloak
-jmxRole=org.keycloak.adapters.jaas.RolePrincipal:admin
 ```
 
 2) In jconsole you can fill URL like:
@@ -71,20 +70,15 @@ may be still able to access MBeans remotely via HTTP (Hawtio). So make sure to p
 really protect JMX mbeans.
 
 
-SSH and JMX on JBoss Fuse 6.2 and Apache Karaf 3.0.2
---------------------------------------------
+SSH and JMX on JBoss Fuse 6.2 and Apache Karaf 3.0.3
+----------------------------------------------------
 For SSH steps are very similar to above for 6.1. In JBoss Fuse 6.2 you may need to install `ssh` feature as it doesn't seem to be installed here by default.
 
 ```
 features:install ssh
 ```
 
-For JMX, the steps are similar like for Fuse 6.1, however there is more fine grained authorization for JMX access in Fuse 6.2 and Karaf 3. 
-You need to install just jmxRealm in `$FUSE_HOME/etc/org.apache.karaf.management.cfg` . Property `jmxRole` is no longer valid.
-
-```
-jmxRealm=keycloak
-``` 
+For JMX, the steps are similar like for Fuse 6.1, however there is more fine grained authorization for JMX access in Fuse 6.2 and Karaf 3.
 
 Actually if you login as user `admin`, you have very limited privileges without possibility to do much JMX operations as this user has just `admin` role, which is not allowed to do much in JMX.
 

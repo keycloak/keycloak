@@ -19,12 +19,12 @@ import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.message.Message;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.constants.ServiceUrlConstants;
-import org.keycloak.example.ws.Person;
-import org.keycloak.example.ws.UnknownPersonFault;
+import org.keycloak.example.ws.Product;
+import org.keycloak.example.ws.UnknownProductFault;
 import org.keycloak.util.KeycloakUriBuilder;
 
 /**
- * Servlet for receiving informations about products from backend JAXWS service. Actually it's about "persons" not "products" :)
+ * Servlet for receiving informations about products from backend JAXWS service
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -46,26 +46,27 @@ public class ProductPortalServlet extends HttpServlet {
         out.println("<p>Goto: <a href=\"/customer-portal\">customers</a> | <a href=\"" + logoutUri + "\">logout</a> | <a href=\"" + acctUri + "\">manage acct</a></p>");
         out.println("Servlet User Principal <b>" + req.getUserPrincipal() + "</b> made this request.");
 
-        String unsecuredWsClientResponse = sendWsReq(req, false);
-        String securedWsClientResponse = sendWsReq(req, true);
+        String unsecuredWsClientResponse = sendWsReq(req, "1", false);
+        String securedWsClientResponse = sendWsReq(req, "1", true);
+        String securedWsClient2Response = sendWsReq(req, "2", true);
 
-        out.println("<p>Person with ID 1 - unsecured request: <b>" + unsecuredWsClientResponse + "</b></p>");
-        out.println("<p>Person with ID 1 - secured request: <b>" + securedWsClientResponse + "</b></p>");
+        out.println("<p>Product with ID 1 - unsecured request (it should end with failure): <b>" + unsecuredWsClientResponse + "</b></p><br>");
+        out.println("<p>Product with ID 1 - secured request: <b>" + securedWsClientResponse + "</b></p><br>");
+        out.println("<p>Product with ID 2 - secured request: <b>" + securedWsClient2Response + "</b></p><br>");
         out.println("</body></html>");
         out.flush();
         out.close();
     }
 
-    private String sendWsReq(HttpServletRequest req, boolean secured) {
+    private String sendWsReq(HttpServletRequest req, String productId, boolean secured) {
         JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
-        factory.setServiceClass(Person.class);
-        factory.setAddress("http://localhost:8282/PersonServiceCF");
+        factory.setServiceClass(Product.class);
+        factory.setAddress("http://localhost:8282/ProductServiceCF");
 
-        Person simpleClient = (Person)factory.create();
-        java.lang.String _getPerson_personIdVal = "1";
-        javax.xml.ws.Holder<java.lang.String> _getPerson_personId = new javax.xml.ws.Holder<java.lang.String>(_getPerson_personIdVal);
-        javax.xml.ws.Holder<java.lang.String> _getPerson_ssn = new javax.xml.ws.Holder<java.lang.String>();
-        javax.xml.ws.Holder<java.lang.String> _getPerson_name = new javax.xml.ws.Holder<java.lang.String>();
+        Product simpleClient = (Product)factory.create();
+        java.lang.String _getProduct_productIdVal = productId;
+        javax.xml.ws.Holder<java.lang.String> _getProduct_productId = new javax.xml.ws.Holder<java.lang.String>(_getProduct_productIdVal);
+        javax.xml.ws.Holder<java.lang.String> _getProduct_name = new javax.xml.ws.Holder<java.lang.String>();
 
         // Attach Authorization header
         if (secured) {
@@ -79,12 +80,12 @@ public class ProductPortalServlet extends HttpServlet {
         }
 
         try {
-            simpleClient.getPerson(_getPerson_personId, _getPerson_ssn, _getPerson_name);
-            return String.format("Person received: id=%s, name=%s, ssn=%s", _getPerson_personId.value, _getPerson_name.value, _getPerson_ssn.value);
-        } catch (UnknownPersonFault upf) {
-            return "UnknownPersonFault has occurred. Details: " + upf.toString();
+            simpleClient.getProduct(_getProduct_productId, _getProduct_name);
+            return String.format("Product received: id=%s, name=%s", _getProduct_productId.value, _getProduct_name.value);
+        } catch (UnknownProductFault upf) {
+            return "UnknownProductFault has occurred. Details: " + upf.toString();
         } catch (WebServiceException wse) {
-            String error = "Can't receive person. Reason: " + wse.getMessage();
+            String error = "Can't receive product. Reason: " + wse.getMessage();
             if (wse.getCause() != null) {
                 Throwable cause = wse.getCause();
                 error = error + " Details: " + cause.getClass().getName() + ": " + cause.getMessage();

@@ -64,7 +64,7 @@
     </httpj:engine-factory>
 
     <jaxws:endpoint
-                    implementor="org.keycloak.example.ws.PersonImpl"
-                    address="http://localhost:8282/PersonServiceCF" depends-on="kc-cxf-endpoint"/>
+                    implementor="org.keycloak.example.ws.ProductImpl"
+                    address="http://localhost:8282/ProductServiceCF" depends-on="kc-cxf-endpoint"/>
 
 </beans>
