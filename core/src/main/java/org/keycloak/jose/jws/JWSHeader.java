@@ -1,5 +1,6 @@
 package org.keycloak.jose.jws;
 
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
@@ -11,6 +12,7 @@ import java.io.Serializable;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class JWSHeader implements Serializable {
     @JsonProperty("alg")
     private Algorithm algorithm;
