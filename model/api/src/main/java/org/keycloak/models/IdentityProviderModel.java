@@ -35,7 +35,12 @@ public class IdentityProviderModel implements Serializable {
     private String internalId;
 
     /**
-     * <p>An user-defined identifier to unique identify an identity provider instance.</p>
+     * <p>A non-unique display name for the identity provider.</p>
+     */
+    private String name;
+
+    /**
+     * <p>An user-defined identifier to uniquely identify an identity provider instance.</p>
      */
     private String alias;
 
@@ -77,6 +82,7 @@ public class IdentityProviderModel implements Serializable {
     public IdentityProviderModel(IdentityProviderModel model) {
         this.internalId = model.getInternalId();
         this.providerId = model.getProviderId();
+        this.name = model.getName();
         this.alias = model.getAlias();
         this.config = new HashMap<String, String>(model.getConfig());
         this.enabled = model.isEnabled();
@@ -93,6 +99,14 @@ public class IdentityProviderModel implements Serializable {
 
     public void setInternalId(String internalId) {
         this.internalId = internalId;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getAlias() {

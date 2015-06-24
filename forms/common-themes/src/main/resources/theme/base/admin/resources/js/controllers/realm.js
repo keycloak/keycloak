@@ -654,6 +654,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     } else {
         $scope.identityProvider = {};
         $scope.identityProvider.config = {};
+        $scope.identityProvider.name = "";
         $scope.identityProvider.alias = providerFactory.id;
         $scope.identityProvider.providerId = providerFactory.id;
         $scope.identityProvider.enabled = true;

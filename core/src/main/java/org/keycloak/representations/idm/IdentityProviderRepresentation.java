@@ -25,6 +25,7 @@ import java.util.Map;
  */
 public class IdentityProviderRepresentation {
 
+    protected String name;
     protected String alias;
     protected String internalId;
     protected String providerId;
@@ -60,6 +61,14 @@ public class IdentityProviderRepresentation {
 
     public void setInternalId(String internalId) {
         this.internalId = internalId;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getAlias() {

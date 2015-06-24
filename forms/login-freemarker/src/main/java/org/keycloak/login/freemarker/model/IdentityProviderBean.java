@@ -65,7 +65,10 @@ public class IdentityProviderBean {
 
     private void addIdentityProvider(Set<IdentityProvider> orderedSet, RealmModel realm, URI baseURI, IdentityProviderModel identityProvider) {
         String loginUrl = Urls.identityProviderAuthnRequest(baseURI, identityProvider.getAlias(), realm.getName()).toString();
-        orderedSet.add(new IdentityProvider(identityProvider.getAlias(), identityProvider.getProviderId(), loginUrl,
+
+        // Mismatched variable name: "IdentityProviderModel.name" is set to "identityProvider.alias" on the following line.
+        // This is intentional, and was done to support backwards compatibility. The login page now displays the name.
+        orderedSet.add(new IdentityProvider(identityProvider.getName(), identityProvider.getProviderId(), loginUrl,
                 identityProvider.getConfig() != null ? identityProvider.getConfig().get("guiOrder") : null));
     }
 

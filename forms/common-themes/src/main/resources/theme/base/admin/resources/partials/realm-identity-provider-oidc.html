@@ -26,9 +26,16 @@
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="identifier"><span class="required">*</span> Alias</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="identifier" type="text" ng-model="identityProvider.alias" data-ng-readonly="!newIdentityProvider" required>
+                    <input class="form-control" id="identifier" type="text" ng-trim="false" ng-pattern="/^[a-zA-Z0-9_]*$/" ng-model="identityProvider.alias" data-ng-readonly="!newIdentityProvider" required>
                 </div>
-                <kc-tooltip>The alias uniquely identifies an identity provider and it is also used to build the redirect uri.</kc-tooltip>
+                <kc-tooltip>The alias uniquely identifies an identity provider and it is also used to build the redirect uri. Alphanumeric and underscore characters only.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="displayName"><span class="required">*</span> Name</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="displayName" type="text" ng-model="identityProvider.name" required>
+                </div>
+                <kc-tooltip>The display name is a non-unique identifier used on user-facing pages.</kc-tooltip>
             </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="enabled">Enabled</label>
