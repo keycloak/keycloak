@@ -18,7 +18,7 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="personId" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="productId" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -29,36 +29,36 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
-    "personId"
+    "productId"
 })
-@XmlRootElement(name = "UnknownPersonFault")
-public class UnknownPersonFault {
+@XmlRootElement(name = "GetProduct")
+public class GetProduct {
 
     @XmlElement(required = true)
-    protected String personId;
+    protected String productId;
 
     /**
-     * Gets the value of the personId property.
+     * Gets the value of the productId property.
      *
      * @return
      *     possible object is
      *     {@link String }
      *
      */
-    public String getPersonId() {
-        return personId;
+    public String getProductId() {
+        return productId;
     }
 
     /**
-     * Sets the value of the personId property.
+     * Sets the value of the productId property.
      *
      * @param value
      *     allowed object is
      *     {@link String }
      *
      */
-    public void setPersonId(String value) {
-        this.personId = value;
+    public void setProductId(String value) {
+        this.productId = value;
     }
 
 }

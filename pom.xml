@@ -88,6 +88,7 @@
         <embedmongo.plugin.version>0.1.12</embedmongo.plugin.version>
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
+        <osgi.bundle.plugin.version>2.3.7</osgi.bundle.plugin.version>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -1304,7 +1305,12 @@
                             </configuration>
                         </execution>
                     </executions>
-                </plugin>               
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>maven-bundle-plugin</artifactId>
+                    <version>${osgi.bundle.plugin.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
