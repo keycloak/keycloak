@@ -18,8 +18,7 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="personId" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;element name="ssn" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="productId" type="{http://www.w3.org/2001/XMLSchema}string"/>*
  *         &lt;element name="name" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -31,66 +30,39 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
-    "personId",
-    "ssn",
+    "productId",
     "name"
 })
-@XmlRootElement(name = "GetPersonResponse")
-public class GetPersonResponse {
+@XmlRootElement(name = "GetProductResponse")
+public class GetProductResponse {
 
     @XmlElement(required = true)
-    protected String personId;
-    @XmlElement(required = true)
-    protected String ssn;
+    protected String productId;
     @XmlElement(required = true)
     protected String name;
 
     /**
-     * Gets the value of the personId property.
+     * Gets the value of the productId property.
      *
      * @return
      *     possible object is
      *     {@link String }
      *
      */
-    public String getPersonId() {
-        return personId;
+    public String getProductId() {
+        return productId;
     }
 
     /**
-     * Sets the value of the personId property.
+     * Sets the value of the productId property.
      *
      * @param value
      *     allowed object is
      *     {@link String }
      *
      */
-    public void setPersonId(String value) {
-        this.personId = value;
-    }
-
-    /**
-     * Gets the value of the ssn property.
-     *
-     * @return
-     *     possible object is
-     *     {@link String }
-     *
-     */
-    public String getSsn() {
-        return ssn;
-    }
-
-    /**
-     * Sets the value of the ssn property.
-     *
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *
-     */
-    public void setSsn(String value) {
-        this.ssn = value;
+    public void setProductId(String value) {
+        this.productId = value;
     }
 
     /**
