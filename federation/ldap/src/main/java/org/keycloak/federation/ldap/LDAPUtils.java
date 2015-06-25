@@ -1,6 +1,5 @@
 package org.keycloak.federation.ldap;
 
-import java.util.List;
 import java.util.Set;
 
 import org.keycloak.federation.ldap.idm.model.LDAPDn;
@@ -61,7 +60,7 @@ public class LDAPUtils {
     // ldapUser has filled attributes, but doesn't have filled dn.
     private static void computeAndSetDn(LDAPConfig config, LDAPObject ldapUser) {
         String rdnLdapAttrName = config.getRdnLdapAttribute();
-        String rdnLdapAttrValue = ldapUser.getAttributeAsString(rdnLdapAttrName);
+        String rdnLdapAttrValue = ldapUser.getAttributeAsStringCaseInsensitive(rdnLdapAttrName);
         if (rdnLdapAttrValue == null) {
             throw new ModelException("RDN Attribute [" + rdnLdapAttrName + "] is not filled. Filled attributes: " + ldapUser.getAttributes());
         }
@@ -73,6 +72,6 @@ public class LDAPUtils {
 
     public static String getUsername(LDAPObject ldapUser, LDAPConfig config) {
         String usernameAttr = config.getUsernameLdapAttribute();
-        return ldapUser.getAttributeAsString(usernameAttr);
+        return ldapUser.getAttributeAsStringCaseInsensitive(usernameAttr);
     }
 }

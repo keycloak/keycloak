@@ -263,6 +263,34 @@ public class FederationProvidersIntegrationTest {
     }
 
     @Test
+    public void testCaseSensitiveAttributeName() {
+        KeycloakSession session = keycloakRule.startSession();
+        UserFederationMapperModel zipCodeMapper = null;
+
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            LDAPObject johnZip = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johnzip", "John", "Zip", "johnzip@email.org", "12398");
+
+            // Remove default zipcode mapper
+            UserFederationMapperModel currentZipMapper = appRealm.getUserFederationMapperByName(ldapModel.getId(), "zipCodeMapper");
+            appRealm.removeUserFederationMapper(currentZipMapper);
+
+            // Add zipcode mapper for "POstalCode"
+            FederationTestUtils.addUserAttributeMapper(appRealm, ldapModel, "zipCodeMapper-cs", "postal_code", "POstalCode");
+
+            // Fetch user from LDAP and check that postalCode is filled
+            UserModel user = session.users().getUserByUsername("johnzip", appRealm);
+            String postalCode = user.getAttribute("postal_code");
+            Assert.assertEquals("12398", postalCode);
+
+        } finally {
+            keycloakRule.stopSession(session, false);
+        }
+    }
+
+    @Test
     public void testFullNameMapper() {
         KeycloakSession session = keycloakRule.startSession();
         UserFederationMapperModel firstNameMapper = null;

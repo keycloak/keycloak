@@ -6,18 +6,29 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.logging.Logger;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class LDAPObject {
 
+    private static final Logger logger = Logger.getLogger(LDAPObject.class);
+
     private String uuid;
     private LDAPDn dn;
     private String rdnAttributeName;
 
-    private final List<String> objectClasses = new LinkedList<String>();
-    private final List<String> readOnlyAttributeNames = new LinkedList<String>();
-    private final Map<String, Object> attributes = new HashMap<String, Object>();
+    private final List<String> objectClasses = new LinkedList<>();
+
+    // NOTE: names of read-only attributes are lower-cased to avoid case sensitivity issues
+    private final List<String> readOnlyAttributeNames = new LinkedList<>();
+
+    private final Map<String, Object> attributes = new HashMap<>();
+
+    // Copy of "attributes" containing lower-cased keys
+    private final Map<String, Object> lowerCasedAttributes = new HashMap<>();
+
 
     public String getUuid() {
         return uuid;
@@ -49,7 +60,7 @@ public class LDAPObject {
     }
 
     public void addReadOnlyAttributeName(String readOnlyAttribute) {
-        readOnlyAttributeNames.add(readOnlyAttribute);
+        readOnlyAttributeNames.add(readOnlyAttribute.toLowerCase());
     }
 
     public String getRdnAttributeName() {
@@ -62,21 +73,23 @@ public class LDAPObject {
 
     public void setAttribute(String attributeName, Object attributeValue) {
         attributes.put(attributeName, attributeValue);
+        lowerCasedAttributes.put(attributeName.toLowerCase(), attributeValue);
     }
 
-    public void removeAttribute(String name) {
-        attributes.remove(name);
+    public Object getAttributeCaseInsensitive(String name) {
+        return lowerCasedAttributes.get(name.toLowerCase());
     }
 
-
-    public Object getAttribute(String name) {
-        return attributes.get(name);
-    }
-
-    public String getAttributeAsString(String name) {
-        Object attrValue = attributes.get(name);
+    public String getAttributeAsStringCaseInsensitive(String name) {
+        Object attrValue = lowerCasedAttributes.get(name.toLowerCase());
         if (attrValue != null && !(attrValue instanceof String)) {
-            throw new IllegalStateException("Expected String but attribute was " + attrValue + " of type " + attrValue.getClass().getName());
+            logger.warnf("Expected String but attribute '%s' has value '%s' of type '%s' ", name, attrValue, attrValue.getClass().getName());
+
+            if (attrValue instanceof Collection) {
+                Collection<String> attrValues = (Collection<String>) attrValue;
+                attrValue = attrValues.iterator().next();
+                logger.warnf("Returning just first founded value '%s' from the collection", attrValue);
+            }
         }
 
         return (String) attrValue;
