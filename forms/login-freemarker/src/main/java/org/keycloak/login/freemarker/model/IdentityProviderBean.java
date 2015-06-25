@@ -68,7 +68,9 @@ public class IdentityProviderBean {
 
         // Mismatched variable name: "IdentityProviderModel.name" is set to "identityProvider.alias" on the following line.
         // This is intentional, and was done to support backwards compatibility. The login page now displays the name.
-        orderedSet.add(new IdentityProvider(identityProvider.getName(), identityProvider.getProviderId(), loginUrl,
+        String alias = (identityProvider.getName() != null) ? identityProvider.getName() : identityProvider.getAlias();
+
+        orderedSet.add(new IdentityProvider(alias, identityProvider.getProviderId(), loginUrl,
                 identityProvider.getConfig() != null ? identityProvider.getConfig().get("guiOrder") : null));
     }
 
