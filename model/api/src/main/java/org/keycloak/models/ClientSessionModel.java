@@ -51,6 +51,7 @@ public interface ClientSessionModel {
     public String getNote(String name);
     public void setNote(String name, String value);
     public void removeNote(String name);
+    public Map<String, String> getNotes();
 
     /**
      * These are notes you want applied to the UserSessionModel when the client session is attached to it.

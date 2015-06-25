@@ -36,10 +36,13 @@ public class AuthenticationFlowEntity {
     @Column(name="ALIAS")
     protected String alias;
 
+    @Column(name="PROVIDER_ID")
+    protected String providerId;
+
     @Column(name="DESCRIPTION")
     protected String description;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "flow")
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "parentFlow")
     Collection<AuthenticationExecutionEntity> executions = new ArrayList<AuthenticationExecutionEntity>();
     public String getId() {
         return id;
@@ -79,5 +82,13 @@ public class AuthenticationFlowEntity {
 
     public void setExecutions(Collection<AuthenticationExecutionEntity> executions) {
         this.executions = executions;
+    }
+
+    public String getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(String providerId) {
+        this.providerId = providerId;
     }
 }

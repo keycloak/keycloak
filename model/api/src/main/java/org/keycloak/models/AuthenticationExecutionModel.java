@@ -22,6 +22,7 @@ public class AuthenticationExecutionModel implements Serializable {
     private String id;
     private String authenticatorConfig;
     private String authenticator;
+    private String flowId;
     private boolean autheticatorFlow;
     private Requirement requirement;
     private boolean userSetupAllowed;
@@ -82,6 +83,19 @@ public class AuthenticationExecutionModel implements Serializable {
 
     public void setParentFlow(String parentFlow) {
         this.parentFlow = parentFlow;
+    }
+
+    /**
+     * If this execution is a flow, this is the flowId pointing to an AuthenticationFlowModel
+     *
+     * @return
+     */
+    public String getFlowId() {
+        return flowId;
+    }
+
+    public void setFlowId(String flowId) {
+        this.flowId = flowId;
     }
 
     /**

@@ -12,6 +12,16 @@
                 <constraints nullable="true"/>
             </column>
         </addColumn>
+        <addColumn tableName="AUTHENTICATION_FLOW">
+            <column name="PROVIDER_ID" type="VARCHAR(36)" defaultValue="basic-flow">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="AUTHENTICATION_EXECUTION">
+            <column name="AUTH_FLOW_ID" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
         <dropColumn tableName="AUTHENTICATOR"  columnName="PROVIDER_ID"/>
         <renameTable oldTableName="AUTHENTICATOR_CONFIG" newTableName="AUTHENTICATOR_CONFIG_ENTRY"/>
         <renameTable oldTableName="AUTHENTICATOR" newTableName="AUTHENTICATOR_CONFIG"/>

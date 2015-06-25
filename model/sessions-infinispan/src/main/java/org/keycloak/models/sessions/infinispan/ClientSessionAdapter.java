@@ -166,6 +166,14 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
+    public Map<String, String> getNotes() {
+        if (entity.getNotes() == null || entity.getNotes().isEmpty()) return Collections.emptyMap();
+        Map<String, String> copy = new HashMap<>();
+        copy.putAll(entity.getNotes());
+        return copy;
+    }
+
+    @Override
     public void setUserSessionNote(String name, String value) {
         if (entity.getUserSessionNotes() == null) {
             entity.setUserSessionNotes(new HashMap<String, String>());

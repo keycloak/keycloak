@@ -1,5 +1,5 @@
-org.keycloak.authentication.actions.UpdatePassword
-org.keycloak.authentication.actions.UpdateProfile
-org.keycloak.authentication.actions.UpdateTotp
-org.keycloak.authentication.actions.VerifyEmail
-org.keycloak.authentication.actions.TermsAndConditions
+org.keycloak.authentication.requiredactions.UpdatePassword
+org.keycloak.authentication.requiredactions.UpdateProfile
+org.keycloak.authentication.requiredactions.UpdateTotp
+org.keycloak.authentication.requiredactions.VerifyEmail
+org.keycloak.authentication.requiredactions.TermsAndConditions

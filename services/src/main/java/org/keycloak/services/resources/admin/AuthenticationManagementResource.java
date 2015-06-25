@@ -124,7 +124,7 @@ public class AuthenticationManagementResource {
             rep.setSubFlow(false);
             rep.setRequirementChoices(new LinkedList<String>());
             if (execution.isAutheticatorFlow()) {
-                AuthenticationFlowModel flowRef = realm.getAuthenticationFlowById(execution.getAuthenticator());
+                AuthenticationFlowModel flowRef = realm.getAuthenticationFlowById(execution.getFlowId());
                 rep.setReferenceType(flowRef.getAlias());
                 rep.setExecution(execution.getId());
                 rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.ALTERNATIVE.name());
