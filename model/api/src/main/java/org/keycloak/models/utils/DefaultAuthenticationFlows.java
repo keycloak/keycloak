@@ -18,6 +18,7 @@ public class DefaultAuthenticationFlows {
         AuthenticationFlowModel browser = new AuthenticationFlowModel();
         browser.setAlias(BROWSER_FLOW);
         browser.setDescription("browser based authentication");
+        browser.setProviderId("basic-flow");
         browser = realm.addAuthenticationFlow(browser);
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
         execution.setParentFlow(browser.getId());
@@ -40,11 +41,12 @@ public class DefaultAuthenticationFlows {
         AuthenticationFlowModel forms = new AuthenticationFlowModel();
         forms.setAlias(FORMS_FLOW);
         forms.setDescription("Username, password, otp and other auth forms.");
+        forms.setProviderId("basic-flow");
         forms = realm.addAuthenticationFlow(forms);
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(browser.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
-        execution.setAuthenticator(forms.getId());
+        execution.setFlowId(forms.getId());
         execution.setPriority(30);
         execution.setUserSetupAllowed(false);
         execution.setAutheticatorFlow(true);

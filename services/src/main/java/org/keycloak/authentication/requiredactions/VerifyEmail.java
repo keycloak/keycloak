@@ -1,18 +1,20 @@
-package org.keycloak.authentication.actions;
+package org.keycloak.authentication.requiredactions;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Response;
@@ -22,8 +24,8 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UpdatePassword implements RequiredActionProvider, RequiredActionFactory {
-    protected static Logger logger = Logger.getLogger(UpdatePassword.class);
+public class VerifyEmail implements RequiredActionProvider, RequiredActionFactory {
+    protected static Logger logger = Logger.getLogger(VerifyEmail.class);
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
         int daysToExpirePassword = context.getRealm().getPasswordPolicy().getDaysToExpirePassword();
@@ -51,11 +53,17 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
 
     @Override
     public Response invokeRequiredAction(RequiredActionContext context) {
-        LoginFormsProvider loginFormsProvider = context.getSession()
-                .getProvider(LoginFormsProvider.class)
+        if (Validation.isBlank(context.getUser().getEmail())) {
+            return null;
+        }
+
+        context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, context.getUser().getEmail()).success();
+        LoginActionsService.createActionCookie(context.getRealm(), context.getUriInfo(), context.getConnection(), context.getUserSession().getId());
+
+        LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(context.generateAccessCode(getProviderId()))
                 .setUser(context.getUser());
-        return loginFormsProvider.createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
+        return loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
     }
 
     @Override
@@ -87,18 +95,19 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
 
     @Override
     public String getDisplayText() {
-        return "Update Password";
+        return "Verify Email";
     }
 
 
     @Override
     public String getId() {
-        return UserModel.RequiredAction.UPDATE_PASSWORD.name();
+        return UserModel.RequiredAction.VERIFY_EMAIL.name();
     }
 
     @Override
     public String getProviderId() {
         return getId();
     }
+
 
 }

@@ -5,3 +5,5 @@ org.keycloak.wellknown.WellKnownSpi
 org.keycloak.messages.MessagesSpi
 org.keycloak.authentication.AuthenticatorSpi
 org.keycloak.authentication.RequiredActionSpi
+org.keycloak.authentication.FormAuthenticatorSpi
+org.keycloak.authentication.FormActionSpi

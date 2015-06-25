@@ -12,6 +12,8 @@ public class AuthenticationFlowEntity {
     protected String id;
     protected String alias;
     protected String description;
+    protected String providerId;
+
     List<AuthenticationExecutionEntity> executions = new ArrayList<AuthenticationExecutionEntity>();
     public String getId() {
         return id;
@@ -43,5 +45,13 @@ public class AuthenticationFlowEntity {
 
     public void setExecutions(List<AuthenticationExecutionEntity> executions) {
         this.executions = executions;
+    }
+
+    public String getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(String providerId) {
+        this.providerId = providerId;
     }
 }
