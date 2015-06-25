@@ -3,6 +3,7 @@ package org.keycloak.testsuite.ui.test.role;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.keycloak.testsuite.ui.AbstractKeyCloakTest;
@@ -38,6 +39,7 @@ public class AddCompositeRoleTest extends AbstractKeyCloakTest<RolesPage> {
         navigation.roles();
     }
 
+    @Ignore//KEYCLOAK-1497
     @Test
     public void testAddCompositeRole() {
         User user = new User("usercomposite");
@@ -71,7 +73,7 @@ public class AddCompositeRoleTest extends AbstractKeyCloakTest<RolesPage> {
         page.setCompositeRole(compositeRole);
         roleMappings.addAvailableRole(subRole1.getName(), subRole2.getName());
         //flashMessage.waitUntilPresent();
-        //assertTrue(flashMessage.getText(), flashMessage.isSuccess()); ---BUG ?
+        //assertTrue(flashMessage.getText(), flashMessage.isSuccess()); KEYCLOAK-1497
 
         //check if subroles work as expected
         navigation.users();
@@ -79,7 +81,7 @@ public class AddCompositeRoleTest extends AbstractKeyCloakTest<RolesPage> {
         userPage.goToUser(user);
         navigation.roleMappings(user.getUserName());
         roleMappings.addAvailableRole(compositeRole.getName());
-        assertTrue(roleMappings.checkIfEffectiveRolesAreComplete(roles));
+        assertTrue(roleMappings.checkIfEffectiveRealmRolesAreComplete(compositeRole, subRole1,subRole2));
 
         //delete everything
         navigation.roles();

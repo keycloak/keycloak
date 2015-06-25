@@ -48,6 +48,9 @@ public class Navigation {
     @FindByJQuery("a:contains('Default Roles')")
     private WebElement defaultRolesLink;
 
+    @FindByJQuery("li[ng-class='{active: path[4] == 'roles'}']>a")
+    private WebElement rolesTab;
+
     @FindByJQuery("a:contains('Clients')")
     private WebElement clientsLink;
 
@@ -102,6 +105,12 @@ public class Navigation {
     public void roles() { openPage(rolesLink, "Roles"); }
 
     public void defaultRoles() { openPage(defaultRolesLink, "Roles"); }
+
+    public void rolesTab(String clientName) {
+        String clientNameCapitalized = Character.toUpperCase(clientName.charAt(0))
+                + clientName.substring(1);
+        openPage(rolesTab, clientNameCapitalized);
+    }
 
     public void clients() { openPage(clientsLink, "Clients"); }
 

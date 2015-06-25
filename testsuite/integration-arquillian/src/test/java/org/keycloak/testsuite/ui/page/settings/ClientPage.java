@@ -106,6 +106,11 @@ public class ClientPage extends AbstractPage {
 		}
 	}
 
+	public void goToClient(Client client) {
+		waitAjaxForElement(dataTable);
+		dataTable.findElement(linkText(client.getName())).click();
+	}
+
 	private List<Client> getAllRows() {
 		List<Client> rows = new ArrayList<Client>();
 		List<WebElement> allRows = dataTable.findElements(cssSelector("tbody tr"));
