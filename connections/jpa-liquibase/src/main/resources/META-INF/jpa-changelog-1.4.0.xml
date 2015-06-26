@@ -12,6 +12,9 @@
                 <constraints nullable="true"/>
             </column>
         </addColumn>
+        <addColumn tableName="IDENTITY_PROVIDER">
+            <column name="PROVIDER_NAME" type="VARCHAR(255)"/>
+        </addColumn>
         <dropColumn tableName="AUTHENTICATOR"  columnName="PROVIDER_ID"/>
         <renameTable oldTableName="AUTHENTICATOR_CONFIG" newTableName="AUTHENTICATOR_CONFIG_ENTRY"/>
         <renameTable oldTableName="AUTHENTICATOR" newTableName="AUTHENTICATOR_CONFIG"/>
