@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.TreeSet;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -382,12 +382,6 @@ public class LDAPIdentityStore implements IdentityStore {
 
             NamingEnumeration<? extends Attribute> ldapAttributes = attributes.getAll();
 
-            // Exact name of attributes might be different
-            List<String> uppercasedReadOnlyAttrNames = new ArrayList<>();
-            for (String readonlyAttr : readOnlyAttrNames) {
-                uppercasedReadOnlyAttrNames.add(readonlyAttr.toUpperCase());
-            }
-
             while (ldapAttributes.hasMore()) {
                 Attribute ldapAttribute = ldapAttributes.next();
 
@@ -403,7 +397,7 @@ public class LDAPIdentityStore implements IdentityStore {
                     Object uuidValue = ldapAttribute.get();
                     ldapObject.setUuid(this.operationManager.decodeEntryUUID(uuidValue));
                 } else {
-                    Set<String> attrValues = new TreeSet<>();
+                    Set<String> attrValues = new LinkedHashSet<>();
                     NamingEnumeration<?> enumm = ldapAttribute.getAll();
                     while (enumm.hasMoreElements()) {
                         String attrVal = enumm.next().toString();
@@ -419,7 +413,8 @@ public class LDAPIdentityStore implements IdentityStore {
                             ldapObject.setAttribute(ldapAttributeName, attrValues);
                         }
 
-                        if (uppercasedReadOnlyAttrNames.contains(ldapAttributeName.toUpperCase())) {
+                        // readOnlyAttrNames are lower-cased
+                        if (readOnlyAttrNames.contains(ldapAttributeName.toLowerCase())) {
                             ldapObject.addReadOnlyAttributeName(ldapAttributeName);
                         }
                     }
@@ -443,7 +438,9 @@ public class LDAPIdentityStore implements IdentityStore {
         for (Map.Entry<String, Object> attrEntry : ldapObject.getAttributes().entrySet()) {
             String attrName = attrEntry.getKey();
             Object attrValue = attrEntry.getValue();
-            if (!ldapObject.getReadOnlyAttributeNames().contains(attrName) && (isCreate || !ldapObject.getRdnAttributeName().equalsIgnoreCase(attrName))) {
+
+            // ldapObject.getReadOnlyAttributeNames() are lower-cased
+            if (!ldapObject.getReadOnlyAttributeNames().contains(attrName.toLowerCase()) && (isCreate || !ldapObject.getRdnAttributeName().equalsIgnoreCase(attrName))) {
 
                 if (String.class.isInstance(attrValue)) {
                     if (attrValue.toString().trim().length() == 0) {

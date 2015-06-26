@@ -28,7 +28,7 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
     @Override
     public void onImportUserFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
         String ldapFullNameAttrName = getLdapFullNameAttrName(mapperModel);
-        String fullName = ldapUser.getAttributeAsString(ldapFullNameAttrName);
+        String fullName = ldapUser.getAttributeAsStringCaseInsensitive(ldapFullNameAttrName);
         fullName = fullName.trim();
         if (fullName != null && !fullName.trim().isEmpty()) {
             int lastSpaceIndex = fullName.lastIndexOf(" ");
