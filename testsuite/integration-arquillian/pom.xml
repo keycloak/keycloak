@@ -238,6 +238,12 @@
                                 <app.server.http.port>${app.server.http.port}</app.server.http.port>
                                 <app.server.management.port>${app.server.management.port}</app.server.management.port>
                             </systemPropertyVariables>
+                            <properties>
+                                <property>
+                                    <name>listener</name>
+                                    <value>org.keycloak.testsuite.util.TestConsoleLogger</value>
+                                </property>
+                            </properties>
                         </configuration>
                     </plugin>
                 </plugins>
