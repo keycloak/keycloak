@@ -232,7 +232,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
         if (ldapUser.getUuid().equals(local.getAttribute(LDAPConstants.LDAP_ID))) {
             return ldapUser;
         } else {
-            logger.warnf("LDAP User invalid. ID doesn't match. ID from LDAP [%s], ID from local DB: [%s]", ldapUser.getUuid(), local.getAttribute(LDAPConstants.LDAP_ID));
+            logger.warnf("LDAP User invalid. ID doesn't match. ID from LDAP [%s], LDAP ID from local DB: [%s]", ldapUser.getUuid(), local.getAttribute(LDAPConstants.LDAP_ID));
             return null;
         }
     }

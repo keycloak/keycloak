@@ -74,7 +74,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
             // Import role mappings from LDAP into Keycloak DB
             String roleNameAttr = getRoleNameLdapAttribute(mapperModel);
             for (LDAPObject ldapRole : ldapRoles) {
-                String roleName = ldapRole.getAttributeAsString(roleNameAttr);
+                String roleName = ldapRole.getAttributeAsStringCaseInsensitive(roleNameAttr);
 
                 RoleContainerModel roleContainer = getTargetRoleContainer(mapperModel, realm);
                 RoleModel role = roleContainer.getRole(roleName);
@@ -103,7 +103,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
             RoleContainerModel roleContainer = getTargetRoleContainer(mapperModel, realm);
             String rolesRdnAttr = getRoleNameLdapAttribute(mapperModel);
             for (LDAPObject ldapRole : ldapRoles) {
-                String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
+                String roleName = ldapRole.getAttributeAsStringCaseInsensitive(rolesRdnAttr);
 
                 if (roleContainer.getRole(roleName) == null) {
                     logger.infof("Syncing role [%s] from LDAP to keycloak DB", roleName);
@@ -249,7 +249,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
     protected Set<String> getExistingMemberships(UserFederationMapperModel mapperModel, LDAPObject ldapRole) {
         String memberAttrName = getMembershipLdapAttribute(mapperModel);
         Set<String> memberships = new TreeSet<String>();
-        Object existingMemberships = ldapRole.getAttribute(memberAttrName);
+        Object existingMemberships = ldapRole.getAttributeCaseInsensitive(memberAttrName);
 
         if (existingMemberships != null) {
             if (existingMemberships instanceof String) {
@@ -411,7 +411,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
             Set<RoleModel> roles = new HashSet<RoleModel>();
             String roleNameLdapAttr = getRoleNameLdapAttribute(mapperModel);
             for (LDAPObject role : ldapRoles) {
-                String roleName = role.getAttributeAsString(roleNameLdapAttr);
+                String roleName = role.getAttributeAsStringCaseInsensitive(roleNameLdapAttr);
                 RoleModel modelRole = roleContainer.getRole(roleName);
                 if (modelRole == null) {
                     // Add role to local DB

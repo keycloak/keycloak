@@ -40,6 +40,7 @@ public class LDAPIdentityQuery {
     private final Set<String> returningLdapAttributes = new LinkedHashSet<String>();
 
     // Contains just those returningLdapAttributes, which are read-only. They will be marked as read-only in returned LDAPObject instances as well
+    // NOTE: names of attributes are lower-cased to avoid case sensitivity issues (LDAP searching is usually case-insensitive, so we want to be as well)
     private final Set<String> returningReadOnlyLdapAttributes = new LinkedHashSet<String>();
     private final Set<String> objectClasses = new LinkedHashSet<String>();
 
@@ -77,7 +78,7 @@ public class LDAPIdentityQuery {
     }
 
     public LDAPIdentityQuery addReturningReadOnlyLdapAttribute(String ldapAttributeName) {
-        this.returningReadOnlyLdapAttributes.add(ldapAttributeName);
+        this.returningReadOnlyLdapAttributes.add(ldapAttributeName.toLowerCase());
         return this;
     }
 

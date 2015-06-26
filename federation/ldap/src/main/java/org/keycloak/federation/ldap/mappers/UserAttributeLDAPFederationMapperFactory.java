@@ -30,6 +30,10 @@ public class UserAttributeLDAPFederationMapperFactory extends AbstractLDAPFedera
         ProviderConfigProperty readOnly = createConfigProperty(UserAttributeLDAPFederationMapper.READ_ONLY, "Read Only",
                 "Read-only attribute is imported from LDAP to Keycloak DB, but it's not saved back to LDAP when user is updated in Keycloak.", ProviderConfigProperty.BOOLEAN_TYPE, "false");
         configProperties.add(readOnly);
+
+        ProviderConfigProperty alwaysReadValueFromLDAP = createConfigProperty(UserAttributeLDAPFederationMapper.ALWAYS_READ_VALUE_FROM_LDAP, "Always read value from LDAP",
+                "If on, then during reading of the user will be value of attribute from LDAP always used instead of the value from Keycloak DB", ProviderConfigProperty.BOOLEAN_TYPE, "false");
+        configProperties.add(alwaysReadValueFromLDAP);
     }
 
     @Override
