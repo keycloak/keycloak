@@ -1,22 +1,27 @@
 package org.keycloak.testsuite;
 
-import org.keycloak.testsuite.arquillian.AuthServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.NotFoundException;
-import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.test.api.ArquillianResource;
+import org.jboss.arquillian.junit.Arquillian;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.ContainersManager;
+import org.keycloak.testsuite.console.page.AdminConsole;
+import org.keycloak.testsuite.console.page.AuthServer;
+import org.keycloak.testsuite.console.page.AuthServerContextRoot;
+import static org.keycloak.testsuite.console.page.PageAssert.*;
 import org.keycloak.testsuite.ui.fragment.MenuPage;
 import org.keycloak.testsuite.ui.fragment.Navigation;
 import org.keycloak.testsuite.ui.page.LoginPage;
@@ -28,121 +33,122 @@ import org.keycloak.util.JsonSerialization;
  *
  * @author tkyjovsk
  */
+@RunWith(Arquillian.class)
 @RunAsClient
 @AuthServerContainer("auth-server-wildfly")
-public abstract class AbstractKeycloakTest extends ContainersManager {
+public abstract class AbstractKeycloakTest {
 
-	protected static boolean adminPasswordUpdated = Boolean.parseBoolean(System.getProperty("adminPasswordUpdated", "false"));
+    public static final String REALM_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
+    protected static boolean adminPasswordUpdated = Boolean.parseBoolean(System.getProperty("adminPasswordUpdated", "false"));
 
-	public static final String AUTH_SERVER_BASE_URL = "http://localhost:" + Integer.parseInt(
-			System.getProperty("keycloak.http.port", "8080"));
+    protected Keycloak keycloak;
 
-	public static final String AUTH_SERVER_URL = AUTH_SERVER_BASE_URL + "/auth";
-	public static final String ADMIN_CONSOLE_URL = AUTH_SERVER_URL + "/admin/master/console/index.html";
+    @Drone
+    protected WebDriver driver;
 
-	public static final String SETTINGS_GENERAL_SETTINGS = ADMIN_CONSOLE_URL + "#/realms/%s";
-	public static final String SETTINGS_ROLES = ADMIN_CONSOLE_URL + "#/realms/%s/roles";
-	public static final String SETTINGS_LOGIN = ADMIN_CONSOLE_URL + "#/realms/%s/login-settings";
-	public static final String SETTINGS_SOCIAL = ADMIN_CONSOLE_URL + "#/realms/%s/social-settings";
+    @Page
+    protected AuthServerContextRoot authServerContextRoot;
+    @Page
+    protected AuthServer authServer;
+    @Page
+    protected AdminConsole adminConsole;
 
-	public static final String REALM_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
+    @Page
+    protected LoginPage loginPage;
+    @Page
+    protected PasswordPage passwordPage;
+    @Page
+    protected MenuPage menuPage;
+    @Page
+    protected Navigation navigation;
 
-	@ArquillianResource
-	protected Deployer deployer;
+    @Before
+    public void setUp() {
+        driverSettings();
+        updateAdminPassword();
+        keycloak = Keycloak.getInstance(authServer.getUrlString(),
+                "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
+        importTestRealm();
+    }
 
-	protected Keycloak keycloak;
+    @After
+    public void tearDown() {
+        removeTestRealm();
+        keycloak.close();
+        driver.manage().deleteAllCookies();
+    }
 
-	@Drone
-	protected WebDriver driver;
+    public void loginAsAdmin() {
+        adminConsole.navigateTo();
+        assertCurrentUrlDoesntStartWith(adminConsole);
+        loginPage.loginAsAdmin();
+    }
 
-	@Page
-	protected LoginPage loginPage;
-	@Page
-	protected PasswordPage passwordPage;
-	@Page
-	protected MenuPage menuPage;
-	@Page
-	protected Navigation navigation;
+    public void updateAdminPassword() {
+        if (!adminPasswordUpdated) {
+            loginAsAdmin();
+            passwordPage.confirmNewPassword(ADMIN_PSSWD);
+            passwordPage.submit();
+            assertCurrentUrlStartsWith(adminConsole);
+            logOut();
+            adminPasswordUpdated = true;
+        }
+    }
 
-	public void loginAsAdmin() {
-		driver.get(ADMIN_CONSOLE_URL);
-		loginPage.loginAsAdmin();
-		if (!adminPasswordUpdated) {
-			passwordPage.confirmNewPassword(ADMIN_PSSWD);
-			passwordPage.submit();
-			adminPasswordUpdated = true;
-		}
-	}
+    public void logOut() {
+        adminConsole.navigateTo();
+        assertCurrentUrlStartsWith(adminConsole);
+        menuPage.logOut();
+    }
 
-	public void logOut() {
-		driver.get(ADMIN_CONSOLE_URL);
-		menuPage.logOut();
-	}
+    public static <T> T loadJson(InputStream is, Class<T> type) {
+        try {
+            return JsonSerialization.readValue(is, type);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load json.", e);
+        }
+    }
 
-	public static <T> T loadJson(InputStream is, Class<T> type) {
-		try {
-			return JsonSerialization.readValue(is, type);
-		} catch (IOException e) {
-			throw new RuntimeException("Failed to load json.", e);
-		}
-	}
+    protected void driverSettings() {
+        driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
+        driver.manage().window().maximize();
+    }
 
-	public void importRealm(String realmConfig) {
-		System.out.println("importing realm from config: " + realmConfig);
-		importRealm(getClass().getResourceAsStream(realmConfig));
-	}
+    public boolean isRelative() {
+        return ContainersManager.isRelative(this.getClass());
+    }
 
-	public void importRealm(InputStream is) {
-		importRealm(loadJson(is, RealmRepresentation.class));
-	}
+    public void importTestRealm() {
+        // override in test class if needed
+    }
 
-	public void importRealm(RealmRepresentation realm) {
-		System.out.println("importing realm: " + realm.getRealm());
-//        System.out.println("list of existing realms:");
-//        for (RealmRepresentation r : keycloak.realms().findAll()) {
-//            System.out.println("id: " + r.getId() + ", name: " + r.getRealm());
-//        }
-		try { // TODO - figure out a way how to do this without try-catch
-			RealmResource realmResource = keycloak.realms().realm(realm.getRealm());
-			RealmRepresentation rRep = realmResource.toRepresentation();
-			System.out.println("removing existing realm: " + rRep.getRealm());
-			realmResource.remove();
-		} catch (NotFoundException nfe) {
-			System.out.println("realm " + realm.getRealm() + " not found");
-		}
-		System.out.println("importing realm");
-		keycloak.realms().create(realm);
-	}
+    public void removeTestRealm() {
+        // override in test class if needed
+    }
 
-	protected void driverSettings() {
-		driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
-		driver.manage().window().maximize();
-	}
+    public RealmRepresentation loadRealm(String realmConfig) {
+        System.out.println("Loading realm from " + realmConfig);
+        return loadRealm(getClass().getResourceAsStream(realmConfig));
+    }
 
-	@Before
-	public void setUp() {
-		driverSettings();
-		loginAsAdmin();
-		keycloak = Keycloak.getInstance(AUTH_SERVER_URL,
-				"master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
-	}
+    public RealmRepresentation loadRealm(InputStream is) {
+        RealmRepresentation realm = loadJson(is, RealmRepresentation.class);
+        System.out.println("Loaded realm " + realm.getId());
+        return realm;
+    }
 
-	@After
-	public void tearDown() {
-		keycloak.close();
-		logOut();
-	}
-
-	protected void deploy(String... deployments) {
-		for (String deployment : deployments) {
-			deployer.deploy(deployment);
-		}
-	}
-
-	protected void undeploy(String... deployments) {
-		for (String deployment : deployments) {
-			deployer.undeploy(deployment);
-		}
-	}
+    public void importRealm(RealmRepresentation realm) {
+        System.out.println("importing realm: " + realm.getRealm());
+        try { // TODO - figure out a way how to do this without try-catch
+            RealmResource realmResource = keycloak.realms().realm(realm.getRealm());
+            RealmRepresentation rRep = realmResource.toRepresentation();
+            System.out.println(" realm already exists on server, removing");
+            realmResource.remove();
+        } catch (NotFoundException nfe) {
+            System.out.println(" realm not found on server");
+        }
+        keycloak.realms().create(realm);
+        System.out.println("realm imported");
+    }
 
 }

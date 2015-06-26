@@ -20,13 +20,22 @@
         <examples.home>${project.build.directory}/examples</examples.home>
 
         <keycloak.dist.groupId>org.keycloak</keycloak.dist.groupId>
-        <!--        <keycloak.dist.artifactId>auth-server-dist</keycloak.dist.artifactId>
-        <keycloak.home>${containers.home}/keycloak-${project.version}</keycloak.home>-->
 
         <keycloak.dist.artifactId>keycloak-demo-dist</keycloak.dist.artifactId>
-        <keycloak.home>${containers.home}/keycloak-demo-${project.version}/keycloak</keycloak.home>
         
+        <auth.server.widlfly.home>${containers.home}/keycloak-demo-${project.version}/keycloak</auth.server.widlfly.home>
+
+        <auth.server.port.offset>100</auth.server.port.offset>
+        <auth.server.http.port>8180</auth.server.http.port>
+        <auth.server.management.port>10090</auth.server.management.port>        
+        
+        <app.server.port.offset>200</app.server.port.offset>
+        <app.server.http.port>8280</app.server.http.port>
+        <app.server.management.port>10190</app.server.management.port>
+                        
         <!-- TEST SETTINGS -->
+
+        <default.container></default.container>
 
         <browser>phantomjs</browser>
 		
@@ -38,6 +47,8 @@
         <arquillian-wildfly-container.version>8.1.0.Final</arquillian-wildfly-container.version>
         
         <adminPasswordUpdated>false</adminPasswordUpdated>
+        
+        <version.shrinkwrap.resolvers>2.1.1</version.shrinkwrap.resolvers>
         
     </properties>
 
@@ -118,6 +129,12 @@
         <dependency>
             <groupId>org.jboss.arquillian.extension</groupId>
             <artifactId>arquillian-phantom-driver</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.graphene</groupId>
+            <artifactId>arquillian-graphene-impl</artifactId>
+            <version>1.0.0.CR3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -214,10 +231,12 @@
                             <systemPropertyVariables>
                                 <browser>${browser}</browser>
                                 <shouldDeploy>false</shouldDeploy>
-                                <keycloak.home>${keycloak.home}</keycloak.home>
-                                <keycloak.port.offset>100</keycloak.port.offset>
-                                <keycloak.http.port>8180</keycloak.http.port>
-                                <keycloak.management.port>10090</keycloak.management.port>
+                                <auth.server.port.offset>${auth.server.port.offset}</auth.server.port.offset>
+                                <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>
+                                <auth.server.management.port>${auth.server.management.port}</auth.server.management.port>
+                                <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
+                                <app.server.http.port>${app.server.http.port}</app.server.http.port>
+                                <app.server.management.port>${app.server.management.port}</app.server.management.port>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
@@ -225,39 +244,20 @@
             </build>
         </profile>                
                         	
-        <!--        <profile>
-            <id>keycloak-remote</id>
+        <profile>
+            <id>auth-server-undertow</id>
             <activation>
-                <property>
-                    <name>keycloak.mode</name>
-                    <value>remote</value>
-                </property>
+                <activeByDefault>true</activeByDefault>
             </activation>
             <dependencies>
                 <dependency>
-                    <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-arquillian-container-remote</artifactId>
-                    <scope>test</scope>
+                    <groupId>org.jboss.arquillian.container</groupId>
+                    <artifactId>undertow-embedded</artifactId>
+                    <version>1.0.0.Alpha1-SNAPSHOT</version>
                 </dependency>
             </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <shouldDeploy>false</shouldDeploy>
-                                <arquillian.launch>keycloak-remote</arquillian.launch>
-                                <browser>${browser}</browser>
-                                <adminPasswordUpdated>${adminPasswordUpdated}</adminPasswordUpdated>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>-->
-	
+        </profile>                
+                                
         <profile>
             <id>auth-server-wildfly</id>
             <activation>
@@ -300,12 +300,21 @@
                             </execution>
                         </executions>
                     </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <auth.server.widlfly.home>${auth.server.widlfly.home}</auth.server.widlfly.home>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
         
         <profile>
-            <id>adapter-examples</id>
+            <id>examples</id>
             <activation>
                 <activeByDefault>true</activeByDefault>            
             </activation>
@@ -546,9 +555,6 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <wildfly.home>${wildfly.home}</wildfly.home>
-                                <wildfly.port.offset>200</wildfly.port.offset>
-                                <wildfly.http.port>8280</wildfly.http.port>
-                                <wildfly.management.port>10190</wildfly.management.port>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
@@ -556,32 +562,5 @@
             </build>
         </profile>
 
-        <profile>
-            <id>adapters-undertow</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.jboss.arquillian.container</groupId>
-                    <artifactId>undertow-embedded</artifactId>
-                    <version>1.0.0.Alpha1-SNAPSHOT</version>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <undertow.http.port>8180</undertow.http.port>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>        
-            </build>
-        </profile>                
-                                
     </profiles>
 </project>

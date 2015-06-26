@@ -17,6 +17,8 @@
  */
 package org.keycloak.testsuite.ui.util;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static org.jboss.arquillian.graphene.Graphene.waitAjax;
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import org.openqa.selenium.By;
@@ -59,5 +61,13 @@ public final class SeleniumUtils {
     public static void waitGuiForElementNotPresent(WebElement element) {
         waitGui().until()
                 .element(element).is().not().present();
+    }
+    
+    public static void pause(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(SeleniumUtils.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }

@@ -1,78 +1,39 @@
-package org.keycloak.testsuite;
+package org.keycloak.testsuite.arquillian;
 
-import org.keycloak.testsuite.arquillian.AuthServerContainer;
-import org.keycloak.testsuite.arquillian.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
 import org.jboss.arquillian.container.test.api.ContainerController;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.Before;
-import org.junit.runner.RunWith;
+import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.annotation.Inject;
+import org.jboss.arquillian.core.api.annotation.Observes;
+import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 
 /**
  *
  * @author tkyjovsk
  */
-@RunWith(Arquillian.class)
-public abstract class ContainersManager {
-    
-    @ArquillianResource
-    protected ContainerController controller;
-    
-    private final String authServerQualifier;
-    private final String appServerQualifier;
-    
-    public ContainersManager() {
-        this.authServerQualifier = getAuthServerQualifier(this.getClass());
-        this.appServerQualifier = getAppServerQualifier(this.getClass());
-        System.out.println(this.getClass().getSimpleName());
+public class ContainersManager {
+
+    @Inject
+    private Instance<ContainerController> containerController;
+
+    private String authServerQualifier;
+    private String appServerQualifier;
+
+    public void startContainers(@Observes(precedence = -1) BeforeClass event) {
+        this.authServerQualifier = getAuthServerQualifier(event.getTestClass().getJavaClass());
+        this.appServerQualifier = getAppServerQualifier(event.getTestClass().getJavaClass());
+        System.out.println(event.getTestClass().getJavaClass().getSimpleName());
         System.out.println("Auth server: " + authServerQualifier);
         System.out.println("App server:  " + appServerQualifier);
         if (appServerQualifier.equals(authServerQualifier)) {
             System.out.println("App server == Auth server");
         }
+        startContainers();
     }
 
-    public static Class<? extends ContainersManager>
-            getNearestSuperclassWithAnnotation(Class clazz, Class annotationClass) {
-        return clazz.isAnnotationPresent(annotationClass) ? clazz
-                : (clazz.equals(Object.class) || clazz.equals(ContainersManager.class) ? null // stop recursion
-                        : getNearestSuperclassWithAnnotation(clazz.getSuperclass(), annotationClass)); // continue recursion
-    }
-    
-    public static String getAuthServerQualifier(Class clazz) {
-        Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(clazz, AuthServerContainer.class);
-        if (annotatedClass == null) {
-            throw new IllegalStateException("Couldn't find @AuthServerContainer on the test class or any of its superclasses.");
-        }
-        String authServerQualifier = annotatedClass.getAnnotation(AuthServerContainer.class).value();
-        if (authServerQualifier == null || authServerQualifier.isEmpty()) {
-            throw new IllegalStateException("Null or empty qualifier for keycloak auth server.");
-            // TODO add fallback mechanism when embedded undertow is ready
-        }
-        return authServerQualifier;
-    }
-    
-    public static String getAppServerQualifier(Class clazz) {
-        Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(clazz, AppServerContainer.class);
-        
-        String appServerQualifier = (annotatedClass == null ? null
-                : annotatedClass.getAnnotation(AppServerContainer.class).value());
-        
-        return appServerQualifier == null || appServerQualifier.isEmpty()
-                ? getAuthServerQualifier(clazz) // app server == auth server
-                : appServerQualifier;
-    }
-    
-    public static boolean isRelative(Class clazz) {
-        return getAppServerQualifier(clazz).equals(getAuthServerQualifier(clazz));
-    }
-    
-    public boolean isRelative() {
-        return appServerQualifier.equals(authServerQualifier);
-    }
-    
-    @Before
-    public void startContainers() {
+    private void startContainers() {
+        ContainerController controller = containerController.get();
         if (!controller.isStarted(authServerQualifier)) {
             System.out.println("Starting Auth server: " + authServerQualifier);
             controller.start(authServerQualifier);
@@ -82,5 +43,44 @@ public abstract class ContainersManager {
             controller.start(appServerQualifier);
         }
     }
-    
+
+    public static Class<? extends ContainersManager>
+            getNearestSuperclassWithAnnotation(Class clazz, Class annotationClass) {
+        return clazz.isAnnotationPresent(annotationClass) ? clazz
+                : (clazz.equals(Object.class) || clazz.equals(ContainersManager.class) ? null // stop recursion
+                        : getNearestSuperclassWithAnnotation(clazz.getSuperclass(), annotationClass)); // continue recursion
+    }
+
+    public static String getAuthServerQualifier(Class clazz) {
+        Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(clazz, AuthServerContainer.class);
+        if (annotatedClass == null) {
+            throw new IllegalStateException("Couldn't find @AuthServerContainer on the test class or any of its superclasses.");
+        }
+        String authServerQ = annotatedClass.getAnnotation(AuthServerContainer.class).value();
+        if (authServerQ == null || authServerQ.isEmpty()) {
+            throw new IllegalStateException("Null or empty qualifier for keycloak auth server.");
+            // TODO add fallback mechanism when embedded undertow is ready
+        }
+        return authServerQ;
+    }
+
+    public static String getAppServerQualifier(Class clazz) {
+        Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(clazz, AppServerContainer.class);
+
+        String appServerQ = (annotatedClass == null ? null
+                : annotatedClass.getAnnotation(AppServerContainer.class).value());
+
+        return appServerQ == null || appServerQ.isEmpty()
+                ? getAuthServerQualifier(clazz) // app server == auth server
+                : appServerQ;
+    }
+
+    public static boolean isRelative(Class clazz) {
+        return getAppServerQualifier(clazz).equals(getAuthServerQualifier(clazz));
+    }
+
+    public boolean isRelative() {
+        return appServerQualifier.equals(authServerQualifier);
+    }
+
 }

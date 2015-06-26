@@ -15,11 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.ui.test.settings;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
-import static  org.junit.Assert.*;
+import static org.junit.Assert.*;
 import org.junit.Test;
 import org.keycloak.testsuite.ui.page.settings.SocialSettingsPage;
 import org.keycloak.testsuite.ui.AbstractKeyCloakUITest;
@@ -32,34 +31,34 @@ import org.keycloak.testsuite.ui.model.SocialProvider;
  * @author Petr Mensik
  */
 public class SocialSettingsTest extends AbstractKeyCloakUITest<SocialSettingsPage> {
-	
-	@FindByJQuery(".alert")
+
+    @FindByJQuery(".alert")
     private FlashMessage flashMessage;
-	
+
 //	@Test
-	public void testAddNewProvider() {
-		page.addNewProvider(new Provider(SocialProvider.FACEBOOK, "klic", "secret"));
-		flashMessage.waitUntilPresent();
-		assertTrue("Success message should be displayed", flashMessage.isSuccess());
-	}
-	
+    public void testAddNewProvider() {
+        page.addNewProvider(new Provider(SocialProvider.FACEBOOK, "klic", "secret"));
+        flashMessage.waitUntilPresent();
+        assertTrue("Success message should be displayed", flashMessage.isSuccess());
+    }
+
 //	@Test(expected = NoSuchElementException.class)
-	public void testDuplicitProvider() {
-		page.addNewProvider(new Provider(SocialProvider.FACEBOOK, "a", "b"));
-	}
-	
+    public void testDuplicitProvider() {
+        page.addNewProvider(new Provider(SocialProvider.FACEBOOK, "a", "b"));
+    }
+
 //	@Test
-	public void testEditProvider() {
-		page.goToPage(SETTINGS_SOCIAL);
-		page.editProvider(SocialProvider.FACEBOOK, new Provider(SocialProvider.FACEBOOK, "abc", "def"));
-	}
-	
+//    public void testEditProvider() {
+//        page.goToPage(SETTINGS_SOCIAL);
+//        page.editProvider(SocialProvider.FACEBOOK, new Provider(SocialProvider.FACEBOOK, "abc", "def"));
+//    }
+
 //	@Test
-	public void testDeleteProvider() {
-		
-	}
-	
-	@Test
-	public void testAddMultipleProviders() {
-	}
+    public void testDeleteProvider() {
+
+    }
+
+    @Test
+    public void testAddMultipleProviders() {
+    }
 }

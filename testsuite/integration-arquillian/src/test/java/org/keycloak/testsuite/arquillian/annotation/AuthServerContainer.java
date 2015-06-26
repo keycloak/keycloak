@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.arquillian;
+package org.keycloak.testsuite.arquillian.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

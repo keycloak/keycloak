@@ -19,6 +19,8 @@ package org.keycloak.testsuite.ui;
 
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
+import org.junit.Before;
 import org.keycloak.testsuite.ui.page.AbstractPage;
 
 /**
@@ -30,5 +32,15 @@ public abstract class AbstractKeyCloakUITest<P extends AbstractPage> extends Abs
 
     @Page
     protected P page;
+
+    @Before
+    public void beforeUITest() {
+        loginAsAdmin();
+    }
+
+    @After
+    public void afterUITest() {
+        logOut();
+    }
 
 }

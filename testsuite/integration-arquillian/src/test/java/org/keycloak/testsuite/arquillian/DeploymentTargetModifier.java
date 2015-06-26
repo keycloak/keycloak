@@ -5,7 +5,7 @@ import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescriptio
 import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
 import org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDeploymentScenarioGenerator;
 import org.jboss.arquillian.test.spi.TestClass;
-import static org.keycloak.testsuite.ContainersManager.*;
+import static org.keycloak.testsuite.arquillian.ContainersManager.*;
 
 /**
  *
@@ -23,6 +23,7 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
         if (appServerQualifier != null && !appServerQualifier.isEmpty()) {
             for (DeploymentDescription deployment : deployments) {
                 if (deployment.getTarget() == null || !deployment.getTarget().getName().equals(appServerQualifier)) {
+                    System.out.println("Setting target container for "+deployment.getName() + ": "+appServerQualifier);
                     deployment.setTarget(new TargetDescription(appServerQualifier));
                 }
             }

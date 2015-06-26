@@ -8,20 +8,19 @@ import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.keycloak.representations.adapters.config.BaseAdapterConfig;
-import static org.keycloak.testsuite.AbstractKeycloakTest.AUTH_SERVER_URL;
 import static org.keycloak.testsuite.AbstractKeycloakTest.REALM_KEY;
 import static org.keycloak.testsuite.AbstractKeycloakTest.loadJson;
-import org.keycloak.testsuite.ContainersManager;
-import static org.keycloak.testsuite.ContainersManager.isRelative;
+import org.keycloak.testsuite.adapter.AbstractAdapterTest;
+import static org.keycloak.testsuite.arquillian.ContainersManager.isRelative;
 import org.keycloak.util.JsonSerialization;
 
 /**
  *
  * @author tkyjovsk
  */
-public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
-
-    private static final Logger log = Logger.getLogger(DeploymentArchiveProcessor.class.getName());
+public class AdapterConfigModifier implements ApplicationArchiveProcessor {
+    
+    private static final Logger log = Logger.getLogger(AdapterConfigModifier.class.getName());
 
     public static final String ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak.json";
 
@@ -31,8 +30,8 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
     }
 
     protected void modifyAdapterConfig(Archive<?> archive, TestClass testClass) {
-        System.out.println("Modifying adapter config for " + archive.getName() + ", testClass: " + testClass.getJavaClass().getSimpleName());
-        if (ContainersManager.class.isAssignableFrom(testClass.getJavaClass())) {
+        System.out.println("Modifying adapter config for " + archive.getName());
+        if (AbstractAdapterTest.class.isAssignableFrom(testClass.getJavaClass())) {
             try {
                 BaseAdapterConfig adapterConfig = loadJson(archive.get(ADAPTER_CONFIG_PATH)
                         .getAsset().openStream(), BaseAdapterConfig.class);
@@ -43,7 +42,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                     adapterConfig.setAuthServerUrl("/auth");
 //                ac.setRealmKey(null); // TODO verify if realm key is required for relative scneario
                 } else {
-                    adapterConfig.setAuthServerUrl(AUTH_SERVER_URL);
+                    adapterConfig.setAuthServerUrl(URLProvider.getAuthServerContextRoot() + "/auth");
                     adapterConfig.setRealmKey(REALM_KEY);
                 }
 

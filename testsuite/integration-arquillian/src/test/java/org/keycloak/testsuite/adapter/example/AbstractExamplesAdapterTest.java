@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.graphene.page.Page;
@@ -13,15 +11,14 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractAdapterTest;
-import org.keycloak.testsuite.ui.page.example.CustomerPortalPage;
+import static org.keycloak.testsuite.console.page.PageAssert.assertCurrentUrlStartsWith;
+import org.keycloak.testsuite.adapter.page.CustomerPortalExample;
 
 @RunAsClient
 public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
 
-    public static final String CUSTOMER_PORTAL = "customer-portal-example";
     public static final String PRODUCT_PORTAL = "product-portal-example";
     public static final String DATABASE_SERVICE = "database-service-example";
 
@@ -39,70 +36,53 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
     }
 
     @Page
-    protected CustomerPortalPage customerPortalPage;
-
-    public AbstractExamplesAdapterTest(String appServerBaseURL) {
-        super(appServerBaseURL);
-    }
+    protected CustomerPortalExample customerPortalExample;
+    
+    // TODO other examples using Pages ^
+    
 
     protected static WebArchive exampleDeployment(String name) throws IOException {
         return ShrinkWrap.createFromZipFile(WebArchive.class,
                 new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".war"));
     }
 
-    @Deployment(name = CUSTOMER_PORTAL, managed = false)
+    @Deployment(name = CustomerPortalExample.DEPLOYMENT_NAME)
     private static WebArchive customerPortalExample() throws IOException {
         return exampleDeployment("customer-portal-example");
     }
 
-    @Deployment(name = PRODUCT_PORTAL, managed = false)
+    @Deployment(name = PRODUCT_PORTAL)
     private static WebArchive productPortalExample() throws IOException {
         return exampleDeployment("product-portal-example");
     }
 
-    @Deployment(name = DATABASE_SERVICE, managed = false)
+    @Deployment(name = DATABASE_SERVICE)
     private static WebArchive databaseServiceExample() throws IOException {
         return exampleDeployment("database-service");
     }
 
-    protected void replaceRedirectUris(RealmRepresentation realm, String regex, String replacement) {
-        for (ClientRepresentation client : realm.getClients()) {
-            List<String> redirectUris = client.getRedirectUris();
-            if (redirectUris != null) {
-                List<String> newRedirectUris = new ArrayList<>();
-                for (String uri : redirectUris) {
-                    newRedirectUris.add(uri.replaceAll(regex, replacement));
-                }
-                client.setRedirectUris(newRedirectUris);
-            }
-        }
-    }
-
-    protected void importRealm() throws FileNotFoundException, IOException {
+    @Override
+    public RealmRepresentation loadTestRealm() {
         File testRealmFile = new File(EXAMPLES_HOME
                 + "/keycloak-examples-" + EXAMPLES_VERSION_SUFFIX
                 + "/preconfigured-demo/testrealm.json");
-
-        RealmRepresentation realm = loadJson(new FileInputStream(testRealmFile), RealmRepresentation.class);
-
-        if (isRelative()) {
-            replaceRedirectUris(realm, APP_SERVER_BASE_URL, "");
-        } else {
-            replaceRedirectUris(realm, "(/.*/\\*)", APP_SERVER_BASE_URL + "$1");
+        try {
+            return loadRealm(new FileInputStream(testRealmFile));
+        } catch (FileNotFoundException ex) {
+            throw new IllegalStateException("Test realm file not found: " + testRealmFile);
         }
-
-        importRealm(realm);
     }
 
     @Test
     public void simpleCustomerPortalTest() throws InterruptedException {
-        driver.get(APP_SERVER_BASE_URL + "/customer-portal");
 
-        customerPortalPage.customerListing();
+        customerPortalExample.navigateTo();
+        customerPortalExample.customerListing();
+        
         loginPage.login("bburke@redhat.com", "password");
 
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(APP_SERVER_BASE_URL + "/customer-portal"));
-        customerPortalPage.waitForCustomerListingHeader();
+        assertCurrentUrlStartsWith(customerPortalExample);
+        customerPortalExample.waitForCustomerListingHeader();
 
         Assert.assertTrue(driver.getPageSource().contains("Username: bburke@redhat.com"));
         Assert.assertTrue(driver.getPageSource().contains("Bill Burke"));

@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.arquillian;
+package org.keycloak.testsuite.arquillian.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -12,8 +12,7 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Retention(RUNTIME)
-@Target({ElementType.TYPE})
-public @interface AppServerContainer 
+@Target({ElementType.FIELD})
+public @interface AppServerContext 
 {
-   String value();
 }
