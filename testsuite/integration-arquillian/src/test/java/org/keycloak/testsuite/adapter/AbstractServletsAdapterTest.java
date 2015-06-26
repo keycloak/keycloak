@@ -57,25 +57,17 @@ import org.openqa.selenium.WebDriver;
 public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
     @Page
-    CustomerPortal customerPortal;
-
+    private CustomerPortal customerPortal;
     @Page
-    SecurePortal securePortal;
-
+    private SecurePortal securePortal;
     @Page
-    CustomerDb customerDb;
-
+    private CustomerDbErrorPage customerDbErrorPage;
     @Page
-    CustomerDbErrorPage customerDbErrorPage;
-
+    private ProductPortal productPortal;
     @Page
-    ProductPortal productPortal;
-
+    private SessionPortal sessionPortal;
     @Page
-    SessionPortal sessionPortal;
-
-    @Page
-    InputPortal inputPortal;
+    private InputPortal inputPortal;
 
     @Page
     private AccountSessionsPage accountSessionsPage;
@@ -83,11 +75,11 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Page
     private InputPage inputPage;
 
-    protected static WebArchive adapterDeployment(String name, Class... servletClasses) {
-        return adapterDeployment(name, "keycloak.json", servletClasses);
+    protected static WebArchive servletDeployment(String name, Class... servletClasses) {
+        return servletDeployment(name, "keycloak.json", servletClasses);
     }
 
-    protected static WebArchive adapterDeployment(String name, String adapterConfig, Class... servletClasses) {
+    protected static WebArchive servletDeployment(String name, String adapterConfig, Class... servletClasses) {
         String webInfPath = "/adapter-test/" + name + "/WEB-INF/";
         URL keycloakJSON = AbstractServletsAdapterTest.class.getResource(webInfPath + adapterConfig);
         URL webXML = AbstractServletsAdapterTest.class.getResource(webInfPath + "web.xml");
@@ -106,37 +98,37 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
     @Deployment(name = CustomerPortal.DEPLOYMENT_NAME)
     protected static WebArchive customerPortal() {
-        return adapterDeployment(CustomerPortal.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class);
+        return AbstractServletsAdapterTest.servletDeployment(CustomerPortal.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class);
     }
 
     @Deployment(name = SecurePortal.DEPLOYMENT_NAME)
     protected static WebArchive securePortal() {
-        return adapterDeployment(SecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+        return AbstractServletsAdapterTest.servletDeployment(SecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
     }
 
     @Deployment(name = CustomerDb.DEPLOYMENT_NAME)
     protected static WebArchive customerDb() {
-        return adapterDeployment(CustomerDb.DEPLOYMENT_NAME, CustomerDatabaseServlet.class);
+        return AbstractServletsAdapterTest.servletDeployment(CustomerDb.DEPLOYMENT_NAME, CustomerDatabaseServlet.class);
     }
 
     @Deployment(name = CustomerDbErrorPage.DEPLOYMENT_NAME)
     protected static WebArchive customerDbErrorPage() {
-        return adapterDeployment(CustomerDbErrorPage.DEPLOYMENT_NAME, CustomerDatabaseServlet.class, ErrorServlet.class);
+        return AbstractServletsAdapterTest.servletDeployment(CustomerDbErrorPage.DEPLOYMENT_NAME, CustomerDatabaseServlet.class, ErrorServlet.class);
     }
 
     @Deployment(name = ProductPortal.DEPLOYMENT_NAME)
     protected static WebArchive productPortal() {
-        return adapterDeployment(ProductPortal.DEPLOYMENT_NAME, ProductServlet.class);
+        return AbstractServletsAdapterTest.servletDeployment(ProductPortal.DEPLOYMENT_NAME, ProductServlet.class);
     }
 
     @Deployment(name = SessionPortal.DEPLOYMENT_NAME)
     protected static WebArchive sessionPortal() {
-        return adapterDeployment(SessionPortal.DEPLOYMENT_NAME, "keycloak.json", SessionServlet.class);
+        return servletDeployment(SessionPortal.DEPLOYMENT_NAME, "keycloak.json", SessionServlet.class);
     }
 
     @Deployment(name = InputPortal.DEPLOYMENT_NAME)
     protected static WebArchive inputPortal() {
-        return adapterDeployment(InputPortal.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class);
+        return servletDeployment(InputPortal.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class);
     }
 
     private final String slash = "";

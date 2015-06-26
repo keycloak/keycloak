@@ -15,12 +15,11 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractAdapterTest;
 import static org.keycloak.testsuite.console.page.PageAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.adapter.page.CustomerPortalExample;
+import org.keycloak.testsuite.adapter.page.DatabaseServiceExample;
+import org.keycloak.testsuite.adapter.page.ProductPortalExample;
 
 @RunAsClient
 public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
-
-    public static final String PRODUCT_PORTAL = "product-portal-example";
-    public static final String DATABASE_SERVICE = "database-service-example";
 
     public static final String EXAMPLES_HOME;
     public static final String EXAMPLES_VERSION_SUFFIX;
@@ -36,10 +35,11 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
     }
 
     @Page
-    protected CustomerPortalExample customerPortalExample;
-    
-    // TODO other examples using Pages ^
-    
+    private CustomerPortalExample customerPortalExample;
+    @Page
+    private ProductPortalExample productPortalExample;
+    @Page
+    private DatabaseServiceExample databaseServiceExample;
 
     protected static WebArchive exampleDeployment(String name) throws IOException {
         return ShrinkWrap.createFromZipFile(WebArchive.class,
@@ -48,15 +48,15 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
 
     @Deployment(name = CustomerPortalExample.DEPLOYMENT_NAME)
     private static WebArchive customerPortalExample() throws IOException {
-        return exampleDeployment("customer-portal-example");
+        return exampleDeployment(CustomerPortalExample.DEPLOYMENT_NAME);
     }
 
-    @Deployment(name = PRODUCT_PORTAL)
+    @Deployment(name = ProductPortalExample.DEPLOYMENT_NAME)
     private static WebArchive productPortalExample() throws IOException {
-        return exampleDeployment("product-portal-example");
+        return exampleDeployment(ProductPortalExample.DEPLOYMENT_NAME);
     }
 
-    @Deployment(name = DATABASE_SERVICE)
+    @Deployment(name = DatabaseServiceExample.DEPLOYMENT_NAME)
     private static WebArchive databaseServiceExample() throws IOException {
         return exampleDeployment("database-service");
     }
@@ -78,7 +78,7 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
 
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
-        
+
         loginPage.login("bburke@redhat.com", "password");
 
         assertCurrentUrlStartsWith(customerPortalExample);
