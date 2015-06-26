@@ -1151,24 +1151,6 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
     };
 });
 
-// Restrict input to URL-allowed characters
-module.directive('url-escaped-input', function($parse) {
-    return {
-        restrict: 'A',
-        require: 'ngModel',
-        link: function(scope, iElement, iAttrs, controller) {
-            scope.$watch(iAttrs.ngModel, function(value) {
-                if (!value) {
-                    return;
-                }
-                $parse(iAttrs.ngModel).assign(scope, value.replace(
-                    new RegExp("[^a-zA-Z0-9_\-\s]", 'g'), '').replace(/\s+/g, '-')
-                );
-            });
-        }
-    }
-});​
-
 // collapsable form fieldsets
 module.directive('collapsable', function() {
     return function(scope, element, attrs) {
