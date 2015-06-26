@@ -26,9 +26,9 @@ import java.util.Map;
 public class IdentityProviderEntity {
 
     private String internalId;
+    private String name;
     private String alias;
     private String providerId;
-    private String name;
     private boolean enabled;
     private String updateProfileFirstLoginMode;
     private boolean trustEmail;

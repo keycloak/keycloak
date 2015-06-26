@@ -1161,6 +1161,7 @@ public class RealmAdapter implements RealmModel {
             IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
             identityProviderModel.setProviderId(entity.getProviderId());
+            identityProviderModel.setName(entity.getName());
             identityProviderModel.setAlias(entity.getAlias());
             identityProviderModel.setInternalId(entity.getInternalId());
             identityProviderModel.setConfig(entity.getConfig());
@@ -1193,6 +1194,7 @@ public class RealmAdapter implements RealmModel {
         IdentityProviderEntity entity = new IdentityProviderEntity();
 
         entity.setInternalId(KeycloakModelUtils.generateId());
+        entity.setName(identityProvider.getName());
         entity.setAlias(identityProvider.getAlias());
         entity.setProviderId(identityProvider.getProviderId());
         entity.setEnabled(identityProvider.isEnabled());
@@ -1223,6 +1225,7 @@ public class RealmAdapter implements RealmModel {
     public void updateIdentityProvider(IdentityProviderModel identityProvider) {
         for (IdentityProviderEntity entity : this.realm.getIdentityProviders()) {
             if (entity.getInternalId().equals(identityProvider.getInternalId())) {
+                entity.setName(identityProvider.getAlias());
                 entity.setAlias(identityProvider.getAlias());
                 entity.setEnabled(identityProvider.isEnabled());
                 entity.setUpdateProfileFirstLoginMode(identityProvider.getUpdateProfileFirstLoginMode());
