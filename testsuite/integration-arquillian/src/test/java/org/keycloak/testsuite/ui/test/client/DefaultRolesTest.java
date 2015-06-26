@@ -4,7 +4,7 @@ import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.testsuite.ui.AbstractKeyCloakTest;
+import org.keycloak.testsuite.ui.AbstractKeyCloakUITest;
 import org.keycloak.testsuite.ui.fragment.FlashMessage;
 import org.keycloak.testsuite.ui.fragment.RoleMappings;
 import org.keycloak.testsuite.ui.model.Role;
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Created by fkiss.
  */
-public class DefaultRolesTest extends AbstractKeyCloakTest<RolesPage> {
+public class DefaultRolesTest extends AbstractKeyCloakUITest<RolesPage> {
 
     @Page
     private UserPage userPage;

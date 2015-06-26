@@ -5,7 +5,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.testsuite.ui.AbstractKeyCloakTest;
+import org.keycloak.testsuite.ui.AbstractKeyCloakUITest;
 import org.keycloak.testsuite.ui.fragment.FlashMessage;
 import org.keycloak.testsuite.ui.model.User;
 import org.keycloak.testsuite.ui.fragment.RoleMappings;
@@ -17,7 +17,7 @@ import static org.openqa.selenium.By.linkText;
 /**
  * Created by fkiss.
  */
-public class UserRoleMappingsTest extends AbstractKeyCloakTest<RoleMappings> {
+public class UserRoleMappingsTest extends AbstractKeyCloakUITest<RoleMappings> {
 
     @Page
     private UserPage userPage;

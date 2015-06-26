@@ -6,7 +6,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import org.keycloak.testsuite.ui.AbstractKeyCloakTest;
+import org.keycloak.testsuite.ui.AbstractKeyCloakUITest;
 import org.keycloak.testsuite.ui.fragment.FlashMessage;
 import org.keycloak.testsuite.ui.fragment.RoleMappings;
 import org.keycloak.testsuite.ui.model.Role;
@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * Created by fkiss.
  */
-public class AddCompositeRoleTest extends AbstractKeyCloakTest<RolesPage> {
+public class AddCompositeRoleTest extends AbstractKeyCloakUITest<RolesPage> {
 
     @Page
     private UserPage userPage;
