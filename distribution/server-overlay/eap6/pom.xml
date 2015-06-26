@@ -4,13 +4,13 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.3.0.Final-SNAPSHOT</version>
+        <version>1.3.1.Final</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-eap6-server-overlay-parent</artifactId>
+    <artifactId>keycloak-server-overlay-eap6-parent</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak EAP 6 Server Overlay</name>
+    <name>Keycloak Server Overlay EAP 6</name>
     <description/>
 
 

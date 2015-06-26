@@ -22,11 +22,6 @@
     </licenses>
 
     <properties>
-        <!-- JBoss AS dependency versions -->
-        <version.jboss.maven.plugin>7.4.Final</version.jboss.maven.plugin>
-
-        <!-- WildFly dependency versions -->
-        <version.wildfly.maven.plugin>1.0.1.Final</version.wildfly.maven.plugin>
 
         <!-- PicketLink dependency versions -->
         <version.picketlink.javaee.bom>2.7.0.Beta2</version.picketlink.javaee.bom>
@@ -34,11 +29,17 @@
         <!-- Default target container. -->
         <target.container>jboss-eap</target.container>
 
-        <!-- maven-war-plugin -->
-        <version.war.plugin>2.1.1</version.war.plugin>
-
         <!-- maven-compiler-plugin -->
         <version.compiler.plugin>3.1</version.compiler.plugin>
+        <!-- maven-deploy-plugin -->
+        <version.deploy.plugin>2.8.1</version.deploy.plugin>
+        <!-- JBoss AS dependency versions -->
+        <version.jboss.maven.plugin>7.4.Final</version.jboss.maven.plugin>
+        <!-- maven-war-plugin -->
+        <version.war.plugin>2.1.1</version.war.plugin>
+        <!-- WildFly dependency versions -->
+        <version.wildfly.maven.plugin>1.0.1.Final</version.wildfly.maven.plugin>
+
         <maven.compiler.target>1.6</maven.compiler.target>
         <maven.compiler.source>1.6</maven.compiler.source>
     </properties>
@@ -50,6 +51,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
+                <version>${version.deploy.plugin}</version>
                 <configuration>
                     <skip>true</skip>
                 </configuration>

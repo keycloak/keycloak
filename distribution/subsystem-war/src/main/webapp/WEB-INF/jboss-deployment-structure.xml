@@ -56,6 +56,8 @@
             <module name="org.jboss.resteasy.resteasy-jackson-provider" services="import"/>
             <module name="org.jboss.resteasy.resteasy-multipart-provider" services="import"/>
             <module name="org.jboss.resteasy.resteasy-jaxrs"/>
+
+            <module name="org.jboss.msc"/>
         </dependencies>
         <exclusions>
             <module name="org.jboss.resteasy.resteasy-jackson2-provider"/>

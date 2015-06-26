@@ -102,6 +102,31 @@
                     to newer version and upgrade few methods, which has changed signature. Changes are really minor, but were needed to improve performance of federation.
                 </para>
             </simplesect>
+            <simplesect>
+                <title>WildFly 9.0.0.CR2</title>
+                <para>
+                    Following on from the distribution changes that was done in the last release the standalone download
+                    of Keycloak is now based on WildFly 9.0.0.CR2. This als affects the overlay which can only be deployed
+                    to WildFly 9.0.0.CR2 or JBoss EAP 6.4.0.GA. WildFly 8.2.0.Final is no longer supported for the server.
+                </para>
+            </simplesect>
+            <simplesect>
+                <title>WildFly, JBoss EAP and JBoss AS7 adapters</title>
+                <para>
+                    There are now 3 separate adapter downloads for WildFly, JBoss EAP and JBoss AS7:
+                    <itemizedlist>
+                        <listitem><literal>eap6</literal> - for JBoss EAP 6.x</listitem>
+                        <listitem><literal>wf9</literal> - for WildFly 9.x</listitem>
+                        <listitem><literal>wf8</literal> - for WildFly 8.x</listitem>
+                        <listitem><literal>as7</literal> - for JBoss AS 7.x</listitem>
+                    </itemizedlist>
+                    Make sure you grab the correct one.
+                </para>
+                <para>
+                    You also need to update standalone.xml as the extension module and subsystem definition has changed.
+                    See <link linkend="jboss-adapter-installation">Adapter Installation</link> for details.
+                </para>
+            </simplesect>
         </section>
         <section>
             <title>Migrating from 1.2.0.Beta1 to 1.2.0.RC1</title>

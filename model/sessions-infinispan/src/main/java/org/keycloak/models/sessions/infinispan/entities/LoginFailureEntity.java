@@ -62,4 +62,10 @@ public class LoginFailureEntity implements Serializable {
         this.lastIPFailure = lastIPFailure;
     }
 
+    public void clearFailures() {
+        this.failedLoginNotBefore = 0;
+        this.numFailures = 0;
+        this.lastFailure = 0;
+        this.lastIPFailure = null;
+    }
 }

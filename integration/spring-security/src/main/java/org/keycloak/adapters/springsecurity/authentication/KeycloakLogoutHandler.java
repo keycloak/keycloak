@@ -6,15 +6,12 @@ import org.keycloak.adapters.springsecurity.AdapterDeploymentContextBean;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.util.Assert;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 /**
  * Logs the current user out of Keycloak.
@@ -36,29 +33,17 @@ public class KeycloakLogoutHandler implements LogoutHandler {
     @Override
     public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
 
-        if (authentication instanceof AnonymousAuthenticationToken) {
-            log.warn("Attempt to log out an anonymous authentication");
+        if (!KeycloakAuthenticationToken.class.isAssignableFrom(authentication.getClass())) {
+            log.warn("Cannot log out a non-Keycloak authentication: {}", authentication);
             return;
         }
 
-        try {
-            handleSingleSignOut(request, response);
-        } catch (IOException e) {
-            throw new IllegalStateException("Unable to make logout admin request!", e);
-        }
-
+        handleSingleSignOut(request, response, (KeycloakAuthenticationToken) authentication);
     }
 
-    protected void handleSingleSignOut(HttpServletRequest request, HttpServletResponse response) throws IOException {
-
-        KeycloakAuthenticationToken authentication = (KeycloakAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+    protected void handleSingleSignOut(HttpServletRequest request, HttpServletResponse response, KeycloakAuthenticationToken authenticationToken) {
         KeycloakDeployment deployment = deploymentContextBean.getDeployment();
-        RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext) authentication.getAccount().getKeycloakSecurityContext();
-
-        try {
-            session.logout(deployment);
-        } catch (Exception e) {
-            log.error("Unable to complete Keycloak single sign out", e);
-        }
+        RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext) authenticationToken.getAccount().getKeycloakSecurityContext();
+        session.logout(deployment);
     }
 }

@@ -4,27 +4,52 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.3.0.Final-SNAPSHOT</version>
+        <version>1.3.1.Final</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>arquillian-integration</artifactId>
-    <name>KeyCloak Admin UI TestSuite</name>
+    <name>Keycloak Integration TestSuite - Arquillian</name>
 
     <properties>
+        
+        <!-- CONTAINER SETTINGS -->
+        
+        <containers.home>${project.build.directory}/containers</containers.home>
+        <examples.home>${project.build.directory}/examples</examples.home>
+
+        <keycloak.dist.groupId>org.keycloak</keycloak.dist.groupId>
+
+        <keycloak.dist.artifactId>keycloak-demo-dist</keycloak.dist.artifactId>
+        
+        <auth.server.widlfly.home>${containers.home}/keycloak-demo-${project.version}/keycloak</auth.server.widlfly.home>
+
+        <auth.server.port.offset>100</auth.server.port.offset>
+        <auth.server.http.port>8180</auth.server.http.port>
+        <auth.server.management.port>10090</auth.server.management.port>        
+        
+        <app.server.port.offset>200</app.server.port.offset>
+        <app.server.http.port>8280</app.server.http.port>
+        <app.server.management.port>10190</app.server.management.port>
+                        
+        <!-- TEST SETTINGS -->
+
+        <default.container></default.container>
+
         <browser>phantomjs</browser>
 		
-        <arquillian-core.version>1.1.5.Final</arquillian-core.version>
+        <arquillian-core.version>1.1.8.Final</arquillian-core.version>
         <selenium.version>2.45.0</selenium.version>
-        <arquillian-drone.version>1.3.1.Final</arquillian-drone.version>
+        <arquillian-drone.version>2.0.0.Alpha4</arquillian-drone.version>
         <arquillian-phantomjs.version>1.1.4.Final</arquillian-phantomjs.version>
-        <arquillian-graphene.version>2.0.3.Final</arquillian-graphene.version>
+        <arquillian-graphene.version>2.1.0.Alpha2</arquillian-graphene.version>
         <arquillian-wildfly-container.version>8.1.0.Final</arquillian-wildfly-container.version>
         
-        <!-- Used in profile "wildfly-8-remote".
-        Set to "false" if admin password has already been updated after first login. -->
-        <firstAdminLogin>true</firstAdminLogin>
+        <adminPasswordUpdated>false</adminPasswordUpdated>
+        
+        <version.shrinkwrap.resolvers>2.1.1</version.shrinkwrap.resolvers>
+        
     </properties>
 
     <dependencyManagement>
@@ -65,6 +90,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -75,6 +104,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.arquillian.extension</groupId>
+            <artifactId>arquillian-droidium-multiple-containers</artifactId>
+            <version>1.0.0.Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.arquillian.container</groupId>
+            <artifactId>arquillian-droidium-container-spi</artifactId>
+            <version>1.0.0.Final</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.jboss.arquillian.graphene</groupId>
             <artifactId>graphene-webdriver</artifactId>
             <version>${arquillian-graphene.version}</version>
@@ -82,23 +123,105 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.jboss.arquillian.protocol</groupId>
+            <artifactId>arquillian-protocol-servlet</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.arquillian.extension</groupId>
             <artifactId>arquillian-phantom-driver</artifactId>
-            <version>${arquillian-phantomjs.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.graphene</groupId>
+            <artifactId>arquillian-graphene-impl</artifactId>
+            <version>1.0.0.CR3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>jaxrs-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>async-http-servlet-3.0</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jaxrs</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-undertow</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-multipart-provider</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jackson-provider</artifactId>
+        </dependency>        
+        
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-services</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <profiles>
+        
         <profile>
-            <id>wildfly-8-remote</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-arquillian-container-remote</artifactId>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
+            <id>test</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
@@ -106,19 +229,43 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
-                                <shouldDeploy>false</shouldDeploy>
-                                <arquillian.launch>wildfly-8-remote</arquillian.launch>
                                 <browser>${browser}</browser>
-                                <firstAdminLogin>${first.login}</firstAdminLogin>
+                                <shouldDeploy>false</shouldDeploy>
+                                <auth.server.port.offset>${auth.server.port.offset}</auth.server.port.offset>
+                                <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>
+                                <auth.server.management.port>${auth.server.management.port}</auth.server.management.port>
+                                <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
+                                <app.server.http.port>${app.server.http.port}</app.server.http.port>
+                                <app.server.management.port>${app.server.management.port}</app.server.management.port>
                             </systemPropertyVariables>
+                            <properties>
+                                <property>
+                                    <name>listener</name>
+                                    <value>org.keycloak.testsuite.util.TestConsoleLogger</value>
+                                </property>
+                            </properties>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-		
+        </profile>                
+                        	
         <profile>
-            <id>wildfly-8-managed</id>
+            <id>auth-server-undertow</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.jboss.arquillian.container</groupId>
+                    <artifactId>undertow-embedded</artifactId>
+                    <version>1.0.0.Alpha1-SNAPSHOT</version>
+                </dependency>
+            </dependencies>
+        </profile>                
+                                
+        <profile>
+            <id>auth-server-wildfly</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
@@ -129,10 +276,6 @@
                     <scope>test</scope>
                 </dependency>
             </dependencies>
-            <properties>
-                <install.directory>${project.build.directory}/install</install.directory>
-                <jbossHome>${install.directory}/keycloak-${project.version}</jbossHome>
-            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -142,21 +285,21 @@
                         <executions>
                             <execution>
                                 <id>unpack</id>
-                                <phase>process-test-resources</phase>
+                                <phase>generate-test-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
                                 </goals>
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>org.keycloak</groupId>
-                                            <artifactId>keycloak-server-dist</artifactId>
+                                            <groupId>${keycloak.dist.groupId}</groupId>
+                                            <artifactId>${keycloak.dist.artifactId}</artifactId>
                                             <version>${project.version}</version>
                                             <type>zip</type>
                                             <overWrite>false</overWrite>
                                         </artifactItem>
                                     </artifactItems>
-                                    <outputDirectory>${install.directory}</outputDirectory>
+                                    <outputDirectory>${containers.home}</outputDirectory>
                                     <overWriteReleases>false</overWriteReleases>
                                     <overWriteSnapshots>true</overWriteSnapshots>
                                 </configuration>
@@ -168,15 +311,262 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
-                                <shouldDeploy>false</shouldDeploy>
-                                <arquillian.launch>wildfly-8-managed</arquillian.launch>
-                                <browser>${browser}</browser>
-                                <jbossHome>${jbossHome}</jbossHome>
+                                <auth.server.widlfly.home>${auth.server.widlfly.home}</auth.server.widlfly.home>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
+        
+        <profile>
+            <id>examples</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>            
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>2.10</version>
+                        <executions>
+                            <execution>
+                                <id>examples</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>product-portal-example</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>war</type>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>customer-portal-example</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>war</type>
+                                        </artifactItem>                                        
+                                        <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>database-service</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>war</type>
+                                        </artifactItem>                       
+                                    </artifactItems>
+                                    <outputDirectory>${examples.home}</outputDirectory>
+                                    <overWriteIfNewer>true</overWriteIfNewer>
+                                </configuration>
+                            </execution>                            
+                            <execution>
+                                <id>examples-testrealm</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>keycloak-examples-dist</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>zip</type>
+                                            <includes>*/preconfigured-demo/testrealm.json</includes>
+                                        </artifactItem>
+                                    </artifactItems>
+                                    <outputDirectory>${examples.home}</outputDirectory>
+                                    <overWriteIfNewer>true</overWriteIfNewer>
+                                </configuration>
+                            </execution>                            
+                        </executions>
+                    </plugin>            
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <examples.home>${examples.home}</examples.home>
+                                <examples.version.suffix>${project.version}</examples.version.suffix>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
+        <profile>
+            <id>app-server-wildfly</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <wildfly.home>${containers.home}/wildfly-${wildfly.version}</wildfly.home>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-wf9-adapter-dist</artifactId>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>2.10</version>
+                        <executions>
+                            <execution>
+                                <id>unpack-wildfly</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.wildfly</groupId>
+                                            <artifactId>wildfly-dist</artifactId>
+                                            <type>zip</type>
+                                            <outputDirectory>${containers.home}</outputDirectory>
+                                            <overWrite>false</overWrite>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>unpack-original-standalone-xml</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.wildfly</groupId>
+                                            <artifactId>wildfly-dist</artifactId>
+                                            <type>zip</type>
+                                            <outputDirectory>${containers.home}</outputDirectory>
+                                            <includes>*/standalone/configuration/standalone.xml</includes>
+                                            <overWrite>true</overWrite>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>unpack-wildfly-adapter</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>keycloak-wf9-adapter-dist</artifactId>
+                                            <type>zip</type>
+                                            <outputDirectory>${wildfly.home}</outputDirectory>
+                                            <overWrite>true</overWrite>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            
+                            <execution>
+                                <id>examples</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>product-portal-example</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>war</type>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>customer-portal-example</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>war</type>
+                                        </artifactItem>                                        
+                                        <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>database-service</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>war</type>
+                                        </artifactItem>                       
+                                    </artifactItems>
+                                    <outputDirectory>${examples.home}</outputDirectory>
+                                    <overWriteIfNewer>true</overWriteIfNewer>
+                                </configuration>
+                            </execution>                            
+                            <execution>
+                                <id>examples-testrealm</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>keycloak-examples-dist</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>zip</type>
+                                            <includes>*/preconfigured-demo/testrealm.json</includes>
+                                        </artifactItem>
+                                    </artifactItems>
+                                    <outputDirectory>${examples.home}</outputDirectory>
+                                    <overWriteIfNewer>true</overWriteIfNewer>
+                                </configuration>
+                            </execution>                            
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <version>1.0</version>
+                        <executions>
+                            <execution>
+                                <id>configure-wildfly-adapter</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${wildfly.home}/standalone/configuration</dir>
+                                            <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
+                                            <includes>
+                                                <include>standalone.xml</include>
+                                            </includes>
+                                            <outputDir>${wildfly.home}/standalone/configuration</outputDir>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <wildfly.home>${wildfly.home}</wildfly.home>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
     </profiles>
 </project>

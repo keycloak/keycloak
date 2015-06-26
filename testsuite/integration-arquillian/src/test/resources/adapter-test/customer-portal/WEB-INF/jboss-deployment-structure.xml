@@ -1,0 +1,9 @@
+<jboss-deployment-structure>
+    <deployment>
+        <dependencies>
+            <!-- the Demo code uses classes in these modules.  These are optional to import if you are not using
+                 Apache Http Client or the HttpClientBuilder that comes with the adapter core -->
+            <module name="org.apache.httpcomponents"/>
+        </dependencies>
+    </deployment>
+</jboss-deployment-structure>

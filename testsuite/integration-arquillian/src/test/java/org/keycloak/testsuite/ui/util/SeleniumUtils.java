@@ -15,9 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.ui.util;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static org.jboss.arquillian.graphene.Graphene.waitAjax;
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import org.openqa.selenium.By;
@@ -29,50 +30,44 @@ import org.openqa.selenium.WebElement;
  */
 public final class SeleniumUtils {
 
-    private SeleniumUtils() {
-    }
-
     public static void waitAjaxForElement(By element) {
         waitAjax().until()
-                .element(element)
-                .is()
-                .present();
+                .element(element).is().present();
     }
 
     public static void waitAjaxForElement(WebElement element) {
         waitAjax().until()
-                .element(element)
-                .is()
-                .present();
+                .element(element).is().present();
     }
 
     public static void waitGuiForElement(By element, String message) {
-		waitGui().until(message)
-                .element(element)
-                .is()
-                .present();
-	}
+        waitGui().until(message)
+                .element(element).is().present();
+    }
 
     public static void waitGuiForElement(By element) {
-		waitGuiForElement(element, null);
-	}
+        waitGuiForElement(element, null);
+    }
 
     public static void waitGuiForElement(WebElement element) {
-		waitGuiForElement(element, null);
-	}
+        waitGuiForElement(element, null);
+    }
 
-	public static void waitGuiForElement(WebElement element, String message) {
+    public static void waitGuiForElement(WebElement element, String message) {
         waitGui().until(message)
-                .element(element)
-                .is()
-                .present();
+                .element(element).is().present();
     }
 
     public static void waitGuiForElementNotPresent(WebElement element) {
         waitGui().until()
-                .element(element)
-                .is()
-                .not()
-                .present();
+                .element(element).is().not().present();
+    }
+    
+    public static void pause(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(SeleniumUtils.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }

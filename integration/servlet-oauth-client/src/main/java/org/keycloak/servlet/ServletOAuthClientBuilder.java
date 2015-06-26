@@ -42,8 +42,7 @@ public class ServletOAuthClientBuilder {
 
 
     public static void build(AdapterConfig adapterConfig, ServletOAuthClient oauthClient) {
-        HttpClient client = new HttpClientBuilder().build(adapterConfig);
-        oauthClient.setClient(client);
+        oauthClient.setAdapterConfig(adapterConfig);
         oauthClient.setClientId(adapterConfig.getResource());
         oauthClient.setPublicClient(adapterConfig.isPublicClient());
         oauthClient.setCredentials(adapterConfig.getCredentials());

@@ -29,13 +29,13 @@ Then open $KEYCLOAK_HOME/standalone/configuration/keycloak-server.json and regis
 Sunrise Login Theme
 -------------------
 
-Example login theme that changes the look of the login forms. To enable the theme open the admin console, select your realm, click on `Theme`. In the dropdown for `Login Theme` select `sunrise`. Click `Save` and login to the realm to see the new theme in action.
+Example login theme that changes the look of the login forms. To enable the theme open the admin console, select your realm's `Settings`, click on `Themes`. In the dropdown for `Login Theme` select `sunrise`. Click `Save` and login to the realm to see the new theme in action.
 
 
 Change Logo Theme
 -----------------
 
-To enable the theme open the admin console, select your realm, click on `Theme`. In the dropdowns for `Login Theme`, `Account Theme` and `Admin Console Theme` select `logo-example`. Click `Save` and login to the realm to see the new theme in action.
+To enable the theme open the admin console, select your realm's `Settings`, click on `Themes`. In the dropdowns for `Login Theme`, `Account Theme` and `Admin Console Theme` select `logo-example`. Click `Save` and login to the realm to see the new theme in action.
 
 To change the theme for the welcome pages open `standalone/configuration/keycloak-server.json` find the config for `theme` and add 'welcomeTheme':
 

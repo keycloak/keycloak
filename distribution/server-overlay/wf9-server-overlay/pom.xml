@@ -4,13 +4,13 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.3.0.Final-SNAPSHOT</version>
+        <version>1.3.1.Final</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-wf9-server-overlay</artifactId>
+    <artifactId>keycloak-server-overlay</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak Wildfly 9 Server Overlay Distribution</name>
+    <name>Keycloak Server Overlay Distribution</name>
     <description/>
 
     <dependencies>

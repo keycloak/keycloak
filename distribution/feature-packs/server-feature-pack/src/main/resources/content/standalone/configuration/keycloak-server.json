@@ -1,4 +1,8 @@
 {
+    "providers": [
+        "classpath:${jboss.server.config.dir}/providers/*"
+    ],
+
     "admin": {
         "realm": "master"
     },
@@ -61,6 +65,12 @@
 
     "scheduled": {
         "interval": 900
+    },
+
+    "connectionsHttpClient": {
+        "default": {
+            "disable-trust-manager": true
+        }
     },
 
     "connectionsJpa": {

@@ -14,7 +14,6 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package org.keycloak.subsystem.as7;
 
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
@@ -46,64 +45,41 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
     // two places to avoid dependency between Keycloak Subsystem and Keyclaok Undertow Integration.
     public static final String AUTH_DATA_PARAM_NAME = "org.keycloak.json.adapterConfig";
 
-    // not sure if we need this yet, keeping here just in case
-    protected void addSecurityDomain(DeploymentUnit deploymentUnit, KeycloakAdapterConfigService service) {
-        String deploymentName = deploymentUnit.getName();
-        if (!service.isSecureDeployment(deploymentName)) {
-            return;
-        }
-        WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
-        if (warMetaData == null) return;
-        JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();
-        if (webMetaData == null) return;
-
-        LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
-        if (loginConfig == null || !loginConfig.getAuthMethod().equalsIgnoreCase("KEYCLOAK")) {
-            return;
-        }
-
-        webMetaData.setSecurityDomain("keycloak");
-    }
 
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
-
         String deploymentName = deploymentUnit.getName();
-        KeycloakAdapterConfigService service = KeycloakAdapterConfigService.getInstance();
-        if (service.isSecureDeployment(deploymentName)) {
-            addKeycloakAuthData(phaseContext, deploymentName, service);
-        }
 
-        // FYI, Undertow Extension will find deployments that have auth-method set to KEYCLOAK
-
-        // todo notsure if we need this
-        // addSecurityDomain(deploymentUnit, service);
-    }
-
-    private void addKeycloakAuthData(DeploymentPhaseContext phaseContext, String deploymentName, KeycloakAdapterConfigService service) throws DeploymentUnitProcessingException {
-        DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
+        // if it's not a web-app there's nothing to secure
         WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
         if (warMetaData == null) {
-            throw new DeploymentUnitProcessingException("WarMetaData not found for " + deploymentName + ".  Make sure you have specified a WAR as your secure-deployment in the Keycloak subsystem.");
+            return;
         }
-
-        addJSONData(service.getJSON(deploymentName), warMetaData);
         JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();
         if (webMetaData == null) {
             webMetaData = new JBossWebMetaData();
             warMetaData.setMergedJBossWebMetaData(webMetaData);
         }
 
+        KeycloakAdapterConfigService service = KeycloakAdapterConfigService.getInstance();
+
+        // if secure-deployment configuration exists for web app, we force KEYCLOAK auth method on it
+        // otherwise we only set up KEYCLOAK auth if it's requested through web.xml auth-method
+        LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
+        if (!service.isSecureDeployment(deploymentName) && (loginConfig == null || !loginConfig.getAuthMethod().equalsIgnoreCase("KEYCLOAK"))) {
+            return;
+        }
+
+        log.debug("Setting up KEYCLOAK auth method for WAR: " + deploymentName);
+        loginConfig.setAuthMethod("KEYCLOAK");
+
+        if (service.isSecureDeployment(deploymentName)) {
+            addJSONData(service.getJSON(deploymentName), warMetaData);
+            loginConfig.setRealmName(service.getRealmName(deploymentName));
+        }
         addValve(webMetaData);
 
-        LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
-        if (loginConfig == null) {
-            loginConfig = new LoginConfigMetaData();
-            webMetaData.setLoginConfig(loginConfig);
-        }
-        loginConfig.setAuthMethod("KEYCLOAK");
-        loginConfig.setRealmName(service.getRealmName(deploymentName));
         KeycloakLogger.ROOT_LOGGER.deploymentSecured(deploymentName);
     }
 

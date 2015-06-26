@@ -2,6 +2,7 @@ package org.keycloak.testsuite.ldap;
 
 import java.io.File;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -148,7 +149,12 @@ public class LDAPEmbeddedServer {
         }
 
         // For now, assume that LDIF file is on classpath
-        InputStream is = getClass().getClassLoader().getResourceAsStream(ldifFile);
+        InputStream is;
+        if (ldifFile.startsWith("file:")) {
+            is = new URL(ldifFile).openStream();
+        } else {
+            is = getClass().getClassLoader().getResourceAsStream(ldifFile);
+        }
         if (is == null) {
             throw new IllegalStateException("LDIF file not found on classpath. Location was: " + ldifFile);
         }

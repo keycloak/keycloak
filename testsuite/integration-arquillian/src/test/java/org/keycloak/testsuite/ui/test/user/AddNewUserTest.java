@@ -28,14 +28,14 @@ import org.keycloak.testsuite.ui.page.settings.user.UserPage;
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.keycloak.testsuite.ui.AbstractKeyCloakTest;
+import org.keycloak.testsuite.ui.AbstractKeyCloakUITest;
 import static org.keycloak.testsuite.ui.util.Users.TEST_USER1;
 
 /**
  *
  * @author Filip Kiss
  */
-public class AddNewUserTest extends AbstractKeyCloakTest<UserPage> {
+public class AddNewUserTest extends AbstractKeyCloakUITest<UserPage> {
 
     @FindByJQuery(".alert")
     private FlashMessage flashMessage;

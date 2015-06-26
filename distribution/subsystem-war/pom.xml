@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.3.0.Final-SNAPSHOT</version>
+        <version>1.3.1.Final</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -14,6 +14,18 @@
     <packaging>war</packaging>
     <name>Keycloak Subsystem Server WAR</name>
     <description/>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.msc</groupId>
+            <artifactId>jboss-msc</artifactId>
+            <version>1.2.6.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+        </dependency>
+    </dependencies>
 
     <build>
         <finalName>auth-server</finalName>

@@ -2,6 +2,7 @@ package org.keycloak.models;
 
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,7 +14,8 @@ import java.util.regex.Pattern;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class PasswordPolicy {
+public class PasswordPolicy implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     public static final String INVALID_PASSWORD_MIN_LENGTH_MESSAGE = "invalidPasswordMinLengthMessage";
     public static final String INVALID_PASSWORD_MIN_DIGITS_MESSAGE = "invalidPasswordMinDigitsMessage";
@@ -153,7 +155,7 @@ public class PasswordPolicy {
         return null;
     }
 
-    private static interface Policy {
+    private static interface Policy extends Serializable {
         public Error validate(UserModel user, String password);
         public Error validate(String user, String password);
     }

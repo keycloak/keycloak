@@ -8,11 +8,11 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.3.0.Final-SNAPSHOT</version>
+        <version>1.3.1.Final</version>
         <relativePath>../../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-eap6-server-modules</artifactId>
+    <artifactId>keycloak-server-modules-eap6</artifactId>
 
     <name>Keycloak EAP 6 Server Modules</name>
     <packaging>pom</packaging>
@@ -38,6 +38,10 @@
             <groupId>org.keycloak.subsystem</groupId>
             <artifactId>keycloak-server</artifactId>
             <type>war</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-wildfly-extensions</artifactId>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>

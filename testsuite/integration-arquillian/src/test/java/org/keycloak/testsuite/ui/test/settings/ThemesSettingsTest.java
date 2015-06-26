@@ -20,7 +20,7 @@ package org.keycloak.testsuite.ui.test.settings;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.testsuite.ui.AbstractKeyCloakTest;
+import org.keycloak.testsuite.ui.AbstractKeyCloakUITest;
 import org.keycloak.testsuite.ui.model.Theme;
 import org.keycloak.testsuite.ui.page.settings.ThemesSettingsPage;
 
@@ -29,7 +29,7 @@ import org.keycloak.testsuite.ui.page.settings.ThemesSettingsPage;
  *
  * @author Filip Kiss
  */
-public class ThemesSettingsTest extends AbstractKeyCloakTest<ThemesSettingsPage> {
+public class ThemesSettingsTest extends AbstractKeyCloakUITest<ThemesSettingsPage> {
 
     @Before
     public void beforeThemeTest() {
