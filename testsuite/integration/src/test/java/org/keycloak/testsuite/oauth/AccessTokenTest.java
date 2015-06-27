@@ -616,12 +616,12 @@ public class AccessTokenTest {
             KeycloakSession session = keycloakRule.startSession();
             RealmModel realm = session.realms().getRealmByName("test");
             UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
-            user.setAttribute("street", "5 Yawkey Way");
-            user.setAttribute("locality", "Boston");
-            user.setAttribute("region", "MA");
-            user.setAttribute("postal_code", "02115");
-            user.setAttribute("country", "USA");
-            user.setAttribute("phone", "617-777-6666");
+            user.setSingleAttribute("street", "5 Yawkey Way");
+            user.setSingleAttribute("locality", "Boston");
+            user.setSingleAttribute("region", "MA");
+            user.setSingleAttribute("postal_code", "02115");
+            user.setSingleAttribute("country", "USA");
+            user.setSingleAttribute("phone", "617-777-6666");
             ClientModel app = realm.getClientByClientId("test-app");
             ProtocolMapperModel mapper = AddressMapper.createAddressMapper(true, true);
             app.addProtocolMapper(mapper);

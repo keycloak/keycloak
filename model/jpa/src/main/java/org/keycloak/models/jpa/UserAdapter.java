@@ -22,6 +22,7 @@ import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
+import org.keycloak.util.MultivaluedHashMap;
 import org.keycloak.util.Time;
 
 import javax.persistence.EntityManager;
@@ -92,14 +93,46 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public void setAttribute(String name, String value) {
+    public void setSingleAttribute(String name, String value) {
+        boolean found = false;
+        List<UserAttributeEntity> toRemove = new ArrayList<>();
         for (UserAttributeEntity attr : user.getAttributes()) {
             if (attr.getName().equals(name)) {
-                attr.setValue(value);
-                return;
+                if (!found) {
+                    attr.setValue(value);
+                    found = true;
+                } else {
+                    toRemove.add(attr);
+                }
             }
         }
+
+        for (UserAttributeEntity attr : toRemove) {
+            em.remove(attr);
+            user.getAttributes().remove(attr);
+        }
+
+        if (found) {
+            return;
+        }
+
+        persistAttributeValue(name, value);
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        // Remove all existing
+        removeAttribute(name);
+
+        // Put all new
+        for (String value : values) {
+            persistAttributeValue(name, value);
+        }
+    }
+
+    private void persistAttributeValue(String name, String value) {
         UserAttributeEntity attr = new UserAttributeEntity();
+        attr.setId(KeycloakModelUtils.generateId());
         attr.setName(name);
         attr.setValue(value);
         attr.setUser(user);
@@ -120,7 +153,7 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public String getAttribute(String name) {
+    public String getFirstAttribute(String name) {
         for (UserAttributeEntity attr : user.getAttributes()) {
             if (attr.getName().equals(name)) {
                 return attr.getValue();
@@ -130,10 +163,21 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public Map<String, String> getAttributes() {
-        Map<String, String> result = new HashMap<String, String>();
+    public List<String> getAttribute(String name) {
+        List<String> result = new ArrayList<>();
         for (UserAttributeEntity attr : user.getAttributes()) {
-            result.put(attr.getName(), attr.getValue());
+            if (attr.getName().equals(name)) {
+                result.add(attr.getValue());
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
+        MultivaluedHashMap<String, String> result = new MultivaluedHashMap<>();
+        for (UserAttributeEntity attr : user.getAttributes()) {
+            result.add(attr.getName(), attr.getValue());
         }
         return result;
     }

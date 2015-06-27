@@ -38,6 +38,7 @@ objectclass: inetOrgPerson
 uid: bwilson
 cn: Bruce
 sn: Wilson
+sn: Schneider
 mail: bwilson@keycloak.org
 postalCode: 88441
 postalCode: 77332

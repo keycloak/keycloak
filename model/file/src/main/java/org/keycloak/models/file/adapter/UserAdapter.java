@@ -158,12 +158,23 @@ public class UserAdapter implements UserModel, Comparable {
     }
 
     @Override
-    public void setAttribute(String name, String value) {
+    public void setSingleAttribute(String name, String value) {
         if (user.getAttributes() == null) {
-            user.setAttributes(new HashMap<String, String>());
+            user.setAttributes(new HashMap<String, List<String>>());
         }
 
-        user.getAttributes().put(name, value);
+        List<String> attrValues = new ArrayList<>();
+        attrValues.add(value);
+        user.getAttributes().put(name, attrValues);
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        if (user.getAttributes() == null) {
+            user.setAttributes(new HashMap<String, List<String>>());
+        }
+
+        user.getAttributes().put(name, values);
     }
 
     @Override
@@ -174,13 +185,23 @@ public class UserAdapter implements UserModel, Comparable {
     }
 
     @Override
-    public String getAttribute(String name) {
-        return user.getAttributes()==null ? null : user.getAttributes().get(name);
+    public String getFirstAttribute(String name) {
+        if (user.getAttributes()==null) return null;
+
+        List<String> attrValues = user.getAttributes().get(name);
+        return (attrValues==null || attrValues.isEmpty()) ? null : attrValues.get(0);
     }
 
     @Override
-    public Map<String, String> getAttributes() {
-        return user.getAttributes()==null ? Collections.<String, String>emptyMap() : Collections.unmodifiableMap(user.getAttributes());
+    public List<String> getAttribute(String name) {
+        if (user.getAttributes()==null) return Collections.<String>emptyList();
+        List<String> attrValues = user.getAttributes().get(name);
+        return (attrValues == null) ? Collections.<String>emptyList() : Collections.unmodifiableList(attrValues);
+    }
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
+        return user.getAttributes()==null ? Collections.<String, List<String>>emptyMap() : Collections.unmodifiableMap((Map)user.getAttributes());
     }
 
     @Override

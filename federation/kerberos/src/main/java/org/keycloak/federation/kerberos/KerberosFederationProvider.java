@@ -110,7 +110,7 @@ public class KerberosFederationProvider implements UserFederationProvider {
         // KerberosUsernamePasswordAuthenticator.isUserAvailable is an overhead, so avoid it for now
 
         String kerberosPrincipal = local.getUsername() + "@" + kerberosConfig.getKerberosRealm();
-        return kerberosPrincipal.equals(local.getAttribute(KERBEROS_PRINCIPAL));
+        return kerberosPrincipal.equals(local.getFirstAttribute(KERBEROS_PRINCIPAL));
     }
 
     @Override
@@ -229,7 +229,7 @@ public class KerberosFederationProvider implements UserFederationProvider {
                     return proxied;
                 } else {
                     logger.warn("User with username " + username + " already exists and is linked to provider [" + model.getDisplayName() +
-                            "] but kerberos principal is not correct. Kerberos principal on user is: " + user.getAttribute(KERBEROS_PRINCIPAL));
+                            "] but kerberos principal is not correct. Kerberos principal on user is: " + user.getFirstAttribute(KERBEROS_PRINCIPAL));
                     logger.warn("Will re-create user");
                     session.userStorage().removeUser(realm, user);
                 }
@@ -249,7 +249,7 @@ public class KerberosFederationProvider implements UserFederationProvider {
         user.setEnabled(true);
         user.setEmail(email);
         user.setFederationLink(model.getId());
-        user.setAttribute(KERBEROS_PRINCIPAL, username + "@" + kerberosConfig.getKerberosRealm());
+        user.setSingleAttribute(KERBEROS_PRINCIPAL, username + "@" + kerberosConfig.getKerberosRealm());
 
         if (kerberosConfig.isUpdateProfileFirstLogin()) {
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);

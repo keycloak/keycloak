@@ -3,16 +3,14 @@ package org.keycloak.broker.oidc.mappers;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -76,7 +74,7 @@ public class UserAttributeMapper extends AbstractClaimMapper {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
         Object value = getClaimValue(mapperModel, context);
         if (value != null) {
-            user.setAttribute(attribute, value.toString());
+            user.setSingleAttribute(attribute, value.toString());
         }
     }
 
@@ -84,9 +82,9 @@ public class UserAttributeMapper extends AbstractClaimMapper {
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
         Object value = getClaimValue(mapperModel, context);
-        String current = user.getAttribute(attribute);
+        String current = user.getFirstAttribute(attribute);
         if (value != null && !value.equals(current)) {
-            user.setAttribute(attribute, value.toString());
+            user.setSingleAttribute(attribute, value.toString());
         } else if (value == null) {
             user.removeAttribute(attribute);
         }

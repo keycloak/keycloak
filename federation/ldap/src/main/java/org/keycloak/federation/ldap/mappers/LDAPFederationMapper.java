@@ -2,7 +2,7 @@ package org.keycloak.federation.ldap.mappers;
 
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
-import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.models.RealmModel;
 import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.models.UserFederationMapperModel;
@@ -58,5 +58,5 @@ public interface LDAPFederationMapper extends UserFederationMapper {
      * @param mapperModel
      * @param query
      */
-    void beforeLDAPQuery(UserFederationMapperModel mapperModel, LDAPIdentityQuery query);
+    void beforeLDAPQuery(UserFederationMapperModel mapperModel, LDAPQuery query);
 }

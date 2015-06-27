@@ -16,7 +16,7 @@ import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
-import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.federation.ldap.mappers.RoleLDAPFederationMapper;
 import org.keycloak.models.AccountRoles;
@@ -329,7 +329,7 @@ public class LDAPRoleMappingsTest {
     }
 
     private void deleteRoleMappingsInLDAP(UserFederationMapperModel roleMapperModel, RoleLDAPFederationMapper roleMapper, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, String roleName) {
-        LDAPIdentityQuery ldapQuery = roleMapper.createRoleQuery(roleMapperModel, ldapProvider);
+        LDAPQuery ldapQuery = roleMapper.createRoleQuery(roleMapperModel, ldapProvider);
         LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
         Condition roleNameCondition = conditionsBuilder.equal(new QueryParameter(LDAPConstants.CN), roleName);
         ldapQuery.where(roleNameCondition);

@@ -279,7 +279,7 @@ public class FederationProvidersIntegrationTest {
 
             // Fetch user from LDAP and check that postalCode is filled
             UserModel user = session.users().getUserByUsername("johnzip", appRealm);
-            String postalCode = user.getAttribute("postal_code");
+            String postalCode = user.getFirstAttribute("postal_code");
             Assert.assertEquals("12398", postalCode);
 
         } finally {
@@ -299,21 +299,21 @@ public class FederationProvidersIntegrationTest {
 
             // Fetch user from LDAP and check that postalCode is filled
             UserModel user = session.users().getUserByUsername("johndirect", appRealm);
-            String postalCode = user.getAttribute("postal_code");
+            String postalCode = user.getFirstAttribute("postal_code");
             Assert.assertEquals("12399", postalCode);
 
             // Directly update user in LDAP
-            johnDirect.setAttribute(LDAPConstants.POSTAL_CODE, "12400");
-            johnDirect.setAttribute(LDAPConstants.SN, "DirectLDAPUpdated");
+            johnDirect.setSingleAttribute(LDAPConstants.POSTAL_CODE, "12400");
+            johnDirect.setSingleAttribute(LDAPConstants.SN, "DirectLDAPUpdated");
             ldapFedProvider.getLdapIdentityStore().update(johnDirect);
 
             // Verify that postalCode is still the same as we read it's value from Keycloak DB
             user = session.users().getUserByUsername("johndirect", appRealm);
-            postalCode = user.getAttribute("postal_code");
+            postalCode = user.getFirstAttribute("postal_code");
             Assert.assertEquals("12399", postalCode);
 
             // Check user.getAttributes()
-            postalCode = user.getAttributes().get("postal_code");
+            postalCode = user.getAttributes().get("postal_code").get(0);
             Assert.assertEquals("12399", postalCode);
 
             // LastName is new as lastName mapper will read the value from LDAP
@@ -339,11 +339,11 @@ public class FederationProvidersIntegrationTest {
 
             // Verify that postalCode is read from LDAP now
             UserModel user = session.users().getUserByUsername("johndirect", appRealm);
-            String postalCode = user.getAttribute("postal_code");
+            String postalCode = user.getFirstAttribute("postal_code");
             Assert.assertEquals("12400", postalCode);
 
             // Check user.getAttributes()
-            postalCode = user.getAttributes().get("postal_code");
+            postalCode = user.getAttributes().get("postal_code").get(0);
             Assert.assertEquals("12400", postalCode);
 
             Assert.assertFalse(user.getAttributes().containsKey(UserModel.LAST_NAME));

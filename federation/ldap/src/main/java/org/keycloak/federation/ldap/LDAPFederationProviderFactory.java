@@ -9,7 +9,7 @@ import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
-import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
@@ -184,7 +184,7 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
     public UserFederationSyncResult syncAllUsers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model) {
         logger.infof("Sync all users from LDAP to local store: realm: %s, federation provider: %s", realmId, model.getDisplayName());
 
-        LDAPIdentityQuery userQuery = createQuery(sessionFactory, realmId, model);
+        LDAPQuery userQuery = createQuery(sessionFactory, realmId, model);
         UserFederationSyncResult syncResult = syncImpl(sessionFactory, userQuery, realmId, model);
 
         // TODO: Remove all existing keycloak users, which have federation links, but are not in LDAP. Perhaps don't check users, which were just added or updated during this sync?
@@ -203,7 +203,7 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
         Condition modifyCondition = conditionsBuilder.greaterThanOrEqualTo(new QueryParameter(LDAPConstants.MODIFY_TIMESTAMP), lastSync);
         Condition orCondition = conditionsBuilder.orCondition(createCondition, modifyCondition);
 
-        LDAPIdentityQuery userQuery = createQuery(sessionFactory, realmId, model);
+        LDAPQuery userQuery = createQuery(sessionFactory, realmId, model);
         userQuery.where(orCondition);
         UserFederationSyncResult result = syncImpl(sessionFactory, userQuery, realmId, model);
 
@@ -211,7 +211,7 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
         return result;
     }
 
-    protected UserFederationSyncResult syncImpl(KeycloakSessionFactory sessionFactory, LDAPIdentityQuery userQuery, final String realmId, final UserFederationProviderModel fedModel) {
+    protected UserFederationSyncResult syncImpl(KeycloakSessionFactory sessionFactory, LDAPQuery userQuery, final String realmId, final UserFederationProviderModel fedModel) {
 
         final UserFederationSyncResult syncResult = new UserFederationSyncResult();
 
@@ -254,9 +254,9 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
         return syncResult;
     }
 
-    private LDAPIdentityQuery createQuery(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model) {
+    private LDAPQuery createQuery(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model) {
         class QueryHolder {
-            LDAPIdentityQuery query;
+            LDAPQuery query;
         }
 
         final QueryHolder queryHolder = new QueryHolder();
