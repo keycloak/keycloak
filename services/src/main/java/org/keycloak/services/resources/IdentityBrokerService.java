@@ -17,6 +17,22 @@
  */
 package org.keycloak.services.resources;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.ws.rs.GET;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -47,34 +63,17 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.ErrorPage;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ErrorPage;
-import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialIdentityProvider;
 import org.keycloak.util.ObjectUtil;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.ClientSessionModel.Action.AUTHENTICATE;
@@ -306,7 +305,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return redirectToErrorPage(Messages.IDENTITY_PROVIDER_ALREADY_LINKED, context.getIdpConfig().getAlias());
         }
 
-        UserModel authenticatedUser = clientSession.getUserSession().getUser();
+        UserModel authenticatedUser;
+        if (clientSession.getUserSession() != null) {
+            authenticatedUser = clientSession.getUserSession().getUser();
+        } else {
+            authenticatedUser = this.session.users().getUserByEmail(federatedIdentityModel.getUserName(), this.realmModel);
+        }
 
         if (isDebugEnabled()) {
             LOGGER.debugf("Linking account [%s] from identity provider [%s] to user [%s].", federatedIdentityModel, context.getIdpConfig().getAlias(), authenticatedUser);
@@ -488,53 +492,54 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             existingUser = this.session.users().getUserByEmail(context.getEmail(), this.realmModel);
         }
 
-        if (existingUser != null) {
-            fireErrorEvent(Errors.FEDERATED_IDENTITY_EMAIL_EXISTS);
-            throw new IdentityBrokerException(Messages.FEDERATED_IDENTITY_EMAIL_EXISTS);
+        if (null == existingUser) {
+            String username = getUsernameFromBrokerIdentityContext(context);
+            existingUser = this.session.users().getUserByUsername(username, this.realmModel);
         }
 
-        String username = context.getUsername();
-        if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isEmpty(context.getEmail())) {
-            username = context.getEmail();
-        } else if (username == null) {
-            username = context.getIdpConfig().getAlias() + "." + context.getId();
+        UserModel federatedUser;
+        if (existingUser != null) {
+            if (!existingUser.isEnabled()) {
+                fireErrorEvent(Errors.USER_DISABLED);
+                throw new IdentityBrokerException("Username "+existingUser.getUsername()+" is disabled");
+            }
+
+            if (!existingUser.hasRole(this.realmModel.getClientByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(MANAGE_ACCOUNT))) {
+                fireErrorEvent(Errors.NOT_ALLOWED);
+                throw new IdentityBrokerException("Username "+existingUser.getUsername()+" has insufficient permissions");
+            }
+
+            federatedUser = existingUser;
+
         } else {
-            username = context.getIdpConfig().getAlias() + "." + context.getUsername();
-        }
-        if (username != null) {
-            username = username.trim();
-        }
 
-        existingUser = this.session.users().getUserByUsername(username, this.realmModel);
+            if (isDebugEnabled())
+            {
+                LOGGER.debugf("Creating account from identity [%s].", federatedIdentityModel);
+            }
 
-        if (existingUser != null) {
-            fireErrorEvent(Errors.FEDERATED_IDENTITY_USERNAME_EXISTS);
-            throw new IdentityBrokerException(Messages.FEDERATED_IDENTITY_USERNAME_EXISTS);
-        }
+            String username = getUsernameFromBrokerIdentityContext(context);
 
-        if (isDebugEnabled()) {
-            LOGGER.debugf("Creating account from identity [%s].", federatedIdentityModel);
-        }
+            federatedUser = this.session.users().addUser(this.realmModel, username);
 
-        UserModel federatedUser = this.session.users().addUser(this.realmModel, username);
+            if (isDebugEnabled())
+            {
+                LOGGER.debugf("Account [%s] created.", federatedUser);
+            }
+            federatedUser.setEnabled(true);
+            federatedUser.setEmail(context.getEmail());
+            federatedUser.setFirstName(context.getFirstName());
+            federatedUser.setLastName(context.getLastName());
+            if (context.getIdpConfig().isAddReadTokenRoleOnCreate())
+            {
+                RoleModel readTokenRole = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(Constants.READ_TOKEN_ROLE);
+                federatedUser.grantRole(readTokenRole);
+            }
 
-        if (isDebugEnabled()) {
-            LOGGER.debugf("Account [%s] created.", federatedUser);
-        }
-
-        federatedUser.setEnabled(true);
-        federatedUser.setEmail(context.getEmail());
-        federatedUser.setFirstName(context.getFirstName());
-        federatedUser.setLastName(context.getLastName());
-
-
-        if (context.getIdpConfig().isAddReadTokenRoleOnCreate()) {
-            RoleModel readTokenRole = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(Constants.READ_TOKEN_ROLE);
-            federatedUser.grantRole(readTokenRole);
-        }
-
-        if (context.getIdpConfig().isStoreToken()) {
-            federatedIdentityModel.setToken(context.getToken());
+            if (context.getIdpConfig().isStoreToken())
+            {
+                federatedIdentityModel.setToken(context.getToken());
+            }
         }
 
         this.session.users().addFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
@@ -557,6 +562,23 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 .success();
 
         return federatedUser;
+    }
+
+    private String getUsernameFromBrokerIdentityContext(BrokeredIdentityContext context)
+    {
+        String username = context.getUsername();
+        if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isEmpty(context.getEmail())) {
+            username = context.getEmail();
+        } else if (username == null) {
+            username = context.getIdpConfig().getAlias() + "." + context.getId();
+        } else {
+            username = context.getIdpConfig().getAlias() + "." + context.getUsername();
+        }
+        if (username != null) {
+            username = username.trim();
+        }
+
+        return username;
     }
 
     private Response corsResponse(Response response, ClientModel clientModel) {
