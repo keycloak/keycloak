@@ -60,6 +60,7 @@ public class LDAPConstants {
     public static final String SAM_ACCOUNT_NAME = "sAMAccountName";
     public static final String EMAIL = "mail";
     public static final String POSTAL_CODE = "postalCode";
+    public static final String STREET = "street";
     public static final String MEMBER = "member";
     public static final String MEMBER_OF = "memberOf";
     public static final String OBJECT_CLASS = "objectclass";

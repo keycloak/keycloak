@@ -1,32 +1,49 @@
 package org.keycloak.testsuite.federation;
 
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
+
+import javax.ws.rs.core.UriBuilder;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.adapter.AdapterTest;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
+import org.keycloak.testsuite.rule.WebResource;
+import org.keycloak.testsuite.rule.WebRule;
+import org.openqa.selenium.WebDriver;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LDAPMultipleAttributesTest {
+
+    protected String APP_SERVER_BASE_URL = "http://localhost:8081";
+    protected String LOGIN_URL = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(APP_SERVER_BASE_URL + "/auth")).build("test").toString();
 
     private static LDAPRule ldapRule = new LDAPRule();
 
@@ -41,6 +58,24 @@ public class LDAPMultipleAttributesTest {
 
             ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap", -1, -1, 0);
             FederationTestUtils.addZipCodeLDAPMapper(appRealm, ldapModel);
+            FederationTestUtils.addUserAttributeMapper(appRealm, ldapModel, "streetMapper", "street", LDAPConstants.STREET);
+
+            // Create ldap-portal client
+            ClientModel ldapClient = appRealm.addClient("ldap-portal");
+            ldapClient.addRedirectUri("/ldap-portal");
+            ldapClient.addRedirectUri("/ldap-portal/*");
+            ldapClient.setManagementUrl("/ldap-portal");
+            ldapClient.addProtocolMapper(UserAttributeMapper.createClaimMapper("postalCode", "postal_code", "postal_code", "String", true, "", true, true, true));
+            ldapClient.addProtocolMapper(UserAttributeMapper.createClaimMapper("street", "street", "street", "String", true, "", true, true, false));
+            ldapClient.addScopeMapping(appRealm.getRole("user"));
+            ldapClient.setSecret("password");
+
+            // Deploy ldap-portal client
+            URL url = getClass().getResource("/ldap/ldap-app-keycloak.json");
+            keycloakRule.createApplicationDeployment()
+                    .name("ldap-portal").contextPath("/ldap-portal")
+                    .servletClass(LDAPExampleServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
         }
     });
 
@@ -48,6 +83,18 @@ public class LDAPMultipleAttributesTest {
     public static TestRule chain = RuleChain
             .outerRule(ldapRule)
             .around(keycloakRule);
+
+    @Rule
+    public WebRule webRule = new WebRule(this);
+
+    @WebResource
+    protected WebDriver driver;
+
+    @WebResource
+    protected OAuthClient oauth;
+
+    @WebResource
+    protected LoginPage loginPage;
 
     @Test
     public void testModel() {
@@ -103,6 +150,40 @@ public class LDAPMultipleAttributesTest {
                 Assert.fail("postalCode '" + expected + "' not in postalCodes: " + postalCodes);
             }
         }
+    }
+
+    @Test
+    public void ldapPortalEndToEndTest() {
+        // Login as bwilson
+        driver.navigate().to(APP_SERVER_BASE_URL + "/ldap-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bwilson", "password");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(APP_SERVER_BASE_URL + "/ldap-portal"));
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("bwilson") && pageSource.contains("Bruce"));
+        Assert.assertTrue(pageSource.contains("street") && pageSource.contains("Elm 5"));
+        Assert.assertTrue(pageSource.contains("postal_code") && pageSource.contains("88441") && pageSource.contains("77332"));
+
+        // Logout
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(APP_SERVER_BASE_URL + "/auth"))
+                .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/ldap-portal").build("test").toString();
+        driver.navigate().to(logoutUri);
+
+        // Login as jbrown
+        driver.navigate().to(APP_SERVER_BASE_URL + "/ldap-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("jbrown", "password");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(APP_SERVER_BASE_URL + "/ldap-portal"));
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("jbrown") && pageSource.contains("James Brown"));
+        Assert.assertFalse(pageSource.contains("street"));
+        Assert.assertTrue(pageSource.contains("postal_code") && pageSource.contains("88441"));
+        Assert.assertFalse(pageSource.contains("77332"));
+
+        // Logout
+        driver.navigate().to(logoutUri);
     }
 
 
