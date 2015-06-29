@@ -44,15 +44,21 @@ public class ContainersManager {
         }
     }
 
+    /**
+     *
+     * @param testClass
+     * @param annotationClass
+     * @return testClass or the nearest superclass of testClass that is annotated with annotationClass
+     */
     public static Class<? extends ContainersManager>
-            getNearestSuperclassWithAnnotation(Class clazz, Class annotationClass) {
-        return clazz.isAnnotationPresent(annotationClass) ? clazz
-                : (clazz.equals(Object.class) || clazz.equals(ContainersManager.class) ? null // stop recursion
-                        : getNearestSuperclassWithAnnotation(clazz.getSuperclass(), annotationClass)); // continue recursion
+            getNearestSuperclassWithAnnotation(Class testClass, Class annotationClass) {
+        return testClass.isAnnotationPresent(annotationClass) ? testClass
+                : (testClass.equals(Object.class) ? null // stop recursion
+                        : getNearestSuperclassWithAnnotation(testClass.getSuperclass(), annotationClass)); // continue recursion
     }
 
-    public static String getAuthServerQualifier(Class clazz) {
-        Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(clazz, AuthServerContainer.class);
+    public static String getAuthServerQualifier(Class testClass) {
+        Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AuthServerContainer.class);
         if (annotatedClass == null) {
             throw new IllegalStateException("Couldn't find @AuthServerContainer on the test class or any of its superclasses.");
         }
@@ -64,23 +70,19 @@ public class ContainersManager {
         return authServerQ;
     }
 
-    public static String getAppServerQualifier(Class clazz) {
-        Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(clazz, AppServerContainer.class);
+    public static String getAppServerQualifier(Class testClass) {
+        Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AppServerContainer.class);
 
         String appServerQ = (annotatedClass == null ? null
                 : annotatedClass.getAnnotation(AppServerContainer.class).value());
 
         return appServerQ == null || appServerQ.isEmpty()
-                ? getAuthServerQualifier(clazz) // app server == auth server
+                ? getAuthServerQualifier(testClass) // app server == auth server
                 : appServerQ;
     }
 
-    public static boolean isRelative(Class clazz) {
-        return getAppServerQualifier(clazz).equals(getAuthServerQualifier(clazz));
-    }
-
-    public boolean isRelative() {
-        return appServerQualifier.equals(authServerQualifier);
+    public static boolean isRelative(Class testClass) {
+        return getAppServerQualifier(testClass).equals(getAuthServerQualifier(testClass));
     }
 
 }
