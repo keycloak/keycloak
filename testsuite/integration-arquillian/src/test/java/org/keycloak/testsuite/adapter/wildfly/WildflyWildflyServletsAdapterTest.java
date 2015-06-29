@@ -1,5 +1,6 @@
-package org.keycloak.testsuite.adapter;
+package org.keycloak.testsuite.adapter.wildfly;
 
+import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
 
@@ -9,6 +10,6 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
  */
 @AuthServerContainer("auth-server-wildfly")
 @AppServerContainer("app-server-wildfly")
-public class WildflyServletsAdapterTest extends AbstractServletsAdapterTest {
+public class WildflyWildflyServletsAdapterTest extends AbstractServletsAdapterTest {
 
 }
