@@ -18,6 +18,7 @@ import org.openqa.selenium.WebDriver;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.ContainersManager;
+import org.keycloak.testsuite.arquillian.ContainersManager.AdminPasswordUpdateTracker;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.console.page.AuthServer;
 import org.keycloak.testsuite.console.page.AuthServerContextRoot;
@@ -35,11 +36,10 @@ import org.keycloak.util.JsonSerialization;
  */
 @RunWith(Arquillian.class)
 @RunAsClient
-@AuthServerContainer("auth-server-wildfly")
+@AuthServerContainer("auth-server-undertow")
 public abstract class AbstractKeycloakTest {
 
     public static final String REALM_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
-    protected static boolean adminPasswordUpdated = Boolean.parseBoolean(System.getProperty("adminPasswordUpdated", "false"));
 
     protected Keycloak keycloak;
 
@@ -65,7 +65,9 @@ public abstract class AbstractKeycloakTest {
     @Before
     public void setUp() {
         driverSettings();
-        updateAdminPassword();
+        if (!isAdminPasswordUpdated()) {
+            updateAdminPassword();
+        }
         keycloak = Keycloak.getInstance(authServer.getUrlString(),
                 "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
         importTestRealm();
@@ -78,21 +80,27 @@ public abstract class AbstractKeycloakTest {
         driver.manage().deleteAllCookies();
     }
 
+    public boolean isAdminPasswordUpdated() {
+        return AdminPasswordUpdateTracker.isAdminPasswordUpdated(this.getClass());
+    }
+
+    public void setAdminPasswordUpdated(boolean updated) {
+        AdminPasswordUpdateTracker
+                .setAdminPasswordUpdatedFor(this.getClass(), updated);
+    }
+
     public void loginAsAdmin() {
         adminConsole.navigateTo();
-        assertCurrentUrlDoesntStartWith(adminConsole);
         loginPage.loginAsAdmin();
     }
 
     public void updateAdminPassword() {
-        if (!adminPasswordUpdated) {
-            loginAsAdmin();
-            passwordPage.confirmNewPassword(ADMIN_PSSWD);
-            passwordPage.submit();
-            assertCurrentUrlStartsWith(adminConsole);
-            logOut();
-            adminPasswordUpdated = true;
-        }
+        loginAsAdmin();
+        passwordPage.confirmNewPassword(ADMIN_PSSWD);
+        passwordPage.submit();
+        assertCurrentUrlStartsWith(adminConsole);
+        logOut();
+        setAdminPasswordUpdated(true);
     }
 
     public void logOut() {
