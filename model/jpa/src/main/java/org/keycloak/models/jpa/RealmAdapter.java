@@ -1225,7 +1225,7 @@ public class RealmAdapter implements RealmModel {
     public void updateIdentityProvider(IdentityProviderModel identityProvider) {
         for (IdentityProviderEntity entity : this.realm.getIdentityProviders()) {
             if (entity.getInternalId().equals(identityProvider.getInternalId())) {
-                entity.setName(identityProvider.getAlias());
+                entity.setName(identityProvider.getName());
                 entity.setAlias(identityProvider.getAlias());
                 entity.setEnabled(identityProvider.isEnabled());
                 entity.setUpdateProfileFirstLoginMode(identityProvider.getUpdateProfileFirstLoginMode());
