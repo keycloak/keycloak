@@ -16,7 +16,7 @@
         </container>
         <container qualifier="auth-server-wildfly" mode="manual" default="true">
             <configuration>
-                <property name="jbossHome">${auth.server.widlfly.home}</property>
+                <property name="jbossHome">${auth.server.wildfly.home}</property>
                 <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</property>
                 <property name="managementPort">${auth.server.management.port}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
