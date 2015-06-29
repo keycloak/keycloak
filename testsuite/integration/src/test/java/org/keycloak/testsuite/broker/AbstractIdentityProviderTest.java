@@ -17,11 +17,25 @@
  */
 package org.keycloak.testsuite.broker;
 
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import java.util.Set;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriBuilder;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
@@ -48,20 +62,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
-import java.io.IOException;
-import java.net.URI;
-import java.util.List;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -321,6 +321,7 @@ public abstract class AbstractIdentityProviderTest {
         assertNotNull(federatedUser);
     }
 
+    @Ignore("no longer valid with auto-linking enabled")
     @Test
     public void testUserAlreadyExistsWhenNotUpdatingProfile() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
@@ -346,6 +347,31 @@ public abstract class AbstractIdentityProviderTest {
         assertNotNull(element);
 
         assertEquals("User with email already exists. Please login to account management to link the account.", element.getText());
+    }
+
+    @Test
+    public void testAutolinkProviderWithExistingUser() throws Exception {
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+
+        identityProviderModel.setUpdateProfileFirstLogin(false);
+
+        this.driver.navigate().to("http://localhost:8081/test-app/");
+
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
+
+        // choose the identity provider
+        this.loginPage.clickSocial(getProviderId());
+
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
+
+        // log in to identity provider
+        this.loginPage.login("pedroigor", "password");
+
+        doAfterProviderAuthentication();
+
+        // assert after authentication that user is on original (redirect_uri) url
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app/"));
+
     }
 
     @Test
