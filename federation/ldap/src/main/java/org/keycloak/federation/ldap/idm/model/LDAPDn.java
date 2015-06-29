@@ -2,6 +2,8 @@ package org.keycloak.federation.ldap.idm.model;
 
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -10,12 +12,15 @@ public class LDAPDn {
 
     private final Deque<Entry> entries = new LinkedList<>();
 
+    private static final Pattern dnRegex = Pattern.compile("[^,\\\\]*(?:\\\\.[^,\\\\]*)");
+
     public static LDAPDn fromString(String dnString) {
         LDAPDn dn = new LDAPDn();
 
-        String[] rdns = dnString.split(",");
-        for (String entryStr : rdns) {
-            String[] rdn = entryStr.split("=");
+        Matcher dnMatches = dnRegex.matcher(dnString);
+
+        while (dnMatches.find()) {
+            String[] rdn = dnMatches.group(1).split("=");
             dn.addLast(rdn[0].trim(), rdn[1].trim());
         }
 
