@@ -1,5 +1,7 @@
 package org.keycloak.testsuite.arquillian;
 
+import java.util.HashSet;
+import java.util.Set;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
 import org.jboss.arquillian.container.test.api.ContainerController;
@@ -7,6 +9,7 @@ import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
+import org.junit.AfterClass;
 
 /**
  *
@@ -25,9 +28,10 @@ public class ContainersManager {
         this.appServerQualifier = getAppServerQualifier(event.getTestClass().getJavaClass());
         System.out.println(event.getTestClass().getJavaClass().getSimpleName());
         System.out.println("Auth server: " + authServerQualifier);
-        System.out.println("App server:  " + appServerQualifier);
         if (appServerQualifier.equals(authServerQualifier)) {
             System.out.println("App server == Auth server");
+        } else {
+            System.out.println("App server:  " + appServerQualifier);
         }
         startContainers();
     }
@@ -48,7 +52,8 @@ public class ContainersManager {
      *
      * @param testClass
      * @param annotationClass
-     * @return testClass or the nearest superclass of testClass that is annotated with annotationClass
+     * @return testClass or the nearest superclass of testClass that is
+     * annotated with annotationClass
      */
     public static Class<? extends ContainersManager>
             getNearestSuperclassWithAnnotation(Class testClass, Class annotationClass) {
@@ -83,6 +88,38 @@ public class ContainersManager {
 
     public static boolean isRelative(Class testClass) {
         return getAppServerQualifier(testClass).equals(getAuthServerQualifier(testClass));
+    }
+
+    public void afterClass(@Observes AfterClass event) {
+        if (authServerQualifier.contains("undertow")) {
+            // reset admin pwd status only for undertow
+            AdminPasswordUpdateTracker.setAdminPasswordUpdatedFor(authServerQualifier, false);
+        }
+    }
+
+    public static class AdminPasswordUpdateTracker {
+
+        private static final Set<String> authServersWithUpdatedAdminPassword = new HashSet<>();
+
+        public static boolean isAdminPasswordUpdated(Class testClass) {
+            return isAdminPasswordUpdated(getAuthServerQualifier(testClass));
+        }
+
+        public static boolean isAdminPasswordUpdated(String containerQualifier) {
+            return authServersWithUpdatedAdminPassword.contains(containerQualifier);
+        }
+
+        public static void setAdminPasswordUpdatedFor(Class testClass, boolean updated) {
+            setAdminPasswordUpdatedFor(getAuthServerQualifier(testClass), updated);
+        }
+
+        public static void setAdminPasswordUpdatedFor(String containerQualifier, boolean updated) {
+            if (updated) {
+                authServersWithUpdatedAdminPassword.add(containerQualifier);
+            } else {
+                authServersWithUpdatedAdminPassword.remove(containerQualifier);
+            }
+        }
     }
 
 }
