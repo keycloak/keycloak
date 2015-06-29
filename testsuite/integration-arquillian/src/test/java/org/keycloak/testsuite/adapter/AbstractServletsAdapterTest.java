@@ -31,6 +31,7 @@ import org.keycloak.testsuite.adapter.servlet.SessionServlet;
 import org.keycloak.testsuite.ui.application.page.InputPage;
 import org.keycloak.testsuite.ui.page.account.AccountSessionsPage;
 import static org.junit.Assert.*;
+import org.junit.Ignore;
 import org.keycloak.Version;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -433,6 +434,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
     @Jira("KEYCLOAK-732")
     @Test
+    @Ignore("problem with second browser") // FIXME
     public void testSingleSessionInvalidated(@Drone @SecondBrowser WebDriver driver2) {
 
         loginAndCheckSession(driver, loginPage);
