@@ -22,14 +22,13 @@ import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.jboss.shrinkwrap.undertow.api.UndertowWebArchive;
 import org.keycloak.services.filters.ClientConnectionFilter;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.resources.KeycloakApplication;
 
-public class CustomUndertowContainer implements DeployableContainer<CustomUndertowContainerConfiguration> { //extends EmbeddedUndertowContainer {
+public class CustomUndertowContainer implements DeployableContainer<CustomUndertowContainerConfiguration> {
 
     private UndertowJaxrsServer undertow;
     private CustomUndertowContainerConfiguration configuration;
@@ -38,7 +37,7 @@ public class CustomUndertowContainer implements DeployableContainer<CustomUndert
         ResteasyDeployment deployment = new ResteasyDeployment();
         deployment.setApplicationClass(KeycloakApplication.class.getName());
 
-        DeploymentInfo di = undertow.undertowDeployment(deployment, "");
+        DeploymentInfo di = undertow.undertowDeployment(deployment);
         di.setClassLoader(getClass().getClassLoader());
         di.setContextPath("/auth");
         di.setDeploymentName("Keycloak");
@@ -57,6 +56,14 @@ public class CustomUndertowContainer implements DeployableContainer<CustomUndert
         return di;
     }
 
+    public DeploymentInfo getDeplotymentInfoFromArchive(Archive<?> archive) {
+        if (archive instanceof UndertowWebArchive) {
+            return ((UndertowWebArchive) archive).getDeploymentInfo();
+        } else {
+            throw new IllegalArgumentException("UndertowContainer only supports UndertowWebArchive or WebArchive.");
+        }
+    }
+
     private HTTPContext createHttpContextForDeploymentInfo(DeploymentInfo deploymentInfo) {
         HTTPContext httpContext = new HTTPContext(configuration.getBindAddress(), configuration.getBindHttpPort());
         final Map<String, ServletInfo> servlets = deploymentInfo.getServlets();
@@ -68,21 +75,9 @@ public class CustomUndertowContainer implements DeployableContainer<CustomUndert
     }
 
     @Override
-    public ProtocolMetaData deploy(Archive<?> archive)
-            throws DeploymentException {
-
-        DeploymentInfo di;
-        if (archive instanceof UndertowWebArchive) {
-            di = ((UndertowWebArchive) archive).getDeploymentInfo();
-        } else if (archive instanceof WebArchive) {
-            di = createDeploymentInfoForWebArchive((WebArchive) archive);
-        } else {
-            throw new IllegalArgumentException("UndertowContainer only supports UndertowWebArchive or WebArchive.");
-        }
-
-        System.out.println("DEPLOYING " + di.getDeploymentName());
+    public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
+        DeploymentInfo di = getDeplotymentInfoFromArchive(archive);
         undertow.deploy(di);
-
         return new ProtocolMetaData().addContext(
                 createHttpContextForDeploymentInfo(di));
     }
@@ -110,9 +105,8 @@ public class CustomUndertowContainer implements DeployableContainer<CustomUndert
 
     @Override
     public void start() throws LifecycleException {
-
+        System.out.println("Starting auth server on embedded Undertow.");
         long start = System.currentTimeMillis();
-        System.out.println("STARTING AUTH SERVER");
 
         if (undertow == null) {
             undertow = new UndertowJaxrsServer();
@@ -123,33 +117,25 @@ public class CustomUndertowContainer implements DeployableContainer<CustomUndert
                 .setIoThreads(configuration.getWorkerThreads() / 8)
         );
 
-        System.out.println("CONTAINER STARTED");
-
         undertow.deploy(createAuthServerDeploymentInfo());
 
-        System.out.println("AUTH SERVER STARTED IN " + (System.currentTimeMillis() - start) + " ms\n");
+        System.out.println("Auth server started in " + (System.currentTimeMillis() - start) + " ms\n");
     }
 
     @Override
     public void stop() throws LifecycleException {
+        System.out.println("Stopping auth server.");
         undertow.stop();
     }
 
     @Override
     public void undeploy(Archive<?> archive) throws DeploymentException {
-        // do nothing, undeploy on stop()
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
     public void undeploy(Descriptor descriptor) throws DeploymentException {
         throw new UnsupportedOperationException("Not implemented");
-    }
-
-    public static DeploymentInfo createDeploymentInfoForWebArchive(WebArchive webArchive) {
-        return new DeploymentInfo()
-                .setDeploymentName(webArchive.getName())
-                .setContextPath(webArchive.getName())
-                .setClassLoader(CustomUndertowContainer.class.getClassLoader());
     }
 
 }
