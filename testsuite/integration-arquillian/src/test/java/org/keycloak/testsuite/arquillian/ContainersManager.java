@@ -90,13 +90,13 @@ public class ContainersManager {
         return getAppServerQualifier(testClass).equals(getAuthServerQualifier(testClass));
     }
 
-    public void beforeClassAdminPassword(@Observes BeforeClass event) {
-        if (authServerQualifier.contains("wildfly")) {
-            // for wildfly set admin pwd status from system property
-            AdminPasswordUpdateTracker.setAdminPasswordUpdatedFor(authServerQualifier,
-                    Boolean.parseBoolean(System.getProperty("adminPasswordUpdated", "false")));
-        }
-    }
+//    public void beforeClassAdminPassword(@Observes BeforeClass event) {
+//        if (authServerQualifier.contains("wildfly")) {
+//            // for wildfly set admin pwd status from system property
+//            AdminPasswordUpdateTracker.setAdminPasswordUpdatedFor(authServerQualifier,
+//                    Boolean.parseBoolean(System.getProperty("adminPasswordUpdated", "false")));
+//        }
+//    }
 
     public void afterClassAdminPassword(@Observes AfterClass event) {
         if (authServerQualifier.contains("undertow")) {
