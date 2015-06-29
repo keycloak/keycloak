@@ -23,7 +23,7 @@
 
         <keycloak.dist.artifactId>keycloak-demo-dist</keycloak.dist.artifactId>
         
-        <auth.server.widlfly.home>${containers.home}/keycloak-demo-${project.version}/keycloak</auth.server.widlfly.home>
+        <auth.server.wildfly.home>${containers.home}/keycloak-demo-${project.version}/keycloak</auth.server.wildfly.home>
 
         <auth.server.port.offset>100</auth.server.port.offset>
         <auth.server.http.port>8180</auth.server.http.port>
@@ -213,6 +213,41 @@
             <artifactId>keycloak-services</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-dependencies-server-all</artifactId>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.javax.persistence</groupId>
+            <artifactId>hibernate-jpa-2.0-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-entitymanager</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-undertow</artifactId>
+            <scope>test</scope>
+        </dependency>        
     </dependencies>
 
     <profiles>
@@ -311,7 +346,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
-                                <auth.server.widlfly.home>${auth.server.widlfly.home}</auth.server.widlfly.home>
+                                <auth.server.wildfly.home>${auth.server.wildfly.home}</auth.server.wildfly.home>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
