@@ -1,11 +1,13 @@
 package org.keycloak.authentication;
 
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.UserModel;
 
 import javax.ws.rs.core.Response;
 import java.util.Iterator;
+import java.util.List;
 
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -15,11 +17,16 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     Response alternativeChallenge = null;
     AuthenticationExecutionModel challengedAlternativeExecution = null;
     boolean alternativeSuccessful = false;
-    Iterator<AuthenticationExecutionModel> executions;
+    List<AuthenticationExecutionModel> executions;
+    Iterator<AuthenticationExecutionModel> executionIterator;
     AuthenticationProcessor processor;
+    AuthenticationFlowModel flow;
 
-    public DefaultAuthenticationFlow(AuthenticationProcessor processor) {
+    public DefaultAuthenticationFlow(AuthenticationProcessor processor, AuthenticationFlowModel flow) {
         this.processor = processor;
+        this.flow = flow;
+        this.executions = processor.getRealm().getAuthenticationExecutions(flow.getId());
+        this.executionIterator = executions.iterator();
     }
 
     protected boolean isProcessed(AuthenticationExecutionModel model) {
@@ -34,25 +41,21 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
     @Override
     public Response processAction(String actionExecution) {
-        while (executions.hasNext()) {
-            AuthenticationExecutionModel model = executions.next();
+        while (executionIterator.hasNext()) {
+            AuthenticationExecutionModel model = executionIterator.next();
             if (isProcessed(model)) {
                 AuthenticationProcessor.logger.debug("execution is processed");
                 if (!alternativeSuccessful && model.isAlternative() && processor.isSuccessful(model))
                     alternativeSuccessful = true;
                 continue;
             }
-            if (!model.getId().equals(actionExecution)) {
-                if (model.isAutheticatorFlow()) {
-                    AuthenticationFlow authenticationFlow = processor.createFlowExecution(model.getFlowId(), model);
-                    return authenticationFlow.processAction(actionExecution);
-                } else {
-                    throw new AuthenticationProcessor.AuthException("action is not current execution", AuthenticationProcessor.Error.INTERNAL_ERROR);
-                }
-            } else { // we found the action
+            if (model.isAutheticatorFlow()) {
+                AuthenticationFlow authenticationFlow = processor.createFlowExecution(model.getFlowId(), model);
+                return authenticationFlow.processAction(actionExecution);
+            } else if (model.getId().equals(actionExecution)) {
                 AuthenticatorFactory factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
                 Authenticator authenticator = factory.create();
-                AuthenticatorContext result = processor.createAuthenticatorContext(model, authenticator);
+                AuthenticatorContext result = processor.createAuthenticatorContext(model, authenticator, executions);
                 authenticator.action(result);
                 Response response = processResult(result);
                 if (response == null) return processFlow();
@@ -64,8 +67,8 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
     @Override
     public Response processFlow() {
-        while (executions.hasNext()) {
-            AuthenticationExecutionModel model = executions.next();
+        while (executionIterator.hasNext()) {
+            AuthenticationExecutionModel model = executionIterator.next();
             if (isProcessed(model)) {
                 AuthenticationProcessor.logger.debug("execution is processed");
                 if (!alternativeSuccessful && model.isAlternative() && processor.isSuccessful(model))
@@ -132,7 +135,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                     }
                 }
             }
-            AuthenticatorContext context = processor.createAuthenticatorContext(model, authenticator);
+            AuthenticatorContext context = processor.createAuthenticatorContext(model, authenticator, executions);
             authenticator.authenticate(context);
             Response response = processResult(context);
             if (response != null) return response;

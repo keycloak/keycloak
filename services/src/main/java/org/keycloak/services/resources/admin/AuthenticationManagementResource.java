@@ -8,7 +8,6 @@ import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -139,8 +138,8 @@ public class AuthenticationManagementResource {
                     rep.setSubFlow(true);
                 }
                 AuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, execution.getAuthenticator());
-                if (factory.getReferenceType() == null) continue;
-                rep.setReferenceType(factory.getReferenceType());
+                if (factory.getReferenceCategory() == null) continue;
+                rep.setReferenceType(factory.getReferenceCategory());
                 rep.setConfigurable(factory.isConfigurable());
                 for (AuthenticationExecutionModel.Requirement choice : factory.getRequirementChoices()) {
                     rep.getRequirementChoices().add(choice.name());

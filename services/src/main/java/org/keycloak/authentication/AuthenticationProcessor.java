@@ -26,6 +26,7 @@ import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -167,10 +168,25 @@ public class AuthenticationProcessor {
         Status status;
         Response challenge;
         Error error;
+        List<AuthenticationExecutionModel> currentExecutions;
 
-        private Result(AuthenticationExecutionModel execution, Authenticator authenticator) {
+        private Result(AuthenticationExecutionModel execution, Authenticator authenticator, List<AuthenticationExecutionModel> currentExecutions) {
             this.execution = execution;
             this.authenticator = authenticator;
+            this.currentExecutions = currentExecutions;
+        }
+
+        @Override
+        public AuthenticationExecutionModel.Requirement getCategoryRequirementFromCurrentFlow(String authenticatorCategory) {
+            List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(execution.getParentFlow());
+            for (AuthenticationExecutionModel exe : executions) {
+                AuthenticatorFactory factory = (AuthenticatorFactory) getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, exe.getAuthenticator());
+                if (factory != null && factory.getReferenceCategory().equals(authenticatorCategory)) {
+                    return exe.getRequirement();
+                }
+
+            }
+            return null;
         }
 
         @Override
@@ -434,8 +450,7 @@ public class AuthenticationProcessor {
             throw new AuthException(Error.INTERNAL_ERROR);
         }
         if (flow.getProviderId() == null || flow.getProviderId().equals("basic-flow")) {
-            DefaultAuthenticationFlow flowExecution = new DefaultAuthenticationFlow(this);
-            flowExecution.executions = realm.getAuthenticationExecutions(flow.getId()).iterator();
+            DefaultAuthenticationFlow flowExecution = new DefaultAuthenticationFlow(this, flow);
             return flowExecution;
 
         } else if (flow.getProviderId().equals("form-flow")) {
@@ -587,8 +602,8 @@ public class AuthenticationProcessor {
 
     }
 
-    public AuthenticatorContext createAuthenticatorContext(AuthenticationExecutionModel model, Authenticator authenticator) {
-        return new Result(model, authenticator);
+    public AuthenticatorContext createAuthenticatorContext(AuthenticationExecutionModel model, Authenticator authenticator, List<AuthenticationExecutionModel> executions) {
+        return new Result(model, authenticator, executions);
     }
 
 

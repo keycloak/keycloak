@@ -130,6 +130,10 @@ public class LoginActionsService {
         return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "authenticateForm");
     }
 
+    public static UriBuilder registrationFormProcessor(UriInfo uriInfo) {
+        return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "processRegister");
+    }
+
     public static UriBuilder loginActionsBaseUrl(UriBuilder baseUriBuilder) {
         return baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getLoginActionsService");
     }
@@ -269,6 +273,10 @@ public class LoginActionsService {
 
     protected Response processAuthentication(String execution, ClientSessionModel clientSession) {
         String flowAlias = DefaultAuthenticationFlows.BROWSER_FLOW;
+        return processFlow(execution, clientSession, flowAlias);
+    }
+
+    protected Response processFlow(String execution, ClientSessionModel clientSession, String flowAlias) {
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setClientSession(clientSession)
@@ -313,6 +321,12 @@ public class LoginActionsService {
         return processAuthentication(execution, clientSession);
     }
 
+    protected Response processRegistration(String execution, ClientSessionModel clientSession) {
+        String flowAlias = DefaultAuthenticationFlows.REGISTRATION_FLOW;
+        return processFlow(execution, clientSession, flowAlias);
+    }
+
+
 
     /**
      * protocol independent registration page entry point
@@ -322,7 +336,8 @@ public class LoginActionsService {
      */
     @Path("registration")
     @GET
-    public Response registerPage(@QueryParam("code") String code) {
+    public Response registerPage(@QueryParam("code") String code,
+                                 @QueryParam("execution") String execution) {
         event.event(EventType.REGISTER);
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
@@ -330,7 +345,7 @@ public class LoginActionsService {
         }
 
         Checks checks = new Checks();
-        if (!checks.check(code)) {
+        if (!checks.check(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
             return checks.response;
         }
         event.detail(Details.CODE_ID, code);
@@ -340,10 +355,7 @@ public class LoginActionsService {
 
         authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
-        return session.getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(clientSessionCode.getCode())
-                .setAttribute("passwordRequired", isPasswordRequired())
-                .createRegistration();
+        return processRegistration(execution, clientSession);
     }
 
 
@@ -353,20 +365,27 @@ public class LoginActionsService {
      * @param code
      * @return
      */
-    @Path("request/registration")
+    @Path("registration")
     @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processRegister(@QueryParam("code") String code) {
+    public Response processRegister(@QueryParam("code") String code,
+                                    @QueryParam("execution") String execution) {
         event.event(EventType.REGISTER);
         Checks checks = new Checks();
         if (!checks.check(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
             return checks.response;
         }
-         if (!realm.isRegistrationAllowed()) {
+        if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
             return ErrorPage.error(session, Messages.REGISTRATION_NOT_ALLOWED);
         }
 
+        ClientSessionCode clientCode = checks.clientCode;
+        ClientSessionModel clientSession = clientCode.getClientSession();
+
+        return processRegistration(execution, clientSession);
+    }
+
+    public Response oldRegistration(ClientSessionCode clientCode, ClientSessionModel clientSession) {
         MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
         String username = formData.getFirst(Validation.FIELD_USERNAME);
         String email = formData.getFirst(Validation.FIELD_EMAIL);
@@ -374,8 +393,6 @@ public class LoginActionsService {
             username = email;
             formData.putSingle(AuthenticationManager.FORM_USERNAME, username);
         }
-        ClientSessionCode clientCode = checks.clientCode;
-        ClientSessionModel clientSession = clientCode.getClientSession();
         event.client(clientSession.getClient())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.RESPONSE_TYPE, "code")
@@ -454,11 +471,11 @@ public class LoginActionsService {
 
             // User already registered, but force him to update password
             if (!passwordUpdateSuccessful) {
-                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                user.addRequiredAction(RequiredAction.UPDATE_PASSWORD);
                 return session.getProvider(LoginFormsProvider.class)
                         .setError(passwordUpdateError, passwordUpdateErrorParameters)
                         .setClientSessionCode(clientCode.getCode())
-                        .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
+                        .createResponse(RequiredAction.UPDATE_PASSWORD);
             }
         }
         clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);

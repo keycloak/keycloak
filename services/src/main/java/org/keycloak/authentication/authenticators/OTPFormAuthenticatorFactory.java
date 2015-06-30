@@ -51,7 +51,7 @@ public class OTPFormAuthenticatorFactory implements AuthenticatorFactory {
     }
 
     @Override
-    public String getReferenceType() {
+    public String getReferenceCategory() {
         return UserCredentialModel.TOTP;
     }
 

@@ -54,6 +54,8 @@ public interface AuthenticatorContext {
     HttpRequest getHttpRequest();
     BruteForceProtector getProtector();
 
+    AuthenticationExecutionModel.Requirement getCategoryRequirementFromCurrentFlow(String authenticatorCategory);
+
     void success();
     void failure(AuthenticationProcessor.Error error);
     void failure(AuthenticationProcessor.Error error, Response response);
