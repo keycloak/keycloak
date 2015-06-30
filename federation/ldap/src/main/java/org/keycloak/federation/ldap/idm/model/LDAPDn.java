@@ -12,15 +12,12 @@ public class LDAPDn {
 
     private final Deque<Entry> entries = new LinkedList<>();
 
-    private static final Pattern dnRegex = Pattern.compile("[^,\\\\]*(?:\\\\.[^,\\\\]*)");
-
     public static LDAPDn fromString(String dnString) {
         LDAPDn dn = new LDAPDn();
 
-        Matcher dnMatches = dnRegex.matcher(dnString);
-
-        while (dnMatches.find()) {
-            String[] rdn = dnMatches.group(1).split("=");
+        String[] rdns = dnString.split("(?<!\\\\\\\\),");
+        for (String entryStr : rdns) {
+            String[] rdn = entryStr.split("(?<!\\\\\\\\)=");
             dn.addLast(rdn[0].trim(), rdn[1].trim());
         }
 
