@@ -27,13 +27,31 @@ public interface UserModel {
 
     void setEnabled(boolean enabled);
 
-    void setAttribute(String name, String value);
+    /**
+     * Set single value of specified attribute. Remove all other existing values
+     *
+     * @param name
+     * @param value
+     */
+    void setSingleAttribute(String name, String value);
+
+    void setAttribute(String name, List<String> values);
 
     void removeAttribute(String name);
 
-    String getAttribute(String name);
+    /**
+     * @param name
+     * @return null if there is not any value of specified attribute or first value otherwise. Don't throw exception if there are more values of the attribute
+     */
+    String getFirstAttribute(String name);
 
-    Map<String, String> getAttributes();
+    /**
+     * @param name
+     * @return list of all attribute values or empty list if there are not any values. Never return null
+     */
+    List<String> getAttribute(String name);
+
+    Map<String, List<String>> getAttributes();
 
     Set<String> getRequiredActions();
 

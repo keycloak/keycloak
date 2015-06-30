@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
-import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 
 /**
  * IdentityStore representation providing minimal SPI
@@ -48,9 +48,9 @@ public interface IdentityStore {
 
     // Identity query
 
-    List<LDAPObject> fetchQueryResults(LDAPIdentityQuery LDAPIdentityQuery);
+    List<LDAPObject> fetchQueryResults(LDAPQuery LDAPQuery);
 
-    int countQueryResults(LDAPIdentityQuery LDAPIdentityQuery);
+    int countQueryResults(LDAPQuery LDAPQuery);
 
 //    // Relationship query
 //

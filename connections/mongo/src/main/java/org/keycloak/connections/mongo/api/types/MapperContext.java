@@ -1,5 +1,6 @@
 package org.keycloak.connections.mongo.api.types;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 /**
@@ -14,9 +15,9 @@ public class MapperContext<T, S> {
     private final Class<? extends S> expectedReturnType;
 
     // in case that expected return type is generic type (like "List<String>"), then genericTypes could contain list of expected generic arguments
-    private final List<Class<?>> genericTypes;
+    private final List<Type> genericTypes;
 
-    public MapperContext(T objectToConvert, Class<? extends S> expectedReturnType, List<Class<?>> genericTypes) {
+    public MapperContext(T objectToConvert, Class<? extends S> expectedReturnType, List<Type> genericTypes) {
         this.objectToConvert = objectToConvert;
         this.expectedReturnType = expectedReturnType;
         this.genericTypes = genericTypes;
@@ -30,7 +31,7 @@ public class MapperContext<T, S> {
         return expectedReturnType;
     }
 
-    public List<Class<?>> getGenericTypes() {
+    public List<Type> getGenericTypes() {
         return genericTypes;
     }
 }

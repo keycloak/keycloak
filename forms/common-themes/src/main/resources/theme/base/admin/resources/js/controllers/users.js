@@ -206,6 +206,8 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
         if (!user.attributes) {
             user.attributes = {}
         }
+        convertAttributeValuesToString(user);
+
         $scope.user = angular.copy(user);
         if(user.federationLink) {
             console.log("federationLink is not null");
@@ -252,13 +254,15 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
     }, true);
 
     $scope.save = function() {
+        convertAttributeValuesToLists();
+
         if ($scope.create) {
             User.save({
                 realm: realm.realm
             }, $scope.user, function (data, headers) {
                 $scope.changed = false;
+                convertAttributeValuesToString($scope.user);
                 user = angular.copy($scope.user);
-
                 var l = headers().location;
 
                 console.debug("Location == " + l);
@@ -275,11 +279,32 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
                 userId: $scope.user.id
             }, $scope.user, function () {
                 $scope.changed = false;
+                convertAttributeValuesToString($scope.user);
                 user = angular.copy($scope.user);
                 Notifications.success("Your changes have been saved to the user.");
             });
         }
     };
+
+    function convertAttributeValuesToLists() {
+        var attrs = $scope.user.attributes;
+        for (var attribute in attrs) {
+            if (typeof attrs[attribute] === "string") {
+                var attrVals = attrs[attribute].split("##");
+                attrs[attribute] = attrVals;
+            }
+        }
+    }
+
+    function convertAttributeValuesToString(user) {
+        var attrs = user.attributes;
+        for (var attribute in attrs) {
+            if (typeof attrs[attribute] === "object") {
+                var attrVals = attrs[attribute].join("##");
+                attrs[attribute] = attrVals;
+            }
+        }
+    }
 
     $scope.reset = function() {
         $scope.user = angular.copy(user);

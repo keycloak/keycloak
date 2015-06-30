@@ -26,7 +26,7 @@ import static java.util.Collections.unmodifiableSet;
  *
  * @author Shane Bryzak
  */
-public class LDAPIdentityQuery {
+public class LDAPQuery {
 
     private final LDAPFederationProvider ldapFedProvider;
 
@@ -40,6 +40,7 @@ public class LDAPIdentityQuery {
     private final Set<String> returningLdapAttributes = new LinkedHashSet<String>();
 
     // Contains just those returningLdapAttributes, which are read-only. They will be marked as read-only in returned LDAPObject instances as well
+    // NOTE: names of attributes are lower-cased to avoid case sensitivity issues (LDAP searching is usually case-insensitive, so we want to be as well)
     private final Set<String> returningReadOnlyLdapAttributes = new LinkedHashSet<String>();
     private final Set<String> objectClasses = new LinkedHashSet<String>();
 
@@ -47,46 +48,46 @@ public class LDAPIdentityQuery {
 
     private int searchScope = SearchControls.SUBTREE_SCOPE;
 
-    public LDAPIdentityQuery(LDAPFederationProvider ldapProvider) {
+    public LDAPQuery(LDAPFederationProvider ldapProvider) {
         this.ldapFedProvider = ldapProvider;
     }
 
-    public LDAPIdentityQuery where(Condition... condition) {
+    public LDAPQuery where(Condition... condition) {
         this.conditions.addAll(Arrays.asList(condition));
         return this;
     }
 
-    public LDAPIdentityQuery sortBy(Sort... sorts) {
+    public LDAPQuery sortBy(Sort... sorts) {
         this.ordering.addAll(Arrays.asList(sorts));
         return this;
     }
 
-    public LDAPIdentityQuery setSearchDn(String searchDn) {
+    public LDAPQuery setSearchDn(String searchDn) {
         this.searchDn = searchDn;
         return this;
     }
 
-    public LDAPIdentityQuery addObjectClasses(Collection<String> objectClasses) {
+    public LDAPQuery addObjectClasses(Collection<String> objectClasses) {
         this.objectClasses.addAll(objectClasses);
         return this;
     }
 
-    public LDAPIdentityQuery addReturningLdapAttribute(String ldapAttributeName) {
+    public LDAPQuery addReturningLdapAttribute(String ldapAttributeName) {
         this.returningLdapAttributes.add(ldapAttributeName);
         return this;
     }
 
-    public LDAPIdentityQuery addReturningReadOnlyLdapAttribute(String ldapAttributeName) {
-        this.returningReadOnlyLdapAttributes.add(ldapAttributeName);
+    public LDAPQuery addReturningReadOnlyLdapAttribute(String ldapAttributeName) {
+        this.returningReadOnlyLdapAttributes.add(ldapAttributeName.toLowerCase());
         return this;
     }
 
-    public LDAPIdentityQuery addMappers(Collection<UserFederationMapperModel> mappers) {
+    public LDAPQuery addMappers(Collection<UserFederationMapperModel> mappers) {
         this.mappers.addAll(mappers);
         return this;
     }
 
-    public LDAPIdentityQuery setSearchScope(int searchScope) {
+    public LDAPQuery setSearchScope(int searchScope) {
         this.searchScope = searchScope;
         return this;
     }
@@ -169,17 +170,17 @@ public class LDAPIdentityQuery {
         return ldapFedProvider.getLdapIdentityStore().countQueryResults(this);
     }
 
-    public LDAPIdentityQuery setOffset(int offset) {
+    public LDAPQuery setOffset(int offset) {
         this.offset = offset;
         return this;
     }
 
-    public LDAPIdentityQuery setLimit(int limit) {
+    public LDAPQuery setLimit(int limit) {
         this.limit = limit;
         return this;
     }
 
-    public LDAPIdentityQuery setPaginationContext(byte[] paginationContext) {
+    public LDAPQuery setPaginationContext(byte[] paginationContext) {
         this.paginationContext = paginationContext;
         return this;
     }

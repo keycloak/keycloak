@@ -12,6 +12,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
+
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -271,8 +273,8 @@ public class UserTest extends AbstractClientTest {
     public void attributes() {
         UserRepresentation user1 = new UserRepresentation();
         user1.setUsername("user1");
-        user1.attribute("attr1", "value1user1");
-        user1.attribute("attr2", "value2user1");
+        user1.singleAttribute("attr1", "value1user1");
+        user1.singleAttribute("attr2", "value2user1");
 
         Response response = realm.users().create(user1);
         String user1Id = ApiUtil.getCreatedId(response);
@@ -280,46 +282,56 @@ public class UserTest extends AbstractClientTest {
 
         UserRepresentation user2 = new UserRepresentation();
         user2.setUsername("user2");
-        user2.attribute("attr1", "value1user2");
-        user2.attribute("attr2", "value2user2");
+        user2.singleAttribute("attr1", "value1user2");
+        List<String> vals = new ArrayList<>();
+        vals.add("value2user2");
+        vals.add("value2user2_2");
+        user2.getAttributesAsListValues().put("attr2", vals);
 
         response = realm.users().create(user2);
         String user2Id = ApiUtil.getCreatedId(response);
         response.close();
         user1 = realm.users().get(user1Id).toRepresentation();
-        assertEquals(2, user1.getAttributes().size());
-        assertEquals("value1user1", user1.getAttributes().get("attr1"));
-        assertEquals("value2user1", user1.getAttributes().get("attr2"));
+        assertEquals(2, user1.getAttributesAsListValues().size());
+        assertAttributeValue("value1user1", user1.getAttributesAsListValues().get("attr1"));
+        assertAttributeValue("value2user1", user1.getAttributesAsListValues().get("attr2"));
 
         user2 = realm.users().get(user2Id).toRepresentation();
-        assertEquals(2, user2.getAttributes().size());
-        assertEquals("value1user2", user2.getAttributes().get("attr1"));
-        assertEquals("value2user2", user2.getAttributes().get("attr2"));
+        assertEquals(2, user2.getAttributesAsListValues().size());
+        assertAttributeValue("value1user2", user2.getAttributesAsListValues().get("attr1"));
+        vals = user2.getAttributesAsListValues().get("attr2");
+        assertEquals(2, vals.size());
+        assertTrue(vals.contains("value2user2") && vals.contains("value2user2_2"));
 
-        user1.attribute("attr1", "value3user1");
-        user1.attribute("attr3", "value4user1");
+        user1.singleAttribute("attr1", "value3user1");
+        user1.singleAttribute("attr3", "value4user1");
 
         realm.users().get(user1Id).update(user1);
 
         user1 = realm.users().get(user1Id).toRepresentation();
-        assertEquals(3, user1.getAttributes().size());
-        assertEquals("value3user1", user1.getAttributes().get("attr1"));
-        assertEquals("value2user1", user1.getAttributes().get("attr2"));
-        assertEquals("value4user1", user1.getAttributes().get("attr3"));
+        assertEquals(3, user1.getAttributesAsListValues().size());
+        assertAttributeValue("value3user1", user1.getAttributesAsListValues().get("attr1"));
+        assertAttributeValue("value2user1", user1.getAttributesAsListValues().get("attr2"));
+        assertAttributeValue("value4user1", user1.getAttributesAsListValues().get("attr3"));
 
         user1.getAttributes().remove("attr1");
         realm.users().get(user1Id).update(user1);
 
         user1 = realm.users().get(user1Id).toRepresentation();
-        assertEquals(2, user1.getAttributes().size());
-        assertEquals("value2user1", user1.getAttributes().get("attr2"));
-        assertEquals("value4user1", user1.getAttributes().get("attr3"));
+        assertEquals(2, user1.getAttributesAsListValues().size());
+        assertAttributeValue("value2user1", user1.getAttributesAsListValues().get("attr2"));
+        assertAttributeValue("value4user1", user1.getAttributesAsListValues().get("attr3"));
 
         user1.getAttributes().clear();
         realm.users().get(user1Id).update(user1);
 
         user1 = realm.users().get(user1Id).toRepresentation();
         assertNull(user1.getAttributes());
+    }
+
+    private void assertAttributeValue(String expectedValue, List<String> attrValues) {
+        assertEquals(1, attrValues.size());
+        assertEquals(expectedValue, attrValues.get(0));
     }
 
     @Test

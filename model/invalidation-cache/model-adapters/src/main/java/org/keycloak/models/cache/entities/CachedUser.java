@@ -4,6 +4,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.util.MultivaluedHashMap;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -29,7 +30,7 @@ public class CachedUser implements Serializable {
     private boolean enabled;
     private boolean totp;
     private String federationLink;
-    private Map<String, String> attributes = new HashMap<>();
+    private MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
     private Set<String> requiredActions = new HashSet<>();
     private Set<String> roleMappings = new HashSet<String>();
 
@@ -93,7 +94,7 @@ public class CachedUser implements Serializable {
         return totp;
     }
 
-    public Map<String, String> getAttributes() {
+    public MultivaluedHashMap<String, String> getAttributes() {
         return attributes;
     }
 

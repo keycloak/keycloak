@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.TreeSet;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -28,7 +28,7 @@ import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.internal.BetweenCondition;
-import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.federation.ldap.idm.query.internal.EqualCondition;
 import org.keycloak.federation.ldap.idm.query.internal.GreaterThanCondition;
 import org.keycloak.federation.ldap.idm.query.internal.InCondition;
@@ -108,7 +108,7 @@ public class LDAPIdentityStore implements IdentityStore {
 
 
     @Override
-    public List<LDAPObject> fetchQueryResults(LDAPIdentityQuery identityQuery) {
+    public List<LDAPObject> fetchQueryResults(LDAPQuery identityQuery) {
         if (identityQuery.getSorting() != null && !identityQuery.getSorting().isEmpty()) {
             throw new ModelException("LDAP Identity Store does not yet support sorted queries.");
         }
@@ -160,7 +160,7 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
     @Override
-    public int countQueryResults(LDAPIdentityQuery identityQuery) {
+    public int countQueryResults(LDAPQuery identityQuery) {
         int limit = identityQuery.getLimit();
         int offset = identityQuery.getOffset();
 
@@ -247,7 +247,7 @@ public class LDAPIdentityStore implements IdentityStore {
 
     // ************ END CREDENTIALS AND USER SPECIFIC STUFF
 
-    protected StringBuilder createIdentityTypeSearchFilter(final LDAPIdentityQuery identityQuery) {
+    protected StringBuilder createIdentityTypeSearchFilter(final LDAPQuery identityQuery) {
         StringBuilder filter = new StringBuilder();
 
         for (Condition condition : identityQuery.getConditions()) {
@@ -382,12 +382,6 @@ public class LDAPIdentityStore implements IdentityStore {
 
             NamingEnumeration<? extends Attribute> ldapAttributes = attributes.getAll();
 
-            // Exact name of attributes might be different
-            List<String> uppercasedReadOnlyAttrNames = new ArrayList<>();
-            for (String readonlyAttr : readOnlyAttrNames) {
-                uppercasedReadOnlyAttrNames.add(readonlyAttr.toUpperCase());
-            }
-
             while (ldapAttributes.hasMore()) {
                 Attribute ldapAttribute = ldapAttributes.next();
 
@@ -403,23 +397,20 @@ public class LDAPIdentityStore implements IdentityStore {
                     Object uuidValue = ldapAttribute.get();
                     ldapObject.setUuid(this.operationManager.decodeEntryUUID(uuidValue));
                 } else {
-                    Set<String> attrValues = new TreeSet<>();
+                    Set<String> attrValues = new LinkedHashSet<>();
                     NamingEnumeration<?> enumm = ldapAttribute.getAll();
                     while (enumm.hasMoreElements()) {
-                        String attrVal = enumm.next().toString();
+                        String attrVal = enumm.next().toString().trim();
                         attrValues.add(attrVal);
                     }
 
                     if (ldapAttributeName.equalsIgnoreCase(LDAPConstants.OBJECT_CLASS)) {
                         ldapObject.setObjectClasses(attrValues);
                     } else {
-                        if (attrValues.size() == 1) {
-                            ldapObject.setAttribute(ldapAttributeName, attrValues.iterator().next());
-                        } else {
-                            ldapObject.setAttribute(ldapAttributeName, attrValues);
-                        }
+                        ldapObject.setAttribute(ldapAttributeName, attrValues);
 
-                        if (uppercasedReadOnlyAttrNames.contains(ldapAttributeName.toUpperCase())) {
+                        // readOnlyAttrNames are lower-cased
+                        if (readOnlyAttrNames.contains(ldapAttributeName.toLowerCase())) {
                             ldapObject.addReadOnlyAttributeName(ldapAttributeName);
                         }
                     }
@@ -440,28 +431,25 @@ public class LDAPIdentityStore implements IdentityStore {
     protected BasicAttributes extractAttributes(LDAPObject ldapObject, boolean isCreate) {
         BasicAttributes entryAttributes = new BasicAttributes();
 
-        for (Map.Entry<String, Object> attrEntry : ldapObject.getAttributes().entrySet()) {
+        for (Map.Entry<String, Set<String>> attrEntry : ldapObject.getAttributes().entrySet()) {
             String attrName = attrEntry.getKey();
-            Object attrValue = attrEntry.getValue();
-            if (!ldapObject.getReadOnlyAttributeNames().contains(attrName) && (isCreate || !ldapObject.getRdnAttributeName().equalsIgnoreCase(attrName))) {
+            Set<String> attrValue = attrEntry.getValue();
 
-                if (String.class.isInstance(attrValue)) {
-                    if (attrValue.toString().trim().length() == 0) {
-                        attrValue = LDAPConstants.EMPTY_ATTRIBUTE_VALUE;
-                    }
-                    entryAttributes.put(attrName, attrValue);
-                } else if (Collection.class.isInstance(attrValue)) {
-                    BasicAttribute attr = new BasicAttribute(attrName);
-                    Collection<String> valueCollection = (Collection<String>) attrValue;
-                    for (String val : valueCollection) {
+            // ldapObject.getReadOnlyAttributeNames() are lower-cased
+            if (!ldapObject.getReadOnlyAttributeNames().contains(attrName.toLowerCase()) && (isCreate || !ldapObject.getRdnAttributeName().equalsIgnoreCase(attrName))) {
+                BasicAttribute attr = new BasicAttribute(attrName);
+                if (attrValue == null) {
+                    // Adding empty value as we don't know if attribute is mandatory in LDAP
+                    attr.add(LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
+                } else {
+                    for (String val : attrValue) {
+                        if (val == null || val.toString().trim().length() == 0) {
+                            val = LDAPConstants.EMPTY_ATTRIBUTE_VALUE;
+                        }
                         attr.add(val);
                     }
-                    entryAttributes.put(attr);
-                } else if (attrValue == null || attrValue.toString().trim().length() == 0) {
-                    entryAttributes.put(attrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
-                } else {
-                    throw new ModelException("Unexpected type of value of argument " + attrName + ". Value is " + attrValue);
                 }
+                entryAttributes.put(attr);
             }
         }
 
