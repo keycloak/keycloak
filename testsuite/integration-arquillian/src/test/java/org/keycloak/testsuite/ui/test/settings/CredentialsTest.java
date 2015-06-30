@@ -19,6 +19,7 @@
 package org.keycloak.testsuite.ui.test.settings;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.ui.AbstractKeyCloakUITest;
 import org.keycloak.testsuite.ui.model.PasswordPolicy;
@@ -36,6 +37,7 @@ public class CredentialsTest extends AbstractKeyCloakUITest<CredentialsPage> {
 	}
 	
 	@Test
+        @Ignore("UI changes, see admin console: /#/realms/master/authentication/flows")
 	public void testDigitsNumber() {
 		page.addPolicy(PasswordPolicy.HASH_ITERATIONS, 5);
 		page.removePolicy(PasswordPolicy.DIGITS);
