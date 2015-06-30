@@ -263,6 +263,101 @@ public class FederationProvidersIntegrationTest {
     }
 
     @Test
+    public void testCaseSensitiveAttributeName() {
+        KeycloakSession session = keycloakRule.startSession();
+
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            LDAPObject johnZip = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johnzip", "John", "Zip", "johnzip@email.org", "12398");
+
+            // Remove default zipcode mapper and add the mapper for "POstalCode" to test case sensitivity
+            UserFederationMapperModel currentZipMapper = appRealm.getUserFederationMapperByName(ldapModel.getId(), "zipCodeMapper");
+            appRealm.removeUserFederationMapper(currentZipMapper);
+            FederationTestUtils.addUserAttributeMapper(appRealm, ldapModel, "zipCodeMapper-cs", "postal_code", "POstalCode");
+
+            // Fetch user from LDAP and check that postalCode is filled
+            UserModel user = session.users().getUserByUsername("johnzip", appRealm);
+            String postalCode = user.getFirstAttribute("postal_code");
+            Assert.assertEquals("12398", postalCode);
+
+        } finally {
+            keycloakRule.stopSession(session, false);
+        }
+    }
+
+    @Test
+    public void testDirectLDAPUpdate() {
+        KeycloakSession session = keycloakRule.startSession();
+
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            LDAPObject johnDirect = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johndirect", "John", "Direct", "johndirect@email.org", "12399");
+
+            // Fetch user from LDAP and check that postalCode is filled
+            UserModel user = session.users().getUserByUsername("johndirect", appRealm);
+            String postalCode = user.getFirstAttribute("postal_code");
+            Assert.assertEquals("12399", postalCode);
+
+            // Directly update user in LDAP
+            johnDirect.setSingleAttribute(LDAPConstants.POSTAL_CODE, "12400");
+            johnDirect.setSingleAttribute(LDAPConstants.SN, "DirectLDAPUpdated");
+            ldapFedProvider.getLdapIdentityStore().update(johnDirect);
+
+            // Verify that postalCode is still the same as we read it's value from Keycloak DB
+            user = session.users().getUserByUsername("johndirect", appRealm);
+            postalCode = user.getFirstAttribute("postal_code");
+            Assert.assertEquals("12399", postalCode);
+
+            // Check user.getAttributes()
+            postalCode = user.getAttributes().get("postal_code").get(0);
+            Assert.assertEquals("12399", postalCode);
+
+            // LastName is new as lastName mapper will read the value from LDAP
+            String lastName = user.getLastName();
+            Assert.assertEquals("DirectLDAPUpdated", lastName);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            // Update postalCode mapper to always read the value from LDAP
+            UserFederationMapperModel zipMapper = appRealm.getUserFederationMapperByName(ldapModel.getId(), "zipCodeMapper");
+            zipMapper.getConfig().put(UserAttributeLDAPFederationMapper.ALWAYS_READ_VALUE_FROM_LDAP, "true");
+            appRealm.updateUserFederationMapper(zipMapper);
+
+            // Update lastName mapper to read the value from Keycloak DB
+            UserFederationMapperModel lastNameMapper = appRealm.getUserFederationMapperByName(ldapModel.getId(), "last name");
+            lastNameMapper.getConfig().put(UserAttributeLDAPFederationMapper.ALWAYS_READ_VALUE_FROM_LDAP, "false");
+            appRealm.updateUserFederationMapper(lastNameMapper);
+
+            // Verify that postalCode is read from LDAP now
+            UserModel user = session.users().getUserByUsername("johndirect", appRealm);
+            String postalCode = user.getFirstAttribute("postal_code");
+            Assert.assertEquals("12400", postalCode);
+
+            // Check user.getAttributes()
+            postalCode = user.getAttributes().get("postal_code").get(0);
+            Assert.assertEquals("12400", postalCode);
+
+            Assert.assertFalse(user.getAttributes().containsKey(UserModel.LAST_NAME));
+
+            // lastName is read from Keycloak DB now
+            String lastName = user.getLastName();
+            Assert.assertEquals("Direct", lastName);
+
+        } finally {
+            keycloakRule.stopSession(session, false);
+        }
+    }
+
+    @Test
     public void testFullNameMapper() {
         KeycloakSession session = keycloakRule.startSession();
         UserFederationMapperModel firstNameMapper = null;

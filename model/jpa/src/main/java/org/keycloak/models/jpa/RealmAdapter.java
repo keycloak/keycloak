@@ -1545,6 +1545,7 @@ public class RealmAdapter implements RealmModel {
         AuthenticationFlowModel model = new AuthenticationFlowModel();
         model.setId(entity.getId());
         model.setAlias(entity.getAlias());
+        model.setProviderId(entity.getProviderId());
         model.setDescription(entity.getDescription());
         return model;
     }
@@ -1570,6 +1571,7 @@ public class RealmAdapter implements RealmModel {
         if (entity == null) return;
         entity.setAlias(model.getAlias());
         entity.setDescription(model.getDescription());
+        entity.setProviderId(model.getProviderId());
 
     }
 
@@ -1579,6 +1581,7 @@ public class RealmAdapter implements RealmModel {
         entity.setId(KeycloakModelUtils.generateId());
         entity.setAlias(model.getAlias());
         entity.setDescription(model.getDescription());
+        entity.setProviderId(model.getProviderId());
         entity.setRealm(realm);
         realm.getAuthenticationFlows().add(entity);
         em.persist(entity);
@@ -1592,7 +1595,7 @@ public class RealmAdapter implements RealmModel {
         TypedQuery<AuthenticationExecutionEntity> query = em.createNamedQuery("getAuthenticationExecutionsByFlow", AuthenticationExecutionEntity.class);
         AuthenticationFlowEntity flow = em.getReference(AuthenticationFlowEntity.class, flowId);
         query.setParameter("realm", realm);
-        query.setParameter("flow", flow);
+        query.setParameter("parentFlow", flow);
         List<AuthenticationExecutionEntity> queryResult = query.getResultList();
         List<AuthenticationExecutionModel> executions = new LinkedList<>();
         for (AuthenticationExecutionEntity entity : queryResult) {
@@ -1610,7 +1613,8 @@ public class RealmAdapter implements RealmModel {
         model.setRequirement(entity.getRequirement());
         model.setPriority(entity.getPriority());
         model.setAuthenticator(entity.getAuthenticator());
-        model.setParentFlow(entity.getFlow().getId());
+        model.setFlowId(entity.getFlowId());
+        model.setParentFlow(entity.getParentFlow().getId());
         model.setAutheticatorFlow(entity.isAutheticatorFlow());
         return model;
     }
@@ -1628,9 +1632,10 @@ public class RealmAdapter implements RealmModel {
         entity.setId(KeycloakModelUtils.generateId());
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
+        entity.setFlowId(model.getFlowId());
         entity.setRequirement(model.getRequirement());
         AuthenticationFlowEntity flow = em.find(AuthenticationFlowEntity.class, model.getParentFlow());
-        entity.setFlow(flow);
+        entity.setParentFlow(flow);
         flow.getExecutions().add(entity);
         entity.setRealm(realm);
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
@@ -1651,6 +1656,7 @@ public class RealmAdapter implements RealmModel {
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
+        entity.setFlowId(model.getFlowId());
         em.flush();
     }
 

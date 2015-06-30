@@ -24,7 +24,7 @@ public class BasicDBListMapper implements Mapper<BasicDBList, List> {
     public List convertObject(MapperContext<BasicDBList, List> context) {
         BasicDBList dbList = context.getObjectToConvert();
         ArrayList<Object> appObjects = new ArrayList<Object>();
-        Class<?> expectedListElementType = context.getGenericTypes().get(0);
+        Class<?> expectedListElementType = (Class<?>) context.getGenericTypes().get(0);
 
         for (Object dbObject : dbList) {
             MapperContext<Object, Object> newContext = new MapperContext<Object, Object>(dbObject, expectedListElementType, null);

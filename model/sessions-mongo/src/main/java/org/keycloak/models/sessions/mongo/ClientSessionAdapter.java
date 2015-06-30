@@ -10,6 +10,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.mongo.entities.MongoClientSessionEntity;
 import org.keycloak.models.sessions.mongo.entities.MongoUserSessionEntity;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -156,6 +157,15 @@ public class ClientSessionAdapter extends AbstractMongoAdapter<MongoClientSessio
         entity.getNotes().remove(name);
         updateMongoEntity();
     }
+
+    @Override
+    public Map<String, String> getNotes() {
+        if (entity.getNotes() == null || entity.getNotes().isEmpty()) return Collections.emptyMap();
+        Map<String, String> copy = new HashMap<>();
+        copy.putAll(entity.getNotes());
+        return copy;
+    }
+
 
     @Override
     public void setUserSessionNote(String name, String value) {

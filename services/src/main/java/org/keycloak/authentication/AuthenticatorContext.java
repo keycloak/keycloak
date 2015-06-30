@@ -21,6 +21,7 @@ import javax.ws.rs.core.UriInfo;
  */
 public interface AuthenticatorContext {
     EventBuilder getEvent();
+    EventBuilder newEvent();
 
     AuthenticationExecutionModel getExecution();
 
@@ -54,6 +55,8 @@ public interface AuthenticatorContext {
     HttpRequest getHttpRequest();
     BruteForceProtector getProtector();
 
+    AuthenticationExecutionModel.Requirement getCategoryRequirementFromCurrentFlow(String authenticatorCategory);
+
     void success();
     void failure(AuthenticationProcessor.Error error);
     void failure(AuthenticationProcessor.Error error, Response response);
@@ -77,4 +80,8 @@ public interface AuthenticatorContext {
      * @return
      */
     String generateAccessCode();
+
+    Response getChallenge();
+
+    AuthenticationProcessor.Error getError();
 }

@@ -1,5 +1,8 @@
 package org.keycloak.services.resources;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
@@ -21,8 +24,26 @@ public class AttributeFormDataProcessor {
         for (String key : formData.keySet()) {
             if (!key.startsWith("user.attributes.")) continue;
             String attribute = key.substring("user.attributes.".length());
-            user.setAttribute(attribute, formData.getFirst(key));
+
+            // Need to handle case when attribute has multiple values, but in UI was displayed just first value
+            List<String> modelValue = new ArrayList<>(user.getAttribute(attribute));
+
+            int index = 0;
+            for (String value : formData.get(key)) {
+                addOrSetValue(modelValue, index, value);
+                index++;
+            }
+
+            user.setAttribute(attribute, modelValue);
         }
 
+    }
+
+    private static void addOrSetValue(List<String> list, int index, String value) {
+        if (list.size() > index) {
+            list.set(index, value);
+        } else {
+            list.add(value);
+        }
     }
 }

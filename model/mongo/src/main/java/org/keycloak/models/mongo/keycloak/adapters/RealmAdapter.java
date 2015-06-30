@@ -1342,6 +1342,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         if (toUpdate == null) return;
         toUpdate.setAlias(model.getAlias());
         toUpdate.setDescription(model.getDescription());
+        toUpdate.setProviderId(model.getProviderId());
         updateMongoEntity();
     }
 
@@ -1351,6 +1352,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setId(KeycloakModelUtils.generateId());
         entity.setAlias(model.getAlias());
         entity.setDescription(model.getDescription());
+        entity.setProviderId(model.getProviderId());
         getMongoEntity().getAuthenticationFlows().add(entity);
         model.setId(entity.getId());
         updateMongoEntity();
@@ -1379,6 +1381,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         model.setRequirement(entity.getRequirement());
         model.setPriority(entity.getPriority());
         model.setAuthenticator(entity.getAuthenticator());
+        model.setFlowId(entity.getFlowId());
         model.setParentFlow(entity.getParentFlow());
         model.setAutheticatorFlow(entity.isAuthenticatorFlow());
         return model;
@@ -1411,6 +1414,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setRequirement(model.getRequirement());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
         entity.setAuthenticatorFlow(model.isAutheticatorFlow());
+        entity.setFlowId(model.getFlowId());
         entity.setParentFlow(model.getParentFlow());
         AuthenticationFlowEntity flow = getFlowEntity(model.getParentFlow());
         flow.getExecutions().add(entity);
@@ -1434,6 +1438,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
+        entity.setFlowId(model.getFlowId());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
         updateMongoEntity();
     }

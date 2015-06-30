@@ -56,6 +56,9 @@ public class UrlBean {
     }
 
     public String getRegistrationAction() {
+        if (this.actionuri != null) {
+            return this.actionuri.toString();
+        }
         return Urls.realmRegisterAction(baseURI, realm).toString();
     }
 

@@ -31,7 +31,7 @@ import javax.naming.ldap.PagedResultsResponseControl;
 
 import org.jboss.logging.Logger;
 import org.keycloak.federation.ldap.LDAPConfig;
-import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 
@@ -165,7 +165,7 @@ public class LDAPOperationManager {
         }
     }
 
-    public List<SearchResult> searchPaginated(final String baseDN, final String filter, final LDAPIdentityQuery identityQuery) throws NamingException {
+    public List<SearchResult> searchPaginated(final String baseDN, final String filter, final LDAPQuery identityQuery) throws NamingException {
         final List<SearchResult> result = new ArrayList<SearchResult>();
         final SearchControls cons = getSearchControls(identityQuery.getReturningLdapAttributes(), identityQuery.getSearchScope());
 

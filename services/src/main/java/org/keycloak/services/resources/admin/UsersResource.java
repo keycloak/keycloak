@@ -5,7 +5,6 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
-import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
@@ -228,8 +227,8 @@ public class UsersResource {
             }
         }
 
-        if (rep.getAttributes() != null) {
-            for (Map.Entry<String, String> attr : rep.getAttributes().entrySet()) {
+        if (rep.getAttributesAsListValues() != null) {
+            for (Map.Entry<String, List<String>> attr : rep.getAttributesAsListValues().entrySet()) {
                 user.setAttribute(attr.getKey(), attr.getValue());
             }
 

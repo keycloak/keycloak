@@ -1,4 +1,4 @@
-package org.keycloak.authentication.actions;
+package org.keycloak.authentication.requiredactions;
 
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;

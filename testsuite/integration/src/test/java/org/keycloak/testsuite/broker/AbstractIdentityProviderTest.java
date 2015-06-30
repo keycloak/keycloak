@@ -141,7 +141,7 @@ public abstract class AbstractIdentityProviderTest {
         identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_ON);
 
         UserModel user = assertSuccessfulAuthentication(identityProviderModel, "test-user", "new@email.com", true);
-        Assert.assertEquals("617-666-7777", user.getAttribute("mobile"));
+        Assert.assertEquals("617-666-7777", user.getFirstAttribute("mobile"));
     }
 
     @Test
@@ -304,7 +304,7 @@ public abstract class AbstractIdentityProviderTest {
             identityProviderModel.setTrustEmail(true);
 
             UserModel user = assertSuccessfulAuthenticationWithEmailVerification(identityProviderModel, "test-user", "new@email.com", true);
-            Assert.assertEquals("617-666-7777", user.getAttribute("mobile"));
+            Assert.assertEquals("617-666-7777", user.getFirstAttribute("mobile"));
         } finally {
             identityProviderModel.setTrustEmail(false);
             getRealm().setVerifyEmail(false);

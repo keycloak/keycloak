@@ -1,4 +1,4 @@
-package org.keycloak.authentication.actions;
+package org.keycloak.authentication.requiredactions;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -6,19 +6,13 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Response;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -1,11 +1,10 @@
 package org.keycloak.federation.ldap;
 
-import java.util.List;
 import java.util.Set;
 
 import org.keycloak.federation.ldap.idm.model.LDAPDn;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
-import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.models.ModelException;
@@ -45,8 +44,8 @@ public class LDAPUtils {
         return ldapUser;
     }
 
-    public static LDAPIdentityQuery createQueryForUserSearch(LDAPFederationProvider ldapProvider, RealmModel realm) {
-        LDAPIdentityQuery ldapQuery = new LDAPIdentityQuery(ldapProvider);
+    public static LDAPQuery createQueryForUserSearch(LDAPFederationProvider ldapProvider, RealmModel realm) {
+        LDAPQuery ldapQuery = new LDAPQuery(ldapProvider);
         LDAPConfig config = ldapProvider.getLdapIdentityStore().getConfig();
         ldapQuery.setSearchScope(config.getSearchScope());
         ldapQuery.setSearchDn(config.getUsersDn());

@@ -1233,6 +1233,7 @@ public class RealmAdapter implements RealmModel {
         model.setId(entity.getId());
         model.setAlias(entity.getAlias());
         model.setDescription(entity.getDescription());
+        model.setProviderId(entity.getProviderId());
         return model;
     }
 
@@ -1266,6 +1267,7 @@ public class RealmAdapter implements RealmModel {
         if (toUpdate == null) return;
         toUpdate.setAlias(model.getAlias());
         toUpdate.setDescription(model.getDescription());
+        toUpdate.setProviderId(model.getProviderId());
 
     }
 
@@ -1275,6 +1277,7 @@ public class RealmAdapter implements RealmModel {
         entity.setId(KeycloakModelUtils.generateId());
         entity.setAlias(model.getAlias());
         entity.setDescription(model.getDescription());
+        entity.setProviderId(model.getProviderId());
         realm.getAuthenticationFlows().add(entity);
         model.setId(entity.getId());
         return model;
@@ -1303,6 +1306,7 @@ public class RealmAdapter implements RealmModel {
         model.setPriority(entity.getPriority());
         model.setAuthenticator(entity.getAuthenticator());
         model.setParentFlow(entity.getParentFlow());
+        model.setFlowId(entity.getFlowId());
         model.setAutheticatorFlow(entity.isAuthenticatorFlow());
         return model;
     }
@@ -1334,6 +1338,7 @@ public class RealmAdapter implements RealmModel {
         entity.setRequirement(model.getRequirement());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
         entity.setAuthenticatorFlow(model.isAutheticatorFlow());
+        entity.setFlowId(model.getFlowId());
         AuthenticationFlowEntity flow = getFlowEntity(model.getId());
         flow.getExecutions().add(entity);
         model.setId(entity.getId());
@@ -1355,6 +1360,7 @@ public class RealmAdapter implements RealmModel {
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
+        entity.setFlowId(model.getFlowId());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
     }
 

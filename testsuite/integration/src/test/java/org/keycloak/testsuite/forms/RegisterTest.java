@@ -80,7 +80,9 @@ public class RegisterTest {
         registerPage.assertCurrent();
         Assert.assertEquals("Username already exists.", registerPage.getError());
 
-        events.expectRegister("test-user@localhost", "registerExistingUser@email").user((String) null).error("username_in_use").assertEvent();
+        events.expectRegister("test-user@localhost", "registerExistingUser@email")
+                .removeDetail(Details.EMAIL)
+                .user((String) null).error("username_in_use").assertEvent();
     }
 
     @Test
@@ -94,7 +96,10 @@ public class RegisterTest {
         registerPage.assertCurrent();
         Assert.assertEquals("Password confirmation doesn't match.", registerPage.getError());
 
-        events.expectRegister("registerUserInvalidPasswordConfirm", "registerUserInvalidPasswordConfirm@email").user((String) null).error("invalid_registration").assertEvent();
+        events.expectRegister("registerUserInvalidPasswordConfirm", "registerUserInvalidPasswordConfirm@email")
+                .removeDetail(Details.USERNAME)
+                .removeDetail(Details.EMAIL)
+                .user((String) null).error("invalid_registration").assertEvent();
     }
 
     @Test
@@ -108,7 +113,10 @@ public class RegisterTest {
         registerPage.assertCurrent();
         Assert.assertEquals("Please specify password.", registerPage.getError());
 
-        events.expectRegister("registerUserMissingPassword", "registerUserMissingPassword@email").user((String) null).error("invalid_registration").assertEvent();
+        events.expectRegister("registerUserMissingPassword", "registerUserMissingPassword@email")
+                .removeDetail(Details.USERNAME)
+                .removeDetail(Details.EMAIL)
+                .user((String) null).error("invalid_registration").assertEvent();
     }
 
     @Test
@@ -130,7 +138,10 @@ public class RegisterTest {
             registerPage.assertCurrent();
             Assert.assertEquals("Invalid password: minimum length 8.", registerPage.getError());
 
-            events.expectRegister("registerPasswordPolicy", "registerPasswordPolicy@email").user((String) null).error("invalid_registration").assertEvent();
+            events.expectRegister("registerPasswordPolicy", "registerPasswordPolicy@email")
+                    .removeDetail(Details.USERNAME)
+                    .removeDetail(Details.EMAIL)
+                    .user((String) null).error("invalid_registration").assertEvent();
 
             registerPage.register("firstName", "lastName", "registerPasswordPolicy@email", "registerPasswordPolicy", "password", "password");
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -159,7 +170,10 @@ public class RegisterTest {
         registerPage.assertCurrent();
         Assert.assertEquals("Please specify username.", registerPage.getError());
 
-        events.expectRegister(null, "registerUserMissingUsername@email").removeDetail("username").error("invalid_registration").assertEvent();
+        events.expectRegister(null, "registerUserMissingUsername@email")
+                .removeDetail(Details.USERNAME)
+                .removeDetail(Details.EMAIL)
+                .error("invalid_registration").assertEvent();
     }
 
     @Test
@@ -171,12 +185,15 @@ public class RegisterTest {
         registerPage.register("firstName", "lastName", null, "registerUserMissingEmail", "password", "password");
         registerPage.assertCurrent();
         Assert.assertEquals("Please specify email.", registerPage.getError());
-        events.expectRegister("registerUserMissingEmail", null).removeDetail("email").error("invalid_registration").assertEvent();
+        events.expectRegister("registerUserMissingEmail", null)
+                .removeDetail("email")
+                .error("invalid_registration").assertEvent();
 
         registerPage.register("firstName", "lastName", "registerUserInvalidEmailemail", "registerUserInvalidEmail", "password", "password");
         registerPage.assertCurrent();
         Assert.assertEquals("Invalid email address.", registerPage.getError());
-        events.expectRegister("registerUserInvalidEmail", "registerUserInvalidEmailemail").error("invalid_registration").assertEvent();
+        events.expectRegister("registerUserInvalidEmail", "registerUserInvalidEmailemail")
+                .error("invalid_registration").assertEvent();
     }
 
     @Test
