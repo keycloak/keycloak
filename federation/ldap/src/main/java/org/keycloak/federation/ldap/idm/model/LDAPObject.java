@@ -2,9 +2,12 @@ package org.keycloak.federation.ldap.idm.model;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.logging.Logger;
 
@@ -24,10 +27,10 @@ public class LDAPObject {
     // NOTE: names of read-only attributes are lower-cased to avoid case sensitivity issues
     private final List<String> readOnlyAttributeNames = new LinkedList<>();
 
-    private final Map<String, Object> attributes = new HashMap<>();
+    private final Map<String, Set<String>> attributes = new HashMap<>();
 
     // Copy of "attributes" containing lower-cased keys
-    private final Map<String, Object> lowerCasedAttributes = new HashMap<>();
+    private final Map<String, Set<String>> lowerCasedAttributes = new HashMap<>();
 
 
     public String getUuid() {
@@ -71,32 +74,37 @@ public class LDAPObject {
         this.rdnAttributeName = rdnAttributeName;
     }
 
-    public void setAttribute(String attributeName, Object attributeValue) {
+    public void setSingleAttribute(String attributeName, String attributeValue) {
+        Set<String> asSet = new LinkedHashSet<>();
+        asSet.add(attributeValue);
+        setAttribute(attributeName, asSet);
+    }
+
+    public void setAttribute(String attributeName, Set<String> attributeValue) {
         attributes.put(attributeName, attributeValue);
         lowerCasedAttributes.put(attributeName.toLowerCase(), attributeValue);
     }
 
-    public Object getAttributeCaseInsensitive(String name) {
-        return lowerCasedAttributes.get(name.toLowerCase());
-    }
-
-    public String getAttributeAsStringCaseInsensitive(String name) {
-        Object attrValue = lowerCasedAttributes.get(name.toLowerCase());
-        if (attrValue != null && !(attrValue instanceof String)) {
-            logger.warnf("Expected String but attribute '%s' has value '%s' of type '%s' ", name, attrValue, attrValue.getClass().getName());
-
-            if (attrValue instanceof Collection) {
-                Collection<String> attrValues = (Collection<String>) attrValue;
-                attrValue = attrValues.iterator().next();
-                logger.warnf("Returning just first founded value '%s' from the collection", attrValue);
-            }
+    // Case-insensitive
+    public String getAttributeAsString(String name) {
+        Set<String> attrValue = lowerCasedAttributes.get(name.toLowerCase());
+        if (attrValue == null || attrValue.size() == 0) {
+            return null;
+        } else if (attrValue.size() > 1) {
+            logger.warnf("Expected String but attribute '%s' has more values '%s' on object '%s' . Returning just first value", name, attrValue, dn);
         }
 
-        return (String) attrValue;
+        return attrValue.iterator().next();
+    }
+
+    // Case-insensitive. Return null if there is not value of attribute with given name or set with all values otherwise
+    public Set<String> getAttributeAsSet(String name) {
+        Set<String> values = lowerCasedAttributes.get(name.toLowerCase());
+        return (values == null) ? null : new LinkedHashSet<>(values);
     }
 
 
-    public Map<String, Object> getAttributes() {
+    public Map<String, Set<String>> getAttributes() {
         return attributes;
     }
 

@@ -126,8 +126,8 @@ public class SyncProvidersTest {
             FederationTestUtils.addLDAPUser(ldapFedProvider, testRealm, "user6", "User6FN", "User6LN", "user6@email.org", "126");
             LDAPObject ldapUser5 = ldapFedProvider.loadLDAPUserByUsername(testRealm, "user5");
             // NOTE: Changing LDAP attributes directly here
-            ldapUser5.setAttribute(LDAPConstants.EMAIL, "user5Updated@email.org");
-            ldapUser5.setAttribute(LDAPConstants.POSTAL_CODE, "521");
+            ldapUser5.setSingleAttribute(LDAPConstants.EMAIL, "user5Updated@email.org");
+            ldapUser5.setSingleAttribute(LDAPConstants.POSTAL_CODE, "521");
             ldapFedProvider.getLdapIdentityStore().update(ldapUser5);
 
             // Assert still old users in local provider

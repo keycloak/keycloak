@@ -82,6 +82,15 @@
         {
             "username": "admin",
             "enabled": true,
+            "attributes": {
+                "key1": [
+                    "val1"
+                ],
+                "key2": [
+                    "val21",
+                    "val22"
+                ]
+            },
             "credentials": [
                 {
                     "type": "password",

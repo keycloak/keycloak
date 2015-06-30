@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Mappings UserModel property (the property name of a getter method) to an AttributeStatement.
+ * Mappings UserModel attribute (not property name of a getter method) to an AttributeStatement.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -62,7 +62,7 @@ public class UserAttributeStatementMapper extends AbstractSAMLProtocolMapper imp
     public void transformAttributeStatement(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
         UserModel user = userSession.getUser();
         String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
-        String attributeValue = user.getAttribute(attributeName);
+        String attributeValue = user.getFirstAttribute(attributeName);
         if (attributeValue == null) return;
         AttributeStatementHelper.addAttribute(attributeStatement, mappingModel, attributeValue);
 

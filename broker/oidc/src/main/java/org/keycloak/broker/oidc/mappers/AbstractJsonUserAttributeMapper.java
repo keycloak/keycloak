@@ -110,7 +110,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 
 		String value = getJsonValue(mapperModel, context);
 		if (value != null) {
-			user.setAttribute(attribute, value);
+			user.setSingleAttribute(attribute, value);
 		}
 	}
 

@@ -4,7 +4,7 @@ import java.util.Set;
 
 import org.keycloak.federation.ldap.idm.model.LDAPDn;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
-import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.models.ModelException;
@@ -44,8 +44,8 @@ public class LDAPUtils {
         return ldapUser;
     }
 
-    public static LDAPIdentityQuery createQueryForUserSearch(LDAPFederationProvider ldapProvider, RealmModel realm) {
-        LDAPIdentityQuery ldapQuery = new LDAPIdentityQuery(ldapProvider);
+    public static LDAPQuery createQueryForUserSearch(LDAPFederationProvider ldapProvider, RealmModel realm) {
+        LDAPQuery ldapQuery = new LDAPQuery(ldapProvider);
         LDAPConfig config = ldapProvider.getLdapIdentityStore().getConfig();
         ldapQuery.setSearchScope(config.getSearchScope());
         ldapQuery.setSearchDn(config.getUsersDn());
@@ -60,7 +60,7 @@ public class LDAPUtils {
     // ldapUser has filled attributes, but doesn't have filled dn.
     private static void computeAndSetDn(LDAPConfig config, LDAPObject ldapUser) {
         String rdnLdapAttrName = config.getRdnLdapAttribute();
-        String rdnLdapAttrValue = ldapUser.getAttributeAsStringCaseInsensitive(rdnLdapAttrName);
+        String rdnLdapAttrValue = ldapUser.getAttributeAsString(rdnLdapAttrName);
         if (rdnLdapAttrValue == null) {
             throw new ModelException("RDN Attribute [" + rdnLdapAttrName + "] is not filled. Filled attributes: " + ldapUser.getAttributes());
         }
@@ -72,6 +72,6 @@ public class LDAPUtils {
 
     public static String getUsername(LDAPObject ldapUser, LDAPConfig config) {
         String usernameAttr = config.getUsernameLdapAttribute();
-        return ldapUser.getAttributeAsStringCaseInsensitive(usernameAttr);
+        return ldapUser.getAttributeAsString(usernameAttr);
     }
 }

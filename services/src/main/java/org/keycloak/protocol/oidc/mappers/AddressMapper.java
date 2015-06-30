@@ -118,11 +118,11 @@ public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAcc
     protected void setClaim(IDToken token, UserSessionModel userSession) {
         UserModel user = userSession.getUser();
         AddressClaimSet addressSet = new AddressClaimSet();
-        addressSet.setStreetAddress(user.getAttribute("street"));
-        addressSet.setLocality(user.getAttribute("locality"));
-        addressSet.setRegion(user.getAttribute("region"));
-        addressSet.setPostalCode(user.getAttribute("postal_code"));
-        addressSet.setCountry(user.getAttribute("country"));
+        addressSet.setStreetAddress(user.getFirstAttribute("street"));
+        addressSet.setLocality(user.getFirstAttribute("locality"));
+        addressSet.setRegion(user.getFirstAttribute("region"));
+        addressSet.setPostalCode(user.getFirstAttribute("postal_code"));
+        addressSet.setCountry(user.getFirstAttribute("country"));
         token.getOtherClaims().put("address", addressSet);
     }
 

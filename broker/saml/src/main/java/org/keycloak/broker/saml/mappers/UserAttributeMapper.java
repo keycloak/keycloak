@@ -2,17 +2,14 @@ package org.keycloak.broker.saml.mappers;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
@@ -87,7 +84,7 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
         Object value = getAttribute(mapperModel, context);
         if (value != null) {
-            user.setAttribute(attribute, value.toString());
+            user.setSingleAttribute(attribute, value.toString());
         }
     }
 
@@ -115,9 +112,9 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
         Object value = getAttribute(mapperModel, context);
-        String current = user.getAttribute(attribute);
+        String current = user.getFirstAttribute(attribute);
         if (value != null && !value.equals(current)) {
-            user.setAttribute(attribute, value.toString());
+            user.setSingleAttribute(attribute, value.toString());
         } else if (value == null) {
             user.removeAttribute(attribute);
         }

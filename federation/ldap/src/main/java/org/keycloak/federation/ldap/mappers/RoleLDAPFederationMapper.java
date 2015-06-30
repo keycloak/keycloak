@@ -12,7 +12,7 @@ import org.keycloak.federation.ldap.idm.model.LDAPDn;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
-import org.keycloak.federation.ldap.idm.query.internal.LDAPIdentityQuery;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.LDAPConstants;
@@ -58,7 +58,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     // List of IDs of UserFederationMapperModels where syncRolesFromLDAP was already called in this KeycloakSession. This is to improve performance
     // TODO: Rather address this with caching at LDAPIdentityStore level?
-    private Set<String> rolesSyncedModels = new TreeSet<String>();
+    private Set<String> rolesSyncedModels = new TreeSet<>();
 
     @Override
     public void onImportUserFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
@@ -74,7 +74,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
             // Import role mappings from LDAP into Keycloak DB
             String roleNameAttr = getRoleNameLdapAttribute(mapperModel);
             for (LDAPObject ldapRole : ldapRoles) {
-                String roleName = ldapRole.getAttributeAsStringCaseInsensitive(roleNameAttr);
+                String roleName = ldapRole.getAttributeAsString(roleNameAttr);
 
                 RoleContainerModel roleContainer = getTargetRoleContainer(mapperModel, realm);
                 RoleModel role = roleContainer.getRole(roleName);
@@ -95,7 +95,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         if (!rolesSyncedModels.contains(mapperModel.getId())) {
             logger.debugf("Syncing roles from LDAP into Keycloak DB. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getDisplayName());
 
-            LDAPIdentityQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
+            LDAPQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
 
             // Send query
             List<LDAPObject> ldapRoles = ldapQuery.getResultList();
@@ -103,7 +103,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
             RoleContainerModel roleContainer = getTargetRoleContainer(mapperModel, realm);
             String rolesRdnAttr = getRoleNameLdapAttribute(mapperModel);
             for (LDAPObject ldapRole : ldapRoles) {
-                String roleName = ldapRole.getAttributeAsStringCaseInsensitive(rolesRdnAttr);
+                String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
 
                 if (roleContainer.getRole(roleName) == null) {
                     logger.infof("Syncing role [%s] from LDAP to keycloak DB", roleName);
@@ -115,8 +115,8 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         }
     }
 
-    public LDAPIdentityQuery createRoleQuery(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider) {
-        LDAPIdentityQuery ldapQuery = new LDAPIdentityQuery(ldapProvider);
+    public LDAPQuery createRoleQuery(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider) {
+        LDAPQuery ldapQuery = new LDAPQuery(ldapProvider);
 
         // For now, use same search scope, which is configured "globally" and used for user's search.
         ldapQuery.setSearchScope(ldapProvider.getLdapIdentityStore().getConfig().getSearchScope());
@@ -178,7 +178,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         }
         String[] objClasses = objectClasses.split(",");
 
-        Set<String> trimmed = new HashSet<String>();
+        Set<String> trimmed = new HashSet<>();
         for (String objectClass : objClasses) {
             objectClass = objectClass.trim();
             if (objectClass.length() > 0) {
@@ -202,7 +202,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         String roleNameAttribute = getRoleNameLdapAttribute(mapperModel);
         ldapObject.setRdnAttributeName(roleNameAttribute);
         ldapObject.setObjectClasses(getRoleObjectClasses(mapperModel, ldapProvider));
-        ldapObject.setAttribute(roleNameAttribute, roleName);
+        ldapObject.setSingleAttribute(roleNameAttribute, roleName);
 
         LDAPDn roleDn = LDAPDn.fromString(getRolesDn(mapperModel));
         roleDn.addFirst(roleNameAttribute, roleName);
@@ -220,6 +220,15 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         }
 
         Set<String> memberships = getExistingMemberships(mapperModel, ldapRole);
+
+        // Remove membership placeholder if present
+        for (String membership : memberships) {
+            if (membership.trim().length() == 0) {
+                memberships.remove(membership);
+                break;
+            }
+        }
+
         memberships.add(ldapUser.getDn().toString());
         ldapRole.setAttribute(getMembershipLdapAttribute(mapperModel), memberships);
 
@@ -240,7 +249,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
     }
 
     public LDAPObject loadLDAPRoleByName(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, String roleName) {
-        LDAPIdentityQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
+        LDAPQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
         Condition roleNameCondition = new LDAPQueryConditionsBuilder().equal(new QueryParameter(getRoleNameLdapAttribute(mapperModel)), roleName);
         ldapQuery.where(roleNameCondition);
         return ldapQuery.getFirstResult();
@@ -248,29 +257,15 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     protected Set<String> getExistingMemberships(UserFederationMapperModel mapperModel, LDAPObject ldapRole) {
         String memberAttrName = getMembershipLdapAttribute(mapperModel);
-        Set<String> memberships = new TreeSet<String>();
-        Object existingMemberships = ldapRole.getAttributeCaseInsensitive(memberAttrName);
-
-        if (existingMemberships != null) {
-            if (existingMemberships instanceof String) {
-                String existingMembership = existingMemberships.toString().trim();
-                if (existingMemberships != null && existingMembership.length() > 0) {
-                    memberships.add(existingMembership);
-                }
-            } else if (existingMemberships instanceof Collection) {
-                Collection<String> exMemberships = (Collection<String>) existingMemberships;
-                for (String membership : exMemberships) {
-                    if (membership.trim().length() > 0) {
-                        memberships.add(membership);
-                    }
-                }
-            }
+        Set<String> memberships = ldapRole.getAttributeAsSet(memberAttrName);
+        if (memberships == null) {
+            memberships = new HashSet<>();
         }
         return memberships;
     }
 
     protected List<LDAPObject> getLDAPRoleMappings(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser) {
-        LDAPIdentityQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
+        LDAPQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
         String membershipAttr = getMembershipLdapAttribute(mapperModel);
         Condition membershipCondition = new LDAPQueryConditionsBuilder().equal(new QueryParameter(membershipAttr), ldapUser.getDn().toString());
         ldapQuery.where(membershipCondition);
@@ -290,7 +285,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
     }
 
     @Override
-    public void beforeLDAPQuery(UserFederationMapperModel mapperModel, LDAPIdentityQuery query) {
+    public void beforeLDAPQuery(UserFederationMapperModel mapperModel, LDAPQuery query) {
     }
 
 
@@ -389,7 +384,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
             if (mode == Mode.LDAP_ONLY) {
                 // For LDAP-only we want to retrieve role mappings of target container just from LDAP
-                Set<RoleModel> modelRolesCopy = new HashSet<RoleModel>(modelRoleMappings);
+                Set<RoleModel> modelRolesCopy = new HashSet<>(modelRoleMappings);
                 for (RoleModel role : modelRolesCopy) {
                     if (role.getContainer().equals(targetRoleContainer)) {
                         modelRoleMappings.remove(role);
@@ -408,10 +403,10 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
             List<LDAPObject> ldapRoles = getLDAPRoleMappings(mapperModel, ldapProvider, ldapUser);
 
-            Set<RoleModel> roles = new HashSet<RoleModel>();
+            Set<RoleModel> roles = new HashSet<>();
             String roleNameLdapAttr = getRoleNameLdapAttribute(mapperModel);
             for (LDAPObject role : ldapRoles) {
-                String roleName = role.getAttributeAsStringCaseInsensitive(roleNameLdapAttr);
+                String roleName = role.getAttributeAsString(roleNameLdapAttr);
                 RoleModel modelRole = roleContainer.getRole(roleName);
                 if (modelRole == null) {
                     // Add role to local DB
@@ -430,7 +425,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
             RoleContainerModel roleContainer = getTargetRoleContainer(mapperModel, realm);
             if (role.getContainer().equals(roleContainer)) {
 
-                LDAPIdentityQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
+                LDAPQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
                 LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
                 Condition roleNameCondition = conditionsBuilder.equal(new QueryParameter(getRoleNameLdapAttribute(mapperModel)), role.getName());
                 Condition membershipCondition = conditionsBuilder.equal(new QueryParameter(getMembershipLdapAttribute(mapperModel)), ldapUser.getDn().toString());

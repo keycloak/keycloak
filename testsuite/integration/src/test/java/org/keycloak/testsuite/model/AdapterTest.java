@@ -25,7 +25,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -159,7 +158,7 @@ public class AdapterTest extends AbstractModelTest {
         test1CreateRealm();
 
         UserModel user = realmManager.getSession().users().addUser(realmModel, "bburke");
-        user.setAttribute("attr1", "val1");
+        user.setSingleAttribute("attr1", "val1");
         user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         RoleModel testRole = realmModel.addRole("test");

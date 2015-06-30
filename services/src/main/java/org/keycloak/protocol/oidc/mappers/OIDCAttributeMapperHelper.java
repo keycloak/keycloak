@@ -1,5 +1,6 @@
 package org.keycloak.protocol.oidc.mappers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ProtocolMapper;
@@ -19,6 +20,8 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class OIDCAttributeMapperHelper {
+    private static final Logger logger = Logger.getLogger(OIDCAttributeMapperHelper.class);
+
     public static final String TOKEN_CLAIM_NAME = "claim.name";
     public static final String TOKEN_CLAIM_NAME_LABEL = "Token Claim Name";
     public static final String JSON_TYPE = "Claim JSON Type";
@@ -31,6 +34,26 @@ public class OIDCAttributeMapperHelper {
 
     public static Object mapAttributeValue(ProtocolMapperModel mappingModel, Object attributeValue) {
         if (attributeValue == null) return null;
+
+        if (attributeValue instanceof List) {
+            List<Object> valueAsList = (List<Object>) attributeValue;
+            if (valueAsList.size() == 0) return null;
+
+            if (isMultivalued(mappingModel)) {
+                List<Object> result = new ArrayList<>();
+                for (Object valueItem : valueAsList) {
+                    result.add(mapAttributeValue(mappingModel, valueItem));
+                }
+                return result;
+            } else {
+                if (valueAsList.size() > 1) {
+                    logger.warnf("Multiple values found '%s' for protocol mapper '%s' but expected just single value", attributeValue.toString(), mappingModel.getName());
+                }
+
+                attributeValue = valueAsList.get(0);
+            }
+        }
+
         String type = mappingModel.getConfig().get(JSON_TYPE);
         if (type == null) return attributeValue;
         if (type.equals("boolean")) {
@@ -53,8 +76,9 @@ public class OIDCAttributeMapperHelper {
     }
 
     public static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue) {
-        if (attributeValue == null) return;
         attributeValue = mapAttributeValue(mappingModel, attributeValue);
+        if (attributeValue == null) return;
+
         String protocolClaim = mappingModel.getConfig().get(TOKEN_CLAIM_NAME);
         String[] split = protocolClaim.split("\\.");
         Map<String, Object> jsonObject = token.getOtherClaims();
@@ -100,6 +124,11 @@ public class OIDCAttributeMapperHelper {
 
     public static boolean includeInAccessToken(ProtocolMapperModel mappingModel) {
         return "true".equals(mappingModel.getConfig().get(INCLUDE_IN_ACCESS_TOKEN));
+    }
+
+
+    public static boolean isMultivalued(ProtocolMapperModel mappingModel) {
+        return "true".equals(mappingModel.getConfig().get(ProtocolMapperUtils.MULTIVALUED));
     }
 
     public static void addAttributeConfig(List<ProviderConfigProperty> configProperties) {
