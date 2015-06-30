@@ -31,6 +31,7 @@ import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.util.MultivaluedHashMap;
 import org.keycloak.util.Time;
 
 import java.util.ArrayList;
@@ -59,14 +60,15 @@ public class ModelToRepresentation {
         rep.setFederationLink(user.getFederationLink());
 
         List<String> reqActions = new ArrayList<String>();
-        for (String ra : user.getRequiredActions()){
+        Set<String> requiredActions = user.getRequiredActions();
+        for (String ra : requiredActions){
             reqActions.add(ra);
         }
 
         rep.setRequiredActions(reqActions);
 
         if (user.getAttributes() != null && !user.getAttributes().isEmpty()) {
-            Map<String, String> attrs = new HashMap<String, String>();
+            Map<String, Object> attrs = new HashMap<>();
             attrs.putAll(user.getAttributes());
             rep.setAttributes(attrs);
         }

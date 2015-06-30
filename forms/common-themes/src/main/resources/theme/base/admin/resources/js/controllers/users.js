@@ -195,7 +195,7 @@ module.controller('UserListCtrl', function($scope, realm, User) {
 
 
 
-module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFederationInstances, $location, Dialog, Notifications) {
+module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFederationInstances, RequiredActions, $location, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.create = !user.id;
     $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
@@ -206,6 +206,8 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
         if (!user.attributes) {
             user.attributes = {}
         }
+        convertAttributeValuesToString(user);
+
         $scope.user = angular.copy(user);
         if(user.federationLink) {
             console.log("federationLink is not null");
@@ -219,14 +221,31 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
     }
 
     $scope.changed = false; // $scope.create;
-
+    if (user.requiredActions) {
+        for (var i = 0; i < user.requiredActions.length; i++) {
+            console.log("user require action: " + user.requiredActions[i]);
+        }
+    }
     // ID - Name map for required actions. IDs are enum names.
-    $scope.userReqActionList = [
+    RequiredActions.query({id: realm.realm}, function(data) {
+        $scope.userReqActionList = [];
+        for (var i = 0; i < data.length; i++) {
+            console.log("listed required action: " + data[i].name);
+            if (data[i].enabled) {
+                var item = data[i];
+                $scope.userReqActionList.push(item);
+            }
+        }
+
+    });
+
+        /*[
         {id: "VERIFY_EMAIL", text: "Verify Email"},
         {id: "UPDATE_PROFILE", text: "Update Profile"},
         {id: "CONFIGURE_TOTP", text: "Configure Totp"},
         {id: "UPDATE_PASSWORD", text: "Update Password"}
     ];
+    */
 
     $scope.$watch('user', function() {
         if (!angular.equals($scope.user, user)) {
@@ -235,13 +254,15 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
     }, true);
 
     $scope.save = function() {
+        convertAttributeValuesToLists();
+
         if ($scope.create) {
             User.save({
                 realm: realm.realm
             }, $scope.user, function (data, headers) {
                 $scope.changed = false;
+                convertAttributeValuesToString($scope.user);
                 user = angular.copy($scope.user);
-
                 var l = headers().location;
 
                 console.debug("Location == " + l);
@@ -258,11 +279,32 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
                 userId: $scope.user.id
             }, $scope.user, function () {
                 $scope.changed = false;
+                convertAttributeValuesToString($scope.user);
                 user = angular.copy($scope.user);
                 Notifications.success("Your changes have been saved to the user.");
             });
         }
     };
+
+    function convertAttributeValuesToLists() {
+        var attrs = $scope.user.attributes;
+        for (var attribute in attrs) {
+            if (typeof attrs[attribute] === "string") {
+                var attrVals = attrs[attribute].split("##");
+                attrs[attribute] = attrVals;
+            }
+        }
+    }
+
+    function convertAttributeValuesToString(user) {
+        var attrs = user.attributes;
+        for (var attribute in attrs) {
+            if (typeof attrs[attribute] === "object") {
+                var attrVals = attrs[attribute].join("##");
+                attrs[attribute] = attrVals;
+            }
+        }
+    }
 
     $scope.reset = function() {
         $scope.user = angular.copy(user);

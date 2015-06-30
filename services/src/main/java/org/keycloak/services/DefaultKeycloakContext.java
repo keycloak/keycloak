@@ -1,6 +1,7 @@
 package org.keycloak.services;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.ClientConnection;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.RealmModel;
@@ -16,6 +17,8 @@ public class DefaultKeycloakContext implements KeycloakContext {
     private RealmModel realm;
 
     private ClientModel client;
+
+    private ClientConnection connection;
 
     @Override
     public UriInfo getUri() {
@@ -47,4 +50,13 @@ public class DefaultKeycloakContext implements KeycloakContext {
         this.client = client;
     }
 
+    @Override
+    public ClientConnection getConnection() {
+        return connection;
+    }
+
+    @Override
+    public void setConnection(ClientConnection connection) {
+        this.connection = connection;
+    }
 }

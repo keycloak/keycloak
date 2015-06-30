@@ -92,7 +92,7 @@ public class SSOTest {
 
         assertTrue(profilePage.isCurrent());
 
-        String sessionId2 = events.expectLogin().detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).client("test-app").assertEvent().getSessionId();
+        String sessionId2 = events.expectLogin().removeDetail(Details.USERNAME).client("test-app").assertEvent().getSessionId();
 
         assertEquals(sessionId, sessionId2);
 
@@ -139,7 +139,7 @@ public class SSOTest {
 
             oauth2.openLoginForm();
 
-            events.expectLogin().session(login2.getSessionId()).detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).assertEvent();
+            events.expectLogin().session(login2.getSessionId()).removeDetail(Details.USERNAME).assertEvent();
             Assert.assertEquals(RequestType.AUTH_RESPONSE, RequestType.valueOf(driver2.getTitle()));
             Assert.assertNotNull(oauth2.getCurrentQuery().get(OAuth2Constants.CODE));
 

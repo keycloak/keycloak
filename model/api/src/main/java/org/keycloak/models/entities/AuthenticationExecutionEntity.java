@@ -10,6 +10,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 public class AuthenticationExecutionEntity {
     protected String id;
     protected String authenticator;
+    protected String flowId;
     protected AuthenticationExecutionModel.Requirement requirement;
     protected int priority;
     private boolean userSetupAllowed;
@@ -70,5 +71,13 @@ public class AuthenticationExecutionEntity {
 
     public void setParentFlow(String parentFlow) {
         this.parentFlow = parentFlow;
+    }
+
+    public String getFlowId() {
+        return flowId;
+    }
+
+    public void setFlowId(String flowId) {
+        this.flowId = flowId;
     }
 }

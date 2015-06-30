@@ -166,7 +166,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         private ClientSessionCode parseClientSessionCode(String code) {
             ClientSessionCode clientCode = ClientSessionCode.parse(code, this.session, this.realm);
 
-            if (clientCode != null && clientCode.isValid(AUTHENTICATE)) {
+            if (clientCode != null && clientCode.isValid(AUTHENTICATE.name())) {
                 ClientSessionModel clientSession = clientCode.getClientSession();
 
                 if (clientSession != null) {

@@ -56,6 +56,19 @@ public class MongoUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
+    public void removeClientSession(RealmModel realm, ClientSessionModel clientSession) {
+        MongoClientSessionEntity entity = ((ClientSessionAdapter)clientSession).getMongoEntity();
+        if (entity.getSessionId() != null) {
+            MongoUserSessionEntity userSessionEntity = getUserSessionEntity(realm, entity.getSessionId());
+            getMongoStore().pullItemFromList(userSessionEntity, "clientSessions", entity.getSessionId(), invocationContext);
+
+        }
+
+        mongoStore.removeEntity(entity, invocationContext);
+
+    }
+
+    @Override
     public ClientSessionModel getClientSession(RealmModel realm, String id) {
         MongoClientSessionEntity entity = getClientSessionEntity(id);
         if (entity == null) return null;

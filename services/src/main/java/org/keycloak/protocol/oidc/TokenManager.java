@@ -217,6 +217,12 @@ public class TokenManager {
             }
         }
         clientSession.setProtocolMappers(requestedProtocolMappers);
+
+        Map<String, String> transferredNotes = clientSession.getUserSessionNotes();
+        for (Map.Entry<String, String> entry : transferredNotes.entrySet()) {
+            session.setNote(entry.getKey(), entry.getValue());
+        }
+
     }
 
     public static void dettachClientSession(UserSessionProvider sessions, RealmModel realm, ClientSessionModel clientSession) {

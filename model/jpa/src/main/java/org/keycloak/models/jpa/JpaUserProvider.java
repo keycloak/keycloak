@@ -6,6 +6,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
@@ -44,7 +45,7 @@ public class JpaUserProvider implements UserProvider {
     }
 
     @Override
-    public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
+    public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
         if (id == null) {
             id = KeycloakModelUtils.generateId();
         }
@@ -68,13 +69,18 @@ public class JpaUserProvider implements UserProvider {
                 }
             }
         }
+        for (RequiredActionProviderModel r : realm.getRequiredActionProviders()) {
+            if (r.isEnabled() && r.isDefaultAction()) {
+                userModel.addRequiredAction(r.getAlias());
+            }
+        }
 
         return userModel;
     }
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        return addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true);
+        return addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true, true);
     }
 
     @Override

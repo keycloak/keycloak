@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -160,7 +161,7 @@ public class RealmsResource {
     public IdentityBrokerService getBrokerService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
 
-        IdentityBrokerService brokerService = new IdentityBrokerService(realm);
+        IdentityBrokerService brokerService = new IdentityBrokerService(realm, protector);
         ResteasyProviderFactory.getInstance().injectProperties(brokerService);
 
         brokerService.init();

@@ -137,7 +137,7 @@ public class RegisterTest {
 
             String userId = events.expectRegister("registerPasswordPolicy", "registerPasswordPolicy@email").assertEvent().getUserId();
 
-            events.expectLogin().user(userId).detail(Details.USERNAME, "registerPasswordPolicy").assertEvent();
+            events.expectLogin().user(userId).detail(Details.USERNAME, "registerpasswordpolicy").assertEvent();
         } finally {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
@@ -190,7 +190,7 @@ public class RegisterTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         String userId = events.expectRegister("registerUserSuccess", "registerUserSuccess@email").assertEvent().getUserId();
-        events.expectLogin().detail("username", "registerUserSuccess").user(userId).assertEvent();
+        events.expectLogin().detail("username", "registerusersuccess").user(userId).assertEvent();
     }
 
     @Test
@@ -250,7 +250,7 @@ public class RegisterTest {
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             String userId = events.expectRegister("registerUserSuccessE@email", "registerUserSuccessE@email").assertEvent().getUserId();
-            events.expectLogin().detail("username", "registerUserSuccessE@email").user(userId).assertEvent();
+            events.expectLogin().detail("username", "registerusersuccesse@email").user(userId).assertEvent();
         } finally {
             configureRelamRegistrationEmailAsUsername(false);
         }

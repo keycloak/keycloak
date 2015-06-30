@@ -6,6 +6,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -51,8 +52,8 @@ public class ProfileTest {
             UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
             user.setFirstName("First");
             user.setLastName("Last");
-            user.setAttribute("key1", "value1");
-            user.setAttribute("key2", "value2");
+            user.setSingleAttribute("key1", "value1");
+            user.setSingleAttribute("key2", "value2");
 
             ClientModel accountApp = appRealm.getClientByClientId(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
 
@@ -114,8 +115,12 @@ public class ProfileTest {
         assertEquals("Last", profile.getString("lastName"));
 
         JSONObject attributes = profile.getJSONObject("attributes");
-        assertEquals("value1", attributes.getString("key1"));
-        assertEquals("value2", attributes.getString("key2"));
+        JSONArray attrValue = attributes.getJSONArray("key1");
+        assertEquals(1, attrValue.length());
+        assertEquals("value1", attrValue.get(0));
+        attrValue = attributes.getJSONArray("key2");
+        assertEquals(1, attrValue.length());
+        assertEquals("value2", attrValue.get(0));
     }
 
     @Test

@@ -10,6 +10,8 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.mongo.entities.MongoClientSessionEntity;
 import org.keycloak.models.sessions.mongo.entities.MongoUserSessionEntity;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -107,12 +109,12 @@ public class ClientSessionAdapter extends AbstractMongoAdapter<MongoClientSessio
     }
 
     @Override
-    public Action getAction() {
+    public String getAction() {
         return entity.getAction();
     }
 
     @Override
-    public void setAction(Action action) {
+    public void setAction(String action) {
         entity.setAction(action);
         updateMongoEntity();
     }
@@ -157,22 +159,48 @@ public class ClientSessionAdapter extends AbstractMongoAdapter<MongoClientSessio
     }
 
     @Override
-    public Map<String, UserSessionModel.AuthenticatorStatus> getAuthenticators() {
+    public Map<String, String> getNotes() {
+        if (entity.getNotes() == null || entity.getNotes().isEmpty()) return Collections.emptyMap();
+        Map<String, String> copy = new HashMap<>();
+        copy.putAll(entity.getNotes());
+        return copy;
+    }
+
+
+    @Override
+    public void setUserSessionNote(String name, String value) {
+        entity.getUserSessionNotes().put(name, value);
+        updateMongoEntity();
+    }
+
+    @Override
+    public Map<String, String> getUserSessionNotes() {
+        Map<String, String> copy = new HashMap<>();
+        copy.putAll(entity.getUserSessionNotes());
+        return copy;
+    }
+
+    @Override
+    public Map<String, ExecutionStatus> getExecutionStatus() {
         return entity.getAuthenticatorStatus();
     }
 
     @Override
-    public void setAuthenticatorStatus(String authenticator, UserSessionModel.AuthenticatorStatus status) {
+    public void setExecutionStatus(String authenticator, ExecutionStatus status) {
         entity.getAuthenticatorStatus().put(authenticator, status);
         updateMongoEntity();
 
     }
 
     @Override
-    public void setAuthenticatorStatus(Map<String, UserSessionModel.AuthenticatorStatus> status) {
-        entity.setAuthenticatorStatus(status);
+    public void clearExecutionStatus() {
+        entity.getAuthenticatorStatus().clear();
         updateMongoEntity();
+    }
 
+    @Override
+    public void clearUserSessionNotes() {
+        entity.getUserSessionNotes().clear();
     }
 
     @Override

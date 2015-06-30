@@ -43,6 +43,7 @@
                 </div>
             </div>
 
+            <#if passwordRequired>
             <div class="${properties.kcFormGroupClass!} ${messagesPerField.printIfExists('password',properties.kcFormGroupErrorClass!)}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
@@ -60,6 +61,53 @@
                     <input type="password" id="password-confirm" class="${properties.kcInputClass!}" name="password-confirm" />
                 </div>
             </div>
+            </#if>
+            <div class="form-group">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="user.attributes.street" class="${properties.kcLabelClass!}">${msg("street")}</label>
+                </div>
+
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.street" name="user.attributes.street"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="user.attributes.locality" class="${properties.kcLabelClass!}">${msg("locality")}</label>
+                </div>
+
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.locality" name="user.attributes.locality"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="user.attributes.region" class="${properties.kcLabelClass!}">${msg("region")}</label>
+                </div>
+
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.region" name="user.attributes.region"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="user.attributes.postal_code" class="${properties.kcLabelClass!}">${msg("postal_code")}</label>
+                </div>
+
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.postal_code" name="user.attributes.postal_code"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="user.attributes.country" class="${properties.kcLabelClass!}">${msg("country")}</label>
+                </div>
+
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.country" name="user.attributes.country"/>
+                </div>
+            </div>
+
 
             <div class="${properties.kcFormGroupClass!}">
                 <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">

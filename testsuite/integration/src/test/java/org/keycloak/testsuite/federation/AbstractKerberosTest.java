@@ -18,6 +18,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.authentication.authenticators.SpnegoAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.constants.KerberosConstants;
@@ -35,6 +36,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
+import org.keycloak.testsuite.pages.BypassKerberosPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -58,6 +60,9 @@ public abstract class AbstractKerberosTest {
 
     @WebResource
     protected LoginPage loginPage;
+
+    @WebResource
+    protected BypassKerberosPage bypassPage;
 
     @WebResource
     protected AccountPasswordPage changePasswordPage;
@@ -85,6 +90,7 @@ public abstract class AbstractKerberosTest {
     public void spnegoNotAvailableTest() throws Exception {
         initHttpClient(false);
 
+        SpnegoAuthenticator.bypassChallengeJavascript = true;
         driver.navigate().to(KERBEROS_APP_URL);
         String kcLoginPageLocation = driver.getCurrentUrl();
 
@@ -94,6 +100,7 @@ public abstract class AbstractKerberosTest {
         String responseText = response.readEntity(String.class);
         responseText.contains("Log in to test");
         response.close();
+        SpnegoAuthenticator.bypassChallengeJavascript = false;
     }
 
 
@@ -108,7 +115,7 @@ public abstract class AbstractKerberosTest {
                 .client("kerberos-app")
                 .user(keycloakRule.getUser("test", "hnelson").getId())
                 .detail(Details.REDIRECT_URI, KERBEROS_APP_URL)
-                .detail(Details.AUTH_METHOD, "spnego")
+                //.detail(Details.AUTH_METHOD, "spnego")
                 .detail(Details.USERNAME, "hnelson")
                 .assertEvent();
 
@@ -120,7 +127,7 @@ public abstract class AbstractKerberosTest {
 
         spnegoResponse.close();
         events.clear();
-    }
+     }
 
 
     @Test
@@ -133,6 +140,10 @@ public abstract class AbstractKerberosTest {
 
         // Login with username/password from kerberos
         changePasswordPage.open();
+        // Only needed if you are providing a click thru to bypass kerberos.  Currently there is a javascript
+        // to forward the user if kerberos isn't enabled.
+        //bypassPage.isCurrent();
+        //bypassPage.clickContinue();
         loginPage.assertCurrent();
         loginPage.login("jduke", "theduke");
         changePasswordPage.assertCurrent();
@@ -149,6 +160,10 @@ public abstract class AbstractKerberosTest {
         Assert.assertTrue(driver.getPageSource().contains("Your password has been updated."));
         changePasswordPage.logout();
 
+        // Only needed if you are providing a click thru to bypass kerberos.  Currently there is a javascript
+        // to forward the user if kerberos isn't enabled.
+        //bypassPage.isCurrent();
+        //bypassPage.clickContinue();
         // Login with old password doesn't work, but with new password works
         loginPage.login("jduke", "theduke");
         loginPage.assertCurrent();
@@ -156,7 +171,7 @@ public abstract class AbstractKerberosTest {
         changePasswordPage.assertCurrent();
         changePasswordPage.logout();
 
-        // Assert SPNEGO login still with the old password as mode is unsynced
+       // Assert SPNEGO login still with the old password as mode is unsynced
         events.clear();
         Response spnegoResponse = spnegoLogin("jduke", "theduke");
         Assert.assertEquals(302, spnegoResponse.getStatus());
@@ -164,7 +179,7 @@ public abstract class AbstractKerberosTest {
                 .client("kerberos-app")
                 .user(keycloakRule.getUser("test", "jduke").getId())
                 .detail(Details.REDIRECT_URI, KERBEROS_APP_URL)
-                .detail(Details.AUTH_METHOD, "spnego")
+                //.detail(Details.AUTH_METHOD, "spnego")
                 .detail(Details.USERNAME, "jduke")
                 .assertEvent();
         spnegoResponse.close();
@@ -221,12 +236,16 @@ public abstract class AbstractKerberosTest {
 
 
     protected Response spnegoLogin(String username, String password) {
+        SpnegoAuthenticator.bypassChallengeJavascript = true;
         driver.navigate().to(KERBEROS_APP_URL);
         String kcLoginPageLocation = driver.getCurrentUrl();
-
+        String location = "http://localhost:8081/auth/realms/test/protocol/openid-connect/auth?response_type=code&client_id=kerberos-app&redirect_uri=http%3A%2F%2Flocalhost%3A8081%2Fkerberos-portal&state=0%2F88a96ddd-84fe-4e77-8a46-02394d7b3a7d&login=true";
         // Request for SPNEGO login sent with Resteasy client
         spnegoSchemeFactory.setCredentials(username, password);
-        return client.target(kcLoginPageLocation).request().get();
+        Response response = client.target(kcLoginPageLocation).request().get();
+        SpnegoAuthenticator.bypassChallengeJavascript = false;
+        return response;
+
     }
 
 

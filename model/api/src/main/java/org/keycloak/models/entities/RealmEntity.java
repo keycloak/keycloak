@@ -75,7 +75,8 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private String defaultLocale;
     private List<IdentityProviderMapperEntity> identityProviderMappers = new ArrayList<IdentityProviderMapperEntity>();
     private List<AuthenticationFlowEntity> authenticationFlows = new ArrayList<>();
-    private List<AuthenticatorEntity> authenticators = new ArrayList<>();
+    private List<AuthenticatorConfigEntity> authenticatorConfigs = new ArrayList<>();
+    private List<RequiredActionProviderEntity> requiredActionProviders = new ArrayList<>();
 
 
     public String getName() {
@@ -493,12 +494,20 @@ public class RealmEntity extends AbstractIdentifiableEntity {
         this.authenticationFlows = authenticationFlows;
     }
 
-    public List<AuthenticatorEntity> getAuthenticators() {
-        return authenticators;
+    public List<AuthenticatorConfigEntity> getAuthenticatorConfigs() {
+        return authenticatorConfigs;
     }
 
-    public void setAuthenticators(List<AuthenticatorEntity> authenticators) {
-        this.authenticators = authenticators;
+    public void setAuthenticatorConfigs(List<AuthenticatorConfigEntity> authenticators) {
+        this.authenticatorConfigs = authenticators;
+    }
+
+    public List<RequiredActionProviderEntity> getRequiredActionProviders() {
+        return requiredActionProviders;
+    }
+
+    public void setRequiredActionProviders(List<RequiredActionProviderEntity> requiredActionProviders) {
+        this.requiredActionProviders = requiredActionProviders;
     }
 }
 

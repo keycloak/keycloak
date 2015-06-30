@@ -35,7 +35,7 @@ public class LocaleHelper {
             Locale locale =  findLocale(realm.getSupportedLocales(), localeString);
             if(locale != null){
                 if(user != null){
-                    user.setAttribute(UserModel.LOCALE, locale.toLanguageTag());
+                    user.setSingleAttribute(UserModel.LOCALE, locale.toLanguageTag());
                 }
                 return locale;
             }else{
@@ -48,8 +48,8 @@ public class LocaleHelper {
             String localeString = httpHeaders.getCookies().get(LOCALE_COOKIE).getValue();
             Locale locale =  findLocale(realm.getSupportedLocales(), localeString);
             if(locale != null){
-                if(user != null && user.getAttribute(UserModel.LOCALE) == null){
-                    user.setAttribute(UserModel.LOCALE, locale.toLanguageTag());
+                if(user != null && user.getFirstAttribute(UserModel.LOCALE) == null){
+                    user.setSingleAttribute(UserModel.LOCALE, locale.toLanguageTag());
                 }
                 return locale;
             }else{
@@ -59,7 +59,7 @@ public class LocaleHelper {
 
         //2. User profile
         if(user != null && user.getAttributes().containsKey(UserModel.LOCALE)){
-            String localeString = user.getAttribute(UserModel.LOCALE);
+            String localeString = user.getFirstAttribute(UserModel.LOCALE);
             Locale locale =  findLocale(realm.getSupportedLocales(), localeString);
             if(locale != null){
 

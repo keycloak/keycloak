@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import java.util.Comparator;
 import java.io.Serializable;
 
 /**
@@ -9,8 +10,19 @@ import java.io.Serializable;
 public class AuthenticationExecutionModel implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    public static class ExecutionComparator implements Comparator<AuthenticationExecutionModel> {
+        public static final ExecutionComparator SINGLETON = new ExecutionComparator();
+
+        @Override
+        public int compare(AuthenticationExecutionModel o1, AuthenticationExecutionModel o2) {
+            return o1.priority - o2.priority;
+        }
+    }
+
     private String id;
+    private String authenticatorConfig;
     private String authenticator;
+    private String flowId;
     private boolean autheticatorFlow;
     private Requirement requirement;
     private boolean userSetupAllowed;
@@ -23,6 +35,14 @@ public class AuthenticationExecutionModel implements Serializable {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getAuthenticatorConfig() {
+        return authenticatorConfig;
+    }
+
+    public void setAuthenticatorConfig(String authenticatorConfig) {
+        this.authenticatorConfig = authenticatorConfig;
     }
 
     public String getAuthenticator() {
@@ -63,6 +83,19 @@ public class AuthenticationExecutionModel implements Serializable {
 
     public void setParentFlow(String parentFlow) {
         this.parentFlow = parentFlow;
+    }
+
+    /**
+     * If this execution is a flow, this is the flowId pointing to an AuthenticationFlowModel
+     *
+     * @return
+     */
+    public String getFlowId() {
+        return flowId;
+    }
+
+    public void setFlowId(String flowId) {
+        this.flowId = flowId;
     }
 
     /**

@@ -19,7 +19,6 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.CredentialEntity;
 import org.keycloak.models.entities.UserConsentEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
@@ -127,12 +126,24 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
-    public void setAttribute(String name, String value) {
+    public void setSingleAttribute(String name, String value) {
         if (user.getAttributes() == null) {
-            user.setAttributes(new HashMap<String, String>());
+            user.setAttributes(new HashMap<String, List<String>>());
         }
 
-        user.getAttributes().put(name, value);
+        List<String> attrValues = new ArrayList<>();
+        attrValues.add(value);
+        user.getAttributes().put(name, attrValues);
+        updateUser();
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        if (user.getAttributes() == null) {
+            user.setAttributes(new HashMap<String, List<String>>());
+        }
+
+        user.getAttributes().put(name, values);
         updateUser();
     }
 
@@ -145,13 +156,23 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
-    public String getAttribute(String name) {
-        return user.getAttributes()==null ? null : user.getAttributes().get(name);
+    public String getFirstAttribute(String name) {
+        if (user.getAttributes()==null) return null;
+
+        List<String> attrValues = user.getAttributes().get(name);
+        return (attrValues==null || attrValues.isEmpty()) ? null : attrValues.get(0);
     }
 
     @Override
-    public Map<String, String> getAttributes() {
-        return user.getAttributes()==null ? Collections.<String, String>emptyMap() : Collections.unmodifiableMap(user.getAttributes());
+    public List<String> getAttribute(String name) {
+        if (user.getAttributes()==null) return Collections.<String>emptyList();
+        List<String> attrValues = user.getAttributes().get(name);
+        return (attrValues == null) ? Collections.<String>emptyList() : Collections.unmodifiableList(attrValues);
+    }
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
+        return user.getAttributes()==null ? Collections.<String, List<String>>emptyMap() : Collections.unmodifiableMap((Map)user.getAttributes());
     }
 
     public MongoUserEntity getUser() {
@@ -332,16 +353,6 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
         return result;
     }
-
-    @Override
-    public boolean configuredForCredentialType(String type) {
-        List<UserCredentialValueModel> creds = getCredentialsDirectly();
-        for (UserCredentialValueModel cred : creds) {
-            if (cred.getType().equals(type)) return true;
-        }
-        return false;
-    }
-
 
     @Override
     public void updateCredentialDirectly(UserCredentialValueModel credModel) {

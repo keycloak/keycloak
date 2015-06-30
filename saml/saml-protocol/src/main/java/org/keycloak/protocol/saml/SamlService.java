@@ -1,11 +1,11 @@
 package org.keycloak.protocol.saml;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.ClientConnection;
 import org.keycloak.VerificationException;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
@@ -16,23 +16,23 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.managers.HttpAuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.util.StreamUtil;
@@ -47,16 +47,14 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
+import java.util.List;
 
 /**
  * Resource class for the oauth/openid connect token service
@@ -262,7 +260,7 @@ public class SamlService {
             ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
             clientSession.setAuthMethod(SamlProtocol.LOGIN_PROTOCOL);
             clientSession.setRedirectUri(redirect);
-            clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE);
+            clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
             clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
             clientSession.setNote(SamlProtocol.SAML_BINDING, bindingType);
             clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
@@ -282,34 +280,44 @@ public class SamlService {
                 }
             }
 
-            Response response = authManager.checkNonFormAuthentication(session, clientSession, realm, uriInfo, request, clientConnection, headers, event);
-            if (response != null) return response;
-
-            // SPNEGO/Kerberos authentication TODO: This should be somehow pluggable instead of hardcoded this way (Authentication interceptors?)
-            HttpAuthenticationManager httpAuthManager = new HttpAuthenticationManager(session, clientSession, realm, uriInfo, request, clientConnection, event);
-            HttpAuthenticationManager.HttpAuthOutput httpAuthOutput = httpAuthManager.spnegoAuthenticate(headers);
-            if (httpAuthOutput.getResponse() != null) return httpAuthOutput.getResponse();
-
-            LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class)
-                    .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode());
-
-            // Attach state from SPNEGO authentication
-            if (httpAuthOutput.getChallenge() != null) {
-                httpAuthOutput.getChallenge().sendChallenge(forms);
-            }
-
-            String rememberMeUsername = AuthenticationManager.getRememberMeUsername(realm, headers);
-
-            if (rememberMeUsername != null) {
-                MultivaluedMap<String, String> formData = new MultivaluedMapImpl<String, String>();
-                formData.add(AuthenticationManager.FORM_USERNAME, rememberMeUsername);
-                formData.add("rememberMe", "on");
-
-                forms.setFormData(formData);
-            }
-
-            return forms.createLogin();
+            return newBrowserAuthentication(clientSession);
         }
+
+        private Response buildRedirectToIdentityProvider(String providerId, String accessCode) {
+            logger.debug("Automatically redirect to identity provider: " + providerId);
+            return Response.temporaryRedirect(
+                    Urls.identityProviderAuthnRequest(uriInfo.getBaseUri(), providerId, realm.getName(), accessCode))
+                    .build();
+        }
+
+
+        protected Response newBrowserAuthentication(ClientSessionModel clientSession) {
+            List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
+            for (IdentityProviderModel identityProvider : identityProviders) {
+                if (identityProvider.isAuthenticateByDefault()) {
+                    return buildRedirectToIdentityProvider(identityProvider.getAlias(), new ClientSessionCode(realm, clientSession).getCode() );
+                }
+            }
+            AuthenticationFlowModel flow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+            String flowId = flow.getId();
+            AuthenticationProcessor processor = new AuthenticationProcessor();
+            processor.setClientSession(clientSession)
+                    .setFlowId(flowId)
+                    .setConnection(clientConnection)
+                    .setEventBuilder(event)
+                    .setProtector(authManager.getProtector())
+                    .setRealm(realm)
+                    .setSession(session)
+                    .setUriInfo(uriInfo)
+                    .setRequest(request);
+
+            try {
+                return processor.authenticate();
+            } catch (Exception e) {
+                return processor.handleBrowserException(e);
+            }
+        }
+
 
         private String getBindingType(AuthnRequestType requestAbstractType) {
             URI requestedProtocolBinding = requestAbstractType.getProtocolBinding();
@@ -365,7 +373,7 @@ public class SamlService {
                 // remove client from logout requests
                 for (ClientSessionModel clientSession : userSession.getClientSessions()) {
                     if (clientSession.getClient().getId().equals(client.getId())) {
-                        clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
+                        clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
                     }
                 }
                 logger.debug("browser Logout");
@@ -377,13 +385,13 @@ public class SamlService {
                     UserSessionModel userSession = clientSession.getUserSession();
                     if (clientSession.getClient().getClientId().equals(client.getClientId())) {
                         // remove requesting client from logout
-                        clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT);
+                        clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
 
                         // Remove also other clientSessions of this client as there could be more in this UserSession
                         if (userSession != null) {
                             for (ClientSessionModel clientSession2 : userSession.getClientSessions()) {
                                 if (clientSession2.getClient().getId().equals(client.getId())) {
-                                    clientSession2.setAction(ClientSessionModel.Action.LOGGED_OUT);
+                                    clientSession2.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
                                 }
                             }
                         }
@@ -514,7 +522,6 @@ public class SamlService {
                                     @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
                                     @QueryParam(GeneralConstants.RELAY_STATE) String relayState) {
         logger.debug("SAML GET");
-        //String uri = uriInfo.getRequestUri().toString();
         return new RedirectBindingProtocol().execute(samlRequest, samlResponse, relayState);
     }
 

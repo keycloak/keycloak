@@ -3,13 +3,14 @@ package org.keycloak.models.cache.entities;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
@@ -82,7 +83,9 @@ public class CachedRealm implements Serializable {
     private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, AuthenticationFlowModel> authenticationFlows = new HashMap<>();
-    private Map<String, AuthenticatorModel> authenticators = new HashMap<>();
+    private Map<String, AuthenticatorConfigModel> authenticatorConfigs = new HashMap<>();
+    private Map<String, RequiredActionProviderModel> requiredActionProviders = new HashMap<>();
+    private Map<String, RequiredActionProviderModel> requiredActionProvidersByAlias = new HashMap<>();
     private MultivaluedHashMap<String, AuthenticationExecutionModel> authenticationExecutions = new MultivaluedHashMap<>();
     private Map<String, AuthenticationExecutionModel> executionsById = new HashMap<>();
 
@@ -199,8 +202,12 @@ public class CachedRealm implements Serializable {
                 executionsById.put(execution.getId(), execution);
             }
         }
-        for (AuthenticatorModel authenticator : model.getAuthenticators()) {
-            authenticators.put(authenticator.getId(), authenticator);
+        for (AuthenticatorConfigModel authenticator : model.getAuthenticatorConfigs()) {
+            authenticatorConfigs.put(authenticator.getId(), authenticator);
+        }
+        for (RequiredActionProviderModel action : model.getRequiredActionProviders()) {
+            requiredActionProviders.put(action.getId(), action);
+            requiredActionProvidersByAlias.put(action.getAlias(), action);
         }
 
     }
@@ -429,8 +436,8 @@ public class CachedRealm implements Serializable {
         return authenticationFlows;
     }
 
-    public Map<String, AuthenticatorModel> getAuthenticators() {
-        return authenticators;
+    public Map<String, AuthenticatorConfigModel> getAuthenticatorConfigs() {
+        return authenticatorConfigs;
     }
 
     public MultivaluedHashMap<String, AuthenticationExecutionModel> getAuthenticationExecutions() {
@@ -439,5 +446,13 @@ public class CachedRealm implements Serializable {
 
     public Map<String, AuthenticationExecutionModel> getExecutionsById() {
         return executionsById;
+    }
+
+    public Map<String, RequiredActionProviderModel> getRequiredActionProviders() {
+        return requiredActionProviders;
+    }
+
+    public Map<String, RequiredActionProviderModel> getRequiredActionProvidersByAlias() {
+        return requiredActionProvidersByAlias;
     }
 }

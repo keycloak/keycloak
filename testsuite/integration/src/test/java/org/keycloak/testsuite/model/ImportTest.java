@@ -140,6 +140,22 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals(1, appRoles.size());
         Assert.assertEquals("app-admin", appRoles.iterator().next().getName());
 
+        // Test attributes
+        Map<String, List<String>> attrs = wburke.getAttributes();
+        Assert.assertEquals(1, attrs.size());
+        List<String> attrVals = attrs.get("email");
+        Assert.assertEquals(1, attrVals.size());
+        Assert.assertEquals("bburke@redhat.com", attrVals.get(0));
+
+        attrs = admin.getAttributes();
+        Assert.assertEquals(2, attrs.size());
+        attrVals = attrs.get("key1");
+        Assert.assertEquals(1, attrVals.size());
+        Assert.assertEquals("val1", attrVals.get(0));
+        attrVals = attrs.get("key2");
+        Assert.assertEquals(2, attrVals.size());
+        Assert.assertTrue(attrVals.contains("val21") && attrVals.contains("val22"));
+
         // Test client
         ClientModel oauthClient = realm.getClientByClientId("oauthclient");
         Assert.assertEquals("clientpassword", oauthClient.getSecret());

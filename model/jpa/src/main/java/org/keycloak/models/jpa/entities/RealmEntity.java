@@ -155,7 +155,10 @@ public class RealmEntity {
     Collection<IdentityProviderMapperEntity> identityProviderMappers = new ArrayList<IdentityProviderMapperEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<AuthenticatorEntity> authenticators = new ArrayList<>();
+    Collection<AuthenticatorConfigEntity> authenticators = new ArrayList<>();
+
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    Collection<RequiredActionProviderEntity> requiredActionProviders = new ArrayList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<AuthenticationFlowEntity> authenticationFlows = new ArrayList<>();
@@ -553,12 +556,20 @@ public class RealmEntity {
         this.identityProviderMappers = identityProviderMappers;
     }
 
-    public Collection<AuthenticatorEntity> getAuthenticators() {
+    public Collection<AuthenticatorConfigEntity> getAuthenticatorConfigs() {
         return authenticators;
     }
 
-    public void setAuthenticators(Collection<AuthenticatorEntity> authenticators) {
+    public void setAuthenticatorConfigs(Collection<AuthenticatorConfigEntity> authenticators) {
         this.authenticators = authenticators;
+    }
+
+    public Collection<RequiredActionProviderEntity> getRequiredActionProviders() {
+        return requiredActionProviders;
+    }
+
+    public void setRequiredActionProviders(Collection<RequiredActionProviderEntity> requiredActionProviders) {
+        this.requiredActionProviders = requiredActionProviders;
     }
 
     public Collection<AuthenticationFlowEntity> getAuthenticationFlows() {
@@ -568,5 +579,6 @@ public class RealmEntity {
     public void setAuthenticationFlows(Collection<AuthenticationFlowEntity> authenticationFlows) {
         this.authenticationFlows = authenticationFlows;
     }
+
 }
 

@@ -80,33 +80,37 @@ public class ClientSessionCode {
         return clientSession;
     }
 
-    public boolean isValid(ClientSessionModel.Action requestedAction) {
-        ClientSessionModel.Action action = clientSession.getAction();
+    public boolean isValid(String requestedAction) {
+        if (!isValidAction(requestedAction)) return false;
+        return isActionActive(requestedAction);
+    }
+
+    public boolean isActionActive(String requestedAction) {
+        int timestamp = clientSession.getTimestamp();
+
+        int lifespan;
+        if (requestedAction.equals(ClientSessionModel.Action.CODE_TO_TOKEN.name())) {
+            lifespan = realm.getAccessCodeLifespan();
+
+        } else if (requestedAction.equals(ClientSessionModel.Action.AUTHENTICATE.name())) {
+            lifespan = realm.getAccessCodeLifespanLogin() > 0 ? realm.getAccessCodeLifespanLogin() : realm.getAccessCodeLifespanUserAction();
+        } else {
+            lifespan = realm.getAccessCodeLifespanUserAction();
+        }
+        return timestamp + lifespan > Time.currentTime();
+    }
+
+    public boolean isValidAction(String requestedAction) {
+        String action = clientSession.getAction();
         if (action == null) {
             return false;
         }
-
-        int timestamp = clientSession.getTimestamp();
-
         if (!action.equals(requestedAction)) {
             return false;
         }
-
-        int lifespan;
-        switch (action) {
-            case CODE_TO_TOKEN:
-                lifespan = realm.getAccessCodeLifespan();
-                break;
-            case AUTHENTICATE:
-                lifespan = realm.getAccessCodeLifespanLogin() > 0 ? realm.getAccessCodeLifespanLogin() : realm.getAccessCodeLifespanUserAction();
-                break;
-            default:
-                lifespan = realm.getAccessCodeLifespanUserAction();
-                break;
-        }
-
-        return timestamp + lifespan > Time.currentTime();
+        return true;
     }
+
 
     public Set<RoleModel> getRequestedRoles() {
         Set<RoleModel> requestedRoles = new HashSet<RoleModel>();
@@ -132,29 +136,10 @@ public class ClientSessionCode {
         return requestedProtocolMappers;
     }
 
-    public void setAction(ClientSessionModel.Action action) {
+    public void setAction(String action) {
         clientSession.setAction(action);
         clientSession.setNote(ACTION_KEY, UUID.randomUUID().toString());
         clientSession.setTimestamp(Time.currentTime());
-    }
-
-    public void setRequiredAction(RequiredAction requiredAction) {
-        setAction(convertToAction(requiredAction));
-    }
-
-    private ClientSessionModel.Action convertToAction(RequiredAction requiredAction) {
-        switch (requiredAction) {
-            case CONFIGURE_TOTP:
-                return ClientSessionModel.Action.CONFIGURE_TOTP;
-            case UPDATE_PASSWORD:
-                return ClientSessionModel.Action.UPDATE_PASSWORD;
-            case UPDATE_PROFILE:
-                return ClientSessionModel.Action.UPDATE_PROFILE;
-            case VERIFY_EMAIL:
-                return ClientSessionModel.Action.VERIFY_EMAIL;
-            default:
-                throw new IllegalArgumentException("Unknown required action " + requiredAction);
-        }
     }
 
     public String getCode() {

@@ -26,11 +26,15 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.authentication.authenticators.OTPFormAuthenticator;
+import org.keycloak.authentication.authenticators.OTPFormAuthenticatorFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.MailUtil;
@@ -46,6 +50,7 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.testsuite.utils.CredentialHelper;
 import org.openqa.selenium.WebDriver;
 
 import javax.mail.MessagingException;
@@ -155,7 +160,7 @@ public class RequiredActionEmailVerificationTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        Event sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail("username", "verifyEmail").detail("email", "email@mail.com").assertEvent();
+        Event sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail("username", "verifyemail").detail("email", "email@mail.com").assertEvent();
         String sessionId = sendEvent.getSessionId();
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
@@ -166,9 +171,9 @@ public class RequiredActionEmailVerificationTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectRequiredAction(EventType.VERIFY_EMAIL).user(userId).session(sessionId).detail("username", "verifyEmail").detail("email", "email@mail.com").detail(Details.CODE_ID, mailCodeId).assertEvent();
+        events.expectRequiredAction(EventType.VERIFY_EMAIL).user(userId).session(sessionId).detail("username", "verifyemail").detail("email", "email@mail.com").detail(Details.CODE_ID, mailCodeId).assertEvent();
 
-        events.expectLogin().user(userId).session(sessionId).detail("username", "verifyEmail").detail(Details.CODE_ID, mailCodeId).assertEvent();
+        events.expectLogin().user(userId).session(sessionId).detail("username", "verifyemail").detail(Details.CODE_ID, mailCodeId).assertEvent();
     }
 
     @Test

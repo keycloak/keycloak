@@ -53,8 +53,13 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public void setAttribute(String name, String value) {
-        delegate.setAttribute(name, value);
+    public void setSingleAttribute(String name, String value) {
+        delegate.setSingleAttribute(name, value);
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        delegate.setAttribute(name, values);
     }
 
     @Override
@@ -63,12 +68,17 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public String getAttribute(String name) {
+    public String getFirstAttribute(String name) {
+        return delegate.getFirstAttribute(name);
+    }
+
+    @Override
+    public List<String> getAttribute(String name) {
         return delegate.getAttribute(name);
     }
 
     @Override
-    public Map<String, String> getAttributes() {
+    public Map<String, List<String>> getAttributes() {
         return delegate.getAttributes();
     }
 
@@ -85,11 +95,6 @@ public class UserModelDelegate implements UserModel {
     @Override
     public void removeRequiredAction(String action) {
         delegate.removeRequiredAction(action);
-    }
-
-    @Override
-    public boolean configuredForCredentialType(String type) {
-        return delegate.configuredForCredentialType(type);
     }
 
     @Override

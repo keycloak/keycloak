@@ -12,6 +12,7 @@ public class AuthenticationFlowModel implements Serializable {
     private String id;
     private String alias;
     private String description;
+    private String providerId;
 
     public String getId() {
         return id;
@@ -35,5 +36,13 @@ public class AuthenticationFlowModel implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(String providerId) {
+        this.providerId = providerId;
     }
 }

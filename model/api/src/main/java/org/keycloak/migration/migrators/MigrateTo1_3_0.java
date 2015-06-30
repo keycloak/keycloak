@@ -9,6 +9,8 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.DefaultRequiredActions;
 
 import java.util.List;
 import java.util.Map;

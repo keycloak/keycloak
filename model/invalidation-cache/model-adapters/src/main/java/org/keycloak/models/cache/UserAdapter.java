@@ -11,6 +11,7 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.entities.CachedUser;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -78,9 +79,15 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public void setAttribute(String name, String value) {
+    public void setSingleAttribute(String name, String value) {
         getDelegateForUpdate();
-        updated.setAttribute(name, value);
+        updated.setSingleAttribute(name, value);
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        getDelegateForUpdate();
+        updated.setAttribute(name, values);
     }
 
     @Override
@@ -90,13 +97,20 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public String getAttribute(String name) {
-        if (updated != null) return updated.getAttribute(name);
-        return cached.getAttributes().get(name);
+    public String getFirstAttribute(String name) {
+        if (updated != null) return updated.getFirstAttribute(name);
+        return cached.getAttributes().getFirst(name);
     }
 
     @Override
-    public Map<String, String> getAttributes() {
+    public List<String> getAttribute(String name) {
+        if (updated != null) return updated.getAttribute(name);
+        List<String> result = cached.getAttributes().get(name);
+        return (result == null) ? Collections.<String>emptyList() : result;
+    }
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
         if (updated != null) return updated.getAttributes();
         return cached.getAttributes();
     }
@@ -129,15 +143,6 @@ public class UserAdapter implements UserModel {
     public void removeRequiredAction(String action) {
         getDelegateForUpdate();
         updated.removeRequiredAction(action);
-    }
-
-    @Override
-    public boolean configuredForCredentialType(String type) {
-        List<UserCredentialValueModel> creds = getCredentialsDirectly();
-        for (UserCredentialValueModel cred : creds) {
-            if (cred.getType().equals(type)) return true;
-        }
-        return false;
     }
 
     @Override

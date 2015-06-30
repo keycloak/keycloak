@@ -25,6 +25,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
@@ -266,7 +267,7 @@ public class FileUserProvider implements UserProvider {
     }
 
     @Override
-    public UserAdapter addUser(RealmModel realm, String id, String username, boolean addDefaultRoles) {
+    public UserAdapter addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
         if (inMemoryModel.hasUserWithUsername(realm.getId(), username.toLowerCase()))
             throw new ModelDuplicateException("User with username " + username + " already exists in realm.");
 
@@ -283,6 +284,15 @@ public class FileUserProvider implements UserProvider {
                 }
             }
         }
+
+        if (addDefaultRequiredActions) {
+            for (RequiredActionProviderModel r : realm.getRequiredActionProviders()) {
+                if (r.isEnabled() && r.isDefaultAction()) {
+                    userModel.addRequiredAction(r.getAlias());
+                }
+            }
+        }
+
 
         return userModel;
     }
@@ -358,7 +368,7 @@ public class FileUserProvider implements UserProvider {
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        return this.addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true);
+        return this.addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true, true);
     }
 
     @Override

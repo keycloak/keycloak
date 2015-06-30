@@ -180,6 +180,7 @@ public interface RealmModel extends RoleContainerModel {
     void setSmtpConfig(Map<String, String> smtpConfig);
 
     List<AuthenticationFlowModel> getAuthenticationFlows();
+    AuthenticationFlowModel getFlowByAlias(String alias);
     AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model);
     AuthenticationFlowModel getAuthenticationFlowById(String id);
     void removeAuthenticationFlow(AuthenticationFlowModel model);
@@ -192,11 +193,18 @@ public interface RealmModel extends RoleContainerModel {
     void removeAuthenticatorExecution(AuthenticationExecutionModel model);
 
 
-    List<AuthenticatorModel> getAuthenticators();
-    AuthenticatorModel addAuthenticator(AuthenticatorModel model);
-    void updateAuthenticator(AuthenticatorModel model);
-    void removeAuthenticator(AuthenticatorModel model);
-    AuthenticatorModel getAuthenticatorById(String id);
+    List<AuthenticatorConfigModel> getAuthenticatorConfigs();
+    AuthenticatorConfigModel addAuthenticatorConfig(AuthenticatorConfigModel model);
+    void updateAuthenticatorConfig(AuthenticatorConfigModel model);
+    void removeAuthenticatorConfig(AuthenticatorConfigModel model);
+    AuthenticatorConfigModel getAuthenticatorConfigById(String id);
+
+    List<RequiredActionProviderModel> getRequiredActionProviders();
+    RequiredActionProviderModel addRequiredActionProvider(RequiredActionProviderModel model);
+    void updateRequiredActionProvider(RequiredActionProviderModel model);
+    void removeRequiredActionProvider(RequiredActionProviderModel model);
+    RequiredActionProviderModel getRequiredActionProviderById(String id);
+    RequiredActionProviderModel getRequiredActionProviderByAlias(String alias);
 
     List<IdentityProviderModel> getIdentityProviders();
     IdentityProviderModel getIdentityProviderByAlias(String alias);

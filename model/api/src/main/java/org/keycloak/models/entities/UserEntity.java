@@ -1,7 +1,5 @@
 package org.keycloak.models.entities;
 
-import org.keycloak.models.UserModel;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +21,7 @@ public class UserEntity extends AbstractIdentifiableEntity {
 
     private List<String> roleIds;
 
-    private Map<String, String> attributes;
+    private Map<String, List<String>> attributes;
     private List<String> requiredActions;
     private List<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
     private List<FederatedIdentityEntity> federatedIdentities;
@@ -101,11 +99,11 @@ public class UserEntity extends AbstractIdentifiableEntity {
         this.roleIds = roleIds;
     }
 
-    public Map<String, String> getAttributes() {
+    public Map<String, List<String>> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(Map<String, String> attributes) {
+    public void setAttributes(Map<String, List<String>> attributes) {
         this.attributes = attributes;
     }
 

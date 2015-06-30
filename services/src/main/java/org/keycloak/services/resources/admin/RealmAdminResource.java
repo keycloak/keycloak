@@ -6,6 +6,8 @@ import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
+import org.keycloak.authentication.RequiredActionFactory;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
@@ -25,6 +27,7 @@ import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -53,7 +56,6 @@ import javax.ws.rs.core.UriInfo;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -234,6 +236,15 @@ public class RealmAdminResource {
         ResteasyProviderFactory.getInstance().injectProperties(fed);
         //resourceContext.initResource(fed);
         return fed;
+    }
+
+    @Path("authentication")
+    public AuthenticationManagementResource flows() {
+        AuthenticationManagementResource resource = new AuthenticationManagementResource(realm, session, auth, adminEvent);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        //resourceContext.initResource(resource);
+        return resource;
+
     }
 
     /**
@@ -553,4 +564,5 @@ public class RealmAdminResource {
     public IdentityProvidersResource getIdentityProviderResource() {
         return new IdentityProvidersResource(realm, session, this.auth, adminEvent);
     }
+
 }

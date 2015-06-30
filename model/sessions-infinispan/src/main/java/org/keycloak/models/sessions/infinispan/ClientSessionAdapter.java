@@ -10,6 +10,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -99,12 +100,12 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
-    public Action getAction() {
+    public String getAction() {
         return entity.getAction();
     }
 
     @Override
-    public void setAction(Action action) {
+    public void setAction(String action) {
         entity.setAction(action);
         update();
     }
@@ -164,23 +165,60 @@ public class ClientSessionAdapter implements ClientSessionModel {
         }
     }
 
+    @Override
+    public Map<String, String> getNotes() {
+        if (entity.getNotes() == null || entity.getNotes().isEmpty()) return Collections.emptyMap();
+        Map<String, String> copy = new HashMap<>();
+        copy.putAll(entity.getNotes());
+        return copy;
+    }
+
+    @Override
+    public void setUserSessionNote(String name, String value) {
+        if (entity.getUserSessionNotes() == null) {
+            entity.setUserSessionNotes(new HashMap<String, String>());
+        }
+        entity.getNotes().put(name, value);
+        update();
+
+    }
+
+    @Override
+    public Map<String, String> getUserSessionNotes() {
+        if (entity.getUserSessionNotes() == null) {
+            return Collections.EMPTY_MAP;
+        }
+        HashMap<String, String> copy = new HashMap<>();
+        copy.putAll(entity.getUserSessionNotes());
+        return copy;
+    }
+
+    @Override
+    public void clearUserSessionNotes() {
+        entity.setUserSessionNotes(new HashMap<String, String>());
+        update();
+
+    }
+
     void update() {
         provider.getTx().replace(cache, entity.getId(), entity);
     }
     @Override
-    public Map<String, UserSessionModel.AuthenticatorStatus> getAuthenticators() {
+    public Map<String, ExecutionStatus> getExecutionStatus() {
         return entity.getAuthenticatorStatus();
     }
 
     @Override
-    public void setAuthenticatorStatus(String authenticator, UserSessionModel.AuthenticatorStatus status) {
+    public void setExecutionStatus(String authenticator, ExecutionStatus status) {
         entity.getAuthenticatorStatus().put(authenticator, status);
+        update();
 
     }
 
     @Override
-    public void setAuthenticatorStatus(Map<String, UserSessionModel.AuthenticatorStatus> status) {
-        entity.setAuthenticatorStatus(status);
+    public void clearExecutionStatus() {
+        entity.getAuthenticatorStatus().clear();
+        update();
     }
 
     @Override
@@ -190,6 +228,7 @@ public class ClientSessionAdapter implements ClientSessionModel {
     @Override
     public void setAuthenticatedUser(UserModel user) {
         entity.setAuthUserId(user.getId());
+        update();
 
     }
 

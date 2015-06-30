@@ -18,6 +18,7 @@ import org.keycloak.util.Time;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -46,6 +47,13 @@ public class JpaUserSessionProvider implements UserSessionProvider {
 
         return new ClientSessionAdapter(session, em, realm, entity);
     }
+
+    @Override
+    public void removeClientSession(RealmModel realm, ClientSessionModel clientSession) {
+        ClientSessionEntity clientSessionEntity = ((ClientSessionAdapter)clientSession).getEntity();
+        em.remove(clientSessionEntity);
+        em.flush();
+   }
 
     @Override
     public ClientSessionModel getClientSession(RealmModel realm, String id) {

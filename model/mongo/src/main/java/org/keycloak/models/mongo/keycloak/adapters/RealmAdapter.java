@@ -7,7 +7,7 @@ import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -16,6 +16,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperEventImpl;
@@ -24,9 +25,10 @@ import org.keycloak.models.UserFederationProviderCreationEventImpl;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.entities.AuthenticationExecutionEntity;
 import org.keycloak.models.entities.AuthenticationFlowEntity;
-import org.keycloak.models.entities.AuthenticatorEntity;
+import org.keycloak.models.entities.AuthenticatorConfigEntity;
 import org.keycloak.models.entities.IdentityProviderEntity;
 import org.keycloak.models.entities.IdentityProviderMapperEntity;
+import org.keycloak.models.entities.RequiredActionProviderEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
 import org.keycloak.models.entities.UserFederationMapperEntity;
 import org.keycloak.models.entities.UserFederationProviderEntity;
@@ -1290,6 +1292,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return models;
     }
 
+    @Override
+    public AuthenticationFlowModel getFlowByAlias(String alias) {
+        for (AuthenticationFlowModel flow : getAuthenticationFlows()) {
+            if (flow.getAlias().equals(alias)) {
+                return flow;
+            }
+        }
+        return null;
+    }
+
+
     protected AuthenticationFlowModel entityToModel(AuthenticationFlowEntity entity) {
         AuthenticationFlowModel model = new AuthenticationFlowModel();
         model.setId(entity.getId());
@@ -1328,6 +1341,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         if (toUpdate == null) return;
         toUpdate.setAlias(model.getAlias());
         toUpdate.setDescription(model.getDescription());
+        toUpdate.setProviderId(model.getProviderId());
         updateMongoEntity();
     }
 
@@ -1337,6 +1351,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setId(KeycloakModelUtils.generateId());
         entity.setAlias(model.getAlias());
         entity.setDescription(model.getDescription());
+        entity.setProviderId(model.getProviderId());
         getMongoEntity().getAuthenticationFlows().add(entity);
         model.setId(entity.getId());
         updateMongoEntity();
@@ -1354,6 +1369,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             AuthenticationExecutionModel model = entityToModel(entity);
             executions.add(model);
         }
+        Collections.sort(executions, AuthenticationExecutionModel.ExecutionComparator.SINGLETON);
         return executions;
     }
 
@@ -1364,6 +1380,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         model.setRequirement(entity.getRequirement());
         model.setPriority(entity.getPriority());
         model.setAuthenticator(entity.getAuthenticator());
+        model.setFlowId(entity.getFlowId());
         model.setParentFlow(entity.getParentFlow());
         model.setAutheticatorFlow(entity.isAuthenticatorFlow());
         return model;
@@ -1396,6 +1413,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setRequirement(model.getRequirement());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
         entity.setAuthenticatorFlow(model.isAutheticatorFlow());
+        entity.setFlowId(model.getFlowId());
         entity.setParentFlow(model.getParentFlow());
         AuthenticationFlowEntity flow = getFlowEntity(model.getParentFlow());
         flow.getExecutions().add(entity);
@@ -1419,6 +1437,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
+        entity.setFlowId(model.getFlowId());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
         updateMongoEntity();
     }
@@ -1439,46 +1458,45 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public List<AuthenticatorModel> getAuthenticators() {
-        List<AuthenticatorModel> authenticators = new LinkedList<>();
-        for (AuthenticatorEntity entity : getMongoEntity().getAuthenticators()) {
+    public List<AuthenticatorConfigModel> getAuthenticatorConfigs() {
+        List<AuthenticatorConfigModel> authenticators = new LinkedList<>();
+        for (AuthenticatorConfigEntity entity : getMongoEntity().getAuthenticatorConfigs()) {
             authenticators.add(entityToModel(entity));
         }
         return authenticators;
     }
 
     @Override
-    public AuthenticatorModel addAuthenticator(AuthenticatorModel model) {
-        AuthenticatorEntity auth = new AuthenticatorEntity();
+    public AuthenticatorConfigModel addAuthenticatorConfig(AuthenticatorConfigModel model) {
+        AuthenticatorConfigEntity auth = new AuthenticatorConfigEntity();
         auth.setId(KeycloakModelUtils.generateId());
         auth.setAlias(model.getAlias());
-        auth.setProviderId(model.getProviderId());
         auth.setConfig(model.getConfig());
-        realm.getAuthenticators().add(auth);
+        realm.getAuthenticatorConfigs().add(auth);
         model.setId(auth.getId());
         updateMongoEntity();
         return model;
     }
 
     @Override
-    public void removeAuthenticator(AuthenticatorModel model) {
-        AuthenticatorEntity entity = getAuthenticatorEntity(model.getId());
+    public void removeAuthenticatorConfig(AuthenticatorConfigModel model) {
+        AuthenticatorConfigEntity entity = getAuthenticatorConfigEntity(model.getId());
         if (entity == null) return;
-        getMongoEntity().getAuthenticators().remove(entity);
+        getMongoEntity().getAuthenticatorConfigs().remove(entity);
         updateMongoEntity();
 
     }
 
     @Override
-    public AuthenticatorModel getAuthenticatorById(String id) {
-        AuthenticatorEntity entity = getAuthenticatorEntity(id);
+    public AuthenticatorConfigModel getAuthenticatorConfigById(String id) {
+        AuthenticatorConfigEntity entity = getAuthenticatorConfigEntity(id);
         if (entity == null) return null;
         return entityToModel(entity);
     }
 
-    public AuthenticatorEntity getAuthenticatorEntity(String id) {
-        AuthenticatorEntity entity = null;
-        for (AuthenticatorEntity auth : getMongoEntity().getAuthenticators()) {
+    public AuthenticatorConfigEntity getAuthenticatorConfigEntity(String id) {
+        AuthenticatorConfigEntity entity = null;
+        for (AuthenticatorConfigEntity auth : getMongoEntity().getAuthenticatorConfigs()) {
             if (auth.getId().equals(id)) {
                 entity = auth;
                 break;
@@ -1487,10 +1505,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return entity;
     }
 
-    public AuthenticatorModel entityToModel(AuthenticatorEntity entity) {
-        AuthenticatorModel model = new AuthenticatorModel();
+    public AuthenticatorConfigModel entityToModel(AuthenticatorConfigEntity entity) {
+        AuthenticatorConfigModel model = new AuthenticatorConfigModel();
         model.setId(entity.getId());
-        model.setProviderId(entity.getProviderId());
         model.setAlias(entity.getAlias());
         Map<String, String> config = new HashMap<>();
         if (entity.getConfig() != null) config.putAll(entity.getConfig());
@@ -1499,11 +1516,10 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public void updateAuthenticator(AuthenticatorModel model) {
-        AuthenticatorEntity entity = getAuthenticatorEntity(model.getId());
+    public void updateAuthenticatorConfig(AuthenticatorConfigModel model) {
+        AuthenticatorConfigEntity entity = getAuthenticatorConfigEntity(model.getId());
         if (entity == null) return;
         entity.setAlias(model.getAlias());
-        entity.setProviderId(model.getProviderId());
         if (entity.getConfig() == null) {
             entity.setConfig(model.getConfig());
         } else {
@@ -1512,6 +1528,97 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         }
         updateMongoEntity();
     }
+
+    @Override
+    public RequiredActionProviderModel addRequiredActionProvider(RequiredActionProviderModel model) {
+        RequiredActionProviderEntity auth = new RequiredActionProviderEntity();
+        auth.setId(KeycloakModelUtils.generateId());
+        auth.setAlias(model.getAlias());
+        auth.setProviderId(model.getProviderId());
+        auth.setConfig(model.getConfig());
+        auth.setEnabled(model.isEnabled());
+        auth.setDefaultAction(model.isDefaultAction());
+        realm.getRequiredActionProviders().add(auth);
+        model.setId(auth.getId());
+        updateMongoEntity();
+        return model;
+    }
+
+    @Override
+    public void removeRequiredActionProvider(RequiredActionProviderModel model) {
+        RequiredActionProviderEntity entity = getRequiredActionProviderEntity(model.getId());
+        if (entity == null) return;
+        getMongoEntity().getRequiredActionProviders().remove(entity);
+        updateMongoEntity();
+    }
+
+    @Override
+    public RequiredActionProviderModel getRequiredActionProviderById(String id) {
+        RequiredActionProviderEntity entity = getRequiredActionProviderEntity(id);
+        if (entity == null) return null;
+        return entityToModel(entity);
+    }
+
+    public RequiredActionProviderModel entityToModel(RequiredActionProviderEntity entity) {
+        RequiredActionProviderModel model = new RequiredActionProviderModel();
+        model.setId(entity.getId());
+        model.setProviderId(entity.getProviderId());
+        model.setAlias(entity.getAlias());
+        model.setEnabled(entity.isEnabled());
+        model.setDefaultAction(entity.isDefaultAction());
+        Map<String, String> config = new HashMap<>();
+        if (entity.getConfig() != null) config.putAll(entity.getConfig());
+        model.setConfig(config);
+        return model;
+    }
+
+    @Override
+    public void updateRequiredActionProvider(RequiredActionProviderModel model) {
+        RequiredActionProviderEntity entity = getRequiredActionProviderEntity(model.getId());
+        if (entity == null) return;
+        entity.setAlias(model.getAlias());
+        entity.setProviderId(model.getProviderId());
+        entity.setEnabled(model.isEnabled());
+        entity.setDefaultAction(model.isDefaultAction());
+        if (entity.getConfig() == null) {
+            entity.setConfig(model.getConfig());
+        } else {
+            entity.getConfig().clear();
+            entity.getConfig().putAll(model.getConfig());
+        }
+        updateMongoEntity();
+    }
+
+    @Override
+    public List<RequiredActionProviderModel> getRequiredActionProviders() {
+        List<RequiredActionProviderModel> actions = new LinkedList<>();
+        for (RequiredActionProviderEntity entity : realm.getRequiredActionProviders()) {
+            actions.add(entityToModel(entity));
+        }
+        return actions;
+    }
+
+    public RequiredActionProviderEntity getRequiredActionProviderEntity(String id) {
+        RequiredActionProviderEntity entity = null;
+        for (RequiredActionProviderEntity auth : getMongoEntity().getRequiredActionProviders()) {
+            if (auth.getId().equals(id)) {
+                entity = auth;
+                break;
+            }
+        }
+        return entity;
+    }
+
+    @Override
+    public RequiredActionProviderModel getRequiredActionProviderByAlias(String alias) {
+        for (RequiredActionProviderModel action : getRequiredActionProviders()) {
+            if (action.getAlias().equals(alias)) return action;
+        }
+        return null;
+    }
+
+
+
 
 
     @Override

@@ -43,6 +43,7 @@ import org.keycloak.util.UriUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -796,7 +797,7 @@ public class RepresentationToModel {
         convertDeprecatedSocialProviders(userRep);
 
         // Import users just to user storage. Don't federate
-        UserModel user = session.userStorage().addUser(newRealm, userRep.getId(), userRep.getUsername(), false);
+        UserModel user = session.userStorage().addUser(newRealm, userRep.getId(), userRep.getUsername(), false, false);
         user.setEnabled(userRep.isEnabled());
         user.setEmail(userRep.getEmail());
         user.setEmailVerified(userRep.isEmailVerified());
@@ -805,8 +806,17 @@ public class RepresentationToModel {
         user.setFederationLink(userRep.getFederationLink());
         user.setTotp(userRep.isTotp());
         if (userRep.getAttributes() != null) {
-            for (Map.Entry<String, String> entry : userRep.getAttributes().entrySet()) {
-                user.setAttribute(entry.getKey(), entry.getValue());
+            for (Map.Entry<String, Object> entry : userRep.getAttributes().entrySet()) {
+                Object value = entry.getValue();
+
+                if (value instanceof Collection) {
+                    Collection<String> colVal = (Collection<String>) value;
+                    user.setAttribute(entry.getKey(), new ArrayList<>(colVal));
+                } else if (value instanceof String) {
+                    // TODO: This is here just for backwards compatibility with KC 1.3 and earlier
+                    String stringVal = (String) value;
+                    user.setSingleAttribute(entry.getKey(), stringVal);
+                }
             }
         }
         if (userRep.getRequiredActions() != null) {

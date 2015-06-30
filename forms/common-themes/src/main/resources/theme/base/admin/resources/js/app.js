@@ -273,15 +273,6 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmDefaultRolesCtrl'
         })
-        .when('/realms/:realm/required-credentials', {
-            templateUrl : resourceUrl + '/partials/realm-credentials.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return RealmLoader();
-                }
-            },
-            controller : 'RealmRequiredCredentialsCtrl'
-        })
         .when('/realms/:realm/smtp-settings', {
             templateUrl : resourceUrl + '/partials/realm-smtp.html',
             resolve : {
@@ -1045,6 +1036,33 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ProtocolListCtrl'
         })
+        .when('/realms/:realm/authentication/flows', {
+            templateUrl : resourceUrl + '/partials/authentication-flows.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'AuthenticationFlowsCtrl'
+        })
+        .when('/realms/:realm/authentication/required-actions', {
+            templateUrl : resourceUrl + '/partials/required-actions.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RequiredActionsCtrl'
+        })
+        .when('/realms/:realm/authentication/password-policy', {
+            templateUrl : resourceUrl + '/partials/password-policy.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmPasswordPolicyCtrl'
+        })
         .when('/server-info', {
             templateUrl : resourceUrl + '/partials/server-info.html'
         })
@@ -1489,6 +1507,15 @@ module.directive('kcTabsRealm', function () {
         restrict: 'E',
         replace: true,
         templateUrl: resourceUrl + '/templates/kc-tabs-realm.html'
+    }
+});
+
+module.directive('kcTabsAuthentication', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-authentication.html'
     }
 });
 

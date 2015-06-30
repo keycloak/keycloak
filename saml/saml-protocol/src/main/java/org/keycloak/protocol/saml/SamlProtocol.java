@@ -134,12 +134,9 @@ public class SamlProtocol implements LoginProtocol {
 
     @Override
     public Response cancelLogin(ClientSessionModel clientSession) {
-        return getErrorResponse(clientSession, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
-    }
-
-    @Override
-    public Response invalidSessionError(ClientSessionModel clientSession) {
-        return getErrorResponse(clientSession, JBossSAMLURIConstants.STATUS_AUTHNFAILED.get());
+        Response error = getErrorResponse(clientSession, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
+        session.sessions().removeClientSession(realm, clientSession);
+        return error;
     }
 
     protected String getResponseIssuer(RealmModel realm) {
@@ -241,11 +238,11 @@ public class SamlProtocol implements LoginProtocol {
             // generate a persistent user id specifically for each client.
             UserModel user = userSession.getUser();
             String name = SAML_PERSISTENT_NAME_ID_FOR + "." + clientSession.getClient().getClientId();
-            String samlPersistentId = user.getAttribute(name);
+            String samlPersistentId = user.getFirstAttribute(name);
             if (samlPersistentId != null) return samlPersistentId;
             // "G-" stands for "generated"
             samlPersistentId = "G-" + UUID.randomUUID().toString();
-            user.setAttribute(name, samlPersistentId);
+            user.setSingleAttribute(name, samlPersistentId);
             return samlPersistentId;
         } else if(nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get())){
             // TODO: Support for persistent NameID (pseudo-random identifier persisted in user object)

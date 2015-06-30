@@ -117,14 +117,14 @@ public class UserSessionProviderTest {
         int time = clientSession.getTimestamp();
         assertEquals(null, clientSession.getAction());
 
-        clientSession.setAction(ClientSessionModel.Action.CODE_TO_TOKEN);
+        clientSession.setAction(ClientSessionModel.Action.CODE_TO_TOKEN.name());
         clientSession.setTimestamp(time + 10);
 
         kc.stopSession(session, true);
         session = kc.startSession();
 
         ClientSessionModel updated = session.sessions().getClientSession(realm, id);
-        assertEquals(ClientSessionModel.Action.CODE_TO_TOKEN, updated.getAction());
+        assertEquals(ClientSessionModel.Action.CODE_TO_TOKEN.name(), updated.getAction());
         assertEquals(time + 10, updated.getTimestamp());
     }
 

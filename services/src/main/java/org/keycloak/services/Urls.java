@@ -128,15 +128,20 @@ public class Urls {
     }
 
     public static URI loginActionUpdatePassword(URI baseUri, String realmId) {
-        return requiredActionsBase(baseUri).path(LoginActionsService.class, "updatePassword").build(realmId);
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "updatePassword").build(realmId);
     }
 
     public static URI loginActionUpdateTotp(URI baseUri, String realmId) {
-        return requiredActionsBase(baseUri).path(LoginActionsService.class, "updateTotp").build(realmId);
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "updateTotp").build(realmId);
     }
 
+    public static UriBuilder requiredActionBase(URI baseUri) {
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "requiredAction");
+    }
+
+
     public static URI loginActionUpdateProfile(URI baseUri, String realmId) {
-        return requiredActionsBase(baseUri).path(LoginActionsService.class, "updateProfile").build(realmId);
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "updateProfile").build(realmId);
     }
 
     public static URI loginActionEmailVerification(URI baseUri, String realmId) {
@@ -144,7 +149,7 @@ public class Urls {
     }
 
     public static UriBuilder loginActionEmailVerificationBuilder(URI baseUri) {
-        return requiredActionsBase(baseUri).path(LoginActionsService.class, "emailVerification");
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "emailVerification");
     }
 
     public static URI loginPasswordReset(URI baseUri, String realmId) {
@@ -152,7 +157,7 @@ public class Urls {
     }
 
     public static UriBuilder loginPasswordResetBuilder(URI baseUri) {
-        return requiredActionsBase(baseUri).path(LoginActionsService.class, "passwordReset");
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "passwordReset");
     }
 
     public static URI loginUsernameReminder(URI baseUri, String realmId) {
@@ -160,7 +165,7 @@ public class Urls {
     }
 
     public static UriBuilder loginUsernameReminderBuilder(URI baseUri) {
-        return requiredActionsBase(baseUri).path(LoginActionsService.class, "usernameReminder");
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "usernameReminder");
     }
 
     public static String realmIssuer(URI baseUri, String realmId) {
@@ -171,12 +176,8 @@ public class Urls {
         return UriBuilder.fromUri(baseUri).path(RealmsResource.class);
     }
 
-    public static URI realmLoginAction(URI baseUri, String realmId) {
-        return requiredActionsBase(baseUri).path(LoginActionsService.class, "processLogin").build(realmId);
-    }
-
     public static URI realmLoginPage(URI baseUri, String realmId) {
-        return requiredActionsBase(baseUri).path(LoginActionsService.class, "loginPage").build(realmId);
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "authenticate").build(realmId);
     }
 
     private static UriBuilder realmLogout(URI baseUri) {
@@ -184,11 +185,11 @@ public class Urls {
     }
 
     public static URI realmRegisterAction(URI baseUri, String realmId) {
-        return requiredActionsBase(baseUri).path(LoginActionsService.class, "processRegister").build(realmId);
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "processRegister").build(realmId);
     }
 
     public static URI realmRegisterPage(URI baseUri, String realmId) {
-        return requiredActionsBase(baseUri).path(LoginActionsService.class, "registerPage").build(realmId);
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "registerPage").build(realmId);
     }
 
     public static URI realmInstalledAppUrnCallback(URI baseUri, String realmId) {
@@ -196,7 +197,7 @@ public class Urls {
     }
 
     public static URI realmOauthAction(URI baseUri, String realmId) {
-        return requiredActionsBase(baseUri).path(LoginActionsService.class, "processConsent").build(realmId);
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "processConsent").build(realmId);
     }
 
     public static String localeCookiePath(URI baseUri, String realmName){
@@ -207,7 +208,7 @@ public class Urls {
         return themeBase(baseUri).path(Version.RESOURCES_VERSION).build();
     }
 
-    private static UriBuilder requiredActionsBase(URI baseUri) {
+    private static UriBuilder loginActionsBase(URI baseUri) {
         return realmBase(baseUri).path(RealmsResource.class, "getLoginActionsService");
     }
 

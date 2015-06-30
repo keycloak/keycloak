@@ -1,9 +1,9 @@
 package org.keycloak.protocol.oidc.mappers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -35,6 +35,13 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
         OIDCAttributeMapperHelper.addAttributeConfig(configProperties);
+
+        property = new ProviderConfigProperty();
+        property.setName(ProtocolMapperUtils.MULTIVALUED);
+        property.setLabel(ProtocolMapperUtils.MULTIVALUED_LABEL);
+        property.setHelpText(ProtocolMapperUtils.MULTIVALUED_HELP_TEXT);
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        configProperties.add(property);
 
     }
 
@@ -77,7 +84,7 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
         UserModel user = userSession.getUser();
         String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
-        String attributeValue = user.getAttribute(attributeName);
+        List<String> attributeValue = user.getAttribute(attributeName);
         if (attributeValue == null) return;
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, attributeValue);
     }
@@ -93,12 +100,18 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
                                       String userAttribute,
                                       String tokenClaimName, String claimType,
                                       boolean consentRequired, String consentText,
-                                      boolean accessToken, boolean idToken) {
-        return OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
+                                      boolean accessToken, boolean idToken, boolean multivalued) {
+        ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
                 tokenClaimName, claimType,
                 consentRequired, consentText,
                 accessToken, idToken,
                 PROVIDER_ID);
+
+        if (multivalued) {
+            mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
+        }
+        
+        return mapper;
     }
 
 

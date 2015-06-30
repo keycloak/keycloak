@@ -371,8 +371,8 @@ module.controller('RealmCacheCtrl', function($scope, Current, Realm, realm, serv
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/cache-settings");
 });
 
-module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications, PasswordPolicy) {
-    console.log('RealmRequiredCredentialsCtrl');
+module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications, PasswordPolicy) {
+    console.log('RealmPasswordPolicyCtrl');
 
     $scope.realm = realm;
 
@@ -395,12 +395,6 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
         $scope.policy.splice(index, 1);
     }
 
-    $scope.userCredentialOptions = {
-        'multiple' : true,
-        'simple_tags' : true,
-        'tags' : ['password', 'totp', 'cert', 'kerberos']
-    };
-
     $scope.changed = false;
 
     $scope.$watch('realm', function() {
@@ -420,7 +414,7 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
         $scope.changed = false;
 
         Realm.update($scope.realm, function () {
-            $location.url("/realms/" + realm.realm + "/required-credentials");
+            $location.url("/realms/" + realm.realm + "/authentication/password-policy");
             Notifications.success("Your changes have been saved to the realm.");
             oldCopy = angular.copy($scope.realm);
             oldPolicy = angular.copy($scope.policy);
@@ -1571,6 +1565,73 @@ module.controller('IdentityProviderMapperCreateCtrl', function($scope, realm, id
 
 
 });
+
+module.controller('AuthenticationFlowsCtrl', function($scope, realm, AuthenticationExecutions, Notifications, Dialog, $location) {
+    $scope.realm = realm;
+    var setupForm = function() {
+        AuthenticationExecutions.query({realm: realm.realm, alias: 'browser'}, function(data) {
+            $scope.executions = data;
+            $scope.flowmax = 0;
+            for (var i = 0; i < $scope.executions.length; i++ ) {
+                execution = $scope.executions[i];
+                if (execution.requirementChoices.length > $scope.flowmax) {
+                    $scope.flowmax = execution.requirementChoices.length;
+                }
+            }
+            for (var i = 0; i < $scope.executions.length; i++ ) {
+                execution = $scope.executions[i];
+                execution.empties = [];
+                for (j = 0; j < $scope.flowmax - execution.requirementChoices.length; j++) {
+                    execution.empties.push(j);
+                }
+            }
+        })
+    };
+
+    $scope.updateExecution = function(execution) {
+        var copy = angular.copy(execution);
+        delete copy.empties;
+        AuthenticationExecutions.update({realm: realm.realm, alias: 'browser'}, copy, function() {
+            Notifications.success("Auth requirement updated");
+            setupForm();
+        });
+
+    };
+
+
+    setupForm();
+
+
+});
+
+module.controller('RequiredActionsCtrl', function($scope, realm, RequiredActions, Notifications, Dialog, $location) {
+    console.log('RequiredActionsCtrl');
+    $scope.realm = realm;
+    $scope.requiredActions = [];
+    var setupRequiredActionsForm = function() {
+        console.log('setupRequiredActionsForm');
+        RequiredActions.query({id: realm.realm}, function(data) {
+            $scope.requiredActions = [];
+            for (var i = 0; i < data.length; i++) {
+                $scope.requiredActions.push(data[i]);
+            }
+        });
+    };
+
+    $scope.updateRequiredAction = function(action) {
+        RequiredActions.update({id: realm.realm, alias: action.alias}, action, function() {
+            Notifications.success("Required action updated");
+            setupRequiredActionsForm();
+        });
+    }
+
+    setupRequiredActionsForm();
+
+
+});
+
+
+
 
 
 

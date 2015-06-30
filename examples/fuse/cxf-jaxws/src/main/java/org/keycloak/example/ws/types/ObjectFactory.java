@@ -30,27 +30,27 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetPersonResponse }
+     * Create an instance of {@link GetProductResponse }
      *
      */
-    public GetPersonResponse createGetPersonResponse() {
-        return new GetPersonResponse();
+    public GetProductResponse createGetProductResponse() {
+        return new GetProductResponse();
     }
 
     /**
-     * Create an instance of {@link GetPerson }
+     * Create an instance of {@link GetProduct }
      *
      */
-    public GetPerson createGetPerson() {
-        return new GetPerson();
+    public GetProduct createGetProduct() {
+        return new GetProduct();
     }
 
     /**
-     * Create an instance of {@link UnknownPersonFault }
+     * Create an instance of {@link UnknownProductFault }
      *
      */
-    public UnknownPersonFault createUnknownPersonFault() {
-        return new UnknownPersonFault();
+    public UnknownProductFault createUnknownProductFault() {
+        return new UnknownProductFault();
     }
 
 }

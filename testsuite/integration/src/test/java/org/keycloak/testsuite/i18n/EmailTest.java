@@ -54,7 +54,7 @@ public class EmailTest {
             UserModel user = manager.getSession().users().addUser(appRealm, "login-test");
             user.setEmail("login@test.com");
             user.setEnabled(true);
-            user.setAttribute(UserModel.LOCALE, "de");
+            user.setSingleAttribute(UserModel.LOCALE, "de");
 
             UserCredentialModel creds = new UserCredentialModel();
             creds.setType(CredentialRepresentation.PASSWORD);
@@ -91,7 +91,7 @@ public class EmailTest {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                manager.getSession().users().getUserByUsername("login-test", appRealm).setAttribute(UserModel.LOCALE, "en");
+                manager.getSession().users().getUserByUsername("login-test", appRealm).setSingleAttribute(UserModel.LOCALE, "en");
             }
         });
 

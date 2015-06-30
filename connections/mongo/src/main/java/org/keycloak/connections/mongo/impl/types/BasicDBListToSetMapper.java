@@ -23,7 +23,7 @@ public class BasicDBListToSetMapper implements Mapper<BasicDBList, Set> {
     public Set convertObject(MapperContext<BasicDBList, Set> context) {
         BasicDBList dbList = context.getObjectToConvert();
         Set<Object> appObjects = new HashSet<Object>();
-        Class<?> expectedListElementType = context.getGenericTypes().get(0);
+        Class<?> expectedListElementType = (Class<?>) context.getGenericTypes().get(0);
 
         for (Object dbObject : dbList) {
             MapperContext<Object, Object> newContext = new MapperContext<Object, Object>(dbObject, expectedListElementType, null);

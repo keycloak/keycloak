@@ -3,7 +3,8 @@ package org.keycloak.authentication.authenticators;
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
-import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -18,7 +19,7 @@ public class CookieAuthenticatorFactory implements AuthenticatorFactory {
     public static final String PROVIDER_ID = "auth-cookie";
     static CookieAuthenticator SINGLETON = new CookieAuthenticator();
     @Override
-    public Authenticator create(AuthenticatorModel model) {
+    public Authenticator create() {
         return SINGLETON;
     }
 
@@ -48,13 +49,25 @@ public class CookieAuthenticatorFactory implements AuthenticatorFactory {
     }
 
     @Override
-    public String getDisplayCategory() {
-        return "Complete Authenticator";
+    public String getReferenceType() {
+        return "cookie";
+    }
+
+    @Override
+    public boolean isConfigurable() {
+        return false;
+    }
+
+    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED};
+
+    @Override
+    public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
+        return REQUIREMENT_CHOICES;
     }
 
     @Override
     public String getDisplayType() {
-        return "Cookie Authenticator";
+        return "Cookie";
     }
 
     @Override

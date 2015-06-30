@@ -4,12 +4,13 @@ import org.keycloak.Config;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
@@ -1025,6 +1026,16 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public AuthenticationFlowModel getFlowByAlias(String alias) {
+        for (AuthenticationFlowModel flow : getAuthenticationFlows()) {
+            if (flow.getAlias().equals(alias)) {
+                return flow;
+            }
+        }
+        return null;
+    }
+
+    @Override
     public AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model) {
         getDelegateForUpdate();
         return updated.addAuthenticationFlow(model);
@@ -1084,36 +1095,76 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public List<AuthenticatorModel> getAuthenticators() {
-        if (updated != null) return updated.getAuthenticators();
-        List<AuthenticatorModel> models = new ArrayList<>();
-        models.addAll(cached.getAuthenticators().values());
+    public List<AuthenticatorConfigModel> getAuthenticatorConfigs() {
+        if (updated != null) return updated.getAuthenticatorConfigs();
+        List<AuthenticatorConfigModel> models = new ArrayList<>();
+        models.addAll(cached.getAuthenticatorConfigs().values());
         return models;
     }
 
     @Override
-    public AuthenticatorModel addAuthenticator(AuthenticatorModel model) {
+    public AuthenticatorConfigModel addAuthenticatorConfig(AuthenticatorConfigModel model) {
         getDelegateForUpdate();
-        return updated.addAuthenticator(model);
+        return updated.addAuthenticatorConfig(model);
     }
 
     @Override
-    public void updateAuthenticator(AuthenticatorModel model) {
+    public void updateAuthenticatorConfig(AuthenticatorConfigModel model) {
         getDelegateForUpdate();
-        updated.updateAuthenticator(model);
-
-    }
-
-    @Override
-    public void removeAuthenticator(AuthenticatorModel model) {
-        getDelegateForUpdate();
-        updated.removeAuthenticator(model);
+        updated.updateAuthenticatorConfig(model);
 
     }
 
     @Override
-    public AuthenticatorModel getAuthenticatorById(String id) {
-        if (updated != null) return updated.getAuthenticatorById(id);
-        return cached.getAuthenticators().get(id);
+    public void removeAuthenticatorConfig(AuthenticatorConfigModel model) {
+        getDelegateForUpdate();
+        updated.removeAuthenticatorConfig(model);
+
+    }
+
+    @Override
+    public AuthenticatorConfigModel getAuthenticatorConfigById(String id) {
+        if (updated != null) return updated.getAuthenticatorConfigById(id);
+        return cached.getAuthenticatorConfigs().get(id);
+    }
+
+    @Override
+    public List<RequiredActionProviderModel> getRequiredActionProviders() {
+        if (updated != null) return updated.getRequiredActionProviders();
+        List<RequiredActionProviderModel> models = new ArrayList<>();
+        models.addAll(cached.getRequiredActionProviders().values());
+        return models;
+    }
+
+    @Override
+    public RequiredActionProviderModel addRequiredActionProvider(RequiredActionProviderModel model) {
+        getDelegateForUpdate();
+        return updated.addRequiredActionProvider(model);
+    }
+
+    @Override
+    public void updateRequiredActionProvider(RequiredActionProviderModel model) {
+        getDelegateForUpdate();
+        updated.updateRequiredActionProvider(model);
+
+    }
+
+    @Override
+    public void removeRequiredActionProvider(RequiredActionProviderModel model) {
+        getDelegateForUpdate();
+        updated.removeRequiredActionProvider(model);
+
+    }
+
+    @Override
+    public RequiredActionProviderModel getRequiredActionProviderById(String id) {
+        if (updated != null) return updated.getRequiredActionProviderById(id);
+        return cached.getRequiredActionProviders().get(id);
+    }
+
+    @Override
+    public RequiredActionProviderModel getRequiredActionProviderByAlias(String alias) {
+        if (updated != null) return updated.getRequiredActionProviderByAlias(alias);
+        return cached.getRequiredActionProvidersByAlias().get(alias);
     }
 }
