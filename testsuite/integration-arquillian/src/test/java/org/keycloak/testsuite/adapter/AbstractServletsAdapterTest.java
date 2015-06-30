@@ -62,6 +62,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Page
     private SecurePortal securePortal;
     @Page
+    private CustomerDb customerDb;
+    @Page
     private CustomerDbErrorPage customerDbErrorPage;
     @Page
     private ProductPortal productPortal;
@@ -330,7 +332,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Test
     public void testNullBearerToken() {
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(customerPortal.toString());
+        WebTarget target = client.target(customerDb.toString());
         Response response = target.request().get();
         assertEquals(401, response.getStatus());
         response.close();
