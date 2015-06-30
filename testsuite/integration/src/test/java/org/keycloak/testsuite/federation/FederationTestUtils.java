@@ -47,7 +47,7 @@ class FederationTestUtils {
     }
 
     public static LDAPObject addLDAPUser(LDAPFederationProvider ldapProvider, RealmModel realm, final String username,
-                                            final String firstName, final String lastName, final String email, final String postalCode) {
+                                            final String firstName, final String lastName, final String email, final String street, final String... postalCode) {
         UserModel helperUser = new UserModelDelegate(null) {
 
             @Override
@@ -74,6 +74,8 @@ class FederationTestUtils {
             public List<String> getAttribute(String name) {
                 if ("postal_code".equals(name)) {
                     return Arrays.asList(postalCode);
+                } else if ("street".equals(name)) {
+                    return Arrays.asList(street);
                 } else {
                     return Collections.emptyList();
                 }

@@ -1,9 +1,10 @@
-package org.keycloak.testsuite.ldap;
+package org.keycloak.util.ldap;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.security.auth.kerberos.KerberosPrincipal;
@@ -25,7 +26,13 @@ import org.apache.directory.server.protocol.shared.transport.UdpTransport;
 import org.apache.directory.shared.kerberos.KerberosTime;
 import org.apache.directory.shared.kerberos.KerberosUtils;
 import org.apache.directory.shared.kerberos.codec.types.EncryptionType;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
 import org.jboss.logging.Logger;
+import org.keycloak.util.KerberosSerializationUtils;
+import sun.security.jgss.GSSNameImpl;
+import sun.security.jgss.krb5.Krb5NameElement;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -33,6 +40,16 @@ import org.jboss.logging.Logger;
 public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
 
     private static final Logger log = Logger.getLogger(KerberosEmbeddedServer.class);
+
+    public static final String PROPERTY_KERBEROS_REALM = "kerberos.realm";
+    public static final String PROPERTY_KDC_PORT = "kerberos.port";
+    public static final String PROPERTY_KDC_ENCTYPES = "kerberos.encTypes";
+
+    private static final String DEFAULT_KERBEROS_LDIF_FILE = "classpath:kerberos/default-users.ldif";
+
+    private static final String DEFAULT_KERBEROS_REALM = "KEYCLOAK.ORG";
+    private static final String DEFAULT_KDC_PORT = "6088";
+    private static final String DEFAULT_KDC_ENCRYPTION_TYPES = "aes128-cts-hmac-sha1-96, des-cbc-md5, des3-cbc-sha1-kd";
 
     private final String kerberosRealm;
     private final int kdcPort;
@@ -42,18 +59,53 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
 
 
     public static void main(String[] args) throws Exception {
-        EmbeddedServersFactory factory = EmbeddedServersFactory.readConfiguration();
-        KerberosEmbeddedServer kerberosEmbeddedServer = factory.createKerberosServer();
+        Properties defaultProperties = new Properties();
+        defaultProperties.put(PROPERTY_DSF, DSF_FILE);
+
+        execute(args, defaultProperties);
+    }
+
+    public static void execute(String[] args, Properties defaultProperties) throws Exception {
+        final KerberosEmbeddedServer kerberosEmbeddedServer = new KerberosEmbeddedServer(defaultProperties);
         kerberosEmbeddedServer.init();
         kerberosEmbeddedServer.start();
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+
+            @Override
+            public void run() {
+                try {
+                    kerberosEmbeddedServer.stop();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+        });
     }
 
 
-    protected KerberosEmbeddedServer(String baseDN, String bindHost, int bindPort, String ldifFile, String ldapSaslPrincipal, String kerberosRealm, int kdcPort, String kdcEncryptionTypes) {
-        super(baseDN, bindHost, bindPort, ldifFile, ldapSaslPrincipal);
-        this.kdcEncryptionTypes = kdcEncryptionTypes;
-        this.kerberosRealm = kerberosRealm;
-        this.kdcPort = kdcPort;
+    public KerberosEmbeddedServer(Properties defaultProperties) {
+        super(defaultProperties);
+
+        this.ldifFile = readProperty(PROPERTY_LDIF_FILE, DEFAULT_KERBEROS_LDIF_FILE);
+
+        this.kerberosRealm = readProperty(PROPERTY_KERBEROS_REALM, DEFAULT_KERBEROS_REALM);
+        String kdcPort = readProperty(PROPERTY_KDC_PORT, DEFAULT_KDC_PORT);
+        this.kdcPort = Integer.parseInt(kdcPort);
+        this.kdcEncryptionTypes = readProperty(PROPERTY_KDC_ENCTYPES, DEFAULT_KDC_ENCRYPTION_TYPES);
+
+        if (ldapSaslPrincipal == null || ldapSaslPrincipal.isEmpty()) {
+            try {
+                // Same algorithm like sun.security.krb5.PrincipalName constructor
+                GSSName gssName = GSSManager.getInstance().createName("ldap@" + bindHost, GSSName.NT_HOSTBASED_SERVICE);
+                GSSNameImpl gssName1 = (GSSNameImpl) gssName;
+                Krb5NameElement krb5NameElement = (Krb5NameElement) gssName1.getElement(KerberosSerializationUtils.KRB5_OID);
+                this.ldapSaslPrincipal = krb5NameElement.getKrb5PrincipalName().toString();
+            } catch (GSSException uhe) {
+                throw new RuntimeException(uhe);
+            }
+        }
     }
 
 
@@ -79,7 +131,7 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
     protected LdapServer createLdapServer() {
         LdapServer ldapServer = super.createLdapServer();
 
-        ldapServer.setSaslHost( this.bindHost );
+        ldapServer.setSaslHost(this.bindHost);
         ldapServer.setSaslPrincipal( this.ldapSaslPrincipal);
         ldapServer.setSaslRealms(new ArrayList<String>());
 

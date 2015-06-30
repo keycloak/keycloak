@@ -1,11 +1,11 @@
 package org.keycloak.testsuite.rule;
 
 import java.util.Map;
+import java.util.Properties;
 
 import org.junit.rules.ExternalResource;
-import org.keycloak.testsuite.ldap.EmbeddedServersFactory;
-import org.keycloak.testsuite.ldap.LDAPTestConfiguration;
-import org.keycloak.testsuite.ldap.LDAPEmbeddedServer;
+import org.keycloak.testsuite.federation.LDAPTestConfiguration;
+import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -23,8 +23,7 @@ public class LDAPRule extends ExternalResource {
         ldapTestConfiguration = LDAPTestConfiguration.readConfiguration(connectionPropsLocation);
 
         if (ldapTestConfiguration.isStartEmbeddedLdapLerver()) {
-            EmbeddedServersFactory factory = EmbeddedServersFactory.readConfiguration();
-            ldapEmbeddedServer = createServer(factory);
+            ldapEmbeddedServer = createServer();
             ldapEmbeddedServer.init();
             ldapEmbeddedServer.start();
         }
@@ -47,8 +46,12 @@ public class LDAPRule extends ExternalResource {
         return LDAP_CONNECTION_PROPERTIES_LOCATION;
     }
 
-    protected LDAPEmbeddedServer createServer(EmbeddedServersFactory factory) {
-        return factory.createLdapServer();
+    protected LDAPEmbeddedServer createServer() {
+        Properties defaultProperties = new Properties();
+        defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_DSF, LDAPEmbeddedServer.DSF_INMEMORY);
+        defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_LDIF_FILE, "classpath:ldap/users.ldif");
+
+        return new LDAPEmbeddedServer(defaultProperties);
     }
 
     public Map<String, String> getConfig() {

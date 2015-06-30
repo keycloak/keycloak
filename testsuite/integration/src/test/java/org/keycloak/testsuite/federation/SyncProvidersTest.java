@@ -61,7 +61,7 @@ public class SyncProvidersTest {
             FederationTestUtils.removeAllLDAPUsers(ldapFedProvider, appRealm);
 
             for (int i=1 ; i<=5 ; i++) {
-                LDAPObject ldapUser = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "user" + i, "User" + i + "FN", "User" + i + "LN", "user" + i + "@email.org", "12" + i);
+                LDAPObject ldapUser = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "user" + i, "User" + i + "FN", "User" + i + "LN", "user" + i + "@email.org", null, "12" + i);
                 ldapFedProvider.getLdapIdentityStore().updatePassword(ldapUser, "Password1");
             }
 
@@ -123,7 +123,7 @@ public class SyncProvidersTest {
 
             // Add user to LDAP and update 'user5' in LDAP
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
-            FederationTestUtils.addLDAPUser(ldapFedProvider, testRealm, "user6", "User6FN", "User6LN", "user6@email.org", "126");
+            FederationTestUtils.addLDAPUser(ldapFedProvider, testRealm, "user6", "User6FN", "User6LN", "user6@email.org", null, "126");
             LDAPObject ldapUser5 = ldapFedProvider.loadLDAPUserByUsername(testRealm, "user5");
             // NOTE: Changing LDAP attributes directly here
             ldapUser5.setSingleAttribute(LDAPConstants.EMAIL, "user5Updated@email.org");
