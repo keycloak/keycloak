@@ -249,6 +249,7 @@ public class AuthorizationEndpoint {
     }
 
     protected Response browserAuthentication(String accessCode) {
+        this.event.event(EventType.LOGIN);
         List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
         for (IdentityProviderModel identityProvider : identityProviders) {
             if (identityProvider.isAuthenticateByDefault()) {

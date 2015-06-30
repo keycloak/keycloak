@@ -10,7 +10,7 @@ import org.keycloak.provider.Provider;
  * @version $Revision: 1 $
  */
 public interface FormAction extends Provider {
-    void authenticate(FormContext context);
+    void authenticate(FormActionContext context);
 
     boolean requiresUser();
     boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user);

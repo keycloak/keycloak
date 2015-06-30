@@ -1,0 +1,4 @@
+org.keycloak.authentication.forms.RegistrationPasswordValidation
+org.keycloak.authentication.forms.RegistrationProfileValidation
+org.keycloak.authentication.forms.RegistrationUserCreation
+org.keycloak.authentication.forms.RegistrationUsernameValidation

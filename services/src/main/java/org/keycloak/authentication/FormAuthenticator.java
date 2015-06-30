@@ -1,8 +1,11 @@
 package org.keycloak.authentication;
 
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.Provider;
 
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -10,5 +13,5 @@ import javax.ws.rs.core.Response;
  */
 public interface FormAuthenticator extends Provider {
     void authenticate(AuthenticatorContext context);
-    Response createChallenge(FormContext context, String... errorMessages);
+    Response createChallenge(FormActionContext context, MultivaluedMap<String, String> formData, List<FormMessage> errorMessages);
 }

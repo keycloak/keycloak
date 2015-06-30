@@ -167,7 +167,6 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
                 .user(user != null ? user.getId() : null)
                 .detail(Details.USERNAME, username)
                 .detail(Details.EMAIL, email)
-                .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.REGISTER_METHOD, "form")
                 .detail(Details.REDIRECT_URI, DEFAULT_REDIRECT_URI);
     }
