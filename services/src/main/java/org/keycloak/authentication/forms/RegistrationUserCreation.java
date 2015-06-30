@@ -6,6 +6,8 @@ import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionContext;
 import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.authentication.FormAuthenticator;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
@@ -37,6 +39,10 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         if (context.getRealm().isRegistrationEmailAsUsername()) {
             username = formData.getFirst(RegistrationPage.FIELD_EMAIL);
         }
+        context.getEvent().detail(Details.USERNAME, username)
+                .detail(Details.REGISTER_METHOD, "form")
+                .detail(Details.EMAIL, email)
+        ;
         UserModel user = context.getSession().users().addUser(context.getRealm(), username);
         user.setEnabled(true);
         user.setFirstName(formData.getFirst("firstName"));
@@ -62,6 +68,15 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         }
         context.getEvent().user(user);
         context.success();
+        context.getEvent().success();
+        context.newEvent().event(EventType.LOGIN);
+        context.getEvent().client(context.getClientSession().getClient().getClientId())
+                .detail(Details.REDIRECT_URI, context.getClientSession().getRedirectUri())
+                .detail(Details.AUTH_METHOD, context.getClientSession().getAuthMethod());
+        String authType = context.getClientSession().getNote(Details.AUTH_TYPE);
+        if (authType != null) {
+            context.getEvent().detail(Details.AUTH_TYPE, authType);
+        }
     }
 
     @Override

@@ -21,6 +21,7 @@ import javax.ws.rs.core.UriInfo;
  */
 public interface AuthenticatorContext {
     EventBuilder getEvent();
+    EventBuilder newEvent();
 
     AuthenticationExecutionModel getExecution();
 

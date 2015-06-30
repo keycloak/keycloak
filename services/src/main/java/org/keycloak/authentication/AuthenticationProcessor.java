@@ -177,6 +177,12 @@ public class AuthenticationProcessor {
         }
 
         @Override
+        public EventBuilder newEvent() {
+            AuthenticationProcessor.this.event = new EventBuilder(realm, session, connection);
+            return AuthenticationProcessor.this.event;
+        }
+
+        @Override
         public AuthenticationExecutionModel.Requirement getCategoryRequirementFromCurrentFlow(String authenticatorCategory) {
             List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(execution.getParentFlow());
             for (AuthenticationExecutionModel exe : executions) {
@@ -463,7 +469,6 @@ public class AuthenticationProcessor {
     public Response authenticate() throws AuthException {
         checkClientSession();
         logger.debug("AUTHENTICATE");
-        event.event(EventType.LOGIN);
         event.client(clientSession.getClient().getClientId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.AUTH_METHOD, clientSession.getAuthMethod());
@@ -505,7 +510,6 @@ public class AuthenticationProcessor {
             resetFlow(clientSession);
             return authenticate();
         }
-        event.event(EventType.LOGIN);
         event.client(clientSession.getClient().getClientId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.AUTH_METHOD, clientSession.getAuthMethod());
@@ -536,7 +540,6 @@ public class AuthenticationProcessor {
 
     public Response authenticateOnly() throws AuthException {
         checkClientSession();
-        event.event(EventType.LOGIN);
         event.client(clientSession.getClient().getClientId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.AUTH_METHOD, clientSession.getAuthMethod());

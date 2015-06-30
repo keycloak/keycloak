@@ -6,6 +6,7 @@ import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionContext;
 import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.authentication.FormAuthenticator;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
@@ -35,6 +36,7 @@ public class RegistrationProfileValidation implements FormAction, FormActionFact
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         List<FormMessage> errors = new ArrayList<>();
 
+        context.getEvent().detail(Details.REGISTER_METHOD, "form");
         String eventError = Errors.INVALID_REGISTRATION;
 
         if (Validation.isBlank(formData.getFirst((RegistrationPage.FIELD_FIRST_NAME)))) {
@@ -50,12 +52,14 @@ public class RegistrationProfileValidation implements FormAction, FormActionFact
             errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.MISSING_EMAIL));
         } else if (!Validation.isEmailValid(email)) {
             formData.remove(Validation.FIELD_EMAIL);
+            context.getEvent().detail(Details.EMAIL, email);
             errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.INVALID_EMAIL));
         }
 
         if (context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
             eventError = Errors.EMAIL_IN_USE;
             formData.remove(Validation.FIELD_EMAIL);
+            context.getEvent().detail(Details.EMAIL, email);
             errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.EMAIL_EXISTS));
         }
 

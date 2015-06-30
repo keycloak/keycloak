@@ -6,6 +6,8 @@ import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionContext;
 import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.authentication.FormAuthenticator;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -33,6 +35,7 @@ public class RegistrationPasswordValidation implements FormAction, FormActionFac
     public void authenticate(FormActionContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         List<FormMessage> errors = new ArrayList<>();
+        context.getEvent().detail(Details.REGISTER_METHOD, "form");
         if (Validation.isBlank(formData.getFirst(RegistrationPage.FIELD_PASSWORD))) {
             errors.add(new FormMessage(RegistrationPage.FIELD_PASSWORD, Messages.MISSING_PASSWORD));
         } else if (!formData.getFirst(RegistrationPage.FIELD_PASSWORD).equals(formData.getFirst(RegistrationPage.FIELD_PASSWORD_CONFIRM))) {
@@ -45,6 +48,7 @@ public class RegistrationPasswordValidation implements FormAction, FormActionFac
         }
 
         if (errors.size() > 0) {
+            context.getEvent().error(Errors.INVALID_REGISTRATION);
             formData.remove(RegistrationPage.FIELD_PASSWORD);
             formData.remove(RegistrationPage.FIELD_PASSWORD_CONFIRM);
             Response challenge = context.getFormAuthenticator().createChallenge(context, formData, errors);

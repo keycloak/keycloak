@@ -6,6 +6,7 @@ import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionContext;
 import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.authentication.FormAuthenticator;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
@@ -34,13 +35,17 @@ public class RegistrationUsernameValidation implements FormAction, FormActionFac
     public void authenticate(FormActionContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         List<FormMessage> errors = new ArrayList<>();
+        context.getEvent().detail(Details.REGISTER_METHOD, "form");
 
         String email = formData.getFirst(Validation.FIELD_EMAIL);
         String username = formData.getFirst(RegistrationPage.FIELD_USERNAME);
+        context.getEvent().detail(Details.USERNAME, username);
+        context.getEvent().detail(Details.EMAIL, email);
 
         String usernameField = RegistrationPage.FIELD_USERNAME;
         if (context.getRealm().isRegistrationEmailAsUsername()) {
             username = email;
+            context.getEvent().detail(Details.USERNAME, username);
             usernameField = RegistrationPage.FIELD_EMAIL;
             if (Validation.isBlank(email)) {
                 errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.MISSING_EMAIL));
@@ -55,9 +60,9 @@ public class RegistrationUsernameValidation implements FormAction, FormActionFac
                 return;
             }
             if (email != null && context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
-                context.getEvent().error(Errors.EMAIL_IN_USE);
+                context.getEvent().error(Errors.USERNAME_IN_USE);
                 formData.remove(Validation.FIELD_EMAIL);
-                errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.EMAIL_EXISTS));
+                errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.USERNAME_EXISTS));
                 Response challenge = context.getFormAuthenticator().createChallenge(context, formData, errors);
                 context.challenge(challenge);
                 return;

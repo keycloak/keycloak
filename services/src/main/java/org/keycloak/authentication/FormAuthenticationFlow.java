@@ -44,7 +44,10 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
             this.delegate = delegate;
         }
 
-
+        @Override
+        public EventBuilder newEvent() {
+            return delegate.newEvent();
+        }
 
         @Override
         public FormAuthenticator getFormAuthenticator() {
