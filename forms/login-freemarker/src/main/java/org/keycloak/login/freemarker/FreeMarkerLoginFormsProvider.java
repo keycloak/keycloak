@@ -143,8 +143,8 @@ import java.util.concurrent.TimeUnit;
 
     private Response createResponse(LoginFormsPages page) {
         RealmModel realm = session.getContext().getRealm();
-        ClientModel client = session.getContext().getClient();
         UriInfo uriInfo = session.getContext().getUri();
+        ClientModel client = session.getContext().getClient();
 
         MultivaluedMap<String, String> queryParameterMap = queryParams != null ? queryParams : new MultivaluedMapImpl<String, String>();
 
@@ -406,6 +406,10 @@ import java.util.concurrent.TimeUnit;
 
     public Response createOAuthGrant(ClientSessionModel clientSession) {
         this.clientSession = clientSession;
+
+        // Add ClientSession-retrieved ClientModel to DefaultContext (bug-fix)
+        this.session.getContext().setClient(clientSession.getClient());
+
         return createResponse(LoginFormsPages.OAUTH_GRANT);
     }
 
