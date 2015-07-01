@@ -8,12 +8,14 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.page.adapter.AppServerContextRoot;
 
 /**
  *
  * @author tkyjovsk
  */
+@AppServerContainer
 public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
 
     @Page

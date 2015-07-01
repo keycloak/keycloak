@@ -23,6 +23,8 @@
 
         <keycloak.dist.artifactId>keycloak-demo-dist</keycloak.dist.artifactId>
         
+        <auth.server>auth-server-undertow</auth.server>
+        
         <auth.server.wildfly.home>${containers.home}/keycloak-demo-${project.version}/keycloak</auth.server.wildfly.home>
 
         <auth.server.port.offset>100</auth.server.port.offset>
@@ -101,13 +103,11 @@
         <dependency>
             <groupId>org.jboss.arquillian.junit</groupId>
             <artifactId>arquillian-junit-container</artifactId>
-            <!--<scope>test</scope>-->
         </dependency>
         <dependency>
             <groupId>org.arquillian.extension</groupId>
             <artifactId>arquillian-droidium-multiple-containers</artifactId>
             <version>1.0.0.Final</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.arquillian.container</groupId>
@@ -120,7 +120,6 @@
             <artifactId>graphene-webdriver</artifactId>
             <version>${arquillian-graphene.version}</version>
             <type>pom</type>
-<!--            <scope>test</scope>-->
         </dependency>
         <dependency>
             <groupId>org.jboss.arquillian.protocol</groupId>
@@ -202,17 +201,14 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client</artifactId>
-            <!--<scope>test</scope>-->
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-api</artifactId>
-            <!--<scope>test</scope>-->
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-services</artifactId>
-<!--            <scope>test</scope>-->
         </dependency>
 
         <dependency>
@@ -247,8 +243,16 @@
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-undertow</artifactId>
-            <scope>test</scope>
         </dependency>        
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>undertow-embedded</artifactId>
+            <version>1.0.0.Alpha1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-arquillian-container-managed</artifactId>
+        </dependency>
     </dependencies>
 
     <profiles>
@@ -267,6 +271,7 @@
                             <systemPropertyVariables>
                                 <browser>${browser}</browser>
                                 <shouldDeploy>false</shouldDeploy>
+                                <auth.server>auth-server-undertow</auth.server>
                                 <auth.server.port.offset>${auth.server.port.offset}</auth.server.port.offset>
                                 <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>
                                 <auth.server.management.port>${auth.server.management.port}</auth.server.management.port>
@@ -287,31 +292,14 @@
         </profile>                
                         	
         <profile>
-            <id>auth-server-undertow</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.jboss.arquillian.container</groupId>
-                    <artifactId>undertow-embedded</artifactId>
-                    <version>1.0.0.Alpha1-SNAPSHOT</version>
-                </dependency>
-            </dependencies>
-        </profile>                
-                                
-        <profile>
             <id>auth-server-wildfly</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
+<!--                <property>
+                    <name>auth.server</name>
+                    <value>auth-server-wildfly</value>
+                </property>-->
             </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-arquillian-container-managed</artifactId>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>

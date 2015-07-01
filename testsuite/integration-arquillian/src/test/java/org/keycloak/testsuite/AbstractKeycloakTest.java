@@ -1,6 +1,5 @@
 package org.keycloak.testsuite;
 
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.NotFoundException;
@@ -18,10 +17,11 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.ContainersManager;
 import org.keycloak.testsuite.arquillian.ContainersManager.AdminPasswordUpdateTracker;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
 import org.keycloak.testsuite.page.console.AdminConsole;
 import org.keycloak.testsuite.page.console.AuthServer;
 import org.keycloak.testsuite.page.console.AuthServerContextRoot;
-import static org.keycloak.testsuite.PageAssert.*;
+import static org.keycloak.testsuite.util.PageAssert.*;
 import org.keycloak.testsuite.page.console.fragment.MenuPage;
 import org.keycloak.testsuite.page.console.fragment.Navigation;
 import org.keycloak.testsuite.page.console.login.LoginPage;
@@ -35,7 +35,7 @@ import static org.keycloak.testsuite.util.Json.loadJson;
  */
 @RunWith(Arquillian.class)
 @RunAsClient
-@AuthServerContainer("auth-server-undertow")
+@AuthServerContainer // no value set --> loads qualifier from property auth.server
 public abstract class AbstractKeycloakTest {
 
     protected Keycloak keycloak;
