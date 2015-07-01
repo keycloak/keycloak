@@ -58,6 +58,7 @@ public class Messages {
 
     public static final String USERNAME_EXISTS = "usernameExistsMessage";
     public static final String RECAPTCHA_FAILED = "recaptchaFailed";
+    public static final String RECAPTCHA_NOT_CONFIGURED = "recaptchaNotConfigured";
 
     public static final String EMAIL_EXISTS = "emailExistsMessage";
 

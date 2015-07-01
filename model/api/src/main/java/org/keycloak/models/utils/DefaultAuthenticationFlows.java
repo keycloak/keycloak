@@ -2,7 +2,11 @@ package org.keycloak.models.utils;
 
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -73,6 +77,13 @@ public class DefaultAuthenticationFlows {
         execution.setAutheticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
+        //AuthenticatorConfigModel captchaConfig = new AuthenticatorConfigModel();
+        //captchaConfig.setAlias("Recaptcha Config");
+        //Map<String, String> config = new HashMap<>();
+        //config.put("site.key", "6LcFEAkTAAAAAOaY-5RJk3zIYw4AalNtqfac27Bn");
+        //config.put("secret", "6LcFEAkTAAAAAM0SErEs9NlfhYpOTRj_vOVJSAMI");
+        //captchaConfig.setConfig(config);
+        //captchaConfig = realm.addAuthenticatorConfig(captchaConfig);
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(registrationFormFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
@@ -80,6 +91,7 @@ public class DefaultAuthenticationFlows {
         execution.setPriority(60);
         execution.setUserSetupAllowed(false);
         execution.setAutheticatorFlow(false);
+        //execution.setAuthenticatorConfig(captchaConfig.getId());
         realm.addAuthenticatorExecution(execution);
 
 

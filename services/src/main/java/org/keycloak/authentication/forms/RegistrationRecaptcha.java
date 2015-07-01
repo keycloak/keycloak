@@ -17,6 +17,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -66,8 +67,17 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory {
 
     @Override
     public void buildPage(FormContext context, LoginFormsProvider form) {
+        AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
+        if (captchaConfig == null || captchaConfig.getConfig() == null
+                || captchaConfig.getConfig().get("site.key") == null
+                || captchaConfig.getConfig().get("secret") == null
+                ) {
+            form.addError(new FormMessage(null, Messages.RECAPTCHA_NOT_CONFIGURED));
+            return;
+        }
+        String siteKey = captchaConfig.getConfig().get("site.key");
         form.setAttribute("recaptchaRequired", true);
-        form.setAttribute("recaptchaSiteKey", "6LcFEAkTAAAAAOaY-5RJk3zIYw4AalNtqfac27Bn");
+        form.setAttribute("recaptchaSiteKey", siteKey);
         List<String> scripts = new LinkedList<>();
         scripts.add("https://www.google.com/recaptcha/api.js");
         form.setAttribute("scripts", scripts);
@@ -81,12 +91,14 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory {
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
 
         String captcha = formData.getFirst(G_RECAPTCHA_RESPONSE);
-        if (Validation.isBlank(captcha)) {
+        if (!Validation.isBlank(captcha)) {
+            AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
+            String secret = captchaConfig.getConfig().get("secret");
 
             HttpClient httpClient = context.getSession().getProvider(HttpClientProvider.class).getHttpClient();
             HttpPost post = new HttpPost("https://www.google.com/recaptcha/api/siteverify");
-            List<NameValuePair> formparams = new ArrayList<NameValuePair>();
-            formparams.add(new BasicNameValuePair("secret", "6LcFEAkTAAAAAM0SErEs9NlfhYpOTRj_vOVJSAMI"));
+            List<NameValuePair> formparams = new LinkedList<>();
+            formparams.add(new BasicNameValuePair("secret", secret));
             formparams.add(new BasicNameValuePair("response", captcha));
             formparams.add(new BasicNameValuePair("remoteip", context.getConnection().getRemoteAddr()));
             try {
@@ -108,11 +120,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory {
         if (success) {
             context.success();
         } else {
-            String usernameField = RegistrationPage.FIELD_USERNAME;
-            if (context.getRealm().isRegistrationEmailAsUsername()) {
-                usernameField = RegistrationPage.FIELD_EMAIL;
-            }
-            errors.add(new FormMessage(usernameField, Messages.RECAPTCHA_FAILED));
+            errors.add(new FormMessage(null, Messages.RECAPTCHA_FAILED));
             formData.remove(G_RECAPTCHA_RESPONSE);
             context.getEvent().error(Errors.INVALID_REGISTRATION);
             context.validationError(formData, errors);

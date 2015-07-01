@@ -1613,6 +1613,7 @@ public class RealmAdapter implements RealmModel {
         model.setFlowId(entity.getFlowId());
         model.setParentFlow(entity.getParentFlow().getId());
         model.setAutheticatorFlow(entity.isAutheticatorFlow());
+        model.setAuthenticatorConfig(entity.getAuthenticatorConfig());
         return model;
     }
 
@@ -1631,6 +1632,7 @@ public class RealmAdapter implements RealmModel {
         entity.setPriority(model.getPriority());
         entity.setFlowId(model.getFlowId());
         entity.setRequirement(model.getRequirement());
+        entity.setAuthenticatorConfig(model.getAuthenticatorConfig());
         AuthenticationFlowEntity flow = em.find(AuthenticationFlowEntity.class, model.getParentFlow());
         entity.setParentFlow(flow);
         flow.getExecutions().add(entity);
@@ -1653,6 +1655,7 @@ public class RealmAdapter implements RealmModel {
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
+        entity.setAuthenticatorConfig(model.getAuthenticatorConfig());
         entity.setFlowId(model.getFlowId());
         em.flush();
     }
