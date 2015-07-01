@@ -19,7 +19,6 @@ package org.keycloak.testsuite.page.console;
 
 import java.util.List;
 import javax.ws.rs.core.UriBuilder;
-import org.keycloak.testsuite.util.Constants;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -50,9 +49,5 @@ public class AdminConsole extends AdminRoot {
 
     @FindBy(css = ".ng-binding.btn.btn-danger")
     protected WebElement deleteConfirmationButton;
-
-    public void goToPage(String page) {
-        driver.get(String.format(page, Constants.CURRENT_REALM));
-    }
 
 }
