@@ -33,7 +33,7 @@ public class CustomExtension implements LoadableExtension {
                 .service(DeployableContainer.class, CustomUndertowContainer.class);
 
         builder
-                .service(TestExecutionDecider.class, JiraTestExecutionDecider.class);
+                .service(TestExecutionDecider.class, JiraTestExecutionDecider.class);        
 
     }
 

@@ -23,15 +23,21 @@ public class ContainersManager {
     private String authServerQualifier;
     private String appServerQualifier;
 
+    private static final String AUTH_SERVER_PROPERTY = "auth.server";
+
     public void startContainers(@Observes(precedence = -1) BeforeClass event) {
-        this.authServerQualifier = getAuthServerQualifier(event.getTestClass().getJavaClass());
-        this.appServerQualifier = getAppServerQualifier(event.getTestClass().getJavaClass());
-        System.out.println(event.getTestClass().getJavaClass().getSimpleName());
+        resolveQualifiersFromTestClass(event.getTestClass().getJavaClass());
+        startContainers();
+    }
+
+    private void resolveQualifiersFromTestClass(Class testClass) {
+        this.authServerQualifier = getAuthServerQualifier(testClass);
+        this.appServerQualifier = getAppServerQualifier(testClass);
+        System.out.println(testClass.getSimpleName());
         System.out.println("Auth server: " + authServerQualifier);
         if (!appServerQualifier.equals(authServerQualifier)) {
             System.out.println("App server:  " + appServerQualifier);
         }
-        startContainers();
     }
 
     private void startContainers() {
@@ -51,8 +57,8 @@ public class ContainersManager {
      *
      * @param testClass
      * @param annotationClass
-     * @return testClass or the nearest superclass of testClass that is
-     * annotated with annotationClass
+     * @return testClass or the nearest superclass of testClass annotated with
+     * annotationClass
      */
     public static Class<? extends ContainersManager>
             getNearestSuperclassWithAnnotation(Class testClass, Class annotationClass) {
@@ -64,12 +70,12 @@ public class ContainersManager {
     public static String getAuthServerQualifier(Class testClass) {
         Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AuthServerContainer.class);
         if (annotatedClass == null) {
-            throw new IllegalStateException("Couldn't find @AuthServerContainer on the test class or any of its superclasses.");
+            throw new IllegalStateException("Couldn't find @AuthServerContainer for test class " + testClass.getSimpleName());
         }
         String authServerQ = annotatedClass.getAnnotation(AuthServerContainer.class).value();
         if (authServerQ == null || authServerQ.isEmpty()) {
-            throw new IllegalStateException("Null or empty qualifier for keycloak auth server.");
-            // TODO add fallback mechanism when embedded undertow is ready
+            // default to Undertow
+            authServerQ = System.getProperty(AUTH_SERVER_PROPERTY, "auth-server-undertow");
         }
         return authServerQ;
     }
@@ -83,6 +89,11 @@ public class ContainersManager {
         return appServerQ == null || appServerQ.isEmpty()
                 ? getAuthServerQualifier(testClass) // app server == auth server
                 : appServerQ;
+    }
+
+    public static boolean isAdapterTest(Class testClass) {
+        // presence of @AppServerContainer indicates adapter test
+        return getNearestSuperclassWithAnnotation(testClass, AppServerContainer.class) != null;
     }
 
     public static boolean isRelative(Class testClass) {

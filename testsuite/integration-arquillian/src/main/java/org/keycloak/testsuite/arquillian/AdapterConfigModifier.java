@@ -32,6 +32,7 @@ public class AdapterConfigModifier implements ApplicationArchiveProcessor {
     protected void modifyAdapterConfig(Archive<?> archive, TestClass testClass) {
         System.out.println("Modifying adapter config for " + archive.getName());
         try {
+            // TODO check if keycloak.json is even present in archive
             BaseAdapterConfig adapterConfig = loadJson(archive.get(ADAPTER_CONFIG_PATH)
                     .getAsset().openStream(), BaseAdapterConfig.class);
 
