@@ -39,6 +39,9 @@ public class AuthenticationExecutionEntity {
     @Column(name="AUTHENTICATOR")
     protected String authenticator;
 
+    @Column(name="AUTH_CONFIG")
+    protected String authenticatorConfig;
+
     @Column(name="AUTH_FLOW_ID")
     protected String flowId;
 
@@ -124,5 +127,13 @@ public class AuthenticationExecutionEntity {
 
     public void setFlowId(String flowId) {
         this.flowId = flowId;
+    }
+
+    public String getAuthenticatorConfig() {
+        return authenticatorConfig;
+    }
+
+    public void setAuthenticatorConfig(String authenticatorConfig) {
+        this.authenticatorConfig = authenticatorConfig;
     }
 }

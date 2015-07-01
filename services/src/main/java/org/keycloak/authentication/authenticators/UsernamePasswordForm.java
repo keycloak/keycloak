@@ -48,10 +48,6 @@ public class UsernamePasswordForm extends AbstractFormAuthenticator implements A
 
     @Override
     public void authenticate(AuthenticatorContext context) {
-        if (REGISTRATION_FORM_ACTION.equals(context.getAction()) && context.getUser() != null) {
-            context.success();
-            return;
-        }
         MultivaluedMap<String, String> formData = new MultivaluedMapImpl<>();
         String loginHint = context.getClientSession().getNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
 

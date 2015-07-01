@@ -22,6 +22,9 @@
             <column name="AUTH_FLOW_ID" type="VARCHAR(36)">
                 <constraints nullable="true"/>
             </column>
+            <column name="AUTH_CONFIG" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
         </addColumn>
         <addColumn tableName="USER_ATTRIBUTE">
             <column name="ID" type="VARCHAR(36)">

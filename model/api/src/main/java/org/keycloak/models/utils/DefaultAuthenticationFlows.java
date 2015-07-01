@@ -2,7 +2,11 @@ package org.keycloak.models.utils;
 
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -34,7 +38,9 @@ public class DefaultAuthenticationFlows {
         registrationFormFlow.setProviderId("form-flow");
         registrationFormFlow = realm.addAuthenticationFlow(registrationFormFlow);
 
-        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        AuthenticationExecutionModel execution;
+
+        execution = new AuthenticationExecutionModel();
         execution.setParentFlow(registrationFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("registration-page-form");
@@ -47,7 +53,7 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(registrationFormFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator("username-validation-action");
+        execution.setAuthenticator("registration-user-creation");
         execution.setPriority(20);
         execution.setUserSetupAllowed(false);
         execution.setAutheticatorFlow(false);
@@ -56,16 +62,7 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(registrationFormFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator("profile-validation-action");
-        execution.setPriority(30);
-        execution.setUserSetupAllowed(false);
-        execution.setAutheticatorFlow(false);
-        realm.addAuthenticatorExecution(execution);
-
-        execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(registrationFormFlow.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator("password-validation-action");
+        execution.setAuthenticator("registration-profile-action");
         execution.setPriority(40);
         execution.setUserSetupAllowed(false);
         execution.setAutheticatorFlow(false);
@@ -74,11 +71,29 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(registrationFormFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator("registration-user-creation");
+        execution.setAuthenticator("registration-password-action");
         execution.setPriority(50);
         execution.setUserSetupAllowed(false);
         execution.setAutheticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
+
+        //AuthenticatorConfigModel captchaConfig = new AuthenticatorConfigModel();
+        //captchaConfig.setAlias("Recaptcha Config");
+        //Map<String, String> config = new HashMap<>();
+        //config.put("site.key", "6LcFEAkTAAAAAOaY-5RJk3zIYw4AalNtqfac27Bn");
+        //config.put("secret", "6LcFEAkTAAAAAM0SErEs9NlfhYpOTRj_vOVJSAMI");
+        //captchaConfig.setConfig(config);
+        //captchaConfig = realm.addAuthenticatorConfig(captchaConfig);
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(registrationFormFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        execution.setAuthenticator("registration-recaptcha-action");
+        execution.setPriority(60);
+        execution.setUserSetupAllowed(false);
+        execution.setAutheticatorFlow(false);
+        //execution.setAuthenticatorConfig(captchaConfig.getId());
+        realm.addAuthenticatorExecution(execution);
+
 
 
     }
