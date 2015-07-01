@@ -7,7 +7,8 @@
         <li class="active" data-ng-hide="create">{{mapper.name}}</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{mapper.name|capitalize}}</h1>
+    <h1 data-ng-hide="create">{{mapper.name|capitalize}}<i style="padding-left: 20px" class="pficon pficon-delete" data-ng-show="!create && access.manageRealm" 
+    	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
     <h1 data-ng-show="create">Add User Federation Mapper</h1>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
@@ -75,7 +76,6 @@
         <div class="pull-right form-actions" data-ng-show="!create && access.manageRealm">
             <button kc-reset data-ng-show="changed">Clear changes</button>
             <button kc-save  data-ng-show="changed">Save</button>
-            <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>
         </div>
     </form>
 </div>
