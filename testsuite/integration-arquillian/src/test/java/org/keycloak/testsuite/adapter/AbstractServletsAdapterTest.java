@@ -21,15 +21,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.testsuite.adapter.servlet.CallAuthenticatedServlet;
-import org.keycloak.testsuite.adapter.servlet.CustomerDatabaseServlet;
-import org.keycloak.testsuite.adapter.servlet.CustomerServlet;
-import org.keycloak.testsuite.adapter.servlet.ErrorServlet;
-import org.keycloak.testsuite.adapter.servlet.InputServlet;
-import org.keycloak.testsuite.adapter.servlet.ProductServlet;
-import org.keycloak.testsuite.adapter.servlet.SessionServlet;
-import org.keycloak.testsuite.ui.application.page.InputPage;
-import org.keycloak.testsuite.ui.page.account.AccountSessionsPage;
+import org.keycloak.testsuite.servlet.adapter.CallAuthenticatedServlet;
+import org.keycloak.testsuite.servlet.adapter.CustomerDatabaseServlet;
+import org.keycloak.testsuite.servlet.adapter.CustomerServlet;
+import org.keycloak.testsuite.servlet.adapter.ErrorServlet;
+import org.keycloak.testsuite.servlet.adapter.InputServlet;
+import org.keycloak.testsuite.servlet.adapter.ProductServlet;
+import org.keycloak.testsuite.servlet.adapter.SessionServlet;
+import org.keycloak.testsuite.page.console.account.AccountSessionsPage;
 import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.keycloak.Version;
@@ -38,17 +37,17 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.jira.Jira;
-import static org.keycloak.testsuite.console.page.PageAssert.assertCurrentUrl;
-import static org.keycloak.testsuite.console.page.PageAssert.assertCurrentUrlStartsWith;
-import org.keycloak.testsuite.adapter.page.CustomerDb;
-import org.keycloak.testsuite.adapter.page.CustomerDbErrorPage;
-import org.keycloak.testsuite.adapter.page.CustomerPortal;
-import org.keycloak.testsuite.adapter.page.InputPortal;
-import org.keycloak.testsuite.adapter.page.ProductPortal;
-import org.keycloak.testsuite.adapter.page.SecurePortal;
-import org.keycloak.testsuite.adapter.page.SessionPortal;
-import org.keycloak.testsuite.ui.page.LoginPage;
-import org.keycloak.testsuite.ui.util.SeleniumUtils;
+import static org.keycloak.testsuite.PageAssert.assertCurrentUrl;
+import static org.keycloak.testsuite.PageAssert.assertCurrentUrlStartsWith;
+import org.keycloak.testsuite.page.adapter.CustomerDb;
+import org.keycloak.testsuite.page.adapter.CustomerDbErrorPage;
+import org.keycloak.testsuite.page.adapter.CustomerPortal;
+import org.keycloak.testsuite.page.adapter.InputPortal;
+import org.keycloak.testsuite.page.adapter.ProductPortal;
+import org.keycloak.testsuite.page.adapter.SecurePortal;
+import org.keycloak.testsuite.page.adapter.SessionPortal;
+import org.keycloak.testsuite.page.console.login.LoginPage;
+import org.keycloak.testsuite.util.SeleniumUtils;
 import org.keycloak.testsuite.util.ApiUtil;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.util.BasicAuthHelper;
@@ -75,8 +74,6 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Page
     private AccountSessionsPage accountSessionsPage;
 
-    @Page
-    private InputPage inputPage;
 
     protected static WebArchive servletDeployment(String name, Class... servletClasses) {
         return servletDeployment(name, "keycloak.json", servletClasses);
@@ -154,7 +151,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(inputPortal.toString());
         assertEquals(driver.getCurrentUrl(), inputPortal + slash);
-        inputPage.execute("hello");
+        inputPortal.execute("hello");
 
         assertCurrentUrlStartsWithLoginUrl();
         loginPage.login("bburke@redhat.com", "password");

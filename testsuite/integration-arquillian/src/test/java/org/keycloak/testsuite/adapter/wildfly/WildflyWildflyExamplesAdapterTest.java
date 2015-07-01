@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.adapter.wildfly;
 
-import org.keycloak.testsuite.adapter.example.AbstractExamplesAdapterTest;
+import org.keycloak.testsuite.adapter.AbstractExamplesAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
 

@@ -8,7 +8,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
+import org.keycloak.testsuite.page.adapter.AppServerContextRoot;
 
 /**
  *

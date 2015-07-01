@@ -8,7 +8,7 @@
 
     <servlet>
         <servlet-name>Servlet</servlet-name>
-        <servlet-class>org.keycloak.testsuite.adapter.servlet.ProductServlet</servlet-class>
+        <servlet-class>org.keycloak.testsuite.servlet.adapter.ProductServlet</servlet-class>
     </servlet>
 
     <servlet-mapping>

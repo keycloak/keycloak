@@ -1,7 +1,6 @@
 package org.keycloak.testsuite;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.NotFoundException;
@@ -19,16 +18,16 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.ContainersManager;
 import org.keycloak.testsuite.arquillian.ContainersManager.AdminPasswordUpdateTracker;
-import org.keycloak.testsuite.console.page.AdminConsole;
-import org.keycloak.testsuite.console.page.AuthServer;
-import org.keycloak.testsuite.console.page.AuthServerContextRoot;
-import static org.keycloak.testsuite.console.page.PageAssert.*;
-import org.keycloak.testsuite.ui.fragment.MenuPage;
-import org.keycloak.testsuite.ui.fragment.Navigation;
-import org.keycloak.testsuite.ui.page.LoginPage;
-import org.keycloak.testsuite.ui.page.account.PasswordPage;
-import static org.keycloak.testsuite.ui.util.Constants.ADMIN_PSSWD;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.testsuite.page.console.AdminConsole;
+import org.keycloak.testsuite.page.console.AuthServer;
+import org.keycloak.testsuite.page.console.AuthServerContextRoot;
+import static org.keycloak.testsuite.PageAssert.*;
+import org.keycloak.testsuite.page.console.fragment.MenuPage;
+import org.keycloak.testsuite.page.console.fragment.Navigation;
+import org.keycloak.testsuite.page.console.login.LoginPage;
+import org.keycloak.testsuite.page.console.account.PasswordPage;
+import static org.keycloak.testsuite.util.Constants.ADMIN_PSSWD;
+import static org.keycloak.testsuite.util.Json.loadJson;
 
 /**
  *
@@ -38,8 +37,6 @@ import org.keycloak.util.JsonSerialization;
 @RunAsClient
 @AuthServerContainer("auth-server-undertow")
 public abstract class AbstractKeycloakTest {
-
-    public static final String REALM_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
 
     protected Keycloak keycloak;
 
@@ -107,14 +104,6 @@ public abstract class AbstractKeycloakTest {
         adminConsole.navigateTo();
         assertCurrentUrlStartsWith(adminConsole);
         menuPage.logOut();
-    }
-
-    public static <T> T loadJson(InputStream is, Class<T> type) {
-        try {
-            return JsonSerialization.readValue(is, type);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load json.", e);
-        }
     }
 
     protected void driverSettings() {
