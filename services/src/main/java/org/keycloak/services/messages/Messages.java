@@ -57,6 +57,7 @@ public class Messages {
     public static final String INVALID_TOTP = "invalidTotpMessage";
 
     public static final String USERNAME_EXISTS = "usernameExistsMessage";
+    public static final String RECAPTCHA_FAILED = "recaptchaFailed";
 
     public static final String EMAIL_EXISTS = "emailExistsMessage";
 

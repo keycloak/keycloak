@@ -227,7 +227,8 @@ public class ClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public void setAuthenticatedUser(UserModel user) {
-        entity.setAuthUserId(user.getId());
+        if (user == null) entity.setAuthUserId(null);
+        else entity.setAuthUserId(user.getId());
         update();
 
     }

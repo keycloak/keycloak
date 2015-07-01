@@ -34,7 +34,9 @@ public class DefaultAuthenticationFlows {
         registrationFormFlow.setProviderId("form-flow");
         registrationFormFlow = realm.addAuthenticationFlow(registrationFormFlow);
 
-        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        AuthenticationExecutionModel execution;
+
+        execution = new AuthenticationExecutionModel();
         execution.setParentFlow(registrationFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("registration-page-form");
@@ -47,7 +49,7 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(registrationFormFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator("username-validation-action");
+        execution.setAuthenticator("registration-user-creation");
         execution.setPriority(20);
         execution.setUserSetupAllowed(false);
         execution.setAutheticatorFlow(false);
@@ -56,16 +58,7 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(registrationFormFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator("profile-validation-action");
-        execution.setPriority(30);
-        execution.setUserSetupAllowed(false);
-        execution.setAutheticatorFlow(false);
-        realm.addAuthenticatorExecution(execution);
-
-        execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(registrationFormFlow.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator("password-validation-action");
+        execution.setAuthenticator("registration-profile-action");
         execution.setPriority(40);
         execution.setUserSetupAllowed(false);
         execution.setAutheticatorFlow(false);
@@ -74,11 +67,21 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(registrationFormFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator("registration-user-creation");
+        execution.setAuthenticator("registration-password-action");
         execution.setPriority(50);
         execution.setUserSetupAllowed(false);
         execution.setAutheticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(registrationFormFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        execution.setAuthenticator("registration-recaptcha-action");
+        execution.setPriority(60);
+        execution.setUserSetupAllowed(false);
+        execution.setAutheticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
 
 
     }
