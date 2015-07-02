@@ -247,6 +247,8 @@ table {
   padding-left: 0;
   margin: 0;
   list-style: none;
+  max-height: 200px;
+  overflow-y:auto;
 }
 
 
@@ -254,7 +256,7 @@ table {
   line-height: 60px;
   padding: 0 20px;
   border-bottom: 1px solid #d5d5d6;
-  line-height: 40px;
+  line-height: 39px;
   display: block;
   font-size: 14px;
 }
