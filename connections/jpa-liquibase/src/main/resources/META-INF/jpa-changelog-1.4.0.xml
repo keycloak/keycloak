@@ -17,6 +17,12 @@
             <column name="PROVIDER_ID" type="VARCHAR(36)" defaultValue="basic-flow">
                 <constraints nullable="false"/>
             </column>
+            <column name="TOP_LEVEL" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="BUILT_IN" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
         </addColumn>
         <addColumn tableName="AUTHENTICATION_EXECUTION">
             <column name="AUTH_FLOW_ID" type="VARCHAR(36)">

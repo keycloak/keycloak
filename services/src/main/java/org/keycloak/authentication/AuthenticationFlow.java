@@ -7,6 +7,9 @@ import javax.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public interface AuthenticationFlow {
+    String BASIC_FLOW = "basic-flow";
+    String FORM_FLOW = "form-flow";
+
     Response processAction(String actionExecution);
     Response processFlow();
 }

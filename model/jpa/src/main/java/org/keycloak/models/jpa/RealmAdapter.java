@@ -1544,6 +1544,8 @@ public class RealmAdapter implements RealmModel {
         model.setAlias(entity.getAlias());
         model.setProviderId(entity.getProviderId());
         model.setDescription(entity.getDescription());
+        model.setBuiltIn(entity.isBuiltIn());
+        model.setTopLevel(entity.isTopLevel());
         return model;
     }
 
@@ -1569,6 +1571,8 @@ public class RealmAdapter implements RealmModel {
         entity.setAlias(model.getAlias());
         entity.setDescription(model.getDescription());
         entity.setProviderId(model.getProviderId());
+        entity.setBuiltIn(model.isBuiltIn());
+        entity.setTopLevel(model.isTopLevel());
 
     }
 
@@ -1579,6 +1583,8 @@ public class RealmAdapter implements RealmModel {
         entity.setAlias(model.getAlias());
         entity.setDescription(model.getDescription());
         entity.setProviderId(model.getProviderId());
+        entity.setBuiltIn(model.isBuiltIn());
+        entity.setTopLevel(model.isTopLevel());
         entity.setRealm(realm);
         realm.getAuthenticationFlows().add(entity);
         em.persist(entity);
