@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.arquillian;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
@@ -10,6 +11,7 @@ import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.junit.AfterClass;
+import org.keycloak.testsuite.arquillian.annotation.AdapterLibsLocationProperty;
 
 /**
  *
@@ -61,15 +63,14 @@ public class ContainersManager {
      * @return testClass or the nearest superclass of testClass annotated with
      * annotationClass
      */
-    public static Class<? extends ContainersManager>
-            getNearestSuperclassWithAnnotation(Class testClass, Class annotationClass) {
+    public static Class getNearestSuperclassWithAnnotation(Class testClass, Class annotationClass) {
         return testClass.isAnnotationPresent(annotationClass) ? testClass
-                : (testClass.equals(Object.class) ? null // stop recursion
+                : (testClass.getSuperclass().equals(Object.class) ? null // stop recursion
                         : getNearestSuperclassWithAnnotation(testClass.getSuperclass(), annotationClass)); // continue recursion
     }
 
     public static String getAuthServerQualifier(Class testClass) {
-        Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AuthServerContainer.class);
+        Class<Object> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AuthServerContainer.class);
         String authServerQ = "";
         if (annotatedClass != null) {
             authServerQ = annotatedClass.getAnnotation(AuthServerContainer.class).value();
@@ -92,8 +93,18 @@ public class ContainersManager {
                 : appServerQ;
     }
 
+    public static boolean hasAppServerContainerAnnotation(Class testClass) {
+        return getNearestSuperclassWithAnnotation(testClass, AppServerContainer.class) != null;
+    }
+
     public static boolean isRelative(Class testClass) {
         return getAppServerQualifier(testClass).equals(getAuthServerQualifier(testClass));
+    }
+
+    public static String getAdapterLibsLocationProperty(Class testClass) {
+        Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AdapterLibsLocationProperty.class);
+        return (annotatedClass == null ? null
+                : annotatedClass.getAnnotation(AdapterLibsLocationProperty.class).value());
     }
 
 //    public void beforeClassAdminPassword(@Observes BeforeClass event) {

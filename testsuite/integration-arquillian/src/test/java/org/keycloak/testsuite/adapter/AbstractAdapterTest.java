@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.adapter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
@@ -15,6 +16,7 @@ import org.keycloak.testsuite.page.adapter.AppServerContextRoot;
  *
  * @author tkyjovsk
  */
+@AppServerContainer
 public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
 
     @Page
@@ -22,7 +24,10 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
 
     protected String LOGIN_URL;
 
-//    private boolean testRealmImported = false;
+    public static final String JBOSS_DEPLOYMENT_STRUCTURE_XML = "jboss-deployment-structure.xml";
+    public static final URL jbossDeploymentStructure = AbstractServletsAdapterTest.class
+            .getResource("/adapter-test/" + JBOSS_DEPLOYMENT_STRUCTURE_XML);
+
     @Before
     public void beforeAdapterTest() {
         LOGIN_URL = OIDCLoginProtocolService.authUrl(authServer.createUriBuilder())
@@ -31,8 +36,6 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
 
     @Override
     public void importTestRealm() {
-//        if (!testRealmImported) {
-
         RealmRepresentation realm = loadTestRealm();
         System.out.println("Setting redirect-uris in test realm '" + realm.getId() + "' as " + (isRelative() ? "" : "non-") + "relative");
         if (isRelative()) {
@@ -41,8 +44,6 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
             modifyClientRedirectUris(realm, "^(/.*/\\*)", appServerContextRoot.getUrlString() + "$1");
         }
         importRealm(realm);
-//            testRealmImported = true;
-//        }
     }
 
     public abstract RealmRepresentation loadTestRealm();

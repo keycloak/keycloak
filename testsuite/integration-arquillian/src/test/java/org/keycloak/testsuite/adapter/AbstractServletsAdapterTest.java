@@ -74,24 +74,21 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Page
     private AccountSessionsPage accountSessionsPage;
 
-
     protected static WebArchive servletDeployment(String name, Class... servletClasses) {
         return servletDeployment(name, "keycloak.json", servletClasses);
     }
 
     protected static WebArchive servletDeployment(String name, String adapterConfig, Class... servletClasses) {
         String webInfPath = "/adapter-test/" + name + "/WEB-INF/";
+        
         URL keycloakJSON = AbstractServletsAdapterTest.class.getResource(webInfPath + adapterConfig);
         URL webXML = AbstractServletsAdapterTest.class.getResource(webInfPath + "web.xml");
+        
         WebArchive deployment = ShrinkWrap.create(WebArchive.class, name + ".war")
                 .addClasses(servletClasses)
                 .addAsWebInfResource(webXML, "web.xml")
-                .addAsWebInfResource(keycloakJSON, "keycloak.json");
-
-        URL jbossDeploymentStructure = AbstractServletsAdapterTest.class.getResource(webInfPath + "jboss-deployment-structure.xml");
-        if (jbossDeploymentStructure != null) {
-            deployment = deployment.addAsWebInfResource(jbossDeploymentStructure, "jboss-deployment-structure.xml");
-        }
+                .addAsWebInfResource(keycloakJSON, "keycloak.json")
+                .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
 
         return deployment;
     }

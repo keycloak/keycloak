@@ -40,7 +40,8 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
 
     protected static WebArchive exampleDeployment(String name) throws IOException {
         return ShrinkWrap.createFromZipFile(WebArchive.class,
-                new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".war"));
+                new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".war"))
+                .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
     }
 
     @Deployment(name = CustomerPortalExample.DEPLOYMENT_NAME)

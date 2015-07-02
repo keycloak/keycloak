@@ -8,7 +8,8 @@ import org.jboss.arquillian.test.spi.TestClass;
 import static org.keycloak.testsuite.arquillian.ContainersManager.*;
 
 /**
- *
+ * Changes target container for all Arquillian deployments based on value of @AppServerContainer.
+ * 
  * @author tkyjovsk
  */
 public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenerator {
