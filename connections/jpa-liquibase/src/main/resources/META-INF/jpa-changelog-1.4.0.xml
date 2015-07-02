@@ -128,5 +128,8 @@
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REQUIRED_ACTION_PROVIDER" constraintName="FK_REQ_ACT_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
         <addForeignKeyConstraint baseColumnNames="CLIENT_SESSION" baseTableName="CLIENT_USER_SESSION_NOTE" constraintName="FK_CL_USR_SES_NOTE" referencedColumnNames="ID" referencedTableName="CLIENT_SESSION"/>
         <dropColumn tableName="CLIENT_SESSION" columnName="ACTION"/>
+        <addColumn tableName="USER_ENTITY">
+            <column name="CREATED_TIMESTAMP" type="BIGINT"/>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>
