@@ -37,7 +37,6 @@ final class SecurityActions {
     // -------------------------------------------------------------------------------||
     // Constructor -------------------------------------------------------------------||
     // -------------------------------------------------------------------------------||
-
     /**
      * No instantiation
      */
@@ -48,7 +47,6 @@ final class SecurityActions {
     // -------------------------------------------------------------------------------||
     // Utility Methods ---------------------------------------------------------------||
     // -------------------------------------------------------------------------------||
-
     /**
      * Obtains the Thread Context ClassLoader
      */
@@ -99,20 +97,16 @@ final class SecurityActions {
     }
 
     /**
-     * Create a new instance by finding a constructor that matches the argumentTypes signature using the arguments for
-     * instantiation.
+     * Create a new instance by finding a constructor that matches the
+     * argumentTypes signature using the arguments for instantiation.
      *
-     * @param className
-     *        Full classname of class to create
-     * @param argumentTypes
-     *        The constructor argument types
-     * @param arguments
-     *        The constructor arguments
+     * @param className Full classname of class to create
+     * @param argumentTypes The constructor argument types
+     * @param arguments The constructor arguments
      * @return a new instance
-     * @throws IllegalArgumentException
-     *         if className, argumentTypes, or arguments are null
-     * @throws RuntimeException
-     *         if any exceptions during creation
+     * @throws IllegalArgumentException if className, argumentTypes, or
+     * arguments are null
+     * @throws RuntimeException if any exceptions during creation
      * @author <a href="mailto:aslak@conduct.no">Aslak Knutsen</a>
      * @author <a href="mailto:andrew.rubinger@jboss.org">ALR</a>
      */
@@ -157,8 +151,7 @@ final class SecurityActions {
                     return clazz.getDeclaredConstructor(argumentTypes);
                 }
             });
-        }
-        // Unwrap
+        } // Unwrap
         catch (final PrivilegedActionException pae) {
             final Throwable t = pae.getCause();
             // Rethrow
@@ -168,8 +161,7 @@ final class SecurityActions {
                 // No other checked Exception thrown by Class.getConstructor
                 try {
                     throw (RuntimeException) t;
-                }
-                // Just in case we've really messed up
+                } // Just in case we've really messed up
                 catch (final ClassCastException cce) {
                     throw new RuntimeException("Obtained unchecked Exception; this code should never be reached", t);
                 }
@@ -180,12 +172,9 @@ final class SecurityActions {
     /**
      * Set a single Field value
      *
-     * @param target
-     *        The object to set it on
-     * @param fieldName
-     *        The field name
-     * @param value
-     *        The new value
+     * @param target The object to set it on
+     * @param fieldName The field name
+     * @param value The new value
      */
     public static void setFieldValue(final Class<?> source, final Object target, final String fieldName,
             final Object value) throws NoSuchFieldException {
@@ -201,8 +190,7 @@ final class SecurityActions {
                     return null;
                 }
             });
-        }
-        // Unwrap
+        } // Unwrap
         catch (final PrivilegedActionException pae) {
             final Throwable t = pae.getCause();
             // Rethrow
@@ -212,8 +200,7 @@ final class SecurityActions {
                 // No other checked Exception thrown by Class.getConstructor
                 try {
                     throw (RuntimeException) t;
-                }
-                // Just in case we've really messed up
+                } // Just in case we've really messed up
                 catch (final ClassCastException cce) {
                     throw new RuntimeException("Obtained unchecked Exception; this code should never be reached", t);
                 }
@@ -278,8 +265,7 @@ final class SecurityActions {
                 }
             });
             return value;
-        }
-        // Unwrap
+        } // Unwrap
         catch (final PrivilegedActionException pae) {
             final Throwable t = pae.getCause();
             // Rethrow
@@ -294,8 +280,7 @@ final class SecurityActions {
                 // No other checked Exception thrown by System.getProperty
                 try {
                     throw (RuntimeException) t;
-                }
-                // Just in case we've really messed up
+                } // Just in case we've really messed up
                 catch (final ClassCastException cce) {
                     throw new RuntimeException("Obtained unchecked Exception; this code should never be reached", t);
                 }
@@ -306,11 +291,11 @@ final class SecurityActions {
     // -------------------------------------------------------------------------------||
     // Inner Classes -----------------------------------------------------------------||
     // -------------------------------------------------------------------------------||
-
     /**
      * Single instance to get the TCCL
      */
     private enum GetTcclAction implements PrivilegedAction<ClassLoader> {
+
         INSTANCE;
 
         @Override

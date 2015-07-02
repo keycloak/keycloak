@@ -37,6 +37,7 @@ import org.jboss.arquillian.core.spi.LoadableExtension;
  *
  * @author Dominik Pospisil <dpospisi@redhat.com>
  * @author Stefan Miklosovic <smikloso@redhat.com>
+ * @author Tomas Kyjovsky <tkyjovsk@redhat.com>
  */
 public class MultipleContainersExtension implements LoadableExtension {
 
@@ -50,11 +51,11 @@ public class MultipleContainersExtension implements LoadableExtension {
         builder.context(ContainerContextImpl.class).context(DeploymentContextImpl.class);
 
         builder.observer(RegistryCreator.class)
-            .observer(ContainerDeploymentContextHandler.class)
-            .observer(ContainerLifecycleController.class)
-            .observer(ContainerDeployController.class)
-            .observer(ArchiveDeploymentExporter.class)
-            .observer(DeploymentExceptionHandler.class);
+                .observer(ContainerDeploymentContextHandler.class)
+                .observer(ContainerLifecycleController.class)
+                .observer(ContainerDeployController.class)
+                .observer(ArchiveDeploymentExporter.class)
+                .observer(DeploymentExceptionHandler.class);
     }
 
 }

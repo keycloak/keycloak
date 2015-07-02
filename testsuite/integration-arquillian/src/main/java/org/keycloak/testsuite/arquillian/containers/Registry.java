@@ -45,12 +45,14 @@ import static org.keycloak.testsuite.arquillian.containers.RegistryCreator.getCo
 /**
  * This class registers all adapters which are specified in the arquillian.xml.
  *
- * In the case there is only one adapter implementation on the classpath, it is not necessary to specify it in the container
- * configuration since it will be used automatically. You have to specify it only in the case you are going to use more than one
- * container.
+ * In the case there is only one adapter implementation on the classpath, it is
+ * not necessary to specify it in the container configuration since it will be
+ * used automatically. You have to specify it only in the case you are going to
+ * use more than one container.
  *
  * @author Dominik Pospisil <dpospisi@redhat.com>
  * @author Stefan Miklosovic <smikloso@redhat.com>
+ * @author Tomas Kyjovsky <tkyjovsk@redhat.com>
  */
 public class Registry implements ContainerRegistry {
 
@@ -92,7 +94,7 @@ public class Registry implements ContainerRegistry {
             // before a Container is added to a collection of containers, inject into its injection point
             return addContainer(injector.inject(
                     new ContainerImpl(definition.getContainerName(), dcService, definition)));
-            
+
         } catch (Exception e) {
             throw new ContainerCreationException("Could not create Container " + definition.getContainerName(), e);
         }
