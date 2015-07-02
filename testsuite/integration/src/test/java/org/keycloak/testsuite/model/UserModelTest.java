@@ -8,6 +8,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 
+import static org.junit.Assert.assertNotNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,6 +29,9 @@ public class UserModelTest extends AbstractModelTest {
         user.setFirstName("first-name");
         user.setLastName("last-name");
         user.setEmail("email");
+        assertNotNull(user.getCreatedTimestamp());
+        // test that timestamp is current with 10s tollerance
+        Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
 
         user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
         user.addRequiredAction(RequiredAction.UPDATE_PASSWORD);
@@ -195,6 +200,7 @@ public class UserModelTest extends AbstractModelTest {
 
     public static void assertEquals(UserModel expected, UserModel actual) {
         Assert.assertEquals(expected.getUsername(), actual.getUsername());
+        Assert.assertEquals(expected.getCreatedTimestamp(), actual.getCreatedTimestamp());
         Assert.assertEquals(expected.getFirstName(), actual.getFirstName());
         Assert.assertEquals(expected.getLastName(), actual.getLastName());
 

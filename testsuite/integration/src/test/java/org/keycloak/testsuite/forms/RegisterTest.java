@@ -26,11 +26,15 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.IDToken;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.broker.util.UserSessionStatusServlet.UserSessionStatus;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -208,6 +212,22 @@ public class RegisterTest {
 
         String userId = events.expectRegister("registerUserSuccess", "registerUserSuccess@email").assertEvent().getUserId();
         events.expectLogin().detail("username", "registerusersuccess").user(userId).assertEvent();
+
+        UserModel user = getUser(userId);
+        Assert.assertNotNull(user);
+        Assert.assertNotNull(user.getCreatedTimestamp());
+        // test that timestamp is current with 10s tollerance
+        Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
+    }
+
+    protected UserModel getUser(String userId) {
+        KeycloakSession samlServerSession = keycloakRule.startSession();
+        try {
+            RealmModel brokerRealm = samlServerSession.realms().getRealm("test");
+            return samlServerSession.users().getUserById(userId, brokerRealm);
+        } finally {
+            keycloakRule.stopSession(samlServerSession, false);
+        }
     }
 
     @Test
@@ -268,6 +288,13 @@ public class RegisterTest {
 
             String userId = events.expectRegister("registerUserSuccessE@email", "registerUserSuccessE@email").assertEvent().getUserId();
             events.expectLogin().detail("username", "registerusersuccesse@email").user(userId).assertEvent();
+
+            UserModel user = getUser(userId);
+            Assert.assertNotNull(user);
+            Assert.assertNotNull(user.getCreatedTimestamp());
+            // test that timestamp is current with 10s tollerance
+            Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
+
         } finally {
             configureRelamRegistrationEmailAsUsername(false);
         }

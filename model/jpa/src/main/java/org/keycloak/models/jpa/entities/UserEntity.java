@@ -11,6 +11,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -44,6 +45,8 @@ public class UserEntity {
     protected String username;
     @Column(name = "FIRST_NAME")
     protected String firstName;
+    @Column(name = "CREATED_TIMESTAMP")
+    protected Long createdTimestamp;
     @Column(name = "LAST_NAME")
     protected String lastName;
     @Column(name = "EMAIL")
@@ -88,6 +91,14 @@ public class UserEntity {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public void setCreatedTimestamp(Long timestamp) {
+        createdTimestamp = timestamp;
     }
 
     public String getFirstName() {

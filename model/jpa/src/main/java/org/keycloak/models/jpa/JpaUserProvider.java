@@ -52,6 +52,7 @@ public class JpaUserProvider implements UserProvider {
 
         UserEntity entity = new UserEntity();
         entity.setId(id);
+        entity.setCreatedTimestamp(System.currentTimeMillis());
         entity.setUsername(username.toLowerCase());
         entity.setRealmId(realm.getId());
         em.persist(entity);
