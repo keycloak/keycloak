@@ -340,3 +340,13 @@ module.factory('IdentityProviderMapperLoader', function(Loader, IdentityProvider
     });
 });
 
+module.factory('AuthenticationFlowsLoader', function(Loader, AuthenticationFlows, $route, $q) {
+    return Loader.query(AuthenticationFlows, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
+
+

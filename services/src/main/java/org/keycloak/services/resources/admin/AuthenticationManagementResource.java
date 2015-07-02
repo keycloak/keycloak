@@ -3,9 +3,14 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.AuthenticatorUtil;
+import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
+import org.keycloak.authentication.DefaultAuthenticationFlow;
+import org.keycloak.authentication.FormAction;
+import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.KeycloakSession;
@@ -104,7 +109,21 @@ public class AuthenticationManagementResource {
         }
     }
 
-    @Path("/flow/{flowAlias}/executions")
+    @Path("/flows")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<AuthenticationFlowModel> getFlows() {
+        List<AuthenticationFlowModel> flows = new LinkedList<>();
+        for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
+            if (flow.isTopLevel()) {
+                flows.add(flow);
+            }
+        }
+        return flows;
+    }
+
+    @Path("/flows/{flowAlias}/executions")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
@@ -124,11 +143,15 @@ public class AuthenticationManagementResource {
             rep.setRequirementChoices(new LinkedList<String>());
             if (execution.isAutheticatorFlow()) {
                 AuthenticationFlowModel flowRef = realm.getAuthenticationFlowById(execution.getFlowId());
+                if (AuthenticationFlow.BASIC_FLOW.equals(flowRef.getProviderId())) {
+                    rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.ALTERNATIVE.name());
+                    rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.REQUIRED.name());
+                    rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.DISABLED.name());
+                } else if (AuthenticationFlow.FORM_FLOW.equals(flowRef.getProviderId())) {
+                    rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.REQUIRED.name());
+                    rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.DISABLED.name());
+                }
                 rep.setReferenceType(flowRef.getAlias());
-                rep.setExecution(execution.getId());
-                rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.ALTERNATIVE.name());
-                rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.REQUIRED.name());
-                rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.DISABLED.name());
                 rep.setConfigurable(false);
                 rep.setExecution(execution.getId());
                 rep.setRequirement(execution.getRequirement().name());
@@ -137,9 +160,11 @@ public class AuthenticationManagementResource {
                 if (!flow.getId().equals(execution.getParentFlow())) {
                     rep.setSubFlow(true);
                 }
-                AuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, execution.getAuthenticator());
-                if (factory.getReferenceCategory() == null) continue;
-                rep.setReferenceType(factory.getReferenceCategory());
+                ConfigurableAuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, execution.getAuthenticator());
+                if (factory == null) {
+                    factory = (FormActionFactory)session.getKeycloakSessionFactory().getProviderFactory(FormAction.class, execution.getAuthenticator());
+                }
+                rep.setReferenceType(factory.getDisplayType());
                 rep.setConfigurable(factory.isConfigurable());
                 for (AuthenticationExecutionModel.Requirement choice : factory.getRequirementChoices()) {
                     rep.getRequirementChoices().add(choice.name());
@@ -154,7 +179,7 @@ public class AuthenticationManagementResource {
         return Response.ok(result).build();
     }
 
-    @Path("/flow/{flowAlias}/executions")
+    @Path("/flows/{flowAlias}/executions")
     @PUT
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)

@@ -30,12 +30,16 @@ public class DefaultAuthenticationFlows {
         registrationFlow.setAlias(REGISTRATION_FLOW);
         registrationFlow.setDescription("registration flow");
         registrationFlow.setProviderId("basic-flow");
+        registrationFlow.setTopLevel(true);
+        registrationFlow.setBuiltIn(true);
         registrationFlow = realm.addAuthenticationFlow(registrationFlow);
 
         AuthenticationFlowModel registrationFormFlow = new AuthenticationFlowModel();
         registrationFormFlow.setAlias(REGISTRATION_FORM_FLOW);
         registrationFormFlow.setDescription("registration form");
         registrationFormFlow.setProviderId("form-flow");
+        registrationFormFlow.setTopLevel(false);
+        registrationFormFlow.setBuiltIn(true);
         registrationFormFlow = realm.addAuthenticationFlow(registrationFormFlow);
 
         AuthenticationExecutionModel execution;
@@ -103,6 +107,8 @@ public class DefaultAuthenticationFlows {
         browser.setAlias(BROWSER_FLOW);
         browser.setDescription("browser based authentication");
         browser.setProviderId("basic-flow");
+        browser.setTopLevel(true);
+        browser.setBuiltIn(true);
         browser = realm.addAuthenticationFlow(browser);
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
         execution.setParentFlow(browser.getId());
@@ -123,6 +129,8 @@ public class DefaultAuthenticationFlows {
 
 
         AuthenticationFlowModel forms = new AuthenticationFlowModel();
+        forms.setTopLevel(false);
+        forms.setBuiltIn(true);
         forms.setAlias(LOGIN_FORMS_FLOW);
         forms.setDescription("Username, password, otp and other auth forms.");
         forms.setProviderId("basic-flow");

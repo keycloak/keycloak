@@ -7,7 +7,6 @@ import org.keycloak.authentication.authenticators.AbstractFormAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -466,11 +465,11 @@ public class AuthenticationProcessor {
             logger.error("Unknown flow to execute with");
             throw new AuthException(Error.INTERNAL_ERROR);
         }
-        if (flow.getProviderId() == null || flow.getProviderId().equals("basic-flow")) {
+        if (flow.getProviderId() == null || flow.getProviderId().equals(AuthenticationFlow.BASIC_FLOW)) {
             DefaultAuthenticationFlow flowExecution = new DefaultAuthenticationFlow(this, flow);
             return flowExecution;
 
-        } else if (flow.getProviderId().equals("form-flow")) {
+        } else if (flow.getProviderId().equals(AuthenticationFlow.FORM_FLOW)) {
             FormAuthenticationFlow flowExecution = new FormAuthenticationFlow(this, execution);
             return flowExecution;
         }
