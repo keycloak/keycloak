@@ -23,7 +23,8 @@ public class ContainersManager {
     private String authServerQualifier;
     private String appServerQualifier;
 
-    private static final String AUTH_SERVER_PROPERTY = "auth.server";
+    private static final String AUTH_SERVER_CONTAINER_PROPERTY = "auth.server.container";
+    private static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
 
     public void startContainers(@Observes(precedence = -1) BeforeClass event) {
         resolveQualifiersFromTestClass(event.getTestClass().getJavaClass());
@@ -69,13 +70,13 @@ public class ContainersManager {
 
     public static String getAuthServerQualifier(Class testClass) {
         Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AuthServerContainer.class);
-        if (annotatedClass == null) {
-            throw new IllegalStateException("Couldn't find @AuthServerContainer for test class " + testClass.getSimpleName());
+        String authServerQ = "";
+        if (annotatedClass != null) {
+            authServerQ = annotatedClass.getAnnotation(AuthServerContainer.class).value();
         }
-        String authServerQ = annotatedClass.getAnnotation(AuthServerContainer.class).value();
         if (authServerQ == null || authServerQ.isEmpty()) {
             // default to Undertow
-            authServerQ = System.getProperty(AUTH_SERVER_PROPERTY, "auth-server-undertow");
+            authServerQ = System.getProperty(AUTH_SERVER_CONTAINER_PROPERTY, AUTH_SERVER_CONTAINER_DEFAULT);
         }
         return authServerQ;
     }
@@ -89,11 +90,6 @@ public class ContainersManager {
         return appServerQ == null || appServerQ.isEmpty()
                 ? getAuthServerQualifier(testClass) // app server == auth server
                 : appServerQ;
-    }
-
-    public static boolean isAdapterTest(Class testClass) {
-        // presence of @AppServerContainer indicates adapter test
-        return getNearestSuperclassWithAnnotation(testClass, AppServerContainer.class) != null;
     }
 
     public static boolean isRelative(Class testClass) {
