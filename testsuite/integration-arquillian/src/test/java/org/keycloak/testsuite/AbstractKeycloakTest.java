@@ -35,7 +35,6 @@ import static org.keycloak.testsuite.util.Json.loadJson;
  */
 @RunWith(Arquillian.class)
 @RunAsClient
-@AuthServerContainer // no value set --> loads qualifier from property auth.server
 public abstract class AbstractKeycloakTest {
 
     protected Keycloak keycloak;

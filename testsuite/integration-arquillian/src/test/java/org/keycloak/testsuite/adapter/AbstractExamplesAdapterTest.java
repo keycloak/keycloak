@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -17,7 +16,6 @@ import org.keycloak.testsuite.page.adapter.CustomerPortalExample;
 import org.keycloak.testsuite.page.adapter.DatabaseServiceExample;
 import org.keycloak.testsuite.page.adapter.ProductPortalExample;
 
-@RunAsClient
 public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
 
     public static final String EXAMPLES_HOME;

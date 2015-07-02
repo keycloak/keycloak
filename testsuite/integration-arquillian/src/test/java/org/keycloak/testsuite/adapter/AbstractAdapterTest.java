@@ -15,7 +15,6 @@ import org.keycloak.testsuite.page.adapter.AppServerContextRoot;
  *
  * @author tkyjovsk
  */
-@AppServerContainer
 public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
 
     @Page

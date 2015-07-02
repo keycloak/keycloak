@@ -14,6 +14,9 @@
 
     <properties>
         
+        <exclude.adapters.relative>**/Relative*AdapterTest.java</exclude.adapters.relative>
+        <exclude.adapters.wildfly>**/Wildfly*AdapterTest.java</exclude.adapters.wildfly>
+        
         <!-- CONTAINER SETTINGS -->
         
         <containers.home>${project.build.directory}/containers</containers.home>
@@ -22,8 +25,6 @@
         <keycloak.dist.groupId>org.keycloak</keycloak.dist.groupId>
 
         <keycloak.dist.artifactId>keycloak-demo-dist</keycloak.dist.artifactId>
-        
-        <auth.server>auth-server-undertow</auth.server>
         
         <auth.server.wildfly.home>${containers.home}/keycloak-demo-${project.version}/keycloak</auth.server.wildfly.home>
 
@@ -37,7 +38,7 @@
                         
         <!-- TEST SETTINGS -->
 
-        <default.container></default.container>
+        <auth.server.container>auth-server-undertow</auth.server.container>
 
         <browser>phantomjs</browser>
 		
@@ -104,7 +105,7 @@
             <groupId>org.jboss.arquillian.junit</groupId>
             <artifactId>arquillian-junit-container</artifactId>
         </dependency>
-        <dependency>
+        <!--        <dependency>
             <groupId>org.arquillian.extension</groupId>
             <artifactId>arquillian-droidium-multiple-containers</artifactId>
             <version>1.0.0.Final</version>
@@ -113,7 +114,7 @@
             <groupId>org.arquillian.container</groupId>
             <artifactId>arquillian-droidium-container-spi</artifactId>
             <version>1.0.0.Final</version>
-        </dependency>
+        </dependency>-->
 
         <dependency>
             <groupId>org.jboss.arquillian.graphene</groupId>
@@ -260,7 +261,9 @@
         <profile>
             <id>test</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <property>
+                    <name>!skipTests</name>
+                </property>
             </activation>
             <build>
                 <plugins>
@@ -271,7 +274,7 @@
                             <systemPropertyVariables>
                                 <browser>${browser}</browser>
                                 <shouldDeploy>false</shouldDeploy>
-                                <auth.server>auth-server-undertow</auth.server>
+                                <auth.server.container>${auth.server.container}</auth.server.container>
                                 <auth.server.port.offset>${auth.server.port.offset}</auth.server.port.offset>
                                 <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>
                                 <auth.server.management.port>${auth.server.management.port}</auth.server.management.port>
@@ -285,6 +288,10 @@
                                     <value>org.keycloak.testsuite.util.TestConsoleLogger</value>
                                 </property>
                             </properties>
+                            <excludes>
+                                <exclude>${exclude.adapters.relative}</exclude>
+                                <exclude>${exclude.adapters.wildfly}</exclude>
+                            </excludes>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -294,12 +301,14 @@
         <profile>
             <id>auth-server-wildfly</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
-<!--                <property>
-                    <name>auth.server</name>
+                <property>
+                    <name>auth.server.container</name>
                     <value>auth-server-wildfly</value>
-                </property>-->
+                </property>
             </activation>
+            <properties>
+                <exclude.adapters.relative>-</exclude.adapters.relative>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -335,6 +344,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
+                                <auth.server.wildfly>true</auth.server.wildfly>
                                 <auth.server.wildfly.home>${auth.server.wildfly.home}</auth.server.wildfly.home>
                             </systemPropertyVariables>
                         </configuration>
@@ -346,7 +356,9 @@
         <profile>
             <id>examples</id>
             <activation>
-                <activeByDefault>true</activeByDefault>            
+                <property>
+                    <name>!skipTests</name>
+                </property>
             </activation>
             <build>
                 <plugins>
@@ -424,11 +436,9 @@
         
         <profile>
             <id>app-server-wildfly</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
             <properties>
                 <wildfly.home>${containers.home}/wildfly-${wildfly.version}</wildfly.home>
+                <exclude.adapters.wildfly>-</exclude.adapters.wildfly>
             </properties>
             <dependencies>
                 <dependency>
@@ -584,6 +594,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
+                                <app.server.wildfly>true</app.server.wildfly>
                                 <wildfly.home>${wildfly.home}</wildfly.home>
                             </systemPropertyVariables>
                         </configuration>
