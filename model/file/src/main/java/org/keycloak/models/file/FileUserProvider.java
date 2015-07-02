@@ -305,6 +305,7 @@ public class FileUserProvider implements UserProvider {
 
         UserEntity userEntity = new UserEntity();
         userEntity.setId(userId);
+        userEntity.setCreatedTimestamp(System.currentTimeMillis());
         userEntity.setUsername(username);
         // Compatibility with JPA model, which has user disabled by default
         // userEntity.setEnabled(true);
