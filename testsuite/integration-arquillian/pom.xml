@@ -29,7 +29,10 @@
         <app.server.port.offset>200</app.server.port.offset>
         <app.server.http.port>8280</app.server.http.port>
         <app.server.management.port>10190</app.server.management.port>
-                        
+        <app.server.management.port.jmx>10199</app.server.management.port.jmx>
+        
+        <as7.version>7.1.1.Final</as7.version>
+                                                        
         <!-- TEST SETTINGS -->
         
         <!--
@@ -42,6 +45,7 @@
         <!-- Default test excludes - overridden in profiles. -->
         <exclude.adapters.relative>**/Relative*AdapterTest.java</exclude.adapters.relative>
         <exclude.adapters.wildfly>**/Wildfly*AdapterTest.java</exclude.adapters.wildfly>
+        <exclude.adapters.as7>**/AS7*AdapterTest.java</exclude.adapters.as7>
         
         <!--Default auth-server container.-->
         <auth.server.container>auth-server-undertow</auth.server.container>
@@ -137,6 +141,13 @@
             <groupId>org.jboss.spec.javax.servlet</groupId>
             <artifactId>jboss-servlet-api_3.0_spec</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.jboss.spec</groupId>
+            <artifactId>jboss-javaee-6.0</artifactId>
+            <version>1.0.0.Final</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>        
         
         <dependency>
             <groupId>log4j</groupId>
@@ -247,9 +258,14 @@
             <version>1.0.0.Alpha1-SNAPSHOT</version>
         </dependency>
         <dependency>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-arquillian-container-managed</artifactId>
+            <version>${as7.version}</version>
+        </dependency>
+        <!--        <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-arquillian-container-managed</artifactId>
-        </dependency>
+        </dependency>        -->
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant</artifactId>
@@ -283,6 +299,7 @@
                                 <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
                                 <app.server.http.port>${app.server.http.port}</app.server.http.port>
                                 <app.server.management.port>${app.server.management.port}</app.server.management.port>
+                                <app.server.management.port.jmx>${app.server.management.port.jmx}</app.server.management.port.jmx>
                                 <adapter.type>${adapter.type}</adapter.type>
                             </systemPropertyVariables>
                             <properties>
@@ -294,6 +311,7 @@
                             <excludes>
                                 <exclude>${exclude.adapters.relative}</exclude>
                                 <exclude>${exclude.adapters.wildfly}</exclude>
+                                <exclude>${exclude.adapters.as7}</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -536,7 +554,7 @@
                                     <transformationSets>
                                         <transformationSet>
                                             <dir>${wildfly.home}/standalone/configuration</dir>
-                                            <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
+                                            <stylesheet>src/main/xslt/wildfly9/standalone.xsl</stylesheet>
                                             <includes>
                                                 <include>standalone.xml</include>
                                             </includes>
@@ -629,6 +647,125 @@
                                 <app.server.wildfly>true</app.server.wildfly>
                                 <wildfly.home>${wildfly.home}</wildfly.home>
                                 <adapter.libs.wildfly>${adapter.libs.wildfly}</adapter.libs.wildfly>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>app-server-as7</id>
+            <properties>
+                <as7.home>${containers.home}/jboss-as-${as7.version}</as7.home>
+                <exclude.adapters.as7>-</exclude.adapters.as7>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-as7-adapter-dist</artifactId>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>2.10</version>
+                        <executions>
+                            <execution>
+                                <id>unpack-as7</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.jboss.as</groupId>
+                                            <artifactId>jboss-as-dist</artifactId>
+                                            <version>${as7.version}</version>
+                                            <type>zip</type>
+                                            <outputDirectory>${containers.home}</outputDirectory>
+                                            <overWrite>false</overWrite>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>unpack-original-standalone-xml</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.jboss.as</groupId>
+                                            <artifactId>jboss-as-dist</artifactId>
+                                            <version>${as7.version}</version>
+                                            <type>zip</type>
+                                            <outputDirectory>${containers.home}</outputDirectory>
+                                            <includes>*/standalone/configuration/standalone.xml</includes>
+                                            <overWrite>true</overWrite>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>unpack-as7-adapter</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>keycloak-as7-adapter-dist</artifactId>
+                                            <type>zip</type>
+                                            <outputDirectory>${as7.home}</outputDirectory>
+                                            <overWrite>true</overWrite>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <version>1.0</version>
+                        <executions>
+                            <execution>
+                                <id>configure-as7-adapter</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${as7.home}/standalone/configuration</dir>
+                                            <stylesheet>src/main/xslt/as7/standalone.xsl</stylesheet>
+                                            <includes>
+                                                <include>standalone.xml</include>
+                                            </includes>
+                                            <outputDir>${as7.home}/standalone/configuration</outputDir>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <app.server.as7>true</app.server.as7>
+                                <as7.home>${as7.home}</as7.home>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

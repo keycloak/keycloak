@@ -33,6 +33,18 @@
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
         </configuration>
     </container>
+    <container qualifier="app-server-as7" mode="manual" >
+        <configuration>
+            <property name="enabled">${app.server.as7}</property>
+            <property name="jbossHome">${as7.home}</property>
+            <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${app.server.port.offset} -Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</property>
+            <property name="managementPort">${app.server.management.port}</property>
+            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
+        </configuration>
+<!--        <protocol type="jmx-as7">
+            <property name="executionType">REMOTE</property>
+        </protocol>-->
+    </container>
     
     <extension qualifier="webdriver">
         <property name="browser">${browser}</property>
@@ -40,10 +52,6 @@
     
     <extension qualifier="graphene-secondbrowser">
         <property name="browser">${browser}</property>
-    </extension>
-    
-    <extension name="graphene">
-        <property name="url">http://localhost:8180/auth</property>
     </extension>
     
     <engine>
