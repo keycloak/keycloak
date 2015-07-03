@@ -31,7 +31,7 @@
         <app.server.management.port>10190</app.server.management.port>
         <app.server.management.port.jmx>10199</app.server.management.port.jmx>
         
-        <as7.version>7.1.1.Final</as7.version>
+        <as7.version>${jboss.version}</as7.version>
                                                         
         <!-- TEST SETTINGS -->
         
@@ -46,6 +46,7 @@
         <exclude.adapters.relative>**/Relative*AdapterTest.java</exclude.adapters.relative>
         <exclude.adapters.wildfly>**/Wildfly*AdapterTest.java</exclude.adapters.wildfly>
         <exclude.adapters.as7>**/AS7*AdapterTest.java</exclude.adapters.as7>
+        <exclude.console>-</exclude.console>
         
         <!--Default auth-server container.-->
         <auth.server.container>auth-server-undertow</auth.server.container>
@@ -141,13 +142,6 @@
             <groupId>org.jboss.spec.javax.servlet</groupId>
             <artifactId>jboss-servlet-api_3.0_spec</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.jboss.spec</groupId>
-            <artifactId>jboss-javaee-6.0</artifactId>
-            <version>1.0.0.Final</version>
-            <type>pom</type>
-            <scope>provided</scope>
-        </dependency>        
         
         <dependency>
             <groupId>log4j</groupId>
@@ -218,6 +212,47 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-services</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-core</artifactId>
+        </dependency>
+        
+<!--        <dependency>
+            <groupId>io.undertow</groupId>
+            <artifactId>undertow-servlet</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.undertow</groupId>
+            <artifactId>undertow-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
+        </dependency>-->
+<!--        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-xc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+        </dependency>-->
+        <dependency>
+            <groupId>org.hibernate.javax.persistence</groupId>
+            <artifactId>hibernate-jpa-2.0-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-entitymanager</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -233,18 +268,6 @@
             <type>pom</type>
         </dependency>
         <dependency>
-            <groupId>org.hibernate.javax.persistence</groupId>
-            <artifactId>hibernate-jpa-2.0-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-entitymanager</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-core</artifactId>
         </dependency>
@@ -258,14 +281,9 @@
             <version>1.0.0.Alpha1-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-arquillian-container-managed</artifactId>
-            <version>${as7.version}</version>
-        </dependency>
-        <!--        <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-arquillian-container-managed</artifactId>
-        </dependency>        -->
+        </dependency>        
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant</artifactId>
@@ -312,12 +330,20 @@
                                 <exclude>${exclude.adapters.relative}</exclude>
                                 <exclude>${exclude.adapters.wildfly}</exclude>
                                 <exclude>${exclude.adapters.as7}</exclude>
+                                <exclude>${exclude.console}</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
-        </profile>                
+        </profile>     
+        
+        <profile>
+            <id>no-console</id>
+            <properties>
+                <exclude.console>**/console/**/*Test.java</exclude.console>           
+            </properties>
+        </profile>
                         	
         <profile>
             <id>adapter-bundled</id>
@@ -335,6 +361,7 @@
                 </property>
             </activation>
             <properties>
+                <auth.server.container>auth-server-wildfly</auth.server.container>
                 <exclude.adapters.relative>-</exclude.adapters.relative>
             </properties>
             <build>
@@ -655,6 +682,7 @@
         </profile>
 
         <profile>
+            <!--DOESN WORK YET-->
             <id>app-server-as7</id>
             <properties>
                 <as7.home>${containers.home}/jboss-as-${as7.version}</as7.home>

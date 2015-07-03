@@ -5,7 +5,7 @@ import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescriptio
 import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
 import org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDeploymentScenarioGenerator;
 import org.jboss.arquillian.test.spi.TestClass;
-import static org.keycloak.testsuite.arquillian.ContainersManager.*;
+import static org.keycloak.testsuite.arquillian.ContainersTestEnricher.*;
 
 /**
  * Changes target container for all Arquillian deployments based on value of @AppServerContainer.

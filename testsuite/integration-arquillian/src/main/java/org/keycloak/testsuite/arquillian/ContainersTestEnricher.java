@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.arquillian;
 
-import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
@@ -17,7 +16,7 @@ import org.keycloak.testsuite.arquillian.annotation.AdapterLibsLocationProperty;
  *
  * @author tkyjovsk
  */
-public class ContainersManager {
+public class ContainersTestEnricher {
 
     @Inject
     private Instance<ContainerController> containerController;
@@ -83,7 +82,7 @@ public class ContainersManager {
     }
 
     public static String getAppServerQualifier(Class testClass) {
-        Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AppServerContainer.class);
+        Class<? extends ContainersTestEnricher> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AppServerContainer.class);
 
         String appServerQ = (annotatedClass == null ? null
                 : annotatedClass.getAnnotation(AppServerContainer.class).value());
@@ -102,18 +101,11 @@ public class ContainersManager {
     }
 
     public static String getAdapterLibsLocationProperty(Class testClass) {
-        Class<? extends ContainersManager> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AdapterLibsLocationProperty.class);
+        Class<? extends ContainersTestEnricher> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AdapterLibsLocationProperty.class);
         return (annotatedClass == null ? null
                 : annotatedClass.getAnnotation(AdapterLibsLocationProperty.class).value());
     }
 
-//    public void beforeClassAdminPassword(@Observes BeforeClass event) {
-//        if (authServerQualifier.contains("wildfly")) {
-//            // for wildfly set admin pwd status from system property
-//            AdminPasswordUpdateTracker.setAdminPasswordUpdatedFor(authServerQualifier,
-//                    Boolean.parseBoolean(System.getProperty("adminPasswordUpdated", "false")));
-//        }
-//    }
     public void afterClassAdminPassword(@Observes AfterClass event) {
         if (authServerQualifier.contains("undertow")) {
             // reset admin pwd status only for undertow

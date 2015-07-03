@@ -13,9 +13,9 @@ import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.adapters.config.BaseAdapterConfig;
-import static org.keycloak.testsuite.arquillian.ContainersManager.getAdapterLibsLocationProperty;
-import static org.keycloak.testsuite.arquillian.ContainersManager.hasAppServerContainerAnnotation;
-import static org.keycloak.testsuite.arquillian.ContainersManager.isRelative;
+import static org.keycloak.testsuite.arquillian.ContainersTestEnricher.getAdapterLibsLocationProperty;
+import static org.keycloak.testsuite.arquillian.ContainersTestEnricher.hasAppServerContainerAnnotation;
+import static org.keycloak.testsuite.arquillian.ContainersTestEnricher.isRelative;
 import org.keycloak.testsuite.util.AdapterType;
 import static org.keycloak.testsuite.util.Json.loadJson;
 import org.keycloak.util.JsonSerialization;
@@ -31,11 +31,13 @@ public class AdapterConfigModifier implements ApplicationArchiveProcessor {
     private static final Logger log = Logger.getLogger(AdapterConfigModifier.class.getName());
 
     public static final String ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak.json";
+    public static final String ADAPTER_CONFIG_PATH_TENANT1 = "/WEB-INF/tenant1-keycloak.json";
+    public static final String ADAPTER_CONFIG_PATH_TENANT2 = "/WEB-INF/tenant2-keycloak.json";
 
     @Override
     public void process(Archive<?> archive, TestClass testClass) {
         if (isAdapterTest(testClass)) {
-            modifyAdapterConfig(archive, testClass);
+            modifyAdapterConfigs(archive, testClass);
             attachKeycloakLibs(archive, testClass);
         } else {
             System.out.println(testClass.getJavaClass().getSimpleName() + " is not an AdapterTest");
@@ -46,27 +48,35 @@ public class AdapterConfigModifier implements ApplicationArchiveProcessor {
         return hasAppServerContainerAnnotation(testClass.getJavaClass());
     }
 
-    protected void modifyAdapterConfig(Archive<?> archive, TestClass testClass) {
-        System.out.println("Modifying adapter config for " + archive.getName());
-        try {
-            BaseAdapterConfig adapterConfig = loadJson(archive.get(ADAPTER_CONFIG_PATH)
-                    .getAsset().openStream(), BaseAdapterConfig.class);
+    protected void modifyAdapterConfigs(Archive<?> archive, TestClass testClass) {
+        boolean relative = isRelative(testClass.getJavaClass());
+        modifyAdapterConfig(archive, ADAPTER_CONFIG_PATH, relative);
+        modifyAdapterConfig(archive, ADAPTER_CONFIG_PATH_TENANT1, relative);
+        modifyAdapterConfig(archive, ADAPTER_CONFIG_PATH_TENANT2, relative);
+    }
 
-            boolean relative = isRelative(testClass.getJavaClass());
-            System.out.println(" setting " + (relative ? "" : "non-") + "relative auth-server-url");
-            if (relative) {
-                adapterConfig.setAuthServerUrl("/auth");
+    protected void modifyAdapterConfig(Archive<?> archive, String adapterConfigPath, boolean relative) {
+        if (archive.contains(adapterConfigPath)) {
+            System.out.println("Modifying adapter config " + adapterConfigPath + " in " + archive.getName());
+            try {
+                BaseAdapterConfig adapterConfig = loadJson(archive.get(adapterConfigPath)
+                        .getAsset().openStream(), BaseAdapterConfig.class);
+
+                System.out.println(" setting " + (relative ? "" : "non-") + "relative auth-server-url");
+                if (relative) {
+                    adapterConfig.setAuthServerUrl("/auth");
 //                ac.setRealmKey(null); // TODO verify if realm key is required for relative scneario
-            } else {
-                adapterConfig.setAuthServerUrl(URLProvider.getAuthServerContextRoot() + "/auth");
-                adapterConfig.setRealmKey(REALM_KEY);
+                } else {
+                    adapterConfig.setAuthServerUrl(URLProvider.getAuthServerContextRoot() + "/auth");
+                    adapterConfig.setRealmKey(REALM_KEY);
+                }
+
+                archive.add(new StringAsset(JsonSerialization.writeValueAsPrettyString(adapterConfig)),
+                        adapterConfigPath);
+
+            } catch (IOException ex) {
+                log.log(Level.SEVERE, "Cannot serialize adapter config to JSON.", ex);
             }
-
-            archive.add(new StringAsset(JsonSerialization.writeValueAsPrettyString(adapterConfig)),
-                    ADAPTER_CONFIG_PATH);
-
-        } catch (IOException ex) {
-            log.log(Level.SEVERE, "Cannot serialize adapter config to JSON.", ex);
         }
     }
 

@@ -7,8 +7,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.arquillian.annotation.AppServerContext;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContext;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
 
 public class URLProvider extends URLResourceProvider {
 
@@ -17,14 +17,16 @@ public class URLProvider extends URLResourceProvider {
 
     @Override
     public Object doLookup(ArquillianResource resource, Annotation... qualifiers) {
+        System.out.println("URLProvider.doLookup");
         URL url = (URL) super.doLookup(resource, qualifiers);
         if (url == null) {
             try {
                 for (Annotation a : qualifiers) {
-                    if (AuthServerContext.class.isAssignableFrom(a.annotationType())) {
+                    if (AuthServerContainer.class.isAssignableFrom(a.annotationType())) {
                         return new URL(getAuthServerContextRoot());
                     }
-                    if (AppServerContext.class.isAssignableFrom(a.annotationType())) {
+                    if (AppServerContainer.class.isAssignableFrom(a.annotationType())) {
+                        System.out.println("injecting app server context");
                         return new URL(getAppServerContextRoot());
                     }
                 }

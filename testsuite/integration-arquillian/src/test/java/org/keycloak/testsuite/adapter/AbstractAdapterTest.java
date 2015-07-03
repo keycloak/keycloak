@@ -9,6 +9,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.TestRealms;
+import org.keycloak.testsuite.arquillian.ContainersTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.page.adapter.AppServerContextRoot;
 
@@ -28,6 +30,10 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
     public static final URL jbossDeploymentStructure = AbstractServletsAdapterTest.class
             .getResource("/adapter-test/" + JBOSS_DEPLOYMENT_STRUCTURE_XML);
 
+    public AbstractAdapterTest() {
+        System.out.println("AbstractAdapterTest - App server: " + appServerContextRoot.getUrlString());
+    }
+
     @Before
     public void beforeAdapterTest() {
         LOGIN_URL = OIDCLoginProtocolService.authUrl(authServer.createUriBuilder())
@@ -35,18 +41,24 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
     }
 
     @Override
-    public void importTestRealm() {
-        RealmRepresentation realm = loadTestRealm();
-        System.out.println("Setting redirect-uris in test realm '" + realm.getId() + "' as " + (isRelative() ? "" : "non-") + "relative");
-        if (isRelative()) {
-            modifyClientRedirectUris(realm, appServerContextRoot.getUrlString(), "");
-        } else {
-            modifyClientRedirectUris(realm, "^(/.*/\\*)", appServerContextRoot.getUrlString() + "$1");
+    public TestRealms loadTestRealms() {
+        TestRealms adapterTestRealms = loadAdapterTestRealms();
+        for (RealmRepresentation realm : adapterTestRealms.values()) {
+            System.out.println("Setting redirect-uris in test realm '" + realm.getRealm() + "' as " + (isRelative() ? "" : "non-") + "relative");
+            if (isRelative()) {
+                modifyClientRedirectUris(realm, appServerContextRoot.getUrlString(), "");
+            } else {
+                modifyClientRedirectUris(realm, "^(/.*/\\*)", appServerContextRoot.getUrlString() + "$1");
+            }
         }
-        importRealm(realm);
+        return adapterTestRealms;
     }
 
-    public abstract RealmRepresentation loadTestRealm();
+    public abstract TestRealms loadAdapterTestRealms();
+
+    public boolean isRelative() {
+        return ContainersTestEnricher.isRelative(this.getClass());
+    }
 
     protected void modifyClientRedirectUris(RealmRepresentation realm, String regex, String replacement) {
         for (ClientRepresentation client : realm.getClients()) {
@@ -59,12 +71,6 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
                 client.setRedirectUris(newRedirectUris);
             }
         }
-    }
-
-    @Override
-    public void removeTestRealm() {
-        System.out.println("Removing demo realm.");
-        keycloak.realm("demo").remove();
     }
 
 }

@@ -57,9 +57,9 @@
         }
 
     ],
-    "applications": [
+    "clients": [
         {
-            "name": "multi-tenant",
+            "clientId": "multi-tenant",
             "enabled": true,
             "adminUrl": "http://localhost:8280/multi-tenant",
             "baseUrl": "http://localhost:8280/multi-tenant",
@@ -67,6 +67,6 @@
                 "http://localhost:8280/multi-tenant/*"
             ],
             "secret": "password"
-        }
+        }        
     ]
 }

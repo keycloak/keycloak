@@ -12,7 +12,8 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Retention(RUNTIME)
-@Target({ElementType.FIELD})
-public @interface AppServerContext 
+@Target({ElementType.TYPE, ElementType.METHOD})
+public @interface RequiresRealms 
 {
+   String[] value();
 }

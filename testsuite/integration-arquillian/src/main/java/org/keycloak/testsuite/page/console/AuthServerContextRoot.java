@@ -3,7 +3,7 @@ package org.keycloak.testsuite.page.console;
 import org.keycloak.testsuite.page.AbstractPageWithProvidedUrl;
 import java.net.URL;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContext;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
 
 /**
  *
@@ -12,7 +12,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContext;
 public class AuthServerContextRoot extends AbstractPageWithProvidedUrl {
 
     @ArquillianResource
-    @AuthServerContext
+    @AuthServerContainer
     private URL authServerContextRoot;
 
     @Override

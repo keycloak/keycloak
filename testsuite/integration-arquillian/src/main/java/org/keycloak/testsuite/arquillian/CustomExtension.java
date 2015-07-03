@@ -22,12 +22,14 @@ public class CustomExtension implements LoadableExtension {
 
         builder
                 .override(ResourceProvider.class, URLResourceProvider.class, URLProvider.class)
-                .override(ResourceProvider.class, CustomizableURLResourceProvider.class, URLProvider.class);
-
+                .override(ResourceProvider.class, CustomizableURLResourceProvider.class, URLProvider.class)
+                .service(ResourceProvider.class, URLProvider.class);
+        
         builder
                 .service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)
                 .service(ApplicationArchiveProcessor.class, AdapterConfigModifier.class)
-                .observer(ContainersManager.class);
+                .observer(ContainersTestEnricher.class)
+                .observer(RealmsTestEnricher.class);
 
         builder
                 .service(DeployableContainer.class, CustomUndertowContainer.class);

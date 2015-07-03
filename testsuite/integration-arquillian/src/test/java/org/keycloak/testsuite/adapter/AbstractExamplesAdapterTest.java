@@ -10,12 +10,16 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.TestRealms;
+import static org.keycloak.testsuite.TestRealms.ADAPTER_PRECONFIGURED_DEMO;
+import static org.keycloak.testsuite.TestRealms.loadRealm;
+import org.keycloak.testsuite.arquillian.annotation.RequiresRealms;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.page.adapter.CustomerPortalExample;
 import org.keycloak.testsuite.page.adapter.DatabaseServiceExample;
 import org.keycloak.testsuite.page.adapter.ProductPortalExample;
 
+@RequiresRealms({ADAPTER_PRECONFIGURED_DEMO})
 public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
 
     public static final String EXAMPLES_HOME;
@@ -60,15 +64,17 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
     }
 
     @Override
-    public RealmRepresentation loadTestRealm() {
+    public TestRealms loadAdapterTestRealms() {
+        TestRealms adapterTestRealms = new TestRealms();
         File testRealmFile = new File(EXAMPLES_HOME
                 + "/keycloak-examples-" + EXAMPLES_VERSION_SUFFIX
                 + "/preconfigured-demo/testrealm.json");
         try {
-            return loadRealm(new FileInputStream(testRealmFile));
+            adapterTestRealms.put(ADAPTER_PRECONFIGURED_DEMO, loadRealm(new FileInputStream(testRealmFile)));
         } catch (FileNotFoundException ex) {
             throw new IllegalStateException("Test realm file not found: " + testRealmFile);
         }
+        return adapterTestRealms;
     }
 
     @Test
