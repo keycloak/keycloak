@@ -230,7 +230,8 @@ public class ModelToRepresentation {
         rep.setId(session.getId());
         rep.setStart(Time.toMillis(session.getStarted()));
         rep.setLastAccess(Time.toMillis(session.getLastSessionRefresh()));
-        rep.setUser(session.getUser().getUsername());
+        rep.setUsername(session.getUser().getUsername());
+        rep.setUserId(session.getUser().getId());
         rep.setIpAddress(session.getIpAddress());
         for (ClientSessionModel clientSession : session.getClientSessions()) {
             ClientModel client = clientSession.getClient();
