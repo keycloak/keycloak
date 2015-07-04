@@ -307,9 +307,18 @@ public class FederationProvidersIntegrationTest {
             johnDirect.setSingleAttribute(LDAPConstants.SN, "DirectLDAPUpdated");
             ldapFedProvider.getLdapIdentityStore().update(johnDirect);
 
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("johndirect", appRealm);
+
             // Verify that postalCode is still the same as we read it's value from Keycloak DB
             user = session.users().getUserByUsername("johndirect", appRealm);
-            postalCode = user.getFirstAttribute("postal_code");
+            String postalCode = user.getFirstAttribute("postal_code");
             Assert.assertEquals("12399", postalCode);
 
             // Check user.getAttributes()
@@ -381,9 +390,6 @@ public class FederationProvidersIntegrationTest {
                     FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, ldapFirstNameAttributeName,
                     UserAttributeLDAPFederationMapper.READ_ONLY, "false");
             appRealm.addUserFederationMapper(fullNameMapperModel);
-
-            // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
-            FederationTestUtils.assertUserImported(session.users(), appRealm, "fullname", "James", "Dee", "fullname@email.org", "4578");
         } finally {
             keycloakRule.stopSession(session, true);
         }
@@ -391,6 +397,9 @@ public class FederationProvidersIntegrationTest {
         session = keycloakRule.startSession();
         try {
             RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
+            FederationTestUtils.assertUserImported(session.users(), appRealm, "fullname", "James", "Dee", "fullname@email.org", "4578");
 
             // Remove "fullnameUser" to assert he is removed from LDAP. Revert mappers to previous state
             UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);

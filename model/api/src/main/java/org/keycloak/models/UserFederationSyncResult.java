@@ -8,6 +8,7 @@ public class UserFederationSyncResult {
     private int added;
     private int updated;
     private int removed;
+    private int failed;
 
     public int getAdded() {
         return added;
@@ -33,6 +34,14 @@ public class UserFederationSyncResult {
         this.removed = removed;
     }
 
+    public int getFailed() {
+        return failed;
+    }
+
+    public void setFailed(int failed) {
+        this.failed = failed;
+    }
+
     public void increaseAdded() {
         added++;
     }
@@ -45,14 +54,23 @@ public class UserFederationSyncResult {
         removed++;
     }
 
+    public void increaseFailed() {
+        failed++;
+    }
+
     public void add(UserFederationSyncResult other) {
         added += other.added;
         updated += other.updated;
         removed += other.removed;
+        failed += other.failed;
     }
 
     public String getStatus() {
-        return String.format("%d imported users, %d updated users, %d removed users", added, updated, removed);
+        String status = String.format("%d imported users, %d updated users, %d removed users", added, updated, removed);
+        if (failed != 0) {
+            status += String.format(", %d users failed sync! See server log for more details", failed);
+        }
+        return status;
     }
 
     @Override

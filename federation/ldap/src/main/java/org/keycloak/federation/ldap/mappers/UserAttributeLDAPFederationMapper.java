@@ -3,6 +3,7 @@ package org.keycloak.federation.ldap.mappers;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
@@ -58,6 +60,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
     public static final String LDAP_ATTRIBUTE = "ldap.attribute";
     public static final String READ_ONLY = "read.only";
     public static final String ALWAYS_READ_VALUE_FROM_LDAP = "always.read.value.from.ldap";
+    public static final String IS_MANDATORY_IN_LDAP = "is.mandatory.in.ldap";
 
 
     @Override
@@ -88,6 +91,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
     public void onRegisterUserToLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
         String userModelAttrName = mapperModel.getConfig().get(USER_MODEL_ATTRIBUTE);
         String ldapAttrName = mapperModel.getConfig().get(LDAP_ATTRIBUTE);
+        boolean isMandatoryInLdap = parseBooleanParameter(mapperModel, IS_MANDATORY_IN_LDAP);
 
         Property<Object> userModelProperty = userModelProperties.get(userModelAttrName.toLowerCase());
 
@@ -95,15 +99,27 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
 
             // we have java property on UserModel. Assuming we support just properties of simple types
             Object attrValue = userModelProperty.getValue(localUser);
-            String valueAsString = (attrValue == null) ? null : attrValue.toString();
-            ldapUser.setSingleAttribute(ldapAttrName, valueAsString);
+
+            if (attrValue == null) {
+                if (isMandatoryInLdap) {
+                    ldapUser.setSingleAttribute(ldapAttrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
+                } else {
+                    ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<String>());
+                }
+            } else {
+                ldapUser.setSingleAttribute(ldapAttrName, attrValue.toString());
+            }
         } else {
 
             // we don't have java property. Let's set attribute
             List<String> attrValues = localUser.getAttribute(userModelAttrName);
 
             if (attrValues.size() == 0) {
-                ldapUser.setAttribute(ldapAttrName, null);
+                if (isMandatoryInLdap) {
+                    ldapUser.setSingleAttribute(ldapAttrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
+                } else {
+                    ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<String>());
+                }
             } else {
                 ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<>(attrValues));
             }
@@ -119,6 +135,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
         final String userModelAttrName = mapperModel.getConfig().get(USER_MODEL_ATTRIBUTE);
         final String ldapAttrName = mapperModel.getConfig().get(LDAP_ATTRIBUTE);
         boolean isAlwaysReadValueFromLDAP = parseBooleanParameter(mapperModel, ALWAYS_READ_VALUE_FROM_LDAP);
+        final boolean isMandatoryInLdap = parseBooleanParameter(mapperModel, IS_MANDATORY_IN_LDAP);
 
         // For writable mode, we want to propagate writing of attribute to LDAP as well
         if (ldapProvider.getEditMode() == UserFederationProvider.EditMode.WRITABLE && !isReadOnly(mapperModel)) {
@@ -170,12 +187,20 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
                         ensureTransactionStarted();
 
                         if (value == null) {
-                            ldapUser.setAttribute(ldapAttrName, null);
+                            if (isMandatoryInLdap) {
+                                ldapUser.setSingleAttribute(ldapAttrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
+                            } else {
+                                ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<String>());
+                            }
                         } else if (value instanceof String) {
                             ldapUser.setSingleAttribute(ldapAttrName, (String) value);
                         } else {
                             List<String> asList = (List<String>) value;
-                            ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<>(asList));
+                            if (asList.isEmpty() && isMandatoryInLdap) {
+                                ldapUser.setSingleAttribute(ldapAttrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
+                            } else {
+                                ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<>(asList));
+                            }
                         }
                     }
                 }
@@ -203,7 +228,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
                     if (name.equalsIgnoreCase(userModelAttrName)) {
                         Collection<String> ldapAttrValue = ldapUser.getAttributeAsSet(ldapAttrName);
                         if (ldapAttrValue == null) {
-                            return null;
+                            return Collections.emptyList();
                         } else {
                             return new ArrayList<>(ldapAttrValue);
                         }

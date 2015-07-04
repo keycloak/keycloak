@@ -1,5 +1,6 @@
 package org.keycloak.services;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
 
@@ -10,6 +11,8 @@ import java.util.List;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class DefaultKeycloakTransactionManager implements KeycloakTransactionManager {
+
+    public static final Logger logger = Logger.getLogger(DefaultKeycloakTransactionManager.class);
 
     private List<KeycloakTransaction> transactions = new LinkedList<KeycloakTransaction>();
     private List<KeycloakTransaction> afterCompletion = new LinkedList<KeycloakTransaction>();
@@ -57,13 +60,26 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
                 exception = exception == null ? e : exception;
             }
         }
-        for (KeycloakTransaction tx : afterCompletion) {
-            try {
-                tx.commit();
-            } catch (RuntimeException e) {
-                exception = exception == null ? e : exception;
+
+        // Don't commit "afterCompletion" if commit of some main transaction failed
+        if (exception == null) {
+            for (KeycloakTransaction tx : afterCompletion) {
+                try {
+                    tx.commit();
+                } catch (RuntimeException e) {
+                    exception = exception == null ? e : exception;
+                }
+            }
+        } else {
+            for (KeycloakTransaction tx : afterCompletion) {
+                try {
+                    tx.rollback();
+                } catch (RuntimeException e) {
+                    logger.error("Exception during rollback", e);
+                }
             }
         }
+
         active = false;
         if (exception != null) {
             throw exception;

@@ -68,7 +68,7 @@ public class LDAPMultipleAttributesTest {
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
             FederationTestUtils.removeAllLDAPUsers(ldapFedProvider, appRealm);
 
-            LDAPObject james = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "jbrown", "James", "Brown", "jbrown@keycloak.org", "", "88441");
+            LDAPObject james = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "jbrown", "James", "Brown", "jbrown@keycloak.org", null, "88441");
             ldapFedProvider.getLdapIdentityStore().updatePassword(james, "password");
 
             // User for testing duplicating surname and postalCode
