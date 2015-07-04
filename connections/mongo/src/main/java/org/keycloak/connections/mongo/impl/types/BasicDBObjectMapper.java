@@ -89,13 +89,6 @@ public class BasicDBObjectMapper<S> implements Mapper<BasicDBObject, S> {
             Type[] genericTypeArguments = parameterized.getActualTypeArguments();
 
             List<Type> genericTypes = Arrays.asList(genericTypeArguments);
-            /*for (Type genericType : genericTypeArguments) {
-                if (genericType instanceof Class) {
-                    genericTypes.add((Class<?>) genericType);
-                } else {
-                    System.out.println("foo");
-                }
-            }*/
 
             Class<?> expectedReturnType = (Class<?>)parameterized.getRawType();
             context = new MapperContext<Object, Object>(valueFromDB, expectedReturnType, genericTypes);

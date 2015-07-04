@@ -34,7 +34,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 class FederationTestUtils {
 
     public static UserModel addLocalUser(KeycloakSession session, RealmModel realm, String username, String email, String password) {
-        UserModel user = session.users().addUser(realm, username);
+        UserModel user = session.userStorage().addUser(realm, username);
         user.setEmail(email);
         user.setEnabled(true);
 
@@ -47,7 +47,7 @@ class FederationTestUtils {
     }
 
     public static LDAPObject addLDAPUser(LDAPFederationProvider ldapProvider, RealmModel realm, final String username,
-                                            final String firstName, final String lastName, final String email, final String postalCode) {
+                                            final String firstName, final String lastName, final String email, final String street, final String... postalCode) {
         UserModel helperUser = new UserModelDelegate(null) {
 
             @Override
@@ -72,8 +72,10 @@ class FederationTestUtils {
 
             @Override
             public List<String> getAttribute(String name) {
-                if ("postal_code".equals(name)) {
+                if ("postal_code".equals(name) && postalCode != null && postalCode.length > 0) {
                     return Arrays.asList(postalCode);
+                } else if ("street".equals(name) && street != null) {
+                    return Arrays.asList(street);
                 } else {
                     return Collections.emptyList();
                 }
@@ -105,7 +107,8 @@ class FederationTestUtils {
                 UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, userModelAttributeName,
                 UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, ldapAttributeName,
                 UserAttributeLDAPFederationMapper.READ_ONLY, "false",
-                UserAttributeLDAPFederationMapper.ALWAYS_READ_VALUE_FROM_LDAP, "false");
+                UserAttributeLDAPFederationMapper.ALWAYS_READ_VALUE_FROM_LDAP, "false",
+                UserAttributeLDAPFederationMapper.IS_MANDATORY_IN_LDAP, "false");
         realm.addUserFederationMapper(mapperModel);
     }
 

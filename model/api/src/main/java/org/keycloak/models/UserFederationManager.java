@@ -128,7 +128,7 @@ public class UserFederationManager implements UserProvider {
         if (link != null) {
             UserModel validatedProxyUser = link.validateAndProxy(realm, user);
             if (validatedProxyUser != null) {
-                managedUsers.put(user.getId(), user);
+                managedUsers.put(user.getId(), validatedProxyUser);
                 return validatedProxyUser;
             } else {
                 deleteInvalidUser(realm, user);

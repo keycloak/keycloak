@@ -3,6 +3,7 @@ package org.keycloak.federation.ldap.idm.store.ldap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -437,18 +438,26 @@ public class LDAPIdentityStore implements IdentityStore {
 
             // ldapObject.getReadOnlyAttributeNames() are lower-cased
             if (!ldapObject.getReadOnlyAttributeNames().contains(attrName.toLowerCase()) && (isCreate || !ldapObject.getRdnAttributeName().equalsIgnoreCase(attrName))) {
-                BasicAttribute attr = new BasicAttribute(attrName);
+
                 if (attrValue == null) {
-                    // Adding empty value as we don't know if attribute is mandatory in LDAP
-                    attr.add(LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
-                } else {
-                    for (String val : attrValue) {
-                        if (val == null || val.toString().trim().length() == 0) {
-                            val = LDAPConstants.EMPTY_ATTRIBUTE_VALUE;
-                        }
-                        attr.add(val);
-                    }
+                    // Shouldn't happen
+                    logger.warnf("Attribute '%s' is null on LDAP object '%s' . Using empty value to be saved to LDAP", attrName, ldapObject.getDn().toString());
+                    attrValue = Collections.emptySet();
                 }
+
+                // Ignore empty attributes during create
+                if (isCreate && attrValue.isEmpty()) {
+                    continue;
+                }
+
+                BasicAttribute attr = new BasicAttribute(attrName);
+                for (String val : attrValue) {
+                    if (val == null || val.toString().trim().length() == 0) {
+                        val = LDAPConstants.EMPTY_ATTRIBUTE_VALUE;
+                    }
+                    attr.add(val);
+                }
+
                 entryAttributes.put(attr);
             }
         }

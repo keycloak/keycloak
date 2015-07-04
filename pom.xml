@@ -155,6 +155,7 @@
         <module>testsuite</module>
         <module>timer</module>
         <module>export-import</module>
+        <module>util</module>
     </modules>
 
     <dependencyManagement>
@@ -431,25 +432,21 @@
                 <groupId>org.apache.directory.server</groupId>
                 <artifactId>apacheds-core-annotations</artifactId>
                 <version>${apacheds.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.directory.server</groupId>
                 <artifactId>apacheds-interceptor-kerberos</artifactId>
                 <version>${apacheds.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.directory.server</groupId>
                 <artifactId>apacheds-server-annotations</artifactId>
                 <version>${apacheds.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.directory.api</groupId>
                 <artifactId>api-ldap-codec-standalone</artifactId>
                 <version>${apacheds.codec.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <!-- Selenium -->
@@ -1122,6 +1119,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-util-embedded-ldap</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-docs-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
@@ -1184,6 +1186,7 @@
                 <version>${project.version}</version>
                 <classifier>classes</classifier>
             </dependency>
+
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>federation-properties-example</artifactId>
