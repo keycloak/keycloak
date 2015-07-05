@@ -20,7 +20,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -85,7 +84,7 @@ public class UsersResource {
     private RealmAuth auth;
 
     private TokenManager tokenManager;
-    
+
     @Context
     protected ClientConnection clientConnection;
 
@@ -910,23 +909,34 @@ public class UsersResource {
     /**
      * Verifies a user's password - custom endpoint for Smartling for doing privileged actions
      * @param username user's username (email address)
-     * @param formData contains password
+     * @param password contains password
      * @return 200 (success) or 400 (failure)
      */
     @Path("{username}/verify-password")
     @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response verifyPassword(@PathParam("username") String username, MultivaluedMap<String, String> formData) {
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Response verifyPassword(@PathParam("username") String username, CredentialRepresentation password) {
 
-        AuthenticationManager authenticationManager = new AuthenticationManager();
-        formData.addFirst(AuthenticationManager.FORM_USERNAME, username);
+        auth.requireManage();
 
-        AuthenticationManager.AuthenticationStatus authenticationStatus = authenticationManager.authenticateForm(session, clientConnection, realm, formData);
+        UserModel user = session.users().getUserByUsername(username, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        if (password == null || password.getValue() == null || !CredentialRepresentation.PASSWORD.equals(password.getType())) {
+            throw new BadRequestException("No password provided");
+        }
 
-        if (AuthenticationManager.AuthenticationStatus.SUCCESS.equals(authenticationStatus))
-            return Response.ok().build();
+        Response response = ErrorResponse.error("Invalid password", Response.Status.BAD_REQUEST);
 
-        return ErrorResponse.error("Invalid password", Response.Status.BAD_REQUEST);
+        UserCredentialModel passwordModel = UserCredentialModel.password(password.getValue());
+
+        if (session.users().validCredentials(realm, user, passwordModel))
+            response = Response.ok().build();
+
+        return response;
+
     }
 
 }
