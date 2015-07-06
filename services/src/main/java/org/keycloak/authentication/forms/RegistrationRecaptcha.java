@@ -23,6 +23,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
@@ -43,6 +44,8 @@ import java.util.Map;
 public class RegistrationRecaptcha implements FormAction, FormActionFactory, ConfiguredProvider {
     public static final String G_RECAPTCHA_RESPONSE = "g-recaptcha-response";
     public static final String RECAPTCHA_REFERENCE_CATEGORY = "recaptcha";
+    public static final String SITE_KEY = "site.key";
+    public static final String SITE_SECRET = "secret";
     protected static Logger logger = Logger.getLogger(RegistrationRecaptcha.class);
 
     public static final String PROVIDER_ID = "registration-recaptcha-action";
@@ -74,13 +77,13 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
     public void buildPage(FormContext context, LoginFormsProvider form) {
         AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
         if (captchaConfig == null || captchaConfig.getConfig() == null
-                || captchaConfig.getConfig().get("site.key") == null
-                || captchaConfig.getConfig().get("secret") == null
+                || captchaConfig.getConfig().get(SITE_KEY) == null
+                || captchaConfig.getConfig().get(SITE_SECRET) == null
                 ) {
             form.addError(new FormMessage(null, Messages.RECAPTCHA_NOT_CONFIGURED));
             return;
         }
-        String siteKey = captchaConfig.getConfig().get("site.key");
+        String siteKey = captchaConfig.getConfig().get(SITE_KEY);
         form.setAttribute("recaptchaRequired", true);
         form.setAttribute("recaptchaSiteKey", siteKey);
         List<String> scripts = new LinkedList<>();
@@ -98,7 +101,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
         String captcha = formData.getFirst(G_RECAPTCHA_RESPONSE);
         if (!Validation.isBlank(captcha)) {
             AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
-            String secret = captchaConfig.getConfig().get("secret");
+            String secret = captchaConfig.getConfig().get(SITE_SECRET);
 
             HttpClient httpClient = context.getSession().getProvider(HttpClientProvider.class).getHttpClient();
             HttpPost post = new HttpPost("https://www.google.com/recaptcha/api/siteverify");
@@ -185,8 +188,28 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
         return null;
     }
 
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+
+    static {
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
+        property.setName(SITE_KEY);
+        property.setLabel("Recaptcha Site Key");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Google Recaptcha Site Key");
+        configProperties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(SITE_SECRET);
+        property.setLabel("Recaptcha Secret");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Google Recaptcha Secret");
+        configProperties.add(property);
+
+    }
+
+
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return null;
+        return configProperties;
     }
 }

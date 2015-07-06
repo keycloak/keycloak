@@ -978,7 +978,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 clients : function(ClientListLoader) {
                     return ClientListLoader();
-                },
+                }
             },
             controller : 'UserFederationMapperCtrl'
         })
@@ -1065,6 +1065,36 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'RealmPasswordPolicyCtrl'
+        })
+        .when('/realms/:realm/authentication/config/:provider/:config', {
+            templateUrl : resourceUrl + '/partials/authenticator-config.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                configType : function(AuthenticationConfigDescriptionLoader) {
+                    return AuthenticationConfigDescriptionLoader();
+                },
+                config : function(AuthenticationConfigLoader) {
+                    return AuthenticationConfigLoader();
+                }
+            },
+            controller : 'AuthenticationConfigCtrl'
+        })
+        .when('/create/authentication/:realm/execution/:executionId/provider/:provider', {
+            templateUrl : resourceUrl + '/partials/authenticator-config.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                configType : function(AuthenticationConfigDescriptionLoader) {
+                    return AuthenticationConfigDescriptionLoader();
+                },
+                execution : function(ExecutionIdLoader) {
+                    return ExecutionIdLoader();
+                }
+            },
+            controller : 'AuthenticationConfigCreateCtrl'
         })
         .when('/server-info', {
             templateUrl : resourceUrl + '/partials/server-info.html'

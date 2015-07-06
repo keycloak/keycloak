@@ -9,7 +9,7 @@ import org.keycloak.provider.ProviderFactory;
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
 * @version $Revision: 1 $
 */
-public interface AuthenticatorFactory extends ProviderFactory<Authenticator>, ConfiguredProvider, ConfigurableAuthenticatorFactory {
+public interface AuthenticatorFactory extends ProviderFactory<Authenticator>, ConfigurableAuthenticatorFactory {
     Authenticator create();
 
 }

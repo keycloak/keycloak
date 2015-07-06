@@ -57,7 +57,7 @@ public class UsernamePasswordFormFactory implements AuthenticatorFactory {
 
     @Override
     public boolean isConfigurable() {
-        return true;
+        return false;
     }
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED
