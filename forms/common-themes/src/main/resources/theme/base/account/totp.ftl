@@ -7,7 +7,7 @@
         <table class="table table-bordered table-striped">
             <thead
                 <tr>
-                   <th colspan="2">${msg("configureAuthenticators")}/th>
+                   <th colspan="2">${msg("configureAuthenticators")}</th>
                 </tr>
             </thead>
             <tbody>
