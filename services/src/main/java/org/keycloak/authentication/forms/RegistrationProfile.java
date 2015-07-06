@@ -14,6 +14,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 
@@ -28,6 +29,15 @@ import java.util.List;
 public class RegistrationProfile implements FormAction, FormActionFactory {
     public static final String PROVIDER_ID = "registration-profile-action";
 
+    @Override
+    public String getHelpText() {
+        return null;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return null;
+    }
 
     @Override
     public void validate(ValidationContext context) {

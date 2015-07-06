@@ -1634,6 +1634,93 @@ module.controller('RequiredActionsCtrl', function($scope, realm, RequiredActions
 
 });
 
+module.controller('AuthenticationConfigCtrl', function($scope, realm, configType, config, AuthenticationConfig, Notifications, Dialog, $location) {
+    $scope.realm = realm;
+    $scope.configType = configType;
+    $scope.create = false;
+    $scope.config = angular.copy(config);
+    $scope.changed = false;
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+
+    $scope.$watch('config', function() {
+        if (!angular.equals($scope.config, config)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        AuthenticationConfig.update({
+            realm : realm.realm,
+            config : config.id
+        }, $scope.config, function() {
+            $scope.changed = false;
+            config = angular.copy($scope.config);
+            $location.url("/realms/" + realm.realm + '/authentication/config/' + configType.providerId + "/" + config.id);
+            Notifications.success("Your changes have been saved.");
+        });
+    };
+
+    $scope.reset = function() {
+        $scope.config = angular.copy(config);
+        $scope.changed = false;
+    };
+
+    $scope.cancel = function() {
+        //$location.url("/realms");
+        window.history.back();
+    };
+
+    $scope.remove = function() {
+        Dialog.confirmDelete($scope.config.alias, 'config', function() {
+            AuthenticationConfig.remove({ realm: realm.realm, config : $scope.config.id }, function() {
+                Notifications.success("The config has been deleted.");
+                $location.url("/realms/" + realm.realm + '/authentication/flows');
+            });
+        });
+    };
+
+});
+
+module.controller('AuthenticationConfigCreateCtrl', function($scope, realm, configType, execution, AuthenticationExecutionConfig, Notifications, Dialog, $location) {
+    $scope.realm = realm;
+    $scope.create = true;
+    $scope.config = { config: {}};
+    $scope.configType = configType;
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+
+    $scope.save = function() {
+        AuthenticationExecutionConfig.save({
+            realm : realm.realm,
+            execution: execution
+        }, $scope.config, function(data, headers) {
+            var l = headers().location;
+            var id = l.substring(l.lastIndexOf("/") + 1);
+            var url = "/realms/" + realm.realm + '/authentication/config/' + configType.providerId + "/" + id;
+            console.log('redirect url: ' + url);
+            $location.url(url);
+            Notifications.success("Config has been created.");
+        });
+    };
+
+    $scope.cancel = function() {
+        //$location.url("/realms");
+        window.history.back();
+    };
+
+
+});
+
+
 
 
 

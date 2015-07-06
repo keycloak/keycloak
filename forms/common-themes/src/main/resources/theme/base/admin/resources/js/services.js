@@ -1094,5 +1094,28 @@ module.factory('AuthenticationFlows', function($resource) {
         realm : '@realm'
     });
 });
+module.factory('AuthenticationConfigDescription', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/config-description/:provider', {
+        realm : '@realm',
+        provider: '@provider'
+    });
+});
+
+module.factory('AuthenticationConfig', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/config/:config', {
+        realm : '@realm',
+        config: '@config'
+    }, {
+        update: {
+            method : 'PUT'
+        }
+    });
+});
+module.factory('AuthenticationExecutionConfig', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/executions/:execution/config', {
+        realm : '@realm',
+        execution: '@execution'
+    });
+});
 
 

@@ -8,8 +8,10 @@ import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
 
 import javax.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -39,6 +41,16 @@ public class RegistrationPage implements FormAuthenticator, FormAuthenticatorFac
     @Override
     public String getDisplayType() {
         return "Registration Page";
+    }
+
+    @Override
+    public String getHelpText() {
+        return null;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return null;
     }
 
     @Override
