@@ -44,5 +44,6 @@
         <module>kerberos</module>
         <module>themes</module>
         <module>saml</module>
+        <module>ldap</module>
     </modules>
 </project>

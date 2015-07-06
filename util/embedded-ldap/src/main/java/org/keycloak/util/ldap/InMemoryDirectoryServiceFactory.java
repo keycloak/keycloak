@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.ldap;
+package org.keycloak.util.ldap;
 
 import java.io.File;
 import java.io.IOException;
@@ -76,7 +76,7 @@ class InMemoryDirectoryServiceFactory implements DirectoryServiceFactory {
         directoryService.setInstanceId(name);
 
         // instance layout
-        InstanceLayout instanceLayout = new InstanceLayout(System.getProperty("java.io.tmpdir") + "/server-work-" + name);
+        InstanceLayout instanceLayout = new InstanceLayout(System.getProperty("java.io.tmpdir") + "/server-work-inmemory-" + name);
         if (instanceLayout.getInstanceDirectory().exists()) {
             try {
                 FileUtils.deleteDirectory(instanceLayout.getInstanceDirectory());

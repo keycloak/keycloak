@@ -13,7 +13,9 @@ import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -26,6 +28,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
 import org.keycloak.constants.KerberosConstants;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -176,7 +179,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
         for (LDAPObject ldapUser : ldapUsers) {
             String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
             if (session.userStorage().getUserByUsername(ldapUsername, realm) == null) {
-                UserModel imported = importUserFromLDAP(realm, ldapUser);
+                UserModel imported = importUserFromLDAP(session, realm, ldapUser);
                 searchResults.add(imported);
             }
         }
@@ -249,10 +252,10 @@ public class LDAPFederationProvider implements UserFederationProvider {
             return null;
         }
 
-        return importUserFromLDAP(realm, ldapUser);
+        return importUserFromLDAP(session, realm, ldapUser);
     }
 
-    protected UserModel importUserFromLDAP(RealmModel realm, LDAPObject ldapUser) {
+    protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser) {
         String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
 
         if (ldapUsername == null) {
@@ -298,7 +301,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
             return null;
         }
 
-        return importUserFromLDAP(realm, ldapUser);
+        return importUserFromLDAP(session, realm, ldapUser);
     }
 
     @Override
@@ -381,38 +384,6 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     @Override
     public void close() {
-    }
-
-    protected UserFederationSyncResult importLDAPUsers(RealmModel realm, List<LDAPObject> ldapUsers, UserFederationProviderModel fedModel) {
-        UserFederationSyncResult syncResult = new UserFederationSyncResult();
-
-        for (LDAPObject ldapUser : ldapUsers) {
-            String username = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
-            UserModel currentUser = session.userStorage().getUserByUsername(username, realm);
-
-            if (currentUser == null) {
-                // Add new user to Keycloak
-                importUserFromLDAP(realm, ldapUser);
-                syncResult.increaseAdded();
-            } else {
-                if ((fedModel.getId().equals(currentUser.getFederationLink())) && (ldapUser.getUuid().equals(currentUser.getFirstAttribute(LDAPConstants.LDAP_ID)))) {
-
-                    // Update keycloak user
-                    Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(model.getId());
-                    for (UserFederationMapperModel mapperModel : federationMappers) {
-                        LDAPFederationMapper ldapMapper = getMapper(mapperModel);
-                        ldapMapper.onImportUserFromLDAP(mapperModel, this, ldapUser, currentUser, realm, false);
-                    }
-
-                    logger.debugf("Updated user from LDAP: %s", currentUser.getUsername());
-                    syncResult.increaseUpdated();
-                } else {
-                    logger.warnf("User '%s' is not updated during sync as he is not linked to federation provider '%s'", username, fedModel.getDisplayName());
-                }
-            }
-        }
-
-        return syncResult;
     }
 
     /**

@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.ldap;
+package org.keycloak.util.ldap;
 
 import java.net.URL;
 import java.util.Map;
@@ -61,7 +61,7 @@ class InMemorySchemaPartition extends AbstractLdifPartition {
 
                 // add mandatory attributes
                 if (entry.get(SchemaConstants.ENTRY_CSN_AT) == null) {
-                    entry.add(SchemaConstants.ENTRY_CSN_AT, defaultCSNFactory.newInstance().toString());
+                    entry.add(SchemaConstants.ENTRY_CSN_AT, AbstractLdifPartition.defaultCSNFactory.newInstance().toString());
                 }
                 if (entry.get(SchemaConstants.ENTRY_UUID_AT) == null) {
                     entry.add(SchemaConstants.ENTRY_UUID_AT, UUID.randomUUID().toString());

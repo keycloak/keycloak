@@ -19,7 +19,7 @@ cp http.keytab /tmp/http.keytab
 ```
 
 Alternative is to configure different location for `keyTab` property in `kerberosrealm.json` configuration file (On Windows this will be needed).
-Note that in production, keytab file should be in secured location accessible just to the user under which is Keycloak server running.
+WARNING: In production, keytab file should be in secured location accessible just to the user under which is Keycloak server running.
 
 
 **3)** Run Keycloak server and import `kerberosrealm.json` into it through admin console. This will import realm with sample application
@@ -37,12 +37,13 @@ Also if you are on Linux, make sure that record like:
 ```
 is in your `/etc/hosts` before other records for the 127.0.0.1 host to avoid issues related to incompatible reverse lookup (Ensure the similar for other OS as well)
 
+**4)** Install kerberos client. This is platform dependent. If you are on Fedora, Ubuntu or RHEL, you can install package `freeipa-client`, which contains Kerberos client and bunch of other stuff. 
 
-**4)** Configure Kerberos client (On linux it's in file `/etc/krb5.conf` ). You need to configure `KEYCLOAK.ORG` realm and enable `forwardable` flag, which is needed 
+**5)** Configure Kerberos client (On linux it's in file `/etc/krb5.conf` ). You need to configure `KEYCLOAK.ORG` realm for host `localhost` and enable `forwardable` flag, which is needed 
 for credential delegation example, as application needs to forward Kerberos ticket and authenticate with it against LDAP server. 
 See [this file](https://github.com/keycloak/keycloak/blob/master/testsuite/integration/src/test/resources/kerberos/test-krb5.conf) for inspiration.
 
-**5)**  Run ApacheDS based Kerberos server embedded in Keycloak. Easiest is to checkout keycloak sources, build and then run KerberosEmbeddedServer 
+**6)**  Run ApacheDS based Kerberos server embedded in Keycloak. Easiest is to checkout keycloak sources, build and then run KerberosEmbeddedServer 
 as shown here: 
 
 ```
@@ -55,12 +56,12 @@ mvn exec:java -Pkerberos
 More details about embedded Kerberos server in [testsuite README](https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#kerberos-server).
 
   
-**6)** Configure browser (Firefox, Chrome or other) and enable SPNEGO authentication and credential delegation for `localhost` . 
+**7)** Configure browser (Firefox, Chrome or other) and enable SPNEGO authentication and credential delegation for `localhost` . 
 In Firefox it can be done by adding `localhost` to both `network.negotiate-auth.trusted-uris` and `network.negotiate-auth.delegation-uris` . 
 More info in [testsuite README](https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#kerberos-server).  
  
  
-**7)** Test the example. Obtain kerberos ticket by running command from CMD (on linux):
+**8)** Test the example. Obtain kerberos ticket by running command from CMD (on linux):
 ```
 kinit hnelson@KEYCLOAK.ORG
 ```
