@@ -92,6 +92,9 @@ public abstract class AbstractKeycloakTest {
     public void loginAsAdmin() {
         adminConsole.navigateTo();
         loginPage.loginAsAdmin();
+		if(isAdminPasswordUpdated()) {
+			assertCurrentUrlStartsWith(adminConsole);
+		}
     }
 
     public void updateAdminPassword() {
@@ -118,6 +121,8 @@ public abstract class AbstractKeycloakTest {
     }
 
     protected void driverSettings() {
+        driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
+        driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
         driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
         driver.manage().window().maximize();
     }

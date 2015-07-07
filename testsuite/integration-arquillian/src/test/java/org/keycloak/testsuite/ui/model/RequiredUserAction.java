@@ -22,13 +22,13 @@ package org.keycloak.testsuite.ui.model;
  *
  * @author Petr Mensik
  */
-public enum UserAction {
+public enum RequiredUserAction {
 
 	UPDATE_PASSWORD("Update Password"), VERIFY_EMAIL("Verify Email"), UPDATE_PROFILE("Update Profile"), CONFIGURE_TOTP("Configure Totp");
 	
 	private final String actionName;
 
-	private UserAction(String actionName) {
+	private RequiredUserAction(String actionName) {
 		this.actionName = actionName;
 	}
 

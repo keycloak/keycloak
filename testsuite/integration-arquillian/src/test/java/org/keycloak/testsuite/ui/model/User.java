@@ -15,8 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.ui.model;
+
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  *
@@ -24,85 +26,122 @@ package org.keycloak.testsuite.ui.model;
  */
 public class User {
 
-    private String userName;
-	
+	private String userName;
+
 	private String password;
 
-    private String email;
+	private String email;
 
-    private String firstName;
+	private String firstName;
 
-    private String lastName;
+	private String lastName;
 
-    private boolean userEnabled;
+	private boolean userEnabled;
 
-    private boolean emailVerified;
+	private boolean emailVerified;
 
-    private String requiredUserActions;
+	private List<RequiredUserAction> requiredUserActions;
 
-    public User() {
-        this.userEnabled = true;
-        this.emailVerified = false;
-    }
+	public User() {
+		this.userEnabled = true;
+		this.emailVerified = false;
+		requiredUserActions = new LinkedList<>();
+	}
 
-    public User(String userName) {
+	public User(String userName) {
 		this();
 		this.userName = userName;
-    }
-	
+	}
+
 	public User(String userName, String password) {
 		this(userName);
 		this.password = password;
-    }
-
-    public User(String userName, String password, String email) {
-		this(userName, password);
-		this.email = email;
-    }
-
-    public User(String userName, String password, String email, String firstName, String lastName) {
-		this(userName, password, email);
-		this.firstName = firstName;
-        this.lastName = lastName;
-    }
-
-    public User(String userName, String password, String email, String firstName, String lastName, boolean userEnabled, boolean emailVerified, String requiredUserActions) {
-		this(userName, password, email, firstName, lastName);
-		this.requiredUserActions = requiredUserActions;
-    }
-	
-	public User(User user) {
-		this(user.userName, user.password, user.email, user.firstName, user.lastName,
-				user.userEnabled, user.emailVerified, user.requiredUserActions);
 	}
 
-    public String getUserName() { return userName; }
+	public User(String userName, String password, String email) {
+		this(userName, password);
+		this.email = email;
+	}
 
-    public void setUserName(String userName) { this.userName = userName; }
+	public User(String userName, String password, String email, String firstName, String lastName) {
+		this(userName, password, email);
+		this.firstName = firstName;
+		this.lastName = lastName;
+	}
 
-    public String getEmail() { return email; }
+	public User(String userName, String password, String email, String firstName, String lastName, boolean userEnabled, boolean emailVerified, List<RequiredUserAction> requiredUserActions) {
+		this(userName, password, email, firstName, lastName);
+		this.requiredUserActions = requiredUserActions;
+	}
 
-    public void setEmail(String email) { this.email = email; }
+	public User(User user) {
+		this(user.userName, user.password, user.email, user.firstName, user.lastName,
+			user.userEnabled, user.emailVerified, user.requiredUserActions);
+	}
 
-    public String getFirstName() { return firstName; }
+	public String getUserName() {
+		return userName;
+	}
 
-    public void setFirstName(String firstName) { this.firstName = firstName; }
+	public void setUserName(String userName) {
+		this.userName = userName;
+	}
 
-    public String getLastName() { return lastName; }
+	public String getEmail() {
+		return email;
+	}
 
-    public void setLastName(String lastName) { this.lastName = lastName; }
+	public void setEmail(String email) {
+		this.email = email;
+	}
 
-    public boolean isUserEnabled() { return userEnabled; }
+	public String getFirstName() {
+		return firstName;
+	}
 
-    public void setUserEnabled(boolean userEnabled) { this.userEnabled = userEnabled; }
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
 
-    public boolean isEmailVerified() { return emailVerified; }
+	public String getLastName() {
+		return lastName;
+	}
 
-    public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
 
-    public String getRequiredUserActions() { return requiredUserActions; }
+	public boolean isUserEnabled() {
+		return userEnabled;
+	}
 
-    public void setRequiredUserActions(String requiredUserActions) { this.requiredUserActions = requiredUserActions; }
+	public void setUserEnabled(boolean userEnabled) {
+		this.userEnabled = userEnabled;
+	}
+
+	public boolean isEmailVerified() {
+		return emailVerified;
+	}
+
+	public void setEmailVerified(boolean emailVerified) {
+		this.emailVerified = emailVerified;
+	}
+
+	public List<RequiredUserAction> getRequiredUserActions() {
+		return requiredUserActions;
+	}
+
+	public void setRequiredUserActions(List<RequiredUserAction> requiredUserActions) {
+		this.requiredUserActions = requiredUserActions;
+	}
+	
+	public void addRequiredUserAction(RequiredUserAction requiredUserAction) {
+		requiredUserActions.add(requiredUserAction);
+	}
+	
+	public void removeRequiredUserAction(RequiredUserAction requiredUserAction) {
+		requiredUserActions.remove(requiredUserAction);
+	}
 
 	public String getPassword() {
 		return password;
@@ -111,36 +150,52 @@ public class User {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-	
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
 
-        User user = (User) o;
+		User user = (User) o;
 
-        if (emailVerified != user.emailVerified) return false;
-        if (userEnabled != user.userEnabled) return false;
-        if (email != null ? !email.equals(user.email) : user.email != null) return false;
-        if (firstName != null ? !firstName.equals(user.firstName) : user.firstName != null) return false;
-        if (lastName != null ? !lastName.equals(user.lastName) : user.lastName != null) return false;
-        if (requiredUserActions != null ? !requiredUserActions.equals(user.requiredUserActions) : user.requiredUserActions != null)
-            return false;
-        if (!userName.equals(user.userName)) return false;
+		if (emailVerified != user.emailVerified) {
+			return false;
+		}
+		if (userEnabled != user.userEnabled) {
+			return false;
+		}
+		if (email != null ? !email.equals(user.email) : user.email != null) {
+			return false;
+		}
+		if (firstName != null ? !firstName.equals(user.firstName) : user.firstName != null) {
+			return false;
+		}
+		if (lastName != null ? !lastName.equals(user.lastName) : user.lastName != null) {
+			return false;
+		}
+		if (requiredUserActions != null ? !requiredUserActions.equals(user.requiredUserActions) : user.requiredUserActions != null) {
+			return false;
+		}
+		if (!userName.equals(user.userName)) {
+			return false;
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    @Override
-    public int hashCode() {
-        int result = userName.hashCode();
-        result = 31 * result + (email != null ? email.hashCode() : 0);
-        result = 31 * result + (firstName != null ? firstName.hashCode() : 0);
-        result = 31 * result + (lastName != null ? lastName.hashCode() : 0);
-        result = 31 * result + (userEnabled ? 1 : 0);
-        result = 31 * result + (emailVerified ? 1 : 0);
-        result = 31 * result + (requiredUserActions != null ? requiredUserActions.hashCode() : 0);
-        return result;
-    }
+	@Override
+	public int hashCode() {
+		int result = userName.hashCode();
+		result = 31 * result + (email != null ? email.hashCode() : 0);
+		result = 31 * result + (firstName != null ? firstName.hashCode() : 0);
+		result = 31 * result + (lastName != null ? lastName.hashCode() : 0);
+		result = 31 * result + (userEnabled ? 1 : 0);
+		result = 31 * result + (emailVerified ? 1 : 0);
+		result = 31 * result + (requiredUserActions != null ? requiredUserActions.hashCode() : 0);
+		return result;
+	}
 }
