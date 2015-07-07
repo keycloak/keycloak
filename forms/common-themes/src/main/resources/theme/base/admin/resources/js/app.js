@@ -1579,6 +1579,18 @@ module.directive('kcNavigationUser', function () {
     }
 });
 
+module.directive('kcProviderConfig', function () {
+    return {
+        scope: {
+            config: '=',
+            properties: '='
+        },
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-provider-config.html'
+    }
+});
+
 /*
 *  Used to select the element (invoke $(elem).select()) on specified action list.
 *  Usages kc-select-action="click mouseover"
