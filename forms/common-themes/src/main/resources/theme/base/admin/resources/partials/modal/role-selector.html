@@ -1,0 +1,40 @@
+<div style="padding: 15px 60px 75px 60px">
+    <h2>Role Selector</h2>
+    <form>
+        <div data-ng-show="realmRoles.length > 0">
+        <label class="control-label" for="available">Realm Roles</label>
+        <kc-tooltip>Realm roles that can be selected.</kc-tooltip>
+        <select id="available" class="form-control" size="5"
+                ng-dblclick="selectRealmRole()"
+                ng-model="selectedRealmRole.role"
+                ng-options="r.name for r in realmRoles | orderBy:'toString()'">
+            <option style="display:none" value="">Select a role</option>
+        </select>
+        <button class="btn btn-default" type="submit" ng-click="selectRealmRole()" tooltip="Select realm role" tooltip-placement="right">
+            Select Realm Role</i>
+        </button>
+        </div>
+        <br>
+        <br>
+        <div data-ng-show="clients.length > 0">
+        <label class="control-label">
+            <span>Client Roles</span>
+            <kc-tooltip>Client roles that can be selected.</kc-tooltip>
+            <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="client.selected" ng-options="a.clientId for a in clients" ng-disabled="false">
+            </select>
+        </label>
+        <select id="available-client" class="form-control" size="5"
+                ng-dblclick="selectClientRole()"
+                ng-model="selectedClientRole.role"
+                ng-options="r.name for r in clientRoles | orderBy:'toString()'">
+            <option style="display:none" value="">Select a role</option>
+        </select>
+        <button class="btn btn-default" type="submit" ng-click="selectClientRole()" tooltip="Select client role" tooltip-placement="right">
+            Select Client Role
+        </button>
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" data-ng-class="btns.cancel.cssClass" ng-click="cancel()">Cancel</button>
+    </div>
+</div>

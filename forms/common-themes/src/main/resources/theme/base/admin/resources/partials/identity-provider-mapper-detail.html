@@ -45,7 +45,7 @@
                 </div>
                 <kc-tooltip>{{mapperType.helpText}}</kc-tooltip>
             </div>
-            <kc-provider-config config="mapper.config" properties="mapperType.properties"></kc-provider-config>
+            <kc-provider-config config="mapper.config" properties="mapperType.properties" realm="realm"></kc-provider-config>
         </fieldset>
         <div class="pull-right form-actions" data-ng-show="create && access.manageRealm">
             <button kc-cancel data-ng-click="cancel()">Cancel</button>
