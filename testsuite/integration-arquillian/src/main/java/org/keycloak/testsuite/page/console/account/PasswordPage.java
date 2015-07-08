@@ -39,7 +39,7 @@ public class PasswordPage {
 
     @FindByJQuery("button[value='Save']")
     private WebElement save;
-
+	
     @FindBy(xpath = "//input[@value='Submit']")
     private WebElement submit; // on "update password" page, after first login
 
@@ -78,5 +78,5 @@ public class PasswordPage {
     public void submit() {
         submit.click();
     }
-    
+	
 }

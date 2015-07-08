@@ -28,11 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import org.keycloak.testsuite.model.UserAction;
+import org.keycloak.testsuite.model.RequiredUserAction;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 import static org.openqa.selenium.By.*;
-import org.openqa.selenium.support.ui.Select;
 
 /**
  *
@@ -61,8 +59,11 @@ public class UserPage extends AdminConsole {
 	@FindBy(css = "input[class*='select2-input']")
 	private WebElement requiredUserActionsInput;
 
-	@FindByJQuery(".select2-offscreen")
-	private Select actionsSelect;
+	@FindBy(className = "select2-result-label")
+	private WebElement requiredUserActionsConfirm;
+	
+	@FindBy(className = "select2-search-choice-close")
+	private List<WebElement> removeRequiredActionsList;
 
 	@FindBy(id = "password")
 	private WebElement password;
@@ -76,12 +77,12 @@ public class UserPage extends AdminConsole {
 	@FindBy(css = "table[class*='table']")
 	private WebElement dataTable;
 
-    @FindBy(css = "tr[ng-repeat='user in users']")
-    private WebElement tableRow;
+	@FindBy(css = "tr[ng-repeat='user in users']")
+	private WebElement tableRow;
 
 	@FindByJQuery("button[kc-cancel] ")
 	private WebElement cancel;
-	
+
 	@FindBy(css = "div[class='input-group-addon'] i")
 	private WebElement searchButton;
 
@@ -98,7 +99,11 @@ public class UserPage extends AdminConsole {
 		if (user.isEmailVerified()) {
 			emailVerifiedSwitchToggle.click();
 		}
-//		requiredUserActionsInput.sendKeys(user.getRequiredUserActions());
+		for(RequiredUserAction action : user.getRequiredUserActions()) {
+			requiredUserActionsInput.sendKeys(action.getActionName());
+			requiredUserActionsConfirm.click();
+		}
+		requiredUserActionsConfirm.click();
 		primaryButton.click();
 	}
 
@@ -114,12 +119,7 @@ public class UserPage extends AdminConsole {
 		waitAjaxForElement(searchInput);
 		searchInput.sendKeys(username);
 		searchButton.click();
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        List<User> users = getAllRows();
+		List<User> users = getAllRows();
 		if (users.isEmpty()) {
 			return null;
 
@@ -129,10 +129,11 @@ public class UserPage extends AdminConsole {
 		}
 	}
 
-	public void editUser(User user) {
+	public void updateUser(User user) {
 		goToUser(user);
 		waitAjaxForElement(usernameInput);
 		usernameInput.sendKeys(user.getUserName());
+		emailInput.clear();
 		emailInput.sendKeys(user.getEmail());
 		if (!user.isUserEnabled()) {
 			userEnabledSwitchToggle.click();
@@ -140,13 +141,22 @@ public class UserPage extends AdminConsole {
 		if (user.isEmailVerified()) {
 			emailVerifiedSwitchToggle.click();
 		}
-		requiredUserActionsInput.sendKeys(user.getRequiredUserActions());
-		primaryButton.click();
+		if(user.getRequiredUserActions().isEmpty()) {
+			for(WebElement e : removeRequiredActionsList) {
+				e.click();
+			}
+		} else {
+			for(RequiredUserAction action : user.getRequiredUserActions()) {
+				requiredUserActionsInput.sendKeys(action.getActionName());
+				requiredUserActionsConfirm.click();
+			}
+		}
+		primaryButtons.get(1).click();
 	}
 
 	public void deleteUser(String username) {
 		findUser(username);
-        goToUser(username);
+		goToUser(username);
 		waitAjaxForElement(dangerButton);
 		dangerButton.click();
 		waitAjaxForElement(deleteConfirmationButton);
@@ -162,26 +172,16 @@ public class UserPage extends AdminConsole {
 	}
 
 	public void goToUser(User user) {
-        waitAjaxForElement(tableRow);
-        dataTable.findElement(linkText(user.getUserName())).click();
+		waitAjaxForElement(tableRow);
+		dataTable.findElement(linkText(user.getUserName())).click();
 	}
 
 	public void goToUser(String name) {
 		goToUser(new User(name));
 	}
 
-	public void addAction(UserAction action) {
-		actionsSelect.selectByValue(action.name());
-		primaryButton.click();
-	}
-
-	public void removeAction(UserAction action) {
-		actionsSelect.deselectByValue(action.name());
-		primaryButton.click();
-	}
-
 	private List<User> getAllRows() {
-		List<User> users = new ArrayList<User>();
+		List<User> users = new ArrayList<>();
 		List<WebElement> rows = dataTable.findElements(cssSelector("tbody tr"));
 		if (rows.size() > 1) {
 			for (WebElement rowElement : rows) {
@@ -196,7 +196,7 @@ public class UserPage extends AdminConsole {
 						users.add(user);
 					}
 				}
-			}	
+			}
 		}
 		return users;
 	}
