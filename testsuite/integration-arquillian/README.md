@@ -106,6 +106,8 @@ See the relevant container definitions in `arquillian.xml` located in the **test
 
 ## Custom Arquillian Extensions
 
+Custom extensions are registered in `META-INF/services/org.jboss.arquillian.core.spi.LoadableExtension`.
+
 * Multiple containers extension
  * Replaces Arquillian's default container handling.
  * Allows to manage multiple container instances of different types within a single test run.
@@ -113,7 +115,7 @@ See the relevant container definitions in `arquillian.xml` located in the **test
 * Custom extension
  * `ContainersTestEnricher` - Handles lifecycles of auth-server and app-server.
  * `CustomUndertowContainer` - Custom undertow conatiner adapter.
- * `AdapterConfigModifier` - Modifies adapter config before deployment on app server based on relative/non-relativ scenario.
+ * `AdapterConfigModifier` - Modifies adapter config before deployment on app server based on relative/non-relative scenario.
  * `URLProvider` - Fixes URLs injected by Arquillian which contain 127.0.0.1 instead of localhost.
  * `JiraTestExecutionDecider` - Skipping tests for unresolved JIRAs.
 
