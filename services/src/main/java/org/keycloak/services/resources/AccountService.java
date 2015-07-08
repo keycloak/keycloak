@@ -42,6 +42,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
@@ -433,7 +434,14 @@ public class AccountService {
 
         try {
             if (realm.isEditUsernameAllowed()) {
-                user.setUsername(formData.getFirst("username"));
+                String username = formData.getFirst("username");
+
+                UserModel existing = session.users().getUserByUsername(username, realm);
+                if (existing != null && !existing.getId().equals(user.getId())) {
+                    throw new ModelDuplicateException(Messages.USERNAME_EXISTS);
+                }
+
+                user.setUsername(username);
             }
             user.setFirstName(formData.getFirst("firstName"));
             user.setLastName(formData.getFirst("lastName"));
@@ -441,8 +449,14 @@ public class AccountService {
             String email = formData.getFirst("email");
             String oldEmail = user.getEmail();
             boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
+            if (emailChanged) {
+                UserModel existing = session.users().getUserByEmail(email, realm);
+                if (existing != null && !existing.getId().equals(user.getId())) {
+                    throw new ModelDuplicateException(Messages.EMAIL_EXISTS);
+                }
+            }
 
-            user.setEmail(formData.getFirst("email"));
+            user.setEmail(email);
 
             AttributeFormDataProcessor.process(formData, realm, user);
 
@@ -457,6 +471,9 @@ public class AccountService {
         } catch (ModelReadOnlyException roe) {
             setReferrerOnPage();
             return account.setError(Messages.READ_ONLY_USER).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
+        } catch (ModelDuplicateException mde) {
+            setReferrerOnPage();
+            return account.setError(mde.getMessage()).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
         }
     }
 

@@ -98,7 +98,8 @@
                 <div class="col-md-6">
                     <input class="form-control" id="userObjectClasses" type="text" ng-model="instance.config.userObjectClasses" placeholder="LDAP User Object Classes (div. by comma)" required>
                 </div>
-                <kc-tooltip>All values of LDAP objectClass attribute for users in LDAP divided by comma</kc-tooltip>
+                <kc-tooltip>All values of LDAP objectClass attribute for users in LDAP divided by comma. For example: 'inetOrgPerson, organizationalPerson' . Newly created Keycloak users will be written to LDAP
+                    with all those object classes and existing LDAP user records are found just if they contain all those object classes. </kc-tooltip>
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="ldapConnectionUrl"><span class="required">*</span> Connection URL</label>

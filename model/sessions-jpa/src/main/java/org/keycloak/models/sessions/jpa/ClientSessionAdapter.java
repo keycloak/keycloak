@@ -301,7 +301,7 @@ public class ClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public UserModel getAuthenticatedUser() {
-        return session.users().getUserById(entity.getUserId(), realm);
+        return entity.getUserId() == null ? null : session.users().getUserById(entity.getUserId(), realm);
     }
 
     @Override
