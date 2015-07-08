@@ -1,7 +1,9 @@
 package org.keycloak.testsuite;
 
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.lang.Validate;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -10,11 +12,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
-import org.openqa.selenium.WebDriver;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.TestRealms.importRealm;
 import static org.keycloak.testsuite.TestRealms.removeRealm;
+import org.openqa.selenium.WebDriver;
 import org.keycloak.testsuite.arquillian.ContainersTestEnricher.AdminPasswordUpdateTracker;
 import org.keycloak.testsuite.page.console.AdminConsole;
 import org.keycloak.testsuite.page.console.AuthServer;
@@ -32,11 +34,11 @@ import static org.keycloak.testsuite.util.Constants.ADMIN_PSSWD;
  */
 @RunWith(Arquillian.class)
 @RunAsClient
-public abstract class AbstractKeycloakTest implements TestRealmsManager {
+public abstract class AbstractKeycloakTest {
 
     protected Keycloak keycloak;
 
-    protected TestRealms testRealms;
+    protected List<RealmRepresentation> testRealms = new ArrayList<>();
 
     @Drone
     protected WebDriver driver;
@@ -58,17 +60,23 @@ public abstract class AbstractKeycloakTest implements TestRealmsManager {
     protected Navigation navigation;
 
     @Before
-    public void setUp() {
+    public void beforeAbstractKeycloakTest() {
         driverSettings();
+        
         if (!isAdminPasswordUpdated()) {
             updateAdminPassword();
         }
+        
         keycloak = Keycloak.getInstance(authServer.getUrlString(),
                 "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
+        
+        loadTestRealmsInto(testRealms);
+        importTestRealms();
     }
 
     @After
-    public void tearDown() {
+    public void afterAbstractKeycloakTest() {
+        removeTestRealms();
         keycloak.close();
         driver.manage().deleteAllCookies();
     }
@@ -107,27 +115,18 @@ public abstract class AbstractKeycloakTest implements TestRealmsManager {
         driver.manage().window().maximize();
     }
 
-    public abstract TestRealms loadTestRealms();
+    public abstract void loadTestRealmsInto(List<RealmRepresentation> testRealms);
 
-    public RealmRepresentation getTestRealm(String testRealm) {
-        if (testRealms == null) {
-            System.out.println("Loading test realms.");
-            testRealms = loadTestRealms();
-            System.out.println("Loaded test realms: " + testRealms.keySet());
+    public void importTestRealms() {
+        for (RealmRepresentation testRealm : testRealms) {
+            importRealm(keycloak, testRealm);
         }
-        RealmRepresentation realm = testRealms.get(testRealm);
-        Validate.notNull(realm, "Couldn't locate '" + testRealm + "' among the loaded test realms.");
-        return realm;
     }
 
-    @Override
-    public void importTestRealm(String testRealm) {
-        importRealm(keycloak, getTestRealm(testRealm));
-    }
-
-    @Override
-    public void removeTestRealm(String testRealm) {
-        removeRealm(keycloak, getTestRealm(testRealm));
+    public void removeTestRealms() {
+        for (RealmRepresentation testRealm : testRealms) {
+            removeRealm(keycloak, testRealm);
+        }
     }
 
 }

@@ -31,8 +31,13 @@ public class MultiTenantResolver implements KeycloakConfigResolver {
     @Override
     public KeycloakDeployment resolve(HttpFacade.Request request) {
         String realm = request.getQueryParamValue("realm");
-        
-        InputStream is = getClass().getResourceAsStream("/WEB-INF/" + realm + "-keycloak.json");
+
+        // FIXME doesn't work - need to load resources from WEB-INF
+        InputStream is = getClass().getResourceAsStream("/" + realm + "-keycloak.json");
+
+        if (is == null) {
+            throw new IllegalStateException("Not able to find the file /" + realm + "-keycloak.json");
+        }
 
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(is);
         return deployment;

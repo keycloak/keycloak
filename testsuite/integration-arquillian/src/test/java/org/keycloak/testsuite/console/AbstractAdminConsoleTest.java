@@ -17,11 +17,12 @@
  */
 package org.keycloak.testsuite.console;
 
+import java.util.List;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
-import org.keycloak.testsuite.TestRealms;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.page.console.AdminConsole;
 
 /**
@@ -45,8 +46,8 @@ public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends A
     }
 
     @Override
-    public TestRealms loadTestRealms() {
-        return new TestRealms(); // no test realms for admin console (yet)
+    public void loadTestRealmsInto(List<RealmRepresentation> testRealms) {
+        // no test realms for console tests yet
     }
 
 }

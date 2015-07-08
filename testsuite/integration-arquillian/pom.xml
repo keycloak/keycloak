@@ -46,6 +46,7 @@
         <exclude.adapters.relative>**/Relative*AdapterTest.java</exclude.adapters.relative>
         <exclude.adapters.wildfly>**/Wildfly*AdapterTest.java</exclude.adapters.wildfly>
         <exclude.adapters.as7>**/AS7*AdapterTest.java</exclude.adapters.as7>
+        <!-- Console tests excluded on demand by -P no-console -->
         <exclude.console>-</exclude.console>
         
         <!--Default auth-server container.-->
@@ -58,7 +59,7 @@
         <arquillian-drone.version>2.0.0.Alpha4</arquillian-drone.version>
         <arquillian-phantomjs.version>1.1.4.Final</arquillian-phantomjs.version>
         <arquillian-graphene.version>2.1.0.Alpha2</arquillian-graphene.version>
-        <arquillian-wildfly-container.version>8.1.0.Final</arquillian-wildfly-container.version>
+        <arquillian-wildfly-container.version>8.2.0.Final</arquillian-wildfly-container.version>
         
         <adminPasswordUpdated>false</adminPasswordUpdated>
         
@@ -103,10 +104,9 @@
     </dependencyManagement>
 
     <dependencies>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core</artifactId>
-        </dependency>
+        
+        <!-- TEST DEPENDENCIES -->
+        
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -138,11 +138,11 @@
             <version>1.0.0.CR3</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
+        <!--        <dependency>
             <groupId>org.jboss.spec.javax.servlet</groupId>
             <artifactId>jboss-servlet-api_3.0_spec</artifactId>
-        </dependency>
-        
+        </dependency>-->
+                
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
@@ -155,7 +155,53 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>undertow-embedded</artifactId>
+            <version>1.0.0.Alpha1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-arquillian-container-managed</artifactId>
+        </dependency>        
+        <dependency>
+            <groupId>org.apache.ant</groupId>
+            <artifactId>ant</artifactId>
+            <version>1.9.2</version>
+            <type>jar</type>
+        </dependency>
         
+                        
+        <!-- KEYCLOAK DEPENDENCIES --> 
+        
+        <!-- Keycloak -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-dependencies-server-all</artifactId>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+        </dependency>
+        <!--        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-api</artifactId>
+        </dependency>-->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-services</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-core</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>jaxrs-api</artifactId>
@@ -201,47 +247,6 @@
         </dependency>        
         
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-services</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-adapter-core</artifactId>
-        </dependency>
-        
-<!--        <dependency>
-            <groupId>io.undertow</groupId>
-            <artifactId>undertow-servlet</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.undertow</groupId>
-            <artifactId>undertow-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-core-asl</artifactId>
-        </dependency>-->
-<!--        <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-mapper-asl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-xc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-        </dependency>-->
-        <dependency>
             <groupId>org.hibernate.javax.persistence</groupId>
             <artifactId>hibernate-jpa-2.0-api</artifactId>
         </dependency>
@@ -263,31 +268,13 @@
             <artifactId>bcpkix-jdk15on</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-dependencies-server-all</artifactId>
-            <type>pom</type>
-        </dependency>
-        <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-undertow</artifactId>
-        </dependency>        
-        <dependency>
-            <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>undertow-embedded</artifactId>
-            <version>1.0.0.Alpha1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-arquillian-container-managed</artifactId>
-        </dependency>        
-        <dependency>
-            <groupId>org.apache.ant</groupId>
-            <artifactId>ant</artifactId>
-            <version>1.9.2</version>
+            <groupId>org.jboss.aerogear.test.arquillian</groupId>
+            <artifactId>arquillian-rule</artifactId>
+            <version>0.2.0</version>
             <type>jar</type>
         </dependency>
     </dependencies>
@@ -341,6 +328,7 @@
         <profile>
             <id>no-console</id>
             <properties>
+                <!-- Exclude all admin console tests. -->
                 <exclude.console>**/console/**/*Test.java</exclude.console>           
             </properties>
         </profile>

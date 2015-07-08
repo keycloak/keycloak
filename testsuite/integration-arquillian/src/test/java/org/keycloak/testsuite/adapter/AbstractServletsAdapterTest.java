@@ -36,9 +36,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.TestRealms;
 import static org.keycloak.testsuite.TestRealms.*;
-import org.keycloak.testsuite.arquillian.annotation.RequiresRealms;
 import org.keycloak.testsuite.arquillian.jira.Jira;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
@@ -46,13 +44,10 @@ import org.keycloak.testsuite.page.adapter.CustomerDb;
 import org.keycloak.testsuite.page.adapter.CustomerDbErrorPage;
 import org.keycloak.testsuite.page.adapter.CustomerPortal;
 import org.keycloak.testsuite.page.adapter.InputPortal;
-import org.keycloak.testsuite.page.adapter.MultiTenant;
 import org.keycloak.testsuite.page.adapter.ProductPortal;
 import org.keycloak.testsuite.page.adapter.SecurePortal;
 import org.keycloak.testsuite.page.adapter.SessionPortal;
 import org.keycloak.testsuite.page.console.login.LoginPage;
-import org.keycloak.testsuite.servlet.adapter.MultiTenantResolver;
-import org.keycloak.testsuite.servlet.adapter.MultiTenantServlet;
 import org.keycloak.testsuite.util.SeleniumUtils;
 import org.keycloak.testsuite.util.ApiUtil;
 import org.keycloak.testsuite.util.SecondBrowser;
@@ -60,7 +55,6 @@ import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
-@RequiresRealms({ADAPTER_SERVLETS_DEMO})
 public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
     @Page
@@ -77,8 +71,6 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     private SessionPortal sessionPortal;
     @Page
     private InputPortal inputPortal;
-    @Page
-    private MultiTenant multiTenant;
 
     @Page
     private AccountSessionsPage accountSessionsPage;
@@ -137,31 +129,9 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         return servletDeployment(InputPortal.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class);
     }
 
-    @Deployment(name = MultiTenant.DEPLOYMENT_NAME)
-    protected static WebArchive multiTenant() {
-        String name = MultiTenant.DEPLOYMENT_NAME;
-        String webInfPath = "/adapter-test/" + name + "/WEB-INF/";
-
-        URL keycloakJSON1 = AbstractServletsAdapterTest.class.getResource(webInfPath + "tenant1-keycloak.json");
-        URL keycloakJSON2 = AbstractServletsAdapterTest.class.getResource(webInfPath + "tenant2-keycloak.json");
-        URL webXML = AbstractServletsAdapterTest.class.getResource(webInfPath + "web.xml");
-
-        WebArchive deployment = ShrinkWrap.create(WebArchive.class, name + ".war")
-                .addClasses(MultiTenantServlet.class, MultiTenantResolver.class)
-                .addAsWebInfResource(webXML, "web.xml")
-                .addAsWebInfResource(keycloakJSON1, "tenant1-keycloak.json")
-                .addAsWebInfResource(keycloakJSON2, "tenant2-keycloak.json");
-
-        return deployment;
-    }
-
     @Override
-    public TestRealms loadAdapterTestRealms() {
-        TestRealms adapterTestRealms = new TestRealms();
-        adapterTestRealms.put(ADAPTER_SERVLETS_DEMO, loadRealm("/adapter-test/demorealm.json"));
-        adapterTestRealms.put(ADAPTER_TENANT1, loadRealm("/adapter-test/tenant1-realm.json"));
-        adapterTestRealms.put(ADAPTER_TENANT2, loadRealm("/adapter-test/tenant2-realm.json"));
-        return adapterTestRealms;
+    public void loadAdapterTestRealmsInto(List<RealmRepresentation> testRealms) {
+        testRealms.add(loadRealm("/adapter-test/demorealm.json"));
     }
 
     private final String slash = "";
@@ -575,93 +545,6 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         sessionPortal.navigateTo();
         pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=2"));
-    }
-
-//    Multi-tenancy tests.
-    /**
-     * Simplest scenario: one user, one realm. The user is not logged in at any
-     * other realm
-     *
-     * @throws Exception
-     */
-    @Test
-    @RequiresRealms({ADAPTER_TENANT1, ADAPTER_TENANT2})
-    public void testTenantsLoggingOut() throws Exception {
-        doTenantRequests(ADAPTER_TENANT1, true);
-        doTenantRequests(ADAPTER_TENANT2, true);
-    }
-
-    /**
-     * This tests the adapter's ability to deal with multiple sessions from the
-     * same user, one for each realm. It should not mixup and return a session
-     * from tenant1 to tenant2
-     *
-     * @throws Exception
-     */
-    @Test
-    @RequiresRealms({ADAPTER_TENANT1, ADAPTER_TENANT2})
-    public void testTenantsWithoutLoggingOut() throws Exception {
-        doTenantRequests(ADAPTER_TENANT1, true);
-        doTenantRequests(ADAPTER_TENANT2, true);
-
-        doTenantRequests(ADAPTER_TENANT1, false);
-        doTenantRequests(ADAPTER_TENANT2, true);
-    }
-
-    /**
-     * This test simulates an user that is not logged in yet, and tris to login
-     * into tenant1 using an account from tenant2. On this scenario, the user
-     * should be shown the login page again.
-     *
-     * @throws Exception
-     */
-    @Test
-    @RequiresRealms({ADAPTER_TENANT1, ADAPTER_TENANT2})
-    public void testUnauthorizedAccessNotLoggedIn() throws Exception {
-        multiTenant.navigateToRealm(ADAPTER_TENANT1);
-        assertCurrentUrlStartsWith(authServer);
-
-        loginPage.login("user-tenant2", "user-tenant2");
-        assertCurrentUrlStartsWith(authServer);
-    }
-
-    /**
-     * This test simulates an user which is already logged in into tenant1 and
-     * tries to access a resource on tenant2. On this scenario, the user should
-     * be shown the login page again.
-     *
-     * @throws Exception
-     */
-    @Test
-    @RequiresRealms({ADAPTER_TENANT1, ADAPTER_TENANT2})
-    public void testUnauthorizedAccessLoggedIn() throws Exception {
-        doTenantRequests(ADAPTER_TENANT1, false);
-
-        multiTenant.navigateToRealm(ADAPTER_TENANT2);
-        assertCurrentUrlStartsWith(authServer);
-    }
-
-    private void doTenantRequests(String tenant, boolean logout) {
-        String tenantLoginUrl = OIDCLoginProtocolService.authUrl(authServer.getUriBuilder()).build(tenant).toString();
-
-        multiTenant.navigateToRealm(tenant);
-        System.out.println("Current url: " + driver.getCurrentUrl());
-
-        assertTrue(driver.getCurrentUrl().startsWith(tenantLoginUrl));
-        loginPage.login("bburke@redhat.com", "password");
-        System.out.println("Current url: " + driver.getCurrentUrl());
-
-        assertEquals(multiTenant.getTenantRealmUrl(tenant), driver.getCurrentUrl());
-
-        String pageSource = driver.getPageSource();
-        System.out.println(pageSource);
-
-        assertTrue(pageSource.contains("Username: bburke@redhat.com"));
-        assertTrue(pageSource.contains("Realm: " + tenant));
-
-        if (logout) {
-            driver.manage().deleteAllCookies();
-        }
     }
 
 }

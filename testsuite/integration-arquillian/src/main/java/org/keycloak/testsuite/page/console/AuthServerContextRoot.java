@@ -1,9 +1,9 @@
 package org.keycloak.testsuite.page.console;
 
+import java.net.MalformedURLException;
 import org.keycloak.testsuite.page.AbstractPageWithProvidedUrl;
 import java.net.URL;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
+import org.keycloak.testsuite.arquillian.URLProvider;
 
 /**
  *
@@ -11,9 +11,15 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
  */
 public class AuthServerContextRoot extends AbstractPageWithProvidedUrl {
 
-    @ArquillianResource
-    @AuthServerContainer
     private URL authServerContextRoot;
+
+    public AuthServerContextRoot() {
+        try {
+            authServerContextRoot = new URL(URLProvider.getAuthServerContextRoot());
+        } catch (MalformedURLException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
 
     @Override
     public URL getProvidedUrl() {

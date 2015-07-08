@@ -1,5 +1,6 @@
-package org.keycloak.testsuite.adapter;
+package org.keycloak.testsuite.adapter.as7;
 
+import org.keycloak.testsuite.adapter.AbstractExamplesAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**

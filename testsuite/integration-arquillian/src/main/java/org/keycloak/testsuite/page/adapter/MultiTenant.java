@@ -26,7 +26,7 @@ public class MultiTenant extends AbstractPageWithProvidedUrl {
 
     @Override
     public UriBuilder createUriBuilder() {
-        return super.createUriBuilder().path("?realm={tenantRealm}");
+        return super.createUriBuilder().queryParam("realm", "{tenantRealm}");
     }
 
     public URL getTenantRealmUrl(String realm) {
@@ -38,7 +38,9 @@ public class MultiTenant extends AbstractPageWithProvidedUrl {
     }
 
     public void navigateToRealm(String realm) {
-        driver.navigate().to(getTenantRealmUrl(realm));
+        URL u = getTenantRealmUrl(realm);
+        System.out.println("navigate to "+u.toExternalForm());
+        driver.navigate().to(u.toExternalForm());
     }
 
 }

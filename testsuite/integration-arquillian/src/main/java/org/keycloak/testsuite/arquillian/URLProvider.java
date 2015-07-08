@@ -7,8 +7,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
 
 public class URLProvider extends URLResourceProvider {
 
@@ -17,22 +15,21 @@ public class URLProvider extends URLResourceProvider {
 
     @Override
     public Object doLookup(ArquillianResource resource, Annotation... qualifiers) {
-        System.out.println("URLProvider.doLookup");
         URL url = (URL) super.doLookup(resource, qualifiers);
         if (url == null) {
-            try {
-                for (Annotation a : qualifiers) {
-                    if (AuthServerContainer.class.isAssignableFrom(a.annotationType())) {
-                        return new URL(getAuthServerContextRoot());
-                    }
-                    if (AppServerContainer.class.isAssignableFrom(a.annotationType())) {
-                        System.out.println("injecting app server context");
-                        return new URL(getAppServerContextRoot());
-                    }
-                }
-            } catch (MalformedURLException ex) {
-                throw new IllegalStateException("Cannot inject context root.", ex);
-            }
+//            try {
+//                for (Annotation a : qualifiers) {
+//                    if (AuthServerContainer.class.isAssignableFrom(a.annotationType())) {
+//                        return new URL(getAuthServerContextRoot());
+//                    }
+//                    if (AppServerContainer.class.isAssignableFrom(a.annotationType())) {
+//                        System.out.println("injecting app server context");
+//                        return new URL(getAppServerContextRoot());
+//                    }
+//                }
+//            } catch (MalformedURLException ex) {
+//                throw new IllegalStateException("Cannot inject context root.", ex);
+//            }
         } else {
             try {
                 url = fixLocalhost(url);
@@ -51,7 +48,7 @@ public class URLProvider extends URLResourceProvider {
                 System.getProperty("auth.server.http.port", "8180"));
     }
 
-    private static String getAppServerContextRoot() {
+    public static String getAppServerContextRoot() {
         return "http://localhost:" + Integer.parseInt(
                 System.getProperty("app.server.http.port", "8280"));
     }

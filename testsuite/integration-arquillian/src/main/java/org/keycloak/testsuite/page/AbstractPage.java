@@ -55,6 +55,7 @@ public abstract class AbstractPage {
     }
 
     public void navigateToUsing(WebDriver driver) {
+        System.out.println("navigating to " + getUrlString());
         driver.get(getUrlString());
     }
 
@@ -62,7 +63,7 @@ public abstract class AbstractPage {
             @Drone @SecondBrowser WebDriver driver2) {
         driver2.navigate().to(getUrlString());
     }
-    
+
     public WebDriver getDriver() {
         return driver;
     }

@@ -9,7 +9,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.TestRealms;
 import org.keycloak.testsuite.arquillian.ContainersTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.page.adapter.AppServerContextRoot;
@@ -24,15 +23,12 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
     @Page
     protected AppServerContextRoot appServerContextRoot;
 
+
     protected String LOGIN_URL;
 
     public static final String JBOSS_DEPLOYMENT_STRUCTURE_XML = "jboss-deployment-structure.xml";
     public static final URL jbossDeploymentStructure = AbstractServletsAdapterTest.class
             .getResource("/adapter-test/" + JBOSS_DEPLOYMENT_STRUCTURE_XML);
-
-    public AbstractAdapterTest() {
-        System.out.println("AbstractAdapterTest - App server: " + appServerContextRoot.getUrlString());
-    }
 
     @Before
     public void beforeAdapterTest() {
@@ -41,9 +37,9 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
     }
 
     @Override
-    public TestRealms loadTestRealms() {
-        TestRealms adapterTestRealms = loadAdapterTestRealms();
-        for (RealmRepresentation realm : adapterTestRealms.values()) {
+    public void loadTestRealmsInto(List<RealmRepresentation> testRealms) {
+        loadAdapterTestRealmsInto(testRealms);
+        for (RealmRepresentation realm : testRealms) {
             System.out.println("Setting redirect-uris in test realm '" + realm.getRealm() + "' as " + (isRelative() ? "" : "non-") + "relative");
             if (isRelative()) {
                 modifyClientRedirectUris(realm, appServerContextRoot.getUrlString(), "");
@@ -51,10 +47,9 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
                 modifyClientRedirectUris(realm, "^(/.*/\\*)", appServerContextRoot.getUrlString() + "$1");
             }
         }
-        return adapterTestRealms;
     }
 
-    public abstract TestRealms loadAdapterTestRealms();
+    public abstract void loadAdapterTestRealmsInto(List<RealmRepresentation> testRealms);
 
     public boolean isRelative() {
         return ContainersTestEnricher.isRelative(this.getClass());

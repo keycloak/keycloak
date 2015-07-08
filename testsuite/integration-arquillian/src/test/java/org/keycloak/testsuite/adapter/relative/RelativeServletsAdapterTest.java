@@ -1,6 +1,7 @@
-package org.keycloak.testsuite.adapter;
+package org.keycloak.testsuite.adapter.relative;
 
 import org.junit.Ignore;
+import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 
 /**
  *

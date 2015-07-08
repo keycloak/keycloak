@@ -7,13 +7,14 @@
     <module-name>multi-tenant</module-name>
 
     <servlet>
-        <servlet-name>Servlet</servlet-name>
+        <servlet-name>MultiTenantServlet</servlet-name>
         <servlet-class>org.keycloak.testsuite.servlet.adapter.MultiTenantServlet</servlet-class>
-        <init-param>
-            <param-name>keycloak.config.resolver</param-name>
-            <param-value>org.keycloak.testsuite.servlet.adapter.MultiTenantResolver</param-value>
-        </init-param>
     </servlet>
+    
+    <context-param>
+        <param-name>keycloak.config.resolver</param-name>
+        <param-value>org.keycloak.testsuite.servlet.adapter.MultiTenantResolver</param-value>
+    </context-param>
     
     <servlet-mapping>
         <servlet-name>Servlet</servlet-name>

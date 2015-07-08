@@ -1,5 +1,6 @@
-package org.keycloak.testsuite.adapter;
+package org.keycloak.testsuite.adapter.wildfly;
 
+import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AdapterLibsLocationProperty;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
