@@ -16,7 +16,9 @@ import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
@@ -74,6 +76,9 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
 
             // we have java property on UserModel
             String ldapAttrValue = ldapUser.getAttributeAsString(ldapAttrName);
+
+            checkDuplicateEmail(userModelAttrName, ldapAttrValue, realm, ldapProvider.getSession(), user);
+
             setPropertyOnUserModel(userModelProperty, user, ldapAttrValue);
         } else {
 
@@ -130,8 +135,20 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
         }
     }
 
+    // throw ModelDuplicateException if there is different user in model with same email
+    protected void checkDuplicateEmail(String userModelAttrName, String email, RealmModel realm, KeycloakSession session, UserModel user) {
+        if (UserModel.EMAIL.equalsIgnoreCase(userModelAttrName)) {
+            UserModel that = session.userStorage().getUserByEmail(email, realm);
+            if (that != null && !that.getId().equals(user.getId())) {
+                session.getTransaction().setRollbackOnly();
+                String exceptionMessage = String.format("Can't import user '%s' from LDAP because email '%s' already exists in Keycloak. Existing user with this email is '%s'", user.getUsername(), email, that.getUsername());
+                throw new ModelDuplicateException(exceptionMessage, UserModel.EMAIL);
+            }
+        }
+    }
+
     @Override
-    public UserModel proxy(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, final LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
+    public UserModel proxy(UserFederationMapperModel mapperModel, final LDAPFederationProvider ldapProvider, final LDAPObject ldapUser, UserModel delegate, final RealmModel realm) {
         final String userModelAttrName = mapperModel.getConfig().get(USER_MODEL_ATTRIBUTE);
         final String ldapAttrName = mapperModel.getConfig().get(LDAP_ATTRIBUTE);
         boolean isAlwaysReadValueFromLDAP = parseBooleanParameter(mapperModel, ALWAYS_READ_VALUE_FROM_LDAP);
@@ -162,6 +179,8 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
 
                 @Override
                 public void setEmail(String email) {
+                    checkDuplicateEmail(userModelAttrName, email, realm, ldapProvider.getSession(), this);
+
                     setLDAPAttribute(UserModel.EMAIL, email);
                     super.setEmail(email);
                 }
