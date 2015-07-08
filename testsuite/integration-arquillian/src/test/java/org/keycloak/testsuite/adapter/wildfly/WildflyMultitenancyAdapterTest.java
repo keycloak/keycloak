@@ -11,7 +11,7 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  */
 @AppServerContainer("app-server-wildfly")
 @AdapterLibsLocationProperty("adapter.libs.wildfly")
-@Ignore("Doesn't work yet. MultiTenantResolver unable to load adapter config files.")
+@Ignore("Doesn't work yet. App server returns 403 forbidden.")
 public class WildflyMultitenancyAdapterTest extends AbstractMultitenancyAdapterTest {
 
 }

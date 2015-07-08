@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.adapter;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -12,8 +13,10 @@ import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.TestRealms.loadRealm;
+import static org.keycloak.testsuite.adapter.AbstractExamplesAdapterTest.exampleDeployment;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.page.adapter.MultiTenant;
+import org.keycloak.testsuite.page.adapter.MultiTenantExample;
 import org.keycloak.testsuite.servlet.adapter.MultiTenantResolver;
 import org.keycloak.testsuite.servlet.adapter.MultiTenantServlet;
 
@@ -21,26 +24,33 @@ public abstract class AbstractMultitenancyAdapterTest extends AbstractAdapterTes
 
     public static final String ADAPTER_TENANT1 = "tenant1";
     public static final String ADAPTER_TENANT2 = "tenant2";
-    
+
     @Page
     private MultiTenant multiTenant;
+    @Page
+    private MultiTenantExample multiTenantExample;
 
     @Deployment(name = MultiTenant.DEPLOYMENT_NAME)
     protected static WebArchive multiTenant() {
         String name = MultiTenant.DEPLOYMENT_NAME;
         String webInfPath = "/adapter-test/" + name + "/WEB-INF/";
 
-        URL keycloakJSON1 = AbstractMultitenancyAdapterTest.class.getResource(webInfPath + "tenant1-keycloak.json");
-        URL keycloakJSON2 = AbstractMultitenancyAdapterTest.class.getResource(webInfPath + "tenant2-keycloak.json");
+        URL keycloakJSON1 = AbstractMultitenancyAdapterTest.class.getResource(webInfPath + "classes/tenant1-keycloak.json");
+        URL keycloakJSON2 = AbstractMultitenancyAdapterTest.class.getResource(webInfPath + "classes/tenant2-keycloak.json");
         URL webXML = AbstractMultitenancyAdapterTest.class.getResource(webInfPath + "web.xml");
 
         WebArchive deployment = ShrinkWrap.create(WebArchive.class, name + ".war")
                 .addClasses(MultiTenantServlet.class, MultiTenantResolver.class)
                 .addAsWebInfResource(webXML, "web.xml")
-                .addAsWebInfResource(keycloakJSON1, "tenant1-keycloak.json")
-                .addAsWebInfResource(keycloakJSON2, "tenant2-keycloak.json");
+                .addAsWebInfResource(keycloakJSON1, "classes/tenant1-keycloak.json")
+                .addAsWebInfResource(keycloakJSON2, "classes/tenant2-keycloak.json");
 
         return deployment;
+    }
+
+    @Deployment(name = MultiTenantExample.DEPLOYMENT_NAME)
+    protected static WebArchive customerPortal() throws IOException {
+        return exampleDeployment("examples-multitenant"); // example's name is multitenant.war
     }
 
     @Override
@@ -115,12 +125,12 @@ public abstract class AbstractMultitenancyAdapterTest extends AbstractAdapterTes
 
         multiTenant.navigateToRealm(tenant);
         System.out.println("Current url: " + driver.getCurrentUrl());
-        
+
         assertTrue(driver.getCurrentUrl().startsWith(tenantLoginUrl));
         loginPage.login("bburke@redhat.com", "password");
         System.out.println("Current url: " + driver.getCurrentUrl());
 
-        assertEquals(multiTenant.getTenantRealmUrl(tenant), driver.getCurrentUrl());
+        assertEquals(multiTenant.getTenantRealmUrl(tenant).toExternalForm(), driver.getCurrentUrl());
 
         String pageSource = driver.getPageSource();
         System.out.println(pageSource);
@@ -131,6 +141,16 @@ public abstract class AbstractMultitenancyAdapterTest extends AbstractAdapterTes
         if (logout) {
             driver.manage().deleteAllCookies();
         }
+    }
+
+    @Test
+    @Ignore
+    public void simpleTestMultiTenantExample() {
+        String tenant1LoginUrl = OIDCLoginProtocolService.authUrl(authServer.getUriBuilder()).build("tentant1").toString();
+
+        multiTenantExample.navigateToRealm("tenant1");
+        assertTrue(driver.getCurrentUrl().startsWith(tenant1LoginUrl));
+
     }
 
 }

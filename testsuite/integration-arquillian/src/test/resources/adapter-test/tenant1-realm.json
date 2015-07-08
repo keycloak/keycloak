@@ -67,6 +67,16 @@
                 "http://localhost:8280/multi-tenant/*"
             ],
             "secret": "password"
-        }        
+        },
+        {
+            "clientId": "multitenant",
+            "enabled": true,
+            "adminUrl": "/multitenant/tenant1",
+            "baseUrl": "/multitenant/tenant1",
+            "redirectUris": [
+                "/multitenant/tenant1/*"
+            ],
+            "secret": "password"
+        }
     ]
 }

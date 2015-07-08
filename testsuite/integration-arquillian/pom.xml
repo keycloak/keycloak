@@ -435,7 +435,13 @@
                                             <artifactId>database-service</artifactId>        
                                             <version>${project.version}</version>
                                             <type>war</type>
-                                        </artifactItem>                       
+                                        </artifactItem>       
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>examples-multitenant</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>war</type>
+                                        </artifactItem>                    
                                     </artifactItems>
                                     <outputDirectory>${examples.home}</outputDirectory>
                                     <overWriteIfNewer>true</overWriteIfNewer>

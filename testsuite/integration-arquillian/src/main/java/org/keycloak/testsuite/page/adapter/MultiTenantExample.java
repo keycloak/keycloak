@@ -11,9 +11,9 @@ import org.keycloak.testsuite.page.AbstractPageWithProvidedUrl;
  *
  * @author tkyjovsk
  */
-public class MultiTenant extends AbstractPageWithProvidedUrl {
+public class MultiTenantExample extends AbstractPageWithProvidedUrl {
 
-    public static final String DEPLOYMENT_NAME = "multi-tenant";
+    public static final String DEPLOYMENT_NAME = "multi-tenant-example";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)
@@ -26,7 +26,7 @@ public class MultiTenant extends AbstractPageWithProvidedUrl {
 
     @Override
     public UriBuilder createUriBuilder() {
-        return super.createUriBuilder().path("/").queryParam("realm", "{tenantRealm}");
+        return super.createUriBuilder().path("{tenantRealm}");
     }
 
     public URL getTenantRealmUrl(String realm) {

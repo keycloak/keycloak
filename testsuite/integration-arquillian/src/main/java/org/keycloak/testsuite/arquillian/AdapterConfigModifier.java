@@ -31,8 +31,8 @@ public class AdapterConfigModifier implements ApplicationArchiveProcessor {
     private static final Logger log = Logger.getLogger(AdapterConfigModifier.class.getName());
 
     public static final String ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak.json";
-    public static final String ADAPTER_CONFIG_PATH_TENANT1 = "/WEB-INF/tenant1-keycloak.json";
-    public static final String ADAPTER_CONFIG_PATH_TENANT2 = "/WEB-INF/tenant2-keycloak.json";
+    public static final String ADAPTER_CONFIG_PATH_TENANT1 = "/WEB-INF/classes/tenant1-keycloak.json";
+    public static final String ADAPTER_CONFIG_PATH_TENANT2 = "/WEB-INF/classes/tenant2-keycloak.json";
 
     @Override
     public void process(Archive<?> archive, TestClass testClass) {
