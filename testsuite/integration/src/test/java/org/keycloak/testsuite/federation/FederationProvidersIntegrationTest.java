@@ -417,6 +417,29 @@ public class FederationProvidersIntegrationTest {
     }
 
     @Test
+    public void testImportExistingUserFromLDAP() throws Exception {
+        // Add LDAP user with same email like existing model user
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+                FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "mary", "Mary1", "Kelly1", "mary1@email.org", null, "123");
+                FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "mary-duplicatemail", "Mary2", "Kelly2", "mary@test.com", null, "123");
+            }
+
+        });
+
+        // Try to import the duplicated LDAP user into Keycloak
+        loginPage.open();
+        loginPage.login("mary-duplicatemail", "password");
+        Assert.assertEquals("Email already exists.", loginPage.getError());
+
+        loginPage.login("mary1@email.org", "password");
+        Assert.assertEquals("Username already exists.", loginPage.getError());
+    }
+
+    @Test
     public void testReadonly() {
         KeycloakSession session = keycloakRule.startSession();
         try {

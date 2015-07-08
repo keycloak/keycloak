@@ -205,7 +205,7 @@ public class ClientSessionAdapter extends AbstractMongoAdapter<MongoClientSessio
 
     @Override
     public UserModel getAuthenticatedUser() {
-        return session.users().getUserById(entity.getAuthUserId(), realm);
+        return entity.getAuthUserId() == null ? null : session.users().getUserById(entity.getAuthUserId(), realm);
     }
 
     @Override
