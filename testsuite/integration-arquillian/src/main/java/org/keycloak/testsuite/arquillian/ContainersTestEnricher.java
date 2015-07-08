@@ -108,7 +108,7 @@ public class ContainersTestEnricher {
 
     public void afterClassAdminPassword(@Observes AfterClass event) {
         if (authServerQualifier.contains("undertow")) {
-            // reset admin pwd status only for undertow
+            // reset admin pwd status only for undertow (in the othe container the password persists across restarts)
             AdminPasswordUpdateTracker.setAdminPasswordUpdatedFor(authServerQualifier, false);
         }
     }
