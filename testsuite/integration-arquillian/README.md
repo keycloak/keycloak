@@ -75,6 +75,7 @@ Multiple profiles can be enabled for a single test run (Maven build).
 | Wildfly 9 | `app-server-wildfly` | `-Papp-server-wildfly` | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
 | Wildfly 9 Vanilla | `app-server-wildfly-vanilla` | `-Papp-server-wildfly-vanilla` (mutually exclusive with `-Papp-server-wildfly`) | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
 | JBoss AS 7 | `app-server-as7` | `-Papp-server-as7` | `jboss-as-dist`, `keycloak-adapter-dist-as7` |
+| Tomcat 8 | `app-server-tomcat` | `-Papp-server-tomcat` | `tomcat:8`, `keycloak-tomcat8-adapter-dist` |
 
 See the relevant container definitions in `arquillian.xml` located in the **test resources** folder.
 

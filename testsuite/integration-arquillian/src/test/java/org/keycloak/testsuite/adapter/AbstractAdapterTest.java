@@ -1,9 +1,15 @@
 package org.keycloak.testsuite.adapter;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.junit.Before;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -23,12 +29,14 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
     @Page
     protected AppServerContextRoot appServerContextRoot;
 
-
     protected String LOGIN_URL;
 
     public static final String JBOSS_DEPLOYMENT_STRUCTURE_XML = "jboss-deployment-structure.xml";
     public static final URL jbossDeploymentStructure = AbstractServletsAdapterTest.class
             .getResource("/adapter-test/" + JBOSS_DEPLOYMENT_STRUCTURE_XML);
+    public static final String TOMCAT_CONTEXT_XML = "context.xml";
+    public static final URL tomcatContext = AbstractServletsAdapterTest.class
+            .getResource("/adapter-test/" + TOMCAT_CONTEXT_XML);
 
     @Before
     public void beforeAdapterTest() {
@@ -65,6 +73,16 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
                 }
                 client.setRedirectUris(newRedirectUris);
             }
+        }
+    }
+    
+    public static void addContextXml(Archive archive, String contextPath) {
+        try {
+            String contextXmlContent = IOUtils.toString(tomcatContext.openStream())
+                    .replace("%CONTEXT_PATH%", contextPath);
+            archive.add(new StringAsset(contextXmlContent), "/WEB-INF/context.xml");
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
     }
 

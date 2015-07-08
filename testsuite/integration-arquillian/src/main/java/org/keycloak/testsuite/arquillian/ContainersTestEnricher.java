@@ -138,4 +138,12 @@ public class ContainersTestEnricher {
         }
     }
 
+    public static boolean isWildflyAdapterTest(Class testClass) {
+        return getAppServerQualifier(testClass).contains("wildfly");
+    }
+
+    public static boolean isTomcatAdapterTest(Class testClass) {
+        return getAppServerQualifier(testClass).contains("tomcat");
+    }
+
 }
