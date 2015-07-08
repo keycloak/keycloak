@@ -2,12 +2,12 @@
 
 ## Usage
 
-Running the tests: `mvn test`
+Running the tests: `mvn test` or `mvn clean test`
 
 ## General info
 
 **Exactly one** container has to be selected to run the Keycloak Server.
-This container will be used by all tests during the test run (Maven build).
+This container will be used by all tests during a test run (Maven build).
 
 Undertow is default.
 
@@ -29,6 +29,27 @@ AbstractKeycloakTest
 │   └── AbstractExamplesAdapterTest
 ...
 ```
+
+### AbstractKeycloakTest
+
+* Before class:
+ 1. Updates the admin password
+* Before method:
+ 1. Initiates admin client
+ 2. Imports test realms. Test realms are overridable by test sub-classes.
+* After method:
+ 1. Removes test realms.
+ 2. Closes admin client.
+
+### ContainersTestEnricher
+
+`ContainersTestEnricher` is a custom Arquillian observer that handles lifecycles of auth server and app server containers for each test class.
+Containers are started during @BeforeClass - and shut down during @AfterClass event.
+
+*Optionally* each test can be annotated with `@AuthServerContainer("container-qualifier")` and `@AppServerConatiner("container-qualifier")` annotations.
+
+* In case `@AuthServerContainer` is not provided the *auth server* qualifier is loaded from `auth.server.container` property.
+* In case `@AppServerContainer` is not provided or it's qualifier value is the same as *auth server* container qualifier, the app server isn't started.
 
 ## Admin Console Tests
 
@@ -52,7 +73,7 @@ Multiple profiles can be enabled for a single test run (Maven build).
 | --- | --- | --- | --- |
 | Wildfly 9 Relative | `auth-server-wildfly` | `-Pauth-server-wildfly` | `keycloak-demo-dist` servers both as auth-server and app-server (relative test scenario) |
 | Wildfly 9 | `app-server-wildfly` | `-Papp-server-wildfly` | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
-| Wildfly 9 Vanilla | `app-server-wildfly-vanilla` | `-Papp-server-wildfly-vanilla` (cannot be used with `-Papp-server-wildfly`) | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
+| Wildfly 9 Vanilla | `app-server-wildfly-vanilla` | `-Papp-server-wildfly-vanilla` (mutually exclusive with `-Papp-server-wildfly`) | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
 | JBoss AS 7 | `app-server-as7` | `-Papp-server-as7` | `jboss-as-dist`, `keycloak-adapter-dist-as7` |
 
 See the relevant container definitions in `arquillian.xml` located in the **test resources** folder.
@@ -69,10 +90,10 @@ See the relevant container definitions in `arquillian.xml` located in the **test
 | **Relative** | Both Keycloak Server and test apps running in the same container. | clients' `redirect-uris` can be relative | `auth-server-url` can be relative |
 | **Non-relative** | Test apps run in a different container than Keycloak Server. | clients' `redirect-uris` need to include FQDN of the app server | `auth-server-url` needs to include FQDN of the auth server|
 
-### Adapter Libraries Location
+### Adapter Libraries Mode
 
 1. **Provided.** By container, e.g. as a subsystem.
-2. **Bundled.** In the deployed war.
+2. **Bundled.** In the deployed war. Used with `app-server-wildfly-vanilla` which doesn't have adapter subsystem installed.
 
 
 ## Supported Browsers
@@ -81,3 +102,18 @@ See the relevant container definitions in `arquillian.xml` located in the **test
 | --- | --- | 
 | PhantomJS | `-Dbrowser=phantomjs` (defatult) |
 | Firefox | `-Dbrowser=firefox` |
+
+
+## Custom Arquillian Extensions
+
+* Multiple containers extension
+ * Replaces Arquillian's default container handling.
+ * Allows to manage multiple container instances of different types within a single test run.
+ * Allows to skip loading disabled containers based on `enabled` config property in `arquillian.xml`.
+* Custom extension
+ * `ContainersTestEnricher` - Handles lifecycles of auth-server and app-server.
+ * `CustomUndertowContainer` - Custom undertow conatiner adapter.
+ * `AdapterConfigModifier` - Modifies adapter config before deployment on app server based on relative/non-relativ scenario.
+ * `URLProvider` - Fixes URLs injected by Arquillian which contain 127.0.0.1 instead of localhost.
+ * `JiraTestExecutionDecider` - Skipping tests for unresolved JIRAs.
+
