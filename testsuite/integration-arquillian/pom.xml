@@ -42,12 +42,14 @@
         -->
         <adapter.type>provided</adapter.type>
 
-        <!-- Default test excludes - overridden in profiles. -->
+        <!-- Default test excludes. Overridden in profiles. -->
+        <!-- Console tests not excluded by default. Exclude using -P no-console -->
+        <exclude.console>-</exclude.console>
+        <!-- Adapter tests excluded by default. Enabled per profile. -->
         <exclude.adapters.relative>**/Relative*AdapterTest.java</exclude.adapters.relative>
         <exclude.adapters.wildfly>**/Wildfly*AdapterTest.java</exclude.adapters.wildfly>
         <exclude.adapters.as7>**/AS7*AdapterTest.java</exclude.adapters.as7>
-        <!-- Console tests excluded on demand by -P no-console -->
-        <exclude.console>-</exclude.console>
+        <exclude.adapters.tomcat>**/Tomcat*AdapterTest.java</exclude.adapters.tomcat>
         
         <!--Default auth-server container.-->
         <auth.server.container>auth-server-undertow</auth.server.container>
@@ -788,6 +790,82 @@
                             <systemPropertyVariables>
                                 <app.server.as7>true</app.server.as7>
                                 <as7.home>${as7.home}</as7.home>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <!--DOESN WORK YET-->
+            <id>app-server-tomcat</id>
+            <properties>
+                <tomcat.version>8.0.23</tomcat.version>
+                <tomcat.home>${containers.home}/apache-tomcat-${tomcat.version}</tomcat.home>
+                <exclude.adapters.tomcat>-</exclude.adapters.tomcat>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.jboss.arquillian.container</groupId>
+                    <artifactId>arquillian-tomcat-managed-7</artifactId>
+                    <version>1.0.0.CR7</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>2.10</version>
+                        <executions>
+                            <execution>
+                                <id>unpack-tomcat</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.apache.tomcat</groupId>
+                                            <artifactId>tomcat</artifactId>
+                                            <version>${tomcat.version}</version>
+                                            <type>zip</type>
+                                            <outputDirectory>${containers.home}</outputDirectory>
+                                            <overWrite>false</overWrite>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>unpack-tomcat-adapter</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>keycloak-tomcat8-adapter-dist</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>zip</type>
+                                            <outputDirectory>${tomcat.home}/lib</outputDirectory>
+                                            <overWrite>true</overWrite>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <app.server.tomcat>true</app.server.tomcat>
+                                <tomcat.home>${tomcat.home}</tomcat.home>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
