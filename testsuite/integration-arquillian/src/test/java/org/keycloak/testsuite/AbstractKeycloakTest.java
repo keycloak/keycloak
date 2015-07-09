@@ -1,6 +1,5 @@
 package org.keycloak.testsuite;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +37,7 @@ public abstract class AbstractKeycloakTest {
 
     protected Keycloak keycloak;
 
-    protected List<RealmRepresentation> testRealms = new ArrayList<>();
+    protected List<RealmRepresentation> testRealms;
 
     @Drone
     protected WebDriver driver;
@@ -62,15 +61,14 @@ public abstract class AbstractKeycloakTest {
     @Before
     public void beforeAbstractKeycloakTest() {
         driverSettings();
-        
+
         if (!isAdminPasswordUpdated()) {
             updateAdminPassword();
         }
-        
+
         keycloak = Keycloak.getInstance(authServer.getUrlString(),
                 "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
-        
-        loadTestRealmsInto(testRealms);
+
         importTestRealms();
     }
 
@@ -117,7 +115,17 @@ public abstract class AbstractKeycloakTest {
 
     public abstract void loadTestRealmsInto(List<RealmRepresentation> testRealms);
 
+    private void loadTestRealms() {
+        if (testRealms == null) {
+            testRealms = new ArrayList<>();
+        }
+        if (testRealms.isEmpty()) {
+            loadTestRealmsInto(testRealms);
+        }
+    }
+    
     public void importTestRealms() {
+        loadTestRealms();
         for (RealmRepresentation testRealm : testRealms) {
             importRealm(keycloak, testRealm);
         }
