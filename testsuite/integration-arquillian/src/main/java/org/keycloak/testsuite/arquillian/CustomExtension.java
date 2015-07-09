@@ -26,7 +26,7 @@ public class CustomExtension implements LoadableExtension {
         
         builder
                 .service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)
-                .service(ApplicationArchiveProcessor.class, AdapterConfigModifier.class)
+                .service(ApplicationArchiveProcessor.class, DeploymentArchiveProcessor.class)
                 .observer(ContainersTestEnricher.class);
 
         builder

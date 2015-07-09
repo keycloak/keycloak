@@ -45,6 +45,19 @@
             <property name="executionType">REMOTE</property>
         </protocol>-->
     </container>
+    <container qualifier="app-server-tomcat" mode="manual" >
+        <configuration>
+            <property name="enabled">${app.server.tomcat}</property>
+            <property name="catalinaHome">${tomcat.home}</property>
+            <property name="catalinaBase">${tomcat.home}</property>
+            <property name="bindHttpPort">${app.server.http.port}</property>
+            <property name="jmxPort">${app.server.management.port.tomcat}</property>
+            <property name="user">manager</property>
+            <property name="pass">arquillian</property>
+            <property name="javaVmArguments">-Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</property>
+            <property name="adapterImplClass">org.jboss.arquillian.container.tomcat.managed_7.TomcatManagedContainer</property>
+        </configuration>
+    </container>
     
     <extension qualifier="webdriver">
         <property name="browser">${browser}</property>

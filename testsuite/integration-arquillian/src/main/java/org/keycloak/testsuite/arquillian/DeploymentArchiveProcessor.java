@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.io.IOUtils;
 import org.apache.tools.ant.DirectoryScanner;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.test.spi.TestClass;
@@ -13,9 +14,7 @@ import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.adapters.config.BaseAdapterConfig;
-import static org.keycloak.testsuite.arquillian.ContainersTestEnricher.getAdapterLibsLocationProperty;
-import static org.keycloak.testsuite.arquillian.ContainersTestEnricher.hasAppServerContainerAnnotation;
-import static org.keycloak.testsuite.arquillian.ContainersTestEnricher.isRelative;
+import static org.keycloak.testsuite.arquillian.ContainersTestEnricher.*;
 import org.keycloak.testsuite.util.AdapterType;
 import static org.keycloak.testsuite.util.Json.loadJson;
 import org.keycloak.util.JsonSerialization;
@@ -24,12 +23,13 @@ import org.keycloak.util.JsonSerialization;
  *
  * @author tkyjovsk
  */
-public class AdapterConfigModifier implements ApplicationArchiveProcessor {
+public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
     public static final String REALM_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
 
-    private static final Logger log = Logger.getLogger(AdapterConfigModifier.class.getName());
+    private static final Logger log = Logger.getLogger(DeploymentArchiveProcessor.class.getName());
 
+    public static final String WEBXML_PATH = "/WEB-INF/web.xml";
     public static final String ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak.json";
     public static final String ADAPTER_CONFIG_PATH_TENANT1 = "/WEB-INF/classes/tenant1-keycloak.json";
     public static final String ADAPTER_CONFIG_PATH_TENANT2 = "/WEB-INF/classes/tenant2-keycloak.json";
@@ -39,6 +39,7 @@ public class AdapterConfigModifier implements ApplicationArchiveProcessor {
         if (isAdapterTest(testClass)) {
             modifyAdapterConfigs(archive, testClass);
             attachKeycloakLibs(archive, testClass);
+            modifyWebXml(archive, testClass);
         } else {
             System.out.println(testClass.getJavaClass().getSimpleName() + " is not an AdapterTest");
         }
@@ -116,6 +117,21 @@ public class AdapterConfigModifier implements ApplicationArchiveProcessor {
             libs.add(new File(adapterLibsLocation, lib));
         }
         return libs;
+    }
+
+    protected void modifyWebXml(Archive<?> archive, TestClass testClass) {
+        if (isTomcatAdapterTest(testClass.getJavaClass())) {
+            try {
+                String webXmlContent = IOUtils.toString(
+                        archive.get(WEBXML_PATH).getAsset().openStream());
+
+                webXmlContent = webXmlContent.replace("<auth-method>KEYCLOAK</auth-method>", "<auth-method>BASIC</auth-method>");
+
+                archive.add(new StringAsset((webXmlContent)), WEBXML_PATH);
+            } catch (IOException ex) {
+                throw new RuntimeException("Cannot load web.xml from archive.");
+            }
+        }
     }
 
 }

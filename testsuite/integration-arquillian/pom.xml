@@ -29,7 +29,7 @@
         <app.server.port.offset>200</app.server.port.offset>
         <app.server.http.port>8280</app.server.http.port>
         <app.server.management.port>10190</app.server.management.port>
-        <app.server.management.port.jmx>10199</app.server.management.port.jmx>
+        <!--<app.server.management.port.jmx>10199</app.server.management.port.jmx>-->
         
         <as7.version>${jboss.version}</as7.version>
                                                         
@@ -42,12 +42,14 @@
         -->
         <adapter.type>provided</adapter.type>
 
-        <!-- Default test excludes - overridden in profiles. -->
+        <!-- Default test excludes. Overridden in profiles. -->
+        <!-- Console tests not excluded by default. Exclude using -P no-console -->
+        <exclude.console>-</exclude.console>
+        <!-- Adapter tests excluded by default. Enabled per profile. -->
         <exclude.adapters.relative>**/Relative*AdapterTest.java</exclude.adapters.relative>
         <exclude.adapters.wildfly>**/Wildfly*AdapterTest.java</exclude.adapters.wildfly>
         <exclude.adapters.as7>**/AS7*AdapterTest.java</exclude.adapters.as7>
-        <!-- Console tests excluded on demand by -P no-console -->
-        <exclude.console>-</exclude.console>
+        <exclude.adapters.tomcat>**/Tomcat*AdapterTest.java</exclude.adapters.tomcat>
         
         <!--Default auth-server container.-->
         <auth.server.container>auth-server-undertow</auth.server.container>
@@ -314,10 +316,11 @@
                                 </property>
                             </properties>
                             <excludes>
+                                <exclude>${exclude.console}</exclude>
                                 <exclude>${exclude.adapters.relative}</exclude>
                                 <exclude>${exclude.adapters.wildfly}</exclude>
                                 <exclude>${exclude.adapters.as7}</exclude>
-                                <exclude>${exclude.console}</exclude>
+                                <exclude>${exclude.adapters.tomcat}</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -504,7 +507,7 @@
                         <version>2.10</version>
                         <executions>
                             <execution>
-                                <id>unpack-wildfly</id>
+                                <id>unpack-wildfly-and-adapter</id>
                                 <phase>generate-test-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -518,17 +521,6 @@
                                             <outputDirectory>${containers.home}</outputDirectory>
                                             <overWrite>false</overWrite>
                                         </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>unpack-original-standalone-xml</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
                                         <artifactItem>
                                             <groupId>org.wildfly</groupId>
                                             <artifactId>wildfly-dist</artifactId>
@@ -537,17 +529,6 @@
                                             <includes>*/standalone/configuration/standalone.xml</includes>
                                             <overWrite>true</overWrite>
                                         </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>unpack-wildfly-adapter</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>keycloak-wf9-adapter-dist</artifactId>
@@ -623,7 +604,7 @@
                         <version>2.10</version>
                         <executions>
                             <execution>
-                                <id>unpack-wildfly</id>
+                                <id>unpack-wildfly-and-adapter</id>
                                 <phase>generate-test-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -637,17 +618,6 @@
                                             <outputDirectory>${containers.home}</outputDirectory>
                                             <overWrite>false</overWrite>
                                         </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>unpack-wildfly-adapter</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>keycloak-wf9-adapter-dist</artifactId>
@@ -697,7 +667,7 @@
                         <version>2.10</version>
                         <executions>
                             <execution>
-                                <id>unpack-as7</id>
+                                <id>unpack-as7-and-adapter</id>
                                 <phase>generate-test-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -712,17 +682,6 @@
                                             <outputDirectory>${containers.home}</outputDirectory>
                                             <overWrite>false</overWrite>
                                         </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>unpack-original-standalone-xml</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
                                         <artifactItem>
                                             <groupId>org.jboss.as</groupId>
                                             <artifactId>jboss-as-dist</artifactId>
@@ -732,17 +691,6 @@
                                             <includes>*/standalone/configuration/standalone.xml</includes>
                                             <overWrite>true</overWrite>
                                         </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>unpack-as7-adapter</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>keycloak-as7-adapter-dist</artifactId>
@@ -788,6 +736,132 @@
                             <systemPropertyVariables>
                                 <app.server.as7>true</app.server.as7>
                                 <as7.home>${as7.home}</as7.home>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>app-server-tomcat</id>
+            <properties>
+                <tomcat.version>8.0.23</tomcat.version>
+                <tomcat.home>${containers.home}/apache-tomcat-${tomcat.version}</tomcat.home>
+                <exclude.adapters.tomcat>-</exclude.adapters.tomcat>
+                <!-- FIXME disabled port-offset because tomcat doesn't support it -->
+                <app.server.port.offset>0</app.server.port.offset>
+                <app.server.http.port>8080</app.server.http.port>
+                <app.server.management.port>9990</app.server.management.port>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.jboss.arquillian.container</groupId>
+                    <artifactId>arquillian-tomcat-managed-7</artifactId>
+                    <version>1.0.0.CR7</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>2.10</version>
+                        <executions>
+                            <execution>
+                                <id>unpack-tomcat-and-adapter</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.apache.tomcat</groupId>
+                                            <artifactId>tomcat</artifactId>
+                                            <version>${tomcat.version}</version>
+                                            <type>zip</type>
+                                            <outputDirectory>${containers.home}</outputDirectory>
+                                            <overWrite>false</overWrite>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>keycloak-tomcat8-adapter-dist</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>zip</type>
+                                            <outputDirectory>${tomcat.home}/lib</outputDirectory>
+                                            <overWrite>true</overWrite>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>libs-for-tomcat</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.jboss.resteasy</groupId>
+                                            <artifactId>resteasy-client</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.jboss.resteasy</groupId>
+                                            <artifactId>jaxrs-api</artifactId>
+                                        </artifactItem>                                        
+                                        <artifactItem>
+                                            <groupId>org.jboss.resteasy</groupId>
+                                            <artifactId>resteasy-jaxrs</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>commons-io</groupId>
+                                            <artifactId>commons-io</artifactId>
+                                            <version>1.4</version>
+                                        </artifactItem>
+                                    </artifactItems>
+                                    <outputDirectory>${tomcat.home}/lib</outputDirectory>
+                                    <overWrite>true</overWrite>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <version>1.0</version>
+                        <executions>
+                            <execution>
+                                <id>add-tomcat-manager-user</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${tomcat.home}/conf</dir>
+                                            <stylesheet>src/main/xslt/tomcat/tomcat-users.xsl</stylesheet>
+                                            <includes>
+                                                <include>tomcat-users.xml</include>
+                                            </includes>
+                                            <outputDir>${tomcat.home}/conf</outputDir>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <app.server.tomcat>true</app.server.tomcat>
+                                <tomcat.home>${tomcat.home}</tomcat.home>
+                                <!-- TODO: implement port-offset for tomcat server.xml so we can shift from 8080 -->
+                                <app.server.management.port.tomcat>8089</app.server.management.port.tomcat>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

@@ -90,6 +90,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
                 .addAsWebInfResource(webXML, "web.xml")
                 .addAsWebInfResource(keycloakJSON, "keycloak.json")
                 .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
+        
+        addContextXml(deployment, name);
 
         return deployment;
     }

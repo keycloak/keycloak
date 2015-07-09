@@ -108,7 +108,7 @@ public class ContainersTestEnricher {
 
     public void afterClassAdminPassword(@Observes AfterClass event) {
         if (authServerQualifier.contains("undertow")) {
-            // reset admin pwd status only for undertow
+            // reset admin pwd status only for undertow (in the othe container the password persists across restarts)
             AdminPasswordUpdateTracker.setAdminPasswordUpdatedFor(authServerQualifier, false);
         }
     }
@@ -136,6 +136,14 @@ public class ContainersTestEnricher {
                 authServersWithUpdatedAdminPassword.remove(containerQualifier);
             }
         }
+    }
+
+    public static boolean isWildflyAdapterTest(Class testClass) {
+        return getAppServerQualifier(testClass).contains("wildfly");
+    }
+
+    public static boolean isTomcatAdapterTest(Class testClass) {
+        return getAppServerQualifier(testClass).contains("tomcat");
     }
 
 }
