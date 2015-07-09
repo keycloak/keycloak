@@ -806,7 +806,7 @@ module.controller('UserFederationMapperListCtrl', function($scope, $location, No
 
     $scope.hasAnyMapperTypes = false;
     for (var property in mapperTypes) {
-        if (!(property.startsWith('$'))) {
+        if (!(property.indexOf('$') === 0)) {
             $scope.hasAnyMapperTypes = true;
             break;
         }
