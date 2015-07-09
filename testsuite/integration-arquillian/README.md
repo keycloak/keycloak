@@ -4,12 +4,15 @@
 
 Running the tests: `mvn test` or `mvn clean test`
 
-## General info
+## Test suite
 
-**Exactly one** container has to be selected to run the Keycloak Server.
-This container will be used by all tests during a test run (Maven build).
+### Selecting container for Keycloak Server
 
-Undertow is default.
+The testsuite requires a container for Keycloak Server to be selected.
+This container is used by all tests in the test suite.
+It can be selected using property `auth.server.container`.
+
+By default the testsuite runs the server on embedded Undertow.
 
 ### Containers Supported for Keycloak Server
 
@@ -32,39 +35,43 @@ AbstractKeycloakTest
 
 ### AbstractKeycloakTest
 
-* Before class:
- 1. Updates the admin password
-* Before method:
+Handles test realms. Provides Admin Client for REST operations.
+
+* **@BeforeClass**
+ 1. Updates the admin password to enable the admin user.
+* **@Before**
  1. Initiates admin client
- 2. Imports test realms. Test realms are overridable by test sub-classes.
-* After method:
+ 2. Imports test realms. (Loading test realms is overriden in subclasses.)
+* **@After**
  1. Removes test realms.
  2. Closes admin client.
 
 ### ContainersTestEnricher
 
+Manages *container lifecycles*.
+
 `ContainersTestEnricher` is a custom Arquillian observer that handles lifecycles of auth server and app server containers for each test class.
 Containers are started during @BeforeClass - and shut down during @AfterClass event.
 
-*Optionally* each test can be annotated with `@AuthServerContainer("container-qualifier")` and `@AppServerConatiner("container-qualifier")` annotations.
+*Optionally* each test can be annotated with `@AuthServerContainer("qualifier")` and `@AppServerConatiner("qualifier")` annotations.
 
-* In case `@AuthServerContainer` is not provided the *auth server* qualifier is loaded from `auth.server.container` property.
-* In case `@AppServerContainer` is not provided or it's qualifier value is the same as *auth server* container qualifier, the app server isn't started.
+* In case `@AuthServerContainer` is not provided the *auth server qualifier* is loaded from `auth.server.container` property.
+* In case `@AppServerContainer` is not provided or it's value is the same as *auth server qualifier*, the app server isn't started.
 
 ## Admin Console Tests
 
-Tests for admin console are located in **test sources** under `org/keycloak/testsuite/console/`.
-Related WebDriver page objects and other non-test classes are located on the same path in **main sources**.
+Tests for admin console are located in `org/keycloak/testsuite/console`.
+Related non-test classes are located on the same path in the **main sources**.
 
-Admin console tests are **enabled by default**. The can be disabled by using `-Pno-console`.
+Admin console tests are **ENABLED by default**. They can be disabled by `-P no-console`.
 
 
 ## Adapter Tests
 
-Adapter tests are located in **test sources** under `org/keycloak/testsuite/adapter/`.
-Related non-test classes can be found on the same path in **main sources**.
+Adapter tests are located in `org/keycloak/testsuite/adapter`.
+Related non-test classes can be found on the same path in the **main sources**.
 
-Adapter tests are **disabled by default**. They need to be enabled by profiles.
+Adapter tests are **DISABLED by default**. They can be enabled by profiles.
 Multiple profiles can be enabled for a single test run (Maven build).
 
 ### Containers Supported for Adapter Tests
