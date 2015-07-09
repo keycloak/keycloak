@@ -71,11 +71,11 @@ Multiple profiles can be enabled for a single test run (Maven build).
 
 | Container | Arquillian Qualifier | Maven | Dependencies |
 | --- | --- | --- | --- |
-| Wildfly 9 Relative | `auth-server-wildfly` | `-Pauth-server-wildfly` | `keycloak-demo-dist` servers both as auth-server and app-server (relative test scenario) |
-| Wildfly 9 | `app-server-wildfly` | `-Papp-server-wildfly` | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
-| Wildfly 9 Vanilla | `app-server-wildfly-vanilla` | `-Papp-server-wildfly-vanilla` (mutually exclusive with `-Papp-server-wildfly`) | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
-| JBoss AS 7 | `app-server-as7` | `-Papp-server-as7` | `jboss-as-dist`, `keycloak-adapter-dist-as7` |
-| Tomcat 8 | `app-server-tomcat` | `-Papp-server-tomcat` | `tomcat`, `keycloak-tomcat8-adapter-dist` |
+| **Wildfly 9** Relative | `auth-server-wildfly` | `-Pauth-server-wildfly` | `keycloak-demo-dist` servers both as auth-server and app-server (relative test scenario) |
+| **Wildfly 9** | `app-server-wildfly` | `-Papp-server-wildfly` | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
+| **Wildfly 9** Vanilla | `app-server-wildfly-vanilla` | `-Papp-server-wildfly-vanilla` (mutually exclusive with `-Papp-server-wildfly`) | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
+| **JBoss AS 7** | `app-server-as7` | `-Papp-server-as7` | `jboss-as-dist`, `keycloak-adapter-dist-as7` |
+| **Tomcat 8** | `app-server-tomcat` | `-Papp-server-tomcat` | `tomcat`, `keycloak-tomcat8-adapter-dist` |
 
 See the relevant container definitions in `arquillian.xml` located in the **test resources** folder.
 
@@ -88,8 +88,8 @@ See the relevant container definitions in `arquillian.xml` located in the **test
 
 | Scenario | Description | Realm config (server-side) | Adapter config (client-side) |
 | --- | --- | --- | --- |
-| **Relative** | Both Keycloak Server and test apps running in the same container. | clients' `redirect-uris` can be relative | `auth-server-url` can be relative |
-| **Non-relative** | Test apps run in a different container than Keycloak Server. | clients' `redirect-uris` need to include FQDN of the app server | `auth-server-url` needs to include FQDN of the auth server|
+| **Relative** | Both Keycloak Server and test apps running in the same container. | clients' `baseUrl`, `adminUrl` and `redirect-uris` can be relative | `auth-server-url` can be relative |
+| **Non-relative** | Test apps run in a different container than Keycloak Server. | clients' `baseUrl`, `adminUrl` and `redirect-uris` need to include FQDN of the app server | `auth-server-url` needs to include FQDN of the auth server|
 
 ### Adapter Libraries Mode
 
@@ -101,7 +101,7 @@ See the relevant container definitions in `arquillian.xml` located in the **test
 
 | Browser | Maven |
 | --- | --- | 
-| PhantomJS | `-Dbrowser=phantomjs` (defatult) |
+| PhantomJS | `-Dbrowser=phantomjs` (default) |
 | Firefox | `-Dbrowser=firefox` |
 
 
