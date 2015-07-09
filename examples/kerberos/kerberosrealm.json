@@ -81,7 +81,6 @@
                 "usernameLDAPAttribute" : "uid",
                 "userObjectClasses" : "inetOrgPerson, organizationalPerson",
                 "connectionUrl" : "ldap://localhost:10389",
-                "baseDn" : "dc=keycloak,dc=org",
                 "userDnSuffix" : "ou=People,dc=keycloak,dc=org",
                 "bindDn" : "uid=admin,ou=system",
                 "bindCredential" : "secret",

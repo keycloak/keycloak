@@ -45,3 +45,22 @@ postalCode: 88441
 postalCode: 77332
 street: Elm 5
 userPassword: password
+
+dn: cn=ldap-user,ou=RealmRoles,dc=keycloak,dc=org
+objectclass: top
+objectclass: groupOfNames
+cn: ldap-user
+member: uid=jbrown,ou=People,dc=keycloak,dc=org
+member: uid=bwilson,ou=People,dc=keycloak,dc=org
+
+dn: cn=ldap-admin,ou=RealmRoles,dc=keycloak,dc=org
+objectclass: top
+objectclass: groupOfNames
+cn: ldap-admin
+member: uid=jbrown,ou=People,dc=keycloak,dc=org
+
+dn: cn=accountant,ou=FinanceRoles,dc=keycloak,dc=org
+objectclass: top
+objectclass: groupOfNames
+cn: accountant
+member: uid=bwilson,ou=People,dc=keycloak,dc=org
