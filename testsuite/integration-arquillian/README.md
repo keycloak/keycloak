@@ -28,9 +28,8 @@ See the relevant container definitions in `arquillian.xml` located in the **test
 AbstractKeycloakTest
 ├── AbstractAdminConsoleTest
 ├── AbstractAdapterTest
-│   ├── AbstractServletsAdapterTest
-│   └── AbstractExamplesAdapterTest
-...
+├── …
+…
 ```
 
 ### AbstractKeycloakTest
@@ -88,8 +87,21 @@ See the relevant container definitions in `arquillian.xml` located in the **test
 
 ### Adapter Test Types
 
-1. Using **test servlets**. All tests extending class `AbstractServletsAdapterTest`
-2. Using **example/demo wars**. All tests extending class `AbstractExamplesAdapterTest`
+1. Using **test servlets**.
+2. Using **example/demo wars**.
+
+```
+AbstractKeycloakTest
+└── AbstractAdapterTest
+    ├── AbstractServletsAdapterTest
+    |   ├── Wildfly…
+    |   ├── Tomcat…
+    |   …
+    └── AbstractExamplesAdapterTest
+        ├── Wildfly…
+        ├── Tomcat…
+        …
+```
 
 ### Relative vs Non-relative scenario
 
