@@ -14,8 +14,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This is supposed to be executed from JAR file (java -jar target/embedded-ldap.jar ). For executing from IDE or Maven use directly
- * the proper class (LDAPEmbeddedServer, KerberosEmbeddedServer or KerberosKeytabCreator)
+ * Allows to run embedded ApacheDS LDAP or Kerberos server
+ *
+ * It is supposed to be executed from JAR file. For example:
+ * java -jar target/embedded-ldap.jar ldap
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

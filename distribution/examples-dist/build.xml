@@ -107,6 +107,12 @@
                 <exclude name="**/*.iml"/>
             </fileset>
         </copy>
+        <copy todir="target/examples/ldap" overwrite="true">
+            <fileset dir="../../examples/ldap">
+                <exclude name="**/target/**"/>
+                <exclude name="**/*.iml"/>
+            </fileset>
+        </copy>
         <copy todir="target/examples/kerberos" overwrite="true">
             <fileset dir="../../examples/kerberos">
                 <exclude name="**/target/**"/>
