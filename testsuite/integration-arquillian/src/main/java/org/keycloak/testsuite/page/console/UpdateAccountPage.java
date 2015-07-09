@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.keycloak.testsuite.ui.page;
+package org.keycloak.testsuite.page.console;
 
 import org.keycloak.testsuite.model.User;
 import org.keycloak.testsuite.page.console.AdminConsole;
