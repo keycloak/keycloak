@@ -316,10 +316,11 @@
                                 </property>
                             </properties>
                             <excludes>
+                                <exclude>${exclude.console}</exclude>
                                 <exclude>${exclude.adapters.relative}</exclude>
                                 <exclude>${exclude.adapters.wildfly}</exclude>
                                 <exclude>${exclude.adapters.as7}</exclude>
-                                <exclude>${exclude.console}</exclude>
+                                <exclude>${exclude.adapters.tomcat}</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -798,12 +799,12 @@
         </profile>
 
         <profile>
-            <!--DOESN WORK YET-->
             <id>app-server-tomcat</id>
             <properties>
                 <tomcat.version>8.0.23</tomcat.version>
                 <tomcat.home>${containers.home}/apache-tomcat-${tomcat.version}</tomcat.home>
                 <exclude.adapters.tomcat>-</exclude.adapters.tomcat>
+                <app.server.http.port>8080</app.server.http.port>
             </properties>
             <dependencies>
                 <dependency>
@@ -820,7 +821,7 @@
                         <version>2.10</version>
                         <executions>
                             <execution>
-                                <id>unpack-tomcat</id>
+                                <id>unpack-tomcat-and-adapter</id>
                                 <phase>generate-test-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -835,17 +836,6 @@
                                             <outputDirectory>${containers.home}</outputDirectory>
                                             <overWrite>false</overWrite>
                                         </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>unpack-tomcat-adapter</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>keycloak-tomcat8-adapter-dist</artifactId>
@@ -855,6 +845,36 @@
                                             <overWrite>true</overWrite>
                                         </artifactItem>
                                     </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>libs-for-tomcat</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.jboss.resteasy</groupId>
+                                            <artifactId>resteasy-client</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.jboss.resteasy</groupId>
+                                            <artifactId>jaxrs-api</artifactId>
+                                        </artifactItem>                                        
+                                        <artifactItem>
+                                            <groupId>org.jboss.resteasy</groupId>
+                                            <artifactId>resteasy-jaxrs</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>commons-io</groupId>
+                                            <artifactId>commons-io</artifactId>
+                                            <version>1.4</version>
+                                        </artifactItem>
+                                    </artifactItems>
+                                    <outputDirectory>${tomcat.home}/lib</outputDirectory>
+                                    <overWrite>true</overWrite>
                                 </configuration>
                             </execution>
                         </executions>
@@ -892,8 +912,8 @@
                             <systemPropertyVariables>
                                 <app.server.tomcat>true</app.server.tomcat>
                                 <tomcat.home>${tomcat.home}</tomcat.home>
-                                <!-- TODO: implement port-offset for tomcat server.xml -->
-                                <app.server.http.port>8080</app.server.http.port>
+                                <!-- TODO: implement port-offset for tomcat server.xml so we can shift from 8080 -->
+                                <app.server.http.port>${app.server.http.port}</app.server.http.port>
                                 <app.server.management.port.tomcat>8089</app.server.management.port.tomcat>
                             </systemPropertyVariables>
                         </configuration>

@@ -116,6 +116,7 @@ public abstract class AbstractKeycloakTest {
     public abstract void loadTestRealmsInto(List<RealmRepresentation> testRealms);
 
     private void loadTestRealms() {
+        System.out.println("loading test realms");
         if (testRealms == null) {
             testRealms = new ArrayList<>();
         }
@@ -126,12 +127,14 @@ public abstract class AbstractKeycloakTest {
     
     public void importTestRealms() {
         loadTestRealms();
+        System.out.println("importing test realms");
         for (RealmRepresentation testRealm : testRealms) {
             importRealm(keycloak, testRealm);
         }
     }
 
     public void removeTestRealms() {
+        System.out.println("removing test realms");
         for (RealmRepresentation testRealm : testRealms) {
             removeRealm(keycloak, testRealm);
         }

@@ -75,7 +75,7 @@ Multiple profiles can be enabled for a single test run (Maven build).
 | Wildfly 9 | `app-server-wildfly` | `-Papp-server-wildfly` | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
 | Wildfly 9 Vanilla | `app-server-wildfly-vanilla` | `-Papp-server-wildfly-vanilla` (mutually exclusive with `-Papp-server-wildfly`) | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
 | JBoss AS 7 | `app-server-as7` | `-Papp-server-as7` | `jboss-as-dist`, `keycloak-adapter-dist-as7` |
-| Tomcat 8 | `app-server-tomcat` | `-Papp-server-tomcat` | `tomcat:8`, `keycloak-tomcat8-adapter-dist` |
+| Tomcat 8 | `app-server-tomcat` | `-Papp-server-tomcat` | `tomcat`, `keycloak-tomcat8-adapter-dist` |
 
 See the relevant container definitions in `arquillian.xml` located in the **test resources** folder.
 
@@ -116,7 +116,7 @@ Custom extensions are registered in `META-INF/services/org.jboss.arquillian.core
 * Custom extension
  * `ContainersTestEnricher` - Handles lifecycles of auth-server and app-server.
  * `CustomUndertowContainer` - Custom undertow conatiner adapter.
- * `AdapterConfigModifier` - Modifies adapter config before deployment on app server based on relative/non-relative scenario.
+ * `DeploymentArchiveProcessor` - Modifies adapter config before deployment on app server based on relative/non-relative scenario.
  * `URLProvider` - Fixes URLs injected by Arquillian which contain 127.0.0.1 instead of localhost.
  * `JiraTestExecutionDecider` - Skipping tests for unresolved JIRAs.
 

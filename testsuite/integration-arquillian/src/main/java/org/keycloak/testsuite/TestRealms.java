@@ -27,13 +27,13 @@ public class TestRealms extends HashMap<String, RealmRepresentation> {
         try { // TODO - figure out a way how to do this without try-catch
             RealmResource realmResource = keycloak.realms().realm(realm.getRealm());
             RealmRepresentation rRep = realmResource.toRepresentation();
-            System.out.println(" realm already exists on server, removing");
+            System.out.println(" realm already exists on server, re-importing");
             realmResource.remove();
         } catch (NotFoundException nfe) {
-            System.out.println(" realm not found on server");
+//            System.out.println(" realm not found on server");
         }
         keycloak.realms().create(realm);
-        System.out.println("realm imported");
+//        System.out.println("realm imported");
     }
 
     public static void removeRealm(Keycloak keycloak, RealmRepresentation testRealm) {
