@@ -17,7 +17,8 @@ public abstract class AbstractPage {
 
     private static final long serialVersionUID = 1L;
 
-    private final Map<String, Object> templateValues = new HashMap<>();
+    private final Map<String, Object> defaultTemplateValues = new HashMap<>();
+    private final Map<String, Object> helperTemplateValues = new HashMap<>();
 
     @Drone
     protected WebDriver driver;
@@ -34,11 +35,19 @@ public abstract class AbstractPage {
     }
 
     protected AbstractPage setTemplateValue(String template, Object value) {
-        templateValues.put(template, value);
+        defaultTemplateValues.put(template, value);
         return this;
     }
 
     public URL getUrl() {
+        try {
+            return createUriBuilder().buildFromMap(this.defaultTemplateValues).toURL();
+        } catch (MalformedURLException ex) {
+            throw new IllegalStateException("Page URL is malformed.");
+        }
+    }
+
+    public URL getUrl(Map<String, Object> templateValues) {
         try {
             return createUriBuilder().buildFromMap(templateValues).toURL();
         } catch (MalformedURLException ex) {
@@ -48,6 +57,10 @@ public abstract class AbstractPage {
 
     public String getUrlString() {
         return getUrl().toExternalForm();
+    }
+
+    public String getUrlString(Map<String, Object> templateValues) {
+        return getUrl(templateValues).toExternalForm();
     }
 
     public void navigateTo() {

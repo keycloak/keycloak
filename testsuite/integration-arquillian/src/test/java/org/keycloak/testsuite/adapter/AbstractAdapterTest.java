@@ -46,7 +46,7 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
 
     @Override
     public void loadTestRealmsInto(List<RealmRepresentation> testRealms) {
-        loadAdapterTestRealmsInto(testRealms);
+        loadAdapterTestRealmsTo(testRealms);
         for (RealmRepresentation realm : testRealms) {
             System.out.println("Setting redirect-uris in test realm '" + realm.getRealm() + "' as " + (isRelative() ? "" : "non-") + "relative");
             if (isRelative()) {
@@ -59,7 +59,7 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
         }
     }
 
-    public abstract void loadAdapterTestRealmsInto(List<RealmRepresentation> testRealms);
+    public abstract void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms);
 
     public boolean isRelative() {
         return ContainersTestEnricher.isRelative(this.getClass());

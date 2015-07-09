@@ -49,12 +49,12 @@ public abstract class AbstractMultitenancyAdapterTest extends AbstractAdapterTes
     }
 
     @Deployment(name = MultiTenantExample.DEPLOYMENT_NAME)
-    protected static WebArchive customerPortal() throws IOException {
+    protected static WebArchive multiTenantExample() throws IOException {
         return exampleDeployment("examples-multitenant"); // example's name is multitenant.war
     }
 
     @Override
-    public void loadAdapterTestRealmsInto(List<RealmRepresentation> testRealms) {
+    public void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms) {
         testRealms.add(loadRealm("/adapter-test/tenant1-realm.json"));
         testRealms.add(loadRealm("/adapter-test/tenant2-realm.json"));
     }
@@ -144,7 +144,7 @@ public abstract class AbstractMultitenancyAdapterTest extends AbstractAdapterTes
     }
 
     @Test
-    @Ignore
+    @Ignore // FIXME
     public void simpleTestMultiTenantExample() {
         String tenant1LoginUrl = OIDCLoginProtocolService.authUrl(authServer.getUriBuilder()).build("tentant1").toString();
 

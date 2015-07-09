@@ -23,6 +23,7 @@ import org.keycloak.testsuite.model.RequiredUserAction;
 import org.keycloak.testsuite.model.User;
 import org.keycloak.testsuite.page.console.settings.user.UserPage;
 import org.keycloak.testsuite.page.console.UpdateAccountPage;
+import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 import org.openqa.selenium.By;
 
 public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
@@ -46,10 +47,10 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
     private ProductPortalExample productPortalExample;
     @Page
     private DatabaseServiceExample databaseServiceExample;
-	@Page
-	private UserPage userPage;
-	@Page
-	private UpdateAccountPage accountPage;
+    @Page
+    private UserPage userPage;
+    @Page
+    private UpdateAccountPage accountPage;
 
     protected static WebArchive exampleDeployment(String name) throws IOException {
         return ShrinkWrap.createFromZipFile(WebArchive.class,
@@ -73,7 +74,7 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
     }
 
     @Override
-    public void loadAdapterTestRealmsInto(List<RealmRepresentation> testRealms) {
+    public void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms) {
         File testRealmFile = new File(EXAMPLES_HOME + "/keycloak-examples-" + EXAMPLES_VERSION_SUFFIX
                 + "/preconfigured-demo/testrealm.json");
         try {
@@ -99,79 +100,81 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
         Assert.assertTrue(driver.getPageSource().contains("Stian Thorgersen"));
     }
 
-	@Test
-	@Ignore
-	public void testChangePasswordRequiredUserAction() {
-		System.out.println("befote password login");
-		addRequiredAction(RequiredUserAction.UPDATE_PASSWORD);
-		
-		customerPortalExample.navigateTo();
-		customerPortalExample.customerListing();
-		loginPage.login("bburke@redhat.com", "password");
-		waitGui().until()
-			.element(By.className("kc-feedback-text"))
-			.text()
-			.equalTo("You need to change your password to activate your account.");
-		System.out.println("after password login");
-		removeRequiredAction(RequiredUserAction.UPDATE_PASSWORD);
-	}
-	
-	@Test
-	@Ignore
-	public void testUpdateProfileRequiredUserAction() {
-		System.out.println("befote profile login");
-		addRequiredAction(RequiredUserAction.UPDATE_PROFILE);
-		
-		customerPortalExample.navigateTo();
-		customerPortalExample.customerListing();
-		loginPage.login("bburke@redhat.com", "password");
-		waitGui().until()
-			.element(By.className("kc-feedback-text"))
-			.text()
-			.equalTo("You need to update your user profile to activate your account.");
-		accountPage.updateAccountInfo("bburke@redhat.com", "Bill", "");
-		waitGui().until()
-			.element(By.className("kc-feedback-text"))
-			.text()
-			.equalTo("Please specify last name.");
-		accountPage.updateAccountInfo("bburke@redhat.com", "Bill", "Burke");
-		waitGui().until()
-			.element(By.tagName("h2"))
-			.text()
-			.equalTo("Customer Listing");
-		driver.findElement(By.linkText("logout")).click();
-		System.out.println("after profile login");
-		removeRequiredAction(RequiredUserAction.UPDATE_PROFILE);
-	}
-	
-	private void addRequiredAction(RequiredUserAction action) {
-		try{
-		Thread.sleep(1000);
-		loginAsAdmin();
-		Thread.sleep(1000);
-		navigation.users();
-		Thread.sleep(1000);
-		User bburke = userPage.findUser("bburke@redhat.com");
-		Thread.sleep(1000);
-		bburke.addRequiredUserAction(action);
-		userPage.updateUser(bburke);
-		Thread.sleep(1000);
-		logOut();
-		Thread.sleep(1000);
-		} catch(InterruptedException e) {}
-	}
-	
-	private void removeRequiredAction(RequiredUserAction action) {
-		try {Thread.sleep(1000);
-		loginAsAdmin();
-		Thread.sleep(1000);
-		navigation.users();
-		Thread.sleep(1000);
-		User bburke = userPage.findUser("bburke@redhat.com");
-		Thread.sleep(1000);
-		bburke.removeRequiredUserAction(action);
-		userPage.updateUser(bburke);
-		logOut();
-		} catch(InterruptedException e) {}
-	}
+    @Test
+    @Ignore
+    public void testChangePasswordRequiredUserAction() {
+        System.out.println("before password login");
+        addRequiredAction(RequiredUserAction.UPDATE_PASSWORD);
+
+        customerPortalExample.navigateTo();
+        customerPortalExample.customerListing();
+        loginPage.login("bburke@redhat.com", "password");
+        waitGui().until()
+                .element(By.className("kc-feedback-text"))
+                .text()
+                .equalTo("You need to change your password to activate your account.");
+        System.out.println("after password login");
+        removeRequiredAction(RequiredUserAction.UPDATE_PASSWORD);
+    }
+
+    @Test
+    @Ignore
+    public void testUpdateProfileRequiredUserAction() {
+        System.out.println("before profile login");
+        addRequiredAction(RequiredUserAction.UPDATE_PROFILE);
+
+        customerPortalExample.navigateTo();
+        customerPortalExample.customerListing();
+        loginPage.login("bburke@redhat.com", "password");
+        waitGui().until()
+                .element(By.className("kc-feedback-text"))
+                .text()
+                .equalTo("You need to update your user profile to activate your account.");
+        accountPage.updateAccountInfo("bburke@redhat.com", "Bill", "");
+        waitGui().until()
+                .element(By.className("kc-feedback-text"))
+                .text()
+                .equalTo("Please specify last name.");
+        accountPage.updateAccountInfo("bburke@redhat.com", "Bill", "Burke");
+        waitGui().until()
+                .element(By.tagName("h2"))
+                .text()
+                .equalTo("Customer Listing");
+        driver.findElement(By.linkText("logout")).click();
+        System.out.println("after profile login");
+        removeRequiredAction(RequiredUserAction.UPDATE_PROFILE);
+    }
+
+    private void addRequiredAction(RequiredUserAction action) {
+        pause(1000);
+        loginAsAdmin();
+        pause(1000);
+        adminConsole.navigateTo();
+        pause(1000);
+        navigation.users();
+        pause(1000);
+        User bburke = userPage.findUser("bburke@redhat.com");
+        pause(1000);
+        bburke.addRequiredUserAction(action);
+        userPage.updateUser(bburke);
+        pause(1000);
+        logOut();
+        pause(1000);
+    }
+
+    private void removeRequiredAction(RequiredUserAction action) {
+        pause(1000);
+        loginAsAdmin();
+        pause(1000);
+        adminConsole.navigateTo();
+        pause(1000);
+        navigation.users();
+        pause(1000);
+        User bburke = userPage.findUser("bburke@redhat.com");
+        pause(1000);
+        bburke.removeRequiredUserAction(action);
+        userPage.updateUser(bburke);
+        logOut();
+    }
+
 }

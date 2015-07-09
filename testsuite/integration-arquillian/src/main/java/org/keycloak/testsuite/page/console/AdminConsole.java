@@ -17,7 +17,9 @@
  */
 package org.keycloak.testsuite.page.console;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.ws.rs.core.UriBuilder;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -49,5 +51,11 @@ public class AdminConsole extends AdminRoot {
 
     @FindBy(css = ".ng-binding.btn.btn-danger")
     protected WebElement deleteConfirmationButton;
+
+    public String getUrlString(String consoleRealm) {
+        Map<String,Object> tpl = new HashMap<>();
+        tpl.put("consoleRealm", consoleRealm);
+        return getUrlString(tpl);
+    }
 
 }

@@ -132,7 +132,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     }
 
     @Override
-    public void loadAdapterTestRealmsInto(List<RealmRepresentation> testRealms) {
+    public void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms) {
         testRealms.add(loadRealm("/adapter-test/demorealm.json"));
     }
 
