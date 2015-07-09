@@ -73,19 +73,19 @@
         {
             "clientId": "customer-portal",
             "enabled": true,
-            "adminUrl": "http://localhost:8280/customer-portal",
-            "baseUrl": "http://localhost:8280/customer-portal",
+            "adminUrl": "/customer-portal",
+            "baseUrl": "/customer-portal",
             "redirectUris": [
-                "http://localhost:8280/customer-portal/*"
+                "/customer-portal/*"
             ],
             "secret": "password"
         },
         {
             "clientId": "customer-cookie-portal",
             "enabled": true,
-            "baseUrl": "http://localhost:8280/customer-cookie-portal",
+            "baseUrl": "/customer-cookie-portal",
             "redirectUris": [
-                "http://localhost:8280/customer-cookie-portal/*"
+                "/customer-cookie-portal/*"
             ],
             "secret": "password"
         },
@@ -93,10 +93,10 @@
             "clientId": "customer-portal-js",
             "enabled": true,
             "publicClient": true,
-            "adminUrl": "http://localhost:8280/customer-portal-js",
-            "baseUrl": "http://localhost:8280/customer-portal-js",
+            "adminUrl": "/customer-portal-js",
+            "baseUrl": "/customer-portal-js",
             "redirectUris": [
-                "http://localhost:8080/customer-portal-js/*"
+                "/customer-portal-js/*"
             ]
         },
         {
@@ -111,40 +111,40 @@
         {
             "clientId": "product-portal",
             "enabled": true,
-            "adminUrl": "http://localhost:8280/product-portal",
-            "baseUrl": "http://localhost:8280/product-portal",
+            "adminUrl": "/product-portal",
+            "baseUrl": "/product-portal",
             "redirectUris": [
-                "http://localhost:8280/product-portal/*"
+                "/product-portal/*"
             ],
             "secret": "password"
         },
         {
             "clientId": "secure-portal",
             "enabled": true,
-            "adminUrl": "http://localhost:8280/secure-portal",
-            "baseUrl": "http://localhost:8280/secure-portal",
+            "adminUrl": "/secure-portal",
+            "baseUrl": "/secure-portal",
             "redirectUris": [
-                "http://localhost:8280/secure-portal/*"
+                "/secure-portal/*"
             ],
             "secret": "password"
         },
         {
             "clientId": "session-portal",
             "enabled": true,
-            "adminUrl": "http://localhost:8280/session-portal",
-            "baseUrl": "http://localhost:8280/session-portal",
+            "adminUrl": "/session-portal",
+            "baseUrl": "/session-portal",
             "redirectUris": [
-                "http://localhost:8280/session-portal/*"
+                "/session-portal/*"
             ],
             "secret": "password"
         },
         {
             "clientId": "input-portal",
             "enabled": true,
-            "adminUrl": "http://localhost:8280/input-portal",
-            "baseUrl": "http://localhost:8280/input-portal",
+            "adminUrl": "/input-portal",
+            "baseUrl": "/input-portal",
             "redirectUris": [
-                "http://localhost:8280/input-portal/*"
+                "/input-portal/*"
             ],
             "secret": "password"
         },
@@ -152,8 +152,8 @@
             "clientId": "third-party",
             "enabled": true,
             "redirectUris": [
-                "http://localhost:8280/oauth-client/*",
-                "http://localhost:8280/oauth-client-cdi/*"
+                "/oauth-client/*",
+                "/oauth-client-cdi/*"
             ],
             "secret": "password"
         }

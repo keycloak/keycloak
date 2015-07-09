@@ -51,8 +51,10 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
             System.out.println("Setting redirect-uris in test realm '" + realm.getRealm() + "' as " + (isRelative() ? "" : "non-") + "relative");
             if (isRelative()) {
                 modifyClientRedirectUris(realm, appServerContextRoot.getUrlString(), "");
+                modifyClientUrls(realm, appServerContextRoot.getUrlString(), "");
             } else {
                 modifyClientRedirectUris(realm, "^(/.*/\\*)", appServerContextRoot.getUrlString() + "$1");
+                modifyClientUrls(realm, "^(/.*)", appServerContextRoot.getUrlString() + "$1");
             }
         }
     }
@@ -75,12 +77,25 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
             }
         }
     }
-    
+
+    protected void modifyClientUrls(RealmRepresentation realm, String regex, String replacement) {
+        for (ClientRepresentation client : realm.getClients()) {
+            String baseUrl = client.getBaseUrl();
+            if (baseUrl != null) {
+                client.setBaseUrl(baseUrl.replaceAll(regex, replacement));
+            }
+            String adminUrl = client.getAdminUrl();
+            if (adminUrl != null) {
+                client.setAdminUrl(adminUrl.replaceAll(regex, replacement));
+            }
+        }
+    }
+
     public static void addContextXml(Archive archive, String contextPath) {
         try {
             String contextXmlContent = IOUtils.toString(tomcatContext.openStream())
                     .replace("%CONTEXT_PATH%", contextPath);
-            archive.add(new StringAsset(contextXmlContent), "/WEB-INF/context.xml");
+            archive.add(new StringAsset(contextXmlContent), "/META-INF/context.xml");
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

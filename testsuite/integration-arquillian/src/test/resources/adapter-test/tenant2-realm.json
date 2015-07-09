@@ -61,10 +61,10 @@
         {
             "clientId": "multi-tenant",
             "enabled": true,
-            "adminUrl": "http://localhost:8280/multi-tenant",
-            "baseUrl": "http://localhost:8280/multi-tenant",
+            "adminUrl": "/multi-tenant",
+            "baseUrl": "/multi-tenant",
             "redirectUris": [
-                "http://localhost:8280/multi-tenant/*"
+                "/multi-tenant/*"
             ],
             "secret": "password"
         }
