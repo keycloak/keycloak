@@ -22,6 +22,7 @@ public class CachedUser implements Serializable {
     private String id;
     private String realm;
     private String username;
+    private Long createdTimestamp;
     private String firstName;
     private String lastName;
     private String email;
@@ -34,11 +35,11 @@ public class CachedUser implements Serializable {
     private Set<String> requiredActions = new HashSet<>();
     private Set<String> roleMappings = new HashSet<String>();
 
-
     public CachedUser(RealmModel realm, UserModel user) {
         this.id = user.getId();
         this.realm = realm.getId();
         this.username = user.getUsername();
+        this.createdTimestamp = user.getCreatedTimestamp();
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
         this.attributes.putAll(user.getAttributes());
@@ -64,6 +65,10 @@ public class CachedUser implements Serializable {
 
     public String getUsername() {
         return username;
+    }
+
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
     }
 
     public String getFirstName() {

@@ -224,6 +224,8 @@ public interface WSTrustConstants {
 
         String REFERENCE = "Reference";
 
+        String PREFIX = "wsse";
+
         String PREFIX_11 = "wsse11";
 
         // http://www.ws-i.org/Profiles/KerberosTokenProfile-1.0.html#Kerberos_Security_Token_URI
@@ -238,5 +240,7 @@ public interface WSTrustConstants {
         String URI = "URI";
 
         String VALUE_TYPE = "ValueType";
+
+        String ENCODING_TYPE = "EncodingType";
     }
 }

@@ -1,5 +1,6 @@
 package org.keycloak.authentication.authenticators;
 
+import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
@@ -7,6 +8,7 @@ import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -26,6 +28,8 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public abstract class AbstractFormAuthenticator implements Authenticator {
+
+    private static final Logger logger = Logger.getLogger(AbstractFormAuthenticator.class);
 
     public static final String REGISTRATION_FORM_ACTION = "registration_form";
     public static final String EXECUTION = "execution";
@@ -82,6 +86,14 @@ public abstract class AbstractFormAuthenticator implements Authenticator {
                 .setError(Messages.INVALID_USER).createLogin();
     }
 
+    protected Response setDuplicateUserChallenge(AuthenticatorContext context, String eventError, String loginFormError, AuthenticationProcessor.Error authenticatorError) {
+        context.getEvent().error(eventError);
+        Response challengeResponse = loginForm(context)
+                .setError(loginFormError).createLogin();
+        context.failureChallenge(authenticatorError, challengeResponse);
+        return challengeResponse;
+    }
+
     public boolean invalidUser(AuthenticatorContext context, UserModel user) {
         if (user == null) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
@@ -118,7 +130,23 @@ public abstract class AbstractFormAuthenticator implements Authenticator {
         }
         context.getEvent().detail(Details.USERNAME, username);
         context.getClientSession().setNote(AbstractFormAuthenticator.ATTEMPTED_USERNAME, username);
-        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
+
+        UserModel user = null;
+        try {
+            user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
+        } catch (ModelDuplicateException mde) {
+            logger.error(mde.getMessage(), mde);
+
+            // Could happen during federation import
+            if (mde.getDuplicateFieldName() != null && mde.getDuplicateFieldName().equals(UserModel.EMAIL)) {
+                setDuplicateUserChallenge(context, Errors.EMAIL_IN_USE, Messages.EMAIL_EXISTS, AuthenticationProcessor.Error.INVALID_USER);
+            } else {
+                setDuplicateUserChallenge(context, Errors.USERNAME_IN_USE, Messages.USERNAME_EXISTS, AuthenticationProcessor.Error.INVALID_USER);
+            }
+
+            return false;
+        }
+
         if (invalidUser(context, user)) return false;
         String rememberMe = inputData.getFirst("rememberMe");
         boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");

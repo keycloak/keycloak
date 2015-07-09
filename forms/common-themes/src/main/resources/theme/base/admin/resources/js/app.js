@@ -978,7 +978,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 clients : function(ClientListLoader) {
                     return ClientListLoader();
-                },
+                }
             },
             controller : 'UserFederationMapperCtrl'
         })
@@ -1041,6 +1041,9 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                flows : function(AuthenticationFlowsLoader) {
+                    return AuthenticationFlowsLoader();
                 }
             },
             controller : 'AuthenticationFlowsCtrl'
@@ -1062,6 +1065,36 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'RealmPasswordPolicyCtrl'
+        })
+        .when('/realms/:realm/authentication/config/:provider/:config', {
+            templateUrl : resourceUrl + '/partials/authenticator-config.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                configType : function(AuthenticationConfigDescriptionLoader) {
+                    return AuthenticationConfigDescriptionLoader();
+                },
+                config : function(AuthenticationConfigLoader) {
+                    return AuthenticationConfigLoader();
+                }
+            },
+            controller : 'AuthenticationConfigCtrl'
+        })
+        .when('/create/authentication/:realm/execution/:executionId/provider/:provider', {
+            templateUrl : resourceUrl + '/partials/authenticator-config.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                configType : function(AuthenticationConfigDescriptionLoader) {
+                    return AuthenticationConfigDescriptionLoader();
+                },
+                execution : function(ExecutionIdLoader) {
+                    return ExecutionIdLoader();
+                }
+            },
+            controller : 'AuthenticationConfigCreateCtrl'
         })
         .when('/server-info', {
             templateUrl : resourceUrl + '/partials/server-info.html'
@@ -1543,6 +1576,91 @@ module.directive('kcNavigationUser', function () {
         restrict: 'E',
         replace: true,
         templateUrl: resourceUrl + '/templates/kc-navigation-user.html'
+    }
+});
+
+module.controller('RoleSelectorModalCtrl', function($scope, realm, config, configName, RealmRoles, Client, ClientRole, $modalInstance) {
+    console.log('realm: ' + realm.realm);
+    $scope.selectedRealmRole = {
+        role: undefined
+    };
+    $scope.selectedClientRole = {
+        role: undefined
+    };
+    $scope.client = {
+        selected: undefined
+    };
+
+    $scope.selectRealmRole = function() {
+        config[configName] = $scope.selectedRealmRole.role.name;
+        $modalInstance.close();
+    }
+
+    $scope.selectClientRole = function() {
+        config[configName] = $scope.client.selected.clientId + "." + $scope.selectedClientRole.role.name;
+        $modalInstance.close();
+    }
+
+    $scope.cancel = function() {
+        $modalInstance.dismiss();
+    }
+
+    $scope.changeClient = function() {
+        if ($scope.client.selected) {
+            ClientRole.query({realm: realm.realm, client: $scope.client.selected.id}, function (data) {
+                $scope.clientRoles = data;
+             });
+        } else {
+            console.log('selected client was null');
+            $scope.clientRoles = null;
+        }
+
+    }
+    RealmRoles.query({realm: realm.realm}, function(data) {
+        $scope.realmRoles = data;
+    })
+    Client.query({realm: realm.realm}, function(data) {
+        $scope.clients = data;
+        if (data.length > 0) {
+            $scope.client.selected = data[0];
+            $scope.changeClient();
+        }
+    })
+});
+
+
+module.directive('kcProviderConfig', function ($modal) {
+    return {
+        scope: {
+            config: '=',
+            properties: '=',
+            realm: '='
+        },
+        restrict: 'E',
+        replace: true,
+        link: function(scope, element, attrs) {
+            scope.openRoleSelector = function(configName) {
+                $modal.open({
+                    templateUrl: resourceUrl + '/partials/modal/role-selector.html',
+                    controller: 'RoleSelectorModalCtrl',
+                    resolve: {
+                        realm: function () {
+                            return scope.realm;
+                        },
+                        config: function() {
+                            return scope.config;
+                        },
+                        configName: function() {
+
+                            return configName;
+                        }
+                    }
+                })
+
+            };
+
+        },
+        templateUrl: resourceUrl + '/templates/kc-provider-config.html'
     }
 });
 

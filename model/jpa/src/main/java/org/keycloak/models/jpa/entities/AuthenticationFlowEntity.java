@@ -42,6 +42,13 @@ public class AuthenticationFlowEntity {
     @Column(name="DESCRIPTION")
     protected String description;
 
+    @Column(name="TOP_LEVEL")
+    protected boolean topLevel;
+
+    @Column(name="BUILT_IN")
+    protected boolean builtIn;
+
+
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "parentFlow")
     Collection<AuthenticationExecutionEntity> executions = new ArrayList<AuthenticationExecutionEntity>();
     public String getId() {
@@ -90,5 +97,21 @@ public class AuthenticationFlowEntity {
 
     public void setProviderId(String providerId) {
         this.providerId = providerId;
+    }
+
+    public boolean isTopLevel() {
+        return topLevel;
+    }
+
+    public void setTopLevel(boolean topLevel) {
+        this.topLevel = topLevel;
+    }
+
+    public boolean isBuiltIn() {
+        return builtIn;
+    }
+
+    public void setBuiltIn(boolean builtIn) {
+        this.builtIn = builtIn;
     }
 }

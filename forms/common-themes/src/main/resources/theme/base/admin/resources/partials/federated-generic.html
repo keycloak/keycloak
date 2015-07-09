@@ -5,7 +5,8 @@
         <li data-ng-show="create">Add User Federation Provider</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{instance.providerName|capitalize}}</h1>
+    <h1 data-ng-hide="create">{{instance.providerName|capitalize}}<i style="padding-left: 20px" class="pficon pficon-delete" data-ng-show="!create && access.manageUsers" 
+    	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
     <h1 data-ng-show="create">Add {{instance.providerName|capitalize}} User Federation Provide</h1>
 
     <ul class="nav nav-tabs" data-ng-hide="create">
@@ -90,7 +91,6 @@
                 <button kc-reset data-ng-show="changed">Cancel</button>
                 <button class="btn btn-primary" data-ng-click="triggerChangedUsersSync()" data-ng-hide="changed">Synchronize changed users</button>
                 <button class="btn btn-primary" data-ng-click="triggerFullSync()" data-ng-hide="changed">Synchronize all users</button>
-                <button class="btn btn-danger" data-ng-click="remove()" data-ng-hide="changed">Delete</button>
             </div>
         </div>
     </form>

@@ -1,0 +1,26 @@
+<chapter id="recaptcha">
+    <title>Recaptcha Support on Registration</title>
+
+    <para>
+        To safeguard registration against bots, Keycloak has integration with Google Recaptcha.  To enable this you
+        need to first go to <ulink url="https://developers.google.com/recaptcha/">Google Recaptcha</ulink>
+        and create an API key so that you can get your recaptcha site key and secret.  (FYI, localhost works by default
+        so you don't have to specify a domain).
+     </para>
+    <para>Next, go to the Keycloak Admin Console.  Go to
+        Authentication->Flows page.  Select the 'registration' flow.  Set the 'Recaptcha' requirement to 'Required'.  Click
+        on the 'Configure' button and enter in the Recaptcha site key and secret.
+    </para>
+    <para>
+        Finally, you have to change Keycloak's default security headers.  In the Admin Console, go to Settings->Security Defenses
+        of your realm.  Add a space and <literal>https://www.google.com</literal> to the values of both the <literal>X-Frame-Options</literal>
+        and <literal>Content-Security-Policy</literal> headers.  i.e.
+        <programlisting>
+            frame-src 'self' https://www.google.com
+        </programlisting>
+    </para>
+    <para>
+        That's it!  You may want to edit register.ftl in your login theme to muck around with the placement and styling
+        of the recaptcha button.  Up to you.
+    </para>
+</chapter>

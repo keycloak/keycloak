@@ -68,10 +68,10 @@ public class FederationProvidersIntegrationTest {
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
             FederationTestUtils.removeAllLDAPUsers(ldapFedProvider, appRealm);
 
-            LDAPObject john = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johnkeycloak", "John", "Doe", "john@email.org", "1234");
+            LDAPObject john = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johnkeycloak", "John", "Doe", "john@email.org", null, "1234");
             ldapFedProvider.getLdapIdentityStore().updatePassword(john, "Password1");
 
-            LDAPObject existing = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "existing", "Existing", "Foo", "existing@email.org", "5678");
+            LDAPObject existing = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "existing", "Existing", "Foo", "existing@email.org", null, "5678");
         }
     });
 
@@ -270,7 +270,7 @@ public class FederationProvidersIntegrationTest {
             RealmModel appRealm = new RealmManager(session).getRealmByName("test");
 
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
-            LDAPObject johnZip = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johnzip", "John", "Zip", "johnzip@email.org", "12398");
+            LDAPObject johnZip = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johnzip", "John", "Zip", "johnzip@email.org", null, "12398");
 
             // Remove default zipcode mapper and add the mapper for "POstalCode" to test case sensitivity
             UserFederationMapperModel currentZipMapper = appRealm.getUserFederationMapperByName(ldapModel.getId(), "zipCodeMapper");
@@ -295,7 +295,7 @@ public class FederationProvidersIntegrationTest {
             RealmModel appRealm = new RealmManager(session).getRealmByName("test");
 
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
-            LDAPObject johnDirect = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johndirect", "John", "Direct", "johndirect@email.org", "12399");
+            LDAPObject johnDirect = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johndirect", "John", "Direct", "johndirect@email.org", null, "12399");
 
             // Fetch user from LDAP and check that postalCode is filled
             UserModel user = session.users().getUserByUsername("johndirect", appRealm);
@@ -307,9 +307,18 @@ public class FederationProvidersIntegrationTest {
             johnDirect.setSingleAttribute(LDAPConstants.SN, "DirectLDAPUpdated");
             ldapFedProvider.getLdapIdentityStore().update(johnDirect);
 
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("johndirect", appRealm);
+
             // Verify that postalCode is still the same as we read it's value from Keycloak DB
             user = session.users().getUserByUsername("johndirect", appRealm);
-            postalCode = user.getFirstAttribute("postal_code");
+            String postalCode = user.getFirstAttribute("postal_code");
             Assert.assertEquals("12399", postalCode);
 
             // Check user.getAttributes()
@@ -370,7 +379,7 @@ public class FederationProvidersIntegrationTest {
 
             // Add the user with some fullName into LDAP directly. Ensure that fullName is saved into "cn" attribute in LDAP (currently mapped to model firstName)
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
-            FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "fullname", "James Dee", "Dee", "fullname@email.org", "4578");
+            FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "fullname", "James Dee", "Dee", "fullname@email.org", null, "4578");
 
             // add fullname mapper to the provider and remove "firstNameMapper". For this test, we will simply map full name to the LDAP attribute, which was before firstName ( "givenName" on active directory, "cn" on other LDAP servers)
             firstNameMapper = appRealm.getUserFederationMapperByName(ldapModel.getId(), "first name");
@@ -381,9 +390,6 @@ public class FederationProvidersIntegrationTest {
                     FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, ldapFirstNameAttributeName,
                     UserAttributeLDAPFederationMapper.READ_ONLY, "false");
             appRealm.addUserFederationMapper(fullNameMapperModel);
-
-            // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
-            FederationTestUtils.assertUserImported(session.users(), appRealm, "fullname", "James", "Dee", "fullname@email.org", "4578");
         } finally {
             keycloakRule.stopSession(session, true);
         }
@@ -391,6 +397,9 @@ public class FederationProvidersIntegrationTest {
         session = keycloakRule.startSession();
         try {
             RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
+            FederationTestUtils.assertUserImported(session.users(), appRealm, "fullname", "James", "Dee", "fullname@email.org", "4578");
 
             // Remove "fullnameUser" to assert he is removed from LDAP. Revert mappers to previous state
             UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);
@@ -405,6 +414,29 @@ public class FederationProvidersIntegrationTest {
         } finally {
             keycloakRule.stopSession(session, true);
         }
+    }
+
+    @Test
+    public void testImportExistingUserFromLDAP() throws Exception {
+        // Add LDAP user with same email like existing model user
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+                FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "mary", "Mary1", "Kelly1", "mary1@email.org", null, "123");
+                FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "mary-duplicatemail", "Mary2", "Kelly2", "mary@test.com", null, "123");
+            }
+
+        });
+
+        // Try to import the duplicated LDAP user into Keycloak
+        loginPage.open();
+        loginPage.login("mary-duplicatemail", "password");
+        Assert.assertEquals("Email already exists.", loginPage.getError());
+
+        loginPage.login("mary1@email.org", "password");
+        Assert.assertEquals("Username already exists.", loginPage.getError());
     }
 
     @Test
@@ -485,10 +517,10 @@ public class FederationProvidersIntegrationTest {
             RealmModel appRealm = session.realms().getRealmByName("test");
             LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
 
-            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username1", "John1", "Doel1", "user1@email.org", "121");
-            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username2", "John2", "Doel2", "user2@email.org", "122");
-            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username3", "John3", "Doel3", "user3@email.org", "123");
-            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username4", "John4", "Doel4", "user4@email.org", "124");
+            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username1", "John1", "Doel1", "user1@email.org", null, "121");
+            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username2", "John2", "Doel2", "user2@email.org", null, "122");
+            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username3", "John3", "Doel3", "user3@email.org", null, "123");
+            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username4", "John4", "Doel4", "user4@email.org", null, "124");
 
             // Users are not at local store at this moment
             Assert.assertNull(session.userStorage().getUserByUsername("username1", appRealm));

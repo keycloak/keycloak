@@ -130,6 +130,10 @@ public class LoginActionsService {
         return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "authenticateForm");
     }
 
+    public static UriBuilder registrationFormProcessor(UriInfo uriInfo) {
+        return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "processRegister");
+    }
+
     public static UriBuilder loginActionsBaseUrl(UriBuilder baseUriBuilder) {
         return baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getLoginActionsService");
     }
@@ -269,6 +273,10 @@ public class LoginActionsService {
 
     protected Response processAuthentication(String execution, ClientSessionModel clientSession) {
         String flowAlias = DefaultAuthenticationFlows.BROWSER_FLOW;
+        return processFlow(execution, clientSession, flowAlias);
+    }
+
+    protected Response processFlow(String execution, ClientSessionModel clientSession, String flowAlias) {
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setClientSession(clientSession)
@@ -313,6 +321,12 @@ public class LoginActionsService {
         return processAuthentication(execution, clientSession);
     }
 
+    protected Response processRegistration(String execution, ClientSessionModel clientSession) {
+        String flowAlias = DefaultAuthenticationFlows.REGISTRATION_FLOW;
+        return processFlow(execution, clientSession, flowAlias);
+    }
+
+
 
     /**
      * protocol independent registration page entry point
@@ -322,7 +336,8 @@ public class LoginActionsService {
      */
     @Path("registration")
     @GET
-    public Response registerPage(@QueryParam("code") String code) {
+    public Response registerPage(@QueryParam("code") String code,
+                                 @QueryParam("execution") String execution) {
         event.event(EventType.REGISTER);
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
@@ -330,7 +345,7 @@ public class LoginActionsService {
         }
 
         Checks checks = new Checks();
-        if (!checks.check(code)) {
+        if (!checks.check(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
             return checks.response;
         }
         event.detail(Details.CODE_ID, code);
@@ -340,10 +355,7 @@ public class LoginActionsService {
 
         authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
-        return session.getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(clientSessionCode.getCode())
-                .setAttribute("passwordRequired", isPasswordRequired())
-                .createRegistration();
+        return processRegistration(execution, clientSession);
     }
 
 
@@ -353,143 +365,24 @@ public class LoginActionsService {
      * @param code
      * @return
      */
-    @Path("request/registration")
+    @Path("registration")
     @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processRegister(@QueryParam("code") String code) {
+    public Response processRegister(@QueryParam("code") String code,
+                                    @QueryParam("execution") String execution) {
         event.event(EventType.REGISTER);
         Checks checks = new Checks();
         if (!checks.check(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
             return checks.response;
         }
-         if (!realm.isRegistrationAllowed()) {
+        if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
             return ErrorPage.error(session, Messages.REGISTRATION_NOT_ALLOWED);
         }
 
-        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
-        String username = formData.getFirst(Validation.FIELD_USERNAME);
-        String email = formData.getFirst(Validation.FIELD_EMAIL);
-        if (realm.isRegistrationEmailAsUsername()) {
-            username = email;
-            formData.putSingle(AuthenticationManager.FORM_USERNAME, username);
-        }
         ClientSessionCode clientCode = checks.clientCode;
         ClientSessionModel clientSession = clientCode.getClientSession();
-        event.client(clientSession.getClient())
-                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
-                .detail(Details.RESPONSE_TYPE, "code")
-                .detail(Details.USERNAME, username)
-                .detail(Details.EMAIL, email)
-                .detail(Details.REGISTER_METHOD, "form");
 
-        List<String> requiredCredentialTypes = new LinkedList<>();
-        boolean passwordRequired = isPasswordRequired();
-        if (passwordRequired) {
-            requiredCredentialTypes.add(CredentialRepresentation.PASSWORD);
-        }
-
-        // Validate here, so user is not created if password doesn't validate to passwordPolicy of current realm
-        List<FormMessage> errors = Validation.validateRegistrationForm(realm, formData, requiredCredentialTypes, realm.getPasswordPolicy());
-
-
-        if (errors != null && !errors.isEmpty()) {
-            event.error(Errors.INVALID_REGISTRATION);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setErrors(errors)
-                    .setFormData(formData)
-                    .setClientSessionCode(clientCode.getCode())
-                    .setAttribute("passwordRequired", isPasswordRequired())
-                    .createRegistration();
-        }
-
-        // Validate that user with this username doesn't exist in realm or any federation provider
-        if (session.users().getUserByUsername(username, realm) != null) {
-            event.error(Errors.USERNAME_IN_USE);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.USERNAME_EXISTS)
-                    .setFormData(formData)
-                    .setClientSessionCode(clientCode.getCode())
-                    .setAttribute("passwordRequired", isPasswordRequired())
-                    .createRegistration();
-        }
-
-        // Validate that user with this email doesn't exist in realm or any federation provider
-        if (email != null && session.users().getUserByEmail(email, realm) != null) {
-            event.error(Errors.EMAIL_IN_USE);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.EMAIL_EXISTS)
-                    .setFormData(formData)
-                    .setClientSessionCode(clientCode.getCode())
-                    .setAttribute("passwordRequired", isPasswordRequired())
-                    .createRegistration();
-        }
-
-        UserModel user = session.users().addUser(realm, username);
-        user.setEnabled(true);
-        user.setFirstName(formData.getFirst("firstName"));
-        user.setLastName(formData.getFirst("lastName"));
-
-        user.setEmail(email);
-
-        if (passwordRequired) {
-            UserCredentialModel credentials = new UserCredentialModel();
-            credentials.setType(CredentialRepresentation.PASSWORD);
-            credentials.setValue(formData.getFirst("password"));
-
-            boolean passwordUpdateSuccessful;
-            String passwordUpdateError = null;
-            Object[] passwordUpdateErrorParameters = null;
-            try {
-                session.users().updateCredential(realm, user, UserCredentialModel.password(formData.getFirst("password")));
-                passwordUpdateSuccessful = true;
-            } catch (ModelException me) {
-                passwordUpdateSuccessful = false;
-                passwordUpdateError = me.getMessage();
-                passwordUpdateErrorParameters = me.getParameters();
-            } catch (Exception ape) {
-                passwordUpdateSuccessful = false;
-                passwordUpdateError = ape.getMessage();
-            }
-
-            // User already registered, but force him to update password
-            if (!passwordUpdateSuccessful) {
-                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                return session.getProvider(LoginFormsProvider.class)
-                        .setError(passwordUpdateError, passwordUpdateErrorParameters)
-                        .setClientSessionCode(clientCode.getCode())
-                        .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
-            }
-        }
-        clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
-        AttributeFormDataProcessor.process(formData, realm, user);
-
-        event.user(user).success();
-        event = new EventBuilder(realm, session, clientConnection);
-        clientSession.setAuthenticatedUser(user);
-        AuthenticationFlowModel flow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
-        AuthenticationProcessor processor = new AuthenticationProcessor();
-        processor.setClientSession(clientSession)
-                .setFlowId(flow.getId())
-                .setConnection(clientConnection)
-                .setEventBuilder(event)
-                .setProtector(authManager.getProtector())
-                .setRealm(realm)
-                .setAction(AbstractFormAuthenticator.REGISTRATION_FORM_ACTION)
-                .setSession(session)
-                .setUriInfo(uriInfo)
-                .setRequest(request);
-
-        try {
-            return processor.authenticate();
-        } catch (Exception e) {
-            return processor.handleBrowserException(e);
-        }
-    }
-
-    public boolean isPasswordRequired() {
-        AuthenticationFlowModel browserFlow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
-        return AuthenticatorUtil.isRequired(realm, browserFlow.getId(), UsernamePasswordFormFactory.PROVIDER_ID);
+        return processRegistration(execution, clientSession);
     }
 
     /**

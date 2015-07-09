@@ -7,7 +7,6 @@ import org.keycloak.authentication.authenticators.AbstractFormAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -26,6 +25,7 @@ import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -44,7 +44,6 @@ public class AuthenticationProcessor {
     protected EventBuilder event;
     protected HttpRequest request;
     protected String flowId;
-    protected String action;
     /**
      * This could be an error message forwarded from brokering when the broker failed authentication
      * and we want to continue authentication locally.  forwardedErrorMessage can then be displayed by
@@ -150,15 +149,38 @@ public class AuthenticationProcessor {
         return this;
     }
 
-    public AuthenticationProcessor setAction(String action) {
-        this.action = action;
-        return this;
-    }
-
     public AuthenticationProcessor setForwardedErrorMessage(String forwardedErrorMessage) {
         this.forwardedErrorMessage = forwardedErrorMessage;
         return this;
     }
+
+    public String generateCode() {
+        ClientSessionCode accessCode = new ClientSessionCode(getRealm(), getClientSession());
+        clientSession.setTimestamp(Time.currentTime());
+        return accessCode.getCode();
+    }
+
+    public EventBuilder newEvent() {
+        this.event = new EventBuilder(realm, session, connection);
+        return this.event;
+    }
+
+    public EventBuilder getEvent() {
+        return event;
+    }
+
+    public HttpRequest getRequest() {
+        return request;
+    }
+
+    public void setAutheticatedUser(UserModel user) {
+        UserModel previousUser = clientSession.getAuthenticatedUser();
+        if (previousUser != null && !user.getId().equals(previousUser.getId()))
+            throw new AuthException(Error.USER_CONFLICT);
+        validateUser(user);
+        getClientSession().setAuthenticatedUser(user);
+    }
+
 
     private class Result implements AuthenticatorContext {
         AuthenticatorConfigModel authenticatorConfig;
@@ -167,10 +189,30 @@ public class AuthenticationProcessor {
         Status status;
         Response challenge;
         Error error;
+        List<AuthenticationExecutionModel> currentExecutions;
 
-        private Result(AuthenticationExecutionModel execution, Authenticator authenticator) {
+        private Result(AuthenticationExecutionModel execution, Authenticator authenticator, List<AuthenticationExecutionModel> currentExecutions) {
             this.execution = execution;
             this.authenticator = authenticator;
+            this.currentExecutions = currentExecutions;
+        }
+
+        @Override
+        public EventBuilder newEvent() {
+            return AuthenticationProcessor.this.newEvent();
+        }
+
+        @Override
+        public AuthenticationExecutionModel.Requirement getCategoryRequirementFromCurrentFlow(String authenticatorCategory) {
+            List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(execution.getParentFlow());
+            for (AuthenticationExecutionModel exe : executions) {
+                AuthenticatorFactory factory = (AuthenticatorFactory) getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, exe.getAuthenticator());
+                if (factory != null && factory.getReferenceCategory().equals(authenticatorCategory)) {
+                    return exe.getRequirement();
+                }
+
+            }
+            return null;
         }
 
         @Override
@@ -189,11 +231,6 @@ public class AuthenticationProcessor {
             if (authenticatorConfig != null) return authenticatorConfig;
             authenticatorConfig = realm.getAuthenticatorConfigById(execution.getAuthenticatorConfig());
             return authenticatorConfig;
-        }
-
-        @Override
-        public String getAction() {
-            return AuthenticationProcessor.this.action;
         }
 
         @Override
@@ -266,11 +303,7 @@ public class AuthenticationProcessor {
 
         @Override
         public void setUser(UserModel user) {
-            UserModel previousUser = getUser();
-            if (previousUser != null && !user.getId().equals(previousUser.getId()))
-                throw new AuthException(Error.USER_CONFLICT);
-            validateUser(user);
-            getClientSession().setAuthenticatedUser(user);
+            setAutheticatedUser(user);
         }
 
         @Override
@@ -325,10 +358,9 @@ public class AuthenticationProcessor {
 
         @Override
         public String generateAccessCode() {
-            ClientSessionCode accessCode = new ClientSessionCode(getRealm(), getClientSession());
-            clientSession.setTimestamp(Time.currentTime());
-            return accessCode.getCode();
+            return generateCode();
         }
+
 
         @Override
         public Response getChallenge() {
@@ -433,12 +465,11 @@ public class AuthenticationProcessor {
             logger.error("Unknown flow to execute with");
             throw new AuthException(Error.INTERNAL_ERROR);
         }
-        if (flow.getProviderId() == null || flow.getProviderId().equals("basic-flow")) {
-            DefaultAuthenticationFlow flowExecution = new DefaultAuthenticationFlow(this);
-            flowExecution.executions = realm.getAuthenticationExecutions(flow.getId()).iterator();
+        if (flow.getProviderId() == null || flow.getProviderId().equals(AuthenticationFlow.BASIC_FLOW)) {
+            DefaultAuthenticationFlow flowExecution = new DefaultAuthenticationFlow(this, flow);
             return flowExecution;
 
-        } else if (flow.getProviderId().equals("form-flow")) {
+        } else if (flow.getProviderId().equals(AuthenticationFlow.FORM_FLOW)) {
             FormAuthenticationFlow flowExecution = new FormAuthenticationFlow(this, execution);
             return flowExecution;
         }
@@ -448,7 +479,6 @@ public class AuthenticationProcessor {
     public Response authenticate() throws AuthException {
         checkClientSession();
         logger.debug("AUTHENTICATE");
-        event.event(EventType.LOGIN);
         event.client(clientSession.getClient().getClientId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.AUTH_METHOD, clientSession.getAuthMethod());
@@ -490,7 +520,6 @@ public class AuthenticationProcessor {
             resetFlow(clientSession);
             return authenticate();
         }
-        event.event(EventType.LOGIN);
         event.client(clientSession.getClient().getClientId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.AUTH_METHOD, clientSession.getAuthMethod());
@@ -521,7 +550,6 @@ public class AuthenticationProcessor {
 
     public Response authenticateOnly() throws AuthException {
         checkClientSession();
-        event.event(EventType.LOGIN);
         event.client(clientSession.getClient().getClientId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.AUTH_METHOD, clientSession.getAuthMethod());
@@ -587,8 +615,8 @@ public class AuthenticationProcessor {
 
     }
 
-    public AuthenticatorContext createAuthenticatorContext(AuthenticationExecutionModel model, Authenticator authenticator) {
-        return new Result(model, authenticator);
+    public AuthenticatorContext createAuthenticatorContext(AuthenticationExecutionModel model, Authenticator authenticator, List<AuthenticationExecutionModel> executions) {
+        return new Result(model, authenticator, executions);
     }
 
 

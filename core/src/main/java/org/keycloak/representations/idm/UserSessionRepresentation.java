@@ -11,7 +11,8 @@ import java.util.Set;
  */
 public class UserSessionRepresentation {
     private String id;
-    private String user;
+    private String username;
+    private String userId;
     private String ipAddress;
     private long start;
     private long lastAccess;
@@ -25,12 +26,20 @@ public class UserSessionRepresentation {
         this.id = id;
     }
 
-    public String getUser() {
-        return user;
+    public String getUsername() {
+        return username;
     }
 
-    public void setUser(String user) {
-        this.user = user;
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getIpAddress() {

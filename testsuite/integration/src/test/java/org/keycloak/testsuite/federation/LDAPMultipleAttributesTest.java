@@ -1,6 +1,9 @@
 package org.keycloak.testsuite.federation;
 
 import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +20,7 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
+import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -59,6 +63,19 @@ public class LDAPMultipleAttributesTest {
             ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap", -1, -1, 0);
             FederationTestUtils.addZipCodeLDAPMapper(appRealm, ldapModel);
             FederationTestUtils.addUserAttributeMapper(appRealm, ldapModel, "streetMapper", "street", LDAPConstants.STREET);
+
+            // Remove current users and add default users
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            FederationTestUtils.removeAllLDAPUsers(ldapFedProvider, appRealm);
+
+            LDAPObject james = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "jbrown", "James", "Brown", "jbrown@keycloak.org", null, "88441");
+            ldapFedProvider.getLdapIdentityStore().updatePassword(james, "password");
+
+            // User for testing duplicating surname and postalCode
+            LDAPObject bruce = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "bwilson", "Bruce", "Wilson", "bwilson@keycloak.org", "Elm 5", "88441", "77332");
+            bruce.setAttribute("sn", new LinkedHashSet<>(Arrays.asList("Wilson", "Schneider")));
+            ldapFedProvider.getLdapIdentityStore().update(bruce);
+            ldapFedProvider.getLdapIdentityStore().updatePassword(bruce, "password");
 
             // Create ldap-portal client
             ClientModel ldapClient = appRealm.addClient("ldap-portal");

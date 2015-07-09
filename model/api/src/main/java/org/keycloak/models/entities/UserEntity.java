@@ -10,6 +10,7 @@ import java.util.Map;
 public class UserEntity extends AbstractIdentifiableEntity {
 
     private String username;
+    private Long createdTimestamp;
     private String firstName;
     private String lastName;
     private String email;
@@ -34,6 +35,15 @@ public class UserEntity extends AbstractIdentifiableEntity {
     public void setUsername(String username) {
         this.username = username;
     }
+    
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public void setCreatedTimestamp(Long timestamp) {
+        this.createdTimestamp = timestamp;
+    }
+
 
     public String getFirstName() {
         return firstName;

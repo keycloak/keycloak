@@ -5,7 +5,8 @@
         <li data-ng-show="create">Add User Federation Provider</li>
     </ol>
 
-    <h1 data-ng-hide="create">LDAP</h1>
+    <h1 data-ng-hide="create">LDAP<i style="padding-left: 20px" class="pficon pficon-delete" data-ng-show="!create && access.manageUsers" 
+    	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
     <h1 data-ng-show="create">Add LDAP User Federation Provider</h1>
 
     <ul class="nav nav-tabs" data-ng-hide="create">
@@ -97,7 +98,8 @@
                 <div class="col-md-6">
                     <input class="form-control" id="userObjectClasses" type="text" ng-model="instance.config.userObjectClasses" placeholder="LDAP User Object Classes (div. by comma)" required>
                 </div>
-                <kc-tooltip>All values of LDAP objectClass attribute for users in LDAP divided by comma</kc-tooltip>
+                <kc-tooltip>All values of LDAP objectClass attribute for users in LDAP divided by comma. For example: 'inetOrgPerson, organizationalPerson' . Newly created Keycloak users will be written to LDAP
+                    with all those object classes and existing LDAP user records are found just if they contain all those object classes. </kc-tooltip>
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="ldapConnectionUrl"><span class="required">*</span> Connection URL</label>
@@ -283,7 +285,6 @@
                 <button kc-reset data-ng-show="changed">Cancel</button>
                 <button class="btn btn-primary" data-ng-click="triggerChangedUsersSync()" data-ng-hide="changed">Synchronize changed users</button>
                 <button class="btn btn-primary" data-ng-click="triggerFullSync()" data-ng-hide="changed">Synchronize all users</button>
-                <button class="btn btn-danger" data-ng-click="remove()" data-ng-hide="changed">Delete</button>
             </div>
         </div>
     </form>

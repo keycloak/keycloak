@@ -301,11 +301,12 @@ public class ClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public UserModel getAuthenticatedUser() {
-        return session.users().getUserById(entity.getUserId(), realm);
+        return entity.getUserId() == null ? null : session.users().getUserById(entity.getUserId(), realm);
     }
 
     @Override
     public void setAuthenticatedUser(UserModel user) {
-        entity.setUserId(user.getId());
+        if (user == null) entity.setUserId(null);
+        else entity.setUserId(user.getId());
     }
 }

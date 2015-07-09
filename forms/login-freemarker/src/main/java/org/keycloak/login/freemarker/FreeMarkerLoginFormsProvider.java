@@ -3,7 +3,6 @@ package org.keycloak.login.freemarker;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
@@ -39,8 +38,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.services.Urls;
+import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -52,6 +51,7 @@ import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -61,7 +61,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-    public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
+public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     private static final Logger logger = Logger.getLogger(FreeMarkerLoginFormsProvider.class);
 
@@ -445,13 +445,29 @@ import java.util.concurrent.TimeUnit;
 
     @Override
     public LoginFormsProvider setErrors(List<FormMessage> messages) {
+        if (messages == null) return this;
         this.messageType = MessageType.ERROR;
         this.messages = new ArrayList<>(messages);
         return this;
     }
 
     @Override
-    public FreeMarkerLoginFormsProvider setSuccess(String message, Object ... parameters) {
+    public LoginFormsProvider addError(FormMessage errorMessage) {
+        if (this.messageType != MessageType.ERROR) {
+            this.messageType = null;
+            this.messages = null;
+        }
+        if (messages == null) {
+            this.messageType = MessageType.ERROR;
+            this.messages = new LinkedList<>();
+        }
+        this.messages.add(errorMessage);
+        return this;
+
+    }
+
+    @Override
+    public FreeMarkerLoginFormsProvider setSuccess(String message, Object... parameters) {
         setMessage(MessageType.SUCCESS, message, parameters);
         return this;
     }

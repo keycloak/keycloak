@@ -1,10 +1,11 @@
-package org.keycloak.testsuite.ldap;
+package org.keycloak.util.ldap;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.directory.server.kerberos.shared.crypto.encryption.KerberosKeyFactory;
 import org.apache.directory.server.kerberos.shared.keytab.Keytab;
@@ -34,12 +35,17 @@ public class KerberosKeytabCreator {
             System.out.println("-------------------------");
             System.out.println("Arguments missing or invalid. Required arguments are: <principalName> <passPhrase> <outputKeytabFile>");
             System.out.println("Example of usage:");
-            System.out.println("mvn exec:java -Dexec.mainClass=\"org.keycloak.testsuite.ldap.KerberosKeytabCreator\" -Dexec.args=\"HTTP/localhost@KEYCLOAK.ORG httppwd src/main/resources/kerberos/http.keytab\"");
+            System.out.println("java -jar embedded-ldap/target/embedded-ldap.jar keytabCreator HTTP/localhost@KEYCLOAK.ORG httppassword /tmp/http.keytab");
         } else {
             final File keytabFile = new File(args[2]);
             createKeytab(args[0], args[1], keytabFile);
             System.out.println("Keytab file was created: " + keytabFile.getAbsolutePath() + ", principal: " + args[0] + ", passphrase: " + args[1]);
         }
+    }
+
+    // Just for the reflection purposes
+    public static void execute(String[] args, Properties defaultProperties) throws Exception {
+        main(args);
     }
 
     /**

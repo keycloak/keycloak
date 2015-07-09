@@ -21,22 +21,13 @@ import javax.ws.rs.core.UriInfo;
  */
 public interface AuthenticatorContext {
     EventBuilder getEvent();
+    EventBuilder newEvent();
 
     AuthenticationExecutionModel getExecution();
 
     void setExecution(AuthenticationExecutionModel execution);
 
-    AuthenticatorConfigModel getAuthenticatorConfig();
-
-    String getAction();
-
-    Authenticator getAuthenticator();
-
-    void setAuthenticator(Authenticator authenticator);
-
-    AuthenticationProcessor.Status getStatus();
-
-    UserModel getUser();
+     UserModel getUser();
 
     void setUser(UserModel user);
 
@@ -54,15 +45,6 @@ public interface AuthenticatorContext {
     HttpRequest getHttpRequest();
     BruteForceProtector getProtector();
 
-    void success();
-    void failure(AuthenticationProcessor.Error error);
-    void failure(AuthenticationProcessor.Error error, Response response);
-    void challenge(Response challenge);
-
-    void forceChallenge(Response challenge);
-
-    void failureChallenge(AuthenticationProcessor.Error error, Response challenge);
-    void attempted();
 
     /**
      * This could be an error message forwarded from brokering when the broker failed authentication
@@ -77,6 +59,27 @@ public interface AuthenticatorContext {
      * @return
      */
     String generateAccessCode();
+
+    AuthenticatorConfigModel getAuthenticatorConfig();
+
+    Authenticator getAuthenticator();
+
+    void setAuthenticator(Authenticator authenticator);
+
+    AuthenticationProcessor.Status getStatus();
+
+    AuthenticationExecutionModel.Requirement getCategoryRequirementFromCurrentFlow(String authenticatorCategory);
+
+    void success();
+    void failure(AuthenticationProcessor.Error error);
+    void failure(AuthenticationProcessor.Error error, Response response);
+    void challenge(Response challenge);
+
+    void forceChallenge(Response challenge);
+
+    void failureChallenge(AuthenticationProcessor.Error error, Response challenge);
+    void attempted();
+
 
     Response getChallenge();
 

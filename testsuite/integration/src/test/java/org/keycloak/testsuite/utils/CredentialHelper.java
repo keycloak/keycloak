@@ -5,7 +5,6 @@ import org.keycloak.authentication.authenticators.SpnegoAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.UsernamePasswordFormFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -29,7 +28,7 @@ public class CredentialHelper {
     public static void setCredentialRequirement(String type, RealmModel realm, AuthenticationExecutionModel.Requirement requirement) {
         if (type.equals(CredentialRepresentation.TOTP)) {
             String providerId = OTPFormAuthenticatorFactory.PROVIDER_ID;
-            String flowAlias = DefaultAuthenticationFlows.FORMS_FLOW;
+            String flowAlias = DefaultAuthenticationFlows.LOGIN_FORMS_FLOW;
             authenticationRequirement(realm, providerId, flowAlias, requirement);
         } else if (type.equals(CredentialRepresentation.KERBEROS)) {
             String providerId = SpnegoAuthenticatorFactory.PROVIDER_ID;
@@ -37,7 +36,7 @@ public class CredentialHelper {
             authenticationRequirement(realm, providerId, flowAlias, requirement);
         } else if (type.equals(CredentialRepresentation.PASSWORD)) {
             String providerId = UsernamePasswordFormFactory.PROVIDER_ID;
-            String flowAlias = DefaultAuthenticationFlows.FORMS_FLOW;
+            String flowAlias = DefaultAuthenticationFlows.LOGIN_FORMS_FLOW;
             authenticationRequirement(realm, providerId, flowAlias, requirement);
         }
     }

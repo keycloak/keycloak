@@ -46,7 +46,7 @@ public class SpnegoAuthenticatorFactory implements AuthenticatorFactory {
     }
 
     @Override
-    public String getReferenceType() {
+    public String getReferenceCategory() {
         return UserCredentialModel.KERBEROS;
     }
 
@@ -73,7 +73,7 @@ public class SpnegoAuthenticatorFactory implements AuthenticatorFactory {
 
     @Override
     public String getDisplayType() {
-        return "SPNEGO";
+        return "Kerberos";
     }
 
     @Override

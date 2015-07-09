@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.ldap;
+package org.keycloak.testsuite.federation;
 
 import java.io.File;
 import java.io.InputStream;

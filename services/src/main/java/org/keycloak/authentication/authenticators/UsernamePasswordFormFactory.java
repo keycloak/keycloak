@@ -51,13 +51,13 @@ public class UsernamePasswordFormFactory implements AuthenticatorFactory {
     }
 
     @Override
-    public String getReferenceType() {
+    public String getReferenceCategory() {
         return UserCredentialModel.PASSWORD;
     }
 
     @Override
     public boolean isConfigurable() {
-        return true;
+        return false;
     }
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED

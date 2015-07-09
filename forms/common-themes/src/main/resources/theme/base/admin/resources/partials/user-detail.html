@@ -5,7 +5,8 @@
         <li data-ng-show="create">Add User</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{user.username|capitalize}}</h1>
+    <h1 data-ng-hide="create">{{user.username|capitalize}}<i style="padding-left: 20px" class="pficon pficon-delete" data-ng-show="!create && access.manageUsers" 
+    	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
     <h1 data-ng-show="create">Add User</h1>
 
     <kc-tabs-user></kc-tabs-user>
@@ -17,6 +18,13 @@
                 <label class="col-md-2 control-label"for="id">ID</label>
                 <div class="col-md-6">
                     <input class="form-control" type="text" id="id" name="id" data-ng-model="user.id" autofocus data-ng-readonly="true">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="col-md-2 control-label"for="id">Created at</label>
+                <div class="col-md-6">
+                    {{user.createdTimestamp|date:'shortDate'}}&nbsp;{{user.createdTimestamp|date:'mediumTime'}}
                 </div>
             </div>
 
@@ -111,7 +119,6 @@
             <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageUsers">
                 <button kc-save  data-ng-show="changed">Save</button>
                 <button kc-reset data-ng-show="changed">Cancel</button>
-                <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>
             </div>
         </div>
 

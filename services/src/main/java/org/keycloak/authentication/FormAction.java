@@ -1,5 +1,6 @@
 package org.keycloak.authentication;
 
+import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -10,7 +11,8 @@ import org.keycloak.provider.Provider;
  * @version $Revision: 1 $
  */
 public interface FormAction extends Provider {
-    void authenticate(FormContext context);
+    void validate(ValidationContext context);
+    void success(FormContext context);
 
     boolean requiresUser();
     boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user);
@@ -20,5 +22,7 @@ public interface FormAction extends Provider {
      *
      */
     void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user);
+
+    void buildPage(FormContext context, LoginFormsProvider form);
 
 }
