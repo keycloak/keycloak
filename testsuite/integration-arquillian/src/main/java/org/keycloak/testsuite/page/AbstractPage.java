@@ -1,7 +1,6 @@
 package org.keycloak.testsuite.page;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import javax.ws.rs.core.UriBuilder;
@@ -39,28 +38,12 @@ public abstract class AbstractPage {
         return this;
     }
 
-    public URL getUrl() {
-        try {
-            return createUriBuilder().buildFromMap(this.defaultTemplateValues).toURL();
-        } catch (MalformedURLException ex) {
-            throw new IllegalStateException("Page URL is malformed.");
-        }
+    public URI getUri() {
+        return createUriBuilder().buildFromMap(this.defaultTemplateValues);
     }
 
-    public URL getUrl(Map<String, Object> templateValues) {
-        try {
-            return createUriBuilder().buildFromMap(templateValues).toURL();
-        } catch (MalformedURLException ex) {
-            throw new IllegalStateException("Page URL is malformed.");
-        }
-    }
-
-    public String getUrlString() {
-        return getUrl().toExternalForm();
-    }
-
-    public String getUrlString(Map<String, Object> templateValues) {
-        return getUrl(templateValues).toExternalForm();
+    public URI getUri(Map<String, Object> templateValues) {
+        return createUriBuilder().buildFromMap(templateValues);
     }
 
     public void navigateTo() {
@@ -68,13 +51,13 @@ public abstract class AbstractPage {
     }
 
     public void navigateToUsing(WebDriver driver) {
-        System.out.println("navigating to " + getUrlString());
-        driver.get(getUrlString());
+        System.out.println("navigating to " + getUri().toASCIIString());
+        driver.get(getUri().toASCIIString());
     }
 
     public void navigateToUsingSecondBrowser(
             @Drone @SecondBrowser WebDriver driver2) {
-        driver2.navigate().to(getUrlString());
+        driver2.navigate().to(getUri().toASCIIString());
     }
 
     public WebDriver getDriver() {
@@ -83,7 +66,7 @@ public abstract class AbstractPage {
 
     @Override
     public String toString() {
-        return getUrlString();
+        return getUri().toASCIIString();
     }
 
 }

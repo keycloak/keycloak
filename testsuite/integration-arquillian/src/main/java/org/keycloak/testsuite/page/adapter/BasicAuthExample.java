@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.page.adapter;
 
+import java.net.URI;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,12 +34,12 @@ public class BasicAuthExample extends AbstractPageWithInjectedUrl {
                 .queryParam("value", "{value}");
     }
 
-    public String getUrlString(String user, String password, String value) {
+    public URI getUri(String user, String password, String value) {
         Map<String, Object> templateValues = new HashMap<>();
         templateValues.put("user", user);
         templateValues.put("password", password);
         templateValues.put("value", value);
-        return getUrlString(templateValues);
+        return getUri(templateValues);
     }
 
 }

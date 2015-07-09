@@ -15,7 +15,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 public class PageAssert {
 	
     public static void assertCurrentUrl(AbstractPage page) {
-        assertCurrentUrl(page.getDriver(), page.getUrlString());
+        assertCurrentUrl(page.getDriver(), page.toString());
     }
 
     public static void assertCurrentUrl(WebDriver driver, final String url) {
@@ -32,7 +32,7 @@ public class PageAssert {
     }
 
     public static void assertCurrentUrlStartsWith(AbstractPage page) {
-        assertCurrentUrlStartsWith(page.getDriver(), page.getUrlString());
+        assertCurrentUrlStartsWith(page.getDriver(), page.toString());
     }
 
     public static void assertCurrentUrlStartsWith(WebDriver driver, final String url) {
@@ -49,7 +49,7 @@ public class PageAssert {
     }
 
     public static void assertCurrentUrlDoesntStartWith(AbstractPage page) {
-        assertCurrentUrlDoesntStartWith(page.getDriver(), page.getUrlString());
+        assertCurrentUrlDoesntStartWith(page.getDriver(), page.toString());
     }
 
     public static void assertCurrentUrlDoesntStartWith(WebDriver driver, final String url) {

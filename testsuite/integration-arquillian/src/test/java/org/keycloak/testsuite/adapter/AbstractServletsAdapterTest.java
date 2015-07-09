@@ -160,7 +160,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         assertTrue(pageSource.contains("parameter=hello"));
 
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
-                .queryParam(OAuth2Constants.REDIRECT_URI, customerPortal.getUrlString())
+                .queryParam(OAuth2Constants.REDIRECT_URI, customerPortal.toString())
                 .build("demo").toString();
         driver.navigate().to(logoutUri);
         assertCurrentUrlStartsWithLoginUrl();
@@ -444,7 +444,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         driver2.findElement(By.id("username")).sendKeys("bburke@redhat.com");
         driver2.findElement(By.id("password")).sendKeys("password");
         driver2.findElement(By.id("password")).submit();
-        assertCurrentUrl(driver2, sessionPortal.getUrlString());
+        assertCurrentUrl(driver2, sessionPortal.toString());
         String pageSource = driver2.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));
         // Counter increased now
@@ -464,7 +464,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
         // Assert that I am still logged in browser2 and same session is still preserved
         sessionPortal.navigateToUsing(driver2);
-        assertCurrentUrl(driver2, sessionPortal.getUrlString());
+        assertCurrentUrl(driver2, sessionPortal.toString());
         pageSource = driver2.getPageSource();
         assertTrue(pageSource.contains("Counter=3"));
 

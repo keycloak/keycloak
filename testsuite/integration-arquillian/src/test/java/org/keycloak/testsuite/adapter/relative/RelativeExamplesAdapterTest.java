@@ -52,17 +52,17 @@ public class RelativeExamplesAdapterTest extends AbstractExamplesAdapterTest {
         String value = "hello";
         Client client = ClientBuilder.newClient();
         
-        Response response = client.target(basicAuthExample.getUrlString("admin", "password", value)).request().get();
+        Response response = client.target(basicAuthExample.getUri("admin", "password", value)).request().get();
         assertEquals(200, response.getStatus());
         assertEquals(value, response.readEntity(String.class));
         response.close();
         
-        response = client.target(basicAuthExample.getUrlString("invalid-user", "password", value)).request().get();
+        response = client.target(basicAuthExample.getUri("invalid-user", "password", value)).request().get();
         assertEquals(401, response.getStatus());
         assertTrue(response.readEntity(String.class).contains("Unauthorized"));
         response.close();
         
-        response = client.target(basicAuthExample.getUrlString("admin", "invalid-password", value)).request().get();
+        response = client.target(basicAuthExample.getUri("admin", "invalid-password", value)).request().get();
         assertEquals(401, response.getStatus());
         assertTrue(response.readEntity(String.class).contains("Unauthorized"));
         response.close();

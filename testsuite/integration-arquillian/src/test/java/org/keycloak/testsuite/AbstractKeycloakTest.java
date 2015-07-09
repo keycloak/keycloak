@@ -66,7 +66,7 @@ public abstract class AbstractKeycloakTest {
             updateAdminPassword();
         }
 
-        keycloak = Keycloak.getInstance(authServer.getUrlString(),
+        keycloak = Keycloak.getInstance(authServer.toString(),
                 "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
 
         importTestRealms();

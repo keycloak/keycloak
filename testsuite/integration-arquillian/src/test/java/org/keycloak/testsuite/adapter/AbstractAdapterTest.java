@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.Archive;
@@ -50,11 +48,11 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
         for (RealmRepresentation realm : testRealms) {
             System.out.println("Setting redirect-uris in test realm '" + realm.getRealm() + "' as " + (isRelative() ? "" : "non-") + "relative");
             if (isRelative()) {
-                modifyClientRedirectUris(realm, appServerContextRoot.getUrlString(), "");
-                modifyClientUrls(realm, appServerContextRoot.getUrlString(), "");
+                modifyClientRedirectUris(realm, appServerContextRoot.toString(), "");
+                modifyClientUrls(realm, appServerContextRoot.toString(), "");
             } else {
-                modifyClientRedirectUris(realm, "^(/.*/\\*)", appServerContextRoot.getUrlString() + "$1");
-                modifyClientUrls(realm, "^(/.*)", appServerContextRoot.getUrlString() + "$1");
+                modifyClientRedirectUris(realm, "^(/.*/\\*)", appServerContextRoot.toString() + "$1");
+                modifyClientUrls(realm, "^(/.*)", appServerContextRoot.toString() + "$1");
             }
         }
     }

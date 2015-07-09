@@ -17,6 +17,7 @@
  */
 package org.keycloak.testsuite.page.console;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,10 +53,10 @@ public class AdminConsole extends AdminRoot {
     @FindBy(css = ".ng-binding.btn.btn-danger")
     protected WebElement deleteConfirmationButton;
 
-    public String getUrlString(String consoleRealm) {
+    public URI getUrlString(String consoleRealm) {
         Map<String,Object> tpl = new HashMap<>();
         tpl.put("consoleRealm", consoleRealm);
-        return getUrlString(tpl);
+        return getUri(tpl);
     }
 
 }
