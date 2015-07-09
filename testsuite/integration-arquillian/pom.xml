@@ -507,7 +507,7 @@
                         <version>2.10</version>
                         <executions>
                             <execution>
-                                <id>unpack-wildfly</id>
+                                <id>unpack-wildfly-and-adapter</id>
                                 <phase>generate-test-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -521,17 +521,6 @@
                                             <outputDirectory>${containers.home}</outputDirectory>
                                             <overWrite>false</overWrite>
                                         </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>unpack-original-standalone-xml</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
                                         <artifactItem>
                                             <groupId>org.wildfly</groupId>
                                             <artifactId>wildfly-dist</artifactId>
@@ -540,17 +529,6 @@
                                             <includes>*/standalone/configuration/standalone.xml</includes>
                                             <overWrite>true</overWrite>
                                         </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>unpack-wildfly-adapter</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>keycloak-wf9-adapter-dist</artifactId>
@@ -626,7 +604,7 @@
                         <version>2.10</version>
                         <executions>
                             <execution>
-                                <id>unpack-wildfly</id>
+                                <id>unpack-wildfly-and-adapter</id>
                                 <phase>generate-test-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -640,17 +618,6 @@
                                             <outputDirectory>${containers.home}</outputDirectory>
                                             <overWrite>false</overWrite>
                                         </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>unpack-wildfly-adapter</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>keycloak-wf9-adapter-dist</artifactId>
@@ -700,7 +667,7 @@
                         <version>2.10</version>
                         <executions>
                             <execution>
-                                <id>unpack-as7</id>
+                                <id>unpack-as7-and-adapter</id>
                                 <phase>generate-test-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -715,17 +682,6 @@
                                             <outputDirectory>${containers.home}</outputDirectory>
                                             <overWrite>false</overWrite>
                                         </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>unpack-original-standalone-xml</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
                                         <artifactItem>
                                             <groupId>org.jboss.as</groupId>
                                             <artifactId>jboss-as-dist</artifactId>
@@ -735,17 +691,6 @@
                                             <includes>*/standalone/configuration/standalone.xml</includes>
                                             <overWrite>true</overWrite>
                                         </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>unpack-as7-adapter</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>keycloak-as7-adapter-dist</artifactId>
