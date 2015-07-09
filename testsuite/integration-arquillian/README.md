@@ -12,7 +12,7 @@ The testsuite requires a container for Keycloak Server to be selected.
 This container is used by all tests in the test suite.
 It can be selected using property `auth.server.container`.
 
-By default the testsuite runs the server on embedded Undertow.
+*By default* the testsuite runs the server on embedded *Undertow*.
 
 ### Containers Supported for Keycloak Server
 
@@ -29,7 +29,7 @@ AbstractKeycloakTest
 ├── AbstractAdminConsoleTest
 ├── AbstractAdapterTest
 ├── …
-…
+└── …
 ```
 
 ### AbstractKeycloakTest
@@ -112,9 +112,13 @@ AbstractKeycloakTest
 
 ### Adapter Libraries Mode
 
-1. **Provided.** By container, e.g. as a subsystem.
-2. **Bundled.** In the deployed war. Used with `app-server-wildfly-vanilla` which doesn't have adapter subsystem installed.
+1. **Provided.** By container, e.g. as a subsystem. Default.
+2. **Bundled.** In the deployed war in `/WEB-INF/libs`. Used with `app-server-wildfly-vanilla` which doesn't have adapter subsystem installed.
 
+### Adapter Config Mode
+
+1. **Provided.** In `standalone.xml` using `secure-deployment`. Only supported for *Wildfly*.
+2. **Bundled.** In the deployed war in `/WEB-INF/keycloak.json`. Default.
 
 ## Supported Browsers
 
