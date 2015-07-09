@@ -8,14 +8,14 @@ import javax.ws.rs.core.UriBuilder;
  *
  * @author tkyjovsk
  */
-public abstract class AbstractPageWithProvidedUrl extends AbstractPage {
+public abstract class AbstractPageWithInjectedUrl extends AbstractPage {
 
-    public abstract URL getProvidedUrl();
+    public abstract URL getInjectedUrl();
 
     @Override
     public UriBuilder createUriBuilder() {
         try {
-            return UriBuilder.fromUri(getProvidedUrl().toURI());
+            return UriBuilder.fromUri(getInjectedUrl().toURI());
         } catch (URISyntaxException ex) {
             throw new IllegalStateException(ex);
         }

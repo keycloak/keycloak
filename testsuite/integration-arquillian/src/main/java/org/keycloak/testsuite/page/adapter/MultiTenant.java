@@ -5,13 +5,13 @@ import java.net.URL;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.page.AbstractPageWithProvidedUrl;
+import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 
 /**
  *
  * @author tkyjovsk
  */
-public class MultiTenant extends AbstractPageWithProvidedUrl {
+public class MultiTenant extends AbstractPageWithInjectedUrl {
 
     public static final String DEPLOYMENT_NAME = "multi-tenant";
 
@@ -20,7 +20,7 @@ public class MultiTenant extends AbstractPageWithProvidedUrl {
     private URL url;
 
     @Override
-    public URL getProvidedUrl() {
+    public URL getInjectedUrl() {
         return url;
     }
 
