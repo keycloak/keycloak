@@ -29,7 +29,7 @@
         <app.server.port.offset>200</app.server.port.offset>
         <app.server.http.port>8280</app.server.http.port>
         <app.server.management.port>10190</app.server.management.port>
-        <app.server.management.port.jmx>10199</app.server.management.port.jmx>
+        <!--<app.server.management.port.jmx>10199</app.server.management.port.jmx>-->
         
         <as7.version>${jboss.version}</as7.version>
                                                         
@@ -804,7 +804,10 @@
                 <tomcat.version>8.0.23</tomcat.version>
                 <tomcat.home>${containers.home}/apache-tomcat-${tomcat.version}</tomcat.home>
                 <exclude.adapters.tomcat>-</exclude.adapters.tomcat>
+                <!-- FIXME disabled port-offset because tomcat doesn't support it -->
+                <app.server.port.offset>0</app.server.port.offset>
                 <app.server.http.port>8080</app.server.http.port>
+                <app.server.management.port>9990</app.server.management.port>
             </properties>
             <dependencies>
                 <dependency>
@@ -913,7 +916,6 @@
                                 <app.server.tomcat>true</app.server.tomcat>
                                 <tomcat.home>${tomcat.home}</tomcat.home>
                                 <!-- TODO: implement port-offset for tomcat server.xml so we can shift from 8080 -->
-                                <app.server.http.port>${app.server.http.port}</app.server.http.port>
                                 <app.server.management.port.tomcat>8089</app.server.management.port.tomcat>
                             </systemPropertyVariables>
                         </configuration>
