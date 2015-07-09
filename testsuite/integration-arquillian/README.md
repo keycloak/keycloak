@@ -18,8 +18,8 @@ By default the testsuite runs the server on embedded Undertow.
 
 | Container | Arquillian Qualifier | Maven | Dependencies |
 | --- | --- | --- | --- |
-| Undertow | `auth-server-undertow` | `-Dauth.server.container=auth-server-undertow` (default) | |
-| Wildfly 9 | `auth-server-wildfly` | `-Dauth.server.container=auth-server-wildfly` or `-Pauth-server-wildfly` | `keycloak-demo-dist` |
+| **Undertow** | `auth-server-undertow` | `-Dauth.server.container=auth-server-undertow` **default** | `undertow-core`, `resteasy-undertow` |
+| **Wildfly 9** | `auth-server-wildfly` | `-Dauth.server.container=auth-server-wildfly` or `-Pauth-server-wildfly` | `keycloak-demo-dist` |
 
 See the relevant container definitions in `arquillian.xml` located in the **test resources** folder.
 
@@ -108,8 +108,8 @@ See the relevant container definitions in `arquillian.xml` located in the **test
 
 | Browser | Maven |
 | --- | --- | 
-| PhantomJS | `-Dbrowser=phantomjs` (default) |
-| Firefox | `-Dbrowser=firefox` |
+| **PhantomJS** | `-Dbrowser=phantomjs` **default** |
+| **Firefox** | `-Dbrowser=firefox` |
 
 
 ## Custom Arquillian Extensions
