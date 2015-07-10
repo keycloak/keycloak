@@ -10,9 +10,9 @@ Running the tests: `mvn test` or `mvn clean test`
 
 The testsuite requires a container for Keycloak Server to be selected.
 This container is used by all tests in the test suite.
-It can be selected using property `auth.server.container`.
+It can be selected with property `auth.server.container`.
 
-*By default* the testsuite runs the server on embedded *Undertow*.
+*By default* the tests run with server on embedded *Undertow*.
 
 ### Containers Supported for Keycloak Server
 
@@ -136,7 +136,7 @@ It automatically modifies imported test realms and deployments' adapter configs 
 | Module | Coverage | Supported Containers |
 | --- | --- | --- |
 | Test Servlets | Good | All |
-| Demo | Minimal | `auth-server-wildfly` (relative) |
+| Demo | Minimal, WIP | `auth-server-wildfly` (relative) |
 | Admin Client |  |
 | Cordova |  |
 | CORS |  |
@@ -168,7 +168,7 @@ Custom extensions are registered in `META-INF/services/org.jboss.arquillian.core
  * Allows to skip loading disabled containers based on `enabled` config property in `arquillian.xml`.
 * Custom extension
  * `ContainersTestEnricher` - Handles lifecycles of auth-server and app-server.
- * `CustomUndertowContainer` - Custom undertow conatiner adapter.
+ * `CustomUndertowContainer` - A custom container controller for JAX-RS-enabled Undertow with Keycloak Server.
  * `DeploymentArchiveProcessor` - Modifies adapter config before deployment on app server based on relative/non-relative scenario.
  * `URLProvider` - Fixes URLs injected by Arquillian which contain 127.0.0.1 instead of localhost.
  * `JiraTestExecutionDecider` - Skipping tests for unresolved JIRAs.

@@ -7,6 +7,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import static org.junit.Assert.assertTrue;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.TestRealms.loadRealm;
@@ -37,6 +38,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     }
 
     @Test
+    @Ignore("Need to put deployment's real context path into test realm. It is not /js-console.")
     public void testJSConsoleAuth() {
         jsConsoleExample.navigateTo();
         assertCurrentUrlStartsWith(jsConsoleExample);
