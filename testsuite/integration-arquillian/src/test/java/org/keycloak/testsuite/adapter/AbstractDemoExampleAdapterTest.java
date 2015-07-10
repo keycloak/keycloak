@@ -34,7 +34,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     private DatabaseServiceExample databaseServiceExample;
 
     @Page
-    private UserPage users;
+    private UserPage testRealmUsers;
     @Page
     private UpdateAccountPage accountPage;
 
@@ -63,6 +63,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     public void setPageUriTemplateValues() {
         super.setPageUriTemplateValues();
         testRealm.setTemplateValues(DEMO);
+        testRealmUsers.setTemplateValues(DEMO);
     }
 
     @Test
@@ -130,11 +131,11 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         testRealm.navigateTo();
         testRealm.clickUsers();
         pause(1000);
-        assertCurrentUrl(users);
-        User bburke = users.findUser("bburke@redhat.com");
+        assertCurrentUrl(testRealmUsers);
+        User bburke = testRealmUsers.findUser("bburke@redhat.com");
         pause(1000);
         bburke.addRequiredUserAction(action);
-        users.updateUser(bburke);
+        testRealmUsers.updateUser(bburke);
         pause(1000);
         logOut();
         pause(1000);
@@ -146,10 +147,10 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         testRealm.navigateTo();
         testRealm.clickUsers();
         pause(1000);
-        User bburke = users.findUser("bburke@redhat.com");
+        User bburke = testRealmUsers.findUser("bburke@redhat.com");
         pause(1000);
         bburke.removeRequiredUserAction(action);
-        users.updateUser(bburke);
+        testRealmUsers.updateUser(bburke);
         logOut();
     }
 }
