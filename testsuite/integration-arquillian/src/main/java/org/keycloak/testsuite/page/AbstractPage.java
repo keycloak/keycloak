@@ -44,6 +44,10 @@ public abstract class AbstractPage {
         return this;
     }
 
+    public Object getTemplateValue(String template) {
+        return templateValues.get(template);
+    }
+
     public URI getUri() {
         return getUriBuilder().buildFromMap(templateValues);
     }

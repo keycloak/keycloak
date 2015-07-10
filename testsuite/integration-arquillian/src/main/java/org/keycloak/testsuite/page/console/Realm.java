@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.page.console;
 
 import java.net.URI;
+import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.openqa.selenium.WebElement;
@@ -43,9 +44,14 @@ public class Realm extends RealmsRoot {
         usersLink.click();
     }
 
+    public String getAuthRoot() {
+        URI uri = getUri();
+        return uri.getScheme() + "://" + uri.getAuthority() + "/auth";
+    }
+
     public URI getOIDCLoginUrl() {
-        return OIDCLoginProtocolService.authUrl(getUriBuilder())
-                .build(DEMO);
+        return OIDCLoginProtocolService.authUrl(UriBuilder.fromPath(getAuthRoot()))
+                .build(getTemplateValue(REALM));
     }
 
 }
