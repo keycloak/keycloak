@@ -24,9 +24,17 @@ public abstract class AbstractPage {
 
     public abstract UriBuilder createUriBuilder();
 
+    public String getFragment() {
+        return "";
+    }
+
     public UriBuilder getUriBuilder() {
         if (builder == null) {
             builder = createUriBuilder();
+            String fragment = getFragment();
+            if (fragment != null && !fragment.isEmpty()) {
+                builder.fragment(fragment);
+            }
         }
         return builder;
     }

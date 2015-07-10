@@ -1,6 +1,8 @@
 package org.keycloak.testsuite.page.console;
 
 import javax.ws.rs.core.UriBuilder;
+import org.jboss.arquillian.graphene.findby.FindByJQuery;
+import org.openqa.selenium.WebElement;
 
 /**
  *
@@ -10,6 +12,7 @@ public class Realm extends RealmsRoot {
 
     public static final String REALM = "realm";
     public static final String MASTER = "master";
+    public static final String DEMO = "demo";
 
     public Realm() {
         setTemplateValue(REALM, MASTER);
@@ -17,7 +20,7 @@ public class Realm extends RealmsRoot {
 
     @Override
     public RealmsRoot setTemplateValues(String realm) {
-        setTemplateValues(REALM, realm);
+        setTemplateValues(MASTER, realm);
         return this;
     }
 
@@ -29,8 +32,19 @@ public class Realm extends RealmsRoot {
 
     @Override
     public UriBuilder createUriBuilder() {
-        // Note; The fragment part of URI isn't appendable, like the path is. Need to set the whole fragment.
-        return super.createUriBuilder().fragment("/realms/{" + REALM + "}");
+        return super.createUriBuilder();
+    }
+
+    @Override
+    public String getFragment() {
+        return super.getFragment() + "/{" + REALM + "}";
+    }
+
+    @FindByJQuery("a:contains('Users')")
+    private WebElement usersLink;
+
+    public void users() {
+        usersLink.click();
     }
 
 }

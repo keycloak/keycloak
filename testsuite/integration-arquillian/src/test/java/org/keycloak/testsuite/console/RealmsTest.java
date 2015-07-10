@@ -3,6 +3,7 @@ package org.keycloak.testsuite.console;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.testsuite.page.console.Realm;
+import static org.keycloak.testsuite.page.console.Realm.MASTER;
 import org.keycloak.testsuite.page.console.RealmsRoot;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
 
@@ -25,7 +26,9 @@ public class RealmsTest extends AbstractAdminConsoleTest<RealmsRoot> {
         realmsRoot.navigateTo(); // 2nd time to be sure
         assertCurrentUrl(realmsRoot);
 
-        realmsRoot.clickRealm(Realm.MASTER);
+        realmsRoot.clickRealm(MASTER);
+        
+        realm.setTemplateValues(MASTER);
         assertCurrentUrl(realm);
 
     }

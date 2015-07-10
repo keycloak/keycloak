@@ -16,7 +16,12 @@ public class RealmsRoot extends AdminConsole {
 
     @Override
     public UriBuilder createUriBuilder() {
-        return super.createUriBuilder().path("/").fragment("/realms");
+        return super.createUriBuilder().path("/");
+    }
+
+    @Override
+    public String getFragment() {
+        return "/realms";
     }
 
     public void clickRealm(String realm) {

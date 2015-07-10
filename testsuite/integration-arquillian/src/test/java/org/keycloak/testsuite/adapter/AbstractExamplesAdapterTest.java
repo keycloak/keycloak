@@ -11,7 +11,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.TestRealms.loadRealm;
@@ -101,7 +100,6 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
     }
 
     @Test
-    @Ignore
     public void testChangePasswordRequiredUserAction() {
         System.out.println("before password login");
         addRequiredAction(RequiredUserAction.UPDATE_PASSWORD);
@@ -118,7 +116,6 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
     }
 
     @Test
-    @Ignore
     public void testUpdateProfileRequiredUserAction() {
         System.out.println("before profile login");
         addRequiredAction(RequiredUserAction.UPDATE_PROFILE);
@@ -146,12 +143,10 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
     }
 
     private void addRequiredAction(RequiredUserAction action) {
-        pause(1000);
         loginAsAdmin();
-        pause(1000);
-        adminConsole.navigateTo();
-        pause(1000);
-        navigation.users();
+        pause(2000);
+        realm.navigateTo();
+        realm.users();
         pause(1000);
         User bburke = userPage.findUser("bburke@redhat.com");
         pause(1000);
@@ -163,12 +158,10 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
     }
 
     private void removeRequiredAction(RequiredUserAction action) {
-        pause(1000);
         loginAsAdmin();
-        pause(1000);
-        adminConsole.navigateTo();
-        pause(1000);
-        navigation.users();
+        pause(2000);
+        realm.navigateTo();
+        realm.users();
         pause(1000);
         User bburke = userPage.findUser("bburke@redhat.com");
         pause(1000);

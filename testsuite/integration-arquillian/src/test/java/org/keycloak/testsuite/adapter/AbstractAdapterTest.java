@@ -16,6 +16,8 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.ContainersTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.page.adapter.AppServerContextRoot;
+import org.keycloak.testsuite.page.console.Realm;
+import static org.keycloak.testsuite.page.console.Realm.DEMO;
 
 /**
  *
@@ -26,6 +28,9 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
 
     @Page
     protected AppServerContextRoot appServerContextRoot;
+
+    @Page
+    protected Realm realm;
 
     protected String LOGIN_URL;
 
@@ -39,7 +44,13 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
     @Before
     public void beforeAdapterTest() {
         LOGIN_URL = OIDCLoginProtocolService.authUrl(authServer.createUriBuilder())
-                .build("demo").toString();
+                .build(DEMO).toString();
+    }
+
+    @Override
+    public void setPageUriTemplateValues() {
+        super.setPageUriTemplateValues();
+        realm.setTemplateValues(DEMO);
     }
 
     @Override

@@ -35,6 +35,10 @@ public class AdminConsole extends AdminRoot {
         setTemplateValue(CONSOLE_REALM, MASTER);
     }
 
+    public AdminConsole setTemplateValues() {
+        return setTemplateValues(MASTER);
+    }
+    
     public AdminConsole setTemplateValues(String consoleRealm) {
         setTemplateValue(CONSOLE_REALM, consoleRealm);
         return this;
