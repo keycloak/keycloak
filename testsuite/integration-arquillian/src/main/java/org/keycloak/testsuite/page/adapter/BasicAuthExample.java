@@ -1,9 +1,6 @@
 package org.keycloak.testsuite.page.adapter;
 
-import java.net.URI;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -34,12 +31,11 @@ public class BasicAuthExample extends AbstractPageWithInjectedUrl {
                 .queryParam("value", "{value}");
     }
 
-    public URI getUri(String user, String password, String value) {
-        Map<String, Object> templateValues = new HashMap<>();
-        templateValues.put("user", user);
-        templateValues.put("password", password);
-        templateValues.put("value", value);
-        return getUri(templateValues);
+    public BasicAuthExample setTemplateValues(String user, String password, String value) {
+        setTemplateValue("user", user);
+        setTemplateValue("password", password);
+        setTemplateValue("value", value);
+        return this;
     }
 
 }

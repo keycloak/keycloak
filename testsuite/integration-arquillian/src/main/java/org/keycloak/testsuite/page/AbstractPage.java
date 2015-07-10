@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -16,8 +15,7 @@ public abstract class AbstractPage {
 
     private static final long serialVersionUID = 1L;
 
-    private final Map<String, Object> defaultTemplateValues = new HashMap<>();
-    private final Map<String, Object> helperTemplateValues = new HashMap<>();
+    private final Map<String, Object> templateValues = new HashMap<>();
 
     @Drone
     protected WebDriver driver;
@@ -33,17 +31,13 @@ public abstract class AbstractPage {
         return builder;
     }
 
-    protected AbstractPage setTemplateValue(String template, Object value) {
-        defaultTemplateValues.put(template, value);
+    public AbstractPage setTemplateValue(String template, Object value) {
+        templateValues.put(template, value);
         return this;
     }
 
     public URI getUri() {
-        return createUriBuilder().buildFromMap(this.defaultTemplateValues);
-    }
-
-    public URI getUri(Map<String, Object> templateValues) {
-        return createUriBuilder().buildFromMap(templateValues);
+        return getUriBuilder().buildFromMap(templateValues);
     }
 
     public void navigateTo() {
@@ -51,13 +45,9 @@ public abstract class AbstractPage {
     }
 
     public void navigateToUsing(WebDriver driver) {
-        System.out.println("navigating to " + getUri().toASCIIString());
-        driver.get(getUri().toASCIIString());
-    }
-
-    public void navigateToUsingSecondBrowser(
-            @Drone @SecondBrowser WebDriver driver2) {
-        driver2.navigate().to(getUri().toASCIIString());
+        String uri = getUri().toASCIIString();
+        System.out.println("navigating to " + uri);
+        driver.get(uri);
     }
 
     public WebDriver getDriver() {

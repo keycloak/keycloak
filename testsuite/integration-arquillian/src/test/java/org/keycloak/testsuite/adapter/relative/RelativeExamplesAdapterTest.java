@@ -46,27 +46,30 @@ public class RelativeExamplesAdapterTest extends AbstractExamplesAdapterTest {
             throw new IllegalStateException("Test realm file not found: " + testRealmFile);
         }
     }
-    
+
     @Test
     public void testBasicAuthExample() {
         String value = "hello";
         Client client = ClientBuilder.newClient();
-        
-        Response response = client.target(basicAuthExample.getUri("admin", "password", value)).request().get();
+
+        Response response = client.target(basicAuthExample
+                .setTemplateValues("admin", "password", value).getUri()).request().get();
         assertEquals(200, response.getStatus());
         assertEquals(value, response.readEntity(String.class));
         response.close();
-        
-        response = client.target(basicAuthExample.getUri("invalid-user", "password", value)).request().get();
+
+        response = client.target(basicAuthExample
+                .setTemplateValues("invalid-user", "password", value).getUri()).request().get();
         assertEquals(401, response.getStatus());
         assertTrue(response.readEntity(String.class).contains("Unauthorized"));
         response.close();
-        
-        response = client.target(basicAuthExample.getUri("admin", "invalid-password", value)).request().get();
+
+        response = client.target(basicAuthExample
+                .setTemplateValues("admin", "invalid-password", value).getUri()).request().get();
         assertEquals(401, response.getStatus());
         assertTrue(response.readEntity(String.class).contains("Unauthorized"));
         response.close();
-        
+
         client.close();
     }
 

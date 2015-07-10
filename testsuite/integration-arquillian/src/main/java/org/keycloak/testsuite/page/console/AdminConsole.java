@@ -17,11 +17,9 @@
  */
 package org.keycloak.testsuite.page.console;
 
-import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.ws.rs.core.UriBuilder;
+import static org.keycloak.testsuite.page.console.Realm.MASTER;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -31,13 +29,20 @@ import org.openqa.selenium.support.FindBy;
  */
 public class AdminConsole extends AdminRoot {
 
+    public static final String CONSOLE_REALM = "consoleRealm";
+
     public AdminConsole() {
-        setTemplateValue("consoleRealm", Realm.MASTER);
+        setTemplateValue(CONSOLE_REALM, MASTER);
+    }
+
+    public AdminConsole setTemplateValues(String consoleRealm) {
+        setTemplateValue(CONSOLE_REALM, consoleRealm);
+        return this;
     }
 
     @Override
     public UriBuilder createUriBuilder() {
-        return super.createUriBuilder().path("{consoleRealm}/console");
+        return super.createUriBuilder().path("{" + CONSOLE_REALM + "}/console");
     }
 
     @FindBy(css = ".btn-danger")
@@ -52,11 +57,5 @@ public class AdminConsole extends AdminRoot {
 
     @FindBy(css = ".ng-binding.btn.btn-danger")
     protected WebElement deleteConfirmationButton;
-
-    public URI getUrlString(String consoleRealm) {
-        Map<String,Object> tpl = new HashMap<>();
-        tpl.put("consoleRealm", consoleRealm);
-        return getUri(tpl);
-    }
 
 }
