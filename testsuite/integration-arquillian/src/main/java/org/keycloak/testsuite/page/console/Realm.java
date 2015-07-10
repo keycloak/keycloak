@@ -1,7 +1,8 @@
 package org.keycloak.testsuite.page.console;
 
-import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.openqa.selenium.WebElement;
 
 /**
@@ -31,11 +32,6 @@ public class Realm extends RealmsRoot {
     }
 
     @Override
-    public UriBuilder createUriBuilder() {
-        return super.createUriBuilder();
-    }
-
-    @Override
     public String getFragment() {
         return super.getFragment() + "/{" + REALM + "}";
     }
@@ -43,8 +39,13 @@ public class Realm extends RealmsRoot {
     @FindByJQuery("a:contains('Users')")
     private WebElement usersLink;
 
-    public void users() {
+    public void clickUsers() {
         usersLink.click();
+    }
+
+    public URI getOIDCLoginUrl() {
+        return OIDCLoginProtocolService.authUrl(getUriBuilder())
+                .build(DEMO);
     }
 
 }

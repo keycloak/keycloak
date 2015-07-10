@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.adapter.tomcat;
 
 import org.junit.Ignore;
-import org.keycloak.testsuite.adapter.AbstractExamplesAdapterTest;
+import org.keycloak.testsuite.adapter.AbstractBasicAuthExampleAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
@@ -10,8 +10,7 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  */
 @AppServerContainer("app-server-tomcat")
 @Ignore
-public class TomcatExamplesAdapterTest extends AbstractExamplesAdapterTest {
+public class TomcatBasicAuthExampleAdapterTest extends AbstractBasicAuthExampleAdapterTest {
 
     // TODO find out how to add context.xml dependent on app context (web.xml/module-name)
-    
 }

@@ -440,6 +440,12 @@
                                             <type>war</type>
                                         </artifactItem>       
                                         <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>js-console</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>war</type>
+                                        </artifactItem>       
+                                        <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>examples-multitenant</artifactId>        
                                             <version>${project.version}</version>

@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.TestRealms.loadRealm;
-import static org.keycloak.testsuite.adapter.AbstractExamplesAdapterTest.exampleDeployment;
+import static org.keycloak.testsuite.adapter.AbstractDemoExampleAdapterTest.exampleDeployment;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.page.adapter.MultiTenant;
 import org.keycloak.testsuite.page.adapter.MultiTenantExample;
@@ -50,7 +50,7 @@ public abstract class AbstractMultitenancyAdapterTest extends AbstractAdapterTes
 
     @Deployment(name = MultiTenantExample.DEPLOYMENT_NAME)
     protected static WebArchive multiTenantExample() throws IOException {
-        return exampleDeployment("examples-multitenant"); // example's name is multitenant.war
+        return exampleDeployment("examples-multitenant");
     }
 
     @Override

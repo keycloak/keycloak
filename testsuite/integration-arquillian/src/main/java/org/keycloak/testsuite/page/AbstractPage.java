@@ -48,8 +48,9 @@ public abstract class AbstractPage {
         return getUriBuilder().buildFromMap(templateValues);
     }
 
-    public void navigateTo() {
+    public AbstractPage navigateTo() {
         navigateToUsing(driver);
+        return this;
     }
 
     public void navigateToUsing(WebDriver driver) {

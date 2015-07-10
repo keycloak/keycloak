@@ -77,7 +77,7 @@ public abstract class AbstractKeycloakTest {
 
     @After
     public void afterAbstractKeycloakTest() {
-        removeTestRealms();
+//        removeTestRealms();
         keycloak.close();
         driver.manage().deleteAllCookies();
     }

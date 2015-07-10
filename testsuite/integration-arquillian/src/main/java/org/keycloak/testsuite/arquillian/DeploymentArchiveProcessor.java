@@ -33,6 +33,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
     public static final String ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak.json";
     public static final String ADAPTER_CONFIG_PATH_TENANT1 = "/WEB-INF/classes/tenant1-keycloak.json";
     public static final String ADAPTER_CONFIG_PATH_TENANT2 = "/WEB-INF/classes/tenant2-keycloak.json";
+    public static final String ADAPTER_CONFIG_PATH_JS = "/keycloak.json";
 
     @Override
     public void process(Archive<?> archive, TestClass testClass) {
@@ -54,6 +55,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         modifyAdapterConfig(archive, ADAPTER_CONFIG_PATH, relative);
         modifyAdapterConfig(archive, ADAPTER_CONFIG_PATH_TENANT1, relative);
         modifyAdapterConfig(archive, ADAPTER_CONFIG_PATH_TENANT2, relative);
+        modifyAdapterConfig(archive, ADAPTER_CONFIG_PATH_JS, relative);
     }
 
     protected void modifyAdapterConfig(Archive<?> archive, String adapterConfigPath, boolean relative) {

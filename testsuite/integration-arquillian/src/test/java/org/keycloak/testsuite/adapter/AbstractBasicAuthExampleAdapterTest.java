@@ -1,8 +1,6 @@
-package org.keycloak.testsuite.adapter.relative;
+package org.keycloak.testsuite.adapter;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import javax.ws.rs.client.Client;
@@ -16,35 +14,28 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.TestRealms.loadRealm;
-import org.keycloak.testsuite.adapter.AbstractExamplesAdapterTest;
-import static org.keycloak.testsuite.adapter.AbstractExamplesAdapterTest.EXAMPLES_HOME;
-import static org.keycloak.testsuite.adapter.AbstractExamplesAdapterTest.EXAMPLES_VERSION_SUFFIX;
+import static org.keycloak.testsuite.adapter.AbstractExampleAdapterTest.exampleDeployment;
 import org.keycloak.testsuite.page.adapter.BasicAuthExample;
 
-/**
- *
- * @author tkyjovsk
- */
-public class RelativeExamplesAdapterTest extends AbstractExamplesAdapterTest {
+public abstract class AbstractBasicAuthExampleAdapterTest extends AbstractExampleAdapterTest {
 
     @Page
     private BasicAuthExample basicAuthExample;
 
     @Deployment(name = BasicAuthExample.DEPLOYMENT_NAME)
-    private static WebArchive customerPortalExample() throws IOException {
+    private static WebArchive basicAuthExample() throws IOException {
         return exampleDeployment("examples-basicauth");
     }
 
     @Override
     public void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms) {
-        super.loadAdapterTestRealmsTo(testRealms);
-        File testRealmFile = new File(EXAMPLES_HOME + "/keycloak-examples-" + EXAMPLES_VERSION_SUFFIX
-                + "/basic-auth/basicauthrealm.json");
-        try {
-            testRealms.add(loadRealm(new FileInputStream(testRealmFile)));
-        } catch (FileNotFoundException ex) {
-            throw new IllegalStateException("Test realm file not found: " + testRealmFile);
-        }
+        testRealms.add(loadRealm(new File(EXAMPLES_HOME_DIR + "/basic-auth/basicauthrealm.json")));
+    }
+
+    @Override
+    public void setPageUriTemplateValues() {
+        super.setPageUriTemplateValues();
+        testRealm.setTemplateValues("example");
     }
 
     @Test

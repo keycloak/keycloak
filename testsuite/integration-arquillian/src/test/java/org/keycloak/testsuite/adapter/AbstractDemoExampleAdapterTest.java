@@ -1,14 +1,11 @@
 package org.keycloak.testsuite.adapter;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import org.jboss.arquillian.container.test.api.Deployment;
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
@@ -20,25 +17,14 @@ import org.keycloak.testsuite.page.adapter.DatabaseServiceExample;
 import org.keycloak.testsuite.page.adapter.ProductPortalExample;
 import org.keycloak.testsuite.model.RequiredUserAction;
 import org.keycloak.testsuite.model.User;
+import static org.keycloak.testsuite.page.console.Realm.DEMO;
 import org.keycloak.testsuite.page.console.settings.user.UserPage;
 import org.keycloak.testsuite.page.console.UpdateAccountPage;
+import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
 import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 import org.openqa.selenium.By;
 
-public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
-
-    public static final String EXAMPLES_HOME;
-    public static final String EXAMPLES_VERSION_SUFFIX;
-
-    static {
-        EXAMPLES_HOME = System.getProperty("examples.home", null);
-        Assert.assertNotNull(EXAMPLES_HOME, "Property ${examples.home} must bet set.");
-        System.out.println(EXAMPLES_HOME);
-
-        EXAMPLES_VERSION_SUFFIX = System.getProperty("examples.version.suffix", null);
-        Assert.assertNotNull(EXAMPLES_VERSION_SUFFIX, "Property ${examples.version.suffix} must bet set.");
-        System.out.println(EXAMPLES_VERSION_SUFFIX);
-    }
+public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdapterTest {
 
     @Page
     private CustomerPortalExample customerPortalExample;
@@ -46,16 +32,11 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
     private ProductPortalExample productPortalExample;
     @Page
     private DatabaseServiceExample databaseServiceExample;
+
     @Page
-    private UserPage userPage;
+    private UserPage users;
     @Page
     private UpdateAccountPage accountPage;
-
-    protected static WebArchive exampleDeployment(String name) throws IOException {
-        return ShrinkWrap.createFromZipFile(WebArchive.class,
-                new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".war"))
-                .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
-    }
 
     @Deployment(name = CustomerPortalExample.DEPLOYMENT_NAME)
     private static WebArchive customerPortalExample() throws IOException {
@@ -74,13 +55,14 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
 
     @Override
     public void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms) {
-        File testRealmFile = new File(EXAMPLES_HOME + "/keycloak-examples-" + EXAMPLES_VERSION_SUFFIX
-                + "/preconfigured-demo/testrealm.json");
-        try {
-            testRealms.add(loadRealm(new FileInputStream(testRealmFile)));
-        } catch (FileNotFoundException ex) {
-            throw new IllegalStateException("Test realm file not found: " + testRealmFile);
-        }
+        testRealms.add(
+                loadRealm(new File(EXAMPLES_HOME_DIR + "/preconfigured-demo/testrealm.json")));
+    }
+
+    @Override
+    public void setPageUriTemplateValues() {
+        super.setPageUriTemplateValues();
+        testRealm.setTemplateValues(DEMO);
     }
 
     @Test
@@ -145,13 +127,14 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
     private void addRequiredAction(RequiredUserAction action) {
         loginAsAdmin();
         pause(2000);
-        realm.navigateTo();
-        realm.users();
+        testRealm.navigateTo();
+        testRealm.clickUsers();
         pause(1000);
-        User bburke = userPage.findUser("bburke@redhat.com");
+        assertCurrentUrl(users);
+        User bburke = users.findUser("bburke@redhat.com");
         pause(1000);
         bburke.addRequiredUserAction(action);
-        userPage.updateUser(bburke);
+        users.updateUser(bburke);
         pause(1000);
         logOut();
         pause(1000);
@@ -160,14 +143,13 @@ public abstract class AbstractExamplesAdapterTest extends AbstractAdapterTest {
     private void removeRequiredAction(RequiredUserAction action) {
         loginAsAdmin();
         pause(2000);
-        realm.navigateTo();
-        realm.users();
+        testRealm.navigateTo();
+        testRealm.clickUsers();
         pause(1000);
-        User bburke = userPage.findUser("bburke@redhat.com");
+        User bburke = users.findUser("bburke@redhat.com");
         pause(1000);
         bburke.removeRequiredUserAction(action);
-        userPage.updateUser(bburke);
+        users.updateUser(bburke);
         logOut();
     }
-
 }
