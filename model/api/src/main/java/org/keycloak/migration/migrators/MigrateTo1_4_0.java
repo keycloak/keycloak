@@ -1,6 +1,7 @@
 package org.keycloak.migration.migrators;
 
 import org.keycloak.migration.ModelVersion;
+import org.keycloak.models.ImpersonationServiceConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -15,7 +16,6 @@ import java.util.List;
 public class MigrateTo1_4_0 {
     public static final ModelVersion VERSION = new ModelVersion("1.4.0");
 
-
     public void migrate(KeycloakSession session) {
         List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
@@ -23,6 +23,7 @@ public class MigrateTo1_4_0 {
                 DefaultAuthenticationFlows.addFlows(realm);
                 DefaultRequiredActions.addActions(realm);
             }
+            ImpersonationServiceConstants.setupImpersonationService(session, realm, session.getContext().getContextPath());
 
         }
 

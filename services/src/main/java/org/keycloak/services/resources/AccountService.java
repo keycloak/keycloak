@@ -98,7 +98,7 @@ import java.util.UUID;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AccountService {
+public class AccountService extends AbstractSecuredLocalService {
 
     private static final Logger logger = Logger.getLogger(AccountService.class);
 
@@ -128,34 +128,13 @@ public class AccountService {
 
     public static final String KEYCLOAK_STATE_CHECKER = "KEYCLOAK_STATE_CHECKER";
 
-    private RealmModel realm;
-
-    @Context
-    private HttpRequest request;
-
-    @Context
-    protected HttpHeaders headers;
-
-    @Context
-    private UriInfo uriInfo;
-
-    @Context
-    private ClientConnection clientConnection;
-
-    @Context
-    private KeycloakSession session;
-
     private final AppAuthManager authManager;
-    private final ClientModel client;
     private EventBuilder event;
     private AccountProvider account;
-    private Auth auth;
     private EventStoreProvider eventStore;
-    private String stateChecker;
 
     public AccountService(RealmModel realm, ClientModel client, EventBuilder event) {
-        this.realm = realm;
-        this.client = client;
+        super(realm, client);
         this.event = event;
         this.authManager = new AppAuthManager();
     }
@@ -169,18 +148,10 @@ public class AccountService {
         if (authResult != null) {
             auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), false);
         } else {
-            authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers);
+            authResult = authManager.authenticateIdentityCookie(session, realm);
             if (authResult != null) {
                 auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
-                Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
-                if (cookie != null) {
-                    stateChecker = cookie.getValue();
-                } else {
-                    stateChecker = UUID.randomUUID().toString();
-                    String cookiePath = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
-                    boolean secureOnly = realm.getSslRequired().isRequired(clientConnection);
-                    CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);
-                }
+                updateCsrfChecks();
                 account.setStateChecker(stateChecker);
             }
         }
@@ -236,8 +207,16 @@ public class AccountService {
         return base;
     }
 
+    public static UriBuilder accountServiceApplicationPage(UriInfo uriInfo) {
+        return accountServiceBaseUrl(uriInfo).path(AccountService.class, "applicationsPage");
+    }
+
     public static UriBuilder accountServiceBaseUrl(UriBuilder base) {
         return base.path(RealmsResource.class).path(RealmsResource.class, "getAccountService");
+    }
+
+    protected Set<String> getValidPaths() {
+        return AccountService.VALID_PATHS;
     }
 
     private Response forwardToPage(String path, AccountPages page) {
@@ -365,33 +344,6 @@ public class AccountService {
     @GET
     public Response applicationsPage() {
         return forwardToPage("applications", AccountPages.APPLICATIONS);
-    }
-
-    /**
-     * Check to see if form post has sessionId hidden field and match it against the session id.
-     *
-     * @param formData
-     */
-    protected void csrfCheck(final MultivaluedMap<String, String> formData) {
-        if (!auth.isCookieAuthenticated()) return;
-        String stateChecker = formData.getFirst("stateChecker");
-        if (!this.stateChecker.equals(stateChecker)) {
-            throw new ForbiddenException();
-        }
-
-    }
-
-    /**
-     * Check to see if form post has sessionId hidden field and match it against the session id.
-     *
-     */
-    protected void csrfCheck(String stateChecker) {
-        if (!auth.isCookieAuthenticated()) return;
-        if (auth.getSession() == null) return;
-        if (!this.stateChecker.equals(stateChecker)) {
-            throw new ForbiddenException();
-        }
-
     }
 
     /**
@@ -799,77 +751,9 @@ public class AccountService {
         return RealmsResource.accountUrl(base).path(AccountService.class, "loginRedirect");
     }
 
-    @Path("login-redirect")
-    @GET
-    public Response loginRedirect(@QueryParam("code") String code,
-                                  @QueryParam("state") String state,
-                                  @QueryParam("error") String error,
-                                  @QueryParam("path") String path,
-                                  @QueryParam("referrer") String referrer,
-                                  @Context HttpHeaders headers) {
-        try {
-            if (error != null) {
-                logger.debug("error from oauth");
-                throw new ForbiddenException("error");
-            }
-            if (path != null && !VALID_PATHS.contains(path)) {
-                throw new BadRequestException("Invalid path");
-            }
-            if (!realm.isEnabled()) {
-                logger.debug("realm not enabled");
-                throw new ForbiddenException();
-            }
-            if (!client.isEnabled()) {
-                logger.debug("account management app not enabled");
-                throw new ForbiddenException();
-            }
-            if (code == null) {
-                logger.debug("code not specified");
-                throw new BadRequestException("code not specified");
-            }
-            if (state == null) {
-                logger.debug("state not specified");
-                throw new BadRequestException("state not specified");
-            }
-
-            URI accountUri = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName());
-            URI redirectUri = path != null ? accountUri.resolve(path) : accountUri;
-            if (referrer != null) {
-                redirectUri = redirectUri.resolve("?referrer=" + referrer);
-            }
-
-            return Response.status(302).location(redirectUri).build();
-        } finally {
-        }
-    }
-
-    private Response login(String path) {
-        OAuthRedirect oauth = new OAuthRedirect();
-        String authUrl = OIDCLoginProtocolService.authUrl(uriInfo).build(realm.getName()).toString();
-        oauth.setAuthUrl(authUrl);
-
-        oauth.setClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-
-        UriBuilder uriBuilder = Urls.accountPageBuilder(uriInfo.getBaseUri()).path(AccountService.class, "loginRedirect");
-
-        if (path != null) {
-            uriBuilder.queryParam("path", path);
-        }
-
-        String referrer = uriInfo.getQueryParameters().getFirst("referrer");
-        if (referrer != null) {
-            uriBuilder.queryParam("referrer", referrer);
-        }
-
-        String referrerUri = uriInfo.getQueryParameters().getFirst("referrer_uri");
-        if (referrerUri != null) {
-            uriBuilder.queryParam("referrer_uri", referrerUri);
-        }
-
-        URI accountUri = uriBuilder.build(realm.getName());
-
-        oauth.setStateCookiePath(accountUri.getRawPath());
-        return oauth.redirect(uriInfo, accountUri.toString());
+    @Override
+    protected URI getBaseRedirectUri() {
+        return Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName());
     }
 
     public static boolean isPasswordSet(UserModel user) {
@@ -954,43 +838,4 @@ public class AccountService {
             }
         }
     }
-
-    class OAuthRedirect extends AbstractOAuthClient {
-
-        /**
-         * closes client
-         */
-        public void stop() {
-        }
-
-        public Response redirect(UriInfo uriInfo, String redirectUri) {
-            String state = getStateCode();
-
-            UriBuilder uriBuilder = UriBuilder.fromUri(authUrl)
-                    .queryParam(OAuth2Constants.CLIENT_ID, clientId)
-                    .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
-                    .queryParam(OAuth2Constants.STATE, state)
-                    .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE);
-            if (scope != null) {
-                uriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
-            }
-
-            URI url = uriBuilder.build();
-
-            // todo httpOnly!
-            NewCookie cookie = new NewCookie(getStateCookieName(), state, getStateCookiePath(uriInfo), null, null, -1, isSecure);
-            logger.debug("NewCookie: " + cookie.toString());
-            logger.debug("Oauth Redirect to: " + url);
-            return Response.status(302)
-                    .location(url)
-                    .cookie(cookie).build();
-        }
-
-        private String getStateCookiePath(UriInfo uriInfo) {
-            if (stateCookiePath != null) return stateCookiePath;
-            return uriInfo.getBaseUri().getRawPath();
-        }
-
-    }
-
 }
