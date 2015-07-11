@@ -172,7 +172,7 @@ public class Urls {
         return realmBase(baseUri).path("{realm}").build(realmId).toString();
     }
 
-    private static UriBuilder realmBase(URI baseUri) {
+    public static UriBuilder realmBase(URI baseUri) {
         return UriBuilder.fromUri(baseUri).path(RealmsResource.class);
     }
 

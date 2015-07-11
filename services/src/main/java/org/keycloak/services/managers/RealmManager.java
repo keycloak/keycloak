@@ -9,6 +9,7 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.Constants;
+import org.keycloak.models.ImpersonationServiceConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -88,6 +89,7 @@ public class RealmManager {
         setupAccountManagement(realm);
         setupBrokerService(realm);
         setupAdminConsole(realm);
+        setupImpersonationService(realm);
         setupAuthenticationFlows(realm);
         setupRequiredActions(realm);
 
@@ -233,6 +235,10 @@ public class RealmManager {
         }
     }
 
+    public void setupImpersonationService(RealmModel realm) {
+        ImpersonationServiceConstants.setupImpersonationService(session, realm, contextPath);
+    }
+
     public void setupBrokerService(RealmModel realm) {
         ClientModel client = realm.getClientNameMap().get(Constants.BROKER_SERVICE_CLIENT_ID);
         if (client == null) {
@@ -261,6 +267,8 @@ public class RealmManager {
         setupMasterAdminManagement(realm);
         if (!hasRealmAdminManagementClient(rep)) setupRealmAdminManagement(realm);
         if (!hasAccountManagementClient(rep)) setupAccountManagement(realm);
+        if (!hasImpersonationServiceClient(rep)) setupImpersonationService(realm);
+
         if (!hasBrokerClient(rep)) setupBrokerService(realm);
         if (!hasAdminConsoleClient(rep)) setupAdminConsole(realm);
 
@@ -292,6 +300,15 @@ public class RealmManager {
         if (rep.getClients() == null) return false;
         for (ClientRepresentation clientRep : rep.getClients()) {
             if (clientRep.getClientId().equals(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    private boolean hasImpersonationServiceClient(RealmRepresentation rep) {
+        if (rep.getClients() == null) return false;
+        for (ClientRepresentation clientRep : rep.getClients()) {
+            if (clientRep.getClientId().equals(Constants.IMPERSONATION_SERVICE_CLIENT_ID)) {
                 return true;
             }
         }

@@ -42,7 +42,7 @@ public class ClientTest extends AbstractClientTest {
 
     @Test
     public void getClients() {
-        assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker");
+        assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", "impersonation");
     }
 
     private String createClient() {
@@ -59,7 +59,7 @@ public class ClientTest extends AbstractClientTest {
         String id = createClient();
 
         assertNotNull(realm.clients().get(id));
-        assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", "my-app");
+        assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", "my-app", "impersonation");
     }
 
     @Test

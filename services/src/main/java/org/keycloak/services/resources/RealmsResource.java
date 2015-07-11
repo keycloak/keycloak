@@ -4,7 +4,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
-import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -147,6 +146,22 @@ public class RealmsResource {
         ResteasyProviderFactory.getInstance().injectProperties(accountService);
         accountService.init();
         return accountService;
+    }
+
+    @Path("{realm}/impersonate")
+    public ImpersonationService getImpersonationService(final @PathParam("realm") String name) {
+        RealmModel realm = init(name);
+
+        ClientModel client = realm.getClientNameMap().get(Constants.IMPERSONATION_SERVICE_CLIENT_ID);
+        if (client == null || !client.isEnabled()) {
+            logger.debug("impersonate service not enabled");
+            throw new NotFoundException("impersonate service not enabled");
+        }
+
+        EventBuilder event = new EventBuilder(realm, session, clientConnection);
+        ImpersonationService impersonateService = new ImpersonationService(realm, client, event);
+        ResteasyProviderFactory.getInstance().injectProperties(impersonateService);
+        return impersonateService;
     }
 
     @Path("{realm}")

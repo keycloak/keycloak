@@ -131,7 +131,7 @@ public class SamlService {
                 return ErrorPage.error(session, Messages.INVALID_REQUEST);
             }
 
-            AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
+            AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, false);
             if (authResult == null) {
                 logger.warn("Unknown saml response.");
                 event.event(EventType.LOGOUT);
@@ -354,7 +354,7 @@ public class SamlService {
             }
 
             // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
-            AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
+            AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, false);
             if (authResult != null) {
                 String logoutBinding = getBindingType();
                 if ("true".equals(client.getAttribute(SamlProtocol.SAML_FORCE_POST_BINDING)))

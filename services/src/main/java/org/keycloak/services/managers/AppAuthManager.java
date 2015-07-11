@@ -18,12 +18,12 @@ public class AppAuthManager extends AuthenticationManager {
     protected static Logger logger = Logger.getLogger(AppAuthManager.class);
 
     @Override
-    public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
-        AuthResult authResult = super.authenticateIdentityCookie(session, realm, uriInfo, connection, headers);
+    public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm) {
+        AuthResult authResult = super.authenticateIdentityCookie(session, realm);
         if (authResult == null) return null;
         // refresh the cookies!
-        createLoginCookie(realm, authResult.getUser(), authResult.getSession(), uriInfo, connection);
-        if (authResult.getSession().isRememberMe()) createRememberMeCookie(realm, authResult.getUser().getUsername(), uriInfo, connection);
+        createLoginCookie(realm, authResult.getUser(), authResult.getSession(), session.getContext().getUri(), session.getContext().getConnection());
+        if (authResult.getSession().isRememberMe()) createRememberMeCookie(realm, authResult.getUser().getUsername(), session.getContext().getUri(), session.getContext().getConnection());
         return authResult;
     }
 
