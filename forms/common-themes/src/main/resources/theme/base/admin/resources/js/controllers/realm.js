@@ -79,6 +79,9 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $
 
         get manageEvents() {
             return getAccess('manage-events');
+        },
+        get impersonation() {
+            return getAccess('impersonation');
         }
     }
 

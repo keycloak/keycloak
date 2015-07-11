@@ -5,8 +5,8 @@
         <li data-ng-show="create">Add User</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{user.username|capitalize}}<i style="padding-left: 20px" class="pficon pficon-delete" data-ng-show="!create && access.manageUsers" 
-    	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
+    <h1 data-ng-hide="create">{{user.username|capitalize}}<i style="padding-left: 20px" class="pficon pficon-delete" data-ng-show="!create && access.manageUsers && !changed"
+    	data-ng-click="remove()"></i></h1>
     <h1 data-ng-show="create">Add User</h1>
 
     <kc-tabs-user></kc-tabs-user>
@@ -66,7 +66,7 @@
             <div class="form-group clearfix block">
                 <label class="col-md-2 control-label" for="userEnabled">User Enabled</label>
                 <div class="col-md-6">
-                    <input ng-model="user.enabled" name="userEnabled" id="userEnabled" onoffswitch />
+                    <input ng-model="user.enabled" name="userEnabled" id="userEnabled" ng-disabled="!access.manageUsers" onoffswitch />
                 </div>
                 <kc-tooltip>A disabled user cannot login.</kc-tooltip>
             </div>
@@ -79,7 +79,7 @@
             <div class="form-group clearfix block">
                 <label class="col-md-2 control-label" for="emailVerified">Email verified</label>
                 <div class="col-md-6">
-                    <input ng-model="user.emailVerified" name="emailVerified" id="emailVerified" onoffswitch />
+                    <input ng-model="user.emailVerified" name="emailVerified" id="emailVerified" ng-disabled="!access.manageUsers" onoffswitch />
                 </div>
                 <kc-tooltip>Has the user's email been verified?</kc-tooltip>
             </div>
@@ -116,9 +116,10 @@
                 <button kc-cancel data-ng-click="cancel()">Cancel</button>
             </div>
 
-            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageUsers">
-                <button kc-save  data-ng-show="changed">Save</button>
-                <button kc-reset data-ng-show="changed">Cancel</button>
+            <div class="col-md-10 col-md-offset-2" data-ng-show="!create">
+                <button kc-save  data-ng-show="access.manageUsers && changed">Save</button>
+                <button kc-reset data-ng-show="access.manageUsers && changed">Cancel</button>
+                <button data-ng-show="access.impersonation" class="btn btn-default" data-ng-click="impersonate()">Impersonate</button>
             </div>
         </div>
 

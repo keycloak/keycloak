@@ -8,8 +8,8 @@
 
     <kc-tabs-user></kc-tabs-user>
 
-    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageUsers">
-        <div class="form-group">
+    <form class="form-horizontal" name="realmForm" novalidate>
+        <div class="form-group" kc-read-only="!access.manageUsers">
             <label class="col-md-2 control-label" class="control-label">Realm Roles</label>
 
             <div class="col-md-10">
@@ -56,7 +56,7 @@
                     <span>Client Roles</span>
                     <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="client" ng-options="a.clientId for a in clients" ng-disabled="false"></select>
                 </label>
-                <div class="col-md-10">
+                <div class="col-md-10" kc-read-only="!access.manageUsers">
                     <div class="row" data-ng-hide="client">
                         <div class="col-md-4"><span class="text-muted">Select client to view roles for client</span></div>
                     </div>

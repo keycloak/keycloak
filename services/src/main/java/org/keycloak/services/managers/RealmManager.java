@@ -9,7 +9,7 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.Constants;
-import org.keycloak.models.ImpersonationServiceConstants;
+import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -236,7 +236,7 @@ public class RealmManager {
     }
 
     public void setupImpersonationService(RealmModel realm) {
-        ImpersonationServiceConstants.setupImpersonationService(session, realm, contextPath);
+        ImpersonationConstants.setupImpersonationService(session, realm);
     }
 
     public void setupBrokerService(RealmModel realm) {
