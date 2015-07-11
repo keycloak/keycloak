@@ -51,6 +51,20 @@ public class ZipImportProvider implements ImportProvider {
 
     @Override
     public void importModel(KeycloakSessionFactory factory, Strategy strategy) throws IOException {
+        List<String> realmNames = getRealmsToImport();
+
+        for (String realmName : realmNames) {
+            importRealm(factory, realmName, strategy);
+        }
+    }
+
+    @Override
+    public boolean isMasterRealmExported() throws IOException {
+        List<String> realmNames = getRealmsToImport();
+        return realmNames.contains(Config.getAdminRealm());
+    }
+
+    private List<String> getRealmsToImport() throws IOException {
         List<String> realmNames = new ArrayList<String>();
         for (ExtZipEntry entry : this.decrypter.getEntryList()) {
             String entryName = entry.getName();
@@ -66,10 +80,7 @@ public class ZipImportProvider implements ImportProvider {
                 }
             }
         }
-
-        for (String realmName : realmNames) {
-            importRealm(factory, realmName, strategy);
-        }
+        return realmNames;
     }
 
     @Override

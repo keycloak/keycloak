@@ -49,6 +49,20 @@ public class DirImportProvider implements ImportProvider {
 
     @Override
     public void importModel(KeycloakSessionFactory factory, Strategy strategy) throws IOException {
+        List<String> realmNames = getRealmsToImport();
+
+        for (String realmName : realmNames) {
+            importRealm(factory, realmName, strategy);
+        }
+    }
+
+    @Override
+    public boolean isMasterRealmExported() throws IOException {
+        List<String> realmNames = getRealmsToImport();
+        return realmNames.contains(Config.getAdminRealm());
+    }
+
+    private List<String> getRealmsToImport() throws IOException {
         File[] realmFiles = this.rootDirectory.listFiles(new FilenameFilter() {
 
             @Override
@@ -70,10 +84,7 @@ public class DirImportProvider implements ImportProvider {
                 realmNames.add(realmName);
             }
         }
-
-        for (String realmName : realmNames) {
-            importRealm(factory, realmName, strategy);
-        }
+        return realmNames;
     }
 
     @Override
