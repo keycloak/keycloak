@@ -7,8 +7,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ImpersonationServiceConstants {
-    public static String IMPERSONATION_ALLOWED = "impersonation";
+public class ImpersonationConstants {
+    public static String IMPERSONATION_ROLE = "impersonation";
 
     public static void setupMasterRealmRole(RealmProvider model, RealmModel realm) {
         RealmModel adminRealm;
@@ -22,8 +22,9 @@ public class ImpersonationServiceConstants {
             adminRole = adminRealm.getRole(AdminRoles.ADMIN);
         }
         ClientModel realmAdminApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm));
-        RoleModel impersonationRole = realmAdminApp.addRole(IMPERSONATION_ALLOWED);
-        impersonationRole.setDescription("${role_" + IMPERSONATION_ALLOWED + "}");
+        if (realmAdminApp.getRole(IMPERSONATION_ROLE) != null) return;
+        RoleModel impersonationRole = realmAdminApp.addRole(IMPERSONATION_ROLE);
+        impersonationRole.setDescription("${role_" + IMPERSONATION_ROLE + "}");
         adminRole.addCompositeRole(impersonationRole);
     }
 
@@ -31,28 +32,17 @@ public class ImpersonationServiceConstants {
         if (realm.getName().equals(Config.getAdminRealm())) { return; } // don't need to do this for master realm
         String realmAdminApplicationClientId = Constants.REALM_MANAGEMENT_CLIENT_ID;
         ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationClientId);
-        RoleModel impersonationRole = realmAdminApp.addRole(IMPERSONATION_ALLOWED);
-        impersonationRole.setDescription("${role_" + IMPERSONATION_ALLOWED + "}");
+        if (realmAdminApp.getRole(IMPERSONATION_ROLE) != null) return;
+        RoleModel impersonationRole = realmAdminApp.addRole(IMPERSONATION_ROLE);
+        impersonationRole.setDescription("${role_" + IMPERSONATION_ROLE + "}");
         RoleModel adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
         adminRole.addCompositeRole(impersonationRole);
     }
 
 
-    public static void setupImpersonationService(KeycloakSession session, RealmModel realm, String contextPath) {
-        ClientModel client = realm.getClientNameMap().get(Constants.IMPERSONATION_SERVICE_CLIENT_ID);
-        if (client == null) {
-            client = KeycloakModelUtils.createClient(realm, Constants.IMPERSONATION_SERVICE_CLIENT_ID);
-            client.setName("${client_" + Constants.IMPERSONATION_SERVICE_CLIENT_ID + "}");
-            client.setEnabled(true);
-            client.setFullScopeAllowed(false);
-            String base = contextPath + "/realms/" + realm.getName() + "/impersonate";
-            String redirectUri = base + "/*";
-            client.addRedirectUri(redirectUri);
-            client.setBaseUrl(base);
-
-            setupMasterRealmRole(session.realms(), realm);
-            setupRealmRole(realm);
-        }
+    public static void setupImpersonationService(KeycloakSession session, RealmModel realm) {
+        setupMasterRealmRole(session.realms(), realm);
+        setupRealmRole(realm);
     }
 
 

@@ -61,6 +61,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.WebApplicationException;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,6 +73,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.resources.AccountService;
 
 /**
  * Base resource for managing users
@@ -275,6 +277,37 @@ public class UsersResource {
 
         return rep;
     }
+
+    @Path("{id}/impersonation")
+    @POST
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Object> impersonate(final @PathParam("id") String id) {
+        auth.init(RealmAuth.Resource.IMPERSONATION);
+        auth.requireManage();
+        UserModel user = session.users().getUserById(id, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        RealmModel authenticatedRealm = auth.getAuth().getRealm();
+        // if same realm logout before impersonation
+        boolean sameRealm = false;
+        if (authenticatedRealm.getId().equals(realm.getId())) {
+            sameRealm = true;
+            UserSessionModel userSession = session.sessions().getUserSession(authenticatedRealm, auth.getAuth().getToken().getSessionState());
+            AuthenticationManager.expireIdentityCookie(realm, uriInfo, clientConnection);
+            AuthenticationManager.expireRememberMeCookie(realm, uriInfo, clientConnection);
+            AuthenticationManager.backchannelLogout(session, authenticatedRealm, userSession, uriInfo, clientConnection, headers, true);
+        }
+        UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+        AuthenticationManager.createLoginCookie(realm, userSession.getUser(), userSession, uriInfo, clientConnection);
+        URI redirect = AccountService.accountServiceApplicationPage(uriInfo).build(realm.getName());
+        Map<String, Object> result = new HashMap<>();
+        result.put("sameRealm", sameRealm);
+        result.put("redirect", redirect.toString());
+        return result;
+    }
+
 
     /**
      * List set of sessions associated with this user.

@@ -319,6 +319,13 @@ module.factory('UserConsents', function($resource) {
     });
 });
 
+module.factory('UserImpersonation', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/:user/impersonation', {
+        realm : '@realm',
+        user : '@user'
+    });
+});
+
 module.factory('UserCredentials', function($resource) {
     var credentials = {};
 

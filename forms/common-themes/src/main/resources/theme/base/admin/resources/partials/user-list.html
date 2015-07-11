@@ -5,7 +5,7 @@
         <caption data-ng-show="users" class="hidden">Table of realm users</caption>
         <thead>
         <tr>
-            <th colspan="4">
+            <th colspan="{{access.impersonation == true ? '5' : '4'}}">
                 <div class="form-inline">
                     <div class="form-group">
                         <div class="input-group">
@@ -17,7 +17,7 @@
                     </div>
                     <button class="btn btn-primary" ng-click="query.search = null; firstPage()">View all users</button>
 
-                    <div class="pull-right">
+                    <div class="pull-right" data-ng-show="access.manageUsers">
                         <a class="btn btn-primary" href="#/create/user/{{realm.realm}}">Add User</a>
                     </div>
                 </div>
@@ -29,6 +29,7 @@
             <th>Last Name</th>
             <th>First Name</th>
             <th>Email</th>
+            <th data-ng-show="access.impersonation"></th>
         </tr>
         </tr>
         </thead>
@@ -49,6 +50,7 @@
             <td>{{user.lastName}}</td>
             <td>{{user.firstName}}</td>
             <td>{{user.email}}</td>
+            <td data-ng-show="access.impersonation"><button class="btn btn-default" data-ng-click="impersonate(user.id)">Impersonate</button></td>
         </tr>
         <tr data-ng-show="!users || users.length == 0">
             <td class="text-muted" data-ng-show="!users">Please enter a search, or click on view all users</td>

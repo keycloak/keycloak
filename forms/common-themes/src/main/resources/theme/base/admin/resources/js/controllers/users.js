@@ -154,7 +154,7 @@ module.controller('UserConsentsCtrl', function($scope, realm, user, userConsents
 });
 
 
-module.controller('UserListCtrl', function($scope, realm, User) {
+module.controller('UserListCtrl', function($scope, realm, User, UserImpersonation) {
     $scope.realm = realm;
     $scope.page = 0;
 
@@ -163,6 +163,16 @@ module.controller('UserListCtrl', function($scope, realm, User) {
         max : 5,
         first : 0
     }
+
+    $scope.impersonate = function(userId) {
+        UserImpersonation.save({realm : realm.realm, user: userId}, function (data) {
+            if (data.sameRealm) {
+                window.location = data.redirect;
+            } else {
+                window.open(data.redirect, "_blank");
+            }
+        });
+    };
 
     $scope.firstPage = function() {
         $scope.query.first = 0;
@@ -195,7 +205,7 @@ module.controller('UserListCtrl', function($scope, realm, User) {
 
 
 
-module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFederationInstances, RequiredActions, $location, Dialog, Notifications) {
+module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFederationInstances, UserImpersonation, RequiredActions, $location, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.create = !user.id;
     $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
@@ -208,7 +218,17 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
         }
         convertAttributeValuesToString(user);
 
+
         $scope.user = angular.copy(user);
+        $scope.impersonate = function() {
+            UserImpersonation.save({realm : realm.realm, user: $scope.user.id}, function (data) {
+                if (data.sameRealm) {
+                    window.location = data.redirect;
+                } else {
+                    window.open(data.redirect, "_blank");
+                }
+            });
+        };
         if(user.federationLink) {
             console.log("federationLink is not null");
             UserFederationInstances.get({realm : realm.realm, instance: user.federationLink}, function(link) {
