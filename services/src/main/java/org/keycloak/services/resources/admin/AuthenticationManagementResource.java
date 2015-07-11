@@ -330,7 +330,6 @@ public class AuthenticationManagementResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<RequiredActionProviderRepresentation> getRequiredActions() {
-        this.auth.requireView();
         List<RequiredActionProviderRepresentation> list = new LinkedList<>();
         for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
             RequiredActionProviderRepresentation rep = toRepresentation(model);
@@ -354,7 +353,6 @@ public class AuthenticationManagementResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public RequiredActionProviderRepresentation getRequiredAction(@PathParam("alias") String alias) {
-        this.auth.requireView();
         RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(alias);
         if (model == null) {
             throw new NotFoundException("Failed to find required action: " + alias);
