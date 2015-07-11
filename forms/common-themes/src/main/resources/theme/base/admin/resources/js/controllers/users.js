@@ -129,10 +129,66 @@ module.controller('UserSessionsCtrl', function($scope, realm, user, sessions, Us
     }
 });
 
-module.controller('UserFederatedIdentityCtrl', function($scope, realm, user, federatedIdentities) {
+module.controller('UserFederatedIdentityCtrl', function($scope, $location, realm, user, federatedIdentities, UserFederatedIdentity, Notifications, Dialog) {
     $scope.realm = realm;
     $scope.user = user;
     $scope.federatedIdentities = federatedIdentities;
+
+    $scope.hasAnyProvidersToCreate = function() {
+        return realm.identityProviders.length - $scope.federatedIdentities.length > 0;
+    }
+
+    $scope.removeProviderLink = function(providerLink) {
+
+        console.log("Removing provider link: " + providerLink.identityProvider);
+
+        Dialog.confirmDelete(providerLink.identityProvider, 'Identity Provider Link', function() {
+            UserFederatedIdentity.remove({ realm: realm.realm, user: user.id, provider: providerLink.identityProvider }, function() {
+                Notifications.success("The provider link has been deleted.");
+                var indexToRemove = $scope.federatedIdentities.indexOf(providerLink);
+                $scope.federatedIdentities.splice(indexToRemove, 1);
+            });
+        });
+    }
+});
+
+module.controller('UserFederatedIdentityAddCtrl', function($scope, $location, realm, user, federatedIdentities, UserFederatedIdentity, Notifications) {
+    $scope.realm = realm;
+    $scope.user = user;
+    $scope.federatedIdentity = {};
+
+    var getAvailableProvidersToCreate = function() {
+        var realmProviders = [];
+        for (var i=0 ; i<realm.identityProviders.length ; i++) {
+            var providerAlias = realm.identityProviders[i].alias;
+            realmProviders.push(providerAlias);
+        };
+
+        for (var i=0 ; i<federatedIdentities.length ; i++) {
+            var providerAlias = federatedIdentities[i].identityProvider;
+            var index = realmProviders.indexOf(providerAlias);
+            realmProviders.splice(index, 1);
+        }
+
+        return realmProviders;
+    }
+    $scope.availableProvidersToCreate = getAvailableProvidersToCreate();
+
+    $scope.save = function() {
+        UserFederatedIdentity.save({
+            realm : realm.realm,
+            user: user.id,
+            provider: $scope.federatedIdentity.identityProvider
+        }, $scope.federatedIdentity, function(data, headers) {
+            $location.url("/realms/" + realm.realm + '/users/' + $scope.user.id + '/federated-identity');
+            Notifications.success("Provider link has been created.");
+        });
+    };
+
+    $scope.cancel = function() {
+         $location.url("/realms/" + realm.realm + '/users/' + $scope.user.id + '/federated-identity');
+    };
+
 });
 
 module.controller('UserConsentsCtrl', function($scope, realm, user, userConsents, UserConsents, Notifications) {

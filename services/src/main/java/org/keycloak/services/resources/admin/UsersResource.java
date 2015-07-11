@@ -261,14 +261,8 @@ public class UsersResource {
         UserRepresentation rep = ModelToRepresentation.toRepresentation(user);
 
         if (realm.isIdentityFederationEnabled()) {
-            Set<FederatedIdentityModel> identities = session.users().getFederatedIdentities(user, realm);
-            if (!identities.isEmpty()) {
-                List<FederatedIdentityRepresentation> reps = new LinkedList<>();
-                for (FederatedIdentityModel m : identities) {
-                    reps.add(ModelToRepresentation.toRepresentation(m));
-                }
-                rep.setFederatedIdentities(reps);
-            }
+            List<FederatedIdentityRepresentation> reps = getFederatedIdentities(user);
+            rep.setFederatedIdentities(reps);
         }
 
         if ((protector != null) && protector.isTemporarilyDisabled(session, realm, rep.getUsername())) {
@@ -351,6 +345,10 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
 
+        return getFederatedIdentities(user);
+    }
+
+    private List<FederatedIdentityRepresentation> getFederatedIdentities(UserModel user) {
         Set<FederatedIdentityModel> identities = session.users().getFederatedIdentities(user, realm);
         List<FederatedIdentityRepresentation> result = new ArrayList<FederatedIdentityRepresentation>();
 

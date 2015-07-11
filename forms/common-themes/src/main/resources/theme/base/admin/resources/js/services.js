@@ -305,12 +305,21 @@ module.factory('UserLogout', function($resource) {
         user : '@user'
     });
 });
-module.factory('UserFederatedIdentity', function($resource) {
+
+module.factory('UserFederatedIdentities', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:user/federated-identity', {
         realm : '@realm',
         user : '@user'
     });
 });
+module.factory('UserFederatedIdentity', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/:user/federated-identity/:provider', {
+        realm : '@realm',
+        user : '@user',
+        provider : '@provider'
+    });
+});
+
 module.factory('UserConsents', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:user/consents/:client', {
         realm : '@realm',
