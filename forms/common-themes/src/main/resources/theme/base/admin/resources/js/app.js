@@ -1649,7 +1649,8 @@ module.directive('kcProviderConfig', function ($modal) {
         scope: {
             config: '=',
             properties: '=',
-            realm: '='
+            realm: '=',
+            clients: '='
         },
         restrict: 'E',
         replace: true,
