@@ -2,8 +2,10 @@ package org.keycloak.exportimport;
 
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.services.managers.ApplianceBootstrap;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -12,7 +14,7 @@ public class ExportImportManager {
 
     private static final Logger logger = Logger.getLogger(ExportImportManager.class);
 
-    public void checkExportImport(KeycloakSessionFactory sessionFactory) {
+    public void checkExportImport(KeycloakSessionFactory sessionFactory, String contextPath) {
         String exportImportAction = ExportImportConfig.getAction();
         String realmName = ExportImportConfig.getRealmName();
 
@@ -46,9 +48,21 @@ public class ExportImportManager {
                     Strategy strategy = ExportImportConfig.getStrategy();
                     if (realmName == null) {
                         logger.infof("Full model import requested. Strategy: %s", strategy.toString());
+
+                        // Check if master realm was exported. If it's not, then it needs to be created before other realms are imported
+                        if (!importProvider.isMasterRealmExported()) {
+                            new ApplianceBootstrap().bootstrap(sessionFactory, contextPath);
+                        }
+
                         importProvider.importModel(sessionFactory, strategy);
                     } else {
                         logger.infof("Import of realm '%s' requested. Strategy: %s", realmName, strategy.toString());
+
+                        if (!realmName.equals(Config.getAdminRealm())) {
+                            // Check if master realm exists. If it's not, then it needs to be created before other realm is imported
+                            new ApplianceBootstrap().bootstrap(sessionFactory, contextPath);
+                        }
+
                         importProvider.importRealm(sessionFactory, realmName, strategy);
                     }
                     logger.info("Import finished successfully");
