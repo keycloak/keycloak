@@ -155,7 +155,7 @@ public class SyncProvidersTest {
     }
 
     @Test
-    public void test02duplicateUsernameSync() {
+    public void test02duplicateUsernameAndEmailSync() {
         LDAPObject duplicatedLdapUser;
 
         KeycloakSession session = keycloakRule.startSession();
@@ -168,8 +168,6 @@ public class SyncProvidersTest {
             // Add user to LDAP with duplicated username "user7"
             duplicatedLdapUser = FederationTestUtils.addLDAPUser(ldapFedProvider, testRealm, "user7", "User7FN", "User7LN", "user7-something@email.org", null, "126");
 
-            // Add user to LDAP with duplicated email "user7@email.org"
-            //FederationTestUtils.addLDAPUser(ldapFedProvider, testRealm, "user7-something", "User7FNN", "User7LNL", "user7@email.org", null, "126");
         } finally {
             keycloakRule.stopSession(session, true);
         }
