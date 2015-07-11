@@ -388,7 +388,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'UserSessionsCtrl'
         })
         .when('/realms/:realm/users/:user/federated-identity', {
-            templateUrl : resourceUrl + '/partials/user-federated-identity.html',
+            templateUrl : resourceUrl + '/partials/user-federated-identity-list.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -401,6 +401,21 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'UserFederatedIdentityCtrl'
+        })
+        .when('/create/federated-identity/:realm/:user', {
+            templateUrl : resourceUrl + '/partials/user-federated-identity-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                },
+                federatedIdentities : function(UserFederatedIdentityLoader) {
+                    return UserFederatedIdentityLoader();
+                }
+            },
+            controller : 'UserFederatedIdentityAddCtrl'
         })
         .when('/realms/:realm/users/:user/consents', {
             templateUrl : resourceUrl + '/partials/user-consents.html',

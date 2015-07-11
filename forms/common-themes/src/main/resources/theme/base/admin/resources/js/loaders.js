@@ -171,8 +171,8 @@ module.factory('UserSessionsLoader', function(Loader, UserSessions, $route, $q) 
     });
 });
 
-module.factory('UserFederatedIdentityLoader', function(Loader, UserFederatedIdentity, $route, $q) {
-    return Loader.query(UserFederatedIdentity, function() {
+module.factory('UserFederatedIdentityLoader', function(Loader, UserFederatedIdentities, $route, $q) {
+    return Loader.query(UserFederatedIdentities, function() {
         return {
             realm : $route.current.params.realm,
             user : $route.current.params.user
