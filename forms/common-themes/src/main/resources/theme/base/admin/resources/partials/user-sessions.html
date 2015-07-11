@@ -12,7 +12,7 @@
         <thead>
         <tr>
             <th class="kc-table-actions" colspan="6">
-                <div class="pull-right">
+                <div class="pull-right" data-ng-show="access.manageUsers">
                     <a class="btn btn-primary" ng-click="logoutAll()">Logout All Sessions</a>
                 </div>
             </th>
@@ -36,7 +36,7 @@
                 </div>
             </ul>
             </td>
-            <td><a href="" ng-click="logoutSession(session.id)">logout</a> </td>
+            <td><a data-ng-show="access.manageUsers" href="" ng-click="logoutSession(session.id)">logout</a> </td>
         </tr>
         </tbody>
     </table>
