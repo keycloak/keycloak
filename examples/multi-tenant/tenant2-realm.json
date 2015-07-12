@@ -21,7 +21,8 @@
             ],
             "realmRoles": [ "user" ],
             "clientRoles": {
-                "multi-tenant": [ "user" ]
+                "multi-tenant": [ "user" ],
+                "realm-management": [ "realm-admin" ]
             }
         }
     ],
