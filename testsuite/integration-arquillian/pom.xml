@@ -354,6 +354,11 @@
             <properties>
                 <auth.server.container>auth-server-wildfly</auth.server.container>
                 <exclude.adapters.relative>-</exclude.adapters.relative>
+                <wildfly.home>${containers.home}/keycloak-demo-${project.version}/keycloak</wildfly.home>
+                <keycloak.connectionsJpa.url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</keycloak.connectionsJpa.url>
+                <keycloak.connectionsJpa.driver>h2</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>sa</keycloak.connectionsJpa.password>
             </properties>
             <build>
                 <plugins>
@@ -386,12 +391,56 @@
                         </executions>
                     </plugin>
                     <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <version>1.0</version>
+                        <executions>
+                            <execution>
+                                <id>configure-wildfly-datasource</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${wildfly.home}/standalone/configuration</dir>
+                                            <stylesheet>src/main/xslt/wildfly9/datasource.xsl</stylesheet>
+                                            <includes>
+                                                <include>standalone.xml</include>
+                                            </includes>
+                                            <outputDir>${wildfly.home}/standalone/configuration</outputDir>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>jdbc.url</name>
+                                                    <value>${keycloak.connectionsJpa.url}</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>driver</name>
+                                                    <value>${keycloak.connectionsJpa.driver}</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>username</name>
+                                                    <value>${keycloak.connectionsJpa.user}</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>password</name>
+                                                    <value>${keycloak.connectionsJpa.password}</value>
+                                                </parameter>
+                                            </parameters>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
                                 <auth.server.wildfly>true</auth.server.wildfly>
-                                <auth.server.wildfly.home>${containers.home}/keycloak-demo-${project.version}/keycloak</auth.server.wildfly.home>
+                                <auth.server.wildfly.home>${wildfly.home}</auth.server.wildfly.home>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
