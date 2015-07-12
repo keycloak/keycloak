@@ -13,4 +13,10 @@ public interface ImportProvider extends Provider {
     void importModel(KeycloakSessionFactory factory, Strategy strategy) throws IOException;
 
     void importRealm(KeycloakSessionFactory factory, String realmName, Strategy strategy) throws IOException;
+
+    /**
+     * @return true if master realm was previously exported and is available in the data to be imported
+     * @throws IOException
+     */
+    boolean isMasterRealmExported() throws IOException;
 }

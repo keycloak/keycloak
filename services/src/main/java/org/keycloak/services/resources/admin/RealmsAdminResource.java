@@ -168,12 +168,8 @@ public class RealmsAdminResource {
         for (InputPart inputPart : inputParts) {
             // inputPart.getBody doesn't work as content-type is wrong, and inputPart.setMediaType is not supported on AS7 (RestEasy 2.3.2.Final)
             rep = JsonSerialization.readValue(inputPart.getBodyAsString(), RealmRepresentation.class);
-            RealmModel realm;
-            try {
-                realm = realmManager.importRealm(rep);
-            } catch (ModelDuplicateException e) {
-                return ErrorResponse.exists("Realm " + rep.getRealm() + " already exists");
-            }
+
+            RealmModel realm = realmManager.importRealm(rep);
 
             grantPermissionsToRealmCreator(realm);
             
