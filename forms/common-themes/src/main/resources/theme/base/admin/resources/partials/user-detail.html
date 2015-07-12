@@ -119,7 +119,7 @@
             <div class="col-md-10 col-md-offset-2" data-ng-show="!create">
                 <button kc-save  data-ng-show="access.manageUsers && changed">Save</button>
                 <button kc-reset data-ng-show="access.manageUsers && changed">Cancel</button>
-                <button data-ng-show="access.impersonation" class="btn btn-default" data-ng-click="impersonate()">Impersonate</button>
+                <button data-ng-show="access.impersonation" class="btn btn-default" data-ng-click="impersonate()" tooltip="Login as this user.  If user is in same realm as you, your current login session will be logged out before you are logged in as this user.">Impersonate</button>
             </div>
         </div>
 
