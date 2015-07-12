@@ -8,6 +8,9 @@ import org.keycloak.ClientConnection;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -293,12 +296,20 @@ public class UsersResource {
             AuthenticationManager.expireRememberMeCookie(realm, uriInfo, clientConnection);
             AuthenticationManager.backchannelLogout(session, authenticatedRealm, userSession, uriInfo, clientConnection, headers, true);
         }
+        EventBuilder event = new EventBuilder(realm, session, clientConnection);
+
         UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
         AuthenticationManager.createLoginCookie(realm, userSession.getUser(), userSession, uriInfo, clientConnection);
         URI redirect = AccountService.accountServiceApplicationPage(uriInfo).build(realm.getName());
         Map<String, Object> result = new HashMap<>();
         result.put("sameRealm", sameRealm);
         result.put("redirect", redirect.toString());
+        event.event(EventType.IMPERSONATE)
+             .session(userSession)
+             .user(user)
+             .detail(Details.IMPERSONATOR_REALM,authenticatedRealm.getName())
+             .detail(Details.IMPERSONATOR, auth.getAuth().getUser().getUsername()).success();
+
         return result;
     }
 

@@ -10,6 +10,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 public class ImpersonationConstants {
     public static String IMPERSONATION_ROLE = "impersonation";
 
+
     public static void setupMasterRealmRole(RealmProvider model, RealmModel realm) {
         RealmModel adminRealm;
         RoleModel adminRole;
