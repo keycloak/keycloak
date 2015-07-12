@@ -31,8 +31,8 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
         property = new ProviderConfigProperty();
         property.setName(ROLE_CONFIG);
         property.setLabel("Role");
-        property.setHelpText("Role you want added to the token.  To specify an application role the syntax is appname.approle, i.e. myapp.myrole");
-        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Role you want added to the token.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To specify an application role the syntax is appname.approle, i.e. myapp.myrole");
+        property.setType(ProviderConfigProperty.ROLE_TYPE);
         configProperties.add(property);
     }
 

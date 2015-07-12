@@ -24,6 +24,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.page.console.AdminConsole;
+import static org.keycloak.testsuite.page.console.Realm.MASTER;
 
 /**
  *
@@ -36,12 +37,13 @@ public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends A
     protected P page;
 
     @Before
-    public void beforeUITest() {
+    public void beforeConsoleTest() {
         loginAsAdmin();
     }
 
     @After
-    public void afterUITest() {
+    public void afterConsoleTest() {
+        adminConsole.setTemplateValues(MASTER);
         logOut();
     }
 

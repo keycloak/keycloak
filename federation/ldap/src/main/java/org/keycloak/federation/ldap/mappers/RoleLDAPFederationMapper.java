@@ -239,7 +239,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         Set<String> memberships = getExistingMemberships(mapperModel, ldapRole);
         memberships.remove(ldapUser.getDn().toString());
 
-        // Some membership placeholder needs to be always here as "member" is mandatory attribute on some LDAP servers. But on active directory! (Empty membership is not allowed here)
+        // Some membership placeholder needs to be always here as "member" is mandatory attribute on some LDAP servers. But not on active directory! (Empty membership is not allowed here)
         if (memberships.size() == 0 && !ldapProvider.getLdapIdentityStore().getConfig().isActiveDirectory()) {
             memberships.add(LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE);
         }

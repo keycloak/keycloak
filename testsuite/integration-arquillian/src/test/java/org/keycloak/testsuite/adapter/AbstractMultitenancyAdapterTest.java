@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.TestRealms.loadRealm;
-import static org.keycloak.testsuite.adapter.AbstractExamplesAdapterTest.exampleDeployment;
+import static org.keycloak.testsuite.adapter.AbstractDemoExampleAdapterTest.exampleDeployment;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.page.adapter.MultiTenant;
 import org.keycloak.testsuite.page.adapter.MultiTenantExample;
@@ -49,12 +49,12 @@ public abstract class AbstractMultitenancyAdapterTest extends AbstractAdapterTes
     }
 
     @Deployment(name = MultiTenantExample.DEPLOYMENT_NAME)
-    protected static WebArchive customerPortal() throws IOException {
-        return exampleDeployment("examples-multitenant"); // example's name is multitenant.war
+    protected static WebArchive multiTenantExample() throws IOException {
+        return exampleDeployment("examples-multitenant");
     }
 
     @Override
-    public void loadAdapterTestRealmsInto(List<RealmRepresentation> testRealms) {
+    public void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms) {
         testRealms.add(loadRealm("/adapter-test/tenant1-realm.json"));
         testRealms.add(loadRealm("/adapter-test/tenant2-realm.json"));
     }
@@ -144,7 +144,7 @@ public abstract class AbstractMultitenancyAdapterTest extends AbstractAdapterTes
     }
 
     @Test
-    @Ignore
+    @Ignore // FIXME
     public void simpleTestMultiTenantExample() {
         String tenant1LoginUrl = OIDCLoginProtocolService.authUrl(authServer.getUriBuilder()).build("tentant1").toString();
 

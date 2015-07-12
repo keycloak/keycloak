@@ -29,7 +29,13 @@ public class AdminMessagesProvider implements MessagesProvider {
     @Override
     public String getMessage(String messageKey, Object... parameters) {
         String message = messagesBundle.getProperty(messageKey, messageKey);
-        return new MessageFormat(message, locale).format(parameters);
+
+        try {
+            return new MessageFormat(message, locale).format(parameters);
+        } catch (Exception e) {
+            logger.warnf("Failed to format message due to: %s", e.getMessage());
+            return message;
+        }
     }
 
     @Override

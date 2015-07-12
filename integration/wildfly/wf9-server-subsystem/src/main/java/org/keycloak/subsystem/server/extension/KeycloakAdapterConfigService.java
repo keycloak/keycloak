@@ -26,7 +26,7 @@ public final class KeycloakAdapterConfigService {
 
     static final KeycloakAdapterConfigService INSTANCE = new KeycloakAdapterConfigService();
 
-    static final String DEPLOYMENT_NAME = "keycloak-server";
+    static final String DEPLOYMENT_NAME = "keycloak-server.war";
 
     private String webContext;
 

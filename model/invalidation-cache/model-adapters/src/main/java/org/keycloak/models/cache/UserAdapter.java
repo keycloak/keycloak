@@ -61,6 +61,17 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
+    public Long getCreatedTimestamp() {
+        // get from cached always as it is immutable
+        return cached.getCreatedTimestamp();
+    }
+
+    @Override
+    public void setCreatedTimestamp(Long timestamp) {
+        // nothing to do as this value is immutable
+    }
+
+    @Override
     public boolean isEnabled() {
         if (updated != null) return updated.isEnabled();
         return cached.isEnabled();

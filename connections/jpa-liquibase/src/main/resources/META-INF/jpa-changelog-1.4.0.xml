@@ -17,9 +17,18 @@
             <column name="PROVIDER_ID" type="VARCHAR(36)" defaultValue="basic-flow">
                 <constraints nullable="false"/>
             </column>
+            <column name="TOP_LEVEL" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="BUILT_IN" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
         </addColumn>
         <addColumn tableName="AUTHENTICATION_EXECUTION">
             <column name="AUTH_FLOW_ID" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="AUTH_CONFIG" type="VARCHAR(36)">
                 <constraints nullable="true"/>
             </column>
         </addColumn>
@@ -125,5 +134,8 @@
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REQUIRED_ACTION_PROVIDER" constraintName="FK_REQ_ACT_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
         <addForeignKeyConstraint baseColumnNames="CLIENT_SESSION" baseTableName="CLIENT_USER_SESSION_NOTE" constraintName="FK_CL_USR_SES_NOTE" referencedColumnNames="ID" referencedTableName="CLIENT_SESSION"/>
         <dropColumn tableName="CLIENT_SESSION" columnName="ACTION"/>
+        <addColumn tableName="USER_ENTITY">
+            <column name="CREATED_TIMESTAMP" type="BIGINT"/>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>

@@ -193,17 +193,14 @@
                         </listitem>
                     </varlistentry>
                     <varlistentry>
-                        <term>unitName</term>
+                        <term>schema</term>
                         <listitem>
                             <para>
-                                Allow you to specify name of persistence unit if you want to provide your own persistence.xml file for JPA configuration.
-                                If this option is used, then all other configuration options are ignored as you are expected to configure
-                                all JPA/DB properties in your own persistence.xml file. Hence you can remove properties "dataSource" and "databaseSchema" in this case.
+                                Specify the default database schema to use
                             </para>
                         </listitem>
                     </varlistentry>
                 </variablelist>
-                For more info about Hibernate properties, see <ulink url="http://hibernate.org/orm/documentation/">Hibernate and JPA documentation</ulink> .
             </para>
             <section>
                 <title>Tested databases</title>

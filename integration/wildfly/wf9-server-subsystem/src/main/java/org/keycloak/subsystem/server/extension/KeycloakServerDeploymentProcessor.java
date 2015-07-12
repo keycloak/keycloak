@@ -21,6 +21,8 @@ import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
+import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceTarget;
 
 /**
  * DUP responsible for setting the web context of a Keycloak auth server.
@@ -28,6 +30,8 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessor;
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
 public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcessor {
+
+    private static final ServiceName cacheContainerService = ServiceName.of("jboss", "infinispan", "keycloak");
 
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
@@ -45,6 +49,19 @@ public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcesso
             throw new DeploymentUnitProcessingException("Can't determine web context/module for Keycloak Server");
         }
         description.setModuleName(webContext);
+
+        addInfinispanCaches(phaseContext);
+    }
+
+    private void addInfinispanCaches(DeploymentPhaseContext context) {
+        if (context.getServiceRegistry().getService(cacheContainerService) != null) {
+            ServiceTarget st = context.getServiceTarget();
+            st.addDependency(cacheContainerService);
+            st.addDependency(cacheContainerService.append("realms"));
+            st.addDependency(cacheContainerService.append("users"));
+            st.addDependency(cacheContainerService.append("sessions"));
+            st.addDependency(cacheContainerService.append("loginFailures"));
+        }
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.util;
 
+import javax.ws.rs.core.UriBuilder;
 import org.keycloak.testsuite.page.AbstractPage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -13,56 +14,69 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  * @author tkyjovsk
  */
 public class PageAssert {
-	
+
     public static void assertCurrentUrl(AbstractPage page) {
-        assertCurrentUrl(page.getDriver(), page.getUrlString());
+        assertCurrentUrl(page.getDriver(), page.toString());
     }
 
     public static void assertCurrentUrl(WebDriver driver, final String url) {
-		WebDriverWait wait = new WebDriverWait(driver, 5);
-		ExpectedCondition<Boolean> urlStartsWith = new ExpectedCondition<Boolean>() {
+        WebDriverWait wait = new WebDriverWait(driver, 5);
+        ExpectedCondition<Boolean> urlStartsWith = new ExpectedCondition<Boolean>() {
 
-			@Override
-			public Boolean apply(WebDriver wd) {
-				return wd.getCurrentUrl().equals(url);
-			}
-		};
-		wait.until(urlStartsWith);
-        assertEquals(driver.getCurrentUrl(), url);
+            @Override
+            public Boolean apply(WebDriver wd) {
+                return startsWithNormalized(wd.getCurrentUrl(), url);
+            }
+        };
+        wait.until(urlStartsWith);
+        assertEqualsNormalized(driver.getCurrentUrl(), url);
     }
 
     public static void assertCurrentUrlStartsWith(AbstractPage page) {
-        assertCurrentUrlStartsWith(page.getDriver(), page.getUrlString());
+        assertCurrentUrlStartsWith(page.getDriver(), page.toString());
     }
 
     public static void assertCurrentUrlStartsWith(WebDriver driver, final String url) {
-		WebDriverWait wait = new WebDriverWait(driver, 10);
-		ExpectedCondition<Boolean> urlStartsWith = new ExpectedCondition<Boolean>() {
+        WebDriverWait wait = new WebDriverWait(driver, 10);
+        ExpectedCondition<Boolean> urlStartsWith = new ExpectedCondition<Boolean>() {
 
-			@Override
-			public Boolean apply(WebDriver wd) {
-				return wd.getCurrentUrl().startsWith(url);
-			}
-		};
-		wait.until(urlStartsWith);
-		assertTrue(driver.getCurrentUrl().startsWith(url));
+            @Override
+            public Boolean apply(WebDriver wd) {
+                return startsWithNormalized(wd.getCurrentUrl(), url);
+            }
+        };
+        wait.until(urlStartsWith);
+        assertTrue(startsWithNormalized(driver.getCurrentUrl(), url));
     }
 
     public static void assertCurrentUrlDoesntStartWith(AbstractPage page) {
-        assertCurrentUrlDoesntStartWith(page.getDriver(), page.getUrlString());
+        assertCurrentUrlDoesntStartWith(page.getDriver(), page.toString());
     }
 
     public static void assertCurrentUrlDoesntStartWith(WebDriver driver, final String url) {
-		WebDriverWait wait = new WebDriverWait(driver, 5);
-		ExpectedCondition<Boolean> urlDoesntStartWith = new ExpectedCondition<Boolean>() {
+        WebDriverWait wait = new WebDriverWait(driver, 5);
+        ExpectedCondition<Boolean> urlDoesntStartWith = new ExpectedCondition<Boolean>() {
 
-			@Override
-			public Boolean apply(WebDriver wd) {
-				return !wd.getCurrentUrl().startsWith(url);
-			}
-		};
-		wait.until(urlDoesntStartWith);
-        assertFalse(driver.getCurrentUrl().startsWith(url));
+            @Override
+            public Boolean apply(WebDriver wd) {
+                return !startsWithNormalized(wd.getCurrentUrl(), url);
+            }
+        };
+        wait.until(urlDoesntStartWith);
+        assertFalse(startsWithNormalized(driver.getCurrentUrl(), url));
+    }
+
+    // this normalization is needed because of slash-encoding in uri fragment (the part after #)
+    public static String normalizeUri(String uri) {
+        return UriBuilder.fromUri(uri).build().toASCIIString();
+    }
+
+    public static boolean startsWithNormalized(String str1, String str2) {
+        return normalizeUri(str1).startsWith(normalizeUri(str2));
+    }
+
+    public static void assertEqualsNormalized(String str1, String str2) {
+        assertEquals(normalizeUri(str1), normalizeUri(str2));
     }
 
 }

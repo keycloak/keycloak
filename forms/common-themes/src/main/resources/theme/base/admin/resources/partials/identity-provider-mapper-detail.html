@@ -7,7 +7,8 @@
         <li class="active" data-ng-hide="create">{{mapper.name|capitalize}}</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{mapper.name|capitalize}}</h1>
+    <h1 data-ng-hide="create">{{mapper.name|capitalize}}<i style="padding-left: 20px" class="pficon pficon-delete" data-ng-show="!create && access.manageRealm" 
+    	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
     <h1 data-ng-show="create">Add Identity Provider Mapper</h1>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
@@ -44,23 +45,7 @@
                 </div>
                 <kc-tooltip>{{mapperType.helpText}}</kc-tooltip>
             </div>
-            <div data-ng-repeat="option in mapperType.properties" class="form-group">
-                <label class="col-md-2 control-label">{{option.label}}</label>
-
-                <div class="col-sm-4" data-ng-hide="option.type == 'boolean' || option.type == 'List'">
-                    <input class="form-control" type="text" data-ng-model="mapper.config[ option.name ]" >
-                </div>
-                <div class="col-sm-4" data-ng-show="option.type == 'boolean'">
-                    <input ng-model="mapper.config[ option.name ]" value="'true'" name="option.name" id="option.name" onoffswitchmodel />
-                </div>
-                <div class="col-sm-4" data-ng-show="option.type == 'List'">
-                    <select ng-model="mapper.config[ option.name ]" ng-options="data for data in option.defaultValue">
-                        <option value="" selected> Select one... </option>
-                    </select>
-                </div>
-                <kc-tooltip>{{option.helpText}}</kc-tooltip>
-            </div>
-
+            <kc-provider-config config="mapper.config" properties="mapperType.properties" realm="realm"></kc-provider-config>
         </fieldset>
         <div class="pull-right form-actions" data-ng-show="create && access.manageRealm">
             <button kc-cancel data-ng-click="cancel()">Cancel</button>
@@ -70,7 +55,6 @@
         <div class="pull-right form-actions" data-ng-show="!create && access.manageRealm">
             <button kc-reset data-ng-show="changed">Clear changes</button>
             <button kc-save  data-ng-show="changed">Save</button>
-            <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>
         </div>
     </form>
 </div>

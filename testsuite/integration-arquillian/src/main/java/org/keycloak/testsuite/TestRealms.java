@@ -1,5 +1,8 @@
 package org.keycloak.testsuite;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.HashMap;
 import javax.ws.rs.NotFoundException;
@@ -30,10 +33,9 @@ public class TestRealms extends HashMap<String, RealmRepresentation> {
             System.out.println(" realm already exists on server, re-importing");
             realmResource.remove();
         } catch (NotFoundException nfe) {
-//            System.out.println(" realm not found on server");
+            // expected when realm does not exist
         }
         keycloak.realms().create(realm);
-//        System.out.println("realm imported");
     }
 
     public static void removeRealm(Keycloak keycloak, RealmRepresentation testRealm) {
@@ -41,8 +43,15 @@ public class TestRealms extends HashMap<String, RealmRepresentation> {
     }
 
     public static RealmRepresentation loadRealm(String realmConfig) {
-//        System.out.println("Loading realm from " + realmConfig);
         return loadRealm(TestRealms.class.getResourceAsStream(realmConfig));
+    }
+
+    public static RealmRepresentation loadRealm(File realmFile) {
+        try {
+            return loadRealm(new FileInputStream(realmFile));
+        } catch (FileNotFoundException ex) {
+            throw new IllegalStateException("Test realm file not found: " + realmFile);
+        }
     }
 
     public static RealmRepresentation loadRealm(InputStream is) {

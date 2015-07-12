@@ -29,7 +29,7 @@ import java.util.Set;
 public class DefaultKeycloakSession implements KeycloakSession {
 
     private final DefaultKeycloakSessionFactory factory;
-    private final Map<Integer, Provider> providers = new HashMap<Integer, Provider>();
+    private final Map<Integer, Provider> providers = new HashMap<>();
     private final List<Provider> closable = new LinkedList<Provider>();
     private final DefaultKeycloakTransactionManager transactionManager;
     private RealmProvider model;

@@ -20,6 +20,7 @@ import org.keycloak.testsuite.arquillian.ContainersTestEnricher.AdminPasswordUpd
 import org.keycloak.testsuite.page.console.AdminConsole;
 import org.keycloak.testsuite.page.console.AuthServer;
 import org.keycloak.testsuite.page.console.AuthServerContextRoot;
+import static org.keycloak.testsuite.page.console.Realm.MASTER;
 import static org.keycloak.testsuite.util.PageAssert.*;
 import org.keycloak.testsuite.page.console.fragment.MenuPage;
 import org.keycloak.testsuite.page.console.fragment.Navigation;
@@ -60,13 +61,15 @@ public abstract class AbstractKeycloakTest {
 
     @Before
     public void beforeAbstractKeycloakTest() {
+        setPageUriTemplateValues();
+        
         driverSettings();
 
         if (!isAdminPasswordUpdated()) {
             updateAdminPassword();
         }
 
-        keycloak = Keycloak.getInstance(authServer.getUrlString(),
+        keycloak = Keycloak.getInstance(authServer.toString(),
                 "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
 
         importTestRealms();
@@ -74,7 +77,7 @@ public abstract class AbstractKeycloakTest {
 
     @After
     public void afterAbstractKeycloakTest() {
-        removeTestRealms();
+//        removeTestRealms();
         keycloak.close();
         driver.manage().deleteAllCookies();
     }
@@ -116,6 +119,10 @@ public abstract class AbstractKeycloakTest {
         driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
         driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
         driver.manage().window().maximize();
+    }
+    
+    public void setPageUriTemplateValues() {
+        adminConsole.setTemplateValues(MASTER);
     }
 
     public abstract void loadTestRealmsInto(List<RealmRepresentation> testRealms);

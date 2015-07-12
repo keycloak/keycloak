@@ -463,7 +463,7 @@
                         <version>2.10</version>
                         <executions>
                             <execution>
-                                <id>examples</id>
+                                <id>example-wars</id>
                                 <phase>generate-test-resources</phase>
                                 <goals>
                                     <goal>copy</goal>
@@ -489,8 +489,20 @@
                                             <type>war</type>
                                         </artifactItem>       
                                         <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>js-console</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>war</type>
+                                        </artifactItem>       
+                                        <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>examples-multitenant</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>war</type>
+                                        </artifactItem>                    
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>examples-basicauth</artifactId>        
                                             <version>${project.version}</version>
                                             <type>war</type>
                                         </artifactItem>                    
@@ -500,7 +512,7 @@
                                 </configuration>
                             </execution>                            
                             <execution>
-                                <id>examples-testrealm</id>
+                                <id>example-realms</id>
                                 <phase>generate-test-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -512,7 +524,7 @@
                                             <artifactId>keycloak-examples-dist</artifactId>        
                                             <version>${project.version}</version>
                                             <type>zip</type>
-                                            <includes>*/preconfigured-demo/testrealm.json</includes>
+                                            <includes>**/*realm.json</includes>
                                         </artifactItem>
                                     </artifactItems>
                                     <outputDirectory>${examples.home}</outputDirectory>

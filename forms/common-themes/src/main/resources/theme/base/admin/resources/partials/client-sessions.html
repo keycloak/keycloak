@@ -48,7 +48,7 @@
         </tfoot>
         <tbody>
         <tr data-ng-repeat="session in sessions">
-            <td><a href="#/realms/{{realm.realm}}/users/{{session.user}}">{{session.user}}</a></td>
+            <td><a href="#/realms/{{realm.realm}}/users/{{session.userId}}">{{session.username}}</a></td>
             <td>{{session.ipAddress}}</td>
             <td>{{session.start | date:'medium'}}</td>
         </tr>

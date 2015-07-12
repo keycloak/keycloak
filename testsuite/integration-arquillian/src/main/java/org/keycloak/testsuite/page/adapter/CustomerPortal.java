@@ -3,13 +3,13 @@ package org.keycloak.testsuite.page.adapter;
 import java.net.URL;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.page.AbstractPageWithProvidedUrl;
+import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 
 /**
  *
  * @author tkyjovsk
  */
-public class CustomerPortal extends AbstractPageWithProvidedUrl {
+public class CustomerPortal extends AbstractPageWithInjectedUrl {
 
     public static final String DEPLOYMENT_NAME = "customer-portal";
 
@@ -18,7 +18,7 @@ public class CustomerPortal extends AbstractPageWithProvidedUrl {
     private URL url;
 
     @Override
-    public URL getProvidedUrl() {
+    public URL getInjectedUrl() {
         return url;
     }
 

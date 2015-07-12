@@ -10,9 +10,9 @@ Running the tests: `mvn test` or `mvn clean test`
 
 The testsuite requires a container for Keycloak Server to be selected.
 This container is used by all tests in the test suite.
-It can be selected using property `auth.server.container`.
+It can be selected with property `auth.server.container`.
 
-By default the testsuite runs the server on embedded Undertow.
+*By default* the tests run with server on embedded *Undertow*.
 
 ### Containers Supported for Keycloak Server
 
@@ -27,9 +27,7 @@ See the relevant container definitions in `arquillian.xml` located in the **test
 ```
 AbstractKeycloakTest
 ├── AbstractAdminConsoleTest
-├── AbstractAdapterTest
-├── …
-…
+└── AbstractAdapterTest
 ```
 
 ### AbstractKeycloakTest
@@ -50,12 +48,13 @@ Handles test realms. Provides Admin Client for REST operations.
 Manages *container lifecycles*.
 
 `ContainersTestEnricher` is a custom Arquillian observer that handles lifecycles of auth server and app server containers for each test class.
-Containers are started during @BeforeClass - and shut down during @AfterClass event.
+Containers are started during `@BeforeClass` and shut down during `@AfterClass` event.
 
-*Optionally* each test can be annotated with `@AuthServerContainer("qualifier")` and `@AppServerConatiner("qualifier")` annotations.
+*Optionally* each test class can be annotated with `@AuthServerContainer("qualifier")` and `@AppServerConatiner("qualifier")` annotations 
+to indicate containers required for the test.
 
-* In case `@AuthServerContainer` is not provided the *auth server qualifier* is loaded from `auth.server.container` property.
-* In case `@AppServerContainer` is not provided or it's value is the same as *auth server qualifier*, the app server isn't started.
+* In case `@AuthServerContainer` is not present the *auth server qualifier* is loaded from `auth.server.container` property.
+* In case `@AppServerContainer` is not present or it's value is the same as *auth server qualifier*, the app server isn't started for the test class.
 
 ## Admin Console Tests
 
@@ -77,10 +76,10 @@ Multiple profiles can be enabled for a single test run (Maven build).
 
 | Container | Arquillian Qualifier | Maven | Dependencies |
 | --- | --- | --- | --- |
-| **Wildfly 9** Relative | `auth-server-wildfly` | `-Pauth-server-wildfly` | `keycloak-demo-dist` servers both as auth-server and app-server (relative test scenario) |
+| **Wildfly 9** Relative | `auth-server-wildfly` | `-Pauth-server-wildfly` | `keycloak-demo-dist` serves both as auth-server and app-server (relative test scenario) |
 | **Wildfly 9** | `app-server-wildfly` | `-Papp-server-wildfly` | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
 | **Wildfly 9** Vanilla | `app-server-wildfly-vanilla` | `-Papp-server-wildfly-vanilla` (mutually exclusive with `-Papp-server-wildfly`) | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
-| **JBoss AS 7** | `app-server-as7` | `-Papp-server-as7` | `jboss-as-dist`, `keycloak-adapter-dist-as7` |
+| ~~**JBoss AS 7**~~ not fully functional yet | `app-server-as7` | `-Papp-server-as7` | `jboss-as-dist`, `keycloak-adapter-dist-as7` |
 | **Tomcat 8** | `app-server-tomcat` | `-Papp-server-tomcat` | `tomcat`, `keycloak-tomcat8-adapter-dist` |
 
 See the relevant container definitions in `arquillian.xml` located in the **test resources** folder.
@@ -94,27 +93,62 @@ See the relevant container definitions in `arquillian.xml` located in the **test
 AbstractKeycloakTest
 └── AbstractAdapterTest
     ├── AbstractServletsAdapterTest
+    |   ├── Relative…
     |   ├── Wildfly…
     |   ├── Tomcat…
     |   …
-    └── AbstractExamplesAdapterTest
-        ├── Wildfly…
-        ├── Tomcat…
+    └── AbstractExampleAdapterTest
+        ├── AbstractDemoExampleAdapterTest
+        |   ├── Relative…
+        |   ├── Wildfly…
+        |   ├── Tomcat…
+        |   …
+        ├── AbstractBasicAuthExampleAdapterTest
+        |   ├── Relative…
+        |   ├── Wildfly…
+        |   ├── Tomcat…
+        |   …
         …
 ```
 
 ### Relative vs Non-relative scenario
 
-| Scenario | Description | Realm config (server-side) | Adapter config (client-side) |
+The test suite can handle both types.
+It automatically modifies imported test realms and deployments' adapter configs based on scenario type.
+
+| Scenario | Description | Realm config (server side) | Adapter config (client side) |
 | --- | --- | --- | --- |
-| **Relative** | Both Keycloak Server and test apps running in the same container. | clients' `baseUrl`, `adminUrl` and `redirect-uris` can be relative | `auth-server-url` can be relative |
-| **Non-relative** | Test apps run in a different container than Keycloak Server. | clients' `baseUrl`, `adminUrl` and `redirect-uris` need to include FQDN of the app server | `auth-server-url` needs to include FQDN of the auth server|
+| **Relative** | Both Keycloak Server and test apps running in the same container. | client `baseUrl`, `adminUrl` and `redirect-uris` can be relative | `auth-server-url` can be relative |
+| **Non-relative** | Test apps run in a different container than Keycloak Server. | client `baseUrl`, `adminUrl` and `redirect-uris` need to include FQDN of the app server | `auth-server-url` needs to include FQDN of the auth server|
 
 ### Adapter Libraries Mode
 
-1. **Provided.** By container, e.g. as a subsystem.
-2. **Bundled.** In the deployed war. Used with `app-server-wildfly-vanilla` which doesn't have adapter subsystem installed.
+1. **Provided.** By container, e.g. as a subsystem. Default.
+2. **Bundled.** In the deployed war in `/WEB-INF/libs`. Used with `app-server-wildfly-vanilla` which doesn't have adapter subsystem installed.
 
+### Adapter Config Mode
+
+1. ~~**Provided.** In `standalone.xml` using `secure-deployment`. Only supported for *Wildfly*.~~ not supported yet
+2. **Bundled.** In the deployed war in `/WEB-INF/keycloak.json`. Default.
+
+### Adapters Test Coverage
+
+| Module | Coverage | Supported Containers |
+| --- | --- | --- |
+| Test Servlets | Good | All |
+| Demo | Minimal, WIP | `auth-server-wildfly` (relative) |
+| Admin Client |  |
+| Cordova |  |
+| CORS |  |
+| JS Console | Minimal, WIP | `auth-server-wildfly` (relative) |
+| Providers |  |
+| Themes |  |
+| Multitenancy | WIP |
+| Basic Auth | Good | All |
+| Fuse |  |
+| SAML |  |
+| LDAP |  |
+| Kerberos |  |
 
 ## Supported Browsers
 
@@ -134,7 +168,7 @@ Custom extensions are registered in `META-INF/services/org.jboss.arquillian.core
  * Allows to skip loading disabled containers based on `enabled` config property in `arquillian.xml`.
 * Custom extension
  * `ContainersTestEnricher` - Handles lifecycles of auth-server and app-server.
- * `CustomUndertowContainer` - Custom undertow conatiner adapter.
+ * `CustomUndertowContainer` - A custom container controller for JAX-RS-enabled Undertow with Keycloak Server.
  * `DeploymentArchiveProcessor` - Modifies adapter config before deployment on app server based on relative/non-relative scenario.
  * `URLProvider` - Fixes URLs injected by Arquillian which contain 127.0.0.1 instead of localhost.
  * `JiraTestExecutionDecider` - Skipping tests for unresolved JIRAs.

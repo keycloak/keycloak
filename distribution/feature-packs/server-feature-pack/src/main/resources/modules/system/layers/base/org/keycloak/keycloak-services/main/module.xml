@@ -49,6 +49,7 @@
         <module name="org.keycloak.keycloak-model-sessions-jpa" services="import"/>
         <module name="org.keycloak.keycloak-model-sessions-mem" services="import"/>
         <module name="org.keycloak.keycloak-model-sessions-mongo" services="import"/>
+        <module name="org.keycloak.keycloak-saml-core" services="import"/>
         <module name="org.keycloak.keycloak-saml-protocol" services="import"/>
         <module name="org.keycloak.keycloak-services" export="true" services="import"/>
         <module name="org.keycloak.keycloak-social-core" services="import"/>

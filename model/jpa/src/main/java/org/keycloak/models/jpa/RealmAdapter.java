@@ -1544,6 +1544,8 @@ public class RealmAdapter implements RealmModel {
         model.setAlias(entity.getAlias());
         model.setProviderId(entity.getProviderId());
         model.setDescription(entity.getDescription());
+        model.setBuiltIn(entity.isBuiltIn());
+        model.setTopLevel(entity.isTopLevel());
         return model;
     }
 
@@ -1569,6 +1571,8 @@ public class RealmAdapter implements RealmModel {
         entity.setAlias(model.getAlias());
         entity.setDescription(model.getDescription());
         entity.setProviderId(model.getProviderId());
+        entity.setBuiltIn(model.isBuiltIn());
+        entity.setTopLevel(model.isTopLevel());
 
     }
 
@@ -1579,6 +1583,8 @@ public class RealmAdapter implements RealmModel {
         entity.setAlias(model.getAlias());
         entity.setDescription(model.getDescription());
         entity.setProviderId(model.getProviderId());
+        entity.setBuiltIn(model.isBuiltIn());
+        entity.setTopLevel(model.isTopLevel());
         entity.setRealm(realm);
         realm.getAuthenticationFlows().add(entity);
         em.persist(entity);
@@ -1613,6 +1619,7 @@ public class RealmAdapter implements RealmModel {
         model.setFlowId(entity.getFlowId());
         model.setParentFlow(entity.getParentFlow().getId());
         model.setAutheticatorFlow(entity.isAutheticatorFlow());
+        model.setAuthenticatorConfig(entity.getAuthenticatorConfig());
         return model;
     }
 
@@ -1631,6 +1638,7 @@ public class RealmAdapter implements RealmModel {
         entity.setPriority(model.getPriority());
         entity.setFlowId(model.getFlowId());
         entity.setRequirement(model.getRequirement());
+        entity.setAuthenticatorConfig(model.getAuthenticatorConfig());
         AuthenticationFlowEntity flow = em.find(AuthenticationFlowEntity.class, model.getParentFlow());
         entity.setParentFlow(flow);
         flow.getExecutions().add(entity);
@@ -1653,6 +1661,7 @@ public class RealmAdapter implements RealmModel {
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
+        entity.setAuthenticatorConfig(model.getAuthenticatorConfig());
         entity.setFlowId(model.getFlowId());
         em.flush();
     }

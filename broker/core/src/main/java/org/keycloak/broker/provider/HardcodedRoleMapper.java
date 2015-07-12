@@ -27,15 +27,15 @@ public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
         property = new ProviderConfigProperty();
         property.setName(ROLE);
         property.setLabel("Role");
-        property.setHelpText("Role to grant to user.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
-        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Role to grant to user.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
+        property.setType(ProviderConfigProperty.ROLE_TYPE);
         configProperties.add(property);
     }
 
 
 
     public static String[] parseRole(String role) {
-        int scopeIndex = role.indexOf('.');
+        int scopeIndex = role.lastIndexOf('.');
         if (scopeIndex > -1) {
             String appName = role.substring(0, scopeIndex);
             role = role.substring(scopeIndex + 1);

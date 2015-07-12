@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.page.console.settings.user;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
@@ -29,6 +28,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import org.keycloak.testsuite.model.RequiredUserAction;
+import org.keycloak.testsuite.page.console.Realm;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
 import static org.openqa.selenium.By.*;
 
@@ -36,169 +36,174 @@ import static org.openqa.selenium.By.*;
  *
  * @author Filip Kiss
  */
-public class UserPage extends AdminConsole {
+public class UserPage extends Realm {
 
-	@FindBy(id = "username")
-	private WebElement usernameInput;
+    @FindBy(id = "username")
+    private WebElement usernameInput;
 
-	@FindBy(id = "email")
-	private WebElement emailInput;
+    @FindBy(id = "email")
+    private WebElement emailInput;
 
-	@FindBy(id = "firstName")
-	private WebElement firstNameInput;
+    @FindBy(id = "firstName")
+    private WebElement firstNameInput;
 
-	@FindBy(id = "lastName")
-	private WebElement lastNameInput;
+    @FindBy(id = "lastName")
+    private WebElement lastNameInput;
 
-	@FindBy(id = "emailVerified")
-	private WebElement emailVerifiedSwitchToggle;
+    @FindBy(id = "emailVerified")
+    private WebElement emailVerifiedSwitchToggle;
 
-	@FindBy(css = "label[for='userEnabled']")
-	private WebElement userEnabledSwitchToggle;
+    @FindBy(css = "label[for='userEnabled']")
+    private WebElement userEnabledSwitchToggle;
 
-	@FindBy(css = "input[class*='select2-input']")
-	private WebElement requiredUserActionsInput;
+    @FindBy(css = "input[class*='select2-input']")
+    private WebElement requiredUserActionsInput;
 
-	@FindBy(className = "select2-result-label")
-	private WebElement requiredUserActionsConfirm;
-	
-	@FindBy(className = "select2-search-choice-close")
-	private List<WebElement> removeRequiredActionsList;
+    @FindBy(className = "select2-result-label")
+    private WebElement requiredUserActionsConfirm;
 
-	@FindBy(id = "password")
-	private WebElement password;
+    @FindBy(className = "select2-search-choice-close")
+    private List<WebElement> removeRequiredActionsList;
 
-	@FindBy(id = "confirmPassword")
-	private WebElement confirmPassword;
+    @FindBy(id = "password")
+    private WebElement password;
 
-	@FindBy(css = "input[class*='search']")
-	private WebElement searchInput;
+    @FindBy(id = "confirmPassword")
+    private WebElement confirmPassword;
 
-	@FindBy(css = "table[class*='table']")
-	private WebElement dataTable;
+    @FindBy(css = "input[class*='search']")
+    private WebElement searchInput;
 
-	@FindBy(css = "tr[ng-repeat='user in users']")
-	private WebElement tableRow;
+    @FindBy(css = "table[class*='table']")
+    private WebElement dataTable;
 
-	@FindByJQuery("button[kc-cancel] ")
-	private WebElement cancel;
+    @FindBy(css = "tr[ng-repeat='user in users']")
+    private WebElement tableRow;
 
-	@FindBy(css = "div[class='input-group-addon'] i")
-	private WebElement searchButton;
+    @FindByJQuery("button[kc-cancel] ")
+    private WebElement cancel;
 
-	public void addUser(User user) {
-		primaryButtons.get(1).click();
-		waitAjaxForElement(usernameInput);
-		usernameInput.sendKeys(user.getUserName());
-		emailInput.sendKeys(user.getEmail());
-		firstNameInput.sendKeys(user.getFirstName());
-		lastNameInput.sendKeys(user.getLastName());
-		if (!user.isUserEnabled()) {
-			userEnabledSwitchToggle.click();
-		}
-		if (user.isEmailVerified()) {
-			emailVerifiedSwitchToggle.click();
-		}
-		for(RequiredUserAction action : user.getRequiredUserActions()) {
-			requiredUserActionsInput.sendKeys(action.getActionName());
-			requiredUserActionsConfirm.click();
-		}
-		requiredUserActionsConfirm.click();
-		primaryButton.click();
-	}
+    @FindBy(css = "div[class='input-group-addon'] i")
+    private WebElement searchButton;
 
-	public void addPasswordForUser(User user) {
-		password.sendKeys(user.getPassword());
-		confirmPassword.sendKeys(user.getPassword());
-		dangerButton.click();
-		waitAjaxForElement(deleteConfirmationButton);
-		deleteConfirmationButton.click();
-	}
+    @Override
+    public String getFragment() {
+        return super.getFragment() + "/users";
+    }
 
-	public User findUser(String username) {
-		waitAjaxForElement(searchInput);
-		searchInput.sendKeys(username);
-		searchButton.click();
-		List<User> users = getAllRows();
-		if (users.isEmpty()) {
-			return null;
+    public void addUser(User user) {
+        primaryButtons.get(1).click();
+        waitAjaxForElement(usernameInput);
+        usernameInput.sendKeys(user.getUserName());
+        emailInput.sendKeys(user.getEmail());
+        firstNameInput.sendKeys(user.getFirstName());
+        lastNameInput.sendKeys(user.getLastName());
+        if (!user.isUserEnabled()) {
+            userEnabledSwitchToggle.click();
+        }
+        if (user.isEmailVerified()) {
+            emailVerifiedSwitchToggle.click();
+        }
+        for (RequiredUserAction action : user.getRequiredUserActions()) {
+            requiredUserActionsInput.sendKeys(action.getActionName());
+            requiredUserActionsConfirm.click();
+        }
+        requiredUserActionsConfirm.click();
+        primaryButton.click();
+    }
 
-		} else {
-			assertEquals(1, users.size());
-			return users.get(0);
-		}
-	}
+    public void addPasswordForUser(User user) {
+        password.sendKeys(user.getPassword());
+        confirmPassword.sendKeys(user.getPassword());
+        dangerButton.click();
+        waitAjaxForElement(deleteConfirmationButton);
+        deleteConfirmationButton.click();
+    }
 
-	public void updateUser(User user) {
-		goToUser(user);
-		waitAjaxForElement(usernameInput);
-		usernameInput.sendKeys(user.getUserName());
-		emailInput.clear();
-		emailInput.sendKeys(user.getEmail());
-		if (!user.isUserEnabled()) {
-			userEnabledSwitchToggle.click();
-		}
-		if (user.isEmailVerified()) {
-			emailVerifiedSwitchToggle.click();
-		}
-		if(user.getRequiredUserActions().isEmpty()) {
-			for(WebElement e : removeRequiredActionsList) {
-				e.click();
-			}
-		} else {
-			for(RequiredUserAction action : user.getRequiredUserActions()) {
-				requiredUserActionsInput.sendKeys(action.getActionName());
-				requiredUserActionsConfirm.click();
-			}
-		}
-		primaryButtons.get(1).click();
-	}
+    public User findUser(String username) {
+        waitAjaxForElement(searchInput);
+        searchInput.sendKeys(username);
+        searchButton.click();
+        List<User> users = getAllRows();
+        if (users.isEmpty()) {
+            return null;
 
-	public void deleteUser(String username) {
-		findUser(username);
-		goToUser(username);
-		waitAjaxForElement(dangerButton);
-		dangerButton.click();
-		waitAjaxForElement(deleteConfirmationButton);
-		deleteConfirmationButton.click();
-	}
+        } else {
+            assertEquals(1, users.size());
+            return users.get(0);
+        }
+    }
 
-	public void cancel() {
-		cancel.click();
-	}
+    public void updateUser(User user) {
+        goToUser(user);
+        waitAjaxForElement(usernameInput);
+        usernameInput.sendKeys(user.getUserName());
+        emailInput.clear();
+        emailInput.sendKeys(user.getEmail());
+        if (!user.isUserEnabled()) {
+            userEnabledSwitchToggle.click();
+        }
+        if (user.isEmailVerified()) {
+            emailVerifiedSwitchToggle.click();
+        }
+        if (user.getRequiredUserActions().isEmpty()) {
+            for (WebElement e : removeRequiredActionsList) {
+                e.click();
+            }
+        } else {
+            for (RequiredUserAction action : user.getRequiredUserActions()) {
+                requiredUserActionsInput.sendKeys(action.getActionName());
+                requiredUserActionsConfirm.click();
+            }
+        }
+        primaryButtons.get(1).click();
+    }
 
-	public void showAllUsers() {
-		primaryButtons.get(0).click();
-	}
+    public void deleteUser(String username) {
+        findUser(username);
+        goToUser(username);
+        waitAjaxForElement(dangerButton);
+        dangerButton.click();
+        waitAjaxForElement(deleteConfirmationButton);
+        deleteConfirmationButton.click();
+    }
 
-	public void goToUser(User user) {
-		waitAjaxForElement(tableRow);
-		dataTable.findElement(linkText(user.getUserName())).click();
-	}
+    public void cancel() {
+        cancel.click();
+    }
 
-	public void goToUser(String name) {
-		goToUser(new User(name));
-	}
+    public void showAllUsers() {
+        primaryButtons.get(0).click();
+    }
 
-	private List<User> getAllRows() {
-		List<User> users = new ArrayList<>();
-		List<WebElement> rows = dataTable.findElements(cssSelector("tbody tr"));
-		if (rows.size() > 1) {
-			for (WebElement rowElement : rows) {
-				if (rowElement.isDisplayed()) {
-					User user = new User();
-					List<WebElement> tds = rowElement.findElements(tagName("td"));
-					if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
-						user.setUserName(tds.get(0).getText());
-						user.setLastName(tds.get(1).getText());
-						user.setFirstName(tds.get(2).getText());
-						user.setEmail(tds.get(3).getText());
-						users.add(user);
-					}
-				}
-			}
-		}
-		return users;
-	}
+    public void goToUser(User user) {
+        waitAjaxForElement(tableRow);
+        dataTable.findElement(linkText(user.getUserName())).click();
+    }
+
+    public void goToUser(String name) {
+        goToUser(new User(name));
+    }
+
+    private List<User> getAllRows() {
+        List<User> users = new ArrayList<>();
+        List<WebElement> rows = dataTable.findElements(cssSelector("tbody tr"));
+        if (rows.size() > 1) {
+            for (WebElement rowElement : rows) {
+                if (rowElement.isDisplayed()) {
+                    User user = new User();
+                    List<WebElement> tds = rowElement.findElements(tagName("td"));
+                    if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
+                        user.setUserName(tds.get(0).getText());
+                        user.setLastName(tds.get(1).getText());
+                        user.setFirstName(tds.get(2).getText());
+                        user.setEmail(tds.get(3).getText());
+                        users.add(user);
+                    }
+                }
+            }
+        }
+        return users;
+    }
 
 }

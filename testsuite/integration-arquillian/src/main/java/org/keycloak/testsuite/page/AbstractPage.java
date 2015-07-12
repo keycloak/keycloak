@@ -1,12 +1,10 @@
 package org.keycloak.testsuite.page;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -26,42 +24,43 @@ public abstract class AbstractPage {
 
     public abstract UriBuilder createUriBuilder();
 
+    public String getFragment() {
+        return "";
+    }
+
     public UriBuilder getUriBuilder() {
         if (builder == null) {
             builder = createUriBuilder();
+            String fragment = getFragment();
+            if (fragment != null && !fragment.isEmpty()) {
+                builder.fragment(fragment);
+            }
         }
         return builder;
     }
 
-    protected AbstractPage setTemplateValue(String template, Object value) {
+    public AbstractPage setTemplateValue(String template, Object value) {
         templateValues.put(template, value);
         return this;
     }
 
-    public URL getUrl() {
-        try {
-            return createUriBuilder().buildFromMap(templateValues).toURL();
-        } catch (MalformedURLException ex) {
-            throw new IllegalStateException("Page URL is malformed.");
-        }
+    public Object getTemplateValue(String template) {
+        return templateValues.get(template);
     }
 
-    public String getUrlString() {
-        return getUrl().toExternalForm();
+    public URI getUri() {
+        return getUriBuilder().buildFromMap(templateValues);
     }
 
-    public void navigateTo() {
+    public AbstractPage navigateTo() {
         navigateToUsing(driver);
+        return this;
     }
 
     public void navigateToUsing(WebDriver driver) {
-        System.out.println("navigating to " + getUrlString());
-        driver.get(getUrlString());
-    }
-
-    public void navigateToUsingSecondBrowser(
-            @Drone @SecondBrowser WebDriver driver2) {
-        driver2.navigate().to(getUrlString());
+        String uri = getUri().toASCIIString();
+        System.out.println("navigating to " + uri);
+        driver.get(uri);
     }
 
     public WebDriver getDriver() {
@@ -70,7 +69,7 @@ public abstract class AbstractPage {
 
     @Override
     public String toString() {
-        return getUrlString();
+        return getUri().toASCIIString();
     }
 
 }

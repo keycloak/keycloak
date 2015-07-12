@@ -4,20 +4,17 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.junit.Before;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.ContainersTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.page.adapter.AppServerContextRoot;
+import org.keycloak.testsuite.page.console.Realm;
 
 /**
  *
@@ -29,8 +26,6 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
     @Page
     protected AppServerContextRoot appServerContextRoot;
 
-    protected String LOGIN_URL;
-
     public static final String JBOSS_DEPLOYMENT_STRUCTURE_XML = "jboss-deployment-structure.xml";
     public static final URL jbossDeploymentStructure = AbstractServletsAdapterTest.class
             .getResource("/adapter-test/" + JBOSS_DEPLOYMENT_STRUCTURE_XML);
@@ -38,28 +33,25 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
     public static final URL tomcatContext = AbstractServletsAdapterTest.class
             .getResource("/adapter-test/" + TOMCAT_CONTEXT_XML);
 
-    @Before
-    public void beforeAdapterTest() {
-        LOGIN_URL = OIDCLoginProtocolService.authUrl(authServer.createUriBuilder())
-                .build("demo").toString();
-    }
+    @Page
+    protected Realm testRealm;
 
     @Override
     public void loadTestRealmsInto(List<RealmRepresentation> testRealms) {
-        loadAdapterTestRealmsInto(testRealms);
-        for (RealmRepresentation realm : testRealms) {
-            System.out.println("Setting redirect-uris in test realm '" + realm.getRealm() + "' as " + (isRelative() ? "" : "non-") + "relative");
+        loadAdapterTestRealmsTo(testRealms);
+        for (RealmRepresentation tr : testRealms) {
+            System.out.println("Setting redirect-uris in test realm '" + tr.getRealm() + "' as " + (isRelative() ? "" : "non-") + "relative");
             if (isRelative()) {
-                modifyClientRedirectUris(realm, appServerContextRoot.getUrlString(), "");
-                modifyClientUrls(realm, appServerContextRoot.getUrlString(), "");
+                modifyClientRedirectUris(tr, appServerContextRoot.toString(), "");
+                modifyClientUrls(tr, appServerContextRoot.toString(), "");
             } else {
-                modifyClientRedirectUris(realm, "^(/.*/\\*)", appServerContextRoot.getUrlString() + "$1");
-                modifyClientUrls(realm, "^(/.*)", appServerContextRoot.getUrlString() + "$1");
+                modifyClientRedirectUris(tr, "^(/.*/\\*)", appServerContextRoot.toString() + "$1");
+                modifyClientUrls(tr, "^(/.*)", appServerContextRoot.toString() + "$1");
             }
         }
     }
 
-    public abstract void loadAdapterTestRealmsInto(List<RealmRepresentation> testRealms);
+    public abstract void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms);
 
     public boolean isRelative() {
         return ContainersTestEnricher.isRelative(this.getClass());

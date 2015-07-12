@@ -51,14 +51,14 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     }
 
     @Override
-    public void update(KeycloakSession session, Connection connection) {
+    public void update(KeycloakSession session, Connection connection, String defaultSchema) {
         logger.debug("Starting database update");
 
         // Need ThreadLocal as liquibase doesn't seem to have API to inject custom objects into tasks
         ThreadLocalSessionContext.setCurrentSession(session);
 
         try {
-            Liquibase liquibase = getLiquibase(connection);
+            Liquibase liquibase = getLiquibase(connection, defaultSchema);
 
             List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null);
             if (!changeSets.isEmpty()) {
@@ -93,9 +93,9 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     }
 
     @Override
-    public void validate(Connection connection) {
+    public void validate(Connection connection, String defaultSchema) {
         try {
-            Liquibase liquibase = getLiquibase(connection);
+            Liquibase liquibase = getLiquibase(connection, defaultSchema);
 
             liquibase.validate();
         } catch (Exception e) {
@@ -103,7 +103,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         }
     }
 
-    private Liquibase getLiquibase(Connection connection) throws Exception {
+    private Liquibase getLiquibase(Connection connection, String defaultSchema) throws Exception {
         ServiceLocator sl = ServiceLocator.getInstance();
 
         if (!System.getProperties().containsKey("liquibase.scan.packages")) {
@@ -125,6 +125,9 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
 
         LogFactory.setInstance(new LogWrapper());
         Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
+        if (defaultSchema != null) {
+            database.setDefaultSchemaName(defaultSchema);
+        }
         return new Liquibase(CHANGELOG, new ClassLoaderResourceAccessor(getClass().getClassLoader()), database);
     }
 
