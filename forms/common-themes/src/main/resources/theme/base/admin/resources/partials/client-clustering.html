@@ -47,9 +47,9 @@
                     <tr>
                         <th class="kc-table-actions" colspan="3" data-ng-show="access.manageClients">
                             <div class="pull-right">
-                                <a class="btn btn-primary" tooltip="Manually register cluster node. This is usually not needed as cluster node should be registered automatically by adapter"
+                                <a class="btn btn-default" tooltip="Manually register cluster node. This is usually not needed as cluster node should be registered automatically by adapter"
                                    tooltip-placement="bottom" href="#/register-node/realms/{{realm.realm}}/clients/{{client.id}}/clustering">Register node manually</a>
-                                <a class="btn btn-primary" data-ng-click="testNodesAvailable()" data-ng-show="nodeRegistrations && nodeRegistrations.length > 0">Test cluster availability</a>
+                                <a class="btn btn-default" data-ng-click="testNodesAvailable()" data-ng-show="nodeRegistrations && nodeRegistrations.length > 0">Test cluster availability</a>
                             </div>
                         </th>
                     </tr>
