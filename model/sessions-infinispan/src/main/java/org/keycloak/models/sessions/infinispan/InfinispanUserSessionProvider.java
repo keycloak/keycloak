@@ -236,7 +236,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 .execute();
 
         for (String id : sessions.keySet()) {
-            removeUserSession(realm, getUserSession(realm, id));
+            removeUserSession(realm, id);
         }
     }
 
@@ -252,7 +252,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 .execute();
 
         for (String id : map.keySet()) {
-            removeUserSession(realm, getUserSession(realm, id));
+            removeUserSession(realm, id);
         }
 
         map = new MapReduceTask(sessionCache)
@@ -361,7 +361,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
     }
 
-    void removeUserSession(RealmModel realm, String userSessionId) {
+    protected void removeUserSession(RealmModel realm, String userSessionId) {
         tx.remove(sessionCache, userSessionId);
 
         Map<String, String> map = new MapReduceTask(sessionCache)
