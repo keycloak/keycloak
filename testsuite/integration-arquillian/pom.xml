@@ -67,6 +67,18 @@
         
         <version.shrinkwrap.resolvers>2.1.1</version.shrinkwrap.resolvers>
         
+        <!-- database settings -->
+        <!-- properties for configuring datasource subsystem in standalone.xml -->
+        <keycloak.connectionsJpa.url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</keycloak.connectionsJpa.url>
+        <keycloak.connectionsJpa.driver>h2</keycloak.connectionsJpa.driver>
+        <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
+        <keycloak.connectionsJpa.password>sa</keycloak.connectionsJpa.password>
+        
+        <!-- properties for deploying jdbc driver, default values are for h2 DB -->
+        <jdbc.mvn.groupId>org.keycloak</jdbc.mvn.groupId>
+        <jdbc.mvn.artifactId>keycloak-parent</jdbc.mvn.artifactId>
+        <jdbc.mvn.version>${project.version}</jdbc.mvn.version>
+        <jdbc.mvn.type>pom</jdbc.mvn.type>
     </properties>
 
     <dependencyManagement>
@@ -355,19 +367,6 @@
                 <auth.server.container>auth-server-wildfly</auth.server.container>
                 <exclude.adapters.relative>-</exclude.adapters.relative>
                 <wildfly.home>${containers.home}/keycloak-demo-${project.version}/keycloak</wildfly.home>
-                
-                <!-- properties for configuring datasource subsystem in standalone.xml -->
-                <keycloak.connectionsJpa.url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</keycloak.connectionsJpa.url>
-                <keycloak.connectionsJpa.driver>h2</keycloak.connectionsJpa.driver>
-                <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
-                <keycloak.connectionsJpa.password>sa</keycloak.connectionsJpa.password>
-                
-                <!-- properties for deploying jdbc driver, default values are for h2 DB -->
-                <jdbc.mvn.groupId>org.keycloak</jdbc.mvn.groupId>
-                <jdbc.mvn.artifactId>keycloak-parent</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${project.version}</jdbc.mvn.version>
-                <jdbc.mvn.type>pom</jdbc.mvn.type>
-                <jdbc.outputDirectory>${project.build.directory}</jdbc.outputDirectory>
             </properties>
             <build>
                 <plugins>
@@ -412,7 +411,7 @@
                                             <type>${jdbc.mvn.type}</type>
                                         </artifactItem>
                                     </artifactItems>
-                                    <outputDirectory>${jdbc.outputDirectory}</outputDirectory>
+                                    <outputDirectory>${wildfly.home}/standalone/deployments</outputDirectory>
                                     <overWriteIfNewer>true</overWriteIfNewer>
                                 </configuration>
                             </execution>
