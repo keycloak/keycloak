@@ -2,12 +2,14 @@ html,body {
     height: 100%;
 }
 
+/**
 .navbar-pf .navbar-brand {
     background: url('../img/brand.svg') no-repeat 0px 5px;
     display: block;
     height: 25px;
     width: 200px;
 }
+**/
 
 form {
     margin-top: 20px;
@@ -225,7 +227,6 @@ table {
 
 .realm-add{
   padding: 10px;
-  bor
 }
 
 .realm-selector h2{
@@ -275,6 +276,7 @@ table {
   background-position: center center!important;
   background-image: url('../img/keyclok-logo.svg')!important;
   background-size: 148px 36px !important;
+background-repeat: no-repeat;
   width: 148px!important;
 }
 

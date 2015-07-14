@@ -884,21 +884,22 @@ module.factory('ClientOrigins', function($resource) {
 });
 
 module.factory('Current', function(Realm, $route, $rootScope) {
-    var current = {};
-
-    current.realms = {};
-    current.realm = null;
+    var current = {
+        realms: {},
+        realm: null
+    };
 
     $rootScope.$on('$routeChangeStart', function() {
-        current.realm = null;
         current.realms = Realm.query(null, function(realms) {
+            var currentRealm = null;
             if ($route.current.params.realm) {
                 for (var i = 0; i < realms.length; i++) {
                     if (realms[i].realm == $route.current.params.realm) {
-                        current.realm =  realms[i];
+                        currentRealm =  realms[i];
                     }
                 }
             }
+            current.realm = currentRealm;
         });
     });
 
