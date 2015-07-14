@@ -15,6 +15,7 @@ import org.openqa.selenium.support.FindBy;
 public class JSConsoleExample extends AbstractPageWithInjectedUrl {
 
     public static final String DEPLOYMENT_NAME = "js-console-example";
+    public static final String CLIENT_ID = "js-console";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)

@@ -70,7 +70,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                     adapterConfig.setAuthServerUrl("/auth");
 //                ac.setRealmKey(null); // TODO verify if realm key is required for relative scneario
                 } else {
-                    adapterConfig.setAuthServerUrl(URLProvider.getAuthServerContextRoot() + "/auth");
+                    adapterConfig.setAuthServerUrl(getAuthServerContextRoot() + "/auth");
                     adapterConfig.setRealmKey(REALM_KEY);
                 }
 

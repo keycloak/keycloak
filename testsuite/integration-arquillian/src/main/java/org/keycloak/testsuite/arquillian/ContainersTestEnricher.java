@@ -1,13 +1,17 @@
 package org.keycloak.testsuite.arquillian;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
+import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.junit.AfterClass;
 import org.keycloak.testsuite.arquillian.annotation.AdapterLibsLocationProperty;
@@ -27,8 +31,13 @@ public class ContainersTestEnricher {
     private static final String AUTH_SERVER_CONTAINER_PROPERTY = "auth.server.container";
     private static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
 
+    @Inject
+    @ClassScoped
+    private InstanceProducer<ContextRootStore> contextRootStore;
+
     public void startContainers(@Observes(precedence = -1) BeforeClass event) {
         resolveQualifiersFromTestClass(event.getTestClass().getJavaClass());
+        initializeContextRootStore(event.getTestClass().getJavaClass());
         startContainers();
     }
 
@@ -113,6 +122,22 @@ public class ContainersTestEnricher {
         }
     }
 
+    private void initializeContextRootStore(Class testClass) {
+        String authServerContextRootStr = getAuthServerContextRoot();
+        String appServerContextRootStr = isRelative(testClass)
+                ? authServerContextRootStr
+                : getAppServerContextRoot();
+        try {
+            URL authServerContextRoot = new URL(authServerContextRootStr);
+            URL appServerContextRoot = new URL(appServerContextRootStr);
+
+            contextRootStore.set(new ContextRootStore(authServerContextRoot, appServerContextRoot));
+
+        } catch (MalformedURLException ex) {
+            throw new IllegalStateException("Malformed url.", ex);
+        }
+    }
+
     public static class AdminPasswordUpdateTracker {
 
         private static final Set<String> authServersWithUpdatedAdminPassword = new HashSet<>();
@@ -144,6 +169,17 @@ public class ContainersTestEnricher {
 
     public static boolean isTomcatAdapterTest(Class testClass) {
         return getAppServerQualifier(testClass).contains("tomcat");
+    }
+
+    public static String getAuthServerContextRoot() {
+        // TODO find if this can be extracted from ARQ metadata instead of System properties
+        return "http://localhost:" + Integer.parseInt(
+                System.getProperty("auth.server.http.port", "8180"));
+    }
+
+    public static String getAppServerContextRoot() {
+        return "http://localhost:" + Integer.parseInt(
+                System.getProperty("app.server.http.port", "8280"));
     }
 
 }

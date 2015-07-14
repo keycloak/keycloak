@@ -83,6 +83,35 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
         }
     }
 
+    /**
+     * Modifies baseUrl, adminUrl and redirectUris for client based on real
+     * deployment url of the app.
+     *
+     * @param realm
+     * @param clientId
+     * @param deploymentUrl
+     */
+    protected void fixClientUrisUsingDeploymentUrl(RealmRepresentation realm, String clientId, String deploymentUrl) {
+        for (ClientRepresentation client : realm.getClients()) {
+            if (clientId.equals(client.getClientId())) {
+                if (client.getBaseUrl() != null) {
+                    client.setBaseUrl(deploymentUrl);
+                }
+                if (client.getAdminUrl() != null) {
+                    client.setAdminUrl(deploymentUrl);
+                }
+                List<String> redirectUris = client.getRedirectUris();
+                if (redirectUris != null) {
+                    List<String> newRedirectUris = new ArrayList<>();
+                    for (String uri : redirectUris) {
+                        newRedirectUris.add(deploymentUrl + "/*");
+                    }
+                    client.setRedirectUris(newRedirectUris);
+                }
+            }
+        }
+    }
+
     public static void addContextXml(Archive archive, String contextPath) {
         try {
             String contextXmlContent = IOUtils.toString(tomcatContext.openStream())

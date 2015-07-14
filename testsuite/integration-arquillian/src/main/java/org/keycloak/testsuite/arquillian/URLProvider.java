@@ -6,31 +6,36 @@ import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
+import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
 
 public class URLProvider extends URLResourceProvider {
 
     public static final String LOCALHOST_ADDRESS = "127.0.0.1";
     public static final String LOCALHOST_HOSTNAME = "localhost";
 
+    @Inject
+    Instance<ContextRootStore> contextRootStore;
+
     @Override
     public Object doLookup(ArquillianResource resource, Annotation... qualifiers) {
         URL url = (URL) super.doLookup(resource, qualifiers);
-        if (url == null) {
-//            try {
-//                for (Annotation a : qualifiers) {
-//                    if (AuthServerContainer.class.isAssignableFrom(a.annotationType())) {
-//                        return new URL(getAuthServerContextRoot());
-//                    }
-//                    if (AppServerContainer.class.isAssignableFrom(a.annotationType())) {
-//                        System.out.println("injecting app server context");
-//                        return new URL(getAppServerContextRoot());
-//                    }
-//                }
-//            } catch (MalformedURLException ex) {
-//                throw new IllegalStateException("Cannot inject context root.", ex);
-//            }
-        } else {
+
+        // inject context roots if annotation present
+        for (Annotation a : qualifiers) {
+            if (AuthServerContainer.class.isAssignableFrom(a.annotationType())) {
+                return contextRootStore.get().getAuthServerContextRoot();
+            }
+            if (AppServerContainer.class.isAssignableFrom(a.annotationType())) {
+                return contextRootStore.get().getAppServerContextRoot();
+            }
+        }
+
+        // fix injected URLs
+        if (url != null) {
             try {
                 url = fixLocalhost(url);
                 url = removeTrailingSlash(url);
@@ -40,17 +45,6 @@ public class URLProvider extends URLResourceProvider {
             System.out.println("Fixed injected @ArquillianResource URL to: " + url);
         }
         return url;
-    }
-
-    public static String getAuthServerContextRoot() {
-        // TODO find if this can be extracted from ARQ metadata instead of System properties
-        return "http://localhost:" + Integer.parseInt(
-                System.getProperty("auth.server.http.port", "8180"));
-    }
-
-    public static String getAppServerContextRoot() {
-        return "http://localhost:" + Integer.parseInt(
-                System.getProperty("app.server.http.port", "8280"));
     }
 
     public URL fixLocalhost(URL url) throws MalformedURLException {

@@ -7,13 +7,12 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import static org.junit.Assert.assertTrue;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.TestRealms.loadRealm;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.page.adapter.JSConsoleExample;
-import static org.keycloak.testsuite.util.RealmAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 
 public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampleAdapterTest {
@@ -28,7 +27,9 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
     @Override
     public void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms) {
-        testRealms.add(loadRealm(new File(EXAMPLES_HOME_DIR + "/js-console/example-realm.json")));
+        RealmRepresentation jsConsoleRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/js-console/example-realm.json"));
+        fixClientUrisUsingDeploymentUrl(jsConsoleRealm, JSConsoleExample.CLIENT_ID, jsConsoleExample.getUri().toASCIIString());
+        testRealms.add(jsConsoleRealm);
     }
 
     @Override
@@ -38,7 +39,6 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     }
 
     @Test
-    @Ignore("Need to put deployment's real context path into test realm. It is not /js-console.")
     public void testJSConsoleAuth() {
         jsConsoleExample.navigateTo();
         assertCurrentUrlStartsWith(jsConsoleExample);
@@ -47,10 +47,10 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         jsConsoleExample.logIn();
         loginPage.login("user", "invalid-password");
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlDoesntStartWith(jsConsoleExample);
 
         loginPage.login("invalid-user", "password");
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlDoesntStartWith(jsConsoleExample);
 
         loginPage.login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
