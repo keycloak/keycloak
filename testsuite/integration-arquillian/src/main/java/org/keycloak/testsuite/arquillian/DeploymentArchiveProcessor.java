@@ -70,7 +70,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                     adapterConfig.setAuthServerUrl("/auth");
 //                ac.setRealmKey(null); // TODO verify if realm key is required for relative scneario
                 } else {
-                    adapterConfig.setAuthServerUrl(getAuthServerContextRoot() + "/auth");
+                    adapterConfig.setAuthServerUrl(getAuthServerContextRootFromSystemProperty() + "/auth");
                     adapterConfig.setRealmKey(REALM_KEY);
                 }
 
@@ -122,7 +122,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
     }
 
     protected void modifyWebXml(Archive<?> archive, TestClass testClass) {
-        if (isTomcatAdapterTest(testClass.getJavaClass())) {
+        if (isTomcatAppServer(testClass.getJavaClass())) {
             try {
                 String webXmlContent = IOUtils.toString(
                         archive.get(WEBXML_PATH).getAsset().openStream());

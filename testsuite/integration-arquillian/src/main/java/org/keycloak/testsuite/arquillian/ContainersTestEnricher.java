@@ -123,10 +123,10 @@ public class ContainersTestEnricher {
     }
 
     private void initializeContextRootStore(Class testClass) {
-        String authServerContextRootStr = getAuthServerContextRoot();
+        String authServerContextRootStr = getAuthServerContextRootFromSystemProperty();
         String appServerContextRootStr = isRelative(testClass)
                 ? authServerContextRootStr
-                : getAppServerContextRoot();
+                : getAppServerContextRootFromSystemProperty();
         try {
             URL authServerContextRoot = new URL(authServerContextRootStr);
             URL appServerContextRoot = new URL(appServerContextRootStr);
@@ -163,21 +163,26 @@ public class ContainersTestEnricher {
         }
     }
 
-    public static boolean isWildflyAdapterTest(Class testClass) {
+    public static boolean isWildflyAppServer(Class testClass) {
         return getAppServerQualifier(testClass).contains("wildfly");
     }
 
-    public static boolean isTomcatAdapterTest(Class testClass) {
+    public static boolean isTomcatAppServer(Class testClass) {
         return getAppServerQualifier(testClass).contains("tomcat");
     }
 
-    public static String getAuthServerContextRoot() {
+    public static boolean isOSGiAppServer(Class testClass) {
+        String q = getAppServerQualifier(testClass);
+        return q.contains("karaf") || q.contains("fuse");
+    }
+
+    public static String getAuthServerContextRootFromSystemProperty() {
         // TODO find if this can be extracted from ARQ metadata instead of System properties
         return "http://localhost:" + Integer.parseInt(
                 System.getProperty("auth.server.http.port", "8180"));
     }
 
-    public static String getAppServerContextRoot() {
+    public static String getAppServerContextRootFromSystemProperty() {
         return "http://localhost:" + Integer.parseInt(
                 System.getProperty("app.server.http.port", "8280"));
     }

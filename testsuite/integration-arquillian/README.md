@@ -140,7 +140,7 @@ It automatically modifies imported test realms and deployments' adapter configs 
 | Admin Client |  |
 | Cordova |  |
 | CORS |  |
-| JS Console | Minimal, WIP | `auth-server-wildfly` (relative) |
+| JS Console | Good | `auth-server-wildfly` (relative) |
 | Providers |  |
 | Themes |  |
 | Multitenancy | WIP |
