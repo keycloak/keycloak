@@ -46,8 +46,8 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     private static final String CHANGELOG = "META-INF/jpa-changelog-master.xml";
 
     @Override
-    public String getCurrentVersionSql() {
-        return "SELECT ID from DATABASECHANGELOG ORDER BY DATEEXECUTED DESC LIMIT 1";
+    public String getCurrentVersionSql(String defaultSchema) {
+        return "SELECT ID from " + getTable("DATABASECHANGELOG", defaultSchema) + " ORDER BY DATEEXECUTED DESC LIMIT 1";
     }
 
     @Override
@@ -65,7 +65,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
                 if (changeSets.get(0).getId().equals(FIRST_VERSION)) {
                     Statement statement = connection.createStatement();
                     try {
-                        statement.executeQuery("SELECT id FROM REALM");
+                        statement.executeQuery("SELECT id FROM " + getTable("REALM", defaultSchema));
 
                         logger.infov("Updating database from {0} to {1}", FIRST_VERSION, changeSets.get(changeSets.size() - 1).getId());
                         liquibase.markNextChangeSetRan(null);
@@ -229,6 +229,10 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             return logger;
         }
 
+    }
+
+    private String getTable(String table, String defaultSchema) {
+        return defaultSchema != null ? defaultSchema + "." + table : table;
     }
 
 }

@@ -196,7 +196,7 @@
                         <term>schema</term>
                         <listitem>
                             <para>
-                                Specify the default database schema to use
+                                Specify the database schema to use
                             </para>
                         </listitem>
                     </varlistentry>
