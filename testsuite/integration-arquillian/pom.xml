@@ -366,7 +366,7 @@
             <properties>
                 <auth.server.container>auth-server-wildfly</auth.server.container>
                 <exclude.adapters.relative>-</exclude.adapters.relative>
-                <wildfly.home>${containers.home}/keycloak-demo-${project.version}/keycloak</wildfly.home>
+                <auth.server.wildfly.home>${containers.home}/keycloak-demo-${project.version}/keycloak</auth.server.wildfly.home>
             </properties>
             <build>
                 <plugins>
@@ -411,7 +411,7 @@
                                             <type>${jdbc.mvn.type}</type>
                                         </artifactItem>
                                     </artifactItems>
-                                    <outputDirectory>${wildfly.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</outputDirectory>
+                                    <outputDirectory>${auth.server.wildfly.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</outputDirectory>
                                     <overWriteIfNewer>true</overWriteIfNewer>
                                 </configuration>
                             </execution>
@@ -431,12 +431,12 @@
                                 <configuration>
                                     <transformationSets>
                                         <transformationSet>
-                                            <dir>${wildfly.home}/modules/system/layers/base/com/h2database/h2/main</dir>
+                                            <dir>${auth.server.wildfly.home}/modules/system/layers/base/com/h2database/h2/main</dir>
                                             <stylesheet>src/main/xslt/wildfly9/module.xsl</stylesheet>
                                             <includes>
                                                 <include>module.xml</include>
                                             </includes>
-                                            <outputDir>${wildfly.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</outputDir>
+                                            <outputDir>${auth.server.wildfly.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</outputDir>
                                             <parameters>
                                                 <parameter>
                                                     <name>database</name>
@@ -449,12 +449,12 @@
                                             </parameters>
                                         </transformationSet>
                                         <transformationSet>
-                                            <dir>${wildfly.home}/standalone/configuration</dir>
+                                            <dir>${auth.server.wildfly.home}/standalone/configuration</dir>
                                             <stylesheet>src/main/xslt/wildfly9/datasource.xsl</stylesheet>
                                             <includes>
                                                 <include>standalone.xml</include>
                                             </includes>
-                                            <outputDir>${wildfly.home}/standalone/configuration</outputDir>
+                                            <outputDir>${auth.server.wildfly.home}/standalone/configuration</outputDir>
                                             <parameters>
                                                 <parameter>
                                                     <name>jdbc.url</name>
@@ -485,7 +485,7 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <auth.server.wildfly>true</auth.server.wildfly>
-                                <auth.server.wildfly.home>${wildfly.home}</auth.server.wildfly.home>
+                                <auth.server.wildfly.home>${auth.server.wildfly.home}</auth.server.wildfly.home>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
@@ -595,7 +595,7 @@
         <profile>
             <id>app-server-wildfly</id>
             <properties>
-                <wildfly.home>${containers.home}/wildfly-${wildfly.version}</wildfly.home>
+                <app.server.wildfly.home>${containers.home}/wildfly-${wildfly.version}</app.server.wildfly.home>
                 <exclude.adapters.wildfly>-</exclude.adapters.wildfly>
             </properties>
             <dependencies>
@@ -639,7 +639,7 @@
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>keycloak-wf9-adapter-dist</artifactId>
                                             <type>zip</type>
-                                            <outputDirectory>${wildfly.home}</outputDirectory>
+                                            <outputDirectory>${app.server.wildfly.home}</outputDirectory>
                                             <overWrite>true</overWrite>
                                         </artifactItem>
                                     </artifactItems>
@@ -661,12 +661,12 @@
                                 <configuration>
                                     <transformationSets>
                                         <transformationSet>
-                                            <dir>${wildfly.home}/standalone/configuration</dir>
+                                            <dir>${app.server.wildfly.home}/standalone/configuration</dir>
                                             <stylesheet>src/main/xslt/wildfly9/standalone.xsl</stylesheet>
                                             <includes>
                                                 <include>standalone.xml</include>
                                             </includes>
-                                            <outputDir>${wildfly.home}/standalone/configuration</outputDir>
+                                            <outputDir>${app.server.wildfly.home}/standalone/configuration</outputDir>
                                         </transformationSet>
                                     </transformationSets>
                                 </configuration>
@@ -679,7 +679,7 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <app.server.wildfly>true</app.server.wildfly>
-                                <wildfly.home>${wildfly.home}</wildfly.home>
+                                <app.server.wildfly.home>${app.server.wildfly.home}</app.server.wildfly.home>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
@@ -690,7 +690,7 @@
         <profile>
             <id>app-server-wildfly-vanilla</id>
             <properties>
-                <wildfly.home>${containers.home}/wildfly-${wildfly.version}</wildfly.home>
+                <app.server.wildfly.home>${containers.home}/wildfly-${wildfly.version}</app.server.wildfly.home>
                 <exclude.adapters.wildfly>-</exclude.adapters.wildfly>
                 <adapter.libs.wildfly>${project.build.directory}/adapter-libs/wildfly</adapter.libs.wildfly>
                 <adapter.type>bundled</adapter.type>
@@ -742,7 +742,7 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <app.server.wildfly>true</app.server.wildfly>
-                                <wildfly.home>${wildfly.home}</wildfly.home>
+                                <app.server.wildfly.home>${app.server.wildfly.home}</app.server.wildfly.home>
                                 <adapter.libs.wildfly>${adapter.libs.wildfly}</adapter.libs.wildfly>
                             </systemPropertyVariables>
                         </configuration>
