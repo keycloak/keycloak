@@ -985,12 +985,18 @@
                 <karaf.version>3.0.3</karaf.version>
                 <karaf.home>${containers.home}/karaf-example-dist-${project.version}</karaf.home>
                 <exclude.adapters.karaf>-</exclude.adapters.karaf>
+                <app.server.http.port>8181</app.server.http.port>
             </properties>
             <dependencies>
                 <dependency>
                     <groupId>org.jboss.arquillian.container</groupId>
                     <artifactId>arquillian-container-karaf-managed</artifactId>
                     <version>2.1.0.CR18</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.aries.jmx</groupId>
+                    <artifactId>org.apache.aries.jmx</artifactId>
+                    <version>1.1.1</version>
                 </dependency>
             </dependencies>
             <build>
@@ -1001,7 +1007,7 @@
                         <version>2.10</version>
                         <executions>
                             <execution>
-                                <id>karaf-dist</id>
+                                <id>karaf-example-dist</id>
                                 <phase>generate-test-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -1019,9 +1025,52 @@
                                     </artifactItems>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>fuse-examples</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>product-portal-fuse-example</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>jar</type>
+                                        </artifactItem>                                               
+                                        <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>customer-portal-fuse-example</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>war</type>
+                                        </artifactItem>                                               
+                                        <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>camel-endpoint-example</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>jar</type>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>cxf-jaxws-example</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>jar</type>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.keycloak.example.demo</groupId>
+                                            <artifactId>cxf-jaxrs-example</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>jar</type>
+                                        </artifactItem>
+                                    </artifactItems>
+                                    <outputDirectory>${examples.home}</outputDirectory>
+                                    <overWrite>true</overWrite>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
-                    
+
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>

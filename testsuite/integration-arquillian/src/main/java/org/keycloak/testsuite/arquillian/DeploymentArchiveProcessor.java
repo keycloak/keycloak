@@ -37,15 +37,16 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
     @Override
     public void process(Archive<?> archive, TestClass testClass) {
-        if (isAdapterTest(testClass)) {
-            modifyAdapterConfigs(archive, testClass);
-            attachKeycloakLibs(archive, testClass);
-            modifyWebXml(archive, testClass);
-        } else {
-            System.out.println(testClass.getJavaClass().getSimpleName() + " is not an AdapterTest");
-        }
+        System.out.println("Processing archive " + archive.getName());
+//        if (isAdapterTest(testClass)) {
+        modifyAdapterConfigs(archive, testClass);
+        attachKeycloakLibs(archive, testClass);
+        modifyWebXml(archive, testClass);
+//        } else {
+//            System.out.println(testClass.getJavaClass().getSimpleName() + " is not an AdapterTest");
+//        }
     }
-
+    
     public static boolean isAdapterTest(TestClass testClass) {
         return hasAppServerContainerAnnotation(testClass.getJavaClass());
     }
