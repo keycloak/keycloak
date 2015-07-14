@@ -74,11 +74,14 @@
         <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
         <keycloak.connectionsJpa.password>sa</keycloak.connectionsJpa.password>
         
-        <!-- properties for deploying jdbc driver, default values are for h2 DB -->
+        <!-- properties for deploying jdbc driver, default values are valid (maven-dependency-plugin requires that) but useless -->
         <jdbc.mvn.groupId>org.keycloak</jdbc.mvn.groupId>
         <jdbc.mvn.artifactId>keycloak-parent</jdbc.mvn.artifactId>
         <jdbc.mvn.version>${project.version}</jdbc.mvn.version>
         <jdbc.mvn.type>pom</jdbc.mvn.type>
+        <!-- default: do not update modules, if "real" db is used set this properly: -->
+        <!--<jdbc.mvn.driver.deployment.dir>${wildfly.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>-->
+        <jdbc.mvn.driver.deployment.dir>${project.build.directory}/junk</jdbc.mvn.driver.deployment.dir>
     </properties>
 
     <dependencyManagement>
@@ -354,7 +357,7 @@
                 <adapter.type>bundled</adapter.type>
             </properties>
         </profile>
-        
+
         <profile>
             <id>auth-server-wildfly</id>
             <activation>
@@ -411,7 +414,7 @@
                                             <type>${jdbc.mvn.type}</type>
                                         </artifactItem>
                                     </artifactItems>
-                                    <outputDirectory>${wildfly.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</outputDirectory>
+                                    <outputDirectory>${jdbc.mvn.driver.deployment.dir}</outputDirectory>
                                     <overWriteIfNewer>true</overWriteIfNewer>
                                 </configuration>
                             </execution>
@@ -436,7 +439,7 @@
                                             <includes>
                                                 <include>module.xml</include>
                                             </includes>
-                                            <outputDir>${wildfly.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</outputDir>
+                                            <outputDir>${jdbc.mvn.driver.deployment.dir}</outputDir>
                                             <parameters>
                                                 <parameter>
                                                     <name>database</name>
