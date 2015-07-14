@@ -9,17 +9,17 @@
     <container qualifier="auth-server-undertow" mode="manual" >
         <configuration>
             <property name="bindAddress">localhost</property>
-            <property name="bindHttpPort">${auth.server.http.port}</property>
             <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.CustomUndertowContainer</property>
+            <property name="bindHttpPort">${auth.server.http.port}</property>
         </configuration>
     </container>
     <container qualifier="auth-server-wildfly" mode="manual" >
         <configuration>
             <property name="enabled">${auth.server.wildfly}</property>
+            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${auth.server.wildfly.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</property>
             <property name="managementPort">${auth.server.management.port}</property>
-            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
         </configuration>
     </container>
 
@@ -27,27 +27,28 @@
     <container qualifier="app-server-wildfly" mode="manual" >
         <configuration>
             <property name="enabled">${app.server.wildfly}</property>
+            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${app.server.wildfly.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${app.server.port.offset} -Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</property>
             <property name="managementPort">${app.server.management.port}</property>
-            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
         </configuration>
     </container>
     <container qualifier="app-server-as7" mode="manual" >
         <configuration>
             <property name="enabled">${app.server.as7}</property>
+            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${as7.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${app.server.port.offset} -Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</property>
             <property name="managementPort">${app.server.management.port}</property>
-            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
         </configuration>
-<!--        <protocol type="jmx-as7">
+        <!--        <protocol type="jmx-as7">
             <property name="executionType">REMOTE</property>
         </protocol>-->
     </container>
     <container qualifier="app-server-tomcat" mode="manual" >
         <configuration>
             <property name="enabled">${app.server.tomcat}</property>
+            <property name="adapterImplClass">org.jboss.arquillian.container.tomcat.managed_7.TomcatManagedContainer</property>
             <property name="catalinaHome">${tomcat.home}</property>
             <property name="catalinaBase">${tomcat.home}</property>
             <property name="bindHttpPort">${app.server.http.port}</property>
@@ -55,9 +56,28 @@
             <property name="user">manager</property>
             <property name="pass">arquillian</property>
             <property name="javaVmArguments">-Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</property>
-            <property name="adapterImplClass">org.jboss.arquillian.container.tomcat.managed_7.TomcatManagedContainer</property>
         </configuration>
     </container>
+    <container qualifier="app-server-karaf" mode="manual" >
+        <configuration>
+            <property name="enabled">${app.server.karaf}</property>
+            <property name="adapterImplClass">org.jboss.arquillian.container.osgi.karaf.managed.KarafManagedDeployableContainer</property>
+            <property name="autostartBundle">false</property>
+            <property name="karafHome">${karaf.home}</property>
+            <property name="javaVmArguments">-agentlib:jdwp=transport=dt_socket,address=5005,server=y,suspend=n -Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</property>
+            <property name="jmxServiceURL">service:jmx:rmi://127.0.0.1:44444/jndi/rmi://127.0.0.1:1099/karaf-root</property>
+            <property name="jmxUsername">karaf</property>
+            <property name="jmxPassword">karaf</property>            
+        </configuration>
+    </container>
+<!--    <container qualifier="app-server-jetty" mode="manual" >
+        <configuration>
+            <property name="enabled">${app.server.jetty}</property>
+            <property name="adapterImplClass">org.jboss.arquillian.container.jetty.embedded_7.JettyEmbeddedContainer</property>
+            <property name="bindHttpPort">${app.server.http.port}</property>
+            <property name="jettyPlus">false</property>
+        </configuration>
+    </container>-->
     
     <extension qualifier="webdriver">
         <property name="browser">${browser}</property>
@@ -68,7 +88,7 @@
     </extension>
     
     <engine>
-        <!-- This allows manual inspection of created deployment archives. -->
+        <!-- This allows manual inspection of deployed archives. -->
         <property name="deploymentExportPath">target/deployments</property>
     </engine>
     
