@@ -14,7 +14,7 @@ public interface JpaUpdaterProvider extends Provider {
 
     public String LAST_VERSION = "1.4.0";
 
-    public String getCurrentVersionSql();
+    public String getCurrentVersionSql(String defaultSchema);
 
     public void update(KeycloakSession session, Connection connection, String defaultSchema);
 
