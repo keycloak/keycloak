@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dt-example table-type="html" order="3">
+
+<css lib="datatables colreorder">
+div.DTCR_pointer {
+	margin-top: -15px;
+	margin-left: -9px;
+	width: 18px;
+	background: url('../images/insert.png') no-repeat top left;
+}
+</css>
+<js lib="jquery datatables colreorder">
+<![CDATA[
+$(document).ready(function() {
+	$('#example').DataTable( {
+		dom: 'Rlfrtip'
+	} );
+} );
+]]>
+</js>
+
+<title lib="ColReorder">Alternative insert styling</title>
+
+<info><![CDATA[
+
+Using CSS it is easy to modify the insert bar to suit your web-site. This example shows how an arrow can be used to show the insert point rather than the straight bar used in the other examples by simply adding an extra CSS rule to include the image.
+
+]]></info>
+
+</dt-example>
