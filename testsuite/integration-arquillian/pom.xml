@@ -50,6 +50,7 @@
         <exclude.adapters.wildfly>**/Wildfly*AdapterTest.java</exclude.adapters.wildfly>
         <exclude.adapters.as7>**/AS7*AdapterTest.java</exclude.adapters.as7>
         <exclude.adapters.tomcat>**/Tomcat*AdapterTest.java</exclude.adapters.tomcat>
+        <exclude.adapters.karaf>**/Karaf*AdapterTest.java</exclude.adapters.karaf>
         
         <!--Default auth-server container.-->
         <auth.server.container>auth-server-undertow</auth.server.container>
@@ -541,7 +542,7 @@
                                             <artifactId>js-console</artifactId>        
                                             <version>${project.version}</version>
                                             <type>war</type>
-                                        </artifactItem>       
+                                        </artifactItem>
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>examples-multitenant</artifactId>        
@@ -980,10 +981,9 @@
 
         <profile>
             <id>app-server-karaf</id>
-            <!--DOESN'T WORK YET-->
             <properties>
                 <karaf.version>3.0.3</karaf.version>
-                <karaf.home>${containers.home}/apache-karaf-${karaf.version}</karaf.home>
+                <karaf.home>${containers.home}/karaf-example-dist-${project.version}</karaf.home>
                 <exclude.adapters.karaf>-</exclude.adapters.karaf>
             </properties>
             <dependencies>
@@ -992,51 +992,36 @@
                     <artifactId>arquillian-container-karaf-managed</artifactId>
                     <version>2.1.0.CR18</version>
                 </dependency>
-                
-                <dependency>
-                    <!-- scope is compile so all features (there is only one) are installed into startup.properties and the feature repo itself is not added in etc/org.apache.karaf.features.cfg file -->
-                    <groupId>org.apache.karaf.features</groupId>
-                    <artifactId>framework</artifactId>
-                    <version>${karaf.version}</version>
-                    <type>kar</type>
-                </dependency>
-                <dependency>
-                    <!-- scope is runtime so the feature repo is listed in etc/org.apache.karaf.features.cfg file, and features will installed into the system directory -->
-                    <groupId>org.apache.karaf.features</groupId>
-                    <artifactId>standard</artifactId>
-                    <version>${karaf.version}</version>
-                    <classifier>features</classifier>
-                    <type>xml</type>
-                    <scope>runtime</scope>
-                </dependency>
             </dependencies>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.karaf.tooling</groupId>
-                        <artifactId>karaf-maven-plugin</artifactId>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <bootFeatures>
-                                <feature>jaas</feature>
-                                <feature>standard</feature>
-                                <feature>management</feature>
-                                <feature>bundle</feature>
-                                <feature>config</feature>
-                                <feature>deployer</feature>
-                                <feature>diagnostic</feature>
-                                <feature>instance</feature>
-                                <feature>kar</feature>
-                                <feature>log</feature>
-                                <feature>package</feature>
-                                <feature>service</feature>
-                                <feature>system</feature>
-                            </bootFeatures>
-                            <installedFeatures>
-                                <feature>wrapper</feature>
-                            </installedFeatures>
-                        </configuration>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>2.10</version>
+                        <executions>
+                            <execution>
+                                <id>karaf-dist</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>karaf-example-dist</artifactId>        
+                                            <version>${project.version}</version>
+                                            <type>zip</type>
+                                            <outputDirectory>${containers.home}</outputDirectory>
+                                            <overWrite>false</overWrite>
+                                        </artifactItem>                                               
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
+                    
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
@@ -1051,7 +1036,7 @@
             </build>
         </profile>
 
-<!--        <profile>
+        <!--        <profile>
             <id>app-server-jetty</id>
             <properties>
                 <jetty.version>8</jetty.version>
