@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>Respond JS Test Page</title>
+	<link href="https://rawgithub.com/scottjehl/Respond/master/test/test.css" rel="stylesheet"/>
+	<link href="https://rawgithub.com/scottjehl/Respond/master/test/test2.css" media="screen and (min-width: 600px)" rel="stylesheet"/>
+	<script src="../dest/respond.src.js"></script>
+	
+	<!-- Respond.js proxy on external server -->
+	<link href="https://rawgithub.com/scottjehl/Respond/master/cross-domain/respond-proxy.html" id="respond-proxy" rel="respond-proxy" />
+	<link href="respond.proxy.gif" id="respond-redirect" rel="respond-redirect" />
+	<script src="respond.proxy.js"></script>
+</head> 
+<body>
+	<p>This is a visual test file for cross-domain proxy.</p>
+
+	<p>The media queries in the included CSS file simply change the body's background color depending on the browser width. If you see any colors aside from black, then the media queries are working in your browser. You can resize your browser window to see it change on the fly.</p>
+
+
+	<p id="attribute-test">Media-attributes are working too! This should be visible above 600px.</p>
+
+</body>
+</html>
