@@ -20,6 +20,8 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     @Page
     private JSConsoleExample jsConsoleExample;
 
+    public static int TOKEN_LIFESPAN_LEEWAY = 3; // seconds
+
     @Deployment(name = JSConsoleExample.DEPLOYMENT_NAME)
     private static WebArchive jsConsoleExample() throws IOException {
         return exampleDeployment("js-console");
@@ -28,7 +30,12 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     @Override
     public void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms) {
         RealmRepresentation jsConsoleRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/js-console/example-realm.json"));
-        fixClientUrisUsingDeploymentUrl(jsConsoleRealm, JSConsoleExample.CLIENT_ID, jsConsoleExample.getUri().toASCIIString());
+
+        fixClientUrisUsingDeploymentUrl(jsConsoleRealm,
+                JSConsoleExample.CLIENT_ID, jsConsoleExample.getUri().toASCIIString());
+
+        jsConsoleRealm.setAccessTokenLifespan(30 + TOKEN_LIFESPAN_LEEWAY); // seconds
+
         testRealms.add(jsConsoleRealm);
     }
 
@@ -55,12 +62,70 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         loginPage.login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Init Success (Authenticated)"));
+        assertTrue(driver.getPageSource().contains("Auth Success"));
 
         pause(1000);
 
         jsConsoleExample.logOut();
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Init Success (Not Authenticated)"));
+    }
+
+    @Test
+    public void testRefreshToken() {
+        jsConsoleExample.navigateTo();
+        assertCurrentUrlStartsWith(jsConsoleExample);
+
+        jsConsoleExample.refreshToken();
+        assertTrue(driver.getPageSource().contains("Failed to refresh token"));
+
+        jsConsoleExample.logIn();
+        loginPage.login("user", "password");
+        assertCurrentUrlStartsWith(jsConsoleExample);
+        assertTrue(driver.getPageSource().contains("Auth Success"));
+
+        jsConsoleExample.refreshToken();
+        assertTrue(driver.getPageSource().contains("Auth Refresh Success"));
+    }
+
+    @Test
+    public void testRefreshTokenIfUnder30s() {
+        jsConsoleExample.navigateTo();
+        assertCurrentUrlStartsWith(jsConsoleExample);
+
+        jsConsoleExample.refreshToken();
+        assertTrue(driver.getPageSource().contains("Failed to refresh token"));
+
+        jsConsoleExample.logIn();
+        loginPage.login("user", "password");
+        assertCurrentUrlStartsWith(jsConsoleExample);
+        assertTrue(driver.getPageSource().contains("Auth Success"));
+
+        jsConsoleExample.refreshTokenIfUnder30s();
+        assertTrue(driver.getPageSource().contains("Token not refreshed, valid for"));
+
+        pause((TOKEN_LIFESPAN_LEEWAY + 2) * 1000);
+
+        jsConsoleExample.refreshTokenIfUnder30s();
+        assertTrue(driver.getPageSource().contains("Auth Refresh Success"));
+    }
+    
+    @Test 
+    public void testGetProfile() {
+        jsConsoleExample.navigateTo();
+        assertCurrentUrlStartsWith(jsConsoleExample);
+        
+        jsConsoleExample.getProfile();
+        assertTrue(driver.getPageSource().contains("Failed to load profile"));
+        
+        jsConsoleExample.logIn();
+        loginPage.login("user", "password");
+        assertCurrentUrlStartsWith(jsConsoleExample);
+        assertTrue(driver.getPageSource().contains("Auth Success"));
+
+        jsConsoleExample.getProfile();
+        assertTrue(driver.getPageSource().contains("Failed to load profile"));
+        assertTrue(driver.getPageSource().contains("\"username\": \"user\""));
     }
 
 }
