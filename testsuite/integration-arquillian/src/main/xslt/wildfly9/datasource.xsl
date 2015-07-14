@@ -59,11 +59,27 @@
         </datasource>
     </xsl:variable>
     
+    <xsl:variable name="newDriverDefinition">
+        <xsl:if test="$driver != 'h2'">
+            <driver name="{$driver}" module="com.{$driver}" />
+        </xsl:if>
+    </xsl:variable>
+    
     <!-- Add new datasource definition. -->
     <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsDS)]
 		         /*[local-name()='datasources' and starts-with(namespace-uri(), $nsDS)]">
         <xsl:copy>
             <xsl:copy-of select="$newDatasourceDefinition"/>
+            <xsl:apply-templates select="@* | node()" />
+        </xsl:copy>
+    </xsl:template>
+    
+    <!-- Add new driver definition. -->
+    <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsDS)]
+		         /*[local-name()='datasources' and starts-with(namespace-uri(), $nsDS)]
+		         /*[local-name()='drivers' and starts-with(namespace-uri(), $nsDS)]">
+        <xsl:copy>
+            <xsl:copy-of select="$newDriverDefinition"/>
             <xsl:apply-templates select="@* | node()" />
         </xsl:copy>
     </xsl:template>

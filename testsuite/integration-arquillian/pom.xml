@@ -411,7 +411,7 @@
                                             <type>${jdbc.mvn.type}</type>
                                         </artifactItem>
                                     </artifactItems>
-                                    <outputDirectory>${wildfly.home}/standalone/deployments</outputDirectory>
+                                    <outputDirectory>${wildfly.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</outputDirectory>
                                     <overWriteIfNewer>true</overWriteIfNewer>
                                 </configuration>
                             </execution>
@@ -430,6 +430,24 @@
                                 </goals>
                                 <configuration>
                                     <transformationSets>
+                                        <transformationSet>
+                                            <dir>${wildfly.home}/modules/system/layers/base/com/h2database/h2/main</dir>
+                                            <stylesheet>src/main/xslt/wildfly9/module.xsl</stylesheet>
+                                            <includes>
+                                                <include>module.xml</include>
+                                            </includes>
+                                            <outputDir>${wildfly.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</outputDir>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>database</name>
+                                                    <value>${jdbc.mvn.artifactId}</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>version</name>
+                                                    <value>${jdbc.mvn.version}</value>
+                                                </parameter>
+                                            </parameters>
+                                        </transformationSet>
                                         <transformationSet>
                                             <dir>${wildfly.home}/standalone/configuration</dir>
                                             <stylesheet>src/main/xslt/wildfly9/datasource.xsl</stylesheet>
