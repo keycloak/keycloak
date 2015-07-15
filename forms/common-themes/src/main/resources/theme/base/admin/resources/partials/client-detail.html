@@ -7,7 +7,7 @@
     </ol>
 
     <h1 data-ng-show="create">Add Client</h1>
-    <h1 data-ng-hide="create">{{client.clientId|capitalize}}<i style="padding-left: 20px" class="pficon pficon-delete" data-ng-show="!create && access.manageClients" 
+    <h1 data-ng-hide="create">{{client.clientId|capitalize}}<i class="pficon pficon-delete pfdelete" data-ng-show="!create && access.manageClients" 
     	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
 
     <kc-tabs-client></kc-tabs-client>
