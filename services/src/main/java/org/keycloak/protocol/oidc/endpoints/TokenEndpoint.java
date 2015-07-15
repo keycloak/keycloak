@@ -356,7 +356,7 @@ public class TokenEndpoint {
 
         event.success();
 
-        return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
+        return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
 }

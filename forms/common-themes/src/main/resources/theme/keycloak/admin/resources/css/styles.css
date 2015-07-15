@@ -2,12 +2,14 @@ html,body {
     height: 100%;
 }
 
+/**
 .navbar-pf .navbar-brand {
     background: url('../img/brand.svg') no-repeat 0px 5px;
     display: block;
     height: 25px;
     width: 200px;
 }
+**/
 
 form {
     margin-top: 20px;
@@ -152,3 +154,138 @@ table {
 .select2-container-multi .select2-choices .select2-search-field {
     height: 26px;
 }
+
+
+/*********** New Menu ***********/
+
+
+.sidebar-pf-left{
+  background: #292e34;
+}
+
+.sidebar-pf .nav-pills > li a i, .sidebar-pf .nav-pills > li a span{
+  color:  #72767b;
+  display: inline-block;
+  margin-right: 10px;
+}
+.sidebar-pf .nav-pills > li > a{
+  color: #dbdada;
+  padding: 0px 20px 0 30px!important;
+  line-height: 30px;
+  border-left-width: 12px;
+  border-left-style:  solid;
+  border-left-color: #292e34;
+  margin-left: -6px;
+}
+
+.sidebar-pf .nav-pills > li > a:hover{
+  background: #393f44;
+  border-color:#292e34; 
+  border-left-color: #393f44;
+  color: #fff;
+}
+
+.sidebar-pf .nav-pills > li > a:after{
+  display: none!important;
+}
+
+
+.sidebar-pf .nav-pills > li.active > a {
+  color: #fff;
+  background: #393f44!important;
+  border-bottom: 1px solid #000!important;
+  border-top: 1px solid #000!important;
+  border-left-color: #39a5dc!important;
+}
+
+.sidebar-pf .nav-pills > li.active a i, .sidebar-pf .nav-pills > li.active a span{
+  color: #39a5dc;
+}
+
+/*********** Realm selector ***********/
+
+.realm-selector{
+  color: #fff;
+  margin: 0 -20px;
+  position: relative;
+}
+
+.realm-dropmenu{
+  display: none;
+  cursor: pointer;
+  position: absolute;
+  top: 60px;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: #fff;
+}
+
+.realm-selector:hover .realm-dropmenu{
+  display: block;
+}
+
+.realm-add{
+  padding: 10px;
+}
+
+.realm-selector h2{
+  font-size: 16px;
+  line-height: 60px;
+  padding: 0 20px;
+  margin: 0;
+  border-bottom: 1px solid #d5d5d6;
+}
+
+.realm-selector h2 i{
+  display: inline-block;
+  float: right;
+  line-height: 60px;
+}
+
+
+.realm-selector ul{
+  padding-left: 0;
+  margin: 0;
+  list-style: none;
+  max-height: 200px;
+  overflow-y:auto;
+}
+
+
+.realm-selector ul li a{
+  line-height: 60px;
+  padding: 0 20px;
+  border-bottom: 1px solid #d5d5d6;
+  line-height: 39px;
+  display: block;
+  font-size: 14px;
+}
+
+
+/*********** Overwrites header defaults ***********/
+
+.navbar-pf{
+  border-top: none!important;
+}
+
+.navbar-brand{
+  padding: 0!important;
+  height: 56px!important;
+  line-height: 56px;
+  background-position: center center!important;
+  background-image: url('../img/keyclok-logo.svg')!important;
+  background-size: 148px 36px !important;
+background-repeat: no-repeat;
+  width: 148px!important;
+}
+
+.navbar-pf .navbar-utility > li > a{
+  padding: 22px 30px 23px 40px!important;
+}
+/* @media (min-width: 768px) */
+.navbar-pf .navbar-utility li.dropdown > .dropdown-toggle .pficon-user {
+  top: 22px;
+  left:20px;
+}
+

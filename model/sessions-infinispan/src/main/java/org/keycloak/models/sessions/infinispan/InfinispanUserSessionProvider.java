@@ -361,7 +361,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
     }
 
-    void removeUserSession(RealmModel realm, String userSessionId) {
+    protected void removeUserSession(RealmModel realm, String userSessionId) {
         tx.remove(sessionCache, userSessionId);
 
         Map<String, String> map = new MapReduceTask(sessionCache)

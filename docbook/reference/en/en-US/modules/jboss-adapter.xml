@@ -199,7 +199,7 @@ public class CustomerService {
         <title>Securing WARs via Keycloak Subsystem</title>
         <para>
             You do not have to crack open a WAR to secure it with Keycloak.  Alternatively, you can externally secure
-            it via the Keycloak Subsystem.  While you don't have to specify KEYCLOAK as an <literal>auth-method</literal>,
+            it via the Keycloak Adapter Subsystem.  While you don't have to specify KEYCLOAK as an <literal>auth-method</literal>,
             you still have to define the <literal>security-constraints</literal> in <literal>web.xml</literal>.  You do
             not, however, have to create a <literal>WEB-INF/keycloak.json</literal> file.  This metadata is instead defined
             within XML in your server's <literal>domain.xml</literal> or <literal>standalone.xml</literal> subsystem
@@ -207,20 +207,22 @@ public class CustomerService {
         </para>
 <para>
 <programlisting><![CDATA[
-<server xmlns="urn:jboss:domain:1.4">
+<extensions>
+  <extension module="org.keycloak.keycloak-adapter-subsystem"/>
+</extensions>
 
-  <profile>
-    <subsystem xmlns="urn:jboss:domain:keycloak:1.0">
-       <secure-deployment name="WAR MODULE NAME.war">
-          <realm>demo</realm>
-          <realm-public-key>MIGfMA0GCSqGSIb3DQEBAQUAA</realm-public-key>
-          <auth-server-url>http://localhost:8081/auth</auth-server-url>
-          <ssl-required>external</ssl-required>
-          <resource>customer-portal</resource>
-          <credential name="secret">password</credential>
-       </secure-deployment>
-    </subsystem>
-  </profile>
+<profile>
+  <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
+     <secure-deployment name="WAR MODULE NAME.war">
+        <realm>demo</realm>
+        <realm-public-key>MIGfMA0GCSqGSIb3DQEBAQUAA</realm-public-key>
+        <auth-server-url>http://localhost:8081/auth</auth-server-url>
+        <ssl-required>external</ssl-required>
+        <resource>customer-portal</resource>
+        <credential name="secret">password</credential>
+     </secure-deployment>
+  </subsystem>
+</profile>
 ]]>
 </programlisting>
 </para>
@@ -242,7 +244,7 @@ public class CustomerService {
         </para>
         <para>
             <programlisting><![CDATA[
-<subsystem xmlns="urn:jboss:domain:keycloak:1.0">
+<subsystem xmlns="urn:jboss:domain:keycloak:1.1">
     <realm name="demo">
         <realm-public-key>MIGfMA0GCSqGSIb3DQEBA</realm-public-key>
         <auth-server-url>http://localhost:8080/auth</auth-server-url>
