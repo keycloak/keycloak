@@ -1352,7 +1352,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model) {
         AuthenticationFlowEntity entity = new AuthenticationFlowEntity();
-        entity.setId(KeycloakModelUtils.generateId());
+        String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
+        entity.setId(id);
         entity.setAlias(model.getAlias());
         entity.setDescription(model.getDescription());
         entity.setProviderId(model.getProviderId());
@@ -1414,7 +1415,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public AuthenticationExecutionModel addAuthenticatorExecution(AuthenticationExecutionModel model) {
         AuthenticationExecutionEntity entity = new AuthenticationExecutionEntity();
-        entity.setId(KeycloakModelUtils.generateId());
+        String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
+        entity.setId(id);
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
@@ -1476,9 +1478,21 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public AuthenticatorConfigModel getAuthenticatorConfigByAlias(String alias) {
+        for (AuthenticatorConfigModel config : getAuthenticatorConfigs()) {
+            if (config.getAlias().equals(alias)) {
+                return config;
+            }
+        }
+        return null;
+    }
+
+
+    @Override
     public AuthenticatorConfigModel addAuthenticatorConfig(AuthenticatorConfigModel model) {
         AuthenticatorConfigEntity auth = new AuthenticatorConfigEntity();
-        auth.setId(KeycloakModelUtils.generateId());
+        String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
+        auth.setId(id);
         auth.setAlias(model.getAlias());
         auth.setConfig(model.getConfig());
         realm.getAuthenticatorConfigs().add(auth);
