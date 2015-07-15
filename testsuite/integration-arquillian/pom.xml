@@ -81,7 +81,7 @@
         <jdbc.mvn.version>${project.version}</jdbc.mvn.version>
         <jdbc.mvn.type>pom</jdbc.mvn.type>
         <!-- default: do not update modules, if "real" db is used set this properly: -->
-        <!--<jdbc.mvn.driver.deployment.dir>${wildfly.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>-->
+        <!--<jdbc.mvn.driver.deployment.dir>${auth.server.wildfly.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>-->
         <jdbc.mvn.driver.deployment.dir>${project.build.directory}/junk</jdbc.mvn.driver.deployment.dir>
     </properties>
 
@@ -434,6 +434,7 @@
                                 </goals>
                                 <configuration>
                                     <transformationSets>
+                                        <!-- create module.xml in modules -->
                                         <transformationSet>
                                             <dir>${auth.server.wildfly.home}/modules/system/layers/base/com/h2database/h2/main</dir>
                                             <stylesheet>src/main/xslt/wildfly9/module.xsl</stylesheet>
@@ -452,6 +453,7 @@
                                                 </parameter>
                                             </parameters>
                                         </transformationSet>
+                                        <!-- add datasource to standalone.xml -->
                                         <transformationSet>
                                             <dir>${auth.server.wildfly.home}/standalone/configuration</dir>
                                             <stylesheet>src/main/xslt/wildfly9/datasource.xsl</stylesheet>
