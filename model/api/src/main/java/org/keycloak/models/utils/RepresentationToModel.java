@@ -303,20 +303,23 @@ public class RepresentationToModel {
             // assume this is an old version being imported
             DefaultAuthenticationFlows.addFlows(newRealm);
         } else {
-            for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
-                AuthenticationFlowModel model = toModel(flowRep);
-                model = newRealm.addAuthenticationFlow(model);
-                for (AuthenticationExecutionRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
-                    AuthenticationExecutionModel execution = toModel(exeRep);
-                    execution.setParentFlow(model.getId());
-                    newRealm.addAuthenticatorExecution(execution);
-                }
-            }
             for (AuthenticatorConfigRepresentation configRep : rep.getAuthenticatorConfig()) {
                 AuthenticatorConfigModel model = toModel(configRep);
                 newRealm.addAuthenticatorConfig(model);
             }
-        }
+            for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
+                AuthenticationFlowModel model = toModel(flowRep);
+                model = newRealm.addAuthenticationFlow(model);
+            }
+            for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
+                AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
+                for (AuthenticationExecutionRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
+                    AuthenticationExecutionModel execution = toModel(newRealm, exeRep);
+                    execution.setParentFlow(model.getId());
+                    newRealm.addAuthenticatorExecution(execution);
+                }
+            }
+         }
 
     }
 
@@ -1044,19 +1047,24 @@ public class RepresentationToModel {
         model.setBuiltIn(rep.isBuiltIn());
         model.setTopLevel(rep.isTopLevel());
         model.setProviderId(rep.getProviderId());
-        model.setId(rep.getId());
         model.setAlias(rep.getAlias());
         model.setDescription(rep.getDescription());
         return model;
 
     }
 
-    public static AuthenticationExecutionModel toModel(AuthenticationExecutionRepresentation rep) {
+    public static AuthenticationExecutionModel toModel(RealmModel realm, AuthenticationExecutionRepresentation rep) {
         AuthenticationExecutionModel model = new AuthenticationExecutionModel();
-        model.setAuthenticatorConfig(rep.getAuthenticatorConfig());
+        if (rep.getAuthenticatorConfig() != null) {
+            AuthenticatorConfigModel config = realm.getAuthenticatorConfigByAlias(rep.getAuthenticatorConfig());
+            model.setAuthenticatorConfig(config.getId());
+        }
         model.setAuthenticator(rep.getAuthenticator());
         model.setAutheticatorFlow(rep.isAutheticatorFlow());
-        model.setFlowId(rep.getFlowId());
+        if (rep.getFlowAlias() != null) {
+            AuthenticationFlowModel flow = realm.getFlowByAlias(rep.getFlowAlias());
+            model.setFlowId(flow.getId());
+        }
         model.setPriority(rep.getPriority());
         model.setUserSetupAllowed(rep.isUserSetupAllowed());
         model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
@@ -1065,7 +1073,6 @@ public class RepresentationToModel {
 
     public static AuthenticatorConfigModel toModel(AuthenticatorConfigRepresentation rep) {
         AuthenticatorConfigModel model = new AuthenticatorConfigModel();
-        model.setId(rep.getId());
         model.setAlias(rep.getAlias());
         model.setConfig(rep.getConfig());
         return model;

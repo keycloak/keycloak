@@ -37,7 +37,6 @@ import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.util.MultivaluedHashMap;
 import org.keycloak.util.Time;
 
 import java.util.ArrayList;
@@ -199,11 +198,7 @@ public class ModelToRepresentation {
         rep.setAuthenticationFlows(new LinkedList<AuthenticationFlowRepresentation>());
         rep.setAuthenticatorConfig(new LinkedList<AuthenticatorConfigRepresentation>());
         for (AuthenticationFlowModel model : realm.getAuthenticationFlows()) {
-            AuthenticationFlowRepresentation flowRep = toRepresentation(model);
-            flowRep.setAuthenticationExecutions(new LinkedList<AuthenticationExecutionRepresentation>());
-            for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(model.getId())) {
-                flowRep.getAuthenticationExecutions().add(toRepresentation(execution));
-            }
+            AuthenticationFlowRepresentation flowRep = toRepresentation(realm, model);
             rep.getAuthenticationFlows().add(flowRep);
         }
         for (AuthenticatorConfigModel model : realm.getAuthenticatorConfigs()) {
@@ -430,24 +425,33 @@ public class ModelToRepresentation {
         return consentRep;
     }
 
-    public static AuthenticationFlowRepresentation  toRepresentation(AuthenticationFlowModel model) {
+    public static AuthenticationFlowRepresentation  toRepresentation(RealmModel realm, AuthenticationFlowModel model) {
         AuthenticationFlowRepresentation rep = new AuthenticationFlowRepresentation();
         rep.setBuiltIn(model.isBuiltIn());
         rep.setTopLevel(model.isTopLevel());
         rep.setProviderId(model.getProviderId());
-        rep.setId(model.getId());
         rep.setAlias(model.getAlias());
         rep.setDescription(model.getDescription());
+        rep.setAuthenticationExecutions(new LinkedList<AuthenticationExecutionRepresentation>());
+        for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(model.getId())) {
+            rep.getAuthenticationExecutions().add(toRepresentation(realm, execution));
+        }
         return rep;
 
     }
 
-    public static AuthenticationExecutionRepresentation toRepresentation(AuthenticationExecutionModel model) {
+    public static AuthenticationExecutionRepresentation toRepresentation(RealmModel realm, AuthenticationExecutionModel model) {
         AuthenticationExecutionRepresentation rep = new AuthenticationExecutionRepresentation();
-        rep.setAuthenticatorConfig(model.getAuthenticatorConfig());
+        if (model.getAuthenticatorConfig() != null) {
+            AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(model.getAuthenticatorConfig());
+            rep.setAuthenticatorConfig(config.getAlias());
+        }
         rep.setAuthenticator(model.getAuthenticator());
         rep.setAutheticatorFlow(model.isAutheticatorFlow());
-        rep.setFlowId(model.getFlowId());
+        if (model.getFlowId() != null) {
+            AuthenticationFlowModel flow = realm.getAuthenticationFlowById(model.getFlowId());
+            rep.setFlowAlias(flow.getAlias());
+       }
         rep.setPriority(model.getPriority());
         rep.setUserSetupAllowed(model.isUserSetupAllowed());
         rep.setRequirement(model.getRequirement().name());
@@ -456,7 +460,6 @@ public class ModelToRepresentation {
 
     public static AuthenticatorConfigRepresentation toRepresentation(AuthenticatorConfigModel model) {
         AuthenticatorConfigRepresentation rep = new AuthenticatorConfigRepresentation();
-        rep.setId(model.getId());
         rep.setAlias(model.getAlias());
         rep.setConfig(model.getConfig());
         return rep;

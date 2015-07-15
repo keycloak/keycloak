@@ -12,7 +12,7 @@ public class AuthenticationExecutionRepresentation implements Serializable {
 
     private String authenticatorConfig;
     private String authenticator;
-    private String flowId;
+    private String flowAlias;
     private boolean autheticatorFlow;
     private String requirement;
     private boolean userSetupAllowed;
@@ -63,12 +63,12 @@ public class AuthenticationExecutionRepresentation implements Serializable {
      *
      * @return
      */
-    public String getFlowId() {
-        return flowId;
+    public String getFlowAlias() {
+        return flowAlias;
     }
 
-    public void setFlowId(String flowId) {
-        this.flowId = flowId;
+    public void setFlowAlias(String flowId) {
+        this.flowAlias = flowId;
     }
 
     /**

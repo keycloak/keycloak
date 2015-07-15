@@ -10,21 +10,12 @@ import java.util.List;
 public class AuthenticationFlowRepresentation implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String id;
     private String alias;
     private String description;
     private String providerId;
     private boolean topLevel;
     private boolean builtIn;
     protected List<AuthenticationExecutionRepresentation> authenticationExecutions;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getAlias() {
         return alias;
