@@ -4,6 +4,9 @@ import net.iharder.Base64;
 import org.jboss.logging.Logger;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.migration.MigrationProvider;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
@@ -23,6 +26,9 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -288,6 +294,30 @@ public class RepresentationToModel {
         if(rep.getDefaultLocale() != null){
             newRealm.setDefaultLocale(rep.getDefaultLocale());
         }
+
+        importAuthenticationFlows(newRealm, rep);
+    }
+
+    public static void importAuthenticationFlows(RealmModel newRealm, RealmRepresentation rep) {
+        if (rep.getAuthenticationFlows() == null) {
+            // assume this is an old version being imported
+            DefaultAuthenticationFlows.addFlows(newRealm);
+        } else {
+            for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
+                AuthenticationFlowModel model = toModel(flowRep);
+                model = newRealm.addAuthenticationFlow(model);
+                for (AuthenticationExecutionRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
+                    AuthenticationExecutionModel execution = toModel(exeRep);
+                    execution.setParentFlow(model.getId());
+                    newRealm.addAuthenticatorExecution(execution);
+                }
+            }
+            for (AuthenticatorConfigRepresentation configRep : rep.getAuthenticatorConfig()) {
+                AuthenticatorConfigModel model = toModel(configRep);
+                newRealm.addAuthenticatorConfig(model);
+            }
+        }
+
     }
 
     private static void convertDeprecatedSocialProviders(RealmRepresentation rep) {
@@ -921,7 +951,7 @@ public class RepresentationToModel {
             }
         }
     }
-    public static IdentityProviderModel toModel(IdentityProviderRepresentation representation) {
+   public static IdentityProviderModel toModel(IdentityProviderRepresentation representation) {
         IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
         identityProviderModel.setInternalId(representation.getInternalId());
@@ -1008,5 +1038,38 @@ public class RepresentationToModel {
         }
         return consentModel;
     }
+
+    public static AuthenticationFlowModel toModel(AuthenticationFlowRepresentation rep) {
+        AuthenticationFlowModel model = new AuthenticationFlowModel();
+        model.setBuiltIn(rep.isBuiltIn());
+        model.setTopLevel(rep.isTopLevel());
+        model.setProviderId(rep.getProviderId());
+        model.setId(rep.getId());
+        model.setAlias(rep.getAlias());
+        model.setDescription(rep.getDescription());
+        return model;
+
+    }
+
+    public static AuthenticationExecutionModel toModel(AuthenticationExecutionRepresentation rep) {
+        AuthenticationExecutionModel model = new AuthenticationExecutionModel();
+        model.setAuthenticatorConfig(rep.getAuthenticatorConfig());
+        model.setAuthenticator(rep.getAuthenticator());
+        model.setAutheticatorFlow(rep.isAutheticatorFlow());
+        model.setFlowId(rep.getFlowId());
+        model.setPriority(rep.getPriority());
+        model.setUserSetupAllowed(rep.isUserSetupAllowed());
+        model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
+        return model;
+    }
+
+    public static AuthenticatorConfigModel toModel(AuthenticatorConfigRepresentation rep) {
+        AuthenticatorConfigModel model = new AuthenticatorConfigModel();
+        model.setId(rep.getId());
+        model.setAlias(rep.getAlias());
+        model.setConfig(rep.getConfig());
+        return model;
+    }
+
 
 }

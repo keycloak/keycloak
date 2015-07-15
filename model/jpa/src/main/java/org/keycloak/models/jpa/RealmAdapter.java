@@ -1579,7 +1579,8 @@ public class RealmAdapter implements RealmModel {
     @Override
     public AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model) {
         AuthenticationFlowEntity entity = new AuthenticationFlowEntity();
-        entity.setId(KeycloakModelUtils.generateId());
+        String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
+        entity.setId(id);
         entity.setAlias(model.getAlias());
         entity.setDescription(model.getDescription());
         entity.setProviderId(model.getProviderId());
@@ -1633,7 +1634,8 @@ public class RealmAdapter implements RealmModel {
     @Override
     public AuthenticationExecutionModel addAuthenticatorExecution(AuthenticationExecutionModel model) {
         AuthenticationExecutionEntity entity = new AuthenticationExecutionEntity();
-        entity.setId(KeycloakModelUtils.generateId());
+        String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
+        entity.setId(id);
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setFlowId(model.getFlowId());
@@ -1678,7 +1680,8 @@ public class RealmAdapter implements RealmModel {
     @Override
     public AuthenticatorConfigModel addAuthenticatorConfig(AuthenticatorConfigModel model) {
         AuthenticatorConfigEntity auth = new AuthenticatorConfigEntity();
-        auth.setId(KeycloakModelUtils.generateId());
+        String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
+        auth.setId(id);
         auth.setAlias(model.getAlias());
         auth.setRealm(realm);
         auth.setConfig(model.getConfig());
@@ -1742,7 +1745,8 @@ public class RealmAdapter implements RealmModel {
     @Override
     public RequiredActionProviderModel addRequiredActionProvider(RequiredActionProviderModel model) {
         RequiredActionProviderEntity auth = new RequiredActionProviderEntity();
-        auth.setId(KeycloakModelUtils.generateId());
+        String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
+        auth.setId(id);
         auth.setAlias(model.getAlias());
         auth.setName(model.getName());
         auth.setRealm(realm);

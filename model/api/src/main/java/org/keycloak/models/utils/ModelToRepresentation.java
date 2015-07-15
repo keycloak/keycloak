@@ -1,5 +1,8 @@
 package org.keycloak.models.utils;
 
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -17,6 +20,9 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
+import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -183,9 +189,29 @@ public class ModelToRepresentation {
         rep.setInternationalizationEnabled(realm.isInternationalizationEnabled());
         rep.getSupportedLocales().addAll(realm.getSupportedLocales());
         rep.setDefaultLocale(realm.getDefaultLocale());
-
+        if (internal) {
+            exportAuthenticationFlows(realm, rep);
+        }
         return rep;
     }
+
+    public static void exportAuthenticationFlows(RealmModel realm, RealmRepresentation rep) {
+        rep.setAuthenticationFlows(new LinkedList<AuthenticationFlowRepresentation>());
+        rep.setAuthenticatorConfig(new LinkedList<AuthenticatorConfigRepresentation>());
+        for (AuthenticationFlowModel model : realm.getAuthenticationFlows()) {
+            AuthenticationFlowRepresentation flowRep = toRepresentation(model);
+            flowRep.setAuthenticationExecutions(new LinkedList<AuthenticationExecutionRepresentation>());
+            for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(model.getId())) {
+                flowRep.getAuthenticationExecutions().add(toRepresentation(execution));
+            }
+            rep.getAuthenticationFlows().add(flowRep);
+        }
+        for (AuthenticatorConfigModel model : realm.getAuthenticatorConfigs()) {
+            rep.getAuthenticatorConfig().add(toRepresentation(model));
+        }
+
+    }
+
 
     public static RealmEventsConfigRepresentation toEventsConfigReprensetation(RealmModel realm) {
         RealmEventsConfigRepresentation rep = new RealmEventsConfigRepresentation();
@@ -403,5 +429,38 @@ public class ModelToRepresentation {
         consentRep.setGrantedClientRoles(grantedClientRoles);
         return consentRep;
     }
+
+    public static AuthenticationFlowRepresentation  toRepresentation(AuthenticationFlowModel model) {
+        AuthenticationFlowRepresentation rep = new AuthenticationFlowRepresentation();
+        rep.setBuiltIn(model.isBuiltIn());
+        rep.setTopLevel(model.isTopLevel());
+        rep.setProviderId(model.getProviderId());
+        rep.setId(model.getId());
+        rep.setAlias(model.getAlias());
+        rep.setDescription(model.getDescription());
+        return rep;
+
+    }
+
+    public static AuthenticationExecutionRepresentation toRepresentation(AuthenticationExecutionModel model) {
+        AuthenticationExecutionRepresentation rep = new AuthenticationExecutionRepresentation();
+        rep.setAuthenticatorConfig(model.getAuthenticatorConfig());
+        rep.setAuthenticator(model.getAuthenticator());
+        rep.setAutheticatorFlow(model.isAutheticatorFlow());
+        rep.setFlowId(model.getFlowId());
+        rep.setPriority(model.getPriority());
+        rep.setUserSetupAllowed(model.isUserSetupAllowed());
+        rep.setRequirement(model.getRequirement().name());
+        return rep;
+    }
+
+    public static AuthenticatorConfigRepresentation toRepresentation(AuthenticatorConfigModel model) {
+        AuthenticatorConfigRepresentation rep = new AuthenticatorConfigRepresentation();
+        rep.setId(model.getId());
+        rep.setAlias(model.getAlias());
+        rep.setConfig(model.getConfig());
+        return rep;
+    }
+
 
 }

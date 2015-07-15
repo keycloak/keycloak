@@ -20,9 +20,8 @@ public class DefaultAuthenticationFlows {
     public static final String LOGIN_FORMS_FLOW = "forms";
 
     public static void addFlows(RealmModel realm) {
-        browserFlow(realm);
-        registrationFlow(realm);
-
+        if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm);
+        if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
     }
 
     public static void registrationFlow(RealmModel realm) {
