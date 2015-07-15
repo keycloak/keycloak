@@ -43,10 +43,10 @@
 
 
         <section id="overlay_install">
-            <title>Install on existing WildFly 9.0.0.CR2</title>
+            <title>Install on existing WildFly 9.0.0.Final</title>
             <para>
-                Keycloak can be installed into an existing WildFly 9.0.0.CR2 server. To do this download
-                <literal>keycloak-overlay-&project.version;.zip</literal> or  <literal>keycloak-overlay-&project.version;.tar.gz</literal>.
+                Keycloak can be installed into an existing WildFly 9.0.0.Final server. To do this download
+                <literal>keycloak-overlay-&project.version;.zip</literal> or <literal>keycloak-overlay-&project.version;.tar.gz</literal>.
                 Once downloaded extract into the root directory of your WildFly installation. To start WildFly with Keycloak
                 run:
                 <programlisting>keycloak-&project.version;/bin/standalone.sh --server-config=standalone-keycloak.xml</programlisting>
@@ -65,16 +65,16 @@
                 to, for example <literal>standalone/configuration/standalone.xml</literal>. From <literal>standalone-keycloak.xml</literal>
                 you need to copy 3 elements:
                 <itemizedlist>
-                    <listitem><literal>&lt;extension module="org.keycloak.keycloak-subsystem"/&gt;</literal></listitem>
+                    <listitem><literal>&lt;extension module="org.keycloak.keycloak-server-subsystem"/&gt;</literal></listitem>
                     <listitem><literal>&lt;datasource jndi-name="java:jboss/datasources/KeycloakDS" ...&gt;</literal></listitem>
-                    <listitem><literal>&lt;subsystem xmlns="urn:jboss:domain:keycloak:1.0" ...&gt;</literal></listitem>
+                    <listitem><literal>&lt;subsystem xmlns="urn:jboss:domain:keycloak-server:1.1" ...&gt;</literal></listitem>
                 </itemizedlist>
             </para>
         </section>
         <section>
             <title>Install on existing JBoss EAP 6.4.0.GA</title>
             <para>
-                Same procedure as JBoss EAP 6.4.0.GA, but download <literal>keycloak-overlay-eap6-&project.version;.zip</literal> or  <literal>keycloak-overlay-eap6-&project.version;.tar.gz</literal>.
+                Same procedure as WildFly 9.0.0.Final, but download <literal>keycloak-overlay-eap6-&project.version;.zip</literal> or <literal>keycloak-overlay-eap6-&project.version;.tar.gz</literal>.
             </para>
         </section>
         <section>
@@ -84,7 +84,7 @@
                 To install it first download <literal>keycloak-demo-&project.version;.zip</literal> or
                 <literal>keycloak-demo-&project.version;.tar.gz</literal>. Once downloaded extract it inside
                 <literal>keycloak-demo-&project.version;</literal> you'll find <literal>keycloak</literal> which contains
-                a full WildFly 9.0.0.CR2 server with Keycloak Server and Adapters included. You'll also find <literal>docs</literal>
+                a full WildFly 9.0.0.Final server with Keycloak Server and Adapters included. You'll also find <literal>docs</literal>
                 and <literal>examples</literal> which contains everything you need to get started developing applications that use Keycloak.
             </para>
             <para>
