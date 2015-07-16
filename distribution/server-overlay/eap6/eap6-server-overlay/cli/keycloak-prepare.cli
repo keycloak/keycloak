@@ -1,0 +1,8 @@
+/subsystem=datasources/data-source=KeycloakDS/:add(connection-url="jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE",driver-name=h2,jndi-name=java:jboss/datasources/KeycloakDS,password=sa,user-name=sa,use-java-context=true,enabled=true)
+/subsystem=logging/logger=org.jboss.resteasy.resteasy_jaxrs.i18n/:add(level=ERROR)
+/subsystem=security/security-domain=keycloak/:add
+/subsystem=security/security-domain=keycloak/authentication=classic:add
+/subsystem=security/security-domain=keycloak/authentication=classic/login-module=keycloak/:add(flag=required,code=org.keycloak.adapters.jboss.KeycloakLoginModule)
+/subsystem=security/security-domain=sp/:add(cache-type=default)
+/subsystem=security/security-domain=sp/authentication=classic:add
+/subsystem=security/security-domain=sp/authentication=classic/login-module=saml/:add(flag=required,code=org.picketlink.identity.federation.bindings.wildfly.SAML2LoginModule)
