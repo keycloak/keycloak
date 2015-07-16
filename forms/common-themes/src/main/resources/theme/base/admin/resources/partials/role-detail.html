@@ -6,10 +6,8 @@
         <li data-ng-show="create">Add Role</li>
     </ol>
 
-    <h1 data-ng-hide="create">
-        {{role.name|capitalize}}
-        <i id="removeRole" style="padding-left: 20px" class="pficon pficon-delete" data-ng-show="!create && access.manageRealm" data-ng-hide="changed" data-ng-click="remove()"></i>
-    </h1>
+    <h1 data-ng-hide="create">{{role.name|capitalize}} <i id="removeRole" class="pficon pficon-delete clickable" data-ng-show="!create && access.manageRealm" 
+    	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
     <h1 data-ng-show="create">Add Role</h1>
 
     <form class="form-horizontal clearfix" name="realmForm" novalidate kc-read-only="!access.manageRealm">

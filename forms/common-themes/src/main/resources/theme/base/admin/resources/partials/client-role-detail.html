@@ -9,7 +9,7 @@
     </ol>
 
     <h1 data-ng-show="create">Add Role</h1>
-    <h1 data-ng-hide="create">{{role.name|capitalize}}<i style="padding-left: 20px" class="pficon pficon-delete" data-ng-show="!create && access.manageClients" 
+    <h1 data-ng-hide="create">{{role.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create && access.manageClients" 
     	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients">
