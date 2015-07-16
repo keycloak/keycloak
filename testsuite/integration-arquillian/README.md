@@ -78,10 +78,10 @@ Multiple profiles can be enabled for a single test run (Maven build).
 | --- | --- | --- | --- |
 | **Wildfly 9** Relative | `auth-server-wildfly` | `-Pauth-server-wildfly` | `keycloak-demo-dist` serves both as auth-server and app-server (relative test scenario) |
 | **Wildfly 9** | `app-server-wildfly` | `-Papp-server-wildfly` | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
-| **Wildfly 9** Vanilla | `app-server-wildfly-vanilla` | `-Papp-server-wildfly-vanilla` (mutually exclusive with `-Papp-server-wildfly`) | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
+| **Wildfly 9** Vanilla | `app-server-wildfly-vanilla` | `-Papp-server-wildfly-vanilla` mutually exclusive with `-Papp-server-wildfly` | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
 | ~~**JBoss AS 7**~~ not fully functional yet | `app-server-as7` | `-Papp-server-as7` | `jboss-as-dist`, `keycloak-adapter-dist-as7` |
 | **Tomcat 8** | `app-server-tomcat` | `-Papp-server-tomcat` | `tomcat`, `keycloak-tomcat8-adapter-dist` |
-| **Karaf 3** WIP | `app-server-karaf` | `-Papp-server-karaf` | `testsuite/karaf-example-dist` |
+| **Karaf 3** | `app-server-karaf` | `-Papp-server-karaf` mututally exclusive with other profiles | `testsuite/karaf-example-dist` |
 
 See the relevant container definitions in `arquillian.xml` located in the **test resources** folder.
 
