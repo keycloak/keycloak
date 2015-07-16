@@ -289,3 +289,13 @@ background-repeat: no-repeat;
   left:20px;
 }
 
+.clickable {
+    cursor: pointer;
+}
+
+h1 i {
+    color: #999999;
+    font-size: 18px;
+    margin-left: 10px;
+}
+
