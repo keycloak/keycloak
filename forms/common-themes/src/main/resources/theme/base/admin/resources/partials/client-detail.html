@@ -204,6 +204,13 @@
                 </div>
                 <kc-tooltip>If configured, this URL will be used for every binding to both the SP's Assertion Consumer and Single Logout Services.  This can be individually overiden for each binding and service in the Fine Grain SAML Endpoint Configuration.</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                <label class="col-md-2 control-label" for="urlReferenceName">IDP Initiated SSO URL Name</label>
+                <div class="col-sm-6">
+                    <input ng-model="client.attributes.saml_idp_initiated_sso_url_name" class="form-control" type="text" name="urlReferenceName" id="urlReferenceName" />
+                </div>
+                <kc-tooltip>URL fragment name to reference client when you want to do IDP Initiated SSO.  Leaving this empty will disable IDP Initiated SSO.  The URL you will reference from your browser will be: {server-root}/realms/{realm}/protocol/saml/clients/{client-url-name}</kc-tooltip>
+            </div>
             <div class="form-group" data-ng-show="!client.bearerOnly && !create && protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="newWebOrigin">Web Origins</label>
 
