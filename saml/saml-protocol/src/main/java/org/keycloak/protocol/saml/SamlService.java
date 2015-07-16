@@ -561,7 +561,8 @@ public class SamlService {
     @GET
     @Path("clients/{client}")
     @Produces(MediaType.TEXT_HTML)
-    public Response idpInitiatedSSO(@PathParam("client") String clientUrlName) {
+    public Response idpInitiatedSSO(@PathParam("client") String clientUrlName,
+                                    @QueryParam("RelayState") String relayState) {
         event.event(EventType.LOGIN);
         ClientModel client = null;
         for (ClientModel c : realm.getClients()) {
@@ -609,7 +610,9 @@ public class SamlService {
         clientSession.setNote(SamlProtocol.SAML_IDP_INITIATED_LOGIN, "true");
         clientSession.setRedirectUri(redirect);
 
-        String relayState = client.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_RELAY_STATE);
+        if (relayState == null) {
+            relayState = client.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_RELAY_STATE);
+        }
         if (relayState != null && !relayState.trim().equals("")) {
             clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
         }
