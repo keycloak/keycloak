@@ -3,6 +3,7 @@ package org.keycloak.protocol.saml;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
 import org.keycloak.VerificationException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -42,6 +43,7 @@ import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -245,8 +247,8 @@ public class SamlService {
                 } else {
                     redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
                 }
-                if (redirect == null && client instanceof ClientModel) {
-                    redirect = ((ClientModel) client).getManagementUrl();
+                if (redirect == null) {
+                    redirect = client.getManagementUrl();
                 }
 
             }
@@ -283,40 +285,8 @@ public class SamlService {
             return newBrowserAuthentication(clientSession);
         }
 
-        private Response buildRedirectToIdentityProvider(String providerId, String accessCode) {
-            logger.debug("Automatically redirect to identity provider: " + providerId);
-            return Response.temporaryRedirect(
-                    Urls.identityProviderAuthnRequest(uriInfo.getBaseUri(), providerId, realm.getName(), accessCode))
-                    .build();
-        }
 
 
-        protected Response newBrowserAuthentication(ClientSessionModel clientSession) {
-            List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
-            for (IdentityProviderModel identityProvider : identityProviders) {
-                if (identityProvider.isAuthenticateByDefault()) {
-                    return buildRedirectToIdentityProvider(identityProvider.getAlias(), new ClientSessionCode(realm, clientSession).getCode() );
-                }
-            }
-            AuthenticationFlowModel flow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
-            String flowId = flow.getId();
-            AuthenticationProcessor processor = new AuthenticationProcessor();
-            processor.setClientSession(clientSession)
-                    .setFlowId(flowId)
-                    .setConnection(clientConnection)
-                    .setEventBuilder(event)
-                    .setProtector(authManager.getProtector())
-                    .setRealm(realm)
-                    .setSession(session)
-                    .setUriInfo(uriInfo)
-                    .setRequest(request);
-
-            try {
-                return processor.authenticate();
-            } catch (Exception e) {
-                return processor.handleBrowserException(e);
-            }
-        }
 
 
         private String getBindingType(AuthnRequestType requestAbstractType) {
@@ -515,6 +485,42 @@ public class SamlService {
     }
 
 
+    private Response buildRedirectToIdentityProvider(String providerId, String accessCode) {
+        logger.debug("Automatically redirect to identity provider: " + providerId);
+        return Response.temporaryRedirect(
+                Urls.identityProviderAuthnRequest(uriInfo.getBaseUri(), providerId, realm.getName(), accessCode))
+                .build();
+    }
+
+    protected Response newBrowserAuthentication(ClientSessionModel clientSession) {
+        List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
+        for (IdentityProviderModel identityProvider : identityProviders) {
+            if (identityProvider.isAuthenticateByDefault()) {
+                return buildRedirectToIdentityProvider(identityProvider.getAlias(), new ClientSessionCode(realm, clientSession).getCode() );
+            }
+        }
+        AuthenticationFlowModel flow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+        String flowId = flow.getId();
+        AuthenticationProcessor processor = new AuthenticationProcessor();
+        processor.setClientSession(clientSession)
+                .setFlowId(flowId)
+                .setConnection(clientConnection)
+                .setEventBuilder(event)
+                .setProtector(authManager.getProtector())
+                .setRealm(realm)
+                .setSession(session)
+                .setUriInfo(uriInfo)
+                .setRequest(request);
+
+        try {
+            return processor.authenticate();
+        } catch (Exception e) {
+            return processor.handleBrowserException(e);
+        }
+    }
+
+
+
     /**
      */
     @GET
@@ -549,6 +555,67 @@ public class SamlService {
         template = template.replace("${idp.sls.HTTP-POST}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
         template = template.replace("${idp.signing.certificate}", realm.getCertificatePem());
         return template;
+
+    }
+
+    @GET
+    @Path("clients/{client}")
+    @Produces(MediaType.TEXT_HTML)
+    public Response idpInitiatedSSO(@PathParam("client") String clientUrlName) {
+        event.event(EventType.LOGIN);
+        ClientModel client = null;
+        for (ClientModel c : realm.getClients()) {
+            String urlName = c.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME);
+            if (urlName == null) continue;
+            if (urlName.equals(clientUrlName)) {
+                client = c;
+                break;
+            }
+        }
+        if (client == null) {
+            event.error(Errors.CLIENT_NOT_FOUND);
+            return ErrorPage.error(session, Messages.CLIENT_NOT_FOUND);
+        }
+        if (client.getManagementUrl() == null
+                && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE) == null
+                && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE) == null) {
+            logger.error("SAML assertion consumer url not set up");
+            event.error(Errors.INVALID_REDIRECT_URI);
+            return ErrorPage.error(session, Messages.INVALID_REDIRECT_URI);
+        }
+
+        String bindingType = SamlProtocol.SAML_POST_BINDING;
+        if (client.getManagementUrl() == null
+                && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE) == null
+                && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE) != null) {
+            bindingType = SamlProtocol.SAML_REDIRECT_BINDING;
+        }
+
+        String redirect = null;
+        if (bindingType.equals(SamlProtocol.SAML_REDIRECT_BINDING)) {
+            redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
+        } else {
+            redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
+        }
+        if (redirect == null) {
+            redirect = client.getManagementUrl();
+        }
+
+        ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
+        clientSession.setAuthMethod(SamlProtocol.LOGIN_PROTOCOL);
+        clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+        clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
+        clientSession.setNote(SamlProtocol.SAML_BINDING, SamlProtocol.SAML_POST_BINDING);
+        clientSession.setNote(SamlProtocol.SAML_IDP_INITIATED_LOGIN, "true");
+        clientSession.setRedirectUri(redirect);
+
+        String relayState = client.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_RELAY_STATE);
+        if (relayState != null && !relayState.trim().equals("")) {
+            clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
+        }
+
+
+        return newBrowserAuthentication(clientSession);
 
     }
 
