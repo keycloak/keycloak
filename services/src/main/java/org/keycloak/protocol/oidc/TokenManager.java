@@ -324,6 +324,7 @@ public class TokenManager {
         token.issuedNow();
         token.issuedFor(client.getClientId());
         token.issuer(clientSession.getNote(OIDCLoginProtocol.ISSUER));
+        token.setNonce(clientSession.getNote(OIDCLoginProtocol.NONCE_PARAM));
         if (session != null) {
             token.setSessionState(session.getId());
         }
@@ -434,6 +435,7 @@ public class TokenManager {
             idToken.issuedNow();
             idToken.issuedFor(accessToken.getIssuedFor());
             idToken.issuer(accessToken.getIssuer());
+            idToken.setNonce(accessToken.getNonce());
             idToken.setSessionState(accessToken.getSessionState());
             if (realm.getAccessTokenLifespan() > 0) {
                 idToken.expiration(Time.currentTime() + realm.getAccessTokenLifespan());
