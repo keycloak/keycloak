@@ -6,7 +6,7 @@
         <li data-ng-show="create">Add Role</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{role.name|capitalize}} <i class="pficon pficon-delete pfdelete" data-ng-show="!create && access.manageRealm" 
+    <h1 data-ng-hide="create">{{role.name|capitalize}} <i class="pficon pficon-delete clickable" data-ng-show="!create && access.manageRealm" 
     	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
     <h1 data-ng-show="create">Add Role</h1>
 

@@ -289,9 +289,13 @@ background-repeat: no-repeat;
   left:20px;
 }
 
-/*********** patternfly pficon-delete custom css ***********/
-.pfdelete {
-	padding-left: 20px;
-	cursor: pointer;
+.clickable {
+    cursor: pointer;
+}
+
+h1 i {
+    color: #999999;
+    font-size: 18px;
+    margin-left: 10px;
 }
 
