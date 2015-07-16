@@ -193,5 +193,8 @@
             go to the client page in the admin console of the client you want to set this up for.  Specify the <literal>IDP Initiated SSO URL Name</literal>.  This is a simple string
             with no whitespace in it.  After this you can reference your client at the following URL:  <literal>root/auth/realms/{realm}/protocol/saml/clients/{url-name}</literal>
         </para>
+        <para>
+            If your client requires a special relay state, you can also configure this in the admin console.
+        </para>
     </section>
 </chapter>

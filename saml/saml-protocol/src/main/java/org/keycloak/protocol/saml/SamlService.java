@@ -609,6 +609,11 @@ public class SamlService {
         clientSession.setNote(SamlProtocol.SAML_IDP_INITIATED_LOGIN, "true");
         clientSession.setRedirectUri(redirect);
 
+        String relayState = client.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_RELAY_STATE);
+        if (relayState != null && !relayState.trim().equals("")) {
+            clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
+        }
+
 
         return newBrowserAuthentication(clientSession);
 

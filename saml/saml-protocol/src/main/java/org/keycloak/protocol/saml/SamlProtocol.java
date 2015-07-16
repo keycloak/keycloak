@@ -59,7 +59,6 @@ import java.util.UUID;
  * @version $Revision: 1 $
  */
 public class SamlProtocol implements LoginProtocol {
-    public static final String SAML_IDP_INITIATED_SSO_URL_NAME = "saml_idp_initiated_sso_url_name";
     protected static final Logger logger = Logger.getLogger(SamlProtocol.class);
 
 
@@ -95,6 +94,8 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_NAME_ID_FORMAT = "SAML_NAME_ID_FORMAT";
     public static final String SAML_DEFAULT_NAMEID_FORMAT = JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get();
     public static final String SAML_PERSISTENT_NAME_ID_FOR = "saml.persistent.name.id.for";
+    public static final String SAML_IDP_INITIATED_SSO_RELAY_STATE = "saml_idp_initiated_sso_relay_state";
+    public static final String SAML_IDP_INITIATED_SSO_URL_NAME = "saml_idp_initiated_sso_url_name";
 
     protected KeycloakSession session;
 
