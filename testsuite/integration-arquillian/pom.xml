@@ -9,8 +9,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>arquillian-integration</artifactId>
-    <name>KeyCloak Admin UI TestSuite</name>
+    <artifactId>keycloak-testsuite-integration-arquillian</artifactId>
+    <name>KeyCloak Arquillian TestSuite</name>
 
     <properties>
         <browser>phantomjs</browser>
@@ -87,6 +87,16 @@
             <version>${arquillian-phantomjs.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-dist</artifactId>
+            <scope>test</scope>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </dependency>
     </dependencies>
 
     <profiles>
@@ -151,7 +161,6 @@
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>keycloak-server-dist</artifactId>
-                                            <version>${project.version}</version>
                                             <type>zip</type>
                                             <overWrite>false</overWrite>
                                         </artifactItem>
