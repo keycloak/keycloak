@@ -42,11 +42,6 @@
             <type>pom</type>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.subsystem</groupId>
-            <artifactId>keycloak-server</artifactId>
-            <type>war</type>
-        </dependency>
-        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-wildfly-extensions</artifactId>
         </dependency>
@@ -104,30 +99,6 @@
                             <outputDirectory>target/</outputDirectory>
                             <workDirectory>target/assembly/work</workDirectory>
                             <tarLongFileMode>gnu</tarLongFileMode>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.keycloak.subsystem</groupId>
-                                    <artifactId>keycloak-server</artifactId>
-                                    <type>war</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/base/org/keycloak/keycloak-server-subsystem/main/server-war</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
                         </configuration>
                     </execution>
                 </executions>

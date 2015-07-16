@@ -12,12 +12,6 @@
 
     <mkdirs>
     </mkdirs>
-<!--    <copy-artifacts>
-        <copy-artifact artifact="org.keycloak.subsystem:keycloak-server" to-location="standalone/configuration" extract="true">
-            
-            <filter pattern="**/keycloak-server.json" include="true"/>
-        </copy-artifact>
-    </copy-artifacts>    -->
     <file-permissions>
         <permission value="755">
             <filter pattern="*.sh" include="true"/>

@@ -35,11 +35,6 @@
             <artifactId>keycloak-as7-server-subsystem</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.subsystem</groupId>
-            <artifactId>keycloak-server</artifactId>
-            <type>war</type>
-        </dependency>
-        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-wildfly-extensions</artifactId>
         </dependency>
@@ -129,30 +124,6 @@
                                 target/assembly/work
                             </workDirectory>
                             <appendAssemblyId>false</appendAssemblyId>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.keycloak.subsystem</groupId>
-                                    <artifactId>keycloak-server</artifactId>
-                                    <type>war</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/modules/org/keycloak/keycloak-as7-server-subsystem/main/server-war</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
                         </configuration>
                     </execution>
                 </executions>
