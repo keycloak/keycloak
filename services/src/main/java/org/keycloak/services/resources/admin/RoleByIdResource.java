@@ -195,7 +195,7 @@ public class RoleByIdResource extends RoleResource {
      * @param client
      * @return
      */
-    @Path("{role}/composites/clients/{client}")
+    @Path("{role-id}/composites/clients/{client}")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
