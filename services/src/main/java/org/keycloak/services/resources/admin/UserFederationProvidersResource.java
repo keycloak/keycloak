@@ -4,19 +4,24 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.constants.KerberosConstants;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.timer.TimerProvider;
+import org.keycloak.utils.CredentialHelper;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -59,6 +64,23 @@ public class UserFederationProvidersResource {
         this.adminEvent = adminEvent;
         
         auth.init(RealmAuth.Resource.USER);
+    }
+
+    /**
+     * Automatically add "kerberos" to required realm credentials if it's supported by saved provider
+     *
+     * @param realm
+     * @param model
+     * @return true if kerberos credentials were added
+     */
+    public static boolean checkKerberosCredential(KeycloakSession session, RealmModel realm, UserFederationProviderModel model) {
+        String allowKerberosCfg = model.getConfig().get(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION);
+        if (Boolean.valueOf(allowKerberosCfg)) {
+            CredentialHelper.setAlternativeCredential(session, CredentialRepresentation.KERBEROS, realm);
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -125,7 +147,7 @@ public class UserFederationProvidersResource {
         UserFederationProviderModel model = realm.addUserFederationProvider(rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName,
                 rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
-        boolean kerberosCredsAdded = KeycloakModelUtils.checkKerberosCredential(realm, model);
+        boolean kerberosCredsAdded = checkKerberosCredential(session, realm, model);
         if (kerberosCredsAdded) {
             logger.info("Added 'kerberos' to required realm credentials");
         }

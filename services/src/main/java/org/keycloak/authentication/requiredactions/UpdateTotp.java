@@ -22,14 +22,6 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     protected static Logger logger = Logger.getLogger(UpdateTotp.class);
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
-        // I don't think we need this check here.  AuthenticationProcessor should be setting the required action
-        // if OTP changes from required from optional or disabled
-        for (RequiredCredentialModel c : context.getRealm().getRequiredCredentials()) {
-            if (c.getType().equals(CredentialRepresentation.TOTP) && !context.getUser().isTotp()) {
-                context.getUser().addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
-                logger.debug("User is required to configure totp");
-            }
-        }
     }
 
     @Override

@@ -132,12 +132,13 @@ public class RepresentationToModel {
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
         if (rep.getEmailTheme() != null) newRealm.setEmailTheme(rep.getEmailTheme());
 
+        // todo remove this stuff as its all deprecated
         if (rep.getRequiredCredentials() != null) {
             for (String requiredCred : rep.getRequiredCredentials()) {
-                addRequiredCredential(newRealm, requiredCred);
+                newRealm.addRequiredCredential(requiredCred);
             }
         } else {
-            addRequiredCredential(newRealm, CredentialRepresentation.PASSWORD);
+            newRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         }
 
         if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
@@ -301,7 +302,7 @@ public class RepresentationToModel {
     public static void importAuthenticationFlows(RealmModel newRealm, RealmRepresentation rep) {
         if (rep.getAuthenticationFlows() == null) {
             // assume this is an old version being imported
-            DefaultAuthenticationFlows.addFlows(newRealm);
+            DefaultAuthenticationFlows.migrateFlows(newRealm);
         } else {
             for (AuthenticatorConfigRepresentation configRep : rep.getAuthenticatorConfig()) {
                 AuthenticatorConfigModel model = toModel(configRep);
@@ -520,10 +521,6 @@ public class RepresentationToModel {
     }
 
     // Basic realm stuff
-
-    public static void addRequiredCredential(RealmModel newRealm, String requiredCred) {
-        newRealm.addRequiredCredential(requiredCred);
-    }
 
 
     private static List<UserFederationProviderModel> convertFederationProviders(List<UserFederationProviderRepresentation> providers) {

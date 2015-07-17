@@ -34,7 +34,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -89,7 +88,7 @@ public class UserFederationProviderResource {
                 rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
         realm.updateUserFederationProvider(model);
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
-        boolean kerberosCredsAdded = KeycloakModelUtils.checkKerberosCredential(realm, model);
+        boolean kerberosCredsAdded = UserFederationProvidersResource.checkKerberosCredential(session, realm, model);
         if (kerberosCredsAdded) {
             logger.info("Added 'kerberos' to required realm credentials");
         }

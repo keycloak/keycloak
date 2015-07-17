@@ -1,4 +1,4 @@
-package org.keycloak.models;
+package org.keycloak.testsuite.model;
 
 import org.junit.Assert;
 import org.junit.Test;

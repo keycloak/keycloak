@@ -4,12 +4,8 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.authentication.AuthenticationFlow;
-import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
-import org.keycloak.authentication.FormAction;
-import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -18,6 +14,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
+import org.keycloak.utils.CredentialHelper;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -191,7 +188,7 @@ public class AuthenticationManagementResource {
                     rep.setSubFlow(true);
                 }
                 String providerId = execution.getAuthenticator();
-                ConfigurableAuthenticatorFactory factory = getConfigurableAuthenticatorFactory(providerId);
+                ConfigurableAuthenticatorFactory factory = CredentialHelper.getConfigurableAuthenticatorFactory(session, providerId);
                 rep.setReferenceType(factory.getDisplayType());
                 rep.setConfigurable(factory.isConfigurable());
                 for (AuthenticationExecutionModel.Requirement choice : factory.getRequirementChoices()) {
@@ -207,14 +204,6 @@ public class AuthenticationManagementResource {
 
         }
         return Response.ok(result).build();
-    }
-
-    public ConfigurableAuthenticatorFactory getConfigurableAuthenticatorFactory(String providerId) {
-        ConfigurableAuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, providerId);
-        if (factory == null) {
-            factory = (FormActionFactory)session.getKeycloakSessionFactory().getProviderFactory(FormAction.class, providerId);
-        }
-        return factory;
     }
 
     @Path("/flows/{flowAlias}/executions")
@@ -439,7 +428,7 @@ public class AuthenticationManagementResource {
     @NoCache
     public AuthenticatorConfigDescription getAuthenticatorConfigDescription(@PathParam("providerId") String providerId) {
         this.auth.requireView();
-        ConfigurableAuthenticatorFactory factory = getConfigurableAuthenticatorFactory(providerId);
+        ConfigurableAuthenticatorFactory factory = CredentialHelper.getConfigurableAuthenticatorFactory(session, providerId);
         if (factory == null) {
             throw new NotFoundException("Could not find authenticator provider");
         }
