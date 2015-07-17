@@ -32,7 +32,9 @@
         <!--<app.server.management.port.jmx>10199</app.server.management.port.jmx>-->
         
         <as7.version>${jboss.version}</as7.version>
-                                                        
+
+        <startup.timeout.sec>60</startup.timeout.sec>
+                                                                                                                
         <!-- TEST SETTINGS -->
         
         <!--
@@ -324,6 +326,7 @@
                                 <app.server.management.port>${app.server.management.port}</app.server.management.port>
                                 <app.server.management.port.jmx>${app.server.management.port.jmx}</app.server.management.port.jmx>
                                 <adapter.type>${adapter.type}</adapter.type>
+                                <startup.timeout.sec>${startup.timeout.sec}</startup.timeout.sec>
                             </systemPropertyVariables>
                             <properties>
                                 <property>
