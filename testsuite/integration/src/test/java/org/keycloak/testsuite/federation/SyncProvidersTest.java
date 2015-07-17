@@ -151,7 +151,7 @@ public class SyncProvidersTest {
             RealmModel testRealm = session.realms().getRealm("test");
             UserProvider userProvider = session.userStorage();
             // Assert users updated in local provider
-            FederationTestUtils.assertUserImported(userProvider, testRealm, "user5", "User5FN", "User5LN", "user5Updated@email.org", "521");
+            FederationTestUtils.assertUserImported(userProvider, testRealm, "user5", "User5FN", "User5LN", "user5updated@email.org", "521");
             FederationTestUtils.assertUserImported(userProvider, testRealm, "user6", "User6FN", "User6LN", "user6@email.org", "126");
         } finally {
             keycloakRule.stopSession(session, false);

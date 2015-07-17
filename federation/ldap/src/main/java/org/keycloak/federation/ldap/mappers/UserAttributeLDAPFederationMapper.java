@@ -23,6 +23,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.models.utils.reflection.Property;
 import org.keycloak.models.utils.reflection.PropertyCriteria;
@@ -138,6 +139,9 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
     // throw ModelDuplicateException if there is different user in model with same email
     protected void checkDuplicateEmail(String userModelAttrName, String email, RealmModel realm, KeycloakSession session, UserModel user) {
         if (UserModel.EMAIL.equalsIgnoreCase(userModelAttrName)) {
+            // lowercase before search
+            email = KeycloakModelUtils.toLowerCaseSafe(email);
+
             UserModel that = session.userStorage().getUserByEmail(email, realm);
             if (that != null && !that.getId().equals(user.getId())) {
                 session.getTransaction().setRollbackOnly();

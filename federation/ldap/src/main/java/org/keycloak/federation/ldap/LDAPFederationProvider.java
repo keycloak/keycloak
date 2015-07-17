@@ -431,13 +431,6 @@ public class LDAPFederationProvider implements UserFederationProvider {
             return null;
         }
 
-        // KEYCLOAK-808: Should we allow case-sensitivity to be configurable?
-        String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
-        if (!username.equals(ldapUsername)) {
-            logger.warnf("User found in LDAP but with different username. LDAP username: %s, Searched username: %s", username, ldapUsername);
-            return null;
-        }
-
         return ldapUser;
     }
 
