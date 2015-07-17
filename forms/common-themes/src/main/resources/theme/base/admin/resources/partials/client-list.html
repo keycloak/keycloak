@@ -18,9 +18,9 @@
                         </div>
                     </div>
 
-                    <div class="pull-right" data-ng-show="access.manageRealm">
-                        <a class="btn btn-default" href="#/create/client/{{realm.realm}}">Create</a>
-                        <a class="btn btn-default" href="#/import/client/{{realm.realm}}" data-ng-show="importButton">Import</a>
+                    <div class="pull-right" data-ng-show="access.manageClients">
+                        <a id="createClient" class="btn btn-default" href="#/create/client/{{realm.realm}}">Create</a>
+                        <a id="importClient" class="btn btn-default" href="#/import/client/{{realm.realm}}" data-ng-show="importButton">Import</a>
                     </div>
                 </div>
             </th>

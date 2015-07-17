@@ -85,8 +85,8 @@ public class ExtendingThemeManager implements ThemeProvider {
 
     private Theme loadTheme(String name, Theme.Type type) throws IOException {
         Theme theme = findTheme(name, type);
-        if (theme != null && theme.getParentName() != null) {
-            List<Theme> themes = new LinkedList<Theme>();
+        if (theme != null && (theme.getParentName() != null || theme.getImportName() != null)) {
+            List<Theme> themes = new LinkedList<>();
             themes.add(theme);
 
             if (theme.getImportName() != null) {
@@ -94,13 +94,15 @@ public class ExtendingThemeManager implements ThemeProvider {
                 themes.add(findTheme(s[1], Theme.Type.valueOf(s[0].toUpperCase())));
             }
 
-            for (String parentName = theme.getParentName(); parentName != null; parentName = theme.getParentName()) {
-                theme = findTheme(parentName, type);
-                themes.add(theme);
+            if (theme.getParentName() != null) {
+                for (String parentName = theme.getParentName(); parentName != null; parentName = theme.getParentName()) {
+                    theme = findTheme(parentName, type);
+                    themes.add(theme);
 
-                if (theme.getImportName() != null) {
-                    String[] s = theme.getImportName().split("/");
-                    themes.add(findTheme(s[1], Theme.Type.valueOf(s[0].toUpperCase())));
+                    if (theme.getImportName() != null) {
+                        String[] s = theme.getImportName().split("/");
+                        themes.add(findTheme(s[1], Theme.Type.valueOf(s[0].toUpperCase())));
+                    }
                 }
             }
 

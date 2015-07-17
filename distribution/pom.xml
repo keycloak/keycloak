@@ -23,7 +23,6 @@
         <module>server-dist</module>
         <module>server-overlay</module>
         <module>src-dist</module>
-        <module>subsystem-war</module>
         <module>feature-packs</module>
     </modules>
 </project>

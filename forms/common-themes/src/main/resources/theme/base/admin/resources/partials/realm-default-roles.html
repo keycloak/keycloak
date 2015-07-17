@@ -19,7 +19,7 @@
                                 ng-model="selectedRealmRoles"
                                 ng-options="r for r in availableRealmRoles | orderBy:'toString()'">
                         </select>
-                        <button class="btn btn-default" type="submit" ng-click="addRealmDefaultRole()" tooltip="Assign role" tooltip-placement="right">
+                        <button ng-disabled="selectedRealmRoles.length == 0" class="btn btn-default" type="submit" ng-click="addRealmDefaultRole()">
                             Add selected <i class="fa fa-angle-double-right"></i>
                         </button>
                     </div>
@@ -31,7 +31,7 @@
                                 ng-model="selectedRealmDefRoles"
                                 ng-options="r for r in realm.defaultRoles | orderBy:'toString()'">
                         </select>
-                        <button class="btn btn-default" type="submit" ng-click="deleteRealmDefaultRole()" tooltip="Unassign role" tooltip-placement="left">
+                        <button ng-disabled="selectedRealmDefRoles.length == 0" class="btn btn-default" type="submit" ng-click="deleteRealmDefaultRole()">
                             <i class="fa fa-angle-double-left"></i> Remove selected
                         </button>
                     </div>
@@ -57,7 +57,7 @@
                                 ng-model="selectedClientRoles"
                                 ng-options="r for r in availableClientRoles | orderBy:'toString()'">
                         </select>
-                        <button class="btn btn-default" type="submit" ng-click="addClientDefaultRole()" tooltip="Assign role" tooltip-placement="right">
+                        <button ng-disabled="selectedClientRoles.length == 0" class="btn btn-default" type="submit" ng-click="addClientDefaultRole()">
                             Add selected <i class="fa fa-angle-double-right"></i>
                         </button>
                     </div>
@@ -69,7 +69,7 @@
                                 ng-model="selectedClientDefRoles"
                                 ng-options="r for r in client.defaultRoles | orderBy:'toString()'">
                         </select>
-                        <button class="btn btn-default" type="submit" ng-click="rmClientDefaultRole()" tooltip="Unassign role" tooltip-placement="left">
+                        <button ng-disabled="selectedClientDefRoles.length == 0" class="btn btn-default" type="submit" ng-click="rmClientDefaultRole()">
                             <i class="fa fa-angle-double-left"></i> Remove selected
                         </button>
                     </div>
