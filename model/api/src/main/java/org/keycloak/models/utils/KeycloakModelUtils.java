@@ -350,30 +350,4 @@ public final class KeycloakModelUtils {
         return mapperModel;
     }
 
-    /**
-     * Automatically add "kerberos" to required realm credentials if it's supported by saved provider
-     *
-     * @param realm
-     * @param model
-     * @return true if kerberos credentials were added
-     */
-    public static boolean checkKerberosCredential(RealmModel realm, UserFederationProviderModel model) {
-        String allowKerberosCfg = model.getConfig().get(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION);
-        if (Boolean.valueOf(allowKerberosCfg)) {
-            boolean found = false;
-            List<RequiredCredentialModel> currentCreds = realm.getRequiredCredentials();
-            for (RequiredCredentialModel cred : currentCreds) {
-                if (cred.getType().equals(UserCredentialModel.KERBEROS)) {
-                    found = true;
-                }
-            }
-
-            if (!found) {
-                realm.addRequiredCredential(UserCredentialModel.KERBEROS);
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

@@ -4,6 +4,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +24,13 @@ public class DefaultAuthenticationFlows {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm);
         if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
     }
+    public static void migrateFlows(RealmModel realm) {
+        browserFlow(realm, true);
+        if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
+    }
+
+
+
 
     public static void registrationFlow(RealmModel realm) {
         AuthenticationFlowModel registrationFlow = new AuthenticationFlowModel();
@@ -102,6 +110,20 @@ public class DefaultAuthenticationFlows {
     }
 
     public static void browserFlow(RealmModel realm) {
+        browserFlow(realm, false);
+    }
+
+    private static boolean hasCredentialType(RealmModel realm, String type) {
+        for (RequiredCredentialModel requiredCredentialModel : realm.getRequiredCredentials()) {
+            if (type.equals(requiredCredentialModel.getType())) {
+                return true;
+            }
+
+        }
+        return false;
+    }
+
+    public static void browserFlow(RealmModel realm, boolean migrate) {
         AuthenticationFlowModel browser = new AuthenticationFlowModel();
         browser.setAlias(BROWSER_FLOW);
         browser.setDescription("browser based authentication");
@@ -120,6 +142,10 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(browser.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        if (migrate && hasCredentialType(realm, RequiredCredentialModel.KERBEROS.getType())) {
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+
+        }
         execution.setAuthenticator("auth-spnego");
         execution.setPriority(20);
         execution.setUserSetupAllowed(false);
@@ -158,6 +184,11 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(forms.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.OPTIONAL);
+        if (migrate && hasCredentialType(realm, RequiredCredentialModel.TOTP.getType())) {
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+
+        }
+
         execution.setAuthenticator("auth-otp-form");
         execution.setPriority(20);
         execution.setUserSetupAllowed(true);
