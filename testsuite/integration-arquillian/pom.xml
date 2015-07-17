@@ -371,6 +371,7 @@
                 <auth.server.container>auth-server-wildfly</auth.server.container>
                 <exclude.adapters.relative>-</exclude.adapters.relative>
                 <auth.server.wildfly.home>${containers.home}/keycloak-demo-${project.version}/keycloak</auth.server.wildfly.home>
+                <startup.timeout.sec>150</startup.timeout.sec>
             </properties>
             <build>
                 <plugins>
