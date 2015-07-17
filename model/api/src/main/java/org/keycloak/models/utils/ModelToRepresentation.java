@@ -129,6 +129,9 @@ public class ModelToRepresentation {
             rep.setEnabledEventTypes(new LinkedList<String>(realm.getEnabledEventTypes()));
         }
 
+        rep.setAdminEventsEnabled(realm.isAdminEventsEnabled());
+        rep.setAdminEventsDetailsEnabled(realm.isAdminEventsDetailsEnabled());
+
         rep.setVerifyEmail(realm.isVerifyEmail());
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
