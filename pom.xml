@@ -1153,12 +1153,6 @@
                 <type>zip</type>
             </dependency>
             <dependency>
-                <groupId>org.keycloak.subsystem</groupId>
-                <artifactId>keycloak-server</artifactId>
-                <version>${project.version}</version>
-                <type>war</type>
-            </dependency>
-            <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-server-feature-pack</artifactId>
                 <version>${project.version}</version>

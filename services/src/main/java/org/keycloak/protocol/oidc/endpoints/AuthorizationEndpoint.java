@@ -79,6 +79,7 @@ public class AuthorizationEndpoint {
     private String scope;
     private String loginHint;
     private String prompt;
+    private String nonce;
     private String idpHint;
 
     private String legacyResponseType;
@@ -102,6 +103,7 @@ public class AuthorizationEndpoint {
         loginHint = params.getFirst(OIDCLoginProtocol.LOGIN_HINT_PARAM);
         prompt = params.getFirst(OIDCLoginProtocol.PROMPT_PARAM);
         idpHint = params.getFirst(AdapterConstants.KC_IDP_HINT);
+        nonce = params.getFirst(OIDCLoginProtocol.NONCE_PARAM);
 
         checkSsl();
         checkRealm();
@@ -225,6 +227,7 @@ public class AuthorizationEndpoint {
         clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
 
         if (state != null) clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, state);
+        if (nonce != null) clientSession.setNote(OIDCLoginProtocol.NONCE_PARAM, nonce);
         if (scope != null) clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
         if (loginHint != null) clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         if (prompt != null) clientSession.setNote(OIDCLoginProtocol.PROMPT_PARAM, prompt);

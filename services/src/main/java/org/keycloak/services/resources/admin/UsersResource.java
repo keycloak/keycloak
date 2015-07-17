@@ -8,6 +8,9 @@ import org.keycloak.ClientConnection;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -61,6 +64,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.WebApplicationException;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,6 +76,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.resources.AccountService;
 
 /**
  * Base resource for managing users
@@ -259,14 +264,8 @@ public class UsersResource {
         UserRepresentation rep = ModelToRepresentation.toRepresentation(user);
 
         if (realm.isIdentityFederationEnabled()) {
-            Set<FederatedIdentityModel> identities = session.users().getFederatedIdentities(user, realm);
-            if (!identities.isEmpty()) {
-                List<FederatedIdentityRepresentation> reps = new LinkedList<>();
-                for (FederatedIdentityModel m : identities) {
-                    reps.add(ModelToRepresentation.toRepresentation(m));
-                }
-                rep.setFederatedIdentities(reps);
-            }
+            List<FederatedIdentityRepresentation> reps = getFederatedIdentities(user);
+            rep.setFederatedIdentities(reps);
         }
 
         if ((protector != null) && protector.isTemporarilyDisabled(session, realm, rep.getUsername())) {
@@ -275,6 +274,45 @@ public class UsersResource {
 
         return rep;
     }
+
+    @Path("{id}/impersonation")
+    @POST
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Object> impersonate(final @PathParam("id") String id) {
+        auth.init(RealmAuth.Resource.IMPERSONATION);
+        auth.requireManage();
+        UserModel user = session.users().getUserById(id, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        RealmModel authenticatedRealm = auth.getAuth().getRealm();
+        // if same realm logout before impersonation
+        boolean sameRealm = false;
+        if (authenticatedRealm.getId().equals(realm.getId())) {
+            sameRealm = true;
+            UserSessionModel userSession = session.sessions().getUserSession(authenticatedRealm, auth.getAuth().getToken().getSessionState());
+            AuthenticationManager.expireIdentityCookie(realm, uriInfo, clientConnection);
+            AuthenticationManager.expireRememberMeCookie(realm, uriInfo, clientConnection);
+            AuthenticationManager.backchannelLogout(session, authenticatedRealm, userSession, uriInfo, clientConnection, headers, true);
+        }
+        EventBuilder event = new EventBuilder(realm, session, clientConnection);
+
+        UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+        AuthenticationManager.createLoginCookie(realm, userSession.getUser(), userSession, uriInfo, clientConnection);
+        URI redirect = AccountService.accountServiceApplicationPage(uriInfo).build(realm.getName());
+        Map<String, Object> result = new HashMap<>();
+        result.put("sameRealm", sameRealm);
+        result.put("redirect", redirect.toString());
+        event.event(EventType.IMPERSONATE)
+             .session(userSession)
+             .user(user)
+             .detail(Details.IMPERSONATOR_REALM,authenticatedRealm.getName())
+             .detail(Details.IMPERSONATOR, auth.getAuth().getUser().getUsername()).success();
+
+        return result;
+    }
+
 
     /**
      * List set of sessions associated with this user.
@@ -318,6 +356,10 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
 
+        return getFederatedIdentities(user);
+    }
+
+    private List<FederatedIdentityRepresentation> getFederatedIdentities(UserModel user) {
         Set<FederatedIdentityModel> identities = session.users().getFederatedIdentities(user, realm);
         List<FederatedIdentityRepresentation> result = new ArrayList<FederatedIdentityRepresentation>();
 

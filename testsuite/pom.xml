@@ -1,18 +1,18 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <parent>
-        <artifactId>keycloak-parent</artifactId>
-        <groupId>org.keycloak</groupId>
-        <version>1.4.0.Final-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
+	<parent>
+		<artifactId>keycloak-parent</artifactId>
+		<groupId>org.keycloak</groupId>
+		<version>1.4.0.Final-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+	<modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-testsuite-pom</artifactId>
+	<artifactId>keycloak-testsuite-pom</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak TestSuite</name>
-    <description />
+	<description />
 
     <dependencyManagement>
         <dependencies>
@@ -81,12 +81,6 @@
             <id>jboss-release</id>
             <modules>
                 <module>docker-cluster</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-karaf</id>
-            <modules>
-                <module>karaf-example-dist</module>
             </modules>
         </profile>
     </profiles>

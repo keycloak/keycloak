@@ -55,15 +55,11 @@ public class ServerUtil {
 
     private final String deploymentName;
     private final Module subsysModule;
-    private final String keycloakVersion;
-    private final boolean isServerWarExploded;
     private final URI serverWar;
 
     ServerUtil(ModelNode operation) {
         this.deploymentName = getDeploymentName(operation);
         this.subsysModule = findSubsysModule();
-        this.keycloakVersion = subsysModule.getProperty("keycloak-version");
-        this.isServerWarExploded = Boolean.parseBoolean(subsysModule.getProperty("server-war-exploded"));
         this.serverWar = findServerWarUri();
     }
 
@@ -80,11 +76,7 @@ public class ServerUtil {
             URL subsysResource = this.subsysModule.getExportedResource("module.xml");
             File subsysDir = new File(subsysResource.toURI()).getParentFile();
             File serverWarDir = new File(subsysDir, "server-war");
-            if (this.isServerWarExploded) {
-                return serverWarDir.toURI();
-            } else {
-                return new File(serverWarDir, "keycloak-server-" + keycloakVersion + ".war").toURI();
-            }
+            return serverWarDir.toURI();
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
         } catch (IllegalArgumentException e) {
@@ -117,14 +109,9 @@ public class ServerUtil {
     private ModelNode makeContentItem() throws OperationFailedException {
         ModelNode contentItem = new ModelNode();
 
-        if (this.isServerWarExploded) {
-            String urlString = new File(serverWar).getAbsolutePath();
-            contentItem.get(PATH).set(urlString);
-            contentItem.get(ARCHIVE).set(false);
-        } else {
-            String urlString = serverWar.toString();
-            contentItem.get(URL).set(urlString);
-        }
+        String urlString = new File(serverWar).getAbsolutePath();
+        contentItem.get(PATH).set(urlString);
+        contentItem.get(ARCHIVE).set(false);
 
         return contentItem;
     }

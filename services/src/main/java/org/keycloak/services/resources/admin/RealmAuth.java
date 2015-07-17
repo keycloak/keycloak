@@ -2,6 +2,7 @@ package org.keycloak.services.resources.admin;
 
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.services.ForbiddenException;
 
 
@@ -13,7 +14,7 @@ public class RealmAuth {
     private Resource resource;
 
     public enum Resource {
-        CLIENT, USER, REALM, EVENTS, IDENTITY_PROVIDER
+        CLIENT, USER, REALM, EVENTS, IDENTITY_PROVIDER, IMPERSONATION
     }
 
     private AdminAuth auth;
@@ -27,6 +28,10 @@ public class RealmAuth {
     public RealmAuth init(Resource resource) {
         this.resource = resource;
         return this;
+    }
+
+    public AdminAuth getAuth() {
+        return auth;
     }
 
     public void requireAny() {
@@ -84,6 +89,8 @@ public class RealmAuth {
                 return AdminRoles.MANAGE_EVENTS;
             case IDENTITY_PROVIDER:
                 return AdminRoles.MANAGE_IDENTITY_PROVIDERS;
+            case IMPERSONATION:
+                return ImpersonationConstants.IMPERSONATION_ROLE;
             default:
                 throw new IllegalStateException();
         }

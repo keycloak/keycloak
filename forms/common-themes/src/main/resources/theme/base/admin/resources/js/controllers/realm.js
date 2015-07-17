@@ -79,6 +79,9 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $
 
         get manageEvents() {
             return getAccess('manage-events');
+        },
+        get impersonation() {
+            return getAccess('impersonation');
         }
     }
 
@@ -477,6 +480,8 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clien
             }
         }
 
+        $scope.selectedRealmRoles = [];
+
         // Update/save the realm with new default roles.
         Realm.update($scope.realm, function () {
             Notifications.success("Realm default roles updated.");
@@ -494,6 +499,8 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clien
                 $scope.realm.defaultRoles.splice(index, 1);
             }
         }
+
+        $scope.selectedRealmDefRoles = [];
 
         // Update/save the realm with new default roles.
         //var realmCopy = angular.copy($scope.realm);
@@ -547,6 +554,8 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clien
             }
         }
 
+        $scope.selectedClientRoles = [];
+
         // Update/save the selected client with new default roles.
         Client.update({
             realm: $scope.realm.realm,
@@ -570,6 +579,8 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clien
                 $scope.availableClientRoles.push(role);
             }
         }
+
+        $scope.selectedClientDefRoles = [];
 
         // Update/save the selected client with new default roles.
         Client.update({

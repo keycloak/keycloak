@@ -21,11 +21,10 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.adapter.CustomerServlet;
 import org.keycloak.testsuite.rule.KerberosRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.testsuite.utils.CredentialHelper;
+import org.keycloak.utils.CredentialHelper;
 
 /**
  * Test of LDAPFederationProvider (Kerberos backed by LDAP)
@@ -44,7 +43,7 @@ public class KerberosLdapTest extends AbstractKerberosTest {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            CredentialHelper.setAlternativeCredential(CredentialRepresentation.KERBEROS, appRealm);
+            CredentialHelper.setAlternativeCredential(manager.getSession(), CredentialRepresentation.KERBEROS, appRealm);
             URL url = getClass().getResource("/kerberos-test/kerberos-app-keycloak.json");
             keycloakRule.createApplicationDeployment()
                     .name("kerberos-portal").contextPath("/kerberos-portal")

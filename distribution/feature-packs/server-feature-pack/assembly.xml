@@ -39,6 +39,7 @@
             <filtered>true</filtered>
             <includes>
                <include>**/module.xml</include>
+               <include>**/MANIFEST.MF</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -47,6 +48,7 @@
             <filtered>false</filtered>
             <excludes>
                <exclude>**/module.xml</exclude>
+               <exclude>**/MANIFEST.MF</exclude>
             </excludes>
         </fileSet>
         <fileSet>

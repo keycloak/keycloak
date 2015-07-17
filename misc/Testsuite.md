@@ -94,11 +94,10 @@ To start a ApacheDS based LDAP server for testing LDAP sending run:
     
     mvn exec:java -Pldap
     
-There are additional system properties you can use to configure (See EmbeddedServersFactory class for details). Once done, you can create LDAP Federation provider
+There are additional system properties you can use to configure (See LDAPEmbeddedServer class for details). Once done, you can create LDAP Federation provider
 in Keycloak admin console with the settings like:
 * Vendor: Other
 * Connection URL: ldap://localhost:10389
-* Base DN: dc=keycloak,dc=org
 * User DN Suffix: ou=People,dc=keycloak,dc=org
 * Bind DN: uid=admin,ou=system
 * Bind credential: secret
@@ -110,18 +109,18 @@ To start a ApacheDS based Kerberos server for testing Kerberos + LDAP sending ru
     
     mvn exec:java -Pkerberos
     
-There are additional system properties you can use to configure (See EmbeddedServersFactory class for details) but for testing purposes default values should be good.
-By default ApacheDS LDAP server will be running on localhost:10389 and Kerberos KDC on localhost:6088 . LDAP will import initial data from [src/main/resources/kerberos/users-kerberos.ldif](src/main/resources/kerberos/users-kerberos.ldif) . 
+There are additional system properties you can use to configure (See LDAPEmbeddedServer and KerberosEmbeddedServer class for details) but for testing purposes default values should be good.
+By default ApacheDS LDAP server will be running on localhost:10389 and Kerberos KDC on localhost:6088 . 
 
 Once kerberos is running, you can create LDAP Federation provider in Keycloak admin console with same settings like mentioned in previous LDAP section. 
 But additionally you can enable Kerberos authentication in LDAP provider with the settings like:
 
 * Kerberos realm: KEYCLOAK.ORG
 * Server Principal: HTTP/localhost@KEYCLOAK.ORG
-* KeyTab: $KEYCLOAK_SOURCES/testsuite/integration/src/main/resources/kerberos/http.keytab (Replace $KEYCLOAK_SOURCES with correct absolute path of your sources)
+* KeyTab: $KEYCLOAK_SOURCES/testsuite/integration/src/test/resources/kerberos/http.keytab (Replace $KEYCLOAK_SOURCES with correct absolute path of your sources)
 
 Once you do this, you should also ensure that your Kerberos client configuration file is properly configured with KEYCLOAK.ORG domain. 
-See [src/main/resources/kerberos/test-krb5.conf](src/main/resources/kerberos/test-krb5.conf) for inspiration. The location of Kerberos configuration file 
+See [../testsuite/integration/src/test/resources/kerberos/test-krb5.conf](../testsuite/integration/src/test/resources/kerberos/test-krb5.conf) for inspiration. The location of Kerberos configuration file 
 is platform dependent (In linux it's file `/etc/krb5.conf` )
 
 Then you need to configure your browser to allow SPNEGO/Kerberos login from `localhost` .

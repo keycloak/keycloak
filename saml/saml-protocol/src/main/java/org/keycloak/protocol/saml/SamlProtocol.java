@@ -40,13 +40,17 @@ import org.w3c.dom.Document;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -71,6 +75,7 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_NAME_ID_FORMAT_ATTRIBUTE = "saml_name_id_format";
     public static final String LOGIN_PROTOCOL = "saml";
     public static final String SAML_BINDING = "saml_binding";
+    public static final String SAML_IDP_INITIATED_LOGIN = "saml_idp_initiated_login";
     public static final String SAML_POST_BINDING = "post";
     public static final String SAML_REDIRECT_BINDING = "get";
     public static final String SAML_SERVER_SIGNATURE = "saml.server.signature";
@@ -89,6 +94,8 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_NAME_ID_FORMAT = "SAML_NAME_ID_FORMAT";
     public static final String SAML_DEFAULT_NAMEID_FORMAT = JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get();
     public static final String SAML_PERSISTENT_NAME_ID_FOR = "saml.persistent.name.id.for";
+    public static final String SAML_IDP_INITIATED_SSO_RELAY_STATE = "saml_idp_initiated_sso_relay_state";
+    public static final String SAML_IDP_INITIATED_SSO_URL_NAME = "saml_idp_initiated_sso_url_name";
 
     protected KeycloakSession session;
 
@@ -134,9 +141,19 @@ public class SamlProtocol implements LoginProtocol {
 
     @Override
     public Response cancelLogin(ClientSessionModel clientSession) {
-        Response error = getErrorResponse(clientSession, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
-        session.sessions().removeClientSession(realm, clientSession);
-        return error;
+        if ("true".equals(clientSession.getClient().getAttribute(SAML_IDP_INITIATED_LOGIN))) {
+            UriBuilder builder = RealmsResource.protocolUrl(uriInfo).path(SamlService.class, "idpInitiatedSSO");
+            Map<String, String> params = new HashMap<>();
+            params.put("realm", realm.getName());
+            params.put("protocol", LOGIN_PROTOCOL);
+            params.put("client", clientSession.getClient().getAttribute(SAML_IDP_INITIATED_SSO_URL_NAME));
+            session.sessions().removeClientSession(realm, clientSession);
+            URI redirect = builder.buildFromMap(params);
+            return Response.status(302).location(redirect).build();
+        } else {
+            session.sessions().removeClientSession(realm, clientSession);
+            return getErrorResponse(clientSession, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
+        }
     }
 
     protected String getResponseIssuer(RealmModel realm) {
@@ -426,7 +443,11 @@ public class SamlProtocol implements LoginProtocol {
 
     @Override
     public Response consentDenied(ClientSessionModel clientSession) {
-        return getErrorResponse(clientSession, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
+        if ("true".equals(clientSession.getClient().getAttribute(SAML_IDP_INITIATED_LOGIN))) {
+            return ErrorPage.error(session, Messages.CONSENT_DENIED);
+        } else {
+            return getErrorResponse(clientSession, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
+        }
     }
 
     public static String getLogoutServiceUrl(UriInfo uriInfo, ClientModel client, String bindingType) {

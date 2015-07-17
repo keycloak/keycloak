@@ -22,34 +22,4 @@
             </ul>
         </li>
     </ul>
-
-    <ul class="nav navbar-nav navbar-primary" data-ng-controller="RealmDropdownCtrl">
-        <li class="dropdown" data-ng-show="current.realm.realm">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                {{current.realm.realm|capitalize}}
-                <b class="caret" data-ng-show="current.realms.length > 1"></b>
-            </a>
-            <ul class="dropdown-menu" data-ng-show="current.realms.length > 1">
-                <li data-ng-repeat="realm in current.realms" data-ng-if="realm.realm != current.realm.realm">
-                    <a href="" ng-click="changeRealm(realm.realm)">{{realm.realm|capitalize}}</a>
-                </li>
-            </ul>
-        </li>
-        <li class="dropdown" data-ng-show="!current.realm.realm">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                Select realm...
-                <b class="caret"></b>
-            </a>
-            <ul class="dropdown-menu">
-                <li data-ng-repeat="realm in current.realms">
-                    <a href="" ng-click="changeRealm(realm.realm)">{{realm.realm}}</a>
-                </li>
-            </ul>
-        </li>
-
-        <li class="pull-right" data-ng-show="auth.user && access.createRealm">
-            <a class="button primary" href="#/create/realm" data-ng-class="path[0] == 'create' && path[1] == 'realm' && 'active'"
-               data-ng-show="auth.user">Add Realm</a>
-        </li>
-    </ul>
 </div>

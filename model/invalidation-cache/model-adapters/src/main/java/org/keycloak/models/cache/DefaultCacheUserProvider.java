@@ -183,7 +183,6 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
         if (cached == null) {
             UserModel model = getDelegate().getUserByEmail(email, realm);
             if (model == null) return null;
-            if (managedUsers.containsKey(model.getId())) return managedUsers.get(model.getId());
             if (userInvalidations.containsKey(model.getId())) return model;
             cached = new CachedUser(realm, model);
             cache.addCachedUser(realm.getId(), cached);

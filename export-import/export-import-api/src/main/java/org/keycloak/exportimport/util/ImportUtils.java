@@ -21,6 +21,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.keycloak.exportimport.ExportImportConfig;
@@ -143,6 +144,15 @@ public class ImportUtils {
      * @throws IOException
      */
     public static void importFromStream(KeycloakSession session, ObjectMapper mapper, InputStream is, Strategy strategy) throws IOException {
+        Map<String, RealmRepresentation> realmReps = getRealmsFromStream(mapper, is);
+        for (RealmRepresentation realmRep : realmReps.values()) {
+            importRealm(session, realmRep, strategy);
+        }
+    }
+
+    public static Map<String, RealmRepresentation> getRealmsFromStream(ObjectMapper mapper, InputStream is) throws IOException {
+        Map<String, RealmRepresentation> result = new HashMap<String, RealmRepresentation>();
+
         JsonFactory factory = mapper.getJsonFactory();
         JsonParser parser = factory.createJsonParser(is);
         try {
@@ -166,17 +176,20 @@ public class ImportUtils {
                 }
 
                 for (RealmRepresentation realmRep : realmReps) {
-                    importRealm(session, realmRep, strategy);
+                    result.put(realmRep.getId(), realmRep);
                 }
             } else if (parser.getCurrentToken() == JsonToken.START_OBJECT) {
                 // Case with single realm in stream
                 RealmRepresentation realmRep = parser.readValueAs(RealmRepresentation.class);
-                importRealm(session, realmRep, strategy);
+                result.put(realmRep.getId(), realmRep);
             }
         } finally {
             parser.close();
         }
+
+        return result;
     }
+
 
     // Assuming that it's invoked inside transaction
     public static void importUsersFromStream(KeycloakSession session, String realmName, ObjectMapper mapper, InputStream is) throws IOException {

@@ -5,6 +5,7 @@ import org.keycloak.ClientConnection;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.resources.KeycloakApplication;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
@@ -19,6 +20,12 @@ public class DefaultKeycloakContext implements KeycloakContext {
     private ClientModel client;
 
     private ClientConnection connection;
+
+    @Override
+    public String getContextPath() {
+        KeycloakApplication app = ResteasyProviderFactory.getContextData(KeycloakApplication.class);
+        return app.getContextPath();
+    }
 
     @Override
     public UriInfo getUri() {

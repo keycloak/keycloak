@@ -9,8 +9,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>arquillian-integration</artifactId>
-    <name>Keycloak Integration TestSuite - Arquillian</name>
+    <artifactId>keycloak-testsuite-integration-arquillian</artifactId>
+    <name>KeyCloak Arquillian TestSuite</name>
 
     <properties>
         
@@ -297,6 +297,16 @@
             <version>0.2.0</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-dist</artifactId>
+            <scope>test</scope>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </dependency>
     </dependencies>
 
     <profiles>
@@ -392,9 +402,8 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>${keycloak.dist.groupId}</groupId>
-                                            <artifactId>${keycloak.dist.artifactId}</artifactId>
-                                            <version>${project.version}</version>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>keycloak-server-dist</artifactId>
                                             <type>zip</type>
                                             <overWrite>false</overWrite>
                                         </artifactItem>

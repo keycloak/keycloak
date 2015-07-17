@@ -76,6 +76,8 @@ public class RealmRepresentation {
     protected Boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
+    protected List<AuthenticationFlowRepresentation> authenticationFlows;
+    protected List<AuthenticatorConfigRepresentation> authenticatorConfig;
 
     @Deprecated
     protected Boolean social;
@@ -626,5 +628,19 @@ public class RealmRepresentation {
         identityProviderMappers.add(rep);
     }
 
+    public List<AuthenticationFlowRepresentation> getAuthenticationFlows() {
+        return authenticationFlows;
+    }
 
+    public void setAuthenticationFlows(List<AuthenticationFlowRepresentation> authenticationFlows) {
+        this.authenticationFlows = authenticationFlows;
+    }
+
+    public List<AuthenticatorConfigRepresentation> getAuthenticatorConfig() {
+        return authenticatorConfig;
+    }
+
+    public void setAuthenticatorConfig(List<AuthenticatorConfigRepresentation> authenticatorConfig) {
+        this.authenticatorConfig = authenticatorConfig;
+    }
 }

@@ -4,12 +4,8 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.authentication.AuthenticationFlow;
-import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
-import org.keycloak.authentication.FormAction;
-import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -18,6 +14,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
+import org.keycloak.utils.CredentialHelper;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -56,7 +53,7 @@ public class AuthenticationManagementResource {
         this.realm = realm;
         this.session = session;
         this.auth = auth;
-        this.auth.init(RealmAuth.Resource.IDENTITY_PROVIDER);
+        this.auth.init(RealmAuth.Resource.REALM);
         this.adminEvent = adminEvent;
     }
 
@@ -140,6 +137,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<AuthenticationFlowModel> getFlows() {
+        this.auth.requireView();
         List<AuthenticationFlowModel> flows = new LinkedList<>();
         for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
             if (flow.isTopLevel()) {
@@ -190,7 +188,7 @@ public class AuthenticationManagementResource {
                     rep.setSubFlow(true);
                 }
                 String providerId = execution.getAuthenticator();
-                ConfigurableAuthenticatorFactory factory = getConfigurableAuthenticatorFactory(providerId);
+                ConfigurableAuthenticatorFactory factory = CredentialHelper.getConfigurableAuthenticatorFactory(session, providerId);
                 rep.setReferenceType(factory.getDisplayType());
                 rep.setConfigurable(factory.isConfigurable());
                 for (AuthenticationExecutionModel.Requirement choice : factory.getRequirementChoices()) {
@@ -206,14 +204,6 @@ public class AuthenticationManagementResource {
 
         }
         return Response.ok(result).build();
-    }
-
-    public ConfigurableAuthenticatorFactory getConfigurableAuthenticatorFactory(String providerId) {
-        ConfigurableAuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, providerId);
-        if (factory == null) {
-            factory = (FormActionFactory)session.getKeycloakSessionFactory().getProviderFactory(FormAction.class, providerId);
-        }
-        return factory;
     }
 
     @Path("/flows/{flowAlias}/executions")
@@ -265,6 +255,7 @@ public class AuthenticationManagementResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public AuthenticatorConfigModel getAuthenticatorConfig(@PathParam("executionId") String execution,@PathParam("id") String id) {
+        this.auth.requireView();
         AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(id);
         if (config == null) {
             throw new NotFoundException("Could not find authenticator config");
@@ -363,6 +354,7 @@ public class AuthenticationManagementResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void updateRequiredAction(@PathParam("alias") String alias, RequiredActionProviderRepresentation rep) {
+        this.auth.requireManage();
         RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(alias);
         if (model == null) {
             throw new NotFoundException("Failed to find required action: " + alias);
@@ -381,6 +373,7 @@ public class AuthenticationManagementResource {
     @Path("required-actions/{alias}")
     @DELETE
     public void updateRequiredAction(@PathParam("alias") String alias) {
+        this.auth.requireManage();
         RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(alias);
         if (model == null) {
             throw new NotFoundException("Failed to find required action: " + alias);
@@ -434,7 +427,8 @@ public class AuthenticationManagementResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public AuthenticatorConfigDescription getAuthenticatorConfigDescription(@PathParam("providerId") String providerId) {
-        ConfigurableAuthenticatorFactory factory = getConfigurableAuthenticatorFactory(providerId);
+        this.auth.requireView();
+        ConfigurableAuthenticatorFactory factory = CredentialHelper.getConfigurableAuthenticatorFactory(session, providerId);
         if (factory == null) {
             throw new NotFoundException("Could not find authenticator provider");
         }
@@ -460,6 +454,7 @@ public class AuthenticationManagementResource {
     @POST
     @NoCache
     public Response createAuthenticatorConfig(AuthenticatorConfigModel config) {
+        this.auth.requireManage();
         config = realm.addAuthenticatorConfig(config);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(config.getId()).build()).build();
     }
@@ -469,6 +464,7 @@ public class AuthenticationManagementResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public AuthenticatorConfigModel getAuthenticatorConfig(@PathParam("id") String id) {
+        this.auth.requireView();
         AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(id);
         if (config == null) {
             throw new NotFoundException("Could not find authenticator config");
@@ -480,6 +476,7 @@ public class AuthenticationManagementResource {
     @DELETE
     @NoCache
     public void removeAuthenticatorConfig(@PathParam("id") String id) {
+        this.auth.requireManage();
         AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(id);
         if (config == null) {
             throw new NotFoundException("Could not find authenticator config");
@@ -502,6 +499,7 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
     public void updateAuthenticatorConfig(@PathParam("id") String id, AuthenticatorConfigModel config) {
+        this.auth.requireManage();
         AuthenticatorConfigModel exists = realm.getAuthenticatorConfigById(id);
         if (exists == null) {
             throw new NotFoundException("Could not find authenticator config");

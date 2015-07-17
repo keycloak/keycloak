@@ -21,7 +21,7 @@ public class CookieAuthenticator implements Authenticator {
     @Override
     public void authenticate(AuthenticatorContext context) {
         AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(context.getSession(),
-                context.getRealm(), context.getUriInfo(), context.getConnection(), context.getHttpRequest().getHttpHeaders(), true);
+                context.getRealm(), true);
         if (authResult == null) {
             context.attempted();
         } else {

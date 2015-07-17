@@ -32,5 +32,7 @@ public interface Details {
     String CONSENT_VALUE_NO_CONSENT_REQUIRED = "no_consent_required"; // No consent is required by client
     String CONSENT_VALUE_CONSENT_GRANTED = "consent_granted";         // Consent granted by user
     String CONSENT_VALUE_PERSISTED_CONSENT = "persistent_consent";    // Persistent consent used (was already granted by user before)
+    String IMPERSONATOR_REALM = "impersonator_realm";
+    String IMPERSONATOR = "impersonator";
 
 }

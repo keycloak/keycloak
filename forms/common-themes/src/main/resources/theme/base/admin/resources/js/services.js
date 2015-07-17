@@ -305,17 +305,33 @@ module.factory('UserLogout', function($resource) {
         user : '@user'
     });
 });
-module.factory('UserFederatedIdentity', function($resource) {
+
+module.factory('UserFederatedIdentities', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:user/federated-identity', {
         realm : '@realm',
         user : '@user'
     });
 });
+module.factory('UserFederatedIdentity', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/:user/federated-identity/:provider', {
+        realm : '@realm',
+        user : '@user',
+        provider : '@provider'
+    });
+});
+
 module.factory('UserConsents', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:user/consents/:client', {
         realm : '@realm',
         user : '@user',
         client: '@client'
+    });
+});
+
+module.factory('UserImpersonation', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/:user/impersonation', {
+        realm : '@realm',
+        user : '@user'
     });
 });
 
@@ -868,21 +884,22 @@ module.factory('ClientOrigins', function($resource) {
 });
 
 module.factory('Current', function(Realm, $route, $rootScope) {
-    var current = {};
-
-    current.realms = {};
-    current.realm = null;
+    var current = {
+        realms: {},
+        realm: null
+    };
 
     $rootScope.$on('$routeChangeStart', function() {
-        current.realm = null;
         current.realms = Realm.query(null, function(realms) {
+            var currentRealm = null;
             if ($route.current.params.realm) {
                 for (var i = 0; i < realms.length; i++) {
                     if (realms[i].realm == $route.current.params.realm) {
-                        current.realm =  realms[i];
+                        currentRealm =  realms[i];
                     }
                 }
             }
+            current.realm = currentRealm;
         });
     });
 

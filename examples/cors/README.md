@@ -1,6 +1,6 @@
 Keycloak CORS support
 ===================================
-The following examples requires Wildfly 8.x / 9.x, JBoss EAP 6.x, or JBoss AS 7.1.1.  This example simulates Browser CORS
+The following examples requires Wildfly 8.0.0, JBoss EAP 6.x, or JBoss AS 7.1.1.  This example simulates Browser CORS
 requests.  While the examples will run on one machine, the servers/applications are configured to point to different domains:
 * **localhost-auth** is where the Keycloak auth server lives
 * **localhost-db** is where a database REST service lives

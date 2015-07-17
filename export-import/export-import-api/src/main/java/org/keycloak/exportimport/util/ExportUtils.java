@@ -46,16 +46,6 @@ public class ExportUtils {
     public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, boolean includeUsers) {
         RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm, true);
 
-        // Audit
-        rep.setEventsEnabled(realm.isEventsEnabled());
-        if (realm.getEventsExpiration() != 0) {
-            rep.setEventsExpiration(realm.getEventsExpiration());
-        }
-
-        if (realm.getEventsListeners() != null) {
-            rep.setEventsListeners(new LinkedList<String>(realm.getEventsListeners()));
-        }
-
         // Clients
         List<ClientModel> clients = realm.getClients();
         List<ClientRepresentation> clientReps = new ArrayList<>();

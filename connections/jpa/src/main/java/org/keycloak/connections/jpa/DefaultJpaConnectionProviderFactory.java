@@ -133,7 +133,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         if (databaseSchema.equals("update")) {
                             String currentVersion = null;
                             try {
-                                ResultSet resultSet = connection.createStatement().executeQuery(updater.getCurrentVersionSql());
+                                ResultSet resultSet = connection.createStatement().executeQuery(updater.getCurrentVersionSql(schema));
                                 if (resultSet.next()) {
                                     currentVersion = resultSet.getString(1);
                                 }

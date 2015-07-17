@@ -186,4 +186,16 @@
             Each realm has a URL where you can view the XML entity descriptor for the IDP.  <literal>root/auth/realms/{realm}/protocol/saml/descriptor</literal>
         </para>
     </section>
+    <section>
+        <title>IDP Initiated Login</title>
+        <para>
+            IDP Initiated Login is a feature that where you can set up a URL on the Keycloak server that will log you into a specific application/client.  To set this up
+            go to the client page in the admin console of the client you want to set this up for.  Specify the <literal>IDP Initiated SSO URL Name</literal>.  This is a simple string
+            with no whitespace in it.  After this you can reference your client at the following URL:  <literal>root/auth/realms/{realm}/protocol/saml/clients/{url-name}</literal>
+        </para>
+        <para>
+            If your client requires a special relay state, you can also configure this in the admin console.  Alternatively, you can specify the relay state in a
+            <literal>RelayState</literal> query parameter, i.e. :  <literal>root/auth/realms/{realm}/protocol/saml/clients/{url-name}?RelayState=thestate</literal>
+        </para>
+    </section>
 </chapter>

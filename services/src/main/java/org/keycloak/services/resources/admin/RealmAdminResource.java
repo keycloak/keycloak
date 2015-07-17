@@ -280,6 +280,7 @@ public class RealmAdminResource {
     @Path("logout-all")
     @POST
     public GlobalRequestResult logoutAll() {
+        auth.init(RealmAuth.Resource.USER).requireManage();
         session.sessions().removeUserSessions(realm);
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
         return new ResourceAdminManager(session).logoutAll(uriInfo.getRequestUri(), realm);
@@ -294,6 +295,7 @@ public class RealmAdminResource {
     @Path("sessions/{session}")
     @DELETE
     public void deleteSession(@PathParam("session") String sessionId) {
+        auth.init(RealmAuth.Resource.USER).requireManage();
         UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
         if (userSession == null) throw new NotFoundException("Sesssion not found");
         AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
