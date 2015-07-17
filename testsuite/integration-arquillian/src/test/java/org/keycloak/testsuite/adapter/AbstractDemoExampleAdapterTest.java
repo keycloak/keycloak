@@ -84,7 +84,6 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
     @Test
     public void testChangePasswordRequiredUserAction() {
-        System.out.println("before password login");
         addRequiredAction(RequiredUserAction.UPDATE_PASSWORD);
 
         customerPortalExample.navigateTo();
@@ -94,13 +93,11 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
                 .element(By.className("kc-feedback-text"))
                 .text()
                 .equalTo("You need to change your password to activate your account.");
-        System.out.println("after password login");
         removeRequiredAction(RequiredUserAction.UPDATE_PASSWORD);
     }
 
     @Test
     public void testUpdateProfileRequiredUserAction() {
-        System.out.println("before profile login");
         addRequiredAction(RequiredUserAction.UPDATE_PROFILE);
 
         customerPortalExample.navigateTo();
@@ -121,7 +118,6 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
                 .text()
                 .equalTo("Customer Listing");
         driver.findElement(By.linkText("logout")).click();
-        System.out.println("after profile login");
         removeRequiredAction(RequiredUserAction.UPDATE_PROFILE);
     }
 

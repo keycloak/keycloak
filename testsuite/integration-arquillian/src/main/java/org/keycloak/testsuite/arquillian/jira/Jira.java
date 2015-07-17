@@ -23,5 +23,6 @@ import java.lang.annotation.Target;
 @Documented
 public @interface Jira {
 
-    String value() default "";
+    String value();
+	boolean enabled() default true;
 }

@@ -22,12 +22,17 @@ public class JBossJiraParser {
     private static final String JBOSS_TRACKER_REST_URL = "https://issues.jboss.org/rest/api/latest/issue/";
 
     public static boolean isIssueClosed(String issueId) {
-        Status issueStatus = getIssueStatus(issueId);
+		Status issueStatus;
+		try {
+			issueStatus = getIssueStatus(issueId);
+		} catch(Exception e) {
+			issueStatus = Status.CLOSED; //let the test run in case there is no connection
+		}
         return issueStatus == Status.CLOSED || issueStatus == Status.RESOLVED;
     }
 
-    private static Status getIssueStatus(String issueId) {
-        Client client = ClientBuilder.newClient();
+    private static Status getIssueStatus(String issueId) throws Exception {
+		Client client = ClientBuilder.newClient();
         WebTarget target = client.target(JBOSS_TRACKER_REST_URL);
         String json = target.path(issueId).request().accept(MediaType.APPLICATION_JSON_TYPE).get(String.class);
         JsonObject jsonObject = new Gson().fromJson(json, JsonElement.class).getAsJsonObject();
