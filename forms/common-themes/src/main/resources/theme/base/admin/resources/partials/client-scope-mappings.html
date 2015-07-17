@@ -57,7 +57,7 @@
                             <label class="control-label" for="realm-composite">Effective Roles  </label>
                             <kc-tooltip>Assigned realm level roles that may have been inherited from a composite role.</kc-tooltip>
                             <select id="realm-composite" class="form-control" multiple size=5
-                                    ng-disabled="true"
+                                    disabled="true"
                                     ng-model="dummymodel"
                                     ng-options="r.name for r in realmComposite">
                             </select>
@@ -105,7 +105,7 @@
                             <label class="control-label" for="client-composite">Effective Roles</label>
                             <kc-tooltip>Assigned client roles that may have been inherited from a composite role.</kc-tooltip>
                             <select id="client-composite" class="form-control" multiple size=5
-                                    ng-disabled="true"
+                                    disabled="true"
                                     ng-model="dummymodel"
                                     ng-options="r.name for r in clientComposite">
                             </select>
