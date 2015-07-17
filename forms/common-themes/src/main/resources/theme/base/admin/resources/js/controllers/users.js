@@ -19,8 +19,10 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
     $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
 
     $scope.addRealmRole = function() {
+        var roles = $scope.selectedRealmRoles;
+        $scope.selectedRealmRoles = [];
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.id + '/role-mappings/realm',
-                $scope.selectedRealmRoles).success(function() {
+                roles).success(function() {
                 $scope.realmMappings = RealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});

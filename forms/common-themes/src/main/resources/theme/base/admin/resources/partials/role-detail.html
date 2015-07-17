@@ -66,7 +66,7 @@
                                     ng-model="selectedRealmRoles"
                                     ng-options="r.name for r in realmRoles | orderBy:'name'">
                             </select>
-                            <button class="btn btn-default" type="submit" ng-click="addRealmRole()" tooltip="Associate role" tooltip-placement="right">
+                            <button ng-disabled="selectedRealmRoles.length == 0" class="btn btn-default" type="submit" ng-click="addRealmRole()">
                                 Add selected <i class="fa fa-angle-double-right"></i>
                             </button>
                         </div>
@@ -78,7 +78,7 @@
                                     ng-model="selectedRealmMappings"
                                     ng-options="r.name for r in realmMappings | orderBy:'name'">
                             </select>
-                            <button class="btn btn-default" type="submit" ng-click="deleteRealmRole()" tooltip="Disassociate role" tooltip-placement="left">
+                            <button ng-disabled="selectedRealmMappings.length == 0" class="btn btn-default" type="submit" ng-click="deleteRealmRole()">
                                 <i class="fa fa-angle-double-left"></i> Remove selected
                             </button>
                         </div>
@@ -105,7 +105,7 @@
                                     ng-model="selectedClientRoles"
                                     ng-options="r.name for r in clientRoles | orderBy:'name'">
                             </select>
-                            <button class="btn btn-default" type="submit" ng-click="addClientRole()" tooltip="Associate role" tooltip-placement="right">
+                            <button ng-disabled="selectedClientRoles.length == 0" class="btn btn-default" type="submit" ng-click="addClientRole()">
                                 Add selected <i class="fa fa-angle-right"></i>
                             </button>
                         </div>
@@ -117,7 +117,7 @@
                                     ng-model="selectedClientMappings"
                                     ng-options="r.name for r in clientMappings | orderBy:'name'">
                             </select>
-                            <button class="btn btn-default" type="submit" ng-click="deleteClientRole()" tooltip="Disassociate role" tooltip-placement="left">
+                            <button ng-disabled="selectedClientMappings.length == 0" class="btn btn-default" type="submit" ng-click="deleteClientRole()">
                                 <i class="fa fa-angle-left"></i> Remove selected
                             </button>
                         </div>

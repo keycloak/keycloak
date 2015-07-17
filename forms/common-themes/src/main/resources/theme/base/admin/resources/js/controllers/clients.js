@@ -906,32 +906,40 @@ module.controller('ClientScopeMappingCtrl', function($scope, $http, realm, clien
     };
 
     $scope.addRealmRole = function() {
+        var roles = $scope.selectedRealmRoles;
+        $scope.selectedRealmRoles = [];
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id + '/scope-mappings/realm',
-                $scope.selectedRealmRoles).success(function() {
+            roles).success(function() {
                 updateRealmRoles();
                 Notifications.success("Scope mappings updated.");
             });
     };
 
     $scope.deleteRealmRole = function() {
+        var roles = $scope.selectedRealmMappings;
+        $scope.selectedRealmMappings = [];
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id +  '/scope-mappings/realm',
-            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function () {
+            {data : roles, headers : {"content-type" : "application/json"}}).success(function () {
                 updateRealmRoles();
                 Notifications.success("Scope mappings updated.");
             });
     };
 
     $scope.addClientRole = function() {
+        var roles = $scope.selectedClientRoles;
+        $scope.selectedClientRoles = [];
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id +  '/scope-mappings/clients/' + $scope.targetClient.id,
-                $scope.selectedClientRoles).success(function () {
+                roles).success(function () {
                 updateClientRoles();
                 Notifications.success("Scope mappings updated.");
             });
     };
 
     $scope.deleteClientRole = function() {
+        var roles = $scope.selectedClientMappings;
+        $scope.selectedClientMappings = [];
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id +  '/scope-mappings/clients/' + $scope.targetClient.id,
-            {data : $scope.selectedClientMappings, headers : {"content-type" : "application/json"}}).success(function () {
+            {data : roles, headers : {"content-type" : "application/json"}}).success(function () {
                 updateClientRoles();
                 Notifications.success("Scope mappings updated.");
             });
