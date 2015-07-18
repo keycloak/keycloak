@@ -299,9 +299,13 @@ public class RepresentationToModel {
         }
 
         importAuthenticationFlows(newRealm, rep);
-        for (RequiredActionProviderRepresentation action : rep.getRequiredActions()) {
-            RequiredActionProviderModel model = toModel(action);
-            newRealm.addRequiredActionProvider(model);
+        if (rep.getRequiredActions() != null) {
+            for (RequiredActionProviderRepresentation action : rep.getRequiredActions()) {
+                RequiredActionProviderModel model = toModel(action);
+                newRealm.addRequiredActionProvider(model);
+            }
+        } else {
+            DefaultRequiredActions.addActions(newRealm);
         }
     }
 
