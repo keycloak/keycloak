@@ -289,6 +289,7 @@ public class ModelToRepresentation {
         rep.setFullScopeAllowed(clientModel.isFullScopeAllowed());
         rep.setBearerOnly(clientModel.isBearerOnly());
         rep.setConsentRequired(clientModel.isConsentRequired());
+        rep.setServiceAccountsEnabled(clientModel.isServiceAccountsEnabled());
         rep.setDirectGrantsOnly(clientModel.isDirectGrantsOnly());
         rep.setSurrogateAuthRequired(clientModel.isSurrogateAuthRequired());
         rep.setBaseUrl(clientModel.getBaseUrl());

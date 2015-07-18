@@ -22,6 +22,7 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.ServiceAccountManager;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
@@ -53,7 +54,7 @@ public class TokenEndpoint {
     private ClientModel client;
 
     private enum Action {
-        AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD
+        AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS
     }
 
     @Context
@@ -97,7 +98,11 @@ public class TokenEndpoint {
         checkSsl();
         checkRealm();
         checkGrantType();
-        checkClient();
+
+        // client grant type will do it's own verification of client
+        if (!grantType.equals(OAuth2Constants.CLIENT_CREDENTIALS)) {
+            checkClient();
+        }
 
         switch (action) {
             case AUTHORIZATION_CODE:
@@ -106,6 +111,8 @@ public class TokenEndpoint {
                 return buildRefreshToken();
             case PASSWORD:
                 return buildResourceOwnerPasswordCredentialsGrant();
+            case CLIENT_CREDENTIALS:
+                return buildClientCredentialsGrant();
         }
 
         throw new RuntimeException("Unknown action " + action);
@@ -144,7 +151,7 @@ public class TokenEndpoint {
         String authorizationHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         client = AuthorizeClientUtil.authorizeClient(authorizationHeader, formParams, event, realm);
 
-        if ((client instanceof ClientModel) && ((ClientModel) client).isBearerOnly()) {
+        if (client.isBearerOnly()) {
             throw new ErrorResponseException("invalid_client", "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
     }
@@ -167,6 +174,9 @@ public class TokenEndpoint {
         } else if (grantType.equals(OAuth2Constants.PASSWORD)) {
             event.event(EventType.LOGIN);
             action = Action.PASSWORD;
+        } else if (grantType.equals(OAuth2Constants.CLIENT_CREDENTIALS)) {
+            event.event(EventType.CLIENT_LOGIN);
+            action = Action.CLIENT_CREDENTIALS;
         } else {
             throw new ErrorResponseException(Errors.INVALID_REQUEST, "Invalid " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
         }
@@ -353,6 +363,11 @@ public class TokenEndpoint {
         event.success();
 
         return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+    }
+
+    public Response buildClientCredentialsGrant() {
+        ServiceAccountManager serviceAccountManager = new ServiceAccountManager(tokenManager, authManager, event, request, formParams, session);
+        return serviceAccountManager.buildClientCredentialsGrant();
     }
 
 }

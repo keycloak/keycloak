@@ -215,6 +215,19 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
+    public List<UserModel> searchForUserByUserAttributes(Map<String, String> attributes, RealmModel realm) {
+        QueryBuilder queryBuilder = new QueryBuilder()
+                .and("realmId").is(realm.getId());
+
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+            queryBuilder.and("attributes." + entry.getKey()).is(entry.getValue());
+        }
+
+        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, queryBuilder.get(), invocationContext);
+        return convertUserEntities(realm, users);
+    }
+
+    @Override
     public Set<FederatedIdentityModel> getFederatedIdentities(UserModel userModel, RealmModel realm) {
         UserModel user = getUserById(userModel.getId(), realm);
         MongoUserEntity userEntity = ((UserAdapter) user).getUser();
