@@ -623,6 +623,7 @@ public class LoginActionsService {
         if (clientSession.getAction().equals(ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
             String actionCookieValue = getActionCookie();
             if (actionCookieValue == null || !actionCookieValue.equals(userSession.getId())) {
+                session.sessions().removeClientSession(realm, clientSession);
                 return session.getProvider(LoginFormsProvider.class)
                         .setSuccess(Messages.ACCOUNT_PASSWORD_UPDATED)
                         .createInfoPage();
@@ -657,6 +658,7 @@ public class LoginActionsService {
 
             String actionCookieValue = getActionCookie();
             if (actionCookieValue == null || !actionCookieValue.equals(userSession.getId())) {
+                session.sessions().removeClientSession(realm, clientSession);
                 return session.getProvider(LoginFormsProvider.class)
                         .setSuccess(Messages.EMAIL_VERIFIED)
                         .createInfoPage();

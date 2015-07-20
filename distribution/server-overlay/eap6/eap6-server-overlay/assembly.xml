@@ -40,6 +40,14 @@
             <source>src/main/providers/README.txt</source>
             <outputDirectory>standalone/configuration/providers</outputDirectory>
         </file>
+        <file>
+            <source>cli/keycloak-prepare.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
+            <source>cli/keycloak-install.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
     </files>
 
 </assembly>

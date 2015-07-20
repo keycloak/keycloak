@@ -44,22 +44,6 @@
         </xsl:copy>
     </xsl:template>
 
-    <xsl:template match="//sec:security-domains">
-        <xsl:copy>
-            <xsl:apply-templates select="node()[name(.)='security-domain']"/>
-            <security-domain name="keycloak">
-                <authentication>
-                    <login-module code="org.keycloak.adapters.jboss.KeycloakLoginModule" flag="required"/>
-                </authentication>
-            </security-domain>
-            <security-domain name="sp" cache-type="default">
-                <authentication>
-                    <login-module code="org.picketlink.identity.federation.bindings.wildfly.SAML2LoginModule" flag="required"/>
-                </authentication>
-            </security-domain>
-        </xsl:copy>
-    </xsl:template>
-
     <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $log)]">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>

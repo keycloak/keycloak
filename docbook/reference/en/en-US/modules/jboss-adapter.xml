@@ -49,6 +49,15 @@ $ unzip keycloak-as7-adapter-dist.zip
         <literal>domain.xml</literal> or <literal>standalone.xml</literal>.
     </para>
     <para>
+        There is a CLI script that will help you modify your server configuration.  Start the server and run the script 
+        from the server's bin directory:
+<programlisting>
+$ cd $JBOSS_HOME/bin
+$ jboss-cli.sh -c --file=adapter-install.cli
+</programlisting>
+        The script will add the extension, subsystem, and optional security-domain as described below.
+    </para>
+    <para>
 <programlisting><![CDATA[
 <server xmlns="urn:jboss:domain:1.4">
 
@@ -65,8 +74,7 @@ $ unzip keycloak-as7-adapter-dist.zip
 </programlisting>
     </para>
         <para>
-            Finally, you must specify a shared keycloak security domain.
-            This security domain should be used with EJBs and other components when you need the security context created
+            The keycloak security domain should be used with EJBs and other components when you need the security context created
             in the secured web tier to be propagated to the EJBs (other EE component) you are invoking.  Otherwise
             this configuration is optional.
         </para>

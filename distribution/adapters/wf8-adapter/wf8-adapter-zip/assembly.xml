@@ -28,4 +28,10 @@
             <outputDirectory>modules/system/layers/base</outputDirectory>
         </fileSet>
     </fileSets>
+    <files>
+        <file>
+             <source>../../shared-cli/adapter-install.cli</source>
+             <outputDirectory>bin</outputDirectory>
+        </file>
+    </files>
 </assembly>
