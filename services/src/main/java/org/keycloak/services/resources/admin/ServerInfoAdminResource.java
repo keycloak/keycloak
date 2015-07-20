@@ -1,5 +1,18 @@
 package org.keycloak.services.resources.admin;
 
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.Set;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.core.Context;
+
 import org.keycloak.Version;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
@@ -24,17 +37,6 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
 import org.keycloak.social.SocialIdentityProvider;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.core.Context;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.Set;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -55,6 +57,7 @@ public class ServerInfoAdminResource {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         info.version = Version.VERSION;
         info.serverTime = new Date().toString();
+        info.serverStartupTime = session.getKeycloakSessionFactory().getServerStartupTimestamp();
         setSocialProviders(info);
         setIdentityProviders(info);
         setThemes(info);
@@ -187,12 +190,115 @@ public class ServerInfoAdminResource {
             info.clientImporters.add(data);
         }
     }
+    
+    public static class MemoryInfo{
+        
+        public long getTotal(){
+            return Runtime.getRuntime().maxMemory();
+        }
+        
+        public String getTotalFormated(){
+            return formatMemory(getTotal());
+        }
+        
+        public long getFree(){
+            return getTotal() - getUsed();
+        }
 
+        public String getFreeFormated(){
+            return formatMemory(getFree());
+        }
+
+        public long getUsed(){
+            return Runtime.getRuntime().totalMemory();
+        }
+        
+        public String getUsedFormated(){
+            return formatMemory(getUsed());
+        }
+        
+        public long getFreePercentage(){
+            return getFree()*100/getTotal();
+        }
+        
+        private String formatMemory(long bytes){
+            if(bytes > 1024L*1024L){
+                return bytes/(1024L *1024L) + " MB"; 
+            } else if(bytes > 1024L){
+                return bytes/(1024L) + " kB"; 
+            } else {
+                return bytes + " B";
+            }
+        }
+        
+    }
+
+    public static class SystemInfo {
+        public String getJavaVersion(){
+            return System.getProperty("java.version");
+        }
+        
+        public String getJavaVendor(){
+            return System.getProperty("java.vendor");
+        }
+        
+        public String getJavaVm(){
+            return System.getProperty("java.vm.name");
+        }
+        
+        public String getJavaVmVersion(){
+            return System.getProperty("java.vm.version");
+        }
+
+        public String getJavaRuntime(){
+            return System.getProperty("java.runtime.name");
+        }
+
+        public String getJavaHome(){
+            return System.getProperty("java.home");
+        }
+        
+        public String getOsName(){
+            return System.getProperty("os.name");
+        }
+        
+        public String getOsArchitecture(){
+            return System.getProperty("os.arch");
+        }
+        
+        public String getOsVersion(){
+            return System.getProperty("os.version");
+        }
+
+        public String getFileEncoding(){
+            return System.getProperty("file.encoding");
+        }
+        
+        public String getUserName(){
+            return System.getProperty("user.name");
+        }
+        
+        public String getUserDir(){
+            return System.getProperty("user.dir");
+        }
+        
+        public String getUserTimezone(){
+            return System.getProperty("user.timezone");
+        }
+        
+        public String getUserLocale(){
+            return (new Locale(System.getProperty("user.country"),System.getProperty("user.language")).toString());
+        }
+        
+    }
+    
     public static class ServerInfoRepresentation {
 
         private String version;
 
         private String serverTime;
+        
+        private long serverStartupTime;
 
         private Map<String, List<String>> themes;
 
@@ -211,9 +317,54 @@ public class ServerInfoAdminResource {
 
         public ServerInfoRepresentation() {
         }
+        
+        public SystemInfo getSystemInfo(){
+            return new SystemInfo();
+        }
+        
+        public MemoryInfo getMemoryInfo(){
+            return new MemoryInfo();
+        }
 
         public String getServerTime() {
             return serverTime;
+        }
+        
+        /**
+         * @return server startup time formatted
+         */
+        public String getServerStartupTime() {
+            return (new Date(serverStartupTime)).toString();
+        }
+        
+        /**
+         * @return server uptime in millis
+         */
+        public long getServerUptimeMillis(){
+            return System.currentTimeMillis() - serverStartupTime;
+        }
+        
+        /**
+         * @return server uptime formatted like "0 days, 10 hours, 24 minutes, 55 seconds"
+         */
+        public String getServerUptime(){
+            long diffInSeconds = getServerUptimeMillis()/1000;
+            long diff[] = new long[] { 0, 0, 0, 0 };
+            /* sec */diff[3] = (diffInSeconds >= 60 ? diffInSeconds % 60 : diffInSeconds);
+            /* min */diff[2] = (diffInSeconds = (diffInSeconds / 60)) >= 60 ? diffInSeconds % 60 : diffInSeconds;
+            /* hours */diff[1] = (diffInSeconds = (diffInSeconds / 60)) >= 24 ? diffInSeconds % 24 : diffInSeconds;
+            /* days */diff[0] = (diffInSeconds = (diffInSeconds / 24));
+
+            return String.format(
+                "%d day%s, %d hour%s, %d minute%s, %d second%s",
+                diff[0],
+                diff[0] != 1 ? "s" : "",
+                diff[1],
+                diff[1] != 1 ? "s" : "",
+                diff[2],
+                diff[2] != 1 ? "s" : "",
+                diff[3],
+                diff[3] != 1 ? "s" : "");
         }
 
         public String getVersion() {
