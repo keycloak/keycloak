@@ -444,8 +444,10 @@ public class SamlProtocol implements LoginProtocol {
     @Override
     public Response consentDenied(ClientSessionModel clientSession) {
         if ("true".equals(clientSession.getClient().getAttribute(SAML_IDP_INITIATED_LOGIN))) {
+            session.sessions().removeClientSession(realm, clientSession);
             return ErrorPage.error(session, Messages.CONSENT_DENIED);
         } else {
+            session.sessions().removeClientSession(realm, clientSession);
             return getErrorResponse(clientSession, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
         }
     }
