@@ -5,6 +5,7 @@ import com.icegreen.greenmail.util.ServerSetup;
 
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMessage.RecipientType;
+import javax.mail.internet.MimeMultipart;
 
 public class MailServer {
 
@@ -22,9 +23,20 @@ public class MailServer {
 
             if (greenMail.waitForIncomingEmail(Long.MAX_VALUE, c + 1)) {
                 MimeMessage message = greenMail.getReceivedMessages()[c++];
+                System.out.println("-------------------------------------------------------");
                 System.out.println("Received mail to " + message.getRecipients(RecipientType.TO)[0]);
-                System.out.println();
-                System.out.println(message.getContent());
+                if (message.getContent() instanceof MimeMultipart) {
+                    MimeMultipart mimeMultipart = (MimeMultipart) message.getContent();
+                    for (int i = 0; i < mimeMultipart.getCount(); i++) {
+                        System.out.println("----");
+                        System.out.println(mimeMultipart.getBodyPart(i).getContentType() + ":");
+                        System.out.println();
+                        System.out.println(mimeMultipart.getBodyPart(i).getContent());
+                    }
+                } else {
+                    System.out.println();
+                    System.out.println(message.getContent());
+                }
                 System.out.println("-------------------------------------------------------");
             }
         }
