@@ -49,9 +49,9 @@
                 <literal>keycloak-overlay-&project.version;.zip</literal> or <literal>keycloak-overlay-&project.version;.tar.gz</literal>.
                 Once downloaded extract into the root directory of your WildFly installation. To start WildFly with Keycloak
                 run:
-                <programlisting>keycloak-&project.version;/bin/standalone.sh --server-config=standalone-keycloak.xml</programlisting>
+                <programlisting>&lt;WILDFLY_HOME&gt;/bin/standalone.sh --server-config=standalone-keycloak.xml</programlisting>
                 or:
-                <programlisting>keycloak-&project.version;/bin/standalone.bat --server-config=standalone-keycloak.xml</programlisting>
+                <programlisting>&lt;WILDFLY_HOME&gt;/bin/standalone.bat --server-config=standalone-keycloak.xml</programlisting>
             </para>
             <para>
                 Once the server is started log into the admin console at
@@ -60,21 +60,28 @@
                 enter in a new password.
             </para>
             <para>
-                To add Keycloak to other sever configurations (standalone.xml, standalone-ha.xml, etc.) open
-                <literal>standalone/configuration/standalone-keycloak.xml</literal> and the configuration you want to add it
-                to, for example <literal>standalone/configuration/standalone.xml</literal>. From <literal>standalone-keycloak.xml</literal>
-                you need to copy 3 elements:
-                <itemizedlist>
-                    <listitem><literal>&lt;extension module="org.keycloak.keycloak-server-subsystem"/&gt;</literal></listitem>
-                    <listitem><literal>&lt;datasource jndi-name="java:jboss/datasources/KeycloakDS" ...&gt;</literal></listitem>
-                    <listitem><literal>&lt;subsystem xmlns="urn:jboss:domain:keycloak-server:1.1" ...&gt;</literal></listitem>
-                </itemizedlist>
+                To add Keycloak to other sever configurations (standalone.xml, standalone-ha.xml, etc.) start the server with
+                the desired server-config.  Then execute the following CLI script:
+                <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c --file=keycloak-install.cli</programlisting>
             </para>
         </section>
         <section>
             <title>Install on existing JBoss EAP 6.4.0.GA</title>
             <para>
                 Same procedure as WildFly 9.0.0.Final, but download <literal>keycloak-overlay-eap6-&project.version;.zip</literal> or <literal>keycloak-overlay-eap6-&project.version;.tar.gz</literal>.
+            </para>
+            <para>
+                However, for EAP, adding Keycloak to other sever configurations (standalone.xml, standalone-ha.xml, etc.) requires two CLI scripts. Start the server with
+                the desired server-config.  Then execute the following CLI scripts with a restart in between:
+                <orderedlist>
+                    <listitem>
+                        <programlisting>&lt;EAP_HOME&gt;/bin/jboss-cli.sh -c --file=keycloak-prepare.cli</programlisting>
+                    </listitem>
+                    <listitem>Restart the server with the same server-config.</listitem>
+                    <listitem>
+                        <programlisting>&lt;EAP_HOME&gt;/bin/jboss-cli.sh -c --file=keycloak-install.cli</programlisting>
+                    </listitem>
+                </orderedlist>
             </para>
         </section>
         <section>

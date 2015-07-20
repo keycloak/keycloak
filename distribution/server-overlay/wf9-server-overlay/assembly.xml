@@ -62,6 +62,10 @@
             <source>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/keycloak-server.json</source>
             <outputDirectory>standalone/configuration</outputDirectory>
         </file>
+        <file>
+            <source>cli/keycloak-install.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
     </files>
 
 </assembly>

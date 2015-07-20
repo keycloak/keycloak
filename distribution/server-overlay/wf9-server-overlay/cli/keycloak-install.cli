@@ -1,0 +1,3 @@
+/subsystem=datasources/data-source=KeycloakDS/:add(connection-url="jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE",driver-name=h2,jndi-name=java:jboss/datasources/KeycloakDS,password=sa,user-name=sa,use-java-context=true)
+/extension=org.keycloak.keycloak-server-subsystem/:add(module=org.keycloak.keycloak-server-subsystem)
+/subsystem=keycloak-server:add(web-context=auth)
