@@ -11,6 +11,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
@@ -31,6 +32,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperRepresentation;
@@ -193,6 +195,7 @@ public class ModelToRepresentation {
         rep.setDefaultLocale(realm.getDefaultLocale());
         if (internal) {
             exportAuthenticationFlows(realm, rep);
+            exportRequiredActions(realm, rep);
         }
         return rep;
     }
@@ -208,6 +211,14 @@ public class ModelToRepresentation {
             rep.getAuthenticatorConfig().add(toRepresentation(model));
         }
 
+    }
+
+    public static void exportRequiredActions(RealmModel realm, RealmRepresentation rep) {
+        rep.setRequiredActions(new LinkedList<RequiredActionProviderRepresentation>());
+        for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
+            RequiredActionProviderRepresentation action = toRepresentation(model);
+            rep.getRequiredActions().add(action);
+        }
     }
 
 
@@ -467,6 +478,21 @@ public class ModelToRepresentation {
         rep.setConfig(model.getConfig());
         return rep;
     }
+
+    public static RequiredActionProviderRepresentation toRepresentation(RequiredActionProviderModel model) {
+        RequiredActionProviderRepresentation rep = new RequiredActionProviderRepresentation();
+        rep.setAlias(model.getAlias());
+        rep.setDefaultAction(model.isDefaultAction());
+        rep.setEnabled(model.isEnabled());
+        rep.setConfig(model.getConfig());
+        rep.setName(model.getName());
+        rep.setProviderId(model.getProviderId());
+        return rep;
+    }
+
+
+
+
 
 
 }

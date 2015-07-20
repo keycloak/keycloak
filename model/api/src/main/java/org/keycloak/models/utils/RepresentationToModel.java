@@ -18,6 +18,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
@@ -38,6 +39,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
@@ -297,6 +299,14 @@ public class RepresentationToModel {
         }
 
         importAuthenticationFlows(newRealm, rep);
+        if (rep.getRequiredActions() != null) {
+            for (RequiredActionProviderRepresentation action : rep.getRequiredActions()) {
+                RequiredActionProviderModel model = toModel(action);
+                newRealm.addRequiredActionProvider(model);
+            }
+        } else {
+            DefaultRequiredActions.addActions(newRealm);
+        }
     }
 
     public static void importAuthenticationFlows(RealmModel newRealm, RealmRepresentation rep) {
@@ -1072,6 +1082,17 @@ public class RepresentationToModel {
         AuthenticatorConfigModel model = new AuthenticatorConfigModel();
         model.setAlias(rep.getAlias());
         model.setConfig(rep.getConfig());
+        return model;
+    }
+
+    public static RequiredActionProviderModel toModel(RequiredActionProviderRepresentation rep) {
+        RequiredActionProviderModel model = new RequiredActionProviderModel();
+        model.setConfig(rep.getConfig());
+        model.setDefaultAction(rep.isDefaultAction());
+        model.setEnabled(rep.isEnabled());
+        model.setProviderId(rep.getProviderId());
+        model.setName(rep.getName());
+        model.setAlias(rep.getAlias());
         return model;
     }
 

@@ -1,0 +1,2 @@
+/subsystem=datasources/data-source=KeycloakDS/:add(connection-url="jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE",driver-name=h2,jndi-name=java:jboss/datasources/KeycloakDS,password=sa,user-name=sa,use-java-context=true,enabled=true)
+/subsystem=logging/logger=org.jboss.resteasy.resteasy_jaxrs.i18n/:add(level=ERROR)
