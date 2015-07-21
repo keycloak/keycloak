@@ -1615,6 +1615,15 @@ module.directive('kcTabsIdentityProvider', function () {
     }
 });
 
+module.directive('kcTabsUserFederation', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-user-federation.html'
+    }
+});
+
 module.controller('RoleSelectorModalCtrl', function($scope, realm, config, configName, RealmRoles, Client, ClientRole, $modalInstance) {
     console.log('realm: ' + realm.realm);
     $scope.selectedRealmRole = {

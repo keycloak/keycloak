@@ -520,11 +520,27 @@ module.controller('UserFederationCtrl', function($scope, $location, realm, UserF
 
 });
 
+module.controller('UserFederationTabCtrl', function(Dialog, $scope, Current, Notifications, $location) {
+    $scope.removeUserFederation = function() {
+        Dialog.confirm('Delete', 'Are you sure you want to permanently delete this provider?  All imported users will also be deleted.', function() {
+            $scope.instance.$remove({
+                realm : Current.realm.realm,
+                instance : $scope.instance.id
+            }, function() {
+                $location.url("/realms/" + Current.realm.realm + "/user-federation");
+                Notifications.success("The provider has been deleted.");
+            });
+        });
+    };
+});
+
+
 module.controller('GenericUserFederationCtrl', function($scope, $location, Notifications, $route, Dialog, realm, instance, providerFactory, UserFederationInstances, UserFederationSync) {
     console.log('GenericUserFederationCtrl');
 
     $scope.create = !instance.providerName;
     $scope.providerFactory = providerFactory;
+    $scope.provider = instance;
 
     console.log("providerFactory: " + providerFactory.id);
 
@@ -618,18 +634,6 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
         } else {
             $route.reload();
         }
-    };
-
-    $scope.remove = function() {
-        Dialog.confirm('Delete', 'Are you sure you want to permanently delete this provider?  All imported users will also be deleted.', function() {
-            $scope.instance.$remove({
-                realm : realm.realm,
-                instance : $scope.instance.id
-            }, function() {
-                $location.url("/realms/" + realm.realm + "/user-federation");
-                Notifications.success("The provider has been deleted.");
-            });
-        });
     };
 
     $scope.triggerFullSync = function() {
@@ -882,6 +886,7 @@ module.controller('UserFederationMapperListCtrl', function($scope, $location, No
 
     $scope.realm = realm;
     $scope.provider = provider;
+    $scope.instance = provider;
 
     $scope.mapperTypes = mapperTypes;
     $scope.mappers = mappers;
