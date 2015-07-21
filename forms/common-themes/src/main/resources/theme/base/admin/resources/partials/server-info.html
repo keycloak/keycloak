@@ -1,21 +1,47 @@
 <div class="col-md-12">
-    <h1>Server Info</h1>
+  <h1>Server Info</h1>
 
-    <table class="table table-striped table-bordered">
+  <table class="table table-striped table-bordered">
+    <tr>
+        <td width="20%">Keycloak Version</td>
+        <td>{{serverInfo.version}}</td>
+    </tr>
+    <tr>
+        <td>Server Time</td>
+        <td>{{serverInfo.serverTime}} (<a style="cursor: pointer" data-ng-click="serverInfoUpdate()">update</a>)</td>
+    </tr>
+    <tr>
+        <td>Server Uptime</td>
+        <td>{{serverInfo.serverUptime}}</td>
+    </tr>
+  </table>
+
+	<fieldset>
+	  <legend>Java VM Memory Statistics</legend>
+	  <div class="form-group">
+	    <table class="table table-striped table-bordered" style="margin-top: 0px;">
+	        <tr>
+	            <td width="20%">Total Memory</td>
+	            <td>{{serverInfo.memoryInfo.totalFormated}}</td>
+	        </tr>
+	        <tr>
+	            <td>Free Memory</td>
+	            <td>{{serverInfo.memoryInfo.freeFormated}} ({{serverInfo.memoryInfo.freePercentage}}%)</td>
+	        </tr>
+	        <tr>
+	            <td>Used Memory</td>
+	            <td>{{serverInfo.memoryInfo.usedFormated}}</td>
+	        </tr>
+	   	</table>
+		</div>
+	</fieldset>
+	
+    <fieldset>
+        <legend collapsed>System Info</legend>
+        <div class="form-group">
+        <table class="table table-striped table-bordered" style="margin-top: 0px;">
         <tr>
-            <td>Version</td>
-            <td>{{serverInfo.version}}</td>
-        </tr>
-        <tr>
-            <td>Server Time</td>
-            <td>{{serverInfo.serverTime}} (<a style="cursor: pointer" data-ng-click="serverInfoUpdate()">update</a>)</td>
-        </tr>
-        <tr>
-            <td>Server Uptime</td>
-            <td>{{serverInfo.serverUptime}}</td>
-        </tr>
-        <tr>
-            <td>Current Working Directory</td>
+            <td width="20%">Current Working Directory</td>
             <td>{{serverInfo.systemInfo.userDir}}</td>
         </tr>
         <tr>
@@ -66,23 +92,59 @@
             <td>OS Architecture</td>
             <td>{{serverInfo.systemInfo.osArchitecture}}</td>
         </tr>
-    </table>
-    
-    <h3>Java VM Memory Statistics</h3>
-    <table class="table table-striped table-bordered">
-        <tr>
-            <td>Total Memory</td>
-            <td>{{serverInfo.memoryInfo.totalFormated}}</td>
-        </tr>
-        <tr>
-            <td>Free Memory</td>
-            <td>{{serverInfo.memoryInfo.freeFormated}} ({{serverInfo.memoryInfo.freePercentage}}%)</td>
-        </tr>
-        <tr>
-            <td>Used Memory</td>
-            <td>{{serverInfo.memoryInfo.usedFormated}}</td>
-        </tr>
-   	</table>
+        </table>
+        </div>
+    </fieldset>    
+
+   	
+    <fieldset ng-show="serverInfo.jpaInfo">
+        <legend collapsed>Database Info</legend>
+        <div class="form-group">
+        <table class="table table-striped table-bordered" style="margin-top: 0px;">
+    			<tr>
+            <td width="20%">Database URL</td>
+            <td>{{serverInfo.jpaInfo.jdbcUrl}}</td>
+        	</tr>
+        	<tr>
+            <td>Database User</td>
+            <td>{{serverInfo.jpaInfo.databaseUser}}</td>
+        	</tr>    
+        	<tr>
+            <td>Database Type</td>
+            <td>{{serverInfo.jpaInfo.databaseProduct}}</td>
+        	</tr>
+        	<tr>
+            <td>Database Driver</td>
+            <td>{{serverInfo.jpaInfo.databaseDriver}}</td>
+        	</tr>
+        </table>
+        </div>
+    </fieldset>    
+
+    <fieldset ng-show="serverInfo.mongoDbInfo">
+        <legend collapsed>Mongo DB Info</legend>
+        <div class="form-group">
+        <table class="table table-striped table-bordered" style="margin-top: 0px;">
+    			<tr width="20%">
+            <td>Address</td>
+            <td>{{serverInfo.mongoDbInfo.address}}</td>
+        	</tr>
+        	<tr>
+            <td>Database</td>
+            <td>{{serverInfo.mongoDbInfo.database}}</td>
+        	</tr>
+        	<tr>
+            <td>User</td>
+            <td>{{serverInfo.mongoDbInfo.user}}</td>
+        	</tr>    
+        	<tr>
+            <td>Driver Version</td>
+            <td>{{serverInfo.mongoDbInfo.driverVersion}}</td>
+        	</tr>
+        </table>
+        </div>
+    </fieldset>    
+   	   	
     <fieldset>
         <legend collapsed>Providers</legend>
 
@@ -93,7 +155,7 @@
             <table class="table table-striped table-bordered">
                 <thead>
                 <tr>
-                    <th>SPI</th>
+                    <th width="20%">SPI</th>
                     <th>Providers</th>
                 </tr>
                 </thead>
@@ -117,7 +179,7 @@
             <table class="table table-striped table-bordered">
                 <thead>
                 <tr>
-                    <th>SPI</th>
+                    <th width="20%">SPI</th>
                     <th>Providers</th>
                 </tr>
                 </thead>

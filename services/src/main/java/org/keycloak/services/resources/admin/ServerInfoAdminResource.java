@@ -1,5 +1,6 @@
 package org.keycloak.services.resources.admin;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -13,9 +14,13 @@ import java.util.Set;
 import javax.ws.rs.GET;
 import javax.ws.rs.core.Context;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Version;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.mongo.DefaultMongoConnectionFactoryProvider.MongoDbInfo;
+import org.keycloak.connections.mongo.MongoConnectionProvider;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
@@ -29,8 +34,10 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.provider.MonitorableProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.ProviderOperationalInfo;
 import org.keycloak.provider.Spi;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -41,6 +48,8 @@ import org.keycloak.social.SocialIdentityProvider;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ServerInfoAdminResource {
+    
+    private static final Logger logger = Logger.getLogger(ServerInfoAdminResource.class);
 
     private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class);
 
@@ -58,6 +67,8 @@ public class ServerInfoAdminResource {
         info.version = Version.VERSION;
         info.serverTime = new Date().toString();
         info.serverStartupTime = session.getKeycloakSessionFactory().getServerStartupTimestamp();
+        info.memoryInfo = (new MemoryInfo()).init(Runtime.getRuntime());
+        info.systemInfo = (new SystemInfo()).init();
         setSocialProviders(info);
         setIdentityProviders(info);
         setThemes(info);
@@ -68,6 +79,21 @@ public class ServerInfoAdminResource {
         setProtocolMapperTypes(info);
         setBuiltinProtocolMappers(info);
         info.setEnums(ENUMS);
+        
+        ProviderFactory<JpaConnectionProvider> jpf = session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
+        if(jpf!=null && jpf instanceof MonitorableProviderFactory){
+           info.jpaInfo = ((MonitorableProviderFactory<?>)jpf).getOperationalInfo();
+        } else {
+            logger.debug("JPA provider not found or is not monitorable");
+        }
+        
+        ProviderFactory<MongoConnectionProvider> mpf = session.getKeycloakSessionFactory().getProviderFactory(MongoConnectionProvider.class);
+        if(mpf!=null && mpf instanceof MonitorableProviderFactory){
+           info.mongoDbInfo = ((MonitorableProviderFactory<?>)mpf).getOperationalInfo();
+        } else {
+            logger.debug("Mongo provider not found or is not monitorable");
+        }
+                
         return info;
     }
 
@@ -191,10 +217,28 @@ public class ServerInfoAdminResource {
         }
     }
     
-    public static class MemoryInfo{
+    public static class MemoryInfo implements Serializable {
+        
+        protected long total;
+        
+        protected long used;
+        
+        public MemoryInfo(){
+        }
+        
+        /**
+         * Fill object fwith info.
+         * @param runtime used to get memory info from.
+         * @return itself for chaining
+         */
+        public MemoryInfo init(Runtime runtime){
+            total = runtime.maxMemory();
+            used = runtime.totalMemory() - runtime.freeMemory();
+            return this;
+        }
         
         public long getTotal(){
-            return Runtime.getRuntime().maxMemory();
+            return total;
         }
         
         public String getTotalFormated(){
@@ -210,7 +254,7 @@ public class ServerInfoAdminResource {
         }
 
         public long getUsed(){
-            return Runtime.getRuntime().totalMemory();
+            return used;
         }
         
         public String getUsedFormated(){
@@ -218,7 +262,7 @@ public class ServerInfoAdminResource {
         }
         
         public long getFreePercentage(){
-            return getFree()*100/getTotal();
+            return getFree() * 100 / getTotal();
         }
         
         private String formatMemory(long bytes){
@@ -233,71 +277,109 @@ public class ServerInfoAdminResource {
         
     }
 
-    public static class SystemInfo {
+    public static class SystemInfo implements Serializable {
+        
+        protected String javaVersion; 
+        protected String javaVendor;
+        protected String javaVm;
+        protected String javaVmVersion;
+        protected String javaRuntime;
+        protected String javaHome;
+        protected String osName;
+        protected String osArchitecture;
+        protected String osVersion;
+        protected String fileEncoding;
+        protected String userName;
+        protected String userDir;
+        protected String userTimezone;
+        protected String userLocale;
+        
+        public SystemInfo() {
+        }
+        
+        /**
+         * Fill object with info about current system loaded from {@link System} properties.
+         * @return object itself for chaining
+         */
+        protected SystemInfo init(){
+            javaVersion = System.getProperty("java.version");
+            javaVendor = System.getProperty("java.vendor");
+            javaVm = System.getProperty("java.vm.name");
+            javaVmVersion = System.getProperty("java.vm.version");
+            javaRuntime = System.getProperty("java.runtime.name");
+            javaHome = System.getProperty("java.home");
+            osName = System.getProperty("os.name");
+            osArchitecture = System.getProperty("os.arch");
+            osVersion = System.getProperty("os.version");
+            fileEncoding = System.getProperty("file.encoding");
+            userName = System.getProperty("user.name");
+            userDir = System.getProperty("user.dir");
+            userTimezone = System.getProperty("user.timezone");
+            userLocale = (new Locale(System.getProperty("user.country"),System.getProperty("user.language")).toString());
+            return this;
+        }
+        
         public String getJavaVersion(){
-            return System.getProperty("java.version");
+            return javaVersion;
         }
         
         public String getJavaVendor(){
-            return System.getProperty("java.vendor");
+            return javaVendor;
         }
         
         public String getJavaVm(){
-            return System.getProperty("java.vm.name");
+            return javaVm;
         }
         
         public String getJavaVmVersion(){
-            return System.getProperty("java.vm.version");
+            return javaVmVersion;
         }
 
         public String getJavaRuntime(){
-            return System.getProperty("java.runtime.name");
+            return javaRuntime;
         }
 
         public String getJavaHome(){
-            return System.getProperty("java.home");
+            return javaHome;
         }
         
         public String getOsName(){
-            return System.getProperty("os.name");
+            return osName;
         }
         
         public String getOsArchitecture(){
-            return System.getProperty("os.arch");
+            return osArchitecture;
         }
         
         public String getOsVersion(){
-            return System.getProperty("os.version");
+            return osVersion;
         }
 
         public String getFileEncoding(){
-            return System.getProperty("file.encoding");
+            return fileEncoding;
         }
         
         public String getUserName(){
-            return System.getProperty("user.name");
+            return userName;
         }
         
         public String getUserDir(){
-            return System.getProperty("user.dir");
+            return userDir;
         }
         
         public String getUserTimezone(){
-            return System.getProperty("user.timezone");
+            return userTimezone;
         }
         
         public String getUserLocale(){
-            return (new Locale(System.getProperty("user.country"),System.getProperty("user.language")).toString());
+            return userLocale;
         }
-        
     }
     
-    public static class ServerInfoRepresentation {
+    public static class ServerInfoRepresentation implements Serializable {
 
         private String version;
-
         private String serverTime;
-        
         private long serverStartupTime;
 
         private Map<String, List<String>> themes;
@@ -314,26 +396,44 @@ public class ServerInfoAdminResource {
         private Map<String, List<ProtocolMapperRepresentation>> builtinProtocolMappers;
 
         private Map<String, List<String>> enums;
+        
+        private MemoryInfo memoryInfo;
+        private SystemInfo systemInfo;
+        
+        private ProviderOperationalInfo jpaInfo;
+        private ProviderOperationalInfo mongoDbInfo;
 
         public ServerInfoRepresentation() {
         }
         
         public SystemInfo getSystemInfo(){
-            return new SystemInfo();
+            return systemInfo;
         }
         
         public MemoryInfo getMemoryInfo(){
-            return new MemoryInfo();
+            return memoryInfo;
+        }
+
+        public ProviderOperationalInfo getJpaInfo() {
+            return jpaInfo;
+        }
+        
+        public ProviderOperationalInfo getMongoDbInfo() {
+            return mongoDbInfo;
         }
 
         public String getServerTime() {
             return serverTime;
         }
         
+        public long getServerStartupTime() {
+            return serverStartupTime;
+        }
+        
         /**
          * @return server startup time formatted
          */
-        public String getServerStartupTime() {
+        public String getServerStartupTimeFormatted() {
             return (new Date(serverStartupTime)).toString();
         }
         
@@ -420,7 +520,7 @@ public class ServerInfoAdminResource {
         }
     }
 
-    public static class SpiInfoRepresentation {
+    public static class SpiInfoRepresentation implements Serializable {
         private String name;
         private boolean internal;
         private Set<String> implementations;

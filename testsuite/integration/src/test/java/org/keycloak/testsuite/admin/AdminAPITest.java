@@ -21,10 +21,27 @@
  */
 package org.keycloak.testsuite.admin;
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.Config;
+import org.keycloak.Version;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -40,22 +57,8 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminRoot;
-import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.KeycloakServer;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 
 /**
  * Tests Undertow Adapter
@@ -293,6 +296,36 @@ public class AdminAPITest {
         empty.setRealm("empty");
         testCreateRealm(empty);
         testCreateRealm("/admin-test/testrealm.json");
+    }
+
+    @Test
+    public void testServerInfo() {
+
+        String token = createToken();
+        final String authHeader = "Bearer " + token;
+        ClientRequestFilter authFilter = new ClientRequestFilter() {
+            @Override
+            public void filter(ClientRequestContext requestContext) throws IOException {
+                requestContext.getHeaders().add(HttpHeaders.AUTHORIZATION, authHeader);
+            }
+        };
+        Client client = ClientBuilder.newBuilder().register(authFilter).build();
+        UriBuilder authBase = UriBuilder.fromUri("http://localhost:8081/auth");
+        WebTarget target = client.target(AdminRoot.adminBaseUrl(authBase).path("serverinfo"));
+
+        Map<?, ?> response = target.request().accept("application/json").get(Map.class);
+
+        Assert.assertNotNull(response);
+        Assert.assertEquals(Version.VERSION, response.get("version"));
+        Assert.assertNotNull(response.get("serverTime"));
+        Assert.assertNotNull(response.get("serverStartupTime"));
+
+        Assert.assertNotNull(response.get("memoryInfo"));
+        Assert.assertNotNull(response.get("jpaInfo"));
+        Assert.assertNull(response.get("mongoDbInfo"));
+        
+        System.out.println(response);
+
     }
 
 }
