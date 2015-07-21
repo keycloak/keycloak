@@ -83,7 +83,7 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $
         get impersonation() {
             return getAccess('impersonation');
         }
-    }
+    };
 
     $scope.$watch(function() {
         return $location.path();
@@ -111,6 +111,18 @@ module.controller('HomeCtrl', function(Realm, Auth, $location) {
             $location.url('/realms');
         }
     });
+});
+
+module.controller('RealmTabCtrl', function(Dialog, $scope, Current, Realm, Notifications, $location) {
+    $scope.removeRealm = function() {
+        Dialog.confirmDelete(Current.realm.realm, 'realm', function() {
+            Realm.remove({ id : Current.realm.realm }, function() {
+                Current.realms = Realm.query();
+                Notifications.success("The realm has been deleted.");
+                $location.url("/");
+            });
+        });
+    };
 });
 
 module.controller('RealmListCtrl', function($scope, Realm, Current) {
@@ -285,16 +297,6 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
 
     $scope.cancel = function() {
         window.history.back();
-    };
-
-    $scope.remove = function() {
-        Dialog.confirmDelete($scope.realm.realm, 'realm', function() {
-            Realm.remove({ id : $scope.realm.realm }, function() {
-                Current.realms = Realm.query();
-                Notifications.success("The realm has been deleted.");
-                $location.url("/");
-            });
-        });
     };
 });
 
