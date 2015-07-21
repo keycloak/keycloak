@@ -1,16 +1,14 @@
 package org.keycloak.migration.migrators;
 
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -28,7 +26,19 @@ public class MigrateTo1_4_0 {
                 DefaultRequiredActions.addActions(realm);
             }
             ImpersonationConstants.setupImpersonationService(session, realm);
+            migrateUsers(session, realm);
         }
 
+    }
+
+    public void migrateUsers(KeycloakSession session, RealmModel realm) {
+        List<UserModel> users = session.userStorage().getUsers(realm);
+        for (UserModel user : users) {
+            String email = user.getEmail();
+            email = KeycloakModelUtils.toLowerCaseSafe(email);
+            if (email != null && !email.equals(user.getEmail())) {
+                user.setEmail(email);
+            }
+        }
     }
 }

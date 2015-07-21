@@ -350,4 +350,7 @@ public final class KeycloakModelUtils {
         return mapperModel;
     }
 
+    public static String toLowerCaseSafe(String str) {
+        return str==null ? str : str.toLowerCase();
+    }
 }
