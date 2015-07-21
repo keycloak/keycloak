@@ -69,6 +69,8 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
                 $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
                 $scope.selectedClientRoles = [];
                 $scope.selectedClientMappings = [];
+                $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
+                $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 Notifications.success("Role mappings updated.");
             });
     };
@@ -81,6 +83,8 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
                 $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
                 $scope.selectedClientRoles = [];
                 $scope.selectedClientMappings = [];
+                $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
+                $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 Notifications.success("Role mappings updated.");
             });
     };
