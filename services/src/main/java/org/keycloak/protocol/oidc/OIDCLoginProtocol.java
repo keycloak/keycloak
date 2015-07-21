@@ -148,6 +148,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
         if (state != null)
             redirectUri.queryParam(OAuth2Constants.STATE, state);
+        session.sessions().removeClientSession(realm, clientSession);
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
         return location.build();
     }

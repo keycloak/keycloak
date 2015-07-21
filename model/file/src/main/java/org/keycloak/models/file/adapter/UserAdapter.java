@@ -86,6 +86,8 @@ public class UserAdapter implements UserModel, Comparable {
 
     @Override
     public void setUsername(String username) {
+        username = KeycloakModelUtils.toLowerCaseSafe(username);
+
         if (getUsername() == null) {
             user.setUsername(username);
             return;
@@ -145,6 +147,8 @@ public class UserAdapter implements UserModel, Comparable {
 
     @Override
     public void setEmail(String email) {
+        email = KeycloakModelUtils.toLowerCaseSafe(email);
+
         if (email == null) {
             user.setEmail(email);
             return;

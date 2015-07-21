@@ -74,6 +74,7 @@ public class UserAdapter implements UserModel {
 
     @Override
     public void setUsername(String username) {
+        username = KeycloakModelUtils.toLowerCaseSafe(username);
         user.setUsername(username);
     }
 
@@ -266,6 +267,7 @@ public class UserAdapter implements UserModel {
 
     @Override
     public void setEmail(String email) {
+        email = KeycloakModelUtils.toLowerCaseSafe(email);
         user.setEmail(email);
     }
 

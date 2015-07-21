@@ -19,7 +19,7 @@ cp http.keytab /tmp/http.keytab
 ```
 
 Alternative is to configure different location for `keyTab` property in `kerberosrealm.json` configuration file (On Windows this will be needed).
-WARNING: In production, keytab file should be in secured location accessible just to the user under which is Keycloak server running.
+**WARNING**: In production, keytab file should be in secured location accessible just to the user under which is Keycloak server running.
 
 
 **3)** Run Keycloak server and import `kerberosrealm.json` into it through admin console. This will import realm with sample application
@@ -47,6 +47,8 @@ See [this file](https://github.com/keycloak/keycloak/blob/master/testsuite/integ
 with these commands (assuming you're in `kerberos` directory with this example)
 
 ```
+cd ../ldap
+mvn clean install
 cd ..
 java -jar ldap/embedded-ldap/target/embedded-ldap.jar kerberos
 ```
