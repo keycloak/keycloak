@@ -266,6 +266,21 @@ module.controller('UserListCtrl', function($scope, realm, User, UserImpersonatio
 });
 
 
+module.controller('UserTabCtrl', function($scope, $location, Dialog, Notifications, Current) {
+    $scope.removeUser = function() {
+        Dialog.confirmDelete($scope.user.id, 'user', function() {
+            $scope.user.$remove({
+                realm : Current.realm.realm,
+                userId : $scope.user.id
+            }, function() {
+                $location.url("/realms/" + Current.realm.realm + "/users");
+                Notifications.success("The user has been deleted.");
+            }, function() {
+                Notifications.error("User couldn't be deleted");
+            });
+        });
+    };
+});
 
 module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFederationInstances, UserImpersonation, RequiredActions, $location, Dialog, Notifications) {
     $scope.realm = realm;
@@ -395,20 +410,6 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
 
     $scope.cancel = function() {
         $location.url("/realms/" + realm.realm + "/users");
-    };
-
-    $scope.remove = function() {
-        Dialog.confirmDelete($scope.user.id, 'user', function() {
-            $scope.user.$remove({
-                realm : realm.realm,
-                userId : $scope.user.id
-            }, function() {
-                $location.url("/realms/" + realm.realm + "/users");
-                Notifications.success("The user has been deleted.");
-            }, function() {
-                Notifications.error("User couldn't be deleted");
-            });
-        });
     };
 });
 

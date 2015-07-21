@@ -5,10 +5,6 @@
         <li data-ng-show="create">Add User</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{user.username|capitalize}}<i id="removeUser" class="pficon pficon-delete clickable" data-ng-show="!create && access.manageUsers && !changed"
-    	data-ng-click="remove()"></i></h1>
-    <h1 data-ng-show="create">Add User</h1>
-
     <kc-tabs-user></kc-tabs-user>
 
     <form class="form-horizontal" name="userForm" novalidate kc-read-only="!access.manageUsers">
