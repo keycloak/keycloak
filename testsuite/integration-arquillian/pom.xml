@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-testsuite-integration-arquillian</artifactId>
-    <name>KeyCloak Arquillian TestSuite</name>
+    <name>Keycloak Integration TestSuite with Arquillian</name>
 
     <properties>
         
@@ -303,10 +303,6 @@
             <scope>test</scope>
             <type>zip</type>
         </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-        </dependency>
     </dependencies>
 
     <profiles>
@@ -403,7 +399,8 @@
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
-                                            <artifactId>keycloak-server-dist</artifactId>
+                                            <artifactId>keycloak-demo-dist</artifactId>
+                                            <version>${project.version}</version>
                                             <type>zip</type>
                                             <overWrite>false</overWrite>
                                         </artifactItem>
