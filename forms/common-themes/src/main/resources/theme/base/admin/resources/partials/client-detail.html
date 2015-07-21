@@ -6,10 +6,6 @@
         <li data-ng-hide="create">{{client.clientId}}</li>
     </ol>
 
-    <h1 data-ng-show="create">Add Client</h1>
-    <h1 data-ng-hide="create">{{client.clientId|capitalize}}<i id="removeClient" class="pficon pficon-delete clickable" data-ng-show="!create && access.manageClients" 
-    	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
-
     <kc-tabs-client></kc-tabs-client>
 
     <form class="form-horizontal" name="clientForm" novalidate kc-read-only="!access.manageClients">
