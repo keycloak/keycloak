@@ -5,7 +5,7 @@
         <caption data-ng-show="users" class="hidden">Table of realm users</caption>
         <thead>
         <tr>
-            <th colspan="{{access.impersonation == true ? '5' : '4'}}">
+            <th colspan="{{access.impersonation == true ? '6' : '5'}}">
                 <div class="form-inline">
                     <div class="form-group">
                         <div class="input-group">
@@ -29,7 +29,7 @@
             <th>Last Name</th>
             <th>First Name</th>
             <th>Email</th>
-            <th data-ng-show="access.impersonation"></th>
+            <th colspan="{{access.impersonation == true ? '2' : '1'}}">Actions</th>
         </tr>
         </tr>
         </thead>
@@ -50,7 +50,12 @@
             <td>{{user.lastName}}</td>
             <td>{{user.firstName}}</td>
             <td>{{user.email}}</td>
-            <td data-ng-show="access.impersonation"><button class="btn btn-default" data-ng-click="impersonate(user.id)" tooltip="Login as this user.  If user is in same realm as you, your current login session will be logged out before you are logged in as this user.">Impersonate</button></td>
+            <td class="kc-action-cell">
+                <a class="btn btn-default btn-block btn-sm" href="#/realms/{{realm.realm}}/clients/{{client.id}}">Edit</a>
+            </td>
+            <td data-ng-show="access.impersonation" class="kc-action-cell">
+                <button class="btn btn-default btn-block btn-sm" data-ng-click="impersonate(user.id)" tooltip="Login as this user.  If user is in same realm as you, your current login session will be logged out before you are logged in as this user.">Impersonate</button>
+            </td>
         </tr>
         <tr data-ng-show="!users || users.length == 0">
             <td class="text-muted" data-ng-show="!users">Please enter a search, or click on view all users</td>

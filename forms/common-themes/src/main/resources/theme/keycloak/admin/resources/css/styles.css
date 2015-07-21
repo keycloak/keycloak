@@ -313,3 +313,7 @@ h1 i {
     right: 0;
     bottom: 0;
 }
+
+.kc-action-cell a {
+    padding-top: 4px;
+}
