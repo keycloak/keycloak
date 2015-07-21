@@ -4,14 +4,7 @@
         <li>{{identityProvider.alias}}</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{identityProvider.alias|capitalize}}</h1>
-    <h1 data-ng-show="create">Add OpenID Connect Identity Provider</h1>
-
-    <ul class="nav nav-tabs" data-ng-hide="newIdentityProvider">
-        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">Settings</a></li>
-        <li><a href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers">Mappers</a></li>
-        <li class="active"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}/export" data-ng-show="!importFile && !newIdentityProvider">Export</a></li>
-    </ul>
+    <kc-tabs-identity-provider></kc-tabs-identity-provider>
 
     <form class="form-horizontal" name="realmForm" novalidate>
         <fieldset class="border-top">

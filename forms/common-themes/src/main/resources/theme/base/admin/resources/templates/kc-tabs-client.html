@@ -3,7 +3,7 @@
     <h1 data-ng-show="create">Add Client</h1>
     <h1 data-ng-hide="create">
         {{client.clientId|capitalize}}
-        <i id="removeClient" class="pficon pficon-delete clickable" data-ng-show="!create && access.manageClients" data-ng-hide="changed" data-ng-click="removeClient()"></i>
+        <i id="removeClient" class="pficon pficon-delete clickable" data-ng-show="access.manageClients" data-ng-click="removeClient()"></i>
     </h1>
 
     <ul class="nav nav-tabs nav-tabs-pf"  data-ng-hide="create && !path[4]">

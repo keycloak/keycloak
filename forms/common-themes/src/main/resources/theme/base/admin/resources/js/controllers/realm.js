@@ -595,6 +595,22 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clien
 
 });
 
+
+
+module.controller('IdentityProviderTabCtrl', function(Dialog, $scope, Current, Notifications, $location) {
+    $scope.removeIdentityProvider = function() {
+        Dialog.confirmDelete($scope.identityProvider.alias, 'provider', function() {
+            $scope.identityProvider.$remove({
+                realm : Current.realm.realm,
+                alias : $scope.identityProvider.alias
+            }, function() {
+                $location.url("/realms/" + Current.realm.realm + "/identity-provider-settings");
+                Notifications.success("The identity provider has been deleted.");
+            });
+        });
+    };
+});
+
 module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload, $http, $route, realm, instance, providerFactory, IdentityProvider, serverInfo, $location, Notifications, Dialog) {
     console.log('RealmIdentityProviderCtrl');
 
@@ -802,18 +818,6 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
 
     $scope.addProvider = function(provider) {
         $location.url("/create/identity-provider/" + realm.realm + "/" + provider.id);
-    };
-
-    $scope.remove = function() {
-        Dialog.confirmDelete($scope.identityProvider.alias, 'provider', function() {
-            $scope.identityProvider.$remove({
-                realm : realm.realm,
-                alias : $scope.identityProvider.alias
-            }, function() {
-                $location.url("/realms/" + realm.realm + "/identity-provider-settings");
-                Notifications.success("The client has been deleted.");
-            });
-        });
     };
 
     $scope.save = function() {

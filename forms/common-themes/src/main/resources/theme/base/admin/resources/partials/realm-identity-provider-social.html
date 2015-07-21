@@ -4,14 +4,7 @@
         <li>{{identityProvider.alias}}</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{identityProvider.alias|capitalize}}<i class="pficon pficon-delete clickable" 
-    	data-ng-hide="newIdentityProvider || changed" data-ng-click="remove()"></i></h1>
-    <h1 data-ng-show="create">Add Social Identity Provider</h1>
-
-    <ul class="nav nav-tabs" data-ng-hide="newIdentityProvider">
-        <li class="active"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">Settings</a></li>
-        <li><a href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers">Mappers</a></li>
-    </ul>
+    <kc-tabs-identity-provider></kc-tabs-identity-provider>
 
     <form class="form-horizontal" name="realmForm" novalidate>
         <fieldset>
