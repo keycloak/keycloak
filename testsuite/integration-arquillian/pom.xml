@@ -346,6 +346,7 @@
                                 <exclude>${exclude.adapters.wildfly}</exclude>
                                 <exclude>${exclude.adapters.as7}</exclude>
                                 <exclude>${exclude.adapters.tomcat}</exclude>
+                                <exclude>${exclude.adapters.karaf}</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
