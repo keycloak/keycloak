@@ -1,4 +1,4 @@
-package org.keycloak.authentication.authenticators;
+package org.keycloak.authentication.authenticators.browser;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
@@ -8,23 +8,18 @@ import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.constants.KerberosConstants;
 import org.keycloak.events.Errors;
 import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
-
-import static org.keycloak.util.HtmlUtils.escapeAttribute;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

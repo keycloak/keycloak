@@ -5,11 +5,13 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -17,6 +19,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -307,52 +310,45 @@ public class TokenEndpoint {
     public Response buildResourceOwnerPasswordCredentialsGrant() {
         event.detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, "token");
 
-        String username = formParams.getFirst(AuthenticationManager.FORM_USERNAME);
-        if (username == null) {
-            event.error(Errors.USERNAME_MISSING);
-            throw new ErrorResponseException("invalid_request", "Missing parameter: username", Response.Status.UNAUTHORIZED);
+        if (client.isConsentRequired()) {
+            throw new ErrorResponseException("invalid_client", "Client requires user consent", Response.Status.BAD_REQUEST);
         }
-        event.detail(Details.USERNAME, username);
-
-        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
-        if (user != null) event.user(user);
-
-        AuthenticationManager.AuthenticationStatus authenticationStatus = authManager.authenticateForm(session, clientConnection, realm, formParams);
-        Map<String, String> err;
-
-        switch (authenticationStatus) {
-            case SUCCESS:
-                break;
-            case ACCOUNT_TEMPORARILY_DISABLED:
-            case ACTIONS_REQUIRED:
-                event.error(Errors.USER_TEMPORARILY_DISABLED);
-                throw new ErrorResponseException("invalid_grant", "Account temporarily disabled", Response.Status.BAD_REQUEST);
-            case ACCOUNT_DISABLED:
-                event.error(Errors.USER_DISABLED);
-                throw new ErrorResponseException("invalid_grant", "Account disabled", Response.Status.BAD_REQUEST);
-            default:
-                event.error(Errors.INVALID_USER_CREDENTIALS);
-                throw new ErrorResponseException("invalid_grant", "Invalid user credentials", Response.Status.UNAUTHORIZED);
-        }
-
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
         UserSessionProvider sessions = session.sessions();
-
-        UserSessionModel userSession = sessions.createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "oauth_credentials", false, null, null);
-        event.session(userSession);
-
         ClientSessionModel clientSession = sessions.createClientSession(realm, client);
         clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
         clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+        AuthenticationFlowModel flow = realm.getFlowByAlias(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW);
+        String flowId = flow.getId();
+        AuthenticationProcessor processor = new AuthenticationProcessor();
+        processor.setClientSession(clientSession)
+                .setFlowId(flowId)
+                .setConnection(clientConnection)
+                .setEventBuilder(event)
+                .setProtector(authManager.getProtector())
+                .setRealm(realm)
+                .setSession(session)
+                .setUriInfo(uriInfo)
+                .setRequest(request);
+        Response challenge = processor.authenticateOnly();
+        if (challenge != null) return challenge;
+        processor.evaluateRequiredActionTriggers();
+        UserModel user = clientSession.getAuthenticatedUser();
+        if (user.getRequiredActions() != null && user.getRequiredActions().size() > 0) {
+            throw new ErrorResponseException("invalid_grant", "Account is not fully set up", Response.Status.BAD_REQUEST);
 
-        TokenManager.attachClientSession(userSession, clientSession);
+        }
+        processor.attachSession();
+        UserSessionModel userSession = processor.getUserSession();
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
                 .generateAccessToken(session, scope, client, user, userSession, clientSession)
                 .generateRefreshToken()
                 .generateIDToken()
                 .build();
+
 
         event.success();
 

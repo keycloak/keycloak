@@ -1,4 +1,4 @@
-package org.keycloak.authentication.authenticators;
+package org.keycloak.authentication.authenticators.browser;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;

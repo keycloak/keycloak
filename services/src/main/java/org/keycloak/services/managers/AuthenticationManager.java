@@ -429,66 +429,7 @@ public class AuthenticationManager {
         final UserModel user = userSession.getUser();
         final ClientModel client = clientSession.getClient();
 
-        RequiredActionContext context = new RequiredActionContext() {
-            @Override
-            public EventBuilder getEvent() {
-                return event;
-            }
-
-            @Override
-            public UserModel getUser() {
-                return user;
-            }
-
-            @Override
-            public RealmModel getRealm() {
-                return realm;
-            }
-
-            @Override
-            public ClientSessionModel getClientSession() {
-                return clientSession;
-            }
-
-            @Override
-            public UserSessionModel getUserSession() {
-                return userSession;
-            }
-
-            @Override
-            public ClientConnection getConnection() {
-                return clientConnection;
-            }
-
-            @Override
-            public UriInfo getUriInfo() {
-                return uriInfo;
-            }
-
-            @Override
-            public KeycloakSession getSession() {
-                return session;
-            }
-
-            @Override
-            public HttpRequest getHttpRequest() {
-                return request;
-            }
-
-            @Override
-            public String generateAccessCode(String action) {
-                ClientSessionCode code = new ClientSessionCode(getRealm(), getClientSession());
-                code.setAction(action);
-                return code.getCode();
-            }
-        };
-
-        // see if any required actions need triggering, i.e. an expired password
-        for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
-            if (!model.isEnabled()) continue;
-            RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
-            provider.evaluateTriggers(context);
-        }
+        RequiredActionContext context = evaluateRequiredActionTriggers(session, userSession, clientSession, clientConnection, request, uriInfo, event, realm, user);
 
 
         logger.debugv("processAccessCode: go to oauth page?: {0}", client.isConsentRequired());
@@ -552,6 +493,70 @@ public class AuthenticationManager {
         }
         return null;
 
+    }
+
+    public static RequiredActionContext evaluateRequiredActionTriggers(final KeycloakSession session, final UserSessionModel userSession, final ClientSessionModel clientSession, final ClientConnection clientConnection, final HttpRequest request, final UriInfo uriInfo, final EventBuilder event, final RealmModel realm, final UserModel user) {
+        RequiredActionContext context = new RequiredActionContext() {
+            @Override
+            public EventBuilder getEvent() {
+                return event;
+            }
+
+            @Override
+            public UserModel getUser() {
+                return user;
+            }
+
+            @Override
+            public RealmModel getRealm() {
+                return realm;
+            }
+
+            @Override
+            public ClientSessionModel getClientSession() {
+                return clientSession;
+            }
+
+            @Override
+            public UserSessionModel getUserSession() {
+                return userSession;
+            }
+
+            @Override
+            public ClientConnection getConnection() {
+                return clientConnection;
+            }
+
+            @Override
+            public UriInfo getUriInfo() {
+                return uriInfo;
+            }
+
+            @Override
+            public KeycloakSession getSession() {
+                return session;
+            }
+
+            @Override
+            public HttpRequest getHttpRequest() {
+                return request;
+            }
+
+            @Override
+            public String generateAccessCode(String action) {
+                ClientSessionCode code = new ClientSessionCode(getRealm(), getClientSession());
+                code.setAction(action);
+                return code.getCode();
+            }
+        };
+
+        // see if any required actions need triggering, i.e. an expired password
+        for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
+            if (!model.isEnabled()) continue;
+            RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
+            provider.evaluateTriggers(context);
+        }
+        return context;
     }
 
 
