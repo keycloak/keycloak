@@ -35,6 +35,9 @@ public class IdentityProviderEntity {
     @Column(name="PROVIDER_ID")
     private String providerId;
 
+    @Column(name="PROVIDER_NAME")
+    private String name;
+
     @Column(name="PROVIDER_ALIAS")
     private String alias;
 
@@ -84,6 +87,14 @@ public class IdentityProviderEntity {
 
     public void setRealm(RealmEntity realm) {
         this.realm = realm;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getAlias() {

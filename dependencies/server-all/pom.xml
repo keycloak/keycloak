@@ -153,6 +153,12 @@
             <artifactId>mongo-java-driver</artifactId>
         </dependency>
 
+        <!-- MS SQL Server jTDS Driver -->
+        <dependency>
+            <groupId>net.sourceforge.jtds</groupId>
+            <artifactId>jtds</artifactId>
+        </dependency>
+
         <!-- export/import -->
         <dependency>
             <groupId>org.keycloak</groupId>

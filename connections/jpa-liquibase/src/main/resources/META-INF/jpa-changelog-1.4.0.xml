@@ -19,6 +19,9 @@
                 <constraints nullable="true"/>
             </column>
         </addColumn>
+        <addColumn tableName="IDENTITY_PROVIDER">
+            <column name="PROVIDER_NAME" type="VARCHAR(255)"/>
+        </addColumn>
         <addColumn tableName="AUTHENTICATION_FLOW">
             <column name="PROVIDER_ID" type="VARCHAR(36)" defaultValue="basic-flow">
                 <constraints nullable="false"/>

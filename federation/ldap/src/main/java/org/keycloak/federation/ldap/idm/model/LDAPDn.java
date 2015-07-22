@@ -2,6 +2,8 @@ package org.keycloak.federation.ldap.idm.model;
 
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -13,9 +15,9 @@ public class LDAPDn {
     public static LDAPDn fromString(String dnString) {
         LDAPDn dn = new LDAPDn();
 
-        String[] rdns = dnString.split(",");
+        String[] rdns = dnString.split("(?<!\\\\),");
         for (String entryStr : rdns) {
-            String[] rdn = entryStr.split("=");
+            String[] rdn = entryStr.split("(?<!\\\\)=");
             dn.addLast(rdn[0].trim(), rdn[1].trim());
         }
 
