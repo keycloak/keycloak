@@ -51,7 +51,7 @@
             <td>{{user.firstName}}</td>
             <td>{{user.email}}</td>
             <td class="kc-action-cell">
-                <a class="btn btn-default btn-block btn-sm" href="#/realms/{{realm.realm}}/clients/{{client.id}}">Edit</a>
+                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/users/{{user.id}}">Edit</button>
             </td>
             <td data-ng-show="access.impersonation" class="kc-action-cell">
                 <button class="btn btn-default btn-block btn-sm" data-ng-click="impersonate(user.id)" tooltip="Login as this user.  If user is in same realm as you, your current login session will be logged out before you are logged in as this user.">Impersonate</button>

@@ -35,7 +35,7 @@
                         <td>{{identityProvider.enabled}}</td>
                         <td>{{identityProvider.config.guiOrder}}</td>
                         <td class="kc-action-cell">
-                            <a class="btn btn-default btn-block btn-sm" href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">Edit</a>
+                            <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">Edit</button>
                         </td>
                     </tr>
                     </tbody>

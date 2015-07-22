@@ -39,7 +39,7 @@
             <td>{{role.composite}}</td>
             <td>{{role.description}}</td>
             <td class="kc-action-cell">
-                <a class="btn btn-default btn-block btn-sm" href="#/realms/{{realm.realm}}/roles/{{role.id}}">Edit</a>
+                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/roles/{{role.id}}">Edit</button>
             </td>
         </tr>
         <tr data-ng-show="(roles | filter:{name: searchQuery}).length == 0">

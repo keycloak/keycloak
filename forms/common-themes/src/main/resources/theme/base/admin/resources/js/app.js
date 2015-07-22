@@ -1843,3 +1843,19 @@ module.directive('kcTooltip', function($compile) {
             }
         };
 });
+
+module.directive( 'kcOpen', function ( $location ) {
+    return function ( scope, element, attrs ) {
+        var path;
+
+        attrs.$observe( 'kcOpen', function (val) {
+            path = val;
+        });
+
+        element.bind( 'click', function () {
+            scope.$apply( function () {
+                $location.path(path);
+            });
+        });
+    };
+});

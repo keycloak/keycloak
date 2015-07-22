@@ -31,7 +31,7 @@
             <td>{{instance.providerName|capitalize}}</td>
             <td>{{instance.priority}}</td>
             <td class="kc-action-cell">
-                <a class="btn btn-default btn-block btn-sm" href="#/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">Edit</a>
+                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">Edit</button>
             </td>
          </tr>
         <tr data-ng-show="!instances || instances.length == 0">

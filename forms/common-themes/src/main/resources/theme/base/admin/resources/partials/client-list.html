@@ -41,7 +41,7 @@
                 <span data-ng-hide="client.baseUrl">Not defined</span>
             </td>
             <td class="kc-action-cell">
-                <a class="btn btn-default btn-block btn-sm" href="#/realms/{{realm.realm}}/clients/{{client.id}}">Edit</a>
+                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}">Edit</button>
             </td>
         </tr>
         <tr data-ng-show="(clients | filter:search).length == 0">
