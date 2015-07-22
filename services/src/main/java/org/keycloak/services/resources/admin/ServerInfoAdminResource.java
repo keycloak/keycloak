@@ -19,7 +19,6 @@ import org.keycloak.Version;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.connections.mongo.DefaultMongoConnectionFactoryProvider.MongoDbInfo;
 import org.keycloak.connections.mongo.MongoConnectionProvider;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;

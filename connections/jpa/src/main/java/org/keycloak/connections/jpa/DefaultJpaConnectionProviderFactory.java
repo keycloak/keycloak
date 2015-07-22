@@ -231,12 +231,6 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 		public String getDatabaseProduct() {
 			return databaseProduct;
 		}
-
-		@Override
-		public boolean isOk() {
-			// TODO KEYCLOAK-1578 - implement operational monitoring of JPA DB connection
-			return true;
-		}
 	}
 
 }
