@@ -161,17 +161,30 @@ public class OAuthClient {
     }
 
     public AccessTokenResponse doGrantAccessTokenRequest(String clientSecret, String username,  String password) throws Exception {
+        return doGrantAccessTokenRequest(realm, username, password, null, clientId, clientSecret);
+    }
+
+    public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
+                                                         String clientId, String clientSecret) throws Exception {
         CloseableHttpClient client = new DefaultHttpClient();
         try {
-            HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl());
-
-            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
-            post.setHeader("Authorization", authorization);
+            HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
             List<NameValuePair> parameters = new LinkedList<NameValuePair>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
             parameters.add(new BasicNameValuePair("username", username));
             parameters.add(new BasicNameValuePair("password", password));
+            if (totp != null) {
+                parameters.add(new BasicNameValuePair("totp", totp));
+
+            }
+            if (clientSecret != null) {
+                String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+                post.setHeader("Authorization", authorization);
+            } else {
+                parameters.add(new BasicNameValuePair("client_id", clientId));
+
+            }
 
             if (clientSessionState != null) {
                 parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, clientSessionState));
@@ -218,6 +231,7 @@ public class OAuthClient {
             closeClient(client);
         }
     }
+
 
     public HttpResponse doLogout(String refreshToken, String clientSecret) throws IOException {
         CloseableHttpClient client = new DefaultHttpClient();
@@ -396,6 +410,11 @@ public class OAuthClient {
     }
 
     public String getResourceOwnerPasswordCredentialGrantUrl() {
+        UriBuilder b = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(baseUrl));
+        return b.build(realm).toString();
+    }
+
+    public String getResourceOwnerPasswordCredentialGrantUrl(String realm) {
         UriBuilder b = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }

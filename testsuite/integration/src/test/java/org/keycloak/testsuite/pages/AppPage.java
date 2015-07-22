@@ -22,14 +22,20 @@
 package org.keycloak.testsuite.pages;
 
 
+import org.keycloak.OAuth2Constants;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.testsuite.OAuthClient;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import javax.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AppPage extends AbstractPage {
 
+    public static final String AUTH_SERVER_URL = "http://localhost:8081/auth";
     public static final String baseUrl = "http://localhost:8081/app";
 
     @FindBy(id = "account")
@@ -55,6 +61,13 @@ public class AppPage extends AbstractPage {
 
     public enum RequestType {
         AUTH_RESPONSE, LOGOUT_REQUEST, APP_REQUEST
+    }
+
+    public void logout() {
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
+                .queryParam(OAuth2Constants.REDIRECT_URI,baseUrl).build("test").toString();
+        driver.navigate().to(logoutUri);
+
     }
 
 }

@@ -186,6 +186,20 @@ module.factory('RealmAdminEvents', function($resource) {
     });
 });
 
+module.factory('BruteForce', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/attack-detection/brute-force/usernames', {
+        realm : '@realm'
+    });
+});
+
+module.factory('BruteForceUser', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/attack-detection/brute-force/usernames/:username', {
+        realm : '@realm',
+        username : '@username'
+    });
+});
+
+
 module.factory('RequiredActions', function($resource) {
     return $resource(authUrl + '/admin/realms/:id/authentication/required-actions/:alias', {
         realm : '@realm',

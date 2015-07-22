@@ -18,6 +18,7 @@
                     <button id="viewAllUsers" class="btn btn-default" ng-click="query.search = null; firstPage()">View all users</button>
 
                     <div class="pull-right" data-ng-show="access.manageUsers">
+                        <button data-ng-click="unlockUsers()" class="btn btn-default">Unlock Users</button>
                         <a id="createUser" class="btn btn-default" href="#/create/user/{{realm.realm}}">Add User</a>
                     </div>
                 </div>

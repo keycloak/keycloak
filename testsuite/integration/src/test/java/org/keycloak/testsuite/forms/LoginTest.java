@@ -138,6 +138,21 @@ public class LoginTest {
     }
 
     @Test
+    public void loginMissingPassword() {
+        loginPage.open();
+        loginPage.missingPassword("login-test");
+
+        loginPage.assertCurrent();
+
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+        events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
+                .detail(Details.USERNAME, "login-test")
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
+    }
+
+    @Test
     public void loginInvalidPasswordDisabledUser() {
         keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override
@@ -210,6 +225,20 @@ public class LoginTest {
 
         events.expectLogin().user((String) null).session((String) null).error("user_not_found")
                 .detail(Details.USERNAME, "invalid")
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
+    }
+
+    @Test
+    public void loginMissingUsername() {
+        loginPage.open();
+        loginPage.missingUsername();
+
+        loginPage.assertCurrent();
+
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+        events.expectLogin().user((String) null).session((String) null).error("user_not_found")
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
     }

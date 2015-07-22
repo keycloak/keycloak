@@ -216,7 +216,7 @@ module.controller('UserConsentsCtrl', function($scope, realm, user, userConsents
 });
 
 
-module.controller('UserListCtrl', function($scope, realm, User, UserImpersonation) {
+module.controller('UserListCtrl', function($scope, realm, User, UserImpersonation, BruteForce, Notifications) {
     $scope.realm = realm;
     $scope.page = 0;
 
@@ -235,6 +235,13 @@ module.controller('UserListCtrl', function($scope, realm, User, UserImpersonatio
             }
         });
     };
+
+    $scope.unlockUsers = function() {
+        BruteForce.delete({realm: realm.realm}, function(data) {
+            Notifications.success("Any temporarily locked users are now unlocked.");
+        });
+    }
+
 
     $scope.firstPage = function() {
         $scope.query.first = 0;
@@ -282,7 +289,7 @@ module.controller('UserTabCtrl', function($scope, $location, Dialog, Notificatio
     };
 });
 
-module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFederationInstances, UserImpersonation, RequiredActions, $location, Dialog, Notifications) {
+module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser, User, UserFederationInstances, UserImpersonation, RequiredActions, $location, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.create = !user.id;
     $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
@@ -314,6 +321,23 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
             })
         } else {
             console.log("federationLink is null");
+        }
+        console.log('realm brute force? ' + realm.bruteForceProtected)
+        $scope.temporarilyDisabled = false;
+        var isDisabled = function () {
+            BruteForceUser.get({realm: realm.realm, username: user.username}, function(data) {
+                console.log('here in isDisabled ' + data.disabled);
+                $scope.temporarilyDisabled = data.disabled;
+            });
+        };
+
+        console.log("check if disabled");
+        isDisabled();
+
+        $scope.unlockUser = function() {
+            BruteForceUser.delete({realm: realm.realm, username: user.username}, function(data) {
+                isDisabled();
+            });
         }
     }
 

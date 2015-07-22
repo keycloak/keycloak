@@ -596,9 +596,8 @@ public class AuthenticationProcessor {
     }
 
     public void validateUser(UserModel authenticatedUser) {
-        if (authenticatedUser != null) {
-            if (!authenticatedUser.isEnabled()) throw new AuthException(Error.USER_DISABLED);
-        }
+        if (authenticatedUser == null) return;
+        if (!authenticatedUser.isEnabled()) throw new AuthException(Error.USER_DISABLED);
         if (realm.isBruteForceProtected()) {
             if (protector.isTemporarilyDisabled(session, realm, authenticatedUser.getUsername())) {
                 throw new AuthException(Error.USER_TEMPORARILY_DISABLED);

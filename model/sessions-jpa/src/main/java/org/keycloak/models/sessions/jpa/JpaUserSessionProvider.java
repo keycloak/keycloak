@@ -93,6 +93,18 @@ public class JpaUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
+    public void removeUserLoginFailure(RealmModel realm, String username) {
+        UsernameLoginFailureEntity entity = em.find(UsernameLoginFailureEntity.class, new UsernameLoginFailureEntity.Key(realm.getId(), username));
+        if (entity == null) return;
+        em.remove(entity);
+    }
+
+    @Override
+    public void removeAllUserLoginFailures(RealmModel realm) {
+        em.createNamedQuery("removeLoginFailuresByRealm").setParameter("realmId", realm.getId()).executeUpdate();
+    }
+
+    @Override
     public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         UserSessionEntity entity = new UserSessionEntity();
         entity.setId(KeycloakModelUtils.generateId());

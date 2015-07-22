@@ -20,6 +20,7 @@ import org.keycloak.models.sessions.infinispan.mapreduce.ClientSessionMapper;
 import org.keycloak.models.sessions.infinispan.mapreduce.FirstResultReducer;
 import org.keycloak.models.sessions.infinispan.mapreduce.LargestResultReducer;
 import org.keycloak.models.sessions.infinispan.mapreduce.SessionMapper;
+import org.keycloak.models.sessions.infinispan.mapreduce.UserLoginFailureMapper;
 import org.keycloak.models.sessions.infinispan.mapreduce.UserSessionMapper;
 import org.keycloak.models.sessions.infinispan.mapreduce.UserSessionNoteMapper;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -294,8 +295,29 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
+    public void removeUserLoginFailure(RealmModel realm, String username) {
+        LoginFailureKey key = new LoginFailureKey(realm.getId(), username);
+        tx.remove(loginFailureCache, key);
+    }
+
+    @Override
+    public void removeAllUserLoginFailures(RealmModel realm) {
+        Map<LoginFailureKey, Object> sessions = new MapReduceTask(loginFailureCache)
+                .mappedWith(UserLoginFailureMapper.create(realm.getId()).emitKey())
+                .reducedWith(new FirstResultReducer())
+                .execute();
+
+        for (LoginFailureKey id : sessions.keySet()) {
+            tx.remove(loginFailureCache, id);
+        }
+    }
+
+
+
+    @Override
     public void onRealmRemoved(RealmModel realm) {
         removeUserSessions(realm);
+        removeAllUserLoginFailures(realm);
     }
 
     @Override
@@ -474,7 +496,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             }
         }
 
-        public void remove(Cache cache, String key) {
+        public void remove(Cache cache, Object key) {
             tasks.put(key, new CacheTask(cache, CacheOperation.REMOVE, key, null));
         }
 
