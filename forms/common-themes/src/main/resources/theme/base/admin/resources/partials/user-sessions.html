@@ -34,7 +34,9 @@
                 </div>
             </ul>
             </td>
-            <td data-ng-show="access.manageUsers"><a  href="" ng-click="logoutSession(session.id)">logout</a> </td>
+            <td class="kc-action-cell" data-ng-show="access.manageUsers">
+                <button class="btn btn-default btn-block btn-sm" ng-click="logoutSession(session.id)">Logout</button>
+            </td>
         </tr>
         </tbody>
     </table>

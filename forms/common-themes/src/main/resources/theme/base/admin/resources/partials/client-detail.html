@@ -270,12 +270,12 @@
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageClients">
-                <button kc-save data-ng-show="changed">Save</button>
+                <button kc-save data-ng-disabled="!changed">Save</button>
                 <button kc-cancel data-ng-click="cancel()">Cancel</button>
             </div>
             <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageClients">
-                <button kc-save  data-ng-show="changed">Save</button>
-                <button kc-reset data-ng-show="changed">Cancel</button>
+                <button kc-save  data-ng-disabled="!changed">Save</button>
+                <button kc-reset data-ng-disabled="!changed">Cancel</button>
             </div>
         </div>
     </form>

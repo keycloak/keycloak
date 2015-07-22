@@ -39,9 +39,12 @@
 
         </fieldset>
 
-        <div class="pull-right form-actions" data-ng-show="access.manageRealm">
-            <button kc-cancel data-ng-click="cancel()">Cancel</button>
-            <button kc-save>Save</button>
+
+        <div class="form-group" data-ng-show="access.manageRealm">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save>Save</button>
+                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+            </div>
         </div>
 
     </form>
