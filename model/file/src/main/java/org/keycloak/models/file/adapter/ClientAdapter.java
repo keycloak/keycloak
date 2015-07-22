@@ -442,6 +442,16 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public boolean isServiceAccountsEnabled() {
+        return entity.isServiceAccountsEnabled();
+    }
+
+    @Override
+    public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
+        entity.setServiceAccountsEnabled(serviceAccountsEnabled);
+    }
+
+    @Override
     public boolean isDirectGrantsOnly() {
         return entity.isDirectGrantsOnly();
     }

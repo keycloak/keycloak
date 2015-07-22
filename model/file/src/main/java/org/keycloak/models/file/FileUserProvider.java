@@ -38,6 +38,7 @@ import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -223,6 +224,25 @@ public class FileUserProvider implements UserProvider {
         }
 
         return sortedSubList(found, firstResult, maxResults);
+    }
+
+    @Override
+    public List<UserModel> searchForUserByUserAttributes(Map<String, String> attributes, RealmModel realm) {
+        Collection<UserModel> users = inMemoryModel.getUsers(realm.getId());
+
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+
+            List<UserModel> matchedUsers = new ArrayList<>();
+            for (UserModel user : users) {
+                List<String> vals = user.getAttribute(entry.getKey());
+                if (vals.contains(entry.getValue())) {
+                    matchedUsers.add(user);
+                }
+            }
+            users = matchedUsers;
+        }
+
+        return (List<UserModel>) users;
     }
 
     @Override

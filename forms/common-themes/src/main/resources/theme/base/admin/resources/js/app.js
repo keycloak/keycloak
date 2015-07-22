@@ -762,6 +762,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientInstallationCtrl'
         })
+        .when('/realms/:realm/clients/:client/service-accounts', {
+            templateUrl : resourceUrl + '/partials/client-service-accounts.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                }
+            },
+            controller : 'ClientServiceAccountsCtrl'
+        })
         .when('/create/client/:realm', {
             templateUrl : resourceUrl + '/partials/client-detail.html',
             resolve : {
