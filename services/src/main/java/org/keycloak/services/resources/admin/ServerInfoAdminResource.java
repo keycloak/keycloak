@@ -1,19 +1,5 @@
 package org.keycloak.services.resources.admin;
 
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.Set;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.core.Context;
-
 import org.jboss.logging.Logger;
 import org.keycloak.Version;
 import org.keycloak.broker.provider.IdentityProvider;
@@ -42,6 +28,19 @@ import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
 import org.keycloak.social.SocialIdentityProvider;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.core.Context;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -219,7 +218,6 @@ public class ServerInfoAdminResource {
     public static class MemoryInfo implements Serializable {
         
         protected long total;
-        
         protected long used;
         
         public MemoryInfo(){
