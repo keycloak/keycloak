@@ -39,6 +39,7 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -113,12 +114,75 @@ public class FederationProvidersIntegrationTest {
 
 
     @Test
-    public void caseSensitiveSearch() {
-        loginPage.open();
+    public void caseInSensitiveImport() {
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmManager manager = new RealmManager(session);
+            RealmModel appRealm = manager.getRealm("test");
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            LDAPObject jbrown2 = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "JBrown2", "John", "Brown2", "jbrown2@email.org", null, "1234");
+            ldapFedProvider.getLdapIdentityStore().updatePassword(jbrown2, "password");
+            LDAPObject jbrown3 = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "jbrown3", "John", "Brown3", "JBrown3@email.org", null, "1234");
+            ldapFedProvider.getLdapIdentityStore().updatePassword(jbrown3, "password");
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
 
-        // This should fail for now due to case-sensitivity
-        loginPage.login("johnKeycloak", "Password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        loginSuccessAndLogout("jbrown2", "password");
+        loginSuccessAndLogout("JBrown2", "password");
+        loginSuccessAndLogout("jbrown2@email.org", "password");
+        loginSuccessAndLogout("JBrown2@email.org", "password");
+
+        loginSuccessAndLogout("jbrown3", "password");
+        loginSuccessAndLogout("JBrown3", "password");
+        loginSuccessAndLogout("jbrown3@email.org", "password");
+        loginSuccessAndLogout("JBrown3@email.org", "password");
+    }
+
+    private void loginSuccessAndLogout(String username, String password) {
+        loginPage.open();
+        loginPage.login(username, password);
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        oauth.openLogout();
+    }
+
+    @Test
+    public void caseInsensitiveSearch() {
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmManager manager = new RealmManager(session);
+            RealmModel appRealm = manager.getRealm("test");
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            LDAPObject jbrown2 = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "JBrown4", "John", "Brown4", "jbrown4@email.org", null, "1234");
+            ldapFedProvider.getLdapIdentityStore().updatePassword(jbrown2, "password");
+            LDAPObject jbrown3 = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "jbrown5", "John", "Brown5", "JBrown5@Email.org", null, "1234");
+            ldapFedProvider.getLdapIdentityStore().updatePassword(jbrown3, "password");
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmManager manager = new RealmManager(session);
+            RealmModel appRealm = manager.getRealm("test");
+
+            // search by username
+            List<UserModel> users = session.users().searchForUser("JBROwn4", appRealm);
+            Assert.assertEquals(1, users.size());
+            UserModel user4 = users.get(0);
+            Assert.assertEquals("jbrown4", user4.getUsername());
+            Assert.assertEquals("jbrown4@email.org", user4.getEmail());
+
+            // search by email
+            users = session.users().searchForUser("JBROwn5@eMAil.org", appRealm);
+            Assert.assertEquals(1, users.size());
+            UserModel user5 = users.get(0);
+            Assert.assertEquals("jbrown5", user5.getUsername());
+            Assert.assertEquals("jbrown5@email.org", user5.getEmail());
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
     }
 
     @Test
