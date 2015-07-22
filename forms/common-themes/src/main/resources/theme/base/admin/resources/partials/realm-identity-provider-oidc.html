@@ -4,9 +4,7 @@
         <li>{{identityProvider.alias}}</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{identityProvider.alias|capitalize}}<i class="pficon pficon-delete clickable" 
-    	data-ng-hide="newIdentityProvider || changed" data-ng-click="remove()"></i></h1>
-    <h1 data-ng-show="create">Add OpenID Connect Identity Provider</h1>
+    <kc-tabs-identity-provider></kc-tabs-identity-provider>
 
     <ul class="nav nav-tabs" data-ng-hide="newIdentityProvider">
         <li class="active"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">Settings</a></li>
@@ -217,8 +215,8 @@
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2">
-                <button kc-save data-ng-show="changed">Save</button>
-                <button kc-cancel data-ng-click="cancel()" data-ng-show="changed">Cancel</button>
+                <button kc-save data-ng-disabled="!changed">Save</button>
+                <button kc-cancel data-ng-click="cancel()" data-ng-disabled="!changed">Cancel</button>
             </div>
         </div>
     </form>

@@ -351,6 +351,6 @@ public final class KeycloakModelUtils {
     }
 
     public static String toLowerCaseSafe(String str) {
-        return str==null ? str : str.toLowerCase();
+        return str==null ? null : str.toLowerCase();
     }
 }

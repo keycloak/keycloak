@@ -8,6 +8,7 @@ import org.junit.Assert;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 import org.keycloak.Config;
+import org.keycloak.constants.ServiceAccountConstants;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
@@ -127,6 +128,15 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
                 //.detail(Details.AUTH_TYPE, AuthorizationEndpoint.CODE_AUTH_TYPE)
                 .detail(Details.REDIRECT_URI, DEFAULT_REDIRECT_URI)
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
+                .session(isUUID());
+    }
+
+    public ExpectedEvent expectClientLogin() {
+        return expect(EventType.CLIENT_LOGIN)
+                .detail(Details.CODE_ID, isCodeId())
+                .detail(Details.CLIENT_AUTH_METHOD, Details.CLIENT_AUTH_METHOD_VALUE_CLIENT_CREDENTIALS)
+                .detail(Details.RESPONSE_TYPE, ServiceAccountConstants.CLIENT_AUTH)
+                .removeDetail(Details.CODE_ID)
                 .session(isUUID());
     }
 

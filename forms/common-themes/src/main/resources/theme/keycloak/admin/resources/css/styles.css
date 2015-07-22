@@ -299,3 +299,17 @@ h1 i {
     margin-left: 10px;
 }
 
+/* Action cell */
+.kc-action-cell {
+    position: relative;
+    width: 100px;
+}
+
+.kc-action-cell .btn {
+    border: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}

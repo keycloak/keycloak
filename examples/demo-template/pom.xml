@@ -36,6 +36,7 @@
         <module>database-service</module>
         <module>third-party</module>
         <module>third-party-cdi</module>
+        <module>service-account</module>
     </modules>
 
     <profiles>

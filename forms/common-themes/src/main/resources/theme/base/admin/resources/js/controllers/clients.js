@@ -4,6 +4,20 @@ Array.prototype.remove = function(from, to) {
     return this.push.apply(this, rest);
 };
 
+module.controller('ClientTabCtrl', function(Dialog, $scope, Current, Notifications, $location) {
+    $scope.removeClient = function() {
+        Dialog.confirmDelete($scope.client.clientId, 'client', function() {
+            $scope.client.$remove({
+                realm : Current.realm.realm,
+                client : $scope.client.id
+            }, function() {
+                $location.url("/realms/" + Current.realm.realm + "/clients");
+                Notifications.success("The client has been deleted.");
+            });
+        });
+    };
+});
+
 module.controller('ClientRoleListCtrl', function($scope, $location, realm, client, roles) {
     $scope.realm = realm;
     $scope.roles = roles;
@@ -834,20 +848,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
     $scope.cancel = function() {
         $location.url("/realms/" + realm.realm + "/clients");
     };
-
-    $scope.remove = function() {
-        Dialog.confirmDelete($scope.client.clientId, 'client', function() {
-            $scope.client.$remove({
-                realm : realm.realm,
-                client : $scope.client.id
-            }, function() {
-                $location.url("/realms/" + realm.realm + "/clients");
-                Notifications.success("The client has been deleted.");
-            });
-        });
-    };
-
-
 });
 
 module.controller('ClientScopeMappingCtrl', function($scope, $http, realm, client, clients, Notifications,
@@ -1295,6 +1295,25 @@ module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serv
         window.history.back();
     };
 
+
+});
+
+module.controller('ClientServiceAccountsCtrl', function($scope, $http, realm, client, Notifications, Client) {
+    $scope.realm = realm;
+    $scope.client = angular.copy(client);
+
+    $scope.serviceAccountsEnabledChanged = function() {
+        if (client.serviceAccountsEnabled != $scope.client.serviceAccountsEnabled) {
+            Client.update({
+                realm : realm.realm,
+                client : client.id
+            }, $scope.client, function() {
+                $scope.changed = false;
+                client = angular.copy($scope.client);
+                Notifications.success("Service Account settings updated.");
+            });
+        }
+    }
 
 });
 

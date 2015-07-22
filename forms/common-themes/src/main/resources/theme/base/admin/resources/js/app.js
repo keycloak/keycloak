@@ -762,6 +762,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientInstallationCtrl'
         })
+        .when('/realms/:realm/clients/:client/service-accounts', {
+            templateUrl : resourceUrl + '/partials/client-service-accounts.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                }
+            },
+            controller : 'ClientServiceAccountsCtrl'
+        })
         .when('/create/client/:realm', {
             templateUrl : resourceUrl + '/partials/client-detail.html',
             resolve : {
@@ -1594,6 +1606,24 @@ module.directive('kcNavigationUser', function () {
     }
 });
 
+module.directive('kcTabsIdentityProvider', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-identity-provider.html'
+    }
+});
+
+module.directive('kcTabsUserFederation', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-user-federation.html'
+    }
+});
+
 module.controller('RoleSelectorModalCtrl', function($scope, realm, config, configName, RealmRoles, Client, ClientRole, $modalInstance) {
     console.log('realm: ' + realm.realm);
     $scope.selectedRealmRole = {
@@ -1812,4 +1842,20 @@ module.directive('kcTooltip', function($compile) {
                 $compile(label)(scope);
             }
         };
+});
+
+module.directive( 'kcOpen', function ( $location ) {
+    return function ( scope, element, attrs ) {
+        var path;
+
+        attrs.$observe( 'kcOpen', function (val) {
+            path = val;
+        });
+
+        element.bind( 'click', function () {
+            scope.$apply( function () {
+                $location.path(path);
+            });
+        });
+    };
 });

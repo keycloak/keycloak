@@ -95,6 +95,9 @@ public class ClientEntity {
     @Column(name="CONSENT_REQUIRED")
     private boolean consentRequired;
 
+    @Column(name="SERVICE_ACCOUNTS_ENABLED")
+    private boolean serviceAccountsEnabled;
+
     @Column(name="NODE_REREG_TIMEOUT")
     private int nodeReRegistrationTimeout;
 
@@ -293,6 +296,14 @@ public class ClientEntity {
 
     public void setConsentRequired(boolean consentRequired) {
         this.consentRequired = consentRequired;
+    }
+
+    public boolean isServiceAccountsEnabled() {
+        return serviceAccountsEnabled;
+    }
+
+    public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
+        this.serviceAccountsEnabled = serviceAccountsEnabled;
     }
 
     public boolean isDirectGrantsOnly() {

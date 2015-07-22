@@ -32,6 +32,10 @@ public interface UserProvider extends Provider {
     List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults);
     List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm);
     List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults);
+
+    // Searching by UserModel.attribute (not property)
+    List<UserModel> searchForUserByUserAttributes(Map<String, String> attributes, RealmModel realm);
+
     Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm);
     FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm);
 

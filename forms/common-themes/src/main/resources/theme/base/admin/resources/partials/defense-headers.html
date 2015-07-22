@@ -1,6 +1,4 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
-    <h1>Settings</h1>
-
     <kc-tabs-realm></kc-tabs-realm>
 
     <ul class="nav nav-tabs nav-tabs-pf">
@@ -27,8 +25,8 @@
         </fieldset>
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-10 col-md-offset-2">
-                <button kc-save  data-ng-show="changed">Save</button>
-                <button kc-reset data-ng-show="changed">Cancel</button>
+                <button kc-save  data-ng-disabled="!changed">Save</button>
+                <button kc-reset data-ng-disabled="!changed">Cancel</button>
             </div>
         </div>
     </form>

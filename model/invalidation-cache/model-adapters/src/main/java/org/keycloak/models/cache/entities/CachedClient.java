@@ -46,6 +46,7 @@ public class CachedClient implements Serializable {
     private List<String> defaultRoles = new LinkedList<String>();
     private boolean bearerOnly;
     private boolean consentRequired;
+    private boolean serviceAccountsEnabled;
     private Map<String, String> roles = new HashMap<String, String>();
     private int nodeReRegistrationTimeout;
     private Map<String, Integer> registeredNodes;
@@ -78,6 +79,7 @@ public class CachedClient implements Serializable {
         defaultRoles.addAll(model.getDefaultRoles());
         bearerOnly = model.isBearerOnly();
         consentRequired = model.isConsentRequired();
+        serviceAccountsEnabled = model.isServiceAccountsEnabled();
         for (RoleModel role : model.getRoles()) {
             roles.put(role.getName(), role.getId());
             cache.addCachedRole(new CachedClientRole(id, role, realm));
@@ -176,6 +178,10 @@ public class CachedClient implements Serializable {
 
     public boolean isConsentRequired() {
         return consentRequired;
+    }
+
+    public boolean isServiceAccountsEnabled() {
+        return serviceAccountsEnabled;
     }
 
     public Map<String, String> getRoles() {

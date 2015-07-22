@@ -207,6 +207,31 @@ public class OAuthClient {
         }
     }
 
+    public AccessTokenResponse doClientCredentialsGrantAccessTokenRequest(String clientSecret) throws Exception {
+        CloseableHttpClient client = new DefaultHttpClient();
+        try {
+            HttpPost post = new HttpPost(getServiceAccountUrl());
+
+            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+            post.setHeader("Authorization", authorization);
+
+            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
+
+            UrlEncodedFormEntity formEntity;
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            post.setEntity(formEntity);
+
+            return new AccessTokenResponse(client.execute(post));
+        } finally {
+            closeClient(client);
+        }
+    }
+
 
     public HttpResponse doLogout(String refreshToken, String clientSecret) throws IOException {
         CloseableHttpClient client = new DefaultHttpClient();
@@ -389,9 +414,13 @@ public class OAuthClient {
         return b.build(realm).toString();
     }
 
-    public String getResourceOwnerPasswordCredentialGrantUrl(String realmName) {
+    public String getResourceOwnerPasswordCredentialGrantUrl(String realm) {
         UriBuilder b = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(baseUrl));
-        return b.build(realmName).toString();
+        return b.build(realm).toString();
+    }
+
+    public String getServiceAccountUrl() {
+        return getResourceOwnerPasswordCredentialGrantUrl();
     }
 
     public String getRefreshTokenUrl() {

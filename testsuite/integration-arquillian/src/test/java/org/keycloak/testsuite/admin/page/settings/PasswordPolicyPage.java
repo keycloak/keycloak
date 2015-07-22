@@ -46,7 +46,7 @@ public class PasswordPolicyPage extends AbstractPage {
 	
 	public void removePolicy(PasswordPolicy policy) {
 		int policyInputLocation = findPolicy(policy);
-		allRows.get(policyInputLocation).findElements(By.tagName("i")).get(0).click();
+		allRows.get(policyInputLocation).findElements(By.tagName("button")).get(0).click();
 		primaryButton.click();
 	}
 	

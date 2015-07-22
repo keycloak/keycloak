@@ -305,6 +305,11 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
+    public List<UserModel> searchForUserByUserAttributes(Map<String, String> attributes, RealmModel realm) {
+        return session.userStorage().searchForUserByUserAttributes(attributes, realm);
+    }
+
+    @Override
     public Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm) {
         validateUser(realm, user);
         if (user == null) throw new IllegalStateException("Federated user no longer valid");
