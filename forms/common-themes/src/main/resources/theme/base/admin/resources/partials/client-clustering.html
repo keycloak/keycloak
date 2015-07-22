@@ -5,8 +5,6 @@
         <li>{{client.clientId}}</li>
     </ol>
 
-    <h1>{{client.clientId|capitalize}}</h1>
-
     <kc-tabs-client></kc-tabs-client>
 
     <form class="form-horizontal" name="clusteringForm" novalidate kc-read-only="!access.manageClients">
@@ -34,8 +32,8 @@
 
             <div class="form-group">
                 <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
-                    <button data-kc-save data-ng-show="changed">Save</button>
-                    <button data-kc-reset data-ng-show="changed">Cancel</button>
+                    <button data-kc-save data-ng-disabled="!changed">Save</button>
+                    <button data-kc-reset data-ng-disabled="!changed">Cancel</button>
                 </div>
             </div>
         </fieldset>

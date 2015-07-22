@@ -4,13 +4,7 @@
         <li>{{identityProvider.alias}}</li>
     </ol>
 
-    <h1>{{identityProvider.alias|capitalize}}</h1>
-
-    <ul class="nav nav-tabs" data-ng-hide="newIdentityProvider">
-        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">Settings</a></li>
-        <li class="active"><a href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers">Mappers</a></li>
-        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}/export" data-ng-show="!importFile && !newIdentityProvider && identityProvider.providerId == 'saml'">Export</a></li>
-    </ul>
+    <kc-tabs-identity-provider></kc-tabs-identity-provider>
 
     <table class="table table-striped table-bordered">
         <thead>

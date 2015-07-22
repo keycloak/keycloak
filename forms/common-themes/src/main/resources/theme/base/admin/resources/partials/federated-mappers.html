@@ -5,12 +5,7 @@
         <li>User Federation Mappers</li>
     </ol>
 
-    <h1>{{provider.providerName === 'ldap' ? 'LDAP' : (provider.providerName|capitalize)}}</h1>
-
-    <ul class="nav nav-tabs" data-ng-hide="create">
-        <li><a href="#/realms/{{realm.realm}}/user-federation/providers/{{provider.providerName}}/{{provider.id}}">Settings</a></li>
-        <li class="active"><a href="#/realms/{{realm.realm}}/user-federation/providers/{{provider.providerName}}/{{provider.id}}/mappers">Mappers</a></li>
-    </ul>
+    <kc-tabs-user-federation></kc-tabs-user-federation>
 
     <table class="table table-striped table-bordered">
         <thead>

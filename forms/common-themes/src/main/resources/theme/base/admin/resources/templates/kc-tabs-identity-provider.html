@@ -1,0 +1,13 @@
+<div data-ng-controller="IdentityProviderTabCtrl">
+    <h1 data-ng-hide="path[0] == 'create'">
+        {{identityProvider.alias|capitalize}}
+        <i class="pficon pficon-delete clickable" data-ng-hide="newIdentityProvider || changed" data-ng-click="removeIdentityProvider()"></i>
+    </h1>
+    <h1 data-ng-show="path[0] == 'create'">Add Identity Provider</h1>
+
+    <ul class="nav nav-tabs" data-ng-hide="newIdentityProvider">
+        <li ng-class="{active: !path[6] && path.length > 5}"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">Settings</a></li>
+        <li ng-class="{active: path[4] == 'mappers'}"><a href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers">Mappers</a></li>
+        <li ng-class="{active: path[6] == 'export'}"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}/export" data-ng-show="!importFile && !newIdentityProvider && identityProvider.providerId == 'saml'">Export</a></li>
+    </ul>
+</div>

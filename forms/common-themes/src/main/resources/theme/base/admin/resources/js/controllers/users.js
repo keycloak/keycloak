@@ -266,6 +266,21 @@ module.controller('UserListCtrl', function($scope, realm, User, UserImpersonatio
 });
 
 
+module.controller('UserTabCtrl', function($scope, $location, Dialog, Notifications, Current) {
+    $scope.removeUser = function() {
+        Dialog.confirmDelete($scope.user.id, 'user', function() {
+            $scope.user.$remove({
+                realm : Current.realm.realm,
+                userId : $scope.user.id
+            }, function() {
+                $location.url("/realms/" + Current.realm.realm + "/users");
+                Notifications.success("The user has been deleted.");
+            }, function() {
+                Notifications.error("User couldn't be deleted");
+            });
+        });
+    };
+});
 
 module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFederationInstances, UserImpersonation, RequiredActions, $location, Dialog, Notifications) {
     $scope.realm = realm;
@@ -396,20 +411,6 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
     $scope.cancel = function() {
         $location.url("/realms/" + realm.realm + "/users");
     };
-
-    $scope.remove = function() {
-        Dialog.confirmDelete($scope.user.id, 'user', function() {
-            $scope.user.$remove({
-                realm : realm.realm,
-                userId : $scope.user.id
-            }, function() {
-                $location.url("/realms/" + realm.realm + "/users");
-                Notifications.success("The user has been deleted.");
-            }, function() {
-                Notifications.error("User couldn't be deleted");
-            });
-        });
-    };
 });
 
 module.controller('UserCredentialsCtrl', function($scope, realm, user, User, UserCredentials, Notifications, Dialog) {
@@ -520,11 +521,27 @@ module.controller('UserFederationCtrl', function($scope, $location, realm, UserF
 
 });
 
+module.controller('UserFederationTabCtrl', function(Dialog, $scope, Current, Notifications, $location) {
+    $scope.removeUserFederation = function() {
+        Dialog.confirm('Delete', 'Are you sure you want to permanently delete this provider?  All imported users will also be deleted.', function() {
+            $scope.instance.$remove({
+                realm : Current.realm.realm,
+                instance : $scope.instance.id
+            }, function() {
+                $location.url("/realms/" + Current.realm.realm + "/user-federation");
+                Notifications.success("The provider has been deleted.");
+            });
+        });
+    };
+});
+
+
 module.controller('GenericUserFederationCtrl', function($scope, $location, Notifications, $route, Dialog, realm, instance, providerFactory, UserFederationInstances, UserFederationSync) {
     console.log('GenericUserFederationCtrl');
 
     $scope.create = !instance.providerName;
     $scope.providerFactory = providerFactory;
+    $scope.provider = instance;
 
     console.log("providerFactory: " + providerFactory.id);
 
@@ -618,18 +635,6 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
         } else {
             $route.reload();
         }
-    };
-
-    $scope.remove = function() {
-        Dialog.confirm('Delete', 'Are you sure you want to permanently delete this provider?  All imported users will also be deleted.', function() {
-            $scope.instance.$remove({
-                realm : realm.realm,
-                instance : $scope.instance.id
-            }, function() {
-                $location.url("/realms/" + realm.realm + "/user-federation");
-                Notifications.success("The provider has been deleted.");
-            });
-        });
     };
 
     $scope.triggerFullSync = function() {
@@ -882,6 +887,7 @@ module.controller('UserFederationMapperListCtrl', function($scope, $location, No
 
     $scope.realm = realm;
     $scope.provider = provider;
+    $scope.instance = provider;
 
     $scope.mapperTypes = mapperTypes;
     $scope.mappers = mappers;

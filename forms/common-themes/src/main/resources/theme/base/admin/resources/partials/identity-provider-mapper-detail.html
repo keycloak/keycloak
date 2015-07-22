@@ -47,14 +47,19 @@
             </div>
             <kc-provider-config config="mapper.config" properties="mapperType.properties" realm="realm"></kc-provider-config>
         </fieldset>
-        <div class="pull-right form-actions" data-ng-show="create && access.manageRealm">
-            <button kc-cancel data-ng-click="cancel()">Cancel</button>
-            <button kc-save>Save</button>
+
+        <div class="form-group" data-ng-show="create && access.manageRealm">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save>Save</button>
+                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+            </div>
         </div>
 
-        <div class="pull-right form-actions" data-ng-show="!create && access.manageRealm">
-            <button kc-reset data-ng-show="changed">Clear changes</button>
-            <button kc-save  data-ng-show="changed">Save</button>
+        <div class="form-group" data-ng-show="!create && access.manageRealm">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save  data-ng-disabled="!changed">Save</button>
+                <button kc-reset data-ng-disabled="!changed">Cancel</button>
+            </div>
         </div>
     </form>
 </div>

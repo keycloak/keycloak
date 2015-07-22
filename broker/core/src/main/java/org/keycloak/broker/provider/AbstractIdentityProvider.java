@@ -59,6 +59,11 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     }
 
     @Override
+    public Response performLogin(AuthenticationRequest request) {
+        return null;
+    }
+
+    @Override
     public Response keycloakInitiatedBrowserLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         return null;
     }
