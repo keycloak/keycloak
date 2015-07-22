@@ -92,7 +92,7 @@ public class Navigation {
     }
 
     public void settings() {
-        openPage(settingsLink, "Settings");
+        openPage(settingsLink, "Master");
     }
 
     public void users() {
@@ -112,7 +112,7 @@ public class Navigation {
     }
 
     public void tokens() {
-        openPage(tokensLink, "Settings");
+        openPage(tokensLink, "Master");
     }
 
     public void sessions() {
@@ -120,7 +120,7 @@ public class Navigation {
     }
 
     public void security() {
-        openPage(securityLink, "Settings");
+        openPage(securityLink, "Master");
     }
 
     public void events() {
@@ -128,11 +128,11 @@ public class Navigation {
     }
 
     public void login() {
-        openPage(loginLink, "Settings");
+        openPage(loginLink, "Master");
     }
 
     public void themes() {
-        openPage(themesLink, "Settings");
+        openPage(themesLink, "Master");
     }
 
     public void roleMappings(String username) {
