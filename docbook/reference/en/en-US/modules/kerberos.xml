@@ -216,7 +216,7 @@ ktadd -k /tmp/http.keytab HTTP/www.mydomain.org@MYDOMAIN.ORG
             GSS credential will need to be used by your application. So you need to enable built-in <literal>gss delegation credential</literal> protocol mapper
             in admin console for your application. This will cause that Keycloak will deserialize GSS credential and transmit it to the application
             in access token. Application will need to deserialize it and use it for further GSS calls against other services. We have an example, which is showing it in details. It's in <literal>examples/kerberos</literal>
-            in the Keycloak appliance distribution or WAR distribution download. You can also check the example sources directly <ulink url="https://github.com/keycloak/keycloak/blob/master/examples/kerberos">here</ulink> .
+            in the Keycloak example distribution or demo distribution download. You can also check the example sources directly <ulink url="https://github.com/keycloak/keycloak/blob/master/examples/kerberos">here</ulink> .
         </para>
         <para>
             Once you deserialize the credential from the access token to the GSSCredential object, then GSSContext will need to

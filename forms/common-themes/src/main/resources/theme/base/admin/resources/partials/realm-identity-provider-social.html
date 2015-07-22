@@ -4,13 +4,7 @@
         <li>{{identityProvider.alias}}</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{identityProvider.alias|capitalize}}</h1>
-    <h1 data-ng-show="create">Add Social Identity Provider</h1>
-
-    <ul class="nav nav-tabs" data-ng-hide="newIdentityProvider">
-        <li class="active"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">Settings</a></li>
-        <li><a href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers">Mappers</a></li>
-    </ul>
+    <kc-tabs-identity-provider></kc-tabs-identity-provider>
 
     <form class="form-horizontal" name="realmForm" novalidate>
         <fieldset>
@@ -107,9 +101,8 @@
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2">
-                <button kc-save data-ng-show="changed">Save</button>
-                <button kc-cancel data-ng-click="cancel()" data-ng-show="changed">Cancel</button>
-                <button kc-delete data-ng-click="remove()" data-ng-hide="newIdentityProvider || changed">Delete</button>
+                <button kc-save data-ng-disabled="!changed">Save</button>
+                <button kc-cancel data-ng-click="cancel()" data-ng-disabled="!changed">Cancel</button>
             </div>
         </div>
     </form>

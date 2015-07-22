@@ -1,0 +1,22 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>1.4.0.Final-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <name>Keycloak Util Parent</name>
+    <description/>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-util-parent</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>embedded-ldap</module>
+    </modules>
+
+</project>

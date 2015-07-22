@@ -5,7 +5,7 @@
         <caption data-ng-show="users" class="hidden">Table of realm users</caption>
         <thead>
         <tr>
-            <th colspan="4">
+            <th colspan="{{access.impersonation == true ? '6' : '5'}}">
                 <div class="form-inline">
                     <div class="form-group">
                         <div class="input-group">
@@ -15,10 +15,10 @@
                             </div>
                         </div>
                     </div>
-                    <button class="btn btn-primary" ng-click="query.search = null; firstPage()">View all users</button>
+                    <button id="viewAllUsers" class="btn btn-default" ng-click="query.search = null; firstPage()">View all users</button>
 
-                    <div class="pull-right">
-                        <a class="btn btn-primary" href="#/create/user/{{realm.realm}}">Add User</a>
+                    <div class="pull-right" data-ng-show="access.manageUsers">
+                        <a id="createUser" class="btn btn-default" href="#/create/user/{{realm.realm}}">Add User</a>
                     </div>
                 </div>
             </th>
@@ -29,6 +29,7 @@
             <th>Last Name</th>
             <th>First Name</th>
             <th>Email</th>
+            <th colspan="{{access.impersonation == true ? '2' : '1'}}">Actions</th>
         </tr>
         </tr>
         </thead>
@@ -49,6 +50,12 @@
             <td>{{user.lastName}}</td>
             <td>{{user.firstName}}</td>
             <td>{{user.email}}</td>
+            <td class="kc-action-cell">
+                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/users/{{user.id}}">Edit</button>
+            </td>
+            <td data-ng-show="access.impersonation" class="kc-action-cell">
+                <button class="btn btn-default btn-block btn-sm" data-ng-click="impersonate(user.id)" tooltip="Login as this user.  If user is in same realm as you, your current login session will be logged out before you are logged in as this user.">Impersonate</button>
+            </td>
         </tr>
         <tr data-ng-show="!users || users.length == 0">
             <td class="text-muted" data-ng-show="!users">Please enter a search, or click on view all users</td>

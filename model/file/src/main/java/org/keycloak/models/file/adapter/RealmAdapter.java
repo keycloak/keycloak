@@ -1234,6 +1234,8 @@ public class RealmAdapter implements RealmModel {
         model.setAlias(entity.getAlias());
         model.setDescription(entity.getDescription());
         model.setProviderId(entity.getProviderId());
+        model.setBuiltIn(entity.isBuiltIn());
+        model.setTopLevel(entity.isTopLevel());
         return model;
     }
 
@@ -1268,16 +1270,21 @@ public class RealmAdapter implements RealmModel {
         toUpdate.setAlias(model.getAlias());
         toUpdate.setDescription(model.getDescription());
         toUpdate.setProviderId(model.getProviderId());
+        toUpdate.setBuiltIn(model.isBuiltIn());
+        toUpdate.setTopLevel(model.isTopLevel());
 
     }
 
     @Override
     public AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model) {
         AuthenticationFlowEntity entity = new AuthenticationFlowEntity();
-        entity.setId(KeycloakModelUtils.generateId());
+        String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
+        entity.setId(id);
         entity.setAlias(model.getAlias());
         entity.setDescription(model.getDescription());
         entity.setProviderId(model.getProviderId());
+        entity.setBuiltIn(model.isBuiltIn());
+        entity.setTopLevel(model.isTopLevel());
         realm.getAuthenticationFlows().add(entity);
         model.setId(entity.getId());
         return model;
@@ -1308,6 +1315,7 @@ public class RealmAdapter implements RealmModel {
         model.setParentFlow(entity.getParentFlow());
         model.setFlowId(entity.getFlowId());
         model.setAutheticatorFlow(entity.isAuthenticatorFlow());
+        model.setAuthenticatorConfig(entity.getAuthenticatorConfig());
         return model;
     }
 
@@ -1332,13 +1340,15 @@ public class RealmAdapter implements RealmModel {
     @Override
     public AuthenticationExecutionModel addAuthenticatorExecution(AuthenticationExecutionModel model) {
         AuthenticationExecutionEntity entity = new AuthenticationExecutionEntity();
-        entity.setId(KeycloakModelUtils.generateId());
+        String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
+        entity.setId(id);
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
         entity.setAuthenticatorFlow(model.isAutheticatorFlow());
         entity.setFlowId(model.getFlowId());
+        entity.setAuthenticatorConfig(model.getAuthenticatorConfig());
         AuthenticationFlowEntity flow = getFlowEntity(model.getId());
         flow.getExecutions().add(entity);
         model.setId(entity.getId());
@@ -1362,6 +1372,7 @@ public class RealmAdapter implements RealmModel {
         entity.setRequirement(model.getRequirement());
         entity.setFlowId(model.getFlowId());
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
+        entity.setAuthenticatorConfig(model.getAuthenticatorConfig());
     }
 
     @Override
@@ -1388,9 +1399,21 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public AuthenticatorConfigModel getAuthenticatorConfigByAlias(String alias) {
+        for (AuthenticatorConfigModel config : getAuthenticatorConfigs()) {
+            if (config.getAlias().equals(alias)) {
+                return config;
+            }
+        }
+        return null;
+    }
+
+
+    @Override
     public AuthenticatorConfigModel addAuthenticatorConfig(AuthenticatorConfigModel model) {
         AuthenticatorConfigEntity auth = new AuthenticatorConfigEntity();
-        auth.setId(KeycloakModelUtils.generateId());
+        String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
+        auth.setId(id);
         auth.setAlias(model.getAlias());
         auth.setConfig(model.getConfig());
         realm.getAuthenticatorConfigs().add(auth);

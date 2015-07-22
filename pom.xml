@@ -49,8 +49,8 @@
         <dom4j.version>1.6.1</dom4j.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <slf4j.version>1.7.7.jbossorg-1</slf4j.version>
-        <wildfly.version>9.0.0.CR2</wildfly.version>
-        <wildfly.core.version>1.0.0.CR6</wildfly.core.version>
+        <wildfly.version>9.0.0.Final</wildfly.version>
+        <wildfly.core.version>1.0.0.Final</wildfly.core.version>
         <wildfly.build-tools.version>1.0.0.Alpha8</wildfly.build-tools.version>
 
         <!-- this is EAP 6.4 alpha, publicly available -->
@@ -156,6 +156,7 @@
         <module>testsuite</module>
         <module>timer</module>
         <module>export-import</module>
+        <module>util</module>
     </modules>
 
     <dependencyManagement>
@@ -432,25 +433,21 @@
                 <groupId>org.apache.directory.server</groupId>
                 <artifactId>apacheds-core-annotations</artifactId>
                 <version>${apacheds.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.directory.server</groupId>
                 <artifactId>apacheds-interceptor-kerberos</artifactId>
                 <version>${apacheds.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.directory.server</groupId>
                 <artifactId>apacheds-server-annotations</artifactId>
                 <version>${apacheds.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.directory.api</groupId>
                 <artifactId>api-ldap-codec-standalone</artifactId>
                 <version>${apacheds.codec.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <!-- Selenium -->
@@ -1128,6 +1125,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-util-embedded-ldap</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-docs-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
@@ -1157,12 +1159,6 @@
                 <type>zip</type>
             </dependency>
             <dependency>
-                <groupId>org.keycloak.subsystem</groupId>
-                <artifactId>keycloak-server</artifactId>
-                <version>${project.version}</version>
-                <type>war</type>
-            </dependency>
-            <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-server-feature-pack</artifactId>
                 <version>${project.version}</version>
@@ -1190,6 +1186,7 @@
                 <version>${project.version}</version>
                 <classifier>classes</classifier>
             </dependency>
+
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>federation-properties-example</artifactId>

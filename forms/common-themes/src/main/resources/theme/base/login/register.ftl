@@ -107,7 +107,13 @@
                     <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.country" name="user.attributes.country"/>
                 </div>
             </div>
-
+            <#if recaptchaRequired??>
+            <div class="form-group">
+                <div class="${properties.kcInputWrapperClass!}">
+                    <div class="g-recaptcha" data-size="compact" data-sitekey="${recaptchaSiteKey}"></div>
+                </div>
+            </div>
+            </#if>
 
             <div class="${properties.kcFormGroupClass!}">
                 <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">

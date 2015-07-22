@@ -25,10 +25,13 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.authentication.requiredactions.UpdateTotp;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -45,7 +48,7 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.testsuite.utils.CredentialHelper;
+import org.keycloak.utils.CredentialHelper;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -58,8 +61,11 @@ public class RequiredActionTotpSetupTest {
 
         @Override
         public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-            CredentialHelper.setRequiredCredential(CredentialRepresentation.TOTP, appRealm);
-            appRealm.addRequiredCredential(CredentialRepresentation.TOTP);
+            CredentialHelper.setRequiredCredential(manager.getSession(), CredentialRepresentation.TOTP, appRealm);
+            //appRealm.addRequiredCredential(CredentialRepresentation.TOTP);
+            RequiredActionProviderModel requiredAction = appRealm.getRequiredActionProviderByAlias(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+            requiredAction.setDefaultAction(true);
+            appRealm.updateRequiredActionProvider(requiredAction);
             appRealm.setResetPasswordAllowed(true);
         }
 

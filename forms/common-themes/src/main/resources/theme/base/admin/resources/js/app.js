@@ -388,7 +388,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'UserSessionsCtrl'
         })
         .when('/realms/:realm/users/:user/federated-identity', {
-            templateUrl : resourceUrl + '/partials/user-federated-identity.html',
+            templateUrl : resourceUrl + '/partials/user-federated-identity-list.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -401,6 +401,21 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'UserFederatedIdentityCtrl'
+        })
+        .when('/create/federated-identity/:realm/:user', {
+            templateUrl : resourceUrl + '/partials/user-federated-identity-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                },
+                federatedIdentities : function(UserFederatedIdentityLoader) {
+                    return UserFederatedIdentityLoader();
+                }
+            },
+            controller : 'UserFederatedIdentityAddCtrl'
         })
         .when('/realms/:realm/users/:user/consents', {
             templateUrl : resourceUrl + '/partials/user-consents.html',
@@ -747,6 +762,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientInstallationCtrl'
         })
+        .when('/realms/:realm/clients/:client/service-accounts', {
+            templateUrl : resourceUrl + '/partials/client-service-accounts.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                }
+            },
+            controller : 'ClientServiceAccountsCtrl'
+        })
         .when('/create/client/:realm', {
             templateUrl : resourceUrl + '/partials/client-detail.html',
             resolve : {
@@ -978,7 +1005,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 clients : function(ClientListLoader) {
                     return ClientListLoader();
-                },
+                }
             },
             controller : 'UserFederationMapperCtrl'
         })
@@ -1041,6 +1068,9 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                flows : function(AuthenticationFlowsLoader) {
+                    return AuthenticationFlowsLoader();
                 }
             },
             controller : 'AuthenticationFlowsCtrl'
@@ -1062,6 +1092,36 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'RealmPasswordPolicyCtrl'
+        })
+        .when('/realms/:realm/authentication/config/:provider/:config', {
+            templateUrl : resourceUrl + '/partials/authenticator-config.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                configType : function(AuthenticationConfigDescriptionLoader) {
+                    return AuthenticationConfigDescriptionLoader();
+                },
+                config : function(AuthenticationConfigLoader) {
+                    return AuthenticationConfigLoader();
+                }
+            },
+            controller : 'AuthenticationConfigCtrl'
+        })
+        .when('/create/authentication/:realm/execution/:executionId/provider/:provider', {
+            templateUrl : resourceUrl + '/partials/authenticator-config.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                configType : function(AuthenticationConfigDescriptionLoader) {
+                    return AuthenticationConfigDescriptionLoader();
+                },
+                execution : function(ExecutionIdLoader) {
+                    return ExecutionIdLoader();
+                }
+            },
+            controller : 'AuthenticationConfigCreateCtrl'
         })
         .when('/server-info', {
             templateUrl : resourceUrl + '/partials/server-info.html'
@@ -1546,6 +1606,110 @@ module.directive('kcNavigationUser', function () {
     }
 });
 
+module.directive('kcTabsIdentityProvider', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-identity-provider.html'
+    }
+});
+
+module.directive('kcTabsUserFederation', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-user-federation.html'
+    }
+});
+
+module.controller('RoleSelectorModalCtrl', function($scope, realm, config, configName, RealmRoles, Client, ClientRole, $modalInstance) {
+    console.log('realm: ' + realm.realm);
+    $scope.selectedRealmRole = {
+        role: undefined
+    };
+    $scope.selectedClientRole = {
+        role: undefined
+    };
+    $scope.client = {
+        selected: undefined
+    };
+
+    $scope.selectRealmRole = function() {
+        config[configName] = $scope.selectedRealmRole.role.name;
+        $modalInstance.close();
+    }
+
+    $scope.selectClientRole = function() {
+        config[configName] = $scope.client.selected.clientId + "." + $scope.selectedClientRole.role.name;
+        $modalInstance.close();
+    }
+
+    $scope.cancel = function() {
+        $modalInstance.dismiss();
+    }
+
+    $scope.changeClient = function() {
+        if ($scope.client.selected) {
+            ClientRole.query({realm: realm.realm, client: $scope.client.selected.id}, function (data) {
+                $scope.clientRoles = data;
+             });
+        } else {
+            console.log('selected client was null');
+            $scope.clientRoles = null;
+        }
+
+    }
+    RealmRoles.query({realm: realm.realm}, function(data) {
+        $scope.realmRoles = data;
+    })
+    Client.query({realm: realm.realm}, function(data) {
+        $scope.clients = data;
+        if (data.length > 0) {
+            $scope.client.selected = data[0];
+            $scope.changeClient();
+        }
+    })
+});
+
+
+module.directive('kcProviderConfig', function ($modal) {
+    return {
+        scope: {
+            config: '=',
+            properties: '=',
+            realm: '=',
+            clients: '='
+        },
+        restrict: 'E',
+        replace: true,
+        link: function(scope, element, attrs) {
+            scope.openRoleSelector = function(configName) {
+                $modal.open({
+                    templateUrl: resourceUrl + '/partials/modal/role-selector.html',
+                    controller: 'RoleSelectorModalCtrl',
+                    resolve: {
+                        realm: function () {
+                            return scope.realm;
+                        },
+                        config: function() {
+                            return scope.config;
+                        },
+                        configName: function() {
+
+                            return configName;
+                        }
+                    }
+                })
+
+            };
+
+        },
+        templateUrl: resourceUrl + '/templates/kc-provider-config.html'
+    }
+});
+
 /*
 *  Used to select the element (invoke $(elem).select()) on specified action list.
 *  Usages kc-select-action="click mouseover"
@@ -1678,4 +1842,20 @@ module.directive('kcTooltip', function($compile) {
                 $compile(label)(scope);
             }
         };
+});
+
+module.directive( 'kcOpen', function ( $location ) {
+    return function ( scope, element, attrs ) {
+        var path;
+
+        attrs.$observe( 'kcOpen', function (val) {
+            path = val;
+        });
+
+        element.bind( 'click', function () {
+            scope.$apply( function () {
+                $location.path(path);
+            });
+        });
+    };
 });

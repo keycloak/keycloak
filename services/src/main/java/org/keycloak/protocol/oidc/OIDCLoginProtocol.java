@@ -55,6 +55,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String GRANT_TYPE_PARAM = "grant_type";
     public static final String REDIRECT_URI_PARAM = "redirect_uri";
     public static final String CLIENT_ID_PARAM = "client_id";
+    public static final String NONCE_PARAM = "nonce";
     public static final String PROMPT_PARAM = "prompt";
     public static final String LOGIN_HINT_PARAM = "login_hint";
     public static final String LOGOUT_REDIRECT_URI = "OIDC_LOGOUT_REDIRECT_URI";
@@ -147,6 +148,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
         if (state != null)
             redirectUri.queryParam(OAuth2Constants.STATE, state);
+        session.sessions().removeClientSession(realm, clientSession);
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
         return location.build();
     }

@@ -4,12 +4,10 @@
         <li>{{user.username}}</li>
     </ol>
 
-    <h1>{{user.username|capitalize}}</h1>
-
     <kc-tabs-user></kc-tabs-user>
 
-    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageUsers">
-        <div class="form-group">
+    <form class="form-horizontal" name="realmForm" novalidate>
+        <div class="form-group" kc-read-only="!access.manageUsers">
             <label class="col-md-2 control-label" class="control-label">Realm Roles</label>
 
             <div class="col-md-10">
@@ -21,7 +19,7 @@
                                 ng-model="selectedRealmRoles"
                                 ng-options="r.name for r in realmRoles">
                         </select>
-                        <button class="btn btn-default" type="submit" ng-click="addRealmRole()" tooltip="Assign role" tooltip-placement="right">
+                        <button ng-disabled="selectedRealmRoles.length == 0" ng-disabled="c.length == 0" class="btn btn-default" type="submit" ng-click="addRealmRole()">
                             Add selected <i class="fa fa-angle-right"></i>
                         </button>
                         <kc-tooltip>Realm roles that can be assigned to the user.</kc-tooltip>
@@ -34,7 +32,7 @@
                                 ng-model="selectedRealmMappings"
                                 ng-options="r.name for r in realmMappings">
                         </select>
-                        <button class="btn btn-default" type="submit" ng-click="deleteRealmRole()" tooltip="Unassign role" tooltip-placement="left">
+                        <button ng-disabled="selectedRealmMappings.length == 0" class="btn btn-default" type="submit" ng-click="deleteRealmRole()">
                             <i class="fa fa-angle-double-left"></i> Remove selected
                         </button>
                     </div>
@@ -42,7 +40,7 @@
                         <label class="control-label" for="realm-composite">Effective Roles</label>
                         <kc-tooltip>All realm role mappings.  Some roles here might be inherited from a mapped composite role.</kc-tooltip>
                         <select id="realm-composite" class="form-control" multiple size=5
-                                ng-disabled="true"
+                                disabled="true"
                                 ng-model="dummymodel"
                                 ng-options="r.name for r in realmComposite">
                         </select>
@@ -56,7 +54,7 @@
                     <span>Client Roles</span>
                     <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="client" ng-options="a.clientId for a in clients" ng-disabled="false"></select>
                 </label>
-                <div class="col-md-10">
+                <div class="col-md-10" kc-read-only="!access.manageUsers">
                     <div class="row" data-ng-hide="client">
                         <div class="col-md-4"><span class="text-muted">Select client to view roles for client</span></div>
                     </div>
@@ -69,7 +67,7 @@
                                     ng-model="selectedClientRoles"
                                     ng-options="r.name for r in clientRoles">
                             </select>
-                            <button class="btn btn-default" type="submit" ng-click="addClientRole()" tooltip="Assign role" tooltip-placement="right">
+                            <button ng-disabled="selectedClientRoles.length == 0" class="btn btn-default" type="submit" ng-click="addClientRole()">
                                 Add selected <i class="fa fa-angle-double-right"></i>
                             </button>
                         </div>
@@ -81,14 +79,14 @@
                                     ng-model="selectedClientMappings"
                                     ng-options="r.name for r in clientMappings">
                             </select>
-                            <button class="btn btn-default" type="submit" ng-click="deleteClientRole()" tooltip="Unassign role" tooltip-placement="left">
+                            <button ng-disabled="selectedClientMappings.length == 0" class="btn btn-default" type="submit" ng-click="deleteClientRole()">
                                 <i class="fa fa-angle-double-left"></i> Remove selected
                             </button>
                         </div>
                         <div class="col-md-3">
                             <label class="control-label" for="client-composite">Effective Roles <span tooltip-placement="right" tooltip="Role mappings for this client.  Some roles here might be inherited from a mapped composite role." class="fa fa-info-circle"></span></label>
                             <select id="client-composite" class="form-control" multiple size=5
-                                    ng-disabled="true"
+                                    disabled="true"
                                     ng-model="dummymodel"
                                     ng-options="r.name for r in clientComposite">
                             </select>

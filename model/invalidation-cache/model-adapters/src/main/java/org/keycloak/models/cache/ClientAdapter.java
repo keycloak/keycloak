@@ -413,6 +413,18 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public boolean isServiceAccountsEnabled() {
+        if (updated != null) return updated.isServiceAccountsEnabled();
+        return cached.isServiceAccountsEnabled();
+    }
+
+    @Override
+    public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
+        getDelegateForUpdate();
+        updated.setServiceAccountsEnabled(serviceAccountsEnabled);
+    }
+
+    @Override
     public RoleModel getRole(String name) {
         if (updated != null) return updated.getRole(name);
         String id = cached.getRoles().get(name);

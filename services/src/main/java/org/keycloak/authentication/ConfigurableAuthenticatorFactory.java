@@ -1,12 +1,13 @@
 package org.keycloak.authentication;
 
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.provider.ConfiguredProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface ConfigurableAuthenticatorFactory {
+public interface ConfigurableAuthenticatorFactory extends ConfiguredProvider {
     String getDisplayType();
 
     /**

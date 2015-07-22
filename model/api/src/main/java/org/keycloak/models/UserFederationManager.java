@@ -128,7 +128,7 @@ public class UserFederationManager implements UserProvider {
         if (link != null) {
             UserModel validatedProxyUser = link.validateAndProxy(realm, user);
             if (validatedProxyUser != null) {
-                managedUsers.put(user.getId(), user);
+                managedUsers.put(user.getId(), validatedProxyUser);
                 return validatedProxyUser;
             } else {
                 deleteInvalidUser(realm, user);
@@ -302,6 +302,11 @@ public class UserFederationManager implements UserProvider {
                 return session.userStorage().searchForUserByAttributes(attributes, realm, first, max);
             }
         }, realm, firstResult, maxResults);
+    }
+
+    @Override
+    public List<UserModel> searchForUserByUserAttributes(Map<String, String> attributes, RealmModel realm) {
+        return session.userStorage().searchForUserByUserAttributes(attributes, realm);
     }
 
     @Override

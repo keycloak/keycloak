@@ -9,6 +9,7 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.Constants;
+import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -20,7 +21,9 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.timer.TimerProvider;
@@ -88,6 +91,7 @@ public class RealmManager {
         setupAccountManagement(realm);
         setupBrokerService(realm);
         setupAdminConsole(realm);
+        setupImpersonationService(realm);
         setupAuthenticationFlows(realm);
         setupRequiredActions(realm);
 
@@ -233,6 +237,10 @@ public class RealmManager {
         }
     }
 
+    public void setupImpersonationService(RealmModel realm) {
+        ImpersonationConstants.setupImpersonationService(session, realm);
+    }
+
     public void setupBrokerService(RealmModel realm) {
         ClientModel client = realm.getClientNameMap().get(Constants.BROKER_SERVICE_CLIENT_ID);
         if (client == null) {
@@ -261,10 +269,26 @@ public class RealmManager {
         setupMasterAdminManagement(realm);
         if (!hasRealmAdminManagementClient(rep)) setupRealmAdminManagement(realm);
         if (!hasAccountManagementClient(rep)) setupAccountManagement(realm);
+
+        boolean postponeImpersonationSetup = false;
+        if (!hasImpersonationServiceClient(rep)) {
+            if (hasRealmAdminManagementClient(rep)) {
+                postponeImpersonationSetup = true;
+            } else {
+                setupImpersonationService(realm);
+            }
+        }
+
         if (!hasBrokerClient(rep)) setupBrokerService(realm);
         if (!hasAdminConsoleClient(rep)) setupAdminConsole(realm);
 
         RepresentationToModel.importRealm(session, rep, realm);
+
+        // Could happen when migrating from older version and I have exported JSON file, which contains "realm-management" client but not "impersonation" client
+        // I need to postpone impersonation because it needs "realm-management" client and it's roles set
+        if (postponeImpersonationSetup) {
+            setupImpersonationService(realm);
+        }
 
         setupAuthenticationFlows(realm);
         setupRequiredActions(realm);
@@ -279,41 +303,49 @@ public class RealmManager {
     }
 
     private boolean hasRealmAdminManagementClient(RealmRepresentation rep) {
-        if (rep.getClients() == null) return false;
-        for (ClientRepresentation clientRep : rep.getClients()) {
-            if (clientRep.getClientId().equals(getRealmAdminClientId(rep))) {
-                return true;
-            }
-        }
-        return false;
+        String realmAdminClientId = getRealmAdminClientId(rep);
+        return hasClient(rep, realmAdminClientId);
     }
 
     private boolean hasAccountManagementClient(RealmRepresentation rep) {
-        if (rep.getClients() == null) return false;
-        for (ClientRepresentation clientRep : rep.getClients()) {
-            if (clientRep.getClientId().equals(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)) {
-                return true;
-            }
-        }
-        return false;
+        return hasClient(rep, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+    }
+    private boolean hasImpersonationServiceClient(RealmRepresentation rep) {
+        return hasClient(rep, Constants.IMPERSONATION_SERVICE_CLIENT_ID);
     }
     private boolean hasBrokerClient(RealmRepresentation rep) {
-        if (rep.getClients() == null) return false;
-        for (ClientRepresentation clientRep : rep.getClients()) {
-            if (clientRep.getClientId().equals(Constants.BROKER_SERVICE_CLIENT_ID)) {
-                return true;
-            }
-        }
-        return false;
+        return hasClient(rep, Constants.BROKER_SERVICE_CLIENT_ID);
     }
 
     private boolean hasAdminConsoleClient(RealmRepresentation rep) {
-        if (rep.getClients() == null) return false;
-        for (ClientRepresentation clientRep : rep.getClients()) {
-            if (clientRep.getClientId().equals(Constants.ADMIN_CONSOLE_CLIENT_ID)) {
-                return true;
+        return hasClient(rep, Constants.ADMIN_CONSOLE_CLIENT_ID);
+    }
+
+    private boolean hasClient(RealmRepresentation rep, String clientId) {
+        if (rep.getClients() != null) {
+            for (ClientRepresentation clientRep : rep.getClients()) {
+                if (clientRep.getClientId().equals(clientId)) {
+                    return true;
+                }
             }
         }
+
+        // TODO: Just for compatibility with old versions. Should be removed later...
+        if (rep.getApplications() != null) {
+            for (ApplicationRepresentation clientRep : rep.getApplications()) {
+                if (clientRep.getName().equals(clientId)) {
+                    return true;
+                }
+            }
+        }
+        if (rep.getOauthClients() != null) {
+            for (OAuthClientRepresentation clientRep : rep.getOauthClients()) {
+                if (clientRep.getName().equals(clientId)) {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 

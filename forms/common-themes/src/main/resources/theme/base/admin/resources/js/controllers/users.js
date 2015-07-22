@@ -19,8 +19,10 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
     $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
 
     $scope.addRealmRole = function() {
+        var roles = $scope.selectedRealmRoles;
+        $scope.selectedRealmRoles = [];
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.id + '/role-mappings/realm',
-                $scope.selectedRealmRoles).success(function() {
+                roles).success(function() {
                 $scope.realmMappings = RealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
@@ -67,6 +69,8 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
                 $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
                 $scope.selectedClientRoles = [];
                 $scope.selectedClientMappings = [];
+                $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
+                $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 Notifications.success("Role mappings updated.");
             });
     };
@@ -79,6 +83,8 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
                 $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.client.id});
                 $scope.selectedClientRoles = [];
                 $scope.selectedClientMappings = [];
+                $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
+                $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 Notifications.success("Role mappings updated.");
             });
     };
@@ -129,10 +135,66 @@ module.controller('UserSessionsCtrl', function($scope, realm, user, sessions, Us
     }
 });
 
-module.controller('UserFederatedIdentityCtrl', function($scope, realm, user, federatedIdentities) {
+module.controller('UserFederatedIdentityCtrl', function($scope, $location, realm, user, federatedIdentities, UserFederatedIdentity, Notifications, Dialog) {
     $scope.realm = realm;
     $scope.user = user;
     $scope.federatedIdentities = federatedIdentities;
+
+    $scope.hasAnyProvidersToCreate = function() {
+        return realm.identityProviders.length - $scope.federatedIdentities.length > 0;
+    }
+
+    $scope.removeProviderLink = function(providerLink) {
+
+        console.log("Removing provider link: " + providerLink.identityProvider);
+
+        Dialog.confirmDelete(providerLink.identityProvider, 'Identity Provider Link', function() {
+            UserFederatedIdentity.remove({ realm: realm.realm, user: user.id, provider: providerLink.identityProvider }, function() {
+                Notifications.success("The provider link has been deleted.");
+                var indexToRemove = $scope.federatedIdentities.indexOf(providerLink);
+                $scope.federatedIdentities.splice(indexToRemove, 1);
+            });
+        });
+    }
+});
+
+module.controller('UserFederatedIdentityAddCtrl', function($scope, $location, realm, user, federatedIdentities, UserFederatedIdentity, Notifications) {
+    $scope.realm = realm;
+    $scope.user = user;
+    $scope.federatedIdentity = {};
+
+    var getAvailableProvidersToCreate = function() {
+        var realmProviders = [];
+        for (var i=0 ; i<realm.identityProviders.length ; i++) {
+            var providerAlias = realm.identityProviders[i].alias;
+            realmProviders.push(providerAlias);
+        };
+
+        for (var i=0 ; i<federatedIdentities.length ; i++) {
+            var providerAlias = federatedIdentities[i].identityProvider;
+            var index = realmProviders.indexOf(providerAlias);
+            realmProviders.splice(index, 1);
+        }
+
+        return realmProviders;
+    }
+    $scope.availableProvidersToCreate = getAvailableProvidersToCreate();
+
+    $scope.save = function() {
+        UserFederatedIdentity.save({
+            realm : realm.realm,
+            user: user.id,
+            provider: $scope.federatedIdentity.identityProvider
+        }, $scope.federatedIdentity, function(data, headers) {
+            $location.url("/realms/" + realm.realm + '/users/' + $scope.user.id + '/federated-identity');
+            Notifications.success("Provider link has been created.");
+        });
+    };
+
+    $scope.cancel = function() {
+         $location.url("/realms/" + realm.realm + '/users/' + $scope.user.id + '/federated-identity');
+    };
+
 });
 
 module.controller('UserConsentsCtrl', function($scope, realm, user, userConsents, UserConsents, Notifications) {
@@ -154,7 +216,7 @@ module.controller('UserConsentsCtrl', function($scope, realm, user, userConsents
 });
 
 
-module.controller('UserListCtrl', function($scope, realm, User) {
+module.controller('UserListCtrl', function($scope, realm, User, UserImpersonation) {
     $scope.realm = realm;
     $scope.page = 0;
 
@@ -163,6 +225,16 @@ module.controller('UserListCtrl', function($scope, realm, User) {
         max : 5,
         first : 0
     }
+
+    $scope.impersonate = function(userId) {
+        UserImpersonation.save({realm : realm.realm, user: userId}, function (data) {
+            if (data.sameRealm) {
+                window.location = data.redirect;
+            } else {
+                window.open(data.redirect, "_blank");
+            }
+        });
+    };
 
     $scope.firstPage = function() {
         $scope.query.first = 0;
@@ -194,8 +266,23 @@ module.controller('UserListCtrl', function($scope, realm, User) {
 });
 
 
+module.controller('UserTabCtrl', function($scope, $location, Dialog, Notifications, Current) {
+    $scope.removeUser = function() {
+        Dialog.confirmDelete($scope.user.id, 'user', function() {
+            $scope.user.$remove({
+                realm : Current.realm.realm,
+                userId : $scope.user.id
+            }, function() {
+                $location.url("/realms/" + Current.realm.realm + "/users");
+                Notifications.success("The user has been deleted.");
+            }, function() {
+                Notifications.error("User couldn't be deleted");
+            });
+        });
+    };
+});
 
-module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFederationInstances, RequiredActions, $location, Dialog, Notifications) {
+module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFederationInstances, UserImpersonation, RequiredActions, $location, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.create = !user.id;
     $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
@@ -208,7 +295,17 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
         }
         convertAttributeValuesToString(user);
 
+
         $scope.user = angular.copy(user);
+        $scope.impersonate = function() {
+            UserImpersonation.save({realm : realm.realm, user: $scope.user.id}, function (data) {
+                if (data.sameRealm) {
+                    window.location = data.redirect;
+                } else {
+                    window.open(data.redirect, "_blank");
+                }
+            });
+        };
         if(user.federationLink) {
             console.log("federationLink is not null");
             UserFederationInstances.get({realm : realm.realm, instance: user.federationLink}, function(link) {
@@ -313,20 +410,6 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, UserFede
 
     $scope.cancel = function() {
         $location.url("/realms/" + realm.realm + "/users");
-    };
-
-    $scope.remove = function() {
-        Dialog.confirmDelete($scope.user.id, 'user', function() {
-            $scope.user.$remove({
-                realm : realm.realm,
-                userId : $scope.user.id
-            }, function() {
-                $location.url("/realms/" + realm.realm + "/users");
-                Notifications.success("The user has been deleted.");
-            }, function() {
-                Notifications.error("User couldn't be deleted");
-            });
-        });
     };
 });
 
@@ -438,11 +521,27 @@ module.controller('UserFederationCtrl', function($scope, $location, realm, UserF
 
 });
 
+module.controller('UserFederationTabCtrl', function(Dialog, $scope, Current, Notifications, $location) {
+    $scope.removeUserFederation = function() {
+        Dialog.confirm('Delete', 'Are you sure you want to permanently delete this provider?  All imported users will also be deleted.', function() {
+            $scope.instance.$remove({
+                realm : Current.realm.realm,
+                instance : $scope.instance.id
+            }, function() {
+                $location.url("/realms/" + Current.realm.realm + "/user-federation");
+                Notifications.success("The provider has been deleted.");
+            });
+        });
+    };
+});
+
+
 module.controller('GenericUserFederationCtrl', function($scope, $location, Notifications, $route, Dialog, realm, instance, providerFactory, UserFederationInstances, UserFederationSync) {
     console.log('GenericUserFederationCtrl');
 
     $scope.create = !instance.providerName;
     $scope.providerFactory = providerFactory;
+    $scope.provider = instance;
 
     console.log("providerFactory: " + providerFactory.id);
 
@@ -536,18 +635,6 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
         } else {
             $route.reload();
         }
-    };
-
-    $scope.remove = function() {
-        Dialog.confirm('Delete', 'Are you sure you want to permanently delete this provider?  All imported users will also be deleted.', function() {
-            $scope.instance.$remove({
-                realm : realm.realm,
-                instance : $scope.instance.id
-            }, function() {
-                $location.url("/realms/" + realm.realm + "/user-federation");
-                Notifications.success("The provider has been deleted.");
-            });
-        });
     };
 
     $scope.triggerFullSync = function() {
@@ -800,13 +887,14 @@ module.controller('UserFederationMapperListCtrl', function($scope, $location, No
 
     $scope.realm = realm;
     $scope.provider = provider;
+    $scope.instance = provider;
 
     $scope.mapperTypes = mapperTypes;
     $scope.mappers = mappers;
 
     $scope.hasAnyMapperTypes = false;
     for (var property in mapperTypes) {
-        if (!(property.startsWith('$'))) {
+        if (!(property.indexOf('$') === 0)) {
             $scope.hasAnyMapperTypes = true;
             break;
         }

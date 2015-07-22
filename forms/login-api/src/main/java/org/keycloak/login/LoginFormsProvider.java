@@ -63,6 +63,8 @@ public interface LoginFormsProvider extends Provider {
      */
     public LoginFormsProvider setErrors(List<FormMessage> messages);
 
+    LoginFormsProvider addError(FormMessage errorMessage);
+
     public LoginFormsProvider setSuccess(String message, Object ... parameters);
 
     public LoginFormsProvider setUser(UserModel user);

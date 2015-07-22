@@ -4,6 +4,9 @@ import net.iharder.Base64;
 import org.jboss.logging.Logger;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.migration.MigrationProvider;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
@@ -15,6 +18,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
@@ -23,6 +27,9 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -32,6 +39,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
@@ -126,12 +134,13 @@ public class RepresentationToModel {
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
         if (rep.getEmailTheme() != null) newRealm.setEmailTheme(rep.getEmailTheme());
 
+        // todo remove this stuff as its all deprecated
         if (rep.getRequiredCredentials() != null) {
             for (String requiredCred : rep.getRequiredCredentials()) {
-                addRequiredCredential(newRealm, requiredCred);
+                newRealm.addRequiredCredential(requiredCred);
             }
         } else {
-            addRequiredCredential(newRealm, CredentialRepresentation.PASSWORD);
+            newRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         }
 
         if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
@@ -288,6 +297,41 @@ public class RepresentationToModel {
         if(rep.getDefaultLocale() != null){
             newRealm.setDefaultLocale(rep.getDefaultLocale());
         }
+
+        importAuthenticationFlows(newRealm, rep);
+        if (rep.getRequiredActions() != null) {
+            for (RequiredActionProviderRepresentation action : rep.getRequiredActions()) {
+                RequiredActionProviderModel model = toModel(action);
+                newRealm.addRequiredActionProvider(model);
+            }
+        } else {
+            DefaultRequiredActions.addActions(newRealm);
+        }
+    }
+
+    public static void importAuthenticationFlows(RealmModel newRealm, RealmRepresentation rep) {
+        if (rep.getAuthenticationFlows() == null) {
+            // assume this is an old version being imported
+            DefaultAuthenticationFlows.migrateFlows(newRealm);
+        } else {
+            for (AuthenticatorConfigRepresentation configRep : rep.getAuthenticatorConfig()) {
+                AuthenticatorConfigModel model = toModel(configRep);
+                newRealm.addAuthenticatorConfig(model);
+            }
+            for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
+                AuthenticationFlowModel model = toModel(flowRep);
+                model = newRealm.addAuthenticationFlow(model);
+            }
+            for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
+                AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
+                for (AuthenticationExecutionRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
+                    AuthenticationExecutionModel execution = toModel(newRealm, exeRep);
+                    execution.setParentFlow(model.getId());
+                    newRealm.addAuthenticatorExecution(execution);
+                }
+            }
+         }
+
     }
 
     private static void convertDeprecatedSocialProviders(RealmRepresentation rep) {
@@ -488,10 +532,6 @@ public class RepresentationToModel {
 
     // Basic realm stuff
 
-    public static void addRequiredCredential(RealmModel newRealm, String requiredCred) {
-        newRealm.addRequiredCredential(requiredCred);
-    }
-
 
     private static List<UserFederationProviderModel> convertFederationProviders(List<UserFederationProviderRepresentation> providers) {
         List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
@@ -585,6 +625,7 @@ public class RepresentationToModel {
         if (resourceRep.getBaseUrl() != null) client.setBaseUrl(resourceRep.getBaseUrl());
         if (resourceRep.isBearerOnly() != null) client.setBearerOnly(resourceRep.isBearerOnly());
         if (resourceRep.isConsentRequired() != null) client.setConsentRequired(resourceRep.isConsentRequired());
+        if (resourceRep.isServiceAccountsEnabled() != null) client.setServiceAccountsEnabled(resourceRep.isServiceAccountsEnabled());
         if (resourceRep.isDirectGrantsOnly() != null) client.setDirectGrantsOnly(resourceRep.isDirectGrantsOnly());
         if (resourceRep.isPublicClient() != null) client.setPublicClient(resourceRep.isPublicClient());
         if (resourceRep.isFrontchannelLogout() != null) client.setFrontchannelLogout(resourceRep.isFrontchannelLogout());
@@ -674,6 +715,7 @@ public class RepresentationToModel {
         if (rep.isEnabled() != null) resource.setEnabled(rep.isEnabled());
         if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
         if (rep.isConsentRequired() != null) resource.setConsentRequired(rep.isConsentRequired());
+        if (rep.isServiceAccountsEnabled() != null) resource.setServiceAccountsEnabled(rep.isServiceAccountsEnabled());
         if (rep.isDirectGrantsOnly() != null) resource.setDirectGrantsOnly(rep.isDirectGrantsOnly());
         if (rep.isPublicClient() != null) resource.setPublicClient(rep.isPublicClient());
         if (rep.isFullScopeAllowed() != null) resource.setFullScopeAllowed(rep.isFullScopeAllowed());
@@ -799,6 +841,7 @@ public class RepresentationToModel {
         // Import users just to user storage. Don't federate
         UserModel user = session.userStorage().addUser(newRealm, userRep.getId(), userRep.getUsername(), false, false);
         user.setEnabled(userRep.isEnabled());
+        user.setCreatedTimestamp(userRep.getCreatedTimestamp());
         user.setEmail(userRep.getEmail());
         user.setEmailVerified(userRep.isEmailVerified());
         user.setFirstName(userRep.getFirstName());
@@ -920,7 +963,7 @@ public class RepresentationToModel {
             }
         }
     }
-    public static IdentityProviderModel toModel(IdentityProviderRepresentation representation) {
+   public static IdentityProviderModel toModel(IdentityProviderRepresentation representation) {
         IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
         identityProviderModel.setInternalId(representation.getInternalId());
@@ -1008,5 +1051,53 @@ public class RepresentationToModel {
         }
         return consentModel;
     }
+
+    public static AuthenticationFlowModel toModel(AuthenticationFlowRepresentation rep) {
+        AuthenticationFlowModel model = new AuthenticationFlowModel();
+        model.setBuiltIn(rep.isBuiltIn());
+        model.setTopLevel(rep.isTopLevel());
+        model.setProviderId(rep.getProviderId());
+        model.setAlias(rep.getAlias());
+        model.setDescription(rep.getDescription());
+        return model;
+
+    }
+
+    public static AuthenticationExecutionModel toModel(RealmModel realm, AuthenticationExecutionRepresentation rep) {
+        AuthenticationExecutionModel model = new AuthenticationExecutionModel();
+        if (rep.getAuthenticatorConfig() != null) {
+            AuthenticatorConfigModel config = realm.getAuthenticatorConfigByAlias(rep.getAuthenticatorConfig());
+            model.setAuthenticatorConfig(config.getId());
+        }
+        model.setAuthenticator(rep.getAuthenticator());
+        model.setAutheticatorFlow(rep.isAutheticatorFlow());
+        if (rep.getFlowAlias() != null) {
+            AuthenticationFlowModel flow = realm.getFlowByAlias(rep.getFlowAlias());
+            model.setFlowId(flow.getId());
+        }
+        model.setPriority(rep.getPriority());
+        model.setUserSetupAllowed(rep.isUserSetupAllowed());
+        model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
+        return model;
+    }
+
+    public static AuthenticatorConfigModel toModel(AuthenticatorConfigRepresentation rep) {
+        AuthenticatorConfigModel model = new AuthenticatorConfigModel();
+        model.setAlias(rep.getAlias());
+        model.setConfig(rep.getConfig());
+        return model;
+    }
+
+    public static RequiredActionProviderModel toModel(RequiredActionProviderRepresentation rep) {
+        RequiredActionProviderModel model = new RequiredActionProviderModel();
+        model.setConfig(rep.getConfig());
+        model.setDefaultAction(rep.isDefaultAction());
+        model.setEnabled(rep.isEnabled());
+        model.setProviderId(rep.getProviderId());
+        model.setName(rep.getName());
+        model.setAlias(rep.getAlias());
+        return model;
+    }
+
 
 }

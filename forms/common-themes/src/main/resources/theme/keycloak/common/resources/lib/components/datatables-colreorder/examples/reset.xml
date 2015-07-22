@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dt-example table-type="html" order="8">
+
+<css lib="datatables colreorder" />
+<js lib="jquery datatables colreorder">
+<![CDATA[
+
+$(document).ready(function() {
+	var table = $('#example').DataTable( {
+		dom: 'Rlfrtip',
+		colReorder: {
+			order: [ 4, 3, 2, 1, 0 ]
+		}
+	} );
+	
+	$('#reset').click( function (e) {
+		e.preventDefault();
+		
+		table.colReorder.reset();
+	} );
+} );
+
+]]>
+</js>
+
+<title lib="ColReorder">Reset ordering API</title>
+
+<info><![CDATA[
+
+One useful control option to present the end user when using ColReorder is the ability to reset the column ordering to that which was found in the HTML. This can be done by calling the `reset` API function. While ColReorder does not provide a visual element for this itself (in order to provide maximum flexibility) it is easy to hook to an event handler, as shown in this example.
+
+For full information about the ColReorder API, please refer to the [ColReorder API documentation](//datatables.net/extensions/colreorder/api).
+
+]]></info>
+
+<demo-html>
+	<button id="reset">Reset to original HTML order</button>
+	<br/><br/>
+</demo-html>
+
+</dt-example>

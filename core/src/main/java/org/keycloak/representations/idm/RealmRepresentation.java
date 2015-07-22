@@ -46,6 +46,7 @@ public class RealmRepresentation {
     protected String codeSecret;
     protected RolesRepresentation roles;
     protected List<String> defaultRoles;
+    @Deprecated
     protected Set<String> requiredCredentials;
     protected String passwordPolicy;
     protected List<UserRepresentation> users;
@@ -76,6 +77,9 @@ public class RealmRepresentation {
     protected Boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
+    protected List<AuthenticationFlowRepresentation> authenticationFlows;
+    protected List<AuthenticatorConfigRepresentation> authenticatorConfig;
+    protected List<RequiredActionProviderRepresentation> requiredActions;
 
     @Deprecated
     protected Boolean social;
@@ -185,11 +189,11 @@ public class RealmRepresentation {
         scopeMappings.add(mapping);
         return mapping;
     }
-
+    @Deprecated
     public Set<String> getRequiredCredentials() {
         return requiredCredentials;
     }
-
+    @Deprecated
     public void setRequiredCredentials(Set<String> requiredCredentials) {
         this.requiredCredentials = requiredCredentials;
     }
@@ -626,5 +630,27 @@ public class RealmRepresentation {
         identityProviderMappers.add(rep);
     }
 
+    public List<AuthenticationFlowRepresentation> getAuthenticationFlows() {
+        return authenticationFlows;
+    }
 
+    public void setAuthenticationFlows(List<AuthenticationFlowRepresentation> authenticationFlows) {
+        this.authenticationFlows = authenticationFlows;
+    }
+
+    public List<AuthenticatorConfigRepresentation> getAuthenticatorConfig() {
+        return authenticatorConfig;
+    }
+
+    public void setAuthenticatorConfig(List<AuthenticatorConfigRepresentation> authenticatorConfig) {
+        this.authenticatorConfig = authenticatorConfig;
+    }
+
+    public List<RequiredActionProviderRepresentation> getRequiredActions() {
+        return requiredActions;
+    }
+
+    public void setRequiredActions(List<RequiredActionProviderRepresentation> requiredActions) {
+        this.requiredActions = requiredActions;
+    }
 }

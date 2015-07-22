@@ -8,6 +8,7 @@
     </resources>
     <dependencies>
         <module name="javax.api"/>
+        <module name="org.bouncycastle"/>
     </dependencies>
 
 </module>

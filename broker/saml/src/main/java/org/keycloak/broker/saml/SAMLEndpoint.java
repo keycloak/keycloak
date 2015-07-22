@@ -286,7 +286,8 @@ public class SAMLEndpoint {
 
                 identity.setUsername(subjectNameID.getValue());
 
-                if (subjectNameID.getFormat().toString().equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())) {
+                //SAML Spec 2.2.2 Format is optional
+                if (subjectNameID.getFormat() != null && subjectNameID.getFormat().toString().equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())) {
                     identity.setEmail(subjectNameID.getValue());
                 }
 

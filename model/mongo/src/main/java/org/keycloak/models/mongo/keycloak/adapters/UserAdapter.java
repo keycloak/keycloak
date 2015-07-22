@@ -4,6 +4,7 @@ import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -66,8 +67,20 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
     @Override
     public void setUsername(String username) {
+        username = KeycloakModelUtils.toLowerCaseSafe(username);
+
         user.setUsername(username);
         updateUser();
+    }
+
+    @Override
+    public Long getCreatedTimestamp() {
+        return user.getCreatedTimestamp();
+    }
+
+    @Override
+    public void setCreatedTimestamp(Long timestamp) {
+        user.setCreatedTimestamp(timestamp);
     }
 
     @Override
@@ -110,6 +123,8 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
     @Override
     public void setEmail(String email) {
+        email = KeycloakModelUtils.toLowerCaseSafe(email);
+
         user.setEmail(email);
         updateUser();
     }

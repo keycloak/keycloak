@@ -127,7 +127,9 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
     }
 
     protected void beforeStop() {
-        nodesRegistrationManagement.stop();
+        if (nodesRegistrationManagement != null) {
+            nodesRegistrationManagement.stop();
+        }
     }
 
     private static InputStream getJSONFromServletContext(ServletContext servletContext) {

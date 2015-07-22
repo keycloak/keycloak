@@ -59,8 +59,8 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
         property = new ProviderConfigProperty();
         property.setName(HardcodedRoleMapper.ROLE);
         property.setLabel("Role");
-        property.setHelpText("Role to grant to user.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
-        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Role to grant to user.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
+        property.setType(ProviderConfigProperty.ROLE_TYPE);
         configProperties.add(property);
     }
 

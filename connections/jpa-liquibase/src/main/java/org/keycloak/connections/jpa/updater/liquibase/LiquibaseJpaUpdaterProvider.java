@@ -46,26 +46,26 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     private static final String CHANGELOG = "META-INF/jpa-changelog-master.xml";
 
     @Override
-    public String getCurrentVersionSql() {
-        return "SELECT ID from DATABASECHANGELOG ORDER BY DATEEXECUTED DESC LIMIT 1";
+    public String getCurrentVersionSql(String defaultSchema) {
+        return "SELECT ID from " + getTable("DATABASECHANGELOG", defaultSchema) + " ORDER BY DATEEXECUTED DESC LIMIT 1";
     }
 
     @Override
-    public void update(KeycloakSession session, Connection connection) {
+    public void update(KeycloakSession session, Connection connection, String defaultSchema) {
         logger.debug("Starting database update");
 
         // Need ThreadLocal as liquibase doesn't seem to have API to inject custom objects into tasks
         ThreadLocalSessionContext.setCurrentSession(session);
 
         try {
-            Liquibase liquibase = getLiquibase(connection);
+            Liquibase liquibase = getLiquibase(connection, defaultSchema);
 
             List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null);
             if (!changeSets.isEmpty()) {
                 if (changeSets.get(0).getId().equals(FIRST_VERSION)) {
                     Statement statement = connection.createStatement();
                     try {
-                        statement.executeQuery("SELECT id FROM REALM");
+                        statement.executeQuery("SELECT id FROM " + getTable("REALM", defaultSchema));
 
                         logger.infov("Updating database from {0} to {1}", FIRST_VERSION, changeSets.get(changeSets.size() - 1).getId());
                         liquibase.markNextChangeSetRan(null);
@@ -93,9 +93,9 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     }
 
     @Override
-    public void validate(Connection connection) {
+    public void validate(Connection connection, String defaultSchema) {
         try {
-            Liquibase liquibase = getLiquibase(connection);
+            Liquibase liquibase = getLiquibase(connection, defaultSchema);
 
             liquibase.validate();
         } catch (Exception e) {
@@ -103,7 +103,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         }
     }
 
-    private Liquibase getLiquibase(Connection connection) throws Exception {
+    private Liquibase getLiquibase(Connection connection, String defaultSchema) throws Exception {
         ServiceLocator sl = ServiceLocator.getInstance();
 
         if (!System.getProperties().containsKey("liquibase.scan.packages")) {
@@ -125,6 +125,9 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
 
         LogFactory.setInstance(new LogWrapper());
         Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
+        if (defaultSchema != null) {
+            database.setDefaultSchemaName(defaultSchema);
+        }
         return new Liquibase(CHANGELOG, new ClassLoaderResourceAccessor(getClass().getClassLoader()), database);
     }
 
@@ -226,6 +229,10 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             return logger;
         }
 
+    }
+
+    private String getTable(String table, String defaultSchema) {
+        return defaultSchema != null ? defaultSchema + "." + table : table;
     }
 
 }

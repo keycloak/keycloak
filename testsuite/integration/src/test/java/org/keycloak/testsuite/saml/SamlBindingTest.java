@@ -143,6 +143,10 @@ public class SamlBindingTest {
         Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
     }
 
+    //@Test
+    public void ideTesting() throws Exception {
+        Thread.sleep(100000000);
+    }
 
     @Test
     public void testPostSimpleLoginLogout() {
@@ -155,6 +159,17 @@ public class SamlBindingTest {
         driver.navigate().to("http://localhost:8081/sales-post?GLO=true");
         checkLoggedOut("http://localhost:8081/sales-post/");
     }
+    @Test
+    public void testPostSimpleLoginLogoutIdpInitiated() {
+        driver.navigate().to("http://localhost:8081/auth/realms/demo/protocol/saml/clients/sales-post");
+        loginPage.login("bburke", "password");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post/");
+        System.out.println(driver.getPageSource());
+        Assert.assertTrue(driver.getPageSource().contains("bburke"));
+        driver.navigate().to("http://localhost:8081/sales-post?GLO=true");
+        checkLoggedOut("http://localhost:8081/sales-post/");
+    }
+
     @Test
     public void testPostSignedLoginLogout() {
         driver.navigate().to("http://localhost:8081/sales-post-sig/");

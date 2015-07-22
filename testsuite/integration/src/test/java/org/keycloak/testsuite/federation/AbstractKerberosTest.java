@@ -18,7 +18,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.adapters.HttpClientBuilder;
-import org.keycloak.authentication.authenticators.SpnegoAuthenticator;
+import org.keycloak.authentication.authenticators.browser.SpnegoAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.constants.KerberosConstants;

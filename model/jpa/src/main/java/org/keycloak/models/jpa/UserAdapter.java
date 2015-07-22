@@ -74,7 +74,18 @@ public class UserAdapter implements UserModel {
 
     @Override
     public void setUsername(String username) {
+        username = KeycloakModelUtils.toLowerCaseSafe(username);
         user.setUsername(username);
+    }
+
+    @Override
+    public Long getCreatedTimestamp() {
+        return user.getCreatedTimestamp();
+    }
+
+    @Override
+    public void setCreatedTimestamp(Long timestamp) {
+        user.setCreatedTimestamp(timestamp);
     }
 
     @Override
@@ -256,6 +267,7 @@ public class UserAdapter implements UserModel {
 
     @Override
     public void setEmail(String email) {
+        email = KeycloakModelUtils.toLowerCaseSafe(email);
         user.setEmail(email);
     }
 

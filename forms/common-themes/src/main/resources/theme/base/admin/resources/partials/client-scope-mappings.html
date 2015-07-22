@@ -5,8 +5,6 @@
         <li>{{client.clientId}}</li>
     </ol>
 
-    <h1>{{client.clientId|capitalize}}</h1>
-
     <kc-tabs-client></kc-tabs-client>
 
         <h2><span>{{client.clientId}}</span> Scope Mappings </h2>
@@ -37,7 +35,7 @@
                                     ng-model="selectedRealmRoles"
                                     ng-options="r.name for r in realmRoles">
                             </select>
-                            <button class="btn btn-default" type="submit" ng-click="addRealmRole()" tooltip="Move right" tooltip-placement="right">
+                            <button ng-disabled="selectedRealmRoles.length == 0" class="btn btn-default" type="submit" ng-click="addRealmRole()">
                                 Add selected <i class="fa fa-angle-double-right"></i>
                             </button>
                         </div>
@@ -49,7 +47,7 @@
                                     ng-model="selectedRealmMappings"
                                     ng-options="r.name for r in realmMappings">
                             </select>
-                            <button class="btn btn-default" type="submit" ng-click="deleteRealmRole()" tooltip="Move left" tooltip-placement="left">
+                            <button ng-disabled="selectedRealmMappings.length == 0" class="btn btn-default" type="submit" ng-click="deleteRealmRole()">
                                 <i class="fa fa-angle-double-left"></i> Remove selected
                             </button>
                         </div>
@@ -57,7 +55,7 @@
                             <label class="control-label" for="realm-composite">Effective Roles  </label>
                             <kc-tooltip>Assigned realm level roles that may have been inherited from a composite role.</kc-tooltip>
                             <select id="realm-composite" class="form-control" multiple size=5
-                                    ng-disabled="true"
+                                    disabled="true"
                                     ng-model="dummymodel"
                                     ng-options="r.name for r in realmComposite">
                             </select>
@@ -85,7 +83,7 @@
                                     ng-model="selectedClientRoles"
                                     ng-options="r.name for r in clientRoles">
                             </select>
-                            <button class="btn btn-default" type="submit" ng-click="addClientRole()" tooltip="Assign role" tooltip-placement="right">
+                            <button ng-disabled="selectedClientRoles.length == 0" class="btn btn-default" type="submit" ng-click="addClientRole()">
                                 Add selected <i class="fa fa-angle-double-right"></i>
                             </button>
                         </div>
@@ -97,7 +95,7 @@
                                     ng-model="selectedClientMappings"
                                     ng-options="r.name for r in clientMappings">
                             </select>
-                            <button class="btn btn-default" type="submit" ng-click="deleteClientRole()" tooltip="Unassign role" tooltip-placement="left">
+                            <button ng-disabled="selectedClientMappings.length == 0" class="btn btn-default" type="submit" ng-click="deleteClientRole()">
                                 <i class="fa fa-angle-double-left"></i> Remove selected
                             </button>
                         </div>
@@ -105,7 +103,7 @@
                             <label class="control-label" for="client-composite">Effective Roles</label>
                             <kc-tooltip>Assigned client roles that may have been inherited from a composite role.</kc-tooltip>
                             <select id="client-composite" class="form-control" multiple size=5
-                                    ng-disabled="true"
+                                    disabled="true"
                                     ng-model="dummymodel"
                                     ng-options="r.name for r in clientComposite">
                             </select>

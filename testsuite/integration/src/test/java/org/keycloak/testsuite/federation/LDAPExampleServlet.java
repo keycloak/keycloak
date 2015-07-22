@@ -36,17 +36,7 @@ public class LDAPExampleServlet extends HttpServlet {
         out.println();
 
         for (Map.Entry<String, Object> claim : idToken.getOtherClaims().entrySet()) {
-            Object value = claim.getValue();
-
-            if (value instanceof List) {
-                List<String> asList = (List<String>) value;
-                StringBuilder result = new StringBuilder();
-                for (String item : asList) {
-                    result.append(item + "<br>");
-                }
-                value = result.toString();
-            }
-
+            String value = claim.getValue().toString();
             out.printf("<tr><td>%s</td><td>%s</td></tr>", claim.getKey(), value);
             out.println();
         }

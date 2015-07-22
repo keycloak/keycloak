@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
+import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
@@ -17,9 +18,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UsersSyncManager;
+import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
 import org.keycloak.testsuite.DummyUserFederationProviderFactory;
@@ -61,7 +65,7 @@ public class SyncProvidersTest {
             FederationTestUtils.removeAllLDAPUsers(ldapFedProvider, appRealm);
 
             for (int i=1 ; i<=5 ; i++) {
-                LDAPObject ldapUser = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "user" + i, "User" + i + "FN", "User" + i + "LN", "user" + i + "@email.org", "12" + i);
+                LDAPObject ldapUser = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "user" + i, "User" + i + "FN", "User" + i + "LN", "user" + i + "@email.org", null, "12" + i);
                 ldapFedProvider.getLdapIdentityStore().updatePassword(ldapUser, "Password1");
             }
 
@@ -81,7 +85,7 @@ public class SyncProvidersTest {
 //    }
 
     @Test
-    public void testLDAPSync() {
+    public void test01LDAPSync() {
         UsersSyncManager usersSyncManager = new UsersSyncManager();
 
         // wait a bit
@@ -91,7 +95,7 @@ public class SyncProvidersTest {
         try {
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
             UserFederationSyncResult syncResult = usersSyncManager.syncAllUsers(sessionFactory, "test", ldapModel);
-            assertSyncEquals(syncResult, 5, 0, 0);
+            assertSyncEquals(syncResult, 5, 0, 0, 0);
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -123,7 +127,7 @@ public class SyncProvidersTest {
 
             // Add user to LDAP and update 'user5' in LDAP
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
-            FederationTestUtils.addLDAPUser(ldapFedProvider, testRealm, "user6", "User6FN", "User6LN", "user6@email.org", "126");
+            FederationTestUtils.addLDAPUser(ldapFedProvider, testRealm, "user6", "User6FN", "User6LN", "user6@email.org", null, "126");
             LDAPObject ldapUser5 = ldapFedProvider.loadLDAPUserByUsername(testRealm, "user5");
             // NOTE: Changing LDAP attributes directly here
             ldapUser5.setSingleAttribute(LDAPConstants.EMAIL, "user5Updated@email.org");
@@ -137,7 +141,7 @@ public class SyncProvidersTest {
             // Trigger partial sync
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
             UserFederationSyncResult syncResult = usersSyncManager.syncChangedUsers(sessionFactory, "test", ldapModel);
-            assertSyncEquals(syncResult, 1, 1, 0);
+            assertSyncEquals(syncResult, 1, 1, 0, 0);
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -147,10 +151,131 @@ public class SyncProvidersTest {
             RealmModel testRealm = session.realms().getRealm("test");
             UserProvider userProvider = session.userStorage();
             // Assert users updated in local provider
-            FederationTestUtils.assertUserImported(userProvider, testRealm, "user5", "User5FN", "User5LN", "user5Updated@email.org", "521");
+            FederationTestUtils.assertUserImported(userProvider, testRealm, "user5", "User5FN", "User5LN", "user5updated@email.org", "521");
             FederationTestUtils.assertUserImported(userProvider, testRealm, "user6", "User6FN", "User6LN", "user6@email.org", "126");
         } finally {
             keycloakRule.stopSession(session, false);
+        }
+    }
+
+    @Test
+    public void test02duplicateUsernameAndEmailSync() {
+        LDAPObject duplicatedLdapUser;
+
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmModel testRealm = session.realms().getRealm("test");
+
+            FederationTestUtils.addLocalUser(session, testRealm, "user7", "user7@email.org", "password");
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+
+            // Add user to LDAP with duplicated username "user7"
+            duplicatedLdapUser = FederationTestUtils.addLDAPUser(ldapFedProvider, testRealm, "user7", "User7FN", "User7LN", "user7-something@email.org", null, "126");
+
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel testRealm = session.realms().getRealm("test");
+
+            // Assert syncing from LDAP fails due to duplicated username
+            UserFederationSyncResult result = new UsersSyncManager().syncAllUsers(session.getKeycloakSessionFactory(), "test", ldapModel);
+            Assert.assertEquals(1, result.getFailed());
+
+            // Remove "user7" from LDAP
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            ldapFedProvider.getLdapIdentityStore().remove(duplicatedLdapUser);
+
+            // Add user to LDAP with duplicated email "user7@email.org"
+            duplicatedLdapUser = FederationTestUtils.addLDAPUser(ldapFedProvider, testRealm, "user7-something", "User7FNN", "User7LNL", "user7@email.org", null, "126");
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel testRealm = session.realms().getRealm("test");
+
+            // Assert syncing from LDAP fails due to duplicated email
+            UserFederationSyncResult result = new UsersSyncManager().syncAllUsers(session.getKeycloakSessionFactory(), "test", ldapModel);
+            Assert.assertEquals(1, result.getFailed());
+            Assert.assertNull(session.userStorage().getUserByUsername("user7-something", testRealm));
+
+            // Update LDAP user to avoid duplicated email
+            duplicatedLdapUser.setSingleAttribute(LDAPConstants.EMAIL, "user7-changed@email.org");
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            ldapFedProvider.getLdapIdentityStore().update(duplicatedLdapUser);
+
+            // Assert user successfully synced now
+            result = new UsersSyncManager().syncAllUsers(session.getKeycloakSessionFactory(), "test", ldapModel);
+            Assert.assertEquals(0, result.getFailed());
+            FederationTestUtils.assertUserImported(session.userStorage(), testRealm, "user7-something", "User7FNN", "User7LNL", "user7-changed@email.org", "126");
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
+
+    // KEYCLOAK-1571
+    @Test
+    public void test03SameUUIDAndUsernameSync() {
+        KeycloakSession session = keycloakRule.startSession();
+        String origUuidAttrName;
+
+        try {
+            RealmModel testRealm = session.realms().getRealm("test");
+
+            // Remove all users from model
+            for (UserModel user : session.userStorage().getUsers(testRealm)) {
+                session.userStorage().removeUser(testRealm, user);
+            }
+
+            UserFederationProviderModel providerModel = KeycloakModelUtils.findUserFederationProviderByDisplayName(ldapModel.getDisplayName(), testRealm);
+
+            // Change name of UUID attribute to same like usernameAttribute
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            String uidAttrName = ldapFedProvider.getLdapIdentityStore().getConfig().getUsernameLdapAttribute();
+            origUuidAttrName = providerModel.getConfig().get(LDAPConstants.UUID_LDAP_ATTRIBUTE);
+            providerModel.getConfig().put(LDAPConstants.UUID_LDAP_ATTRIBUTE, uidAttrName);
+
+            // Need to change this due to ApacheDS pagination bug (For other LDAP servers, pagination works fine) TODO: Remove once ApacheDS upgraded and pagination is fixed
+            providerModel.getConfig().put(LDAPConstants.BATCH_SIZE_FOR_SYNC, "10");
+            testRealm.updateUserFederationProvider(providerModel);
+
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel testRealm = session.realms().getRealm("test");
+            UserFederationProviderModel providerModel = KeycloakModelUtils.findUserFederationProviderByDisplayName(ldapModel.getDisplayName(), testRealm);
+
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            UserFederationSyncResult syncResult = new UsersSyncManager().syncAllUsers(sessionFactory, "test", providerModel);
+            Assert.assertEquals(0, syncResult.getFailed());
+
+        } finally {
+            keycloakRule.stopSession(session, false);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel testRealm = session.realms().getRealm("test");
+
+            // Assert users imported with correct LDAP_ID
+            FederationTestUtils.assertUserImported(session.users(), testRealm, "user1", "User1FN", "User1LN", "user1@email.org", "121");
+            FederationTestUtils.assertUserImported(session.users(), testRealm, "user2", "User2FN", "User2LN", "user2@email.org", "122");
+            UserModel user1 = session.users().getUserByUsername("user1", testRealm);
+            Assert.assertEquals("user1",  user1.getFirstAttribute(LDAPConstants.LDAP_ID));
+
+            // Revert config changes
+            UserFederationProviderModel providerModel = KeycloakModelUtils.findUserFederationProviderByDisplayName(ldapModel.getDisplayName(), testRealm);
+            providerModel.getConfig().put(LDAPConstants.UUID_LDAP_ATTRIBUTE, origUuidAttrName);
+            testRealm.updateUserFederationProvider(providerModel);
+        } finally {
+            keycloakRule.stopSession(session, true);
         }
     }
 
@@ -193,9 +318,10 @@ public class SyncProvidersTest {
         }
     }
 
-    private void assertSyncEquals(UserFederationSyncResult syncResult, int expectedAdded, int expectedUpdated, int expectedRemoved) {
+    private void assertSyncEquals(UserFederationSyncResult syncResult, int expectedAdded, int expectedUpdated, int expectedRemoved, int expectedFailed) {
         Assert.assertEquals(syncResult.getAdded(), expectedAdded);
         Assert.assertEquals(syncResult.getUpdated(), expectedUpdated);
         Assert.assertEquals(syncResult.getRemoved(), expectedRemoved);
+        Assert.assertEquals(syncResult.getFailed(), expectedFailed);
     }
 }

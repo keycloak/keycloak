@@ -171,8 +171,8 @@ module.factory('UserSessionsLoader', function(Loader, UserSessions, $route, $q) 
     });
 });
 
-module.factory('UserFederatedIdentityLoader', function(Loader, UserFederatedIdentity, $route, $q) {
-    return Loader.query(UserFederatedIdentity, function() {
+module.factory('UserFederatedIdentityLoader', function(Loader, UserFederatedIdentities, $route, $q) {
+    return Loader.query(UserFederatedIdentities, function() {
         return {
             realm : $route.current.params.realm,
             user : $route.current.params.user
@@ -339,4 +339,38 @@ module.factory('IdentityProviderMapperLoader', function(Loader, IdentityProvider
         }
     });
 });
+
+module.factory('AuthenticationFlowsLoader', function(Loader, AuthenticationFlows, $route, $q) {
+    return Loader.query(AuthenticationFlows, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
+module.factory('AuthenticationConfigDescriptionLoader', function(Loader, AuthenticationConfigDescription, $route, $q) {
+    return Loader.get(AuthenticationConfigDescription, function () {
+        return {
+            realm: $route.current.params.realm,
+            provider: $route.current.params.provider
+        }
+    });
+});
+
+module.factory('ExecutionIdLoader', function($route) {
+    return function() { return $route.current.params.executionId; };
+});
+
+module.factory('AuthenticationConfigLoader', function(Loader, AuthenticationConfig, $route, $q) {
+    return Loader.get(AuthenticationConfig, function () {
+        return {
+            realm: $route.current.params.realm,
+            config: $route.current.params.config
+        }
+    });
+});
+
+
+
+
 

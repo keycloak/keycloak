@@ -55,6 +55,7 @@
         {
             "username": "wburke",
             "enabled": true,
+            "createdTimestamp" : 123654,
             "attributes": {
                 "email": "bburke@redhat.com"
             },
@@ -71,6 +72,7 @@
         },
         {
             "username": "loginclient",
+            "createdTimestamp" : "123655",
             "enabled": true,
             "credentials": [
                 {

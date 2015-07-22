@@ -8,6 +8,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 
+import static org.junit.Assert.assertNotNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,6 +29,9 @@ public class UserModelTest extends AbstractModelTest {
         user.setFirstName("first-name");
         user.setLastName("last-name");
         user.setEmail("email");
+        assertNotNull(user.getCreatedTimestamp());
+        // test that timestamp is current with 10s tollerance
+        Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
 
         user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
         user.addRequiredAction(RequiredAction.UPDATE_PASSWORD);
@@ -142,6 +147,7 @@ public class UserModelTest extends AbstractModelTest {
     public void testUserMultipleAttributes() throws Exception {
         RealmModel realm = realmManager.createRealm("original");
         UserModel user = session.users().addUser(realm, "user");
+        UserModel userNoAttrs = session.users().addUser(realm, "user-noattrs");
 
         user.setSingleAttribute("key1", "value1");
         List<String> attrVals = new ArrayList<>(Arrays.asList( "val21", "val22" ));
@@ -172,13 +178,6 @@ public class UserModelTest extends AbstractModelTest {
         Assert.assertEquals(allAttrVals.get("key1"), user.getAttribute("key1"));
         Assert.assertEquals(allAttrVals.get("key2"), user.getAttribute("key2"));
 
-        // Test searching
-        Map<String, String> attributes = new HashMap<String, String>();
-        attributes.put("key2", "val22");
-        List<UserModel> users = session.users().searchForUserByAttributes(attributes, realm);
-        Assert.assertEquals(1, users.size());
-        Assert.assertEquals(users.get(0), user);
-
         // Test remove and rewrite attribute
         user.removeAttribute("key1");
         user.setSingleAttribute("key2", "val23");
@@ -193,8 +192,43 @@ public class UserModelTest extends AbstractModelTest {
         Assert.assertEquals("val23", attrVals.get(0));
     }
 
+    @Test
+    public void testSearchByUserAttributes() throws Exception {
+        RealmModel realm = realmManager.createRealm("original");
+        UserModel user1 = session.users().addUser(realm, "user1");
+        UserModel user2 = session.users().addUser(realm, "user2");
+        UserModel user3 = session.users().addUser(realm, "user3");
+
+        user1.setSingleAttribute("key1", "value1");
+        user1.setSingleAttribute("key2", "value21");
+
+        user2.setSingleAttribute("key1", "value1");
+        user2.setSingleAttribute("key2", "value22");
+
+        user3.setSingleAttribute("key2", "value21");
+
+        commit();
+
+        Map<String, String> attributes = new HashMap<String, String>();
+        attributes.put("key1", "value1");
+        List<UserModel> users = session.users().searchForUserByUserAttributes(attributes, realm);
+        Assert.assertEquals(2, users.size());
+        Assert.assertTrue(users.contains(user1));
+        Assert.assertTrue(users.contains(user2));
+
+        attributes.put("key2", "value21");
+        users = session.users().searchForUserByUserAttributes(attributes, realm);
+        Assert.assertEquals(1, users.size());
+        Assert.assertTrue(users.contains(user1));
+
+        attributes.put("key3", "value3");
+        users = session.users().searchForUserByUserAttributes(attributes, realm);
+        Assert.assertEquals(0, users.size());
+    }
+
     public static void assertEquals(UserModel expected, UserModel actual) {
         Assert.assertEquals(expected.getUsername(), actual.getUsername());
+        Assert.assertEquals(expected.getCreatedTimestamp(), actual.getCreatedTimestamp());
         Assert.assertEquals(expected.getFirstName(), actual.getFirstName());
         Assert.assertEquals(expected.getLastName(), actual.getLastName());
 

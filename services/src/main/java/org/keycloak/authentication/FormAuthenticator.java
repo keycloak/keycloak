@@ -1,5 +1,6 @@
 package org.keycloak.authentication;
 
+import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.Provider;
 
@@ -12,6 +13,5 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public interface FormAuthenticator extends Provider {
-    void authenticate(AuthenticatorContext context);
-    Response createChallenge(FormActionContext context, MultivaluedMap<String, String> formData, List<FormMessage> errorMessages);
+    Response render(FormContext context, LoginFormsProvider form);
 }

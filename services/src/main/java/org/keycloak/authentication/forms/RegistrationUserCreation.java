@@ -1,27 +1,29 @@
 package org.keycloak.authentication.forms;
 
 import org.keycloak.Config;
-import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.authentication.FormAction;
-import org.keycloak.authentication.FormActionContext;
 import org.keycloak.authentication.FormActionFactory;
-import org.keycloak.authentication.FormAuthenticator;
+import org.keycloak.authentication.FormContext;
+import org.keycloak.authentication.ValidationContext;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.core.MultivaluedMap;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -32,7 +34,77 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     public static final String PROVIDER_ID = "registration-user-creation";
 
     @Override
-    public void authenticate(FormActionContext context) {
+    public String getHelpText() {
+        return null;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return null;
+    }
+
+    @Override
+    public void validate(ValidationContext context) {
+        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        List<FormMessage> errors = new ArrayList<>();
+        context.getEvent().detail(Details.REGISTER_METHOD, "form");
+
+        String email = formData.getFirst(Validation.FIELD_EMAIL);
+        String username = formData.getFirst(RegistrationPage.FIELD_USERNAME);
+        context.getEvent().detail(Details.USERNAME, username);
+        context.getEvent().detail(Details.EMAIL, email);
+
+        String usernameField = RegistrationPage.FIELD_USERNAME;
+        if (context.getRealm().isRegistrationEmailAsUsername()) {
+            username = email;
+            context.getEvent().detail(Details.USERNAME, username);
+            usernameField = RegistrationPage.FIELD_EMAIL;
+            if (Validation.isBlank(email)) {
+                errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.MISSING_EMAIL));
+            } else if (!Validation.isEmailValid(email)) {
+                errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.INVALID_EMAIL));
+                formData.remove(Validation.FIELD_EMAIL);
+            }
+            if (errors.size() > 0) {
+                context.getEvent().error(Errors.INVALID_REGISTRATION);
+                context.validationError(formData, errors);
+                return;
+            }
+            if (email != null && context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
+                context.getEvent().error(Errors.USERNAME_IN_USE);
+                formData.remove(Validation.FIELD_EMAIL);
+                errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.USERNAME_EXISTS));
+                context.validationError(formData, errors);
+                return;
+            }
+        } else {
+            if (Validation.isBlank(username)) {
+                context.getEvent().error(Errors.INVALID_REGISTRATION);
+                errors.add(new FormMessage(RegistrationPage.FIELD_USERNAME, Messages.MISSING_USERNAME));
+                context.validationError(formData, errors);
+                return;
+            }
+
+        }
+        if (context.getSession().users().getUserByUsername(username, context.getRealm()) != null) {
+            context.getEvent().error(Errors.USERNAME_IN_USE);
+            errors.add(new FormMessage(usernameField, Messages.USERNAME_EXISTS));
+            formData.remove(Validation.FIELD_USERNAME);
+            formData.remove(Validation.FIELD_EMAIL);
+            context.validationError(formData, errors);
+            return;
+
+        }
+        context.success();
+    }
+
+    @Override
+    public void buildPage(FormContext context, LoginFormsProvider form) {
+
+    }
+
+    @Override
+    public void success(FormContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         String email = formData.getFirst(Validation.FIELD_EMAIL);
         String username = formData.getFirst(RegistrationPage.FIELD_USERNAME);
@@ -45,29 +117,12 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         ;
         UserModel user = context.getSession().users().addUser(context.getRealm(), username);
         user.setEnabled(true);
-        user.setFirstName(formData.getFirst("firstName"));
-        user.setLastName(formData.getFirst("lastName"));
 
         user.setEmail(email);
         context.getClientSession().setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
         AttributeFormDataProcessor.process(formData, context.getRealm(), user);
         context.setUser(user);
-        AuthenticationExecutionModel.Requirement categoryRequirement = context.getCategoryRequirementFromCurrentFlow(UserCredentialModel.PASSWORD);
-        boolean passwordRequired = categoryRequirement != null && categoryRequirement != AuthenticationExecutionModel.Requirement.DISABLED;
-        if (passwordRequired) {
-            String password = formData.getFirst(RegistrationPage.FIELD_PASSWORD);
-            UserCredentialModel credentials = new UserCredentialModel();
-            credentials.setType(CredentialRepresentation.PASSWORD);
-            credentials.setValue(password);
-
-            try {
-                context.getSession().users().updateCredential(context.getRealm(), user, UserCredentialModel.password(formData.getFirst("password")));
-            } catch (Exception me) {
-                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-            }
-        }
         context.getEvent().user(user);
-        context.success();
         context.getEvent().success();
         context.newEvent().event(EventType.LOGIN);
         context.getEvent().client(context.getClientSession().getClient().getClientId())
@@ -114,11 +169,14 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         return false;
     }
 
+    private static AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
+            AuthenticationExecutionModel.Requirement.REQUIRED,
+            AuthenticationExecutionModel.Requirement.DISABLED
+    };
     @Override
     public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
-        return new AuthenticationExecutionModel.Requirement[0];
+        return REQUIREMENT_CHOICES;
     }
-
     @Override
     public FormAction create(KeycloakSession session) {
         return this;

@@ -208,6 +208,10 @@
             more attribute mappings (For example to street, postalCode etc), delete firstName/lastname mapper and put fullName mapper instead, add role mappers etc.
             Admin console provides tooltips, which should help on how to configure corresponding mappers.
         </para>
+        <para>
+            We have an example, which is showing LDAP integration and set of base mappers and sample mappers (mappers for street and postalCode) . It's in <literal>examples/ldap</literal>
+            in the Keycloak example distribution or demo distribution download. You can also check the example sources directly <ulink url="https://github.com/keycloak/keycloak/blob/master/examples/ldap">here</ulink> .
+        </para>
     </section>
     <section>
         <title>Writing your own User Federation Provider</title>

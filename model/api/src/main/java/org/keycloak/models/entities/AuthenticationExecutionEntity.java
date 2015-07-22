@@ -10,6 +10,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 public class AuthenticationExecutionEntity {
     protected String id;
     protected String authenticator;
+    private String authenticatorConfig;
     protected String flowId;
     protected AuthenticationExecutionModel.Requirement requirement;
     protected int priority;
@@ -79,5 +80,13 @@ public class AuthenticationExecutionEntity {
 
     public void setFlowId(String flowId) {
         this.flowId = flowId;
+    }
+
+    public String getAuthenticatorConfig() {
+        return authenticatorConfig;
+    }
+
+    public void setAuthenticatorConfig(String authenticatorConfig) {
+        this.authenticatorConfig = authenticatorConfig;
     }
 }

@@ -4,7 +4,7 @@ Keycloak Example - Kerberos Credential Delegation
 This example requires that Keycloak is configured with Kerberos/SPNEGO authentication. It's showing how the forwardable TGT is sent from
 the Keycloak auth-server to the application, which deserializes it and authenticates with it to further Kerberized service, which in the example is LDAP server.
 
-Example is using built-in ApacheDS Kerberos server from the keycloak testsuite and the realm with preconfigured federation provider and `gss delegation credential` protocol mapper.
+Example is using built-in ApacheDS Kerberos server  and the realm with preconfigured federation provider and `gss delegation credential` protocol mapper.
 It also needs to enable forwardable ticket support in Kerberos configuration and your browser.
 
 Detailed steps:
@@ -19,7 +19,7 @@ cp http.keytab /tmp/http.keytab
 ```
 
 Alternative is to configure different location for `keyTab` property in `kerberosrealm.json` configuration file (On Windows this will be needed).
-Note that in production, keytab file should be in secured location accessible just to the user under which is Keycloak server running.
+**WARNING**: In production, keytab file should be in secured location accessible just to the user under which is Keycloak server running.
 
 
 **3)** Run Keycloak server and import `kerberosrealm.json` into it through admin console. This will import realm with sample application
@@ -28,7 +28,7 @@ added to the application.
 
 **WARNING:** It's recommended to use JDK8 to run Keycloak server. For JDK7 you may be faced with the bug described [here](http://darranl.blogspot.cz/2014/09/kerberos-encrypteddata-null-key-keytype.html) . 
 Alternatively you can use OpenJDK7 but in this case you will need to use aes256-cts-hmac-sha1-96 for both KDC and Kerberos client configuration. For server, 
-you can add system property to the maven command when running ApacheDS Kerberos server `-Dkerberos.encTypes=aes256-cts-hmac-sha1-96` (see below) and for 
+you can add system property to the command when running ApacheDS Kerberos server `-Dkerberos.encTypes=aes256-cts-hmac-sha1-96` (see below) and for 
 client add encryption types to configuration file like `/etc/krb5.conf` (but they should be already available. See below).
 
 Also if you are on Linux, make sure that record like:
@@ -37,30 +37,38 @@ Also if you are on Linux, make sure that record like:
 ```
 is in your `/etc/hosts` before other records for the 127.0.0.1 host to avoid issues related to incompatible reverse lookup (Ensure the similar for other OS as well)
 
+**4)** Install kerberos client. This is platform dependent. If you are on Fedora, Ubuntu or RHEL, you can install package `freeipa-client`, which contains Kerberos client and bunch of other stuff. 
 
-**4)** Configure Kerberos client (On linux it's in file `/etc/krb5.conf` ). You need to configure `KEYCLOAK.ORG` realm and enable `forwardable` flag, which is needed 
+**5)** Configure Kerberos client (On linux it's in file `/etc/krb5.conf` ). You need to configure `KEYCLOAK.ORG` realm for host `localhost` and enable `forwardable` flag, which is needed 
 for credential delegation example, as application needs to forward Kerberos ticket and authenticate with it against LDAP server. 
 See [this file](https://github.com/keycloak/keycloak/blob/master/testsuite/integration/src/test/resources/kerberos/test-krb5.conf) for inspiration.
 
-**5)**  Run ApacheDS based Kerberos server embedded in Keycloak. Easiest is to checkout keycloak sources, build and then run KerberosEmbeddedServer 
-as shown here: 
+**6)**  Run ApacheDS based Kerberos server . The [LDAP Example](../ldap) contains the embedded server, which you can run for example 
+with these commands (assuming you're in `kerberos` directory with this example)
 
 ```
-git clone https://github.com/keycloak/keycloak.git
-mvn clean install -DskipTests=true
-cd testsuite/integration
-mvn exec:java -Pkerberos
+cd ../ldap
+mvn clean install
+cd ..
+java -jar ldap/embedded-ldap/target/embedded-ldap.jar kerberos
 ```
 
-More details about embedded Kerberos server in [testsuite README](https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#kerberos-server).
+This will also automatically import the LDIF from `users.ldif` of kerberos example into the LDAP server. If you want to import your own LDIF file, 
+you can add the system property `ldap.ldif` with the path of the LDIF file to the command. For example:
+```
+java -jar -Dldap.ldif=/tmp/my-users.ldif ldap/embedded-ldap/target/embedded-ldap.jar kerberos
+```  
+
+A bit more details about embedded Kerberos server in [testsuite README](https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#kerberos-server).
 
   
-**6)** Configure browser (Firefox, Chrome or other) and enable SPNEGO authentication and credential delegation for `localhost` . 
-In Firefox it can be done by adding `localhost` to both `network.negotiate-auth.trusted-uris` and `network.negotiate-auth.delegation-uris` . 
-More info in [testsuite README](https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#kerberos-server).  
+**7)** Configure browser (Firefox, Chrome or other) and enable SPNEGO authentication and credential delegation for `localhost` . 
+Consult the documentation of your browser and OS on how to do it. For example in Firefox it can be done by adding `localhost` to 
+both `network.negotiate-auth.trusted-uris` and `network.negotiate-auth.delegation-uris` and switch `network.negotiate-auth.allow-non-fqdn` to `true`. 
+A bit more details in [testsuite README](https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#kerberos-server) .  
  
  
-**7)** Test the example. Obtain kerberos ticket by running command from CMD (on linux):
+**8)** Test the example. Obtain kerberos ticket by running command from CMD (on linux):
 ```
 kinit hnelson@KEYCLOAK.ORG
 ```

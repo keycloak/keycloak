@@ -61,13 +61,14 @@ public class KeycloakApplication extends Application {
     public KeycloakApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
         loadConfig();
 
+        this.contextPath = context.getContextPath();
         this.sessionFactory = createSessionFactory();
 
         dispatcher.getDefaultContextObjects().put(KeycloakApplication.class, this);
-        this.contextPath = context.getContextPath();
         BruteForceProtector protector = new BruteForceProtector(sessionFactory);
         dispatcher.getDefaultContextObjects().put(BruteForceProtector.class, protector);
         ResteasyProviderFactory.pushContext(BruteForceProtector.class, protector); // for injection
+        ResteasyProviderFactory.pushContext(KeycloakApplication.class, this); // for injection
         protector.start();
         context.setAttribute(BruteForceProtector.class.getName(), protector);
         context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
@@ -82,7 +83,7 @@ public class KeycloakApplication extends Application {
         classes.add(JsResource.class);
         classes.add(WelcomeResource.class);
 
-        new ExportImportManager().checkExportImport(this.sessionFactory);
+        new ExportImportManager().checkExportImport(this.sessionFactory, context.getContextPath());
 
         setupDefaultRealm(context.getContextPath());
 

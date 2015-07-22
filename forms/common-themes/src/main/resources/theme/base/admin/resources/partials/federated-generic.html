@@ -5,13 +5,7 @@
         <li data-ng-show="create">Add User Federation Provider</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{instance.providerName|capitalize}}</h1>
-    <h1 data-ng-show="create">Add {{instance.providerName|capitalize}} User Federation Provide</h1>
-
-    <ul class="nav nav-tabs" data-ng-hide="create">
-        <li class="active"><a href="#/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">Settings</a></li>
-        <li><a href="#/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}/mappers">Mappers</a></li>
-    </ul>
+    <kc-tabs-user-federation></kc-tabs-user-federation>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
         <fieldset>
@@ -86,11 +80,10 @@
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageUsers">
-                <button kc-save  data-ng-show="changed">Save</button>
-                <button kc-reset data-ng-show="changed">Cancel</button>
+                <button kc-save  data-ng-disabled="!changed">Save</button>
+                <button kc-reset data-ng-disabled="!changed">Cancel</button>
                 <button class="btn btn-primary" data-ng-click="triggerChangedUsersSync()" data-ng-hide="changed">Synchronize changed users</button>
                 <button class="btn btn-primary" data-ng-click="triggerFullSync()" data-ng-hide="changed">Synchronize all users</button>
-                <button class="btn btn-danger" data-ng-click="remove()" data-ng-hide="changed">Delete</button>
             </div>
         </div>
     </form>

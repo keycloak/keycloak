@@ -10,6 +10,8 @@ import javax.ws.rs.core.UriInfo;
  */
 public interface KeycloakContext {
 
+    String getContextPath();
+
     UriInfo getUri();
 
     HttpHeaders getRequestHeaders();

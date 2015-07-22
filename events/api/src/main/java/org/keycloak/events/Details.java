@@ -32,5 +32,13 @@ public interface Details {
     String CONSENT_VALUE_NO_CONSENT_REQUIRED = "no_consent_required"; // No consent is required by client
     String CONSENT_VALUE_CONSENT_GRANTED = "consent_granted";         // Consent granted by user
     String CONSENT_VALUE_PERSISTED_CONSENT = "persistent_consent";    // Persistent consent used (was already granted by user before)
+    String IMPERSONATOR_REALM = "impersonator_realm";
+    String IMPERSONATOR = "impersonator";
+
+    String CLIENT_AUTH_METHOD = "client_auth_method";
+    String CLIENT_AUTH_METHOD_VALUE_CLIENT_CREDENTIALS = "client_credentials";
+    String CLIENT_AUTH_METHOD_VALUE_CERTIFICATE = "client_certificate";
+    String CLIENT_AUTH_METHOD_VALUE_KERBEROS_KEYTAB = "kerberos_keytab";
+    String CLIENT_AUTH_METHOD_VALUE_SIGNED_JWT = "signed_jwt";
 
 }

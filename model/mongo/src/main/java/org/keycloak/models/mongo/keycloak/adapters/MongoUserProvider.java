@@ -3,6 +3,7 @@ package org.keycloak.models.mongo.keycloak.adapters;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
@@ -214,6 +215,19 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
+    public List<UserModel> searchForUserByUserAttributes(Map<String, String> attributes, RealmModel realm) {
+        QueryBuilder queryBuilder = new QueryBuilder()
+                .and("realmId").is(realm.getId());
+
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+            queryBuilder.and("attributes." + entry.getKey()).is(entry.getValue());
+        }
+
+        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, queryBuilder.get(), invocationContext);
+        return convertUserEntities(realm, users);
+    }
+
+    @Override
     public Set<FederatedIdentityModel> getFederatedIdentities(UserModel userModel, RealmModel realm) {
         UserModel user = getUserById(userModel.getId(), realm);
         MongoUserEntity userEntity = ((UserAdapter) user).getUser();
@@ -274,6 +288,7 @@ public class MongoUserProvider implements UserProvider {
         MongoUserEntity userEntity = new MongoUserEntity();
         userEntity.setId(id);
         userEntity.setUsername(username);
+        userEntity.setCreatedTimestamp(System.currentTimeMillis());
         // Compatibility with JPA model, which has user disabled by default
         // userEntity.setEnabled(true);
         userEntity.setRealmId(realm.getId());

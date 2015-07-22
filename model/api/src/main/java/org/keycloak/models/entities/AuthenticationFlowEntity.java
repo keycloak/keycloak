@@ -13,6 +13,8 @@ public class AuthenticationFlowEntity {
     protected String alias;
     protected String description;
     protected String providerId;
+    private boolean topLevel;
+    private boolean builtIn;
 
     List<AuthenticationExecutionEntity> executions = new ArrayList<AuthenticationExecutionEntity>();
     public String getId() {
@@ -53,5 +55,21 @@ public class AuthenticationFlowEntity {
 
     public void setProviderId(String providerId) {
         this.providerId = providerId;
+    }
+
+    public boolean isTopLevel() {
+        return topLevel;
+    }
+
+    public void setTopLevel(boolean topLevel) {
+        this.topLevel = topLevel;
+    }
+
+    public boolean isBuiltIn() {
+        return builtIn;
+    }
+
+    public void setBuiltIn(boolean builtIn) {
+        this.builtIn = builtIn;
     }
 }

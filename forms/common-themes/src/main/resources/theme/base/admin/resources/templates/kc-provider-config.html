@@ -1,0 +1,28 @@
+<div data-ng-repeat="option in properties" class="form-group">
+    <label class="col-md-2 control-label">{{option.label}}</label>
+
+    <div class="col-sm-6" data-ng-hide="option.type == 'boolean' || option.type == 'List' || option.type == 'Role' || option.type == 'ClientList'">
+        <input class="form-control" type="text" data-ng-model="config[ option.name ]" >
+    </div>
+    <div class="col-sm-6" data-ng-show="option.type == 'boolean'">
+        <input ng-model="config[ option.name ]" value="'true'" name="option.name" id="option.name" onoffswitchmodel />
+    </div>
+    <div class="col-sm-6" data-ng-show="option.type == 'List'">
+        <select ng-model="config[ option.name ]" ng-options="data for data in option.defaultValue">
+            <option value="" selected> Select one... </option>
+        </select>
+    </div>
+    <div class="col-sm-6" data-ng-show="option.type == 'Role'">
+        <input class="form-control" type="text" data-ng-model="config[ option.name ]" >
+    </div>
+    <div class="col-sm-4" data-ng-show="option.type == 'Role'">
+        <button type="submit" data-ng-click="openRoleSelector(option.name)" class="btn btn-default" tooltip="Enter role in the textbox to the left, or click this button to browse and select the role you want">Select Role</button>
+    </div>
+    <div class="col-sm-4" data-ng-show="option.type == 'ClientList'">
+        <select ng-model="config[ option.name ]" ng-options="client.clientId as client.clientId for client in clients">
+            <option value="" selected> Select one... </option>
+        </select>
+    </div>
+
+    <kc-tooltip>{{option.helpText}}</kc-tooltip>
+</div>

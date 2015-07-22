@@ -305,17 +305,33 @@ module.factory('UserLogout', function($resource) {
         user : '@user'
     });
 });
-module.factory('UserFederatedIdentity', function($resource) {
+
+module.factory('UserFederatedIdentities', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:user/federated-identity', {
         realm : '@realm',
         user : '@user'
     });
 });
+module.factory('UserFederatedIdentity', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/:user/federated-identity/:provider', {
+        realm : '@realm',
+        user : '@user',
+        provider : '@provider'
+    });
+});
+
 module.factory('UserConsents', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:user/consents/:client', {
         realm : '@realm',
         user : '@user',
         client: '@client'
+    });
+});
+
+module.factory('UserImpersonation', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/:user/impersonation', {
+        realm : '@realm',
+        user : '@user'
     });
 });
 
@@ -868,21 +884,22 @@ module.factory('ClientOrigins', function($resource) {
 });
 
 module.factory('Current', function(Realm, $route, $rootScope) {
-    var current = {};
-
-    current.realms = {};
-    current.realm = null;
+    var current = {
+        realms: {},
+        realm: null
+    };
 
     $rootScope.$on('$routeChangeStart', function() {
-        current.realm = null;
         current.realms = Realm.query(null, function(realms) {
+            var currentRealm = null;
             if ($route.current.params.realm) {
                 for (var i = 0; i < realms.length; i++) {
                     if (realms[i].realm == $route.current.params.realm) {
-                        current.realm =  realms[i];
+                        currentRealm =  realms[i];
                     }
                 }
             }
+            current.realm = currentRealm;
         });
     });
 
@@ -1079,7 +1096,7 @@ module.factory('IdentityProviderMapper', function($resource) {
 });
 
 module.factory('AuthenticationExecutions', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/authentication/flow/:alias/executions', {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/flows/:alias/executions', {
         realm : '@realm',
         alias : '@alias'
     }, {
@@ -1088,5 +1105,128 @@ module.factory('AuthenticationExecutions', function($resource) {
         }
     });
 });
+
+module.factory('AuthenticationFlows', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/flows', {
+        realm : '@realm'
+    });
+});
+module.factory('AuthenticationConfigDescription', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/config-description/:provider', {
+        realm : '@realm',
+        provider: '@provider'
+    });
+});
+
+module.factory('AuthenticationConfig', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/config/:config', {
+        realm : '@realm',
+        config: '@config'
+    }, {
+        update: {
+            method : 'PUT'
+        }
+    });
+});
+module.factory('AuthenticationExecutionConfig', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/executions/:execution/config', {
+        realm : '@realm',
+        execution: '@execution'
+    });
+});
+
+module.service('SelectRoleDialog', function($modal) {
+    var dialog = {};
+
+    var openDialog = function(title, message, btns) {
+        var controller = function($scope, $modalInstance, title, message, btns) {
+            $scope.title = title;
+            $scope.message = message;
+            $scope.btns = btns;
+
+            $scope.ok = function () {
+                $modalInstance.close();
+            };
+            $scope.cancel = function () {
+                $modalInstance.dismiss('cancel');
+            };
+        };
+
+        return $modal.open({
+            templateUrl: resourceUrl + '/templates/kc-modal.html',
+            controller: controller,
+            resolve: {
+                title: function() {
+                    return title;
+                },
+                message: function() {
+                    return message;
+                },
+                btns: function() {
+                    return btns;
+                }
+            }
+        }).result;
+    }
+
+    var escapeHtml = function(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    };
+
+    dialog.confirmDelete = function(name, type, success) {
+        var title = 'Delete ' + escapeHtml(type.charAt(0).toUpperCase() + type.slice(1));
+        var msg = 'Are you sure you want to permanently delete the ' + type + ' ' + name + '?';
+        var btns = {
+            ok: {
+                label: 'Delete',
+                cssClass: 'btn btn-danger'
+            },
+            cancel: {
+                label: 'Cancel',
+                cssClass: 'btn btn-default'
+            }
+        }
+
+        openDialog(title, msg, btns).then(success);
+    }
+
+    dialog.confirmGenerateKeys = function(name, type, success) {
+        var title = 'Generate new keys for realm';
+        var msg = 'Are you sure you want to permanently generate new keys for ' + name + '?';
+        var btns = {
+            ok: {
+                label: 'Generate Keys',
+                cssClass: 'btn btn-danger'
+            },
+            cancel: {
+                label: 'Cancel',
+                cssClass: 'btn btn-default'
+            }
+        }
+
+        openDialog(title, msg, btns).then(success);
+    }
+
+    dialog.confirm = function(title, message, success, cancel) {
+        var btns = {
+            ok: {
+                label: title,
+                cssClass: 'btn btn-danger'
+            },
+            cancel: {
+                label: 'Cancel',
+                cssClass: 'btn btn-default'
+            }
+        }
+
+        openDialog(title, message, btns).then(success, cancel);
+    }
+
+    return dialog
+});
+
+
 
 

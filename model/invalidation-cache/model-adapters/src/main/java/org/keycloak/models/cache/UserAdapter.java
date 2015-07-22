@@ -10,6 +10,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.entities.CachedUser;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -57,7 +58,19 @@ public class UserAdapter implements UserModel {
     @Override
     public void setUsername(String username) {
         getDelegateForUpdate();
+        username = KeycloakModelUtils.toLowerCaseSafe(username);
         updated.setUsername(username);
+    }
+
+    @Override
+    public Long getCreatedTimestamp() {
+        // get from cached always as it is immutable
+        return cached.getCreatedTimestamp();
+    }
+
+    @Override
+    public void setCreatedTimestamp(Long timestamp) {
+        // nothing to do as this value is immutable
     }
 
     @Override
@@ -178,6 +191,7 @@ public class UserAdapter implements UserModel {
     @Override
     public void setEmail(String email) {
         getDelegateForUpdate();
+        email = KeycloakModelUtils.toLowerCaseSafe(email);
         updated.setEmail(email);
     }
 

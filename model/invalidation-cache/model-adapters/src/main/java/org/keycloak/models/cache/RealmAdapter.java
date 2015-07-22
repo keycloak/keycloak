@@ -1036,6 +1036,17 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public AuthenticatorConfigModel getAuthenticatorConfigByAlias(String alias) {
+        for (AuthenticatorConfigModel config : getAuthenticatorConfigs()) {
+            if (config.getAlias().equals(alias)) {
+                return config;
+            }
+        }
+        return null;
+    }
+
+
+    @Override
     public AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model) {
         getDelegateForUpdate();
         return updated.addAuthenticationFlow(model);

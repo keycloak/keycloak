@@ -32,6 +32,8 @@ public class AuthenticatorConfigModel implements Serializable {
         this.alias = alias;
     }
 
+
+
     public Map<String, String> getConfig() {
         return config;
     }

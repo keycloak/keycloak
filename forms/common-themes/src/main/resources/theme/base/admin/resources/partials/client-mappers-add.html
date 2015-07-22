@@ -22,10 +22,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="pull-right" data-ng-show="access.manageRealm">
-                        <button class="btn btn-primary" data-ng-click="add()">Add Selected</button>
-                    </div>
                 </div>
             </th>
         </tr>
@@ -48,6 +44,10 @@
         </tr>
         </tbody>
     </table>
+
+    <div data-ng-show="access.manageRealm">
+        <button class="btn btn-primary" data-ng-click="add()">Add Selected</button>
+    </div>
 </div>
 
 <kc-menu></kc-menu>

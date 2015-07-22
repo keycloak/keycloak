@@ -15,6 +15,9 @@ public enum EventType {
     CODE_TO_TOKEN(true),
     CODE_TO_TOKEN_ERROR(true),
 
+    CLIENT_LOGIN(true),
+    CLIENT_LOGIN_ERROR(true),
+
     REFRESH_TOKEN(false),
     REFRESH_TOKEN_ERROR(false),
     VALIDATE_ACCESS_TOKEN(false),
@@ -62,7 +65,8 @@ public enum EventType {
     IDENTITY_PROVIDER_RETRIEVE_TOKEN(false),
     IDENTITY_PROVIDER_RETRIEVE_TOKEN_ERROR(false),
     IDENTITY_PROVIDER_ACCCOUNT_LINKING(false),
-    IDENTITY_PROVIDER_ACCCOUNT_LINKING_ERROR(false);
+    IDENTITY_PROVIDER_ACCCOUNT_LINKING_ERROR(false),
+    IMPERSONATE(true);
 
     private boolean saveByDefault;
 

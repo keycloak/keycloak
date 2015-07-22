@@ -82,6 +82,7 @@ public class AccountTest {
 
             UserModel user2 = manager.getSession().users().addUser(appRealm, "test-user-no-access@localhost");
             user2.setEnabled(true);
+            user2.setEmail("test-user-no-access@localhost");
             for (String r : accountApp.getDefaultRoles()) {
                 user2.deleteRoleMapping(accountApp.getRole(r));
             }
@@ -395,6 +396,10 @@ public class AccountTest {
 
         events.expectAccount(EventType.UPDATE_PROFILE).assertEvent();
         events.expectAccount(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+
+        // reset user for other tests
+        profilePage.updateProfile("Tom", "Brady", "test-user@localhost");
+        events.clear();
     }
 
     @Test
@@ -429,6 +434,17 @@ public class AccountTest {
 
             events.assertEmpty();
 
+            // Change to the username already occupied by other user
+            profilePage.updateProfile("test-user-no-access@localhost", "New first", "New last", "new@email.com");
+
+            Assert.assertEquals("Username already exists.", profilePage.getError());
+            Assert.assertEquals("test-user-no-access@localhost", profilePage.getUsername());
+            Assert.assertEquals("New first", profilePage.getFirstName());
+            Assert.assertEquals("New last", profilePage.getLastName());
+            Assert.assertEquals("new@email.com", profilePage.getEmail());
+
+            events.assertEmpty();
+
             profilePage.updateProfile("test-user-new@localhost", "New first", "New last", "new@email.com");
 
             Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
@@ -450,6 +466,43 @@ public class AccountTest {
                 }
             });
         }
+    }
+
+    // KEYCLOAK-1534
+    @Test
+    public void changeEmailToExisting() {
+        profilePage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT).assertEvent();
+
+        Assert.assertEquals("test-user@localhost", profilePage.getUsername());
+        Assert.assertEquals("test-user@localhost", profilePage.getEmail());
+
+        // Change to the email, which some other user has
+        profilePage.updateProfile("New first", "New last", "test-user-no-access@localhost");
+
+        profilePage.assertCurrent();
+        Assert.assertEquals("Email already exists.", profilePage.getError());
+        Assert.assertEquals("New first", profilePage.getFirstName());
+        Assert.assertEquals("New last", profilePage.getLastName());
+        Assert.assertEquals("test-user-no-access@localhost", profilePage.getEmail());
+
+        events.assertEmpty();
+
+        // Change some other things, but not email
+        profilePage.updateProfile("New first", "New last", "test-user@localhost");
+
+        Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
+        Assert.assertEquals("New first", profilePage.getFirstName());
+        Assert.assertEquals("New last", profilePage.getLastName());
+        Assert.assertEquals("test-user@localhost", profilePage.getEmail());
+
+        events.expectAccount(EventType.UPDATE_PROFILE).assertEvent();
+
+        // Change email and other things to original values
+        profilePage.updateProfile("Tom", "Brady", "test-user@localhost");
+        events.expectAccount(EventType.UPDATE_PROFILE).assertEvent();
     }
 
     @Test

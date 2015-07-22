@@ -8,7 +8,8 @@
 
     <form class="form-horizontal" name="clusteringForm" novalidate kc-read-only="!access.manageClients" data-ng-show="create || registered">
         <fieldset >
-            <legend><span class="text">Configuration of cluster node</span></legend>
+            <legend><span class="text">Configuration of cluster node<i class="pficon pficon-delete clickable" data-ng-show="access.manageRealm" 
+    			data-ng-hide="create" data-ng-click="unregisterNode()"></i></span></legend>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="host">Host</label>
                 <div class="col-sm-6">
@@ -24,8 +25,7 @@
         </fieldset>
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
-                <button data-kc-save   data-ng-show="create">Save</button>
-                <button data-kc-delete data-ng-hide="create" data-ng-click="unregisterNode()">Delete</button>
+                <button data-kc-save data-ng-show="create">Save</button>
             </div>
         </div>
     </form>

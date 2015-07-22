@@ -25,8 +25,8 @@ public class HardcodedRole extends AbstractSAMLProtocolMapper {
         property = new ProviderConfigProperty();
         property.setName("role");
         property.setLabel("Role");
-        property.setHelpText("Role name you want to hardcode.");
-        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Arbitrary role name you want to hardcode.  This role does not have to exist in current realm and can be just any string you need");
+        property.setType(ProviderConfigProperty.ROLE_TYPE);
         configProperties.add(property);
     }
 

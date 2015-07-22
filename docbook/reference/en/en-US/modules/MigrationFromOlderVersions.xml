@@ -103,11 +103,11 @@
                 </para>
             </simplesect>
             <simplesect>
-                <title>WildFly 9.0.0.CR2</title>
+                <title>WildFly 9.0.0.Final</title>
                 <para>
                     Following on from the distribution changes that was done in the last release the standalone download
-                    of Keycloak is now based on WildFly 9.0.0.CR2. This als affects the overlay which can only be deployed
-                    to WildFly 9.0.0.CR2 or JBoss EAP 6.4.0.GA. WildFly 8.2.0.Final is no longer supported for the server.
+                    of Keycloak is now based on WildFly 9.0.0.Final. This als affects the overlay which can only be deployed
+                    to WildFly 9.0.0.Final or JBoss EAP 6.4.0.GA. WildFly 8.2.0.Final is no longer supported for the server.
                 </para>
             </simplesect>
             <simplesect>

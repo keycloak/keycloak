@@ -57,6 +57,8 @@ public class Messages {
     public static final String INVALID_TOTP = "invalidTotpMessage";
 
     public static final String USERNAME_EXISTS = "usernameExistsMessage";
+    public static final String RECAPTCHA_FAILED = "recaptchaFailed";
+    public static final String RECAPTCHA_NOT_CONFIGURED = "recaptchaNotConfigured";
 
     public static final String EMAIL_EXISTS = "emailExistsMessage";
 
@@ -177,4 +179,6 @@ public class Messages {
     public static final String IDENTITY_PROVIDER_LOGIN_FAILURE = "identityProviderLoginFailure";
 
     public static final String FAILED_LOGOUT = "failedLogout";
+
+    public static final String CONSENT_DENIED="consentDenied";
 }

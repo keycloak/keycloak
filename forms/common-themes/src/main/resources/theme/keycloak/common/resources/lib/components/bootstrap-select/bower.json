@@ -1,0 +1,29 @@
+{
+  "name": "bootstrap-select",
+  "main": [
+    "bootstrap-select.css",
+    "bootstrap-select.js"
+  ],
+  "version": "1.5.4",
+  "homepage": "https://github.com/silviomoreto/bootstrap-select",
+  "authors": [
+    "silviomoreto"
+  ],
+  "keywords": [
+    "form",
+    "bootstrap",
+    "select",
+    "replacement"
+  ],
+  "dependencies": {
+    "jquery": ">=1.7"
+  },
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

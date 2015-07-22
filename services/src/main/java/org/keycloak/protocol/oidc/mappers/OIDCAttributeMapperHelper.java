@@ -87,11 +87,13 @@ public class OIDCAttributeMapperHelper {
                 jsonObject.put(split[i], attributeValue);
             } else {
                 Map<String, Object> nested = (Map<String, Object>)jsonObject.get(split[i]);
+
                 if (nested == null) {
                     nested = new HashMap<String, Object>();
                     jsonObject.put(split[i], nested);
-                    jsonObject = nested;
                 }
+
+                jsonObject = nested;
             }
         }
     }

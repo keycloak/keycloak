@@ -359,21 +359,21 @@ public class AuthenticationManager {
         CookieHelper.addCookie(cookieName, "", path, null, "Expiring cookie", 0, secureOnly, httpOnly);
     }
 
-    public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
-        return authenticateIdentityCookie(session, realm, uriInfo, connection, headers, true);
+    public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm) {
+        return authenticateIdentityCookie(session, realm, true);
     }
 
-    public static AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers, boolean checkActive) {
-        Cookie cookie = headers.getCookies().get(KEYCLOAK_IDENTITY_COOKIE);
+    public static AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm, boolean checkActive) {
+        Cookie cookie = session.getContext().getRequestHeaders().getCookies().get(KEYCLOAK_IDENTITY_COOKIE);
         if (cookie == null || "".equals(cookie.getValue())) {
             logger.debugv("Could not find cookie: {0}", KEYCLOAK_IDENTITY_COOKIE);
             return null;
         }
 
         String tokenString = cookie.getValue();
-        AuthResult authResult = verifyIdentityToken(session, realm, uriInfo, connection, checkActive, tokenString, headers);
+        AuthResult authResult = verifyIdentityToken(session, realm, session.getContext().getUri(), session.getContext().getConnection(), checkActive, tokenString, session.getContext().getRequestHeaders());
         if (authResult == null) {
-            expireIdentityCookie(realm, uriInfo, connection);
+            expireIdentityCookie(realm, session.getContext().getUri(), session.getContext().getConnection());
             return null;
         }
         authResult.getSession().setLastSessionRefresh(Time.currentTime());
@@ -399,9 +399,9 @@ public class AuthenticationManager {
                 }
             }
         }
-        if (userSession.getState() != UserSessionModel.State.LOGGED_IN) userSession.setState(UserSessionModel.State.LOGGED_IN);
         // refresh the cookies!
         createLoginCookie(realm, userSession.getUser(), userSession, uriInfo, clientConnection);
+        if (userSession.getState() != UserSessionModel.State.LOGGED_IN) userSession.setState(UserSessionModel.State.LOGGED_IN);
         if (userSession.isRememberMe()) createRememberMeCookie(realm, userSession.getUser().getUsername(), uriInfo, clientConnection);
         LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
         protocol.setRealm(realm)
@@ -429,66 +429,7 @@ public class AuthenticationManager {
         final UserModel user = userSession.getUser();
         final ClientModel client = clientSession.getClient();
 
-        RequiredActionContext context = new RequiredActionContext() {
-            @Override
-            public EventBuilder getEvent() {
-                return event;
-            }
-
-            @Override
-            public UserModel getUser() {
-                return user;
-            }
-
-            @Override
-            public RealmModel getRealm() {
-                return realm;
-            }
-
-            @Override
-            public ClientSessionModel getClientSession() {
-                return clientSession;
-            }
-
-            @Override
-            public UserSessionModel getUserSession() {
-                return userSession;
-            }
-
-            @Override
-            public ClientConnection getConnection() {
-                return clientConnection;
-            }
-
-            @Override
-            public UriInfo getUriInfo() {
-                return uriInfo;
-            }
-
-            @Override
-            public KeycloakSession getSession() {
-                return session;
-            }
-
-            @Override
-            public HttpRequest getHttpRequest() {
-                return request;
-            }
-
-            @Override
-            public String generateAccessCode(String action) {
-                ClientSessionCode code = new ClientSessionCode(getRealm(), getClientSession());
-                code.setAction(action);
-                return code.getCode();
-            }
-        };
-
-        // see if any required actions need triggering, i.e. an expired password
-        for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
-            if (!model.isEnabled()) continue;
-            RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
-            provider.evaluateTriggers(context);
-        }
+        RequiredActionContext context = evaluateRequiredActionTriggers(session, userSession, clientSession, clientConnection, request, uriInfo, event, realm, user);
 
 
         logger.debugv("processAccessCode: go to oauth page?: {0}", client.isConsentRequired());
@@ -552,6 +493,70 @@ public class AuthenticationManager {
         }
         return null;
 
+    }
+
+    public static RequiredActionContext evaluateRequiredActionTriggers(final KeycloakSession session, final UserSessionModel userSession, final ClientSessionModel clientSession, final ClientConnection clientConnection, final HttpRequest request, final UriInfo uriInfo, final EventBuilder event, final RealmModel realm, final UserModel user) {
+        RequiredActionContext context = new RequiredActionContext() {
+            @Override
+            public EventBuilder getEvent() {
+                return event;
+            }
+
+            @Override
+            public UserModel getUser() {
+                return user;
+            }
+
+            @Override
+            public RealmModel getRealm() {
+                return realm;
+            }
+
+            @Override
+            public ClientSessionModel getClientSession() {
+                return clientSession;
+            }
+
+            @Override
+            public UserSessionModel getUserSession() {
+                return userSession;
+            }
+
+            @Override
+            public ClientConnection getConnection() {
+                return clientConnection;
+            }
+
+            @Override
+            public UriInfo getUriInfo() {
+                return uriInfo;
+            }
+
+            @Override
+            public KeycloakSession getSession() {
+                return session;
+            }
+
+            @Override
+            public HttpRequest getHttpRequest() {
+                return request;
+            }
+
+            @Override
+            public String generateAccessCode(String action) {
+                ClientSessionCode code = new ClientSessionCode(getRealm(), getClientSession());
+                code.setAction(action);
+                return code.getCode();
+            }
+        };
+
+        // see if any required actions need triggering, i.e. an expired password
+        for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
+            if (!model.isEnabled()) continue;
+            RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
+            provider.evaluateTriggers(context);
+        }
+        return context;
     }
 
 

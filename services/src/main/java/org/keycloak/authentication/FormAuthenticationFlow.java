@@ -2,7 +2,9 @@ package org.keycloak.authentication;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientSessionModel;
@@ -10,10 +12,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.resources.LoginActionsService;
 
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,183 +43,99 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
         formAuthenticator = processor.getSession().getProvider(FormAuthenticator.class, execution.getAuthenticator());
     }
 
-    private class FormContext implements FormActionContext {
-        protected AuthenticatorContext delegate;
+    private class FormContextImpl implements FormContext {
+        AuthenticationExecutionModel executionModel;
+        AuthenticatorConfigModel authenticatorConfig;
 
-        private FormContext(AuthenticatorContext delegate) {
-            this.delegate = delegate;
+        private FormContextImpl(AuthenticationExecutionModel executionModel) {
+            this.executionModel = executionModel;
         }
 
         @Override
         public EventBuilder newEvent() {
-            return delegate.newEvent();
+            return processor.newEvent();
         }
 
-        @Override
-        public FormAuthenticator getFormAuthenticator() {
-            return formAuthenticator;
-        }
-
-        @Override
-        public AuthenticationExecutionModel getFormExecution() {
-            return formExecution;
-        }
-
-        @Override
+       @Override
         public EventBuilder getEvent() {
-            return delegate.getEvent();
+            return processor.getEvent();
         }
 
         @Override
         public AuthenticationExecutionModel getExecution() {
-            return delegate.getExecution();
-        }
-
-        @Override
-        public void setExecution(AuthenticationExecutionModel execution) {
-            delegate.setExecution(execution);
+            return executionModel;
         }
 
         @Override
         public AuthenticatorConfigModel getAuthenticatorConfig() {
-            return delegate.getAuthenticatorConfig();
-        }
-
-        @Override
-        public String getAction() {
-            return delegate.getAction();
-        }
-
-        @Override
-        public Authenticator getAuthenticator() {
-            return delegate.getAuthenticator();
-        }
-
-        @Override
-        public void setAuthenticator(Authenticator authenticator) {
-            delegate.setAuthenticator(authenticator);
-        }
-
-        @Override
-        public AuthenticationProcessor.Status getStatus() {
-            return delegate.getStatus();
+            if (executionModel.getAuthenticatorConfig() == null) return null;
+            if (authenticatorConfig != null) return authenticatorConfig;
+            authenticatorConfig = getRealm().getAuthenticatorConfigById(executionModel.getAuthenticatorConfig());
+            return authenticatorConfig;
         }
 
         @Override
         public UserModel getUser() {
-            return delegate.getUser();
+            return getClientSession().getAuthenticatedUser();
         }
 
         @Override
         public void setUser(UserModel user) {
-            delegate.setUser(user);
+            processor.setAutheticatedUser(user);
         }
 
         @Override
         public RealmModel getRealm() {
-            return delegate.getRealm();
+            return processor.getRealm();
         }
 
         @Override
         public ClientSessionModel getClientSession() {
-            return delegate.getClientSession();
-        }
-
-        @Override
-        public void attachUserSession(UserSessionModel userSession) {
-            delegate.attachUserSession(userSession);
+            return processor.getClientSession();
         }
 
         @Override
         public ClientConnection getConnection() {
-            return delegate.getConnection();
+            return processor.getConnection();
         }
 
         @Override
         public UriInfo getUriInfo() {
-            return delegate.getUriInfo();
+            return processor.getUriInfo();
         }
 
         @Override
         public KeycloakSession getSession() {
-            return delegate.getSession();
+            return processor.getSession();
         }
 
         @Override
         public HttpRequest getHttpRequest() {
-            return delegate.getHttpRequest();
+            return processor.getRequest();
         }
 
-        @Override
-        public BruteForceProtector getProtector() {
-            return delegate.getProtector();
+    }
+
+    private class ValidationContextImpl extends FormContextImpl implements ValidationContext {
+        FormAction action;
+
+        private ValidationContextImpl(AuthenticationExecutionModel executionModel, FormAction action) {
+            super(executionModel);
+            this.action = action;
         }
 
+        boolean success;
+        List<FormMessage> errors = null;
+        MultivaluedMap<String, String> formData = null;
         @Override
-        public AuthenticationExecutionModel.Requirement getCategoryRequirementFromCurrentFlow(String authenticatorCategory) {
-            for (AuthenticationExecutionModel formActionExecution : formActionExecutions) {
-                FormActionFactory factory = (FormActionFactory) getSession().getKeycloakSessionFactory().getProviderFactory(FormAction.class, formActionExecution.getAuthenticator());
-                if (factory != null && authenticatorCategory.equals(factory.getReferenceCategory())) {
-                    return formActionExecution.getRequirement();
-                }
-
-            }
-            return null;
+        public void validationError(MultivaluedMap<String, String> formData, List<FormMessage> errors) {
+            this.errors = errors;
+            this.formData = formData;
         }
 
         @Override
         public void success() {
-            delegate.success();
-        }
-
-        @Override
-        public void failure(AuthenticationProcessor.Error error) {
-            delegate.failure(error);
-        }
-
-        @Override
-        public void failure(AuthenticationProcessor.Error error, Response response) {
-            delegate.failure(error, response);
-        }
-
-        @Override
-        public void challenge(Response challenge) {
-            delegate.challenge(challenge);
-        }
-
-        @Override
-        public void forceChallenge(Response challenge) {
-            delegate.forceChallenge(challenge);
-        }
-
-        @Override
-        public void failureChallenge(AuthenticationProcessor.Error error, Response challenge) {
-            delegate.failureChallenge(error, challenge);
-        }
-
-        @Override
-        public void attempted() {
-            delegate.attempted();
-        }
-
-        @Override
-        public String getForwardedErrorMessage() {
-            return delegate.getForwardedErrorMessage();
-        }
-
-        @Override
-        public String generateAccessCode() {
-            return delegate.generateAccessCode();
-        }
-
-        @Override
-        public Response getChallenge() {
-            return delegate.getChallenge();
-        }
-
-        @Override
-        public AuthenticationProcessor.Error getError() {
-            return delegate.getError();
+           success = true;
         }
     }
 
@@ -224,7 +146,12 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
         }
         Map<String, ClientSessionModel.ExecutionStatus> executionStatus = new HashMap<>();
         List<FormAction> requiredActions = new LinkedList<>();
+        List<ValidationContextImpl> successes = new LinkedList<>();
         for (AuthenticationExecutionModel formActionExecution : formActionExecutions) {
+            if (!formActionExecution.isEnabled()) {
+                executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
+                continue;
+            }
             FormAction action = processor.getSession().getProvider(FormAction.class, formActionExecution.getAuthenticator());
 
             UserModel authUser = processor.getClientSession().getAuthenticatedUser();
@@ -251,12 +178,20 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
                 }
             }
 
-            AuthenticatorContext delegate = processor.createAuthenticatorContext(formActionExecution, null, formActionExecutions);
-            FormActionContext result = new FormContext(delegate);
-            action.authenticate(result);
-            Response challenge = processResult(executionStatus, result, formActionExecution);
-            if (challenge != null) return challenge;
-            executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SUCCESS);
+            ValidationContextImpl result = new ValidationContextImpl(formActionExecution, action);
+            action.validate(result);
+            if (result.success) {
+                executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SUCCESS);
+                successes.add(result);
+            } else {
+                processor.logFailure();
+                executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
+                return renderForm(result.formData, result.errors);
+            }
+        }
+
+        for (ValidationContextImpl context : successes) {
+            context.action.success(context);
         }
         // set status and required actions only if form is fully successful
         for (Map.Entry<String, ClientSessionModel.ExecutionStatus> entry : executionStatus.entrySet()) {
@@ -270,63 +205,36 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
     }
 
+    public URI getActionUrl(String executionId, String code) {
+        return LoginActionsService.registrationFormProcessor(processor.getUriInfo())
+                .queryParam(OAuth2Constants.CODE, code)
+                .queryParam("execution", executionId)
+                .build(processor.getRealm().getName());
+    }
+
+
     @Override
     public Response processFlow() {
-        AuthenticatorContext delegate = processor.createAuthenticatorContext(formExecution, null, formActionExecutions);
-        FormActionContext result = new FormContext(delegate);
-        formAuthenticator.authenticate(result);
-        Map<String, ClientSessionModel.ExecutionStatus> executionStatus = new HashMap<>();
-        Response response = processResult(executionStatus, result, formExecution);
-        for (Map.Entry<String, ClientSessionModel.ExecutionStatus> entry : executionStatus.entrySet()) {
-            processor.getClientSession().setExecutionStatus(entry.getKey(), entry.getValue());
+        return renderForm(null, null);
+    }
+
+    public Response renderForm(MultivaluedMap<String, String> formData, List<FormMessage> errors) {
+        String executionId = formExecution.getId();
+        processor.getClientSession().setNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, executionId);
+        String code = processor.generateCode();
+        URI actionUrl = getActionUrl(executionId, code);
+        LoginFormsProvider form = processor.getSession().getProvider(LoginFormsProvider.class)
+                .setActionUri(actionUrl)
+                .setClientSessionCode(code)
+                .setFormData(formData)
+                .setErrors(errors);
+        for (AuthenticationExecutionModel formActionExecution : formActionExecutions) {
+            if (!formActionExecution.isEnabled()) continue;
+            FormAction action = processor.getSession().getProvider(FormAction.class, formActionExecution.getAuthenticator());
+            FormContext result = new FormContextImpl(formActionExecution);
+            action.buildPage(result, form);
         }
-        return response;
+        FormContext context = new FormContextImpl(formExecution);
+        return formAuthenticator.render(context, form);
     }
-
-
-    public Response processResult(Map<String, ClientSessionModel.ExecutionStatus> executionStatus, AuthenticatorContext result, AuthenticationExecutionModel execution) {
-        AuthenticationProcessor.Status status = result.getStatus();
-        if (status == AuthenticationProcessor.Status.SUCCESS) {
-            executionStatus.put(execution.getId(), ClientSessionModel.ExecutionStatus.SUCCESS);
-            return null;
-        } else if (status == AuthenticationProcessor.Status.FAILED) {
-            AuthenticationProcessor.logger.debugv("authenticator FAILED: {0}", execution.getAuthenticator());
-            processor.logFailure();
-            executionStatus.put(execution.getId(), ClientSessionModel.ExecutionStatus.FAILED);
-            if (result.getChallenge() != null) {
-                return sendChallenge(result);
-            }
-            throw new AuthenticationProcessor.AuthException(result.getError());
-        } else if (status == AuthenticationProcessor.Status.FORCE_CHALLENGE) {
-            executionStatus.put(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
-            return sendChallenge(result);
-        } else if (status == AuthenticationProcessor.Status.CHALLENGE) {
-            processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
-            return sendChallenge(result);
-        } else if (status == AuthenticationProcessor.Status.FAILURE_CHALLENGE) {
-            AuthenticationProcessor.logger.debugv("authenticator FAILURE_CHALLENGE: {0}", execution.getAuthenticator());
-            processor.logFailure();
-            executionStatus.put(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
-            return sendChallenge(result);
-        } else if (status == AuthenticationProcessor.Status.ATTEMPTED) {
-            AuthenticationProcessor.logger.debugv("authenticator ATTEMPTED: {0}", execution.getAuthenticator());
-            if (execution.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) {
-                throw new AuthenticationProcessor.AuthException(AuthenticationProcessor.Error.INVALID_CREDENTIALS);
-            }
-            executionStatus.put(execution.getId(), ClientSessionModel.ExecutionStatus.ATTEMPTED);
-            return null;
-        } else {
-            AuthenticationProcessor.logger.debugv("authenticator INTERNAL_ERROR: {0}", execution.getAuthenticator());
-            AuthenticationProcessor.logger.error("Unknown result status");
-            throw new AuthenticationProcessor.AuthException(AuthenticationProcessor.Error.INTERNAL_ERROR);
-        }
-
-    }
-
-    public Response sendChallenge(AuthenticatorContext result) {
-        processor.getClientSession().setNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, formExecution.getId());
-        return result.getChallenge();
-    }
-
-
 }

@@ -190,40 +190,8 @@
 
         <!-- Apache DS -->
         <dependency>
-            <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-core-annotations</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.directory.jdbm</groupId>
-                    <artifactId>apacheds-jdbm1</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-interceptor-kerberos</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-server-annotations</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.directory.jdbm</groupId>
-                    <artifactId>apacheds-jdbm1</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.directory.api</groupId>
-            <artifactId>api-ldap-codec-standalone</artifactId>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-util-embedded-ldap</artifactId>
         </dependency>
 
         <dependency>
@@ -344,7 +312,7 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>org.keycloak.testsuite.ldap.LDAPEmbeddedServer</mainClass>
+                            <mainClass>org.keycloak.util.ldap.LDAPEmbeddedServer</mainClass>
                             <classpathScope>test</classpathScope>
                         </configuration>
                     </plugin>
@@ -359,7 +327,7 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>org.keycloak.testsuite.ldap.KerberosEmbeddedServer</mainClass>
+                            <mainClass>org.keycloak.util.ldap.KerberosEmbeddedServer</mainClass>
                             <classpathScope>test</classpathScope>
                         </configuration>
                     </plugin>

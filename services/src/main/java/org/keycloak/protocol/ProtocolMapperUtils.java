@@ -47,7 +47,7 @@ public class ProtocolMapperUtils {
     }
 
     public static String[] parseRole(String role) {
-        int scopeIndex = role.indexOf('.');
+        int scopeIndex = role.lastIndexOf('.');
         if (scopeIndex > -1) {
             String appName = role.substring(0, scopeIndex);
             role = role.substring(scopeIndex + 1);

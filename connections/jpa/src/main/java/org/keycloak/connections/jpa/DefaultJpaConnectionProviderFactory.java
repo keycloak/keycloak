@@ -70,54 +70,55 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
                     Connection connection = null;
 
-                    String unitName = config.get("unitName");
                     String databaseSchema = config.get("databaseSchema");
 
                     Map<String, Object> properties = new HashMap<String, Object>();
 
-                    // Only load config from keycloak-server.json if unitName is not specified
-                    if (unitName == null) {
-                        unitName = "keycloak-default";
+                    String unitName = "keycloak-default";
 
-                        String dataSource = config.get("dataSource");
-                        if (dataSource != null) {
-                            if (config.getBoolean("jta", false)) {
-                                properties.put(AvailableSettings.JTA_DATASOURCE, dataSource);
-                            } else {
-                                properties.put(AvailableSettings.NON_JTA_DATASOURCE, dataSource);
-                            }
+                    String dataSource = config.get("dataSource");
+                    if (dataSource != null) {
+                        if (config.getBoolean("jta", false)) {
+                            properties.put(AvailableSettings.JTA_DATASOURCE, dataSource);
                         } else {
-                            properties.put(AvailableSettings.JDBC_URL, config.get("url"));
-                            properties.put(AvailableSettings.JDBC_DRIVER, config.get("driver"));
-
-                            String user = config.get("user");
-                            if (user != null) {
-                                properties.put(AvailableSettings.JDBC_USER, user);
-                            }
-                            String password = config.get("password");
-                            if (password != null) {
-                                properties.put(AvailableSettings.JDBC_PASSWORD, password);
-                            }
+                            properties.put(AvailableSettings.NON_JTA_DATASOURCE, dataSource);
                         }
+                    } else {
+                        properties.put(AvailableSettings.JDBC_URL, config.get("url"));
+                        properties.put(AvailableSettings.JDBC_DRIVER, config.get("driver"));
 
-                        String driverDialect = config.get("driverDialect");
-                        if (driverDialect != null && driverDialect.length() > 0) {
-                            properties.put("hibernate.dialect", driverDialect);
+                        String user = config.get("user");
+                        if (user != null) {
+                            properties.put(AvailableSettings.JDBC_USER, user);
                         }
-
-                        if (databaseSchema != null) {
-                            if (databaseSchema.equals("development-update")) {
-                                properties.put("hibernate.hbm2ddl.auto", "update");
-                                databaseSchema = null;
-                            } else if (databaseSchema.equals("development-validate")) {
-                                properties.put("hibernate.hbm2ddl.auto", "validate");
-                                databaseSchema = null;
-                            }
+                        String password = config.get("password");
+                        if (password != null) {
+                            properties.put(AvailableSettings.JDBC_PASSWORD, password);
                         }
-
-                        properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
-                        properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
                     }
+
+                    String driverDialect = config.get("driverDialect");
+                    if (driverDialect != null && driverDialect.length() > 0) {
+                        properties.put("hibernate.dialect", driverDialect);
+                    }
+
+                    String schema = config.get("schema");
+                    if (schema != null) {
+                        properties.put("hibernate.default_schema", schema);
+                    }
+
+                    if (databaseSchema != null) {
+                        if (databaseSchema.equals("development-update")) {
+                            properties.put("hibernate.hbm2ddl.auto", "update");
+                            databaseSchema = null;
+                        } else if (databaseSchema.equals("development-validate")) {
+                            properties.put("hibernate.hbm2ddl.auto", "validate");
+                            databaseSchema = null;
+                        }
+                    }
+
+                    properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
+                    properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
 
                     if (databaseSchema != null) {
                         logger.trace("Updating database");
@@ -132,7 +133,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         if (databaseSchema.equals("update")) {
                             String currentVersion = null;
                             try {
-                                ResultSet resultSet = connection.createStatement().executeQuery(updater.getCurrentVersionSql());
+                                ResultSet resultSet = connection.createStatement().executeQuery(updater.getCurrentVersionSql(schema));
                                 if (resultSet.next()) {
                                     currentVersion = resultSet.getString(1);
                                 }
@@ -140,12 +141,12 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                             }
 
                             if (currentVersion == null || !JpaUpdaterProvider.LAST_VERSION.equals(currentVersion)) {
-                                updater.update(session, connection);
+                                updater.update(session, connection, schema);
                             } else {
                                 logger.debug("Database is up to date");
                             }
                         } else if (databaseSchema.equals("validate")) {
-                            updater.validate(connection);
+                            updater.validate(connection, schema);
                         } else {
                             throw new RuntimeException("Invalid value for databaseSchema: " + databaseSchema);
                         }

@@ -86,6 +86,8 @@ public class UserAdapter implements UserModel, Comparable {
 
     @Override
     public void setUsername(String username) {
+        username = KeycloakModelUtils.toLowerCaseSafe(username);
+
         if (getUsername() == null) {
             user.setUsername(username);
             return;
@@ -96,6 +98,16 @@ public class UserAdapter implements UserModel, Comparable {
         if (inMemoryModel.hasUserWithUsername(realm.getId(), username))
             throw new ModelDuplicateException("User with username " + username + " already exists in realm.");
         user.setUsername(username);
+    }
+
+    @Override
+    public Long getCreatedTimestamp() {
+        return user.getCreatedTimestamp();
+    }
+
+    @Override
+    public void setCreatedTimestamp(Long timestamp) {
+        user.setCreatedTimestamp(timestamp);
     }
 
     @Override
@@ -135,6 +147,8 @@ public class UserAdapter implements UserModel, Comparable {
 
     @Override
     public void setEmail(String email) {
+        email = KeycloakModelUtils.toLowerCaseSafe(email);
+
         if (email == null) {
             user.setEmail(email);
             return;

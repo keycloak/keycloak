@@ -3,10 +3,15 @@ package org.keycloak.services.managers;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.jboss.logging.Logger;
+import org.keycloak.constants.ServiceAccountConstants;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.adapters.config.BaseRealmConfig;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.Time;
@@ -82,6 +87,57 @@ public class ClientManager {
         }
 
         return validatedNodes;
+    }
+
+    public void enableServiceAccount(ClientModel client) {
+        client.setServiceAccountsEnabled(true);
+
+        // Add dedicated user for this service account
+        RealmModel realm = client.getRealm();
+        Map<String, String> search = new HashMap<>();
+        search.put(ServiceAccountConstants.SERVICE_ACCOUNT_CLIENT_ATTRIBUTE, client.getId());
+        List<UserModel> serviceAccountUsers = realmManager.getSession().users().searchForUserByUserAttributes(search, realm);
+        if (serviceAccountUsers.size() == 0) {
+            String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId();
+            logger.infof("Creating service account user '%s'", username);
+
+            UserModel user = realmManager.getSession().users().addUser(realm, username);
+            user.setEnabled(true);
+            user.setEmail(username + "@placeholder.org");
+            user.setSingleAttribute(ServiceAccountConstants.SERVICE_ACCOUNT_CLIENT_ATTRIBUTE, client.getId());
+        }
+
+        // Add protocol mappers to retrieve clientId in access token
+        if (client.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER) == null) {
+            logger.debugf("Creating service account protocol mapper '%s' for client '%s'", ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER, client.getClientId());
+            ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper(ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER,
+                    ServiceAccountConstants.CLIENT_ID,
+                    ServiceAccountConstants.CLIENT_ID, "String",
+                    false, "",
+                    true, true);
+            client.addProtocolMapper(protocolMapper);
+        }
+
+        // Add protocol mappers to retrieve hostname and IP address of client in access token
+        if (client.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, ServiceAccountConstants.CLIENT_HOST_PROTOCOL_MAPPER) == null) {
+            logger.debugf("Creating service account protocol mapper '%s' for client '%s'", ServiceAccountConstants.CLIENT_HOST_PROTOCOL_MAPPER, client.getClientId());
+            ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper(ServiceAccountConstants.CLIENT_HOST_PROTOCOL_MAPPER,
+                    ServiceAccountConstants.CLIENT_HOST,
+                    ServiceAccountConstants.CLIENT_HOST, "String",
+                    false, "",
+                    true, true);
+            client.addProtocolMapper(protocolMapper);
+        }
+
+        if (client.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, ServiceAccountConstants.CLIENT_ADDRESS_PROTOCOL_MAPPER) == null) {
+            logger.debugf("Creating service account protocol mapper '%s' for client '%s'", ServiceAccountConstants.CLIENT_ADDRESS_PROTOCOL_MAPPER, client.getClientId());
+            ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper(ServiceAccountConstants.CLIENT_ADDRESS_PROTOCOL_MAPPER,
+                    ServiceAccountConstants.CLIENT_ADDRESS,
+                    ServiceAccountConstants.CLIENT_ADDRESS, "String",
+                    false, "",
+                    true, true);
+            client.addProtocolMapper(protocolMapper);
+        }
     }
 
     @JsonPropertyOrder({"realm", "realm-public-key", "bearer-only", "auth-server-url", "ssl-required",

@@ -101,6 +101,10 @@ public class ClientResource {
         auth.requireManage();
 
         try {
+            if (rep.isServiceAccountsEnabled() && !client.isServiceAccountsEnabled()) {
+                new ClientManager(new RealmManager(session)).enableServiceAccount(client);;
+            }
+
             RepresentationToModel.updateClient(rep, client);
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
             return Response.noContent().build();

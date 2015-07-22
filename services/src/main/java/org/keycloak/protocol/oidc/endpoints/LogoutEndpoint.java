@@ -117,7 +117,7 @@ public class LogoutEndpoint {
         }
 
         // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
-        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, clientConnection, headers, false);
+        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, false);
         if (authResult != null) {
             userSession = userSession != null ? userSession : authResult.getSession();
             if (redirect != null) userSession.setNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI, redirect);
