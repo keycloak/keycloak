@@ -162,6 +162,12 @@
             "publicClient": true,
             "directGrantsOnly": true,
             "consentRequired": true
+        },
+        {
+            "clientId": "product-sa-client",
+            "enabled": true,
+            "secret": "password",
+            "serviceAccountsEnabled": true
         }
     ],
     "clientScopeMappings": {

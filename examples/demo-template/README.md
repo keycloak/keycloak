@@ -210,6 +210,14 @@ An pure HTML5/Javascript example using Keycloak to secure it.
 If you are already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
 
+Step 10: Service Account Example
+================================
+An example for retrieve service account dedicated to the Client Application itself (not to any user). 
+
+[http://localhost:8080/service-account-portal](http://localhost:8080/service-account-portal)
+
+Client authentication is done with OAuth2 Client Credentials Grant in out-of-bound request (Not Keycloak login screen displayed) 
+
 Admin Console
 ==========================
 
