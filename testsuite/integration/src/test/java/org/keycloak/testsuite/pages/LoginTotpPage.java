@@ -43,7 +43,8 @@ public class LoginTotpPage extends AbstractPage {
     private WebElement loginErrorMessage;
 
     public void login(String totp) {
-        totpInput.sendKeys(totp);
+        totpInput.clear();
+        if (totp != null) totpInput.sendKeys(totp);
 
         submitButton.click();
     }
