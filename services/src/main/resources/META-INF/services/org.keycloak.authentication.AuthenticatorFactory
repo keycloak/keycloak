@@ -1,4 +1,7 @@
-org.keycloak.authentication.authenticators.CookieAuthenticatorFactory
-org.keycloak.authentication.authenticators.UsernamePasswordFormFactory
-org.keycloak.authentication.authenticators.OTPFormAuthenticatorFactory
-org.keycloak.authentication.authenticators.SpnegoAuthenticatorFactory
+org.keycloak.authentication.authenticators.browser.CookieAuthenticatorFactory
+org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory
+org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory
+org.keycloak.authentication.authenticators.browser.SpnegoAuthenticatorFactory
+org.keycloak.authentication.authenticators.directgrant.ValidateOTP
+org.keycloak.authentication.authenticators.directgrant.ValidatePassword
+org.keycloak.authentication.authenticators.directgrant.ValidateUsername

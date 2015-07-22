@@ -277,6 +277,9 @@ public class AuthorizationEndpoint {
         Response challenge = null;
         try {
             challenge = processor.authenticateOnly();
+            if (challenge == null) {
+                challenge = processor.attachSessionExecutionRequiredActions();
+            }
         } catch (Exception e) {
             return processor.handleBrowserException(e);
         }

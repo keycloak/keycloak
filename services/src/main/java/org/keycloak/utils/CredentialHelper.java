@@ -5,16 +5,10 @@ import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
-import org.keycloak.authentication.authenticators.OTPFormAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.SpnegoAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.UsernamePasswordFormFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.utils.DefaultAuthenticationFlows;
-import org.keycloak.representations.idm.CredentialRepresentation;
 
 /**
  * used to set an execution a state based on type.

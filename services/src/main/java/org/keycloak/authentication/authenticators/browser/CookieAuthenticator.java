@@ -1,4 +1,4 @@
-package org.keycloak.authentication.authenticators;
+package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorContext;

@@ -18,14 +18,17 @@ public class DefaultAuthenticationFlows {
     public static final String REGISTRATION_FLOW = "registration";
     public static final String REGISTRATION_FORM_FLOW = "registration form";
     public static final String BROWSER_FLOW = "browser";
+    public static final String DIRECT_GRANT_FLOW = "direct grant";
     public static final String LOGIN_FORMS_FLOW = "forms";
 
     public static void addFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm);
+        if (realm.getFlowByAlias(DIRECT_GRANT_FLOW) == null) directGrantFlow(realm, false);
         if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
     }
     public static void migrateFlows(RealmModel realm) {
         browserFlow(realm, true);
+        directGrantFlow(realm, true);
         if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
     }
 
@@ -121,6 +124,55 @@ public class DefaultAuthenticationFlows {
 
         }
         return false;
+    }
+
+    public static void directGrantFlow(RealmModel realm, boolean migrate) {
+        AuthenticationFlowModel grant = new AuthenticationFlowModel();
+        grant.setAlias(DIRECT_GRANT_FLOW);
+        grant.setDescription("OpenID Connect Resource Owner Grant");
+        grant.setProviderId("basic-flow");
+        grant.setTopLevel(true);
+        grant.setBuiltIn(true);
+        grant = realm.addAuthenticationFlow(grant);
+
+        // username
+        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(grant.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("direct-grant-validate-username");
+        execution.setPriority(10);
+        execution.setUserSetupAllowed(false);
+        execution.setAutheticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        // password
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(grant.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        if (migrate && !hasCredentialType(realm, RequiredCredentialModel.PASSWORD.getType())) {
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        }
+        execution.setAuthenticator("direct-grant-validate-password");
+        execution.setPriority(20);
+        execution.setUserSetupAllowed(false);
+        execution.setAutheticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        // otp
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(grant.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.OPTIONAL);
+        if (migrate && hasCredentialType(realm, RequiredCredentialModel.TOTP.getType())) {
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        }
+        execution.setAuthenticator("direct-grant-validate-otp");
+        execution.setPriority(30);
+        execution.setUserSetupAllowed(false);
+        execution.setAutheticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+
+
     }
 
     public static void browserFlow(RealmModel realm, boolean migrate) {

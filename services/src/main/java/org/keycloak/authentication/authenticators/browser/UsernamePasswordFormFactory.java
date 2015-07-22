@@ -1,12 +1,12 @@
-package org.keycloak.authentication.authenticators;
+package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
@@ -15,12 +15,13 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CookieAuthenticatorFactory implements AuthenticatorFactory {
-    public static final String PROVIDER_ID = "auth-cookie";
-    static CookieAuthenticator SINGLETON = new CookieAuthenticator();
+public class UsernamePasswordFormFactory implements AuthenticatorFactory {
+
+    public static final String PROVIDER_ID = "auth-username-password-form";
+
     @Override
     public Authenticator create() {
-        return SINGLETON;
+        return new UsernamePasswordForm();
     }
 
     @Override
@@ -50,15 +51,16 @@ public class CookieAuthenticatorFactory implements AuthenticatorFactory {
 
     @Override
     public String getReferenceCategory() {
-        return "cookie";
+        return UserCredentialModel.PASSWORD;
     }
 
     @Override
     public boolean isConfigurable() {
         return false;
     }
-
-    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED};
+    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
+            AuthenticationExecutionModel.Requirement.REQUIRED
+    };
 
     @Override
     public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
@@ -67,12 +69,12 @@ public class CookieAuthenticatorFactory implements AuthenticatorFactory {
 
     @Override
     public String getDisplayType() {
-        return "Cookie";
+        return "Username Password Form";
     }
 
     @Override
     public String getHelpText() {
-        return "Validates the SSO cookie set by the auth server.";
+        return "Validates a username and password from login form.";
     }
 
     @Override
