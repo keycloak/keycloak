@@ -11,12 +11,4 @@ import java.io.Serializable;
  */
 public interface ProviderOperationalInfo extends Serializable {
 
-    /**
-     * Return true if provider is OK from operation point of view. It means it is able to perform necessary work.
-     * It can return false for example if remote DB of JPA provider is not available, or LDAP server of LDAP based user federation provider is not available.
-     * 
-     * @return true if provider is OK to perform his operation.
-     */
-    boolean isOk();
-
 }

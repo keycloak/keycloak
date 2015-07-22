@@ -212,12 +212,6 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
 		public String driverVersion;
 		public String user;
 
-		@Override
-		public boolean isOk() {
-			// TODO KEYCLOAK-1578 - implement operational monitoring of Mongo DB connection
-			return true;
-		}
-
 		public String getAddress() {
 			return address;
 		}
