@@ -62,8 +62,8 @@
 
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-10 col-md-offset-2">
-                <button kc-save  data-ng-show="changed">Save</button>
-                <button kc-reset data-ng-show="changed">Cancel</button>
+                <button kc-save  data-ng-disabled="!changed">Save</button>
+                <button kc-reset data-ng-disabled="!changed">Cancel</button>
             </div>
         </div>
     </form>
