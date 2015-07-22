@@ -897,6 +897,13 @@ module.factory('ClientOrigins', function($resource) {
     });
 });
 
+module.factory('ClientServiceAccountUser', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/service-account-user', {
+        realm : '@realm',
+        client : '@client'
+    });
+});
+
 module.factory('Current', function(Realm, $route, $rootScope) {
     var current = {
         realms: {},

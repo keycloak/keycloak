@@ -25,9 +25,12 @@ public interface UserProvider extends Provider {
     UserModel getUserByUsername(String username, RealmModel realm);
     UserModel getUserByEmail(String email, RealmModel realm);
     UserModel getUserByFederatedIdentity(FederatedIdentityModel socialLink, RealmModel realm);
-    List<UserModel> getUsers(RealmModel realm);
+    UserModel getUserByServiceAccountClient(ClientModel client);
+    List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts);
+
+    // Service account is included for counts
     int getUsersCount(RealmModel realm);
-    List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults);
+    List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts);
     List<UserModel> searchForUser(String search, RealmModel realm);
     List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults);
     List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm);

@@ -109,7 +109,7 @@ public class IdentityProviderResource {
                 // Admin changed the ID (alias) of identity provider. We must update all clients and users
                 logger.debug("Changing providerId in all clients and linked users. oldProviderId=" + oldProviderId + ", newProviderId=" + newProviderId);
 
-                updateUsersAfterProviderAliasChange(this.session.users().getUsers(this.realm), oldProviderId, newProviderId);
+                updateUsersAfterProviderAliasChange(this.session.users().getUsers(this.realm, false), oldProviderId, newProviderId);
             }
             
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(providerRep).success();

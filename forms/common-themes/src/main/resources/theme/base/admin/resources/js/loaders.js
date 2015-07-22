@@ -282,6 +282,15 @@ module.factory('ClientListLoader', function(Loader, Client, $route, $q) {
     });
 });
 
+module.factory('ClientServiceAccountUserLoader', function(Loader, ClientServiceAccountUser, $route, $q) {
+    return Loader.get(ClientServiceAccountUser, function() {
+        return {
+            realm : $route.current.params.realm,
+            client : $route.current.params.client
+        }
+    });
+});
+
 
 module.factory('RoleMappingLoader', function(Loader, RoleMapping, $route, $q) {
 	var realm = $route.current.params.realm || $route.current.params.client;
