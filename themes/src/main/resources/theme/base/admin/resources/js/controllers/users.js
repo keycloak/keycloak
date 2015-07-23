@@ -755,10 +755,7 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
 
     $scope.ldapVendors = [
         { "id": "ad", "name": "Active Directory" },
-        { "id": "rhds", "name": "Red Hat Directory Server" },
-        { "id": "tivoli", "name": "Tivoli" },
-        { "id": "edirectory", "name": "Novell eDirectory" },
-        { "id": "other", "name": "Other" }
+        { "id": "rhds", "name": "Red Hat Directory Server" }
     ];
 
     $scope.authTypes = [

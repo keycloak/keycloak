@@ -96,7 +96,17 @@
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-arquillian-container-managed</artifactId>
                 <version>${arquillian-wildfly-container.version}</version>
-            </dependency>        
+            </dependency>     
+            <dependency>
+                <groupId>org.jboss.xnio</groupId>
+                <artifactId>xnio-api</artifactId>
+                <version>3.3.0.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.xnio</groupId>
+                <artifactId>xnio-nio</artifactId>
+                <version>3.3.0.Final</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     
@@ -343,6 +353,7 @@
                     <groupId>org.jboss.resteasy</groupId>
                     <artifactId>resteasy-undertow</artifactId>
                     <scope>compile</scope>
+                    <version>${resteasy.community.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>org.jboss.resteasy</groupId>

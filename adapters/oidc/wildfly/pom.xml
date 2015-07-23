@@ -32,7 +32,7 @@
 
     <modules>
         <module>wildfly-adapter</module>
-        <module>wf8-subsystem</module>
+        <!--<module>wf8-subsystem</module>-->
         <module>wildfly-subsystem</module>
     </modules>
 </project>

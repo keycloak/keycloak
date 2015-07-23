@@ -30,9 +30,21 @@
     <artifactId>keycloak-saml-as7-eap6-adapter-dist-pom</artifactId>
     <packaging>pom</packaging>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.bom</groupId>
+                <artifactId>eap6-supported-artifacts</artifactId>
+                <version>${jboss.eap6.bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <modules>
         <module>as7-modules</module>
-        <module>as7-adapter-zip</module>
+        <!--<module>as7-adapter-zip</module>-->
         <module>eap6-adapter-zip</module>
     </modules>
 </project>

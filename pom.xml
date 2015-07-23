@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>19</version>
+        <version>19.0.0.redhat-2</version>
     </parent>
 
     <name>Keycloak</name>
@@ -35,60 +35,54 @@
     <packaging>pom</packaging>
 
     <properties>
-        <product.name>Keycloak</product.name>
-        <product.name-html>\u003Cdiv class="kc-logo-text"\u003E\u003Cspan\u003EKeycloak\u003C\u002Fspan\u003E\u003C\u002Fdiv\u003E</product.name-html>
-        <product.version>${project.version}</product.version>
+        <product.name>RH-SSO</product.name>
+        <product.name-html>\u003Cstrong\u003ERed Hat\u003C\u002Fstrong\u003E\u003Csup\u003E\u00AE\u003C\u002Fsup\u003E Single Sign On</product.name-html>
+        <product.version>7.0.0.ER6</product.version>
         <product.build-time>${timestamp}</product.build-time>
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
 
         <!-- WildFly -->
-        <eap.version>7.0.0.Beta</eap.version>
-        <jboss.as.version>7.2.0.Final</jboss.as.version>
-        <wildfly.version>10.0.0.Final</wildfly.version>
+        <eap.version>7.0.0.ER5-redhat-1</eap.version>
+        <jboss.as.version>7.5.6.Final-redhat-2</jboss.as.version>
+        <wildfly.version>${eap.version}</wildfly.version>
+        <jboss.eap6.bom.version>6.4.6.GA</jboss.eap6.bom.version>
 
-        <aesh.version>0.66.4</aesh.version>
-        <apache.httpcomponents.version>4.5</apache.httpcomponents.version>
-        <apache.httpcomponents.httpcore.version>4.4.1</apache.httpcomponents.httpcore.version>
-        <apache.mime4j.version>0.6</apache.mime4j.version>
-        <bouncycastle.version>1.52</bouncycastle.version>
-        <dom4j.version>1.6.1</dom4j.version>
-        <github.relaxng.version>2011.1</github.relaxng.version>
-        <h2.version>1.3.173</h2.version>
-        <hibernate.entitymanager.version>5.0.7.Final</hibernate.entitymanager.version>
-        <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
-        <infinispan.version>8.1.0.Final</infinispan.version>
-        <jackson.version>2.5.4</jackson.version>
+        <apache.httpcomponents.version>4.5.0.redhat-1</apache.httpcomponents.version>
+        <apache.mime4j.version>0.6.0.redhat-5</apache.mime4j.version>
+        <bouncycastle.version>1.52.0.redhat-2</bouncycastle.version>
+        <dom4j.version>1.6.1.redhat-7</dom4j.version>
+        <h2.version>1.3.173.redhat-2</h2.version>
+        <hibernate.entitymanager.version>5.0.7.Final-redhat-1</hibernate.entitymanager.version>
+	<infinispan.version>8.1.1.Final-redhat-1</infinispan.version>
+        <jackson.version>2.5.4.redhat-1</jackson.version>
         <javax.mail.version>1.5.5</javax.mail.version>
-        <jboss.logging.version>3.3.0.Final</jboss.logging.version>
-        <jboss.logging.tools.version>2.0.1.Final</jboss.logging.tools.version>
+        <jboss.logging.version>3.3.0.Final-redhat-1</jboss.logging.version>
+        <jboss.logging.tools.version>2.0.1.Final-redhat-1</jboss.logging.tools.version>
         <jboss.logging.tools.wf8.version>1.2.0.Final</jboss.logging.tools.wf8.version>
-        <jboss-jaxrs-api_2.0_spec>1.0.0.Final</jboss-jaxrs-api_2.0_spec>
-        <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>1.0.4.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>
         <log4j.version>1.2.16</log4j.version>
-        <resteasy.version>3.0.14.Final</resteasy.version>
-        <slf4j.version>1.7.7</slf4j.version>
-        <sun.istack.version>2.21</sun.istack.version>
-        <sun.jaxb.version>2.2.11</sun.jaxb.version>
-        <sun.xsom.version>20140925</sun.xsom.version>
-        <undertow.version>1.3.15.Final</undertow.version>
-        <wildfly.core.version>2.0.10.Final</wildfly.core.version>
+	<resteasy.community.version>3.0.14.Final</resteasy.community.version>
+        <slf4j.version>1.7.7.redhat-2</slf4j.version>
+        <wildfly.core.version>2.0.11.Final-redhat-1</wildfly.core.version>
         <wildfly.build-tools.version>1.1.0.Final</wildfly.build-tools.version>
         <!--<xmlsec.version>2.0.5</xmlsec.version>--> <!-- WILDFLY VERSION -->
-        <xmlsec.version>1.5.1</xmlsec.version>
+        <xmlsec.version>1.5.8.redhat-1</xmlsec.version>
+        <commons.logging.version>1.1.1-redhat-2</commons.logging.version>
 
         <!-- Others -->
         <apacheds.version>2.0.0-M17</apacheds.version>
         <apacheds.codec.version>1.0.0-M23</apacheds.codec.version>
-        <google.zxing.version>3.2.1</google.zxing.version>
-        <freemarker.version>2.3.23</freemarker.version>
+        <google.zxing.version>3.2.1.redhat-3</google.zxing.version>
+        <freemarker.version>2.3.23.redhat-2</freemarker.version>
         <jetty9.version>9.1.0.v20131115</jetty9.version>
-        <liquibase.version>3.4.1</liquibase.version>
+        <liquibase.version>3.4.1.redhat-1</liquibase.version>
         <mongo.driver.version>3.2.0</mongo.driver.version>
         <mysql.version>5.1.29</mysql.version>
-        <osgi.version>4.2.0</osgi.version>
+        <osgi.version>5.0.0</osgi.version>
         <pax.web.version>3.1.2</pax.web.version>
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
-        <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
-        <twitter4j.version>4.0.4</twitter4j.version>
+        <servlet.api.30.version>1.0.2.Final-redhat-2</servlet.api.30.version>
+        <twitter4j.version>4.0.4.redhat-2</twitter4j.version>
 
         <!-- Test -->
         <greenmail.version>1.3.1b</greenmail.version>
@@ -164,7 +158,6 @@
         <module>dependencies</module>
         <module>server-spi</module>
         <module>saml-core</module>
-        <module>proxy</module>
         <module>federation</module>
         <module>services</module>
         <module>themes</module>
@@ -180,39 +173,11 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.github.relaxng</groupId>
-                <artifactId>relaxngDatatype</artifactId>
-                <version>${github.relaxng.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.istack</groupId>
-                <artifactId>istack-commons-runtime</artifactId>
-                <version>${sun.istack.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.istack</groupId>
-                <artifactId>istack-commons-tools</artifactId>
-                <version>${sun.istack.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind.external</groupId>
-                <artifactId>rngom</artifactId>
-                <version>${sun.jaxb.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xsom</groupId>
-                <artifactId>xsom</artifactId>
-                <version>${sun.xsom.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
-                <version>${bouncycastle.version}</version>
+                <groupId>org.jboss.bom</groupId>
+                <artifactId>eap-runtime-artifacts</artifactId>
+                <version>7.0.0.ER5</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>javax.mail</groupId>
@@ -220,89 +185,14 @@
                 <version>${javax.mail.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.spec.javax.ws.rs</groupId>
-                <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
-                <version>${jboss-jaxrs-api_2.0_spec}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jaxrs</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-multipart-provider</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jackson2-provider</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-client</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-undertow</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>async-http-servlet-3.0</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.xml.bind</groupId>
-                <artifactId>jboss-jaxb-api_2.2_spec</artifactId>
-                <version>${jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version}</version>
+                <version>${resteasy.community.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wildfly-adapter-subsystem</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.undertow</groupId>
-                <artifactId>undertow-servlet</artifactId>
-                <version>${undertow.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.undertow</groupId>
-                <artifactId>undertow-core</artifactId>
-                <version>${undertow.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-jaxb-annotations</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                <artifactId>jackson-jaxrs-json-provider</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                <artifactId>jackson-jaxrs-base</artifactId>
-                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.spec.javax.servlet</groupId>
@@ -312,6 +202,18 @@
             <dependency>
                 <groupId>org.picketlink</groupId>
                 <artifactId>picketlink-wildfly-common</artifactId>
+                <version>${picketlink.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.picketlink</groupId>
+                <artifactId>picketlink-federation</artifactId>
+                <version>${picketlink.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+	            <groupId>org.picketlink</groupId>
+	            <artifactId>picketlink-config</artifactId>
                 <version>${picketlink.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -334,6 +236,7 @@
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
                 <version>${log4j.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -348,20 +251,10 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.hibernate.javax.persistence</groupId>
-                <artifactId>hibernate-jpa-2.1-api</artifactId>
-                <version>${hibernate.javax.persistence.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${h2.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-entitymanager</artifactId>
-                <version>${hibernate.entitymanager.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.freemarker</groupId>
@@ -374,16 +267,25 @@
                 <version>${xmlsec.version}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>woodstox-core-asl</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>javax.servlet</groupId>
                         <artifactId>servlet-api</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>org.jboss.eap</groupId>
                 <artifactId>wildfly-dist</artifactId>
                 <version>${wildfly.version}</version>
                 <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>${commons.logging.version}</version>
             </dependency>
 
             <!-- Twitter -->
@@ -460,23 +362,12 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>dom4j</groupId>
-                <artifactId>dom4j</artifactId>
-                <version>${dom4j.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>xml-apis</groupId>
                 <artifactId>xml-apis</artifactId>
                 <version>${xml-apis.version}</version>
                 <scope>test</scope>
             </dependency>
             <!-- Older 1.5.10 binding required by embedded ApacheDS -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.version}</version>
-            </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
@@ -489,16 +380,6 @@
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${apache.httpcomponents.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpcore</artifactId>
-                <version>${apache.httpcomponents.httpcore.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -523,22 +404,7 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-controller</artifactId>
-                <version>${wildfly.core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-server</artifactId>
-                <version>${wildfly.core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-ee</artifactId>
-                <version>${wildfly.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>org.jboss.eap</groupId>
                 <artifactId>wildfly-feature-pack</artifactId>
                 <version>${wildfly.version}</version>
                 <type>zip</type>
@@ -557,22 +423,10 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-undertow</artifactId>
-                <version>${wildfly.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-subsystem-test-framework</artifactId>
                 <version>${wildfly.core.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-feature-pack</artifactId>
-                <type>pom</type>
-                <version>${wildfly.core.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
@@ -586,14 +440,9 @@
                 <version>${wildfly.core.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>org.jboss.eap</groupId>
                 <artifactId>wildfly-web-common</artifactId>
                 <version>${wildfly.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>${infinispan.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.liquibase</groupId>
@@ -614,11 +463,6 @@
                 <groupId>org.ops4j.pax.web</groupId>
                 <artifactId>pax-web-runtime</artifactId>
                 <version>${pax.web.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.aesh</groupId>
-                <artifactId>aesh</artifactId>
-                <version>${aesh.version}</version>
             </dependency>
 
             <!-- keycloak -->

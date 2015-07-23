@@ -64,7 +64,7 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>org.jboss.eap</groupId>
             <artifactId>wildfly-web-common</artifactId>
             <scope>provided</scope>
         </dependency>

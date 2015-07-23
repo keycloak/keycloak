@@ -43,7 +43,7 @@
     </build>
     <modules>
         <module>jpa</module>
-        <module>mongo</module>
+        <!--<module>mongo</module>-->
         <module>infinispan</module>
     </modules>
 </project>
