@@ -16,7 +16,6 @@
         <app.server.port.offset>200</app.server.port.offset>
         <app.server.http.port>8280</app.server.http.port>
         <app.server.management.port>10190</app.server.management.port>
-        <!--<app.server.management.port.jmx>10199</app.server.management.port.jmx>-->
 
         <adapter.libs.mode>provided</adapter.libs.mode>
         <adapter.config.mode>bundled</adapter.config.mode>
@@ -38,13 +37,39 @@
                             <configuration>
                                 <artifactItems>
                                     <artifactItem>
-                                        <groupId>org.keycloak</groupId>
-                                        <artifactId>keycloak-testsuite-integration-arquillian-tests-base</artifactId>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
                                         <type>test-jar</type>
                                         <includes>**/arquillian.xml</includes>
                                     </artifactItem>
                                 </artifactItems>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>            
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>xml-maven-plugin</artifactId>
+                    <version>1.0</version>
+                    <executions>
+                        <execution>
+                            <id>add-app-server-to-arquillian-xml</id>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>transform</goal>
+                            </goals>
+                            <configuration>
+                                <transformationSets>
+                                    <transformationSet>
+                                        <dir>${project.build.directory}/dependency</dir>
+                                        <includes>
+                                            <include>arquillian.xml</include>
+                                        </includes>
+                                        <stylesheet>src/main/xslt/arquillian.xsl</stylesheet>
+                                        <outputDir>${project.build.directory}/dependency</outputDir>
+                                    </transformationSet>
+                                </transformationSets>
                             </configuration>
                         </execution>
                     </executions>
@@ -59,7 +84,6 @@
                             <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
                             <app.server.http.port>${app.server.http.port}</app.server.http.port>
                             <app.server.management.port>${app.server.management.port}</app.server.management.port>
-                            <app.server.management.port.jmx>${app.server.management.port.jmx}</app.server.management.port.jmx>
                             <adapter.libs.mode>${adapter.libs.mode}</adapter.libs.mode>
                             <adapter.config.mode>${adapter.config.mode}</adapter.config.mode>
 
@@ -83,13 +107,13 @@
             </activation>
             <dependencies>
                 <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-testsuite-integration-arquillian-tests-base</artifactId>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-tests-base</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-testsuite-integration-arquillian-tests-base</artifactId>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-tests-base</artifactId>
                     <version>${project.version}</version>
                     <type>test-jar</type>
                 </dependency>

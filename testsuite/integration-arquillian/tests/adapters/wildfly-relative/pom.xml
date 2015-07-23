@@ -12,7 +12,12 @@
     <name>Adapter Tests on Wildfly Relative</name>
     
     <properties>
+        
         <adapter.libs.wildfly>${containers.home}/keycloak-wf9-adapter-dist</adapter.libs.wildfly>
+
+        <!--this is needed for adapter tests that load system properties in adapter config-->
+        <app.server.http.port>${auth.server.http.port}</app.server.http.port>
+        
     </properties>
     
     <dependencies>

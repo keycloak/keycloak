@@ -315,8 +315,8 @@
                                     <configuration>
                                         <artifactItems>
                                             <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>keycloak-testsuite-integration-arquillian-server-wildfly</artifactId>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-server-wildfly</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
                                             </artifactItem>
