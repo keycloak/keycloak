@@ -861,6 +861,18 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         $scope.hidePassword = flag;
     };
 
+    $scope.removeIdentityProvider = function(identityProvider) {
+        Dialog.confirmDelete(identityProvider.alias, 'provider', function() {
+            IdentityProvider.remove({
+                realm : realm.realm,
+                alias : identityProvider.alias
+            }, function() {
+                $route.reload();
+                Notifications.success("The identity provider has been deleted.");
+            });
+        });
+    };
+
 });
 
 module.controller('RealmIdentityProviderExportCtrl', function(realm, identityProvider, $scope, $http, IdentityProviderExport) {
@@ -1052,16 +1064,21 @@ module.controller('RealmRevocationCtrl', function($scope, Realm, RealmPushRevoca
 });
 
 
-module.controller('RoleListCtrl', function($scope, $location, realm, roles) {
-
+module.controller('RoleListCtrl', function($scope, $route, Dialog, Notifications, realm, roles, RoleById) {
     $scope.realm = realm;
     $scope.roles = roles;
 
-    $scope.$watch(function() {
-        return $location.path();
-    }, function() {
-        $scope.path = $location.path().substring(1).split("/");
-    });
+    $scope.removeRole = function (role) {
+        Dialog.confirmDelete(role.name, 'role', function () {
+            RoleById.remove({
+                realm: realm.realm,
+                role: role.id
+            }, function () {
+                $route.reload();
+                Notifications.success("The role has been deleted.");
+            });
+        });
+    };
 });
 
 

@@ -6,7 +6,7 @@
     <table class="table table-striped table-bordered">
         <thead>
         <tr ng-show="providers.length > 0 && access.manageUsers">
-            <th colspan="4" class="kc-table-actions">
+            <th colspan="5" class="kc-table-actions">
                 <div class="pull-right">
                     <div>
                         <select class="form-control" ng-model="selectedProvider"
@@ -22,7 +22,7 @@
             <th>ID</th>
             <th>Provider Name</th>
             <th>Priority</th>
-            <th>Actions</th>
+            <th colspan="2">Actions</th>
         </tr>
         </thead>
         <tbody>
@@ -32,6 +32,9 @@
             <td>{{instance.priority}}</td>
             <td class="kc-action-cell">
                 <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">Edit</button>
+            </td>
+            <td class="kc-action-cell">
+                <button class="btn btn-default btn-block btn-sm" data-ng-click="removeUserFederation(instance)">Delete</button>
             </td>
          </tr>
         <tr data-ng-show="!instances || instances.length == 0">
