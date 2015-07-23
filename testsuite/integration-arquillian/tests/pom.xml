@@ -68,7 +68,27 @@
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-arquillian-container-managed</artifactId>
                 <version>${arquillian-wildfly-container.version}</version>
-            </dependency>        
+            </dependency>     
+            <dependency>
+                <groupId>org.jboss.xnio</groupId>
+                <artifactId>xnio-api</artifactId>
+                <version>3.3.0.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.xnio</groupId>
+                <artifactId>xnio-nio</artifactId>
+                <version>3.3.0.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.undertow</groupId>
+                <artifactId>undertow-servlet</artifactId>
+                <version>${undertow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.undertow</groupId>
+                <artifactId>undertow-core</artifactId>
+                <version>${undertow.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     
@@ -313,11 +333,13 @@
                 <dependency>
                     <groupId>org.jboss.resteasy</groupId>
                     <artifactId>resteasy-client</artifactId>
+                    <version>${resteasy.latest.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>org.jboss.resteasy</groupId>
                     <artifactId>resteasy-undertow</artifactId>
                     <scope>compile</scope>
+                    <version>${resteasy.latest.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>org.jboss.resteasy</groupId>

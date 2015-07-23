@@ -15,7 +15,7 @@
 
 
     <modules>
-        <module>wildfly</module>
+        <!--<module>wildfly</module>-->
         <module>eap6</module>
     </modules>
 </project>
