@@ -113,6 +113,13 @@ module.controller('HomeCtrl', function(Realm, Auth, $location) {
     });
 });
 
+module.controller('ServerInfoPageCtrl', function($scope, ServerInfoPage) {
+		$scope.serverInfoPage = ServerInfoPage.get();
+    $scope.serverInfoPageUpdate = function() {
+        $scope.serverInfoPage = ServerInfoPage.get();
+    };
+});
+
 module.controller('RealmListCtrl', function($scope, Realm, Current) {
     $scope.realms = Realm.query();
     Current.realms = $scope.realms;

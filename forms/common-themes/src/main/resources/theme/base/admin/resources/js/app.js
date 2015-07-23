@@ -1112,7 +1112,13 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'AuthenticationConfigCreateCtrl'
         })
         .when('/server-info', {
-            templateUrl : resourceUrl + '/partials/server-info.html'
+            templateUrl : resourceUrl + '/partials/server-info.html',
+            resolve : {
+            	serverInfoPage : function(ServerInfoPageLoader) {
+                return ServerInfoPageLoader();
+            	}
+            },
+            controller : 'ServerInfoPageCtrl'
         })
         .when('/logout', {
             templateUrl : resourceUrl + '/partials/home.html',

@@ -6,20 +6,19 @@ import org.keycloak.Config;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderOperationalInfo;
 
 import javax.naming.InitialContext;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.sql.DataSource;
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -33,7 +32,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
     private Config.Scope config;
     
-    private DatabaseInfo databaseInfo;
+    private Map<String,String> operationalInfo;
 
     @Override
     public JpaConnectionProvider create(KeycloakSession session) {
@@ -127,7 +126,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
                     connection = getConnection();
                     try{ 
-	                    prepareDatabaseInfo(connection);
+	                    prepareOperationalInfo(connection);
 	                    
 	                    if (databaseSchema != null) {
 	                        logger.trace("Updating database");
@@ -180,16 +179,16 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         }
     }
     
-    protected void prepareDatabaseInfo(Connection connection) {
+    protected void prepareOperationalInfo(Connection connection) {
   		try {
-  			databaseInfo = new DatabaseInfo();
+  			operationalInfo = new LinkedHashMap<>();
   			DatabaseMetaData md = connection.getMetaData();
-  			databaseInfo.databaseDriver = md.getDriverName() + " " + md.getDriverVersion();
-  			databaseInfo.databaseProduct = md.getDatabaseProductName() + " " + md.getDatabaseProductVersion();
-  			databaseInfo.databaseUser = md.getUserName();
-  			databaseInfo.jdbcUrl = md.getURL();
+  			operationalInfo.put("databaseUrl",md.getURL());
+  			operationalInfo.put("databaseUser", md.getUserName());
+  			operationalInfo.put("databaseProduct", md.getDatabaseProductName() + " " + md.getDatabaseProductVersion());
+  			operationalInfo.put("databaseDriver", md.getDriverName() + " " + md.getDriverVersion());
   		} catch (SQLException e) {
-  			logger.warn("Unable to get database info due " + e.getMessage());
+  			logger.warn("Unable to prepare operational info due database exception: " + e.getMessage());
   		}
   	}
 
@@ -209,31 +208,8 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     }
     
     @Override
-  	public DatabaseInfo getOperationalInfo() {
-  		return databaseInfo;
-  	}
-
-  	public static class DatabaseInfo implements ProviderOperationalInfo {
-  		protected String jdbcUrl;
-  		protected String databaseUser;
-  		protected String databaseProduct;
-  		protected String databaseDriver;
-
-  		public String getJdbcUrl() {
-  			return jdbcUrl;
-  		}
-
-  		public String getDatabaseDriver() {
-  			return databaseDriver;
-  		}
-
-  		public String getDatabaseUser() {
-  			return databaseUser;
-  		}
-
-  		public String getDatabaseProduct() {
-  			return databaseProduct;
-  		}
+  	public Map<String,String> getOperationalInfo() {
+  		return operationalInfo;
   	}
 
 }

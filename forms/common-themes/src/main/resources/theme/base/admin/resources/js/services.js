@@ -205,6 +205,9 @@ module.factory('ServerInfo', function($resource) {
     return $resource(authUrl + '/admin/serverinfo');
 });
 
+module.factory('ServerInfoPage', function($resource) {
+  return $resource(authUrl + '/admin/serverinfopage');
+});
 
 
 module.factory('ClientProtocolMapper', function($resource) {
