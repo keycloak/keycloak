@@ -17,14 +17,14 @@
     <modules>
         <module>adapters</module>
         <module>saml-adapters</module>
-        <module>demo-dist</module>
-        <module>docs-dist</module>
+        <!--<module>demo-dist</module>-->
+        <!--<module>docs-dist</module>-->
         <module>examples-dist</module>
-        <module>proxy-dist</module>
-        <module>server-dist</module>
+        <!--<module>proxy-dist</module>-->
+        <!--<module>server-dist</module>-->
         <module>server-overlay</module>
         <module>src-dist</module>
-        <module>feature-packs</module>
+        <!--<module>feature-packs</module>-->
     </modules>
 
     <profiles>
