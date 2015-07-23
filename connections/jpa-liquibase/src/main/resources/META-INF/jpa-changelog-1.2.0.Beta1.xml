@@ -156,9 +156,9 @@
 
         <!-- Remove obsolete 'social' and 'claims' stuff -->
         <dropForeignKeyConstraint baseTableName="USER_SOCIAL_LINK" constraintName="FK_68CJYS5UWM55UY823Y75XG4OM" />
-        <dropTable tableName="USER_SOCIAL_LINK" cascadeConstraints="true" />
+        <dropTable tableName="USER_SOCIAL_LINK" />
         <dropForeignKeyConstraint baseTableName="REALM_SOCIAL_CONFIG" constraintName="FK_SV5I3C2TI7G0G922FGE683SOV" />
-        <dropTable tableName="REALM_SOCIAL_CONFIG" cascadeConstraints="true" />
+        <dropTable tableName="REALM_SOCIAL_CONFIG" />
         <dropColumn tableName="CLIENT" columnName="ALLOWED_CLAIMS_MASK" />
 
         <createTable tableName="REALM_ENABLED_EVENT_TYPES">
