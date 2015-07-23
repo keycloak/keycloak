@@ -216,7 +216,7 @@ module.controller('UserConsentsCtrl', function($scope, realm, user, userConsents
 });
 
 
-module.controller('UserListCtrl', function($scope, realm, User, UserImpersonation, BruteForce, Notifications) {
+module.controller('UserListCtrl', function($scope, realm, User, UserImpersonation, BruteForce, Notifications, $route, Dialog) {
     $scope.realm = realm;
     $scope.page = 0;
 
@@ -268,6 +268,20 @@ module.controller('UserListCtrl', function($scope, realm, User, UserImpersonatio
         $scope.users = User.query($scope.query, function() {
             $scope.searchLoaded = true;
             $scope.lastSearch = $scope.query.search;
+        });
+    };
+
+    $scope.removeUser = function(user) {
+        Dialog.confirmDelete(user.id, 'user', function() {
+            user.$remove({
+                realm : realm.realm,
+                userId : user.id
+            }, function() {
+                $route.reload();
+                Notifications.success("The user has been deleted.");
+            }, function() {
+                Notifications.error("User couldn't be deleted");
+            });
         });
     };
 });
@@ -531,7 +545,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
     };
 });
 
-module.controller('UserFederationCtrl', function($scope, $location, realm, UserFederationProviders, UserFederationInstances, Notifications, Dialog) {
+module.controller('UserFederationCtrl', function($scope, $location, $route, realm, UserFederationProviders, UserFederationInstances, Notifications, Dialog) {
     console.log('UserFederationCtrl ++++****');
     $scope.realm = realm;
     $scope.providers = UserFederationProviders.query({realm: realm.realm});
@@ -543,11 +557,22 @@ module.controller('UserFederationCtrl', function($scope, $location, realm, UserF
 
     $scope.instances = UserFederationInstances.query({realm: realm.realm});
 
+    $scope.removeUserFederation = function(instance) {
+        Dialog.confirmDelete(instance.displayName, 'user federation provider', function() {
+            UserFederationInstances.remove({
+                realm : realm.realm,
+                instance : instance.id
+            }, function() {
+                $route.reload();
+                Notifications.success("The provider has been deleted.");
+            });
+        });
+    };
 });
 
 module.controller('UserFederationTabCtrl', function(Dialog, $scope, Current, Notifications, $location) {
     $scope.removeUserFederation = function() {
-        Dialog.confirm('Delete', 'Are you sure you want to permanently delete this provider?  All imported users will also be deleted.', function() {
+        Dialog.confirmDelete($scope.instance.displayName, 'user federation provider', function() {
             $scope.instance.$remove({
                 realm : Current.realm.realm,
                 instance : $scope.instance.id

@@ -483,15 +483,22 @@ module.controller('ClientImportCtrl', function($scope, $location, $upload, realm
 });
 
 
-module.controller('ClientListCtrl', function($scope, realm, clients, Client, serverInfo, $location) {
+module.controller('ClientListCtrl', function($scope, realm, clients, Client, serverInfo, $route, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.clients = clients;
     $scope.importButton = serverInfo.clientImporters.length > 0;
-    $scope.$watch(function() {
-        return $location.path();
-    }, function() {
-        $scope.path = $location.path().substring(1).split("/");
-    });
+
+    $scope.removeClient = function(client) {
+        Dialog.confirmDelete(client.clientId, 'client', function() {
+            Client.remove({
+                realm : realm.realm,
+                client : client.id
+            }, function() {
+                $route.reload();
+                Notifications.success("The client has been deleted.");
+            });
+        });
+    };
 });
 
 module.controller('ClientInstallationCtrl', function($scope, realm, client, ClientInstallation,ClientInstallationJBoss, $http, $routeParams) {
@@ -1003,7 +1010,7 @@ module.controller('ClientRevocationCtrl', function($scope, realm, client, Client
 
 });
 
-module.controller('ClientClusteringCtrl', function($scope, client, Client, ClientTestNodesAvailable, realm, $location, $route, Notifications, TimeUnit) {
+module.controller('ClientClusteringCtrl', function($scope, client, Client, ClientTestNodesAvailable, ClientClusterNode, realm, $location, $route, Dialog, Notifications, TimeUnit) {
     $scope.client = client;
     $scope.realm = realm;
 
@@ -1065,6 +1072,15 @@ module.controller('ClientClusteringCtrl', function($scope, client, Client, Clien
         }
 
         $scope.nodeRegistrations = nodeRegistrations;
+    };
+
+    $scope.removeNode = function(node) {
+        Dialog.confirmDelete(node.host, 'node', function() {
+            ClientClusterNode.remove({ realm : realm.realm, client : client.id , node: node.host }, function() {
+                Notifications.success('Node ' + node.host + ' unregistered successfully.');
+                $route.reload();
+            });
+        });
     };
 });
 
@@ -1172,8 +1188,8 @@ module.controller('AddBuiltinProtocolMapperCtrl', function($scope, realm, client
 });
 
 module.controller('ClientProtocolMapperListCtrl', function($scope, realm, client, serverInfo,
-                                                           ClientProtocolMappersByProtocol,
-                                                           $http, $location, Dialog, Notifications) {
+                                                           ClientProtocolMappersByProtocol, ClientProtocolMapper,
+                                                           $route, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.client = client;
     if (client.protocol == null) {
@@ -1187,6 +1203,15 @@ module.controller('ClientProtocolMapperListCtrl', function($scope, realm, client
     }
     $scope.mapperTypes = mapperTypes;
 
+    $scope.removeMapper = function(mapper) {
+        console.debug(mapper);
+        Dialog.confirmDelete(mapper.name, 'mapper', function() {
+            ClientProtocolMapper.remove({ realm: realm.realm, client: client.id, id : mapper.id }, function() {
+                Notifications.success("The mapper has been deleted.");
+                $route.reload();
+            });
+        });
+    };
 
     var updateMappers = function() {
         $scope.mappers = ClientProtocolMappersByProtocol.query({realm : realm.realm, client : client.id, protocol : client.protocol});

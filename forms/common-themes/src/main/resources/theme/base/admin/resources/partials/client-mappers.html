@@ -10,7 +10,7 @@
     <table class="table table-striped table-bordered">
         <thead>
         <tr>
-            <th class="kc-table-actions" colspan="4">
+            <th class="kc-table-actions" colspan="6">
                 <div class="form-inline">
                     <div class="form-group">
                         <div class="input-group">
@@ -32,6 +32,7 @@
             <th>Name</th>
             <th>Category</th>
             <th>Type</th>
+            <th colspan="2">Actions</th>
         </tr>
         </thead>
         <tbody>
@@ -39,6 +40,12 @@
             <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/mappers/{{mapper.id}}">{{mapper.name}}</a></td>
             <td>{{mapperTypes[mapper.protocolMapper].category}}</td>
             <td>{{mapperTypes[mapper.protocolMapper].name}}</td>
+            <td class="kc-action-cell">
+                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}/mappers/{{mapper.id}}">Edit</button>
+            </td>
+            <td class="kc-action-cell">
+                <button class="btn btn-default btn-block btn-sm" data-ng-click="removeMapper(mapper)">Delete</button>
+            </td>
         </tr>
         <tr data-ng-show="mappers.length == 0">
             <td>No mappers available</td>

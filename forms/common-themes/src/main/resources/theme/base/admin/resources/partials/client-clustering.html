@@ -43,7 +43,7 @@
             <table class="table table-striped table-bordered">
                 <thead>
                     <tr>
-                        <th class="kc-table-actions" colspan="3" data-ng-show="access.manageClients">
+                        <th class="kc-table-actions" colspan="5" data-ng-show="access.manageClients">
                             <div class="pull-right">
                                 <a class="btn btn-default" tooltip="Manually register cluster node. This is usually not needed as cluster node should be registered automatically by adapter"
                                    tooltip-placement="bottom" href="#/register-node/realms/{{realm.realm}}/clients/{{client.id}}/clustering">Register node manually</a>
@@ -54,12 +54,19 @@
                     <tr data-ng-hide="!nodeRegistrations || nodeRegistrations.length == 0">
                         <th>Node host</th>
                         <th>Last registration</th>
+                        <th colspan="2">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr ng-repeat="node in nodeRegistrations">
                         <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/clustering/{{node.host}}">{{node.host}}</a></td>
                         <td>{{node.lastRegistration}}</td>
+                        <td class="kc-action-cell">
+                            <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}/clustering/{{node.host}}">Edit</button>
+                        </td>
+                        <td class="kc-action-cell">
+                            <button class="btn btn-default btn-block btn-sm" data-ng-click="removeNode(node)">Delete</button>
+                        </td>
                     </tr>
                     <tr data-ng-show="!nodeRegistrations || nodeRegistrations.length == 0">
                         <td class="text-muted">No registered cluster nodes available</td>
