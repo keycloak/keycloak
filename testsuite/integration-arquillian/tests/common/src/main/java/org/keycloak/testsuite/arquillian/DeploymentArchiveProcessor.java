@@ -15,7 +15,7 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.adapters.config.BaseAdapterConfig;
 import static org.keycloak.testsuite.arquillian.ContainersTestEnricher.*;
-import org.keycloak.testsuite.util.AdapterType;
+import org.keycloak.testsuite.util.AdapterLibsMode;
 import static org.keycloak.testsuite.util.Json.loadJson;
 import org.keycloak.util.JsonSerialization;
 
@@ -85,10 +85,10 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
     }
 
     protected void attachKeycloakLibs(Archive<?> archive, TestClass testClass) {
-        AdapterType adapterType = AdapterType.getByType(System.getProperty("adapter.type",
-                AdapterType.PROVIDED.getType()));
+        AdapterLibsMode adapterType = AdapterLibsMode.getByType(System.getProperty("adapter.libs.mode",
+                AdapterLibsMode.PROVIDED.getType()));
         System.out.println("Adapter type: " + adapterType);
-        if (adapterType.equals(AdapterType.BUNDLED)) {
+        if (adapterType.equals(AdapterLibsMode.BUNDLED)) {
             System.out.println("Attaching keycloak adapter libs to " + archive.getName());
 
             String libsLocationProperty = getAdapterLibsLocationProperty(testClass.getJavaClass());

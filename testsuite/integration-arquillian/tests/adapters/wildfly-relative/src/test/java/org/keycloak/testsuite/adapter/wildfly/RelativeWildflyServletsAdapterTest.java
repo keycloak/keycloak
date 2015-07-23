@@ -1,14 +1,16 @@
-package org.keycloak.testsuite.adapter.relative;
+package org.keycloak.testsuite.adapter.wildfly;
 
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
+import org.keycloak.testsuite.arquillian.annotation.AdapterLibsLocationProperty;
 
 /**
  *
  * @author tkyjovsk
  */
-public class RelativeServletsAdapterTest extends AbstractServletsAdapterTest {
+@AdapterLibsLocationProperty("adapter.libs.wildfly")
+public class RelativeWildflyServletsAdapterTest extends AbstractServletsAdapterTest {
 
     // FIXME - The 'app.server.base.url' property provided to auth server via arquillian.xml 
     // is pre-set for non-relative scenario. Need to inject correct property to auth server for relative scenario.

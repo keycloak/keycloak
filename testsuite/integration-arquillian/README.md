@@ -128,7 +128,7 @@ It automatically modifies imported test realms and deployments' adapter configs 
 ### Adapter Libraries Mode
 
 1. **Provided.** By container, e.g. as a subsystem. *Default.*
-2. **Bundled.** In the deployed war in `/WEB-INF/libs`. *Wildfly only*.
+2. **Bundled.** In the deployed war in `/WEB-INF/libs`. Enable with `-Dadapter.libs.bundled`. *Wildfly only*.
 
 ### Adapter Config Mode
 

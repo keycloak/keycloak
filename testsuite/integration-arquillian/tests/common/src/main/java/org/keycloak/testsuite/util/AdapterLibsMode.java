@@ -4,14 +4,14 @@ package org.keycloak.testsuite.util;
  *
  * @author tkyjovsk
  */
-public enum AdapterType {
+public enum AdapterLibsMode {
     
     PROVIDED("provided"),
     BUNDLED("bundled");
 
     private final String type;
 
-    private AdapterType(String type) {
+    private AdapterLibsMode(String type) {
         this.type = type;
     }
 
@@ -19,8 +19,8 @@ public enum AdapterType {
         return type;
     }
 
-    public static AdapterType getByType(String type) {
-        for (AdapterType s : AdapterType.values()) {
+    public static AdapterLibsMode getByType(String type) {
+        for (AdapterLibsMode s : AdapterLibsMode.values()) {
             if (s.getType().equals(type)) {
                 return s;
             }
