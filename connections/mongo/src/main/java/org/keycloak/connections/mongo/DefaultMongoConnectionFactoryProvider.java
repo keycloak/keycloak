@@ -14,13 +14,13 @@ import org.keycloak.connections.mongo.impl.context.TransactionMongoStoreInvocati
 import org.keycloak.connections.mongo.updater.MongoUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderOperationalInfo;
 
 import javax.net.ssl.SSLSocketFactory;
-
 import java.lang.reflect.Method;
 import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -61,7 +61,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
     private DB db;
     protected Config.Scope config;
     
-    private MongoDbInfo mongoDbInfo;
+    private Map<String,String> operationalInfo;
 
     @Override
     public MongoConnectionProvider create(KeycloakSession session) {
@@ -165,11 +165,11 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             client = new MongoClient(new ServerAddress(host, port), clientOptions);
         }
         
-        mongoDbInfo = new MongoDbInfo();
-    		mongoDbInfo.driverVersion = client.getVersion();
-    		mongoDbInfo.address = client.getAddress().toString();
-    		mongoDbInfo.database = dbName;
-    		mongoDbInfo.user = user;
+        operationalInfo = new LinkedHashMap<>();
+        operationalInfo.put("mongoServerAddress", client.getAddress().toString());
+        operationalInfo.put("mongoDatabaseName", dbName);
+        operationalInfo.put("mongoUser", user);
+        operationalInfo.put("mongoDriverVersion", client.getVersion());
     		
         logger.debugv("Initialized mongo model. host: %s, port: %d, db: %s", host, port, dbName);
         return client;
@@ -219,31 +219,8 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
     }
     
     @Override
-  	public ProviderOperationalInfo getOperationalInfo() {
-  		return mongoDbInfo;
+  	public Map<String,String> getOperationalInfo() {
+  		return operationalInfo;
   	}
 
-  	public static class MongoDbInfo implements ProviderOperationalInfo {
-
-  		public String address;
-  		public String database;
-  		public String driverVersion;
-  		public String user;
-
-  		public String getAddress() {
-  			return address;
-  		}
-
-  		public String getDatabase() {
-  			return database;
-  		}
-
-  		public String getDriverVersion() {
-  			return driverVersion;
-  		}
-
-  		public String getUser() {
-  			return user;
-  		}
-  	}
 }

@@ -317,13 +317,41 @@ public class AdminAPITest {
         Assert.assertNotNull(response);
         Assert.assertEquals(Version.VERSION, response.get("version"));
         Assert.assertNotNull(response.get("serverTime"));
+        Assert.assertNotNull(response.get("providers"));
+        Assert.assertNotNull(response.get("themes"));
+        Assert.assertNotNull(response.get("enums"));
+
+        // System.out.println(response);
+
+    }
+
+    @Test
+    public void testServerInfoPage() {
+
+        String token = createToken();
+        final String authHeader = "Bearer " + token;
+        ClientRequestFilter authFilter = new ClientRequestFilter() {
+            @Override
+            public void filter(ClientRequestContext requestContext) throws IOException {
+                requestContext.getHeaders().add(HttpHeaders.AUTHORIZATION, authHeader);
+            }
+        };
+        Client client = ClientBuilder.newBuilder().register(authFilter).build();
+        UriBuilder authBase = UriBuilder.fromUri("http://localhost:8081/auth");
+        WebTarget target = client.target(AdminRoot.adminBaseUrl(authBase).path("serverinfopage"));
+
+        Map<?, ?> response = target.request().accept("application/json").get(Map.class);
+
+        Assert.assertNotNull(response);
+        Assert.assertEquals(Version.VERSION, response.get("version"));
+        Assert.assertNotNull(response.get("serverTime"));
+        Assert.assertNotNull(response.get("providers"));
         Assert.assertNotNull(response.get("serverStartupTime"));
 
         Assert.assertNotNull(response.get("memoryInfo"));
-        Assert.assertNotNull(response.get("jpaInfo"));
-        Assert.assertNull(response.get("mongoDbInfo"));
+        Assert.assertNotNull(response.get("systemInfo"));
         
-        System.out.println(response);
+        // System.out.println(response);
 
     }
 
