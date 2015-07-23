@@ -37,7 +37,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>org.jboss.eap</groupId>
             <artifactId>wildfly-dist</artifactId>
             <type>zip</type>
         </dependency>

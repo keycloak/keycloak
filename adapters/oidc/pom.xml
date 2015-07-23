@@ -40,8 +40,6 @@
         <module>osgi-adapter</module>
         <module>servlet-filter</module>
         <module>servlet-oauth-client</module>
-        <module>spring-boot</module>
-        <module>spring-security</module>
         <module>tomcat</module>
         <module>undertow</module>
         <module>wildfly</module>

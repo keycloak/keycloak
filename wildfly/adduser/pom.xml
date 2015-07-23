@@ -45,7 +45,6 @@
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-domain-management</artifactId>
-            <version>${wildfly.core.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.aesh</groupId>

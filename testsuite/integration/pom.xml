@@ -27,7 +27,22 @@
 
     <artifactId>keycloak-testsuite-integration</artifactId>
     <name>Keycloak Integration TestSuite</name>
-    <description />
+    <description/>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.xnio</groupId>
+                <artifactId>xnio-api</artifactId>
+                <version>3.3.0.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.xnio</groupId>
+                <artifactId>xnio-nio</artifactId>
+                <version>3.3.0.Final</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -232,7 +247,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>org.jboss.eap</groupId>
             <artifactId>wildfly-undertow</artifactId>
             <scope>test</scope>
         </dependency>

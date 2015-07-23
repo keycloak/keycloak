@@ -30,10 +30,22 @@
     <artifactId>keycloak-saml-tomcat-integration-pom</artifactId>
     <packaging>pom</packaging>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.bom</groupId>
+                <artifactId>eap6-supported-artifacts</artifactId>
+                <version>${jboss.eap6.bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <modules>
         <module>tomcat-core</module>
-        <module>tomcat6</module>
-        <module>tomcat7</module>
-        <module>tomcat8</module>
+        <!--<module>tomcat6</module>-->
+        <!--<module>tomcat7</module>-->
+        <!--<module>tomcat8</module>-->
     </modules>
 </project>

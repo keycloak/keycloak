@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-
-
 <!--
   ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
@@ -19,12 +17,13 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.3" name="org.mongodb.mongo-java-driver">
-    <resources>
-        <artifact name="${org.mongodb:mongo-java-driver}"/>
-    </resources>
-    <dependencies>
-        <module name="javax.api"/>
-    </dependencies>
+<module xmlns="urn:jboss:module:1.3" name="org.jboss.as.product" slot="rh-sso">
 
+    <resources>
+        <resource-root path="dir"/>
+        <!-- Insert resources here -->
+    </resources>
+
+    <dependencies>
+    </dependencies>
 </module>
