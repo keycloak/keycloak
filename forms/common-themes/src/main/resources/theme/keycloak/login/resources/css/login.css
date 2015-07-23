@@ -143,6 +143,10 @@
     margin-bottom: 0;
 }
 
+#kc-terms-text {
+    margin-bottom: 20px;
+}
+
 .feedback-error #kc-feedback-wrapper {
     background-image: url(../img/feedback-error-arrow-down.png);
 }
