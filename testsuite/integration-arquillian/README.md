@@ -18,8 +18,8 @@ It can be selected with property `auth.server.container`.
 
 | Container | Arquillian Qualifier | Maven | Dependencies |
 | --- | --- | --- | --- |
-| **Undertow** | `auth-server-undertow` | `-Dauth.server.container=auth-server-undertow` **default** | `undertow-core`, `resteasy-undertow` |
-| **Wildfly 9** | `auth-server-wildfly` | `-Dauth.server.container=auth-server-wildfly` or `-Pauth-server-wildfly` | `keycloak-demo-dist` |
+| **Undertow** | `auth-server-undertow` | **default** | `undertow-core`, `resteasy-undertow` |
+| **Wildfly 9** | `auth-server-wildfly` | `-Pauth-server-wildfly` | `keycloak-server-dist` |
 
 See the relevant container definitions in `arquillian.xml` located in the **test resources** folder.
 
@@ -78,10 +78,9 @@ Multiple profiles can be enabled for a single test run (Maven build).
 | --- | --- | --- | --- |
 | **Wildfly 9** Relative | `auth-server-wildfly` | `-Pauth-server-wildfly` | `keycloak-demo-dist` serves both as auth-server and app-server (relative test scenario) |
 | **Wildfly 9** | `app-server-wildfly` | `-Papp-server-wildfly` | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
-| **Wildfly 9** Vanilla | `app-server-wildfly-vanilla` | `-Papp-server-wildfly-vanilla` mutually exclusive with `-Papp-server-wildfly` | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
-| ~~**JBoss AS 7**~~ not fully functional yet | `app-server-as7` | `-Papp-server-as7` | `jboss-as-dist`, `keycloak-adapter-dist-as7` |
+| ~~**JBoss AS 7**~~ WIP | `app-server-as7` | `-Papp-server-as7` | `jboss-as-dist`, `keycloak-adapter-dist-as7` |
 | **Tomcat 8** | `app-server-tomcat` | `-Papp-server-tomcat` | `tomcat`, `keycloak-tomcat8-adapter-dist` |
-| **Karaf 3** | `app-server-karaf` | `-Papp-server-karaf` mututally exclusive with other profiles | `testsuite/karaf-example-dist` |
+| **Karaf 3** | `app-server-karaf` | `-Papp-server-karaf` | `apache-camel`, `apache-cxf`, `keycloak-osgi-features`, `keycloak-fuse-example-features` |
 
 See the relevant container definitions in `arquillian.xml` located in the **test resources** folder.
 
@@ -124,29 +123,29 @@ It automatically modifies imported test realms and deployments' adapter configs 
 
 ### Adapter Libraries Mode
 
-1. **Provided.** By container, e.g. as a subsystem. Default.
-2. **Bundled.** In the deployed war in `/WEB-INF/libs`. Used with `app-server-wildfly-vanilla` which doesn't have adapter subsystem installed.
+1. **Provided.** By container, e.g. as a subsystem. *Default.*
+2. **Bundled.** In the deployed war in `/WEB-INF/libs`. *Wildfly only*.
 
 ### Adapter Config Mode
 
-1. ~~**Provided.** In `standalone.xml` using `secure-deployment`. Only supported for *Wildfly*.~~ not supported yet
-2. **Bundled.** In the deployed war in `/WEB-INF/keycloak.json`. Default.
+1. ~~**Provided.** In `standalone.xml` using `secure-deployment`. *Wildfly only.*~~ WIP
+2. **Bundled.** In the deployed war in `/WEB-INF/keycloak.json`. *Default.*
 
 ### Adapters Test Coverage
 
 | Module | Coverage | Supported Containers |
 | --- | --- | --- |
-| Test Servlets | Good | All |
-| Demo | Minimal, WIP | `auth-server-wildfly` (relative) |
-| Admin Client |  |
-| Cordova |  |
-| CORS |  |
-| JS Console | Good | `auth-server-wildfly` (relative) |
-| Providers |  |
+| ***Test Servlets*** | Good | All |
+| **Demo** | Minimal, WIP | `auth-server-wildfly` (relative) |
+| **Admin Client** |  |
+| **Cordova** |  |
+| **CORS** |  |
+| **JS Console** | Good | `auth-server-wildfly` (relative) |
+| **Providers** |  |
 | Themes |  |
 | Multitenancy | WIP |  |
-| Basic Auth | Good | All |
-| Fuse | WIP | `app-server-karaf` |
+| **Basic Auth** | Good | All |
+| **Fuse** | WIP | `app-server-karaf` |
 | SAML |  |
 | LDAP |  |
 | Kerberos |  |
