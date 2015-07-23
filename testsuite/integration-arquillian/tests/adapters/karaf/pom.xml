@@ -14,7 +14,6 @@
     <properties>
         <karaf.version>3.0.3</karaf.version>
         <karaf.home>${project.build.directory}/assembly</karaf.home>
-        <exclude.adapters.karaf>-</exclude.adapters.karaf>
                 
         <!--fuse examples expect auth server on 8080-->
         <auth.server.port.offset>0</auth.server.port.offset>

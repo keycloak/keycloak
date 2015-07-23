@@ -42,7 +42,6 @@
     </build>
     
     <profiles>    
-        
         <profile>
             <id>no-console</id>
             <properties>
@@ -50,6 +49,6 @@
                 <exclude.console>**/console/**/*Test.java</exclude.console>           
             </properties>
         </profile>
-                        	
     </profiles>
+    
 </project>

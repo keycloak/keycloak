@@ -14,7 +14,6 @@
     <properties>
         <tomcat.version>8.0.23</tomcat.version>
         <tomcat.home>${containers.home}/apache-tomcat-${tomcat.version}</tomcat.home>
-        <exclude.adapters.tomcat>-</exclude.adapters.tomcat>
         <!-- FIXME disabled port-offset because tomcat doesn't support it -->
         <app.server.port.offset>0</app.server.port.offset>
         <app.server.http.port>8080</app.server.http.port>

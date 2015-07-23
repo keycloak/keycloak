@@ -84,7 +84,6 @@
                             <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>
                             <auth.server.management.port>${auth.server.management.port}</auth.server.management.port>
                             <startup.timeout.sec>${startup.timeout.sec}</startup.timeout.sec>
-                            <exclude>${exclude.console}</exclude>
                         </systemPropertyVariables>
                         <properties>
                             <property>
@@ -289,7 +288,6 @@
             <properties>
                 <auth.server.container>auth-server-wildfly</auth.server.container>
                 <auth.server.wildfly.home>${containers.home}/keycloak-${project.version}</auth.server.wildfly.home>
-                <exclude.adapters.relative>-</exclude.adapters.relative>
                 <startup.timeout.sec>150</startup.timeout.sec>
             </properties>
             <dependencies>

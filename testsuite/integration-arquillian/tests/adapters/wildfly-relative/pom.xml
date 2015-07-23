@@ -47,7 +47,7 @@
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>unpack-wildfly-and-adapter</id>
+                                <id>unpack-adapter</id>
                                 <phase>generate-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
