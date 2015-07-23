@@ -15,19 +15,19 @@
 
     <modules>
         <module>adapter-core</module>
-        <module>jaxrs-oauth-client</module>
+        <!--<module>jaxrs-oauth-client</module>-->
         <module>servlet-oauth-client</module>
         <module>jboss-adapter-core</module>
         <module>tomcat</module>
         <module>as7-eap6</module>
         <module>jetty</module>
-        <module>undertow</module>
+        <!--<module>undertow</module>-->
         <module>wildfly</module>
         <module>js</module>
         <module>installed</module>
-        <module>admin-client</module>
+        <!--<module>admin-client</module>-->
         <module>osgi-adapter</module>
-        <module>spring-boot</module>
-        <module>spring-security</module>
+        <!--<module>spring-boot</module>-->
+        <!--<module>spring-security</module>-->
     </modules>
 </project>

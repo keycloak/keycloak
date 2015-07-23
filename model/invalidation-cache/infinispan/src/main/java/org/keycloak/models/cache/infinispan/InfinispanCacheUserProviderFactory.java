@@ -14,6 +14,8 @@ import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.cache.CacheUserProviderFactory;
 import org.keycloak.models.cache.entities.CachedUser;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -28,7 +30,7 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
     protected final RealmLookup emailLookup = new RealmLookup();
 
     // Method CacheEntryCreatedEvent.getValue is available from ispn 6 (EAP6 and AS7 are on ispn 5)
-    private boolean isNewInfinispan;
+    private Method eventGetValueMethod;
 
     @Override
     public CacheUserProvider create(KeycloakSession session) {
@@ -51,10 +53,8 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
 
     protected void checkIspnVersion() {
         try {
-            CacheEntryCreatedEvent.class.getMethod("getValue");
-            isNewInfinispan = true;
+            eventGetValueMethod = CacheEntryCreatedEvent.class.getMethod("getValue");
         } catch (NoSuchMethodException nsme) {
-            isNewInfinispan = false;
         }
     }
 
@@ -86,8 +86,12 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
                 CachedUser cachedUser;
 
                 // Try optimized version if available
-                if (isNewInfinispan) {
-                    cachedUser = event.getValue();
+                if (eventGetValueMethod != null) {
+                    try {
+                        cachedUser = (CachedUser) eventGetValueMethod.invoke(event);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                 } else {
                     String userId = event.getKey();
                     cachedUser = event.getCache().get(userId);

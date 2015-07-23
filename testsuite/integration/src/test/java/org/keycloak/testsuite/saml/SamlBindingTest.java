@@ -3,6 +3,7 @@ package org.keycloak.testsuite.saml;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.Config;
@@ -60,6 +61,7 @@ import java.io.InputStream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Ignore
 public class SamlBindingTest {
 
     @ClassRule

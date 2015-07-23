@@ -31,7 +31,7 @@ import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.Version;
-import org.keycloak.admin.client.Keycloak;
+//import org.keycloak.admin.client.Keycloak;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -49,7 +49,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.admin.ApiUtil;
+//import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountSessionsPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
@@ -177,49 +177,49 @@ public class AdapterTestStrategy extends ExternalResource {
     }
 
 
-    public void testLoginSSOAndLogout() throws Exception {
-        // test login to customer-portal which does a bearer request to customer-db
-        driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
-        System.out.println("Current url: " + driver.getCurrentUrl());
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-        loginPage.login("bburke@redhat.com", "password");
-        System.out.println("Current url: " + driver.getCurrentUrl());
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/customer-portal" + slash);
-        String pageSource = driver.getPageSource();
-        System.out.println(pageSource);
-        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+//    public void testLoginSSOAndLogout() throws Exception {
+//        // test login to customer-portal which does a bearer request to customer-db
+//        driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
+//        System.out.println("Current url: " + driver.getCurrentUrl());
+//        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+//        loginPage.login("bburke@redhat.com", "password");
+//        System.out.println("Current url: " + driver.getCurrentUrl());
+//        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/customer-portal" + slash);
+//        String pageSource = driver.getPageSource();
+//        System.out.println(pageSource);
+//        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
-        // test SSO
-        driver.navigate().to(APP_SERVER_BASE_URL + "/product-portal");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/product-portal" + slash);
-        pageSource = driver.getPageSource();
-        System.out.println(pageSource);
-        Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
+//        // test SSO
+//        driver.navigate().to(APP_SERVER_BASE_URL + "/product-portal");
+//        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/product-portal" + slash);
+//        pageSource = driver.getPageSource();
+//        System.out.println(pageSource);
+//        Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
-        // View stats
-        List<Map<String, String>> stats = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", "security-admin-console").realm("demo").getClientSessionStats();
-        Map<String, String> customerPortalStats = null;
-        Map<String, String> productPortalStats = null;
-        for (Map<String, String> s : stats) {
-            if (s.get("clientId").equals("customer-portal")) {
-                customerPortalStats = s;
-            } else if (s.get("clientId").equals("product-portal")) {
-                productPortalStats = s;
-            }
-        }
-        Assert.assertEquals(1, Integer.parseInt(customerPortalStats.get("active")));
-        Assert.assertEquals(1, Integer.parseInt(productPortalStats.get("active")));
+//        // View stats
+//        List<Map<String, String>> stats = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", "security-admin-console").realm("demo").getClientSessionStats();
+//        Map<String, String> customerPortalStats = null;
+//        Map<String, String> productPortalStats = null;
+//        for (Map<String, String> s : stats) {
+//            if (s.get("clientId").equals("customer-portal")) {
+//                customerPortalStats = s;
+//            } else if (s.get("clientId").equals("product-portal")) {
+//                productPortalStats = s;
+//            }
+//        }
+//        Assert.assertEquals(1, Integer.parseInt(customerPortalStats.get("active")));
+//        Assert.assertEquals(1, Integer.parseInt(productPortalStats.get("active")));
 
-        // test logout
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
-                .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/customer-portal").build("demo").toString();
-        driver.navigate().to(logoutUri);
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-        driver.navigate().to(APP_SERVER_BASE_URL + "/product-portal");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-        driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-    }
+//        // test logout
+//        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
+//                .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/customer-portal").build("demo").toString();
+//        driver.navigate().to(logoutUri);
+//        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+//        driver.navigate().to(APP_SERVER_BASE_URL + "/product-portal");
+//        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+//        driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
+//        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+//    }
 
     public void testServletRequestLogout() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
@@ -588,23 +588,23 @@ public class AdapterTestStrategy extends ExternalResource {
         Time.setOffset(0);
     }
 
-    /**
-     * KEYCLOAK-942
-     */
-    public void testAdminApplicationLogout() throws Throwable {
-        // login as bburke
-        loginAndCheckSession(driver, loginPage);
+//    /**
+//     * KEYCLOAK-942
+//     */
+//    public void testAdminApplicationLogout() throws Throwable {
+//        // login as bburke
+//        loginAndCheckSession(driver, loginPage);
 
-        // logout mposolda with admin client
-        Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
-        ApiUtil.findClientByClientId(keycloakAdmin.realm("demo"), "session-portal").logoutUser("mposolda");
+//        // logout mposolda with admin client
+//        Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
+//        ApiUtil.findClientByClientId(keycloakAdmin.realm("demo"), "session-portal").logoutUser("mposolda");
 
-        // bburke should be still logged with original httpSession in our browser window
-        driver.navigate().to(APP_SERVER_BASE_URL + "/session-portal");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/session-portal" + slash);
-        String pageSource = driver.getPageSource();
-        Assert.assertTrue(pageSource.contains("Counter=3"));
-    }
+//        // bburke should be still logged with original httpSession in our browser window
+//        driver.navigate().to(APP_SERVER_BASE_URL + "/session-portal");
+//        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/session-portal" + slash);
+//        String pageSource = driver.getPageSource();
+//        Assert.assertTrue(pageSource.contains("Counter=3"));
+//    }
 
     /**
      * KEYCLOAK-1216

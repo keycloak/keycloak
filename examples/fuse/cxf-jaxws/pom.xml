@@ -15,7 +15,7 @@
     <description/>
 
     <properties>
-        <cxf.version>2.7.14</cxf.version>
+        <cxf.version>2.7.14.redhat-1</cxf.version>
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>

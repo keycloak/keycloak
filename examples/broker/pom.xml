@@ -17,6 +17,6 @@
         <module>facebook-authentication</module>
         <module>google-authentication</module>
         <module>saml-broker-authentication</module>
-        <module>twitter-authentication</module>
+        <!--<module>twitter-authentication</module>-->
     </modules>
 </project>

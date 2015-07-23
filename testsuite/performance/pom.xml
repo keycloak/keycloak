@@ -199,17 +199,14 @@
                             <dependency>
                                 <groupId>com.h2database</groupId>
                                 <artifactId>h2</artifactId>
-                                <version>${h2.version}</version>
                             </dependency>
                             <dependency>
                                 <groupId>org.hibernate</groupId>
                                 <artifactId>hibernate-entitymanager</artifactId>
-                                <version>${hibernate.entitymanager.version}</version>
                             </dependency>
                             <dependency>
                                 <groupId>dom4j</groupId>
                                 <artifactId>dom4j</artifactId>
-                                <version>${dom4j.version}</version>
                             </dependency>
                             <dependency>
                                 <groupId>org.slf4j</groupId>

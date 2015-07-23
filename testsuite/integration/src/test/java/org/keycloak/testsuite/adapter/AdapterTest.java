@@ -98,10 +98,10 @@ public class AdapterTest {
     @Rule
     public AdapterTestStrategy testStrategy = new AdapterTestStrategy("http://localhost:8081/auth", "http://localhost:8081", keycloakRule);
 
-    @Test
-    public void testLoginSSOAndLogout() throws Exception {
-        testStrategy.testLoginSSOAndLogout();
-    }
+//    @Test
+//    public void testLoginSSOAndLogout() throws Exception {
+//        testStrategy.testLoginSSOAndLogout();
+//    }
 
     @Test
     public void testSavedPostRequest() throws Exception {
@@ -188,10 +188,10 @@ public class AdapterTest {
     /**
      * KEYCLOAK-942
      */
-    @Test
-    public void testAdminApplicationLogout() throws Throwable {
-        testStrategy.testAdminApplicationLogout();
-    }
+//    @Test
+//    public void testAdminApplicationLogout() throws Throwable {
+//        testStrategy.testAdminApplicationLogout();
+//    }
 
     /**
      * KEYCLOAK-1216
