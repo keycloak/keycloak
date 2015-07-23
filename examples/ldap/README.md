@@ -13,24 +13,20 @@ The example application is then showing all the basic claims of current user tog
 
 Detailed steps how to make the example working:
 
-**1)** Build and deploy this sample's WAR file in `ldap-app/target/ldap-portal.war` . For this example, deploy on the same server that is running the Keycloak Server, 
+**1)** Build and deploy this sample's WAR file in `target/ldap-portal.war` . For this example, deploy on the same server that is running the Keycloak Server, 
 although this is not required for real world scenarios.
 
 
 **2)**  Run ApacheDS based LDAP server. You can run the command like this (assuming you're in the "ldap" directory with this example): 
 
 ```
-java -jar embedded-ldap/target/embedded-ldap.jar ldap
+mvn exec:java -Pldap
 ```
 
-This will also automatically import the LDIF from `ldap-app/users.ldif` into the LDAP server. If you want to import your own LDIF file, 
-you can add the system property `ldap.ldif` with the path of the LDIF file to the command. For example:
-```
-java -jar -Dldap.ldif=/tmp/my-users.ldif embedded-ldap/target/embedded-ldap.jar ldap
-```  
+This will also automatically import the LDIF from `ldap-example-users.ldif` into the LDAP server. Replace with your own LDIF file if you want different users.
  
  
-**3)** Run Keycloak server and import `ldap-app/ldaprealm.json` into it through admin console. This contains the realm with preconfigured LDAP federation provider and LDAP mappers 
+**3)** Run Keycloak server and import `ldaprealm.json` into it through admin console. This contains the realm with preconfigured LDAP federation provider and LDAP mappers 
 and protocol mappers. Note that there are not any roles or users in this file. All of users, roles and role mappings data will be imported automatically from LDAP. 
  
  
