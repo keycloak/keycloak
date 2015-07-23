@@ -304,6 +304,14 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(otherAppAdminConsent.isRoleGranted(realm.getRole("admin")));
         Assert.assertFalse(otherAppAdminConsent.isRoleGranted(application.getRole("app-admin")));
         Assert.assertTrue(otherAppAdminConsent.isProtocolMapperGranted(gssCredentialMapper));
+
+        // Test service accounts
+        Assert.assertFalse(application.isServiceAccountsEnabled());
+        Assert.assertTrue(otherApp.isServiceAccountsEnabled());
+        Assert.assertNull(session.users().getUserByServiceAccountClient(application));
+        UserModel linked = session.users().getUserByServiceAccountClient(otherApp);
+        Assert.assertNotNull(linked);
+        Assert.assertEquals("my-service-user", linked.getUsername());
     }
 
     @Test

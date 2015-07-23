@@ -142,6 +142,7 @@
         <dropColumn tableName="CLIENT_SESSION" columnName="ACTION"/>
         <addColumn tableName="USER_ENTITY">
             <column name="CREATED_TIMESTAMP" type="BIGINT"/>
+            <column name="SERVICE_ACCOUNT_CLIENT_LINK" type="VARCHAR(36)"/>
         </addColumn>
     </changeSet>
 </databaseChangeLog>

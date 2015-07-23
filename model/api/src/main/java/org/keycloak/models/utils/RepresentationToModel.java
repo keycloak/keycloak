@@ -902,6 +902,14 @@ public class RepresentationToModel {
                 user.addConsent(consentModel);
             }
         }
+        if (userRep.getServiceAccountClientId() != null) {
+            String clientId = userRep.getServiceAccountClientId();
+            ClientModel client = clientMap.get(clientId);
+            if (client == null) {
+                throw new RuntimeException("Unable to find client specified for service account link. Client: " + clientId);
+            }
+            user.setServiceAccountClientLink(client.getId());;
+        }
         return user;
     }
 

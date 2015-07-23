@@ -27,6 +27,7 @@ public class UserEntity extends AbstractIdentifiableEntity {
     private List<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
     private List<FederatedIdentityEntity> federatedIdentities;
     private String federationLink;
+    private String serviceAccountClientLink;
 
     public String getUsername() {
         return username;
@@ -147,6 +148,14 @@ public class UserEntity extends AbstractIdentifiableEntity {
 
     public void setFederationLink(String federationLink) {
         this.federationLink = federationLink;
+    }
+
+    public String getServiceAccountClientLink() {
+        return serviceAccountClientLink;
+    }
+
+    public void setServiceAccountClientLink(String serviceAccountClientLink) {
+        this.serviceAccountClientLink = serviceAccountClientLink;
     }
 }
 

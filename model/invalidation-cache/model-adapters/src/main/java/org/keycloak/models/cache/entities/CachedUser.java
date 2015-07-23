@@ -31,6 +31,7 @@ public class CachedUser implements Serializable {
     private boolean enabled;
     private boolean totp;
     private String federationLink;
+    private String serviceAccountClientLink;
     private MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
     private Set<String> requiredActions = new HashSet<>();
     private Set<String> roleMappings = new HashSet<String>();
@@ -49,6 +50,7 @@ public class CachedUser implements Serializable {
         this.enabled = user.isEnabled();
         this.totp = user.isTotp();
         this.federationLink = user.getFederationLink();
+        this.serviceAccountClientLink = user.getServiceAccountClientLink();
         this.requiredActions.addAll(user.getRequiredActions());
         for (RoleModel role : user.getRoleMappings()) {
             roleMappings.add(role.getId());
@@ -113,5 +115,9 @@ public class CachedUser implements Serializable {
 
     public String getFederationLink() {
         return federationLink;
+    }
+
+    public String getServiceAccountClientLink() {
+        return serviceAccountClientLink;
     }
 }

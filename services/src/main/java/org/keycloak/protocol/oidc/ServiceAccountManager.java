@@ -106,20 +106,13 @@ public class ServiceAccountManager {
     protected Response finishClientAuthorization() {
         event.detail(Details.RESPONSE_TYPE, ServiceAccountConstants.CLIENT_AUTH);
 
-        Map<String, String> search = new HashMap<>();
-        search.put(ServiceAccountConstants.SERVICE_ACCOUNT_CLIENT_ATTRIBUTE, client.getId());
-        List<UserModel> users = session.users().searchForUserByUserAttributes(search, realm);
+        clientUser = session.users().getUserByServiceAccountClient(client);
 
-        if (users.size() == 0) {
+        if (clientUser == null || client.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER) == null) {
             // May need to handle bootstrap here as well
-            logger.warnf("Service account user for client '%s' not found. Creating now", client.getClientId());
+            logger.infof("Service account user for client '%s' not found or default protocol mapper for service account not found. Creating now", client.getClientId());
             new ClientManager(new RealmManager(session)).enableServiceAccount(client);
-            users = session.users().searchForUserByUserAttributes(search, realm);
-            clientUser = users.get(0);
-        } else if (users.size() == 1) {
-            clientUser = users.get(0);
-        } else {
-            throw new ModelDuplicateException("Multiple service account users found for client '" + client.getClientId() + "' . Check your DB");
+            clientUser = session.users().getUserByServiceAccountClient(client);
         }
 
         String clientUsername = clientUser.getUsername();

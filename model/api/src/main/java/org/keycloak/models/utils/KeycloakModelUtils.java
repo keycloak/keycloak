@@ -2,6 +2,7 @@ package org.keycloak.models.utils;
 
 import org.bouncycastle.openssl.PEMWriter;
 import org.keycloak.constants.KerberosConstants;
+import org.keycloak.constants.ServiceAccountConstants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -349,6 +350,8 @@ public final class KeycloakModelUtils {
 
         return mapperModel;
     }
+
+    // END USER FEDERATION RELATED STUFF
 
     public static String toLowerCaseSafe(String str) {
         return str==null ? null : str.toLowerCase();

@@ -26,6 +26,7 @@ public class UserRepresentation {
     protected String lastName;
     protected String email;
     protected String federationLink;
+    protected String serviceAccountClientId; // For rep, it points to clientId (not DB ID)
 
     // Currently there is Map<String, List<String>> but for backwards compatibility, we also need to support Map<String, String>
     protected Map<String, Object> attributes;
@@ -217,5 +218,13 @@ public class UserRepresentation {
 
     public void setFederationLink(String federationLink) {
         this.federationLink = federationLink;
+    }
+
+    public String getServiceAccountClientId() {
+        return serviceAccountClientId;
+    }
+
+    public void setServiceAccountClientId(String serviceAccountClientId) {
+        this.serviceAccountClientId = serviceAccountClientId;
     }
 }

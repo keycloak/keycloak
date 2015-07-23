@@ -19,6 +19,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
@@ -290,6 +291,31 @@ public class ClientResource {
             client.removeWebOrigin(origin);
         }
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+    }
+
+    /**
+     * Returns user dedicated to this service account
+     *
+     * @return
+     */
+    @Path("service-account-user")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserRepresentation getServiceAccountUser() {
+        auth.requireView();
+
+        UserModel user = session.users().getUserByServiceAccountClient(client);
+        if (user == null) {
+            if (client.isServiceAccountsEnabled()) {
+                new ClientManager(new RealmManager(session)).enableServiceAccount(client);
+                user = session.users().getUserByServiceAccountClient(client);
+            } else {
+                throw new BadRequestException("Service account not enabled for the client '" + client.getClientId() + "'");
+            }
+        }
+
+        return ModelToRepresentation.toRepresentation(user);
     }
 
     /**

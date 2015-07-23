@@ -32,7 +32,7 @@ public class MigrateTo1_4_0 {
     }
 
     public void migrateUsers(KeycloakSession session, RealmModel realm) {
-        List<UserModel> users = session.userStorage().getUsers(realm);
+        List<UserModel> users = session.userStorage().getUsers(realm, false);
         for (UserModel user : users) {
             String email = user.getEmail();
             email = KeycloakModelUtils.toLowerCaseSafe(email);

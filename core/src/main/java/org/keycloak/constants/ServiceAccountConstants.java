@@ -8,7 +8,6 @@ public interface ServiceAccountConstants {
     String CLIENT_AUTH = "client_auth";
 
     String SERVICE_ACCOUNT_USER_PREFIX = "service-account-";
-    String SERVICE_ACCOUNT_CLIENT_ATTRIBUTE = "serviceAccountClient";
 
     String CLIENT_ID_PROTOCOL_MAPPER = "Client ID";
     String CLIENT_HOST_PROTOCOL_MAPPER = "Client Host";

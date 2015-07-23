@@ -123,7 +123,7 @@ public class ExportUtils {
 
         // Finally users if needed
         if (includeUsers) {
-            List<UserModel> allUsers = session.users().getUsers(realm);
+            List<UserModel> allUsers = session.users().getUsers(realm, true);
             List<UserRepresentation> users = new ArrayList<UserRepresentation>();
             for (UserModel user : allUsers) {
                 UserRepresentation userRep = exportUser(session, realm, user);
@@ -284,6 +284,15 @@ public class ExportUtils {
         }
         if (consentReps.size() > 0) {
             userRep.setClientConsents(consentReps);
+        }
+
+        // Service account
+        if (user.getServiceAccountClientLink() != null) {
+            String clientInternalId = user.getServiceAccountClientLink();
+            ClientModel client = realm.getClientById(clientInternalId);
+            if (client != null) {
+                userRep.setServiceAccountClientId(client.getClientId());
+            }
         }
 
         return userRep;

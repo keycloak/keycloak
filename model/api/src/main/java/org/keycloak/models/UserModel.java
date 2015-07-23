@@ -104,6 +104,9 @@ public interface UserModel {
     String getFederationLink();
     void setFederationLink(String link);
 
+    String getServiceAccountClientLink();
+    void setServiceAccountClientLink(String clientInternalId);
+
     void addConsent(UserConsentModel consent);
     UserConsentModel getConsentByClient(String clientInternalId);
     List<UserConsentModel> getConsents();

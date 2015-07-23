@@ -368,6 +368,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 clients : function(ClientListLoader) {
                     return ClientListLoader();
+                },
+                client : function() {
+                    return {};
                 }
             },
             controller : 'UserRoleMappingCtrl'
@@ -762,17 +765,23 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientInstallationCtrl'
         })
-        .when('/realms/:realm/clients/:client/service-accounts', {
-            templateUrl : resourceUrl + '/partials/client-service-accounts.html',
+        .when('/realms/:realm/clients/:client/service-account-roles', {
+            templateUrl : resourceUrl + '/partials/client-service-account-roles.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                user : function(ClientServiceAccountUserLoader) {
+                    return ClientServiceAccountUserLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
                 },
                 client : function(ClientLoader) {
                     return ClientLoader();
                 }
             },
-            controller : 'ClientServiceAccountsCtrl'
+            controller : 'UserRoleMappingCtrl'
         })
         .when('/create/client/:realm', {
             templateUrl : resourceUrl + '/partials/client-detail.html',
