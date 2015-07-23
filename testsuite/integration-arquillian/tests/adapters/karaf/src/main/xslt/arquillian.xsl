@@ -17,7 +17,7 @@
                     <property name="adapterImplClass">org.jboss.arquillian.container.osgi.karaf.managed.KarafManagedDeployableContainer</property>
                     <property name="autostartBundle">false</property>
                     <property name="karafHome">${karaf.home}</property>
-                    <property name="javaVmArguments">-agentlib:jdwp=transport=dt_socket,address=5005,server=y,suspend=n -Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</property>
+                    <property name="javaVmArguments">-agentlib:jdwp=transport=dt_socket,address=5005,server=y,suspend=n ${adapter.test.props}</property>
                     <property name="jmxServiceURL">service:jmx:rmi://127.0.0.1:44444/jndi/rmi://127.0.0.1:1099/karaf-root</property>
                     <property name="jmxUsername">karaf</property>
                     <property name="jmxPassword">karaf</property>            

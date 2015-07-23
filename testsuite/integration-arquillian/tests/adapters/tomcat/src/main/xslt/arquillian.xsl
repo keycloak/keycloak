@@ -21,7 +21,7 @@
                     <property name="jmxPort">${app.server.management.port.tomcat}</property>
                     <property name="user">manager</property>
                     <property name="pass">arquillian</property>
-                    <property name="javaVmArguments">-Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</property>
+                    <property name="javaVmArguments">${adapter.test.props}</property>
                 </configuration>
             </container>
     

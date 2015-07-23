@@ -16,9 +16,7 @@
         <app.server.port.offset>200</app.server.port.offset>
         <app.server.http.port>8280</app.server.http.port>
         <app.server.management.port>10190</app.server.management.port>
-
-        <adapter.libs.mode>provided</adapter.libs.mode>
-        <adapter.config.mode>bundled</adapter.config.mode>
+        <adapter.test.props>-Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</adapter.test.props>
     </properties>
     
     <build>
@@ -84,10 +82,11 @@
                             <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
                             <app.server.http.port>${app.server.http.port}</app.server.http.port>
                             <app.server.management.port>${app.server.management.port}</app.server.management.port>
-                            <adapter.libs.mode>${adapter.libs.mode}</adapter.libs.mode>
-                            <adapter.config.mode>${adapter.config.mode}</adapter.config.mode>
+                            
+                            <adapter.test.props>${adapter.test.props}</adapter.test.props>
 
                             <adapter.libs.mode>bundled</adapter.libs.mode>
+                            <adapter.config.mode>provided</adapter.config.mode>
                             
                         </systemPropertyVariables>
                     </configuration>

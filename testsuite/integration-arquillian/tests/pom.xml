@@ -75,6 +75,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.18.1</version>
                     <configuration>
                         <systemPropertyVariables>
                             <browser>${browser}</browser>
@@ -289,6 +290,7 @@
                 <auth.server.container>auth-server-wildfly</auth.server.container>
                 <auth.server.wildfly.home>${containers.home}/keycloak-${project.version}</auth.server.wildfly.home>
                 <startup.timeout.sec>150</startup.timeout.sec>
+                <adapter.test.props/>
             </properties>
             <dependencies>
                 <dependency>
@@ -332,6 +334,7 @@
                                 <systemPropertyVariables>
                                     <auth.server.wildfly>true</auth.server.wildfly>
                                     <auth.server.wildfly.home>${auth.server.wildfly.home}</auth.server.wildfly.home>
+                                    <adapter.test.props>${adapter.test.props}</adapter.test.props>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>

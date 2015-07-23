@@ -16,7 +16,7 @@
                     <property name="enabled">${app.server.wildfly}</property>
                     <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                     <property name="jbossHome">${app.server.wildfly.home}</property>
-                    <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${app.server.port.offset} -Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</property>
+                    <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${app.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m ${adapter.test.props}</property>
                     <property name="managementPort">${app.server.management.port}</property>
                 </configuration>
             </container>
