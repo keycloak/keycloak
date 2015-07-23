@@ -40,7 +40,7 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.TOTP);
-        if (password == null) {
+        if (password == null || password.isEmpty()) {
             Response challengeResponse = challenge(context, null);
             context.challenge(challengeResponse);
             return;
