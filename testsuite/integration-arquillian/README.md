@@ -70,7 +70,11 @@ Adapter tests are located in `org/keycloak/testsuite/adapter`.
 Related non-test classes can be found on the same path in the **main sources**.
 
 Adapter tests are **DISABLED by default**. They can be enabled by profiles.
-Multiple profiles can be enabled for a single test run (Maven build).
+Multiple profiles can be enabled for a single test execution.
+
+*Note:* When testing adapter with multiple containers in a single run it is better 
+to use the `--fail-at-end` (`-fae`) strategy instead of the default `--fail-fast` one.
+This will allow Maven to continue building other modules even if some of them have test failures.
 
 ### Containers Supported for Adapter Tests
 
