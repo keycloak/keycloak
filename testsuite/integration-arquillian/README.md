@@ -9,10 +9,10 @@ Running the tests: `mvn test` or `mvn clean test`
 ### Selecting container for Keycloak Server
 
 The testsuite requires a container for Keycloak Server to be selected.
-This container is used by all tests in the test suite.
-It can be selected with property `auth.server.container`.
+This container is used by all tests in the suite during a single test execution.
 
 *By default* the tests run with server on embedded *Undertow*.
+A different container can be selected with profile, e.g. `-Pauth-server-wildfly`.
 
 ### Containers Supported for Keycloak Server
 
