@@ -2,15 +2,15 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <parent>
-        <groupId>org.keycloak</groupId>
-        <artifactId>keycloak-testsuite-integration-arquillian</artifactId>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian</artifactId>
         <version>1.4.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-testsuite-integration-arquillian-servers</artifactId>
+    <artifactId>integration-arquillian-servers</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak Integration TestSuite with Arquillian - Servers</name>
+    <name>Servers</name>
 
     <profiles>
         <profile>
