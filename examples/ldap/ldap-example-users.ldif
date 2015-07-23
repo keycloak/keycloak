@@ -64,4 +64,3 @@ objectclass: top
 objectclass: groupOfNames
 cn: accountant
 member: uid=bwilson,ou=People,dc=keycloak,dc=org
-
