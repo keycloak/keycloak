@@ -13,7 +13,7 @@
     <name>Keycloak Integration TestSuite with Arquillian - Tests</name>
     
     <modules>
-        <module>common</module>
+        <module>base</module>
         <module>adapters</module>
     </modules>
     

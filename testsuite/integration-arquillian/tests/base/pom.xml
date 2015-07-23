@@ -8,8 +8,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-testsuite-integration-arquillian-tests-common</artifactId>
-    <name>Keycloak Integration TestSuite with Arquillian - Common</name>
+    <artifactId>keycloak-testsuite-integration-arquillian-tests-base</artifactId>
+    <name>Keycloak Integration TestSuite with Arquillian - Base Tests</name>
 
     <properties>
         <exclude.console>-</exclude.console>

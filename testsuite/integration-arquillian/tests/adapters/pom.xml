@@ -22,22 +22,6 @@
         <adapter.config.mode>bundled</adapter.config.mode>
     </properties>
     
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-testsuite-integration-arquillian-tests-common</artifactId>
-                <version>${project.version}</version>
-            </dependency>        
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-testsuite-integration-arquillian-tests-common</artifactId>
-                <version>${project.version}</version>
-                <type>test-jar</type>
-            </dependency>        
-        </dependencies>
-    </dependencyManagement>
-    
     <build>
         <pluginManagement>
             <plugins>
@@ -55,7 +39,7 @@
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.keycloak</groupId>
-                                        <artifactId>keycloak-testsuite-integration-arquillian-tests-common</artifactId>
+                                        <artifactId>keycloak-testsuite-integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
                                         <type>test-jar</type>
                                         <includes>**/arquillian.xml</includes>
@@ -82,13 +66,6 @@
                             <adapter.libs.mode>bundled</adapter.libs.mode>
                             
                         </systemPropertyVariables>
-                        <excludes>
-                            <exclude>${exclude.adapters.relative}</exclude>
-                            <exclude>${exclude.adapters.wildfly}</exclude>
-                            <exclude>${exclude.adapters.as7}</exclude>
-                            <exclude>${exclude.adapters.tomcat}</exclude>
-                            <exclude>${exclude.adapters.karaf}</exclude>
-                        </excludes>
                     </configuration>
                 </plugin>
             </plugins>
@@ -107,11 +84,13 @@
             <dependencies>
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-testsuite-integration-arquillian-tests-common</artifactId>
+                    <artifactId>keycloak-testsuite-integration-arquillian-tests-base</artifactId>
+                    <version>${project.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-testsuite-integration-arquillian-tests-common</artifactId>
+                    <artifactId>keycloak-testsuite-integration-arquillian-tests-base</artifactId>
+                    <version>${project.version}</version>
                     <type>test-jar</type>
                 </dependency>
             </dependencies>
