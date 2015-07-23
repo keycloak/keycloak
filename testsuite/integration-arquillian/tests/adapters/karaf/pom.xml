@@ -76,6 +76,7 @@
             <version>1.1.1</version>
         </dependency>
     </dependencies>
+    
     <build>
         <plugins>
             <plugin>
@@ -109,6 +110,10 @@
                         <karaf.home>${karaf.home}</karaf.home>
                     </systemPropertyVariables>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>xml-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
