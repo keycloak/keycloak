@@ -313,3 +313,20 @@ h1 i {
     right: 0;
     bottom: 0;
 }
+
+
+/* Time selector */
+
+.time-selector input {
+    display: inline-block;
+    width: 120px;
+    padding-right: 0;
+    margin-right: 0;
+}
+
+.time-selector select {
+    display: inline-block;
+    width: 80px;
+    margin-left: 0;
+    padding-left: 0;
+}
