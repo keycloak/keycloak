@@ -42,9 +42,8 @@
             <artifactId>keycloak-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-domain-management</artifactId>
-            <version>${wildfly.core.version}</version>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-domain-management</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.aesh</groupId>
