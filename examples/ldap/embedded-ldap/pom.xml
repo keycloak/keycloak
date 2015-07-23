@@ -19,11 +19,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-util-embedded-ldap</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
     <build>
