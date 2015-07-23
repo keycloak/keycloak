@@ -70,7 +70,7 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>org.jboss.eap</groupId>
             <artifactId>wildfly-web-common</artifactId>
             <version>${wildfly.version}</version>
             <scope>provided</scope>

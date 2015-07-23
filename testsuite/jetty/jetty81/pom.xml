@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
@@ -14,7 +13,7 @@
     <properties>
         <jetty9.version>8.1.17.v20150415</jetty9.version>
     </properties>
-    <description />
+    <description/>
 
    <dependencies>
         <dependency>
@@ -185,7 +184,7 @@
             <artifactId>selenium-chrome-driver</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>org.jboss.eap</groupId>
             <artifactId>wildfly-undertow</artifactId>
             <version>${wildfly.version}</version>
             <scope>test</scope>

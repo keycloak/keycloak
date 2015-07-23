@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
@@ -11,7 +10,22 @@
 
     <artifactId>keycloak-testsuite-integration</artifactId>
     <name>Keycloak Integration TestSuite</name>
-    <description />
+    <description/>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.xnio</groupId>
+                <artifactId>xnio-api</artifactId>
+                <version>3.3.0.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.xnio</groupId>
+                <artifactId>xnio-nio</artifactId>
+                <version>3.3.0.Final</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -46,14 +60,18 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>jaxrs-api</artifactId>
+            <version>3.0.10.Final</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>async-http-servlet-3.0</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>
+            <scope>test</scope>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -72,18 +90,23 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-client</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-undertow</artifactId>
+            <version>3.0.14.Final</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-multipart-provider</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jackson-provider</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.google.zxing</groupId>
@@ -212,7 +235,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>org.jboss.eap</groupId>
             <artifactId>wildfly-undertow</artifactId>
             <scope>test</scope>
         </dependency>
