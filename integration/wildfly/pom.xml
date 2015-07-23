@@ -14,10 +14,10 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>wildfly-adapter</module>
+        <!--<module>wildfly-adapter</module>-->
         <module>wildfly-extensions</module>
-        <module>wf8-subsystem</module>
+        <!--<module>wf8-subsystem</module>
         <module>wf9-subsystem</module>
-        <module>wf9-server-subsystem</module>
+        <module>wf9-server-subsystem</module>-->
     </modules>
 </project>
