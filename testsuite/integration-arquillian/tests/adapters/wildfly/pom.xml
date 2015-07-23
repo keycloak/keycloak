@@ -77,11 +77,11 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <systemProperties>
+                    <systemPropertyVariables>
                         <app.server.wildfly>true</app.server.wildfly>
                         <app.server.wildfly.home>${app.server.wildfly.home}</app.server.wildfly.home>
                         <adapter.libs.wildfly>${adapter.libs.wildfly}</adapter.libs.wildfly>
-                    </systemProperties>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

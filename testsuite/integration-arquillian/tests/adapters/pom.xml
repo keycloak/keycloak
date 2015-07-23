@@ -110,9 +110,9 @@
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
-                                <systemProperties>
+                                <systemPropertyVariables>
                                     <adapter.libs.mode>provided</adapter.libs.mode>
-                                </systemProperties>
+                                </systemPropertyVariables>
                             </configuration>
                         </plugin>
                     </plugins>
