@@ -8,7 +8,7 @@
                     <caption class="hidden">Table of identity providers</caption>
                     <thead>
                     <tr>
-                        <th colspan="4" class="kc-table-actions">
+                        <th colspan="6" class="kc-table-actions">
                             <div class="dropdown pull-right">
                                 <select class="form-control" ng-model="provider"
                                         ng-options="p.name group by p.groupName for p in allProviders track by p.id"
@@ -23,6 +23,7 @@
                         <th>Provider</th>
                         <th>Enabled</th>
                         <th width="15%">GUI order</th>
+                        <th colspan="2">Actions</th>
                     </tr>
                     </thead>
                     <tbody ng-show="configuredProviders.length > 0">
@@ -33,6 +34,12 @@
                         <td>{{identityProvider.providerId}}</td>
                         <td>{{identityProvider.enabled}}</td>
                         <td>{{identityProvider.config.guiOrder}}</td>
+                        <td class="kc-action-cell">
+                            <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">Edit</button>
+                        </td>
+                        <td class="kc-action-cell">
+                            <button class="btn btn-default btn-block btn-sm" data-ng-click="removeIdentityProvider(identityProvider)">Delete</button>
+                        </td>
                     </tr>
                     </tbody>
                 </table>

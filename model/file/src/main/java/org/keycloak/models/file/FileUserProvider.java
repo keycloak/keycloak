@@ -38,6 +38,7 @@ import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -106,8 +107,18 @@ public class FileUserProvider implements UserProvider {
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return getUsers(realm, -1, -1);
+    public UserModel getUserByServiceAccountClient(ClientModel client) {
+        for (UserModel user : inMemoryModel.getUsers(client.getRealm().getId())) {
+            if (client.getId().equals(user.getServiceAccountClientLink())) {
+                return user;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts) {
+        return getUsers(realm, -1, -1, includeServiceAccounts);
     }
 
     @Override
@@ -116,10 +127,25 @@ public class FileUserProvider implements UserProvider {
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        List users = new ArrayList(inMemoryModel.getUsers(realm.getId()));
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
+        List<UserModel> users = new ArrayList<>(inMemoryModel.getUsers(realm.getId()));
+
+        if (!includeServiceAccounts) {
+            users = filterServiceAccountUsers(users);
+        }
+
         List<UserModel> sortedList = sortedSubList(users, firstResult, maxResults);
         return sortedList;
+    }
+
+    private List<UserModel> filterServiceAccountUsers(List<UserModel> users) {
+        List<UserModel> result = new ArrayList<>();
+        for (UserModel user : users) {
+            if (user.getServiceAccountClientLink() == null) {
+                result.add(user);
+            }
+        }
+        return result;
     }
 
     protected List<UserModel> sortedSubList(List list, int firstResult, int maxResults) {
@@ -182,6 +208,9 @@ public class FileUserProvider implements UserProvider {
             }
         }
 
+        // Remove users with service account link
+        found = filterServiceAccountUsers(found);
+
         return sortedSubList(found, firstResult, maxResults);
     }
 
@@ -223,6 +252,25 @@ public class FileUserProvider implements UserProvider {
         }
 
         return sortedSubList(found, firstResult, maxResults);
+    }
+
+    @Override
+    public List<UserModel> searchForUserByUserAttributes(Map<String, String> attributes, RealmModel realm) {
+        Collection<UserModel> users = inMemoryModel.getUsers(realm.getId());
+
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+
+            List<UserModel> matchedUsers = new ArrayList<>();
+            for (UserModel user : users) {
+                List<String> vals = user.getAttribute(entry.getKey());
+                if (vals.contains(entry.getValue())) {
+                    matchedUsers.add(user);
+                }
+            }
+            users = matchedUsers;
+        }
+
+        return (List<UserModel>) users;
     }
 
     @Override

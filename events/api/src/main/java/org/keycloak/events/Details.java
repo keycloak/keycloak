@@ -35,4 +35,10 @@ public interface Details {
     String IMPERSONATOR_REALM = "impersonator_realm";
     String IMPERSONATOR = "impersonator";
 
+    String CLIENT_AUTH_METHOD = "client_auth_method";
+    String CLIENT_AUTH_METHOD_VALUE_CLIENT_CREDENTIALS = "client_credentials";
+    String CLIENT_AUTH_METHOD_VALUE_CERTIFICATE = "client_certificate";
+    String CLIENT_AUTH_METHOD_VALUE_KERBEROS_KEYTAB = "kerberos_keytab";
+    String CLIENT_AUTH_METHOD_VALUE_SIGNED_JWT = "signed_jwt";
+
 }

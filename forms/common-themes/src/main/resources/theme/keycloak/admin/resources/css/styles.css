@@ -299,3 +299,34 @@ h1 i {
     margin-left: 10px;
 }
 
+/* Action cell */
+.kc-action-cell {
+    position: relative;
+    width: 100px;
+}
+
+.kc-action-cell .btn {
+    border: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+
+/* Time selector */
+
+.time-selector input {
+    display: inline-block;
+    width: 120px;
+    padding-right: 0;
+    margin-right: 0;
+}
+
+.time-selector select {
+    display: inline-block;
+    width: 80px;
+    margin-left: 0;
+    padding-left: 0;
+}

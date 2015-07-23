@@ -204,8 +204,17 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return getUsers(realm, 0, Integer.MAX_VALUE - 1);
+    public UserModel getUserByServiceAccountClient(ClientModel client) {
+        UserModel user = session.userStorage().getUserByServiceAccountClient(client);
+        if (user != null) {
+            user = validateAndProxyUser(client.getRealm(), user);
+        }
+        return user;
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts) {
+        return getUsers(realm, 0, Integer.MAX_VALUE - 1, includeServiceAccounts);
 
     }
 
@@ -242,11 +251,11 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, final boolean includeServiceAccounts) {
         return query(new PaginatedQuery() {
             @Override
             public List<UserModel> query(RealmModel realm, int first, int max) {
-                return session.userStorage().getUsers(realm, first, max);
+                return session.userStorage().getUsers(realm, first, max, includeServiceAccounts);
             }
         }, realm, firstResult, maxResults);
     }
@@ -302,6 +311,11 @@ public class UserFederationManager implements UserProvider {
                 return session.userStorage().searchForUserByAttributes(attributes, realm, first, max);
             }
         }, realm, firstResult, maxResults);
+    }
+
+    @Override
+    public List<UserModel> searchForUserByUserAttributes(Map<String, String> attributes, RealmModel realm) {
+        return session.userStorage().searchForUserByUserAttributes(attributes, realm);
     }
 
     @Override

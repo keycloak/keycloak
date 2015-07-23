@@ -5,14 +5,12 @@
         <li>{{client.clientId}}</li>
     </ol>
 
-    <h1>{{client.clientId|capitalize}}</h1>
-
     <kc-tabs-client></kc-tabs-client>
 
     <table class="table table-striped table-bordered">
         <thead>
         <tr>
-            <th class="kc-table-actions" colspan="3" data-ng-show="access.manageClients">
+            <th class="kc-table-actions" colspan="4" data-ng-show="access.manageClients">
                 <div class="pull-right">
                     <a class="btn btn-default" href="#/create/role/{{realm.realm}}/clients/{{client.id}}">Add Role</a>
                 </div>
@@ -22,6 +20,7 @@
             <th>Role Name</th>
             <th>Composite</th>
             <th>Description</th>
+            <th>Actions</th>
         </tr>
         </thead>
         <tbody>
@@ -29,6 +28,9 @@
             <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/roles/{{role.id}}">{{role.name}}</a></td>
             <td>{{role.composite}}</td>
             <td>{{role.description}}</td>
+            <td class="kc-action-cell">
+                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}/roles/{{role.id}}">Edit</button>
+            </td>
         </tr>
         <tr data-ng-show="!roles || roles.length == 0">
             <td>No client roles available</td>

@@ -18,7 +18,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.adapters.HttpClientBuilder;
-import org.keycloak.authentication.authenticators.SpnegoAuthenticator;
+import org.keycloak.authentication.authenticators.browser.SpnegoAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.constants.KerberosConstants;
@@ -288,14 +288,14 @@ public abstract class AbstractKerberosTest {
             RealmManager manager = new RealmManager(session);
 
             RealmModel appRealm = manager.getRealm("test");
-            List<UserModel> users = session.userStorage().getUsers(appRealm);
+            List<UserModel> users = session.userStorage().getUsers(appRealm, true);
             for (UserModel user : users) {
                 if (!user.getUsername().equals(AssertEvents.DEFAULT_USERNAME)) {
                     session.userStorage().removeUser(appRealm, user);
                 }
             }
 
-            Assert.assertEquals(1, session.userStorage().getUsers(appRealm).size());
+            Assert.assertEquals(1, session.userStorage().getUsers(appRealm, true).size());
         } finally {
             keycloakRule.stopSession(session, true);
         }

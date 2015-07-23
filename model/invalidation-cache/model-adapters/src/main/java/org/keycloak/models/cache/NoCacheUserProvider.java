@@ -74,8 +74,13 @@ public class NoCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return getDelegate().getUsers(realm);
+    public UserModel getUserByServiceAccountClient(ClientModel client) {
+        return getDelegate().getUserByServiceAccountClient(client);
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts) {
+        return getDelegate().getUsers(realm, includeServiceAccounts);
     }
 
     @Override
@@ -84,8 +89,8 @@ public class NoCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        return getDelegate().getUsers(realm, firstResult, maxResults);
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
+        return getDelegate().getUsers(realm, firstResult, maxResults, includeServiceAccounts);
     }
 
     @Override
@@ -106,6 +111,11 @@ public class NoCacheUserProvider implements CacheUserProvider {
     @Override
     public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
         return getDelegate().searchForUserByAttributes(attributes, realm, firstResult, maxResults);
+    }
+
+    @Override
+    public List<UserModel> searchForUserByUserAttributes(Map<String, String> attributes, RealmModel realm) {
+        return getDelegate().searchForUserByUserAttributes(attributes, realm);
     }
 
     @Override

@@ -368,6 +368,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 clients : function(ClientListLoader) {
                     return ClientListLoader();
+                },
+                client : function() {
+                    return {};
                 }
             },
             controller : 'UserRoleMappingCtrl'
@@ -761,6 +764,24 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ClientInstallationCtrl'
+        })
+        .when('/realms/:realm/clients/:client/service-account-roles', {
+            templateUrl : resourceUrl + '/partials/client-service-account-roles.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(ClientServiceAccountUserLoader) {
+                    return ClientServiceAccountUserLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                }
+            },
+            controller : 'UserRoleMappingCtrl'
         })
         .when('/create/client/:realm', {
             templateUrl : resourceUrl + '/partials/client-detail.html',
@@ -1594,6 +1615,24 @@ module.directive('kcNavigationUser', function () {
     }
 });
 
+module.directive('kcTabsIdentityProvider', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-identity-provider.html'
+    }
+});
+
+module.directive('kcTabsUserFederation', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-user-federation.html'
+    }
+});
+
 module.controller('RoleSelectorModalCtrl', function($scope, realm, config, configName, RealmRoles, Client, ClientRole, $modalInstance) {
     console.log('realm: ' + realm.realm);
     $scope.selectedRealmRole = {
@@ -1812,4 +1851,20 @@ module.directive('kcTooltip', function($compile) {
                 $compile(label)(scope);
             }
         };
+});
+
+module.directive( 'kcOpen', function ( $location ) {
+    return function ( scope, element, attrs ) {
+        var path;
+
+        attrs.$observe( 'kcOpen', function (val) {
+            path = val;
+        });
+
+        element.bind( 'click', function () {
+            scope.$apply( function () {
+                $location.path(path);
+            });
+        });
+    };
 });

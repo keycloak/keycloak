@@ -1,16 +1,10 @@
 package org.keycloak.util.ldap;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
-import org.apache.commons.io.FileUtils;
 import org.apache.directory.api.ldap.model.constants.SchemaConstants;
-import org.apache.directory.api.ldap.model.exception.LdapEntryAlreadyExistsException;
-import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.api.ldap.model.schema.LdapComparator;
 import org.apache.directory.api.ldap.model.schema.SchemaManager;
-import org.apache.directory.api.ldap.model.schema.comparators.NormalizingComparator;
+import org.
+        apache.directory.api.ldap.model.schema.comparators.NormalizingComparator;
 import org.apache.directory.api.ldap.model.schema.registries.ComparatorRegistry;
 import org.apache.directory.api.ldap.model.schema.registries.SchemaLoader;
 import org.apache.directory.api.ldap.schemaextractor.SchemaLdifExtractor;
@@ -23,18 +17,19 @@ import org.apache.directory.server.core.DefaultDirectoryService;
 import org.apache.directory.server.core.api.CacheService;
 import org.apache.directory.server.core.api.DirectoryService;
 import org.apache.directory.server.core.api.InstanceLayout;
-import org.apache.directory.server.core.api.interceptor.context.AddOperationContext;
 import org.apache.directory.server.core.api.partition.Partition;
 import org.apache.directory.server.core.api.schema.SchemaPartition;
 import org.apache.directory.server.core.factory.DefaultDirectoryServiceFactory;
 import org.apache.directory.server.core.factory.DirectoryServiceFactory;
-import org.apache.directory.server.core.factory.JdbmPartitionFactory;
 import org.apache.directory.server.core.factory.LdifPartitionFactory;
 import org.apache.directory.server.core.factory.PartitionFactory;
 import org.apache.directory.server.core.partition.ldif.LdifPartition;
 import org.apache.directory.server.i18n.I18n;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Slightly modified version of {@link DefaultDirectoryServiceFactory} which allows persistence among restarts and uses LDIF partitions by default
@@ -44,7 +39,7 @@ import org.slf4j.LoggerFactory;
 class FileDirectoryServiceFactory implements DirectoryServiceFactory {
 
     /** A logger for this class */
-    private static final Logger LOG = LoggerFactory.getLogger(FileDirectoryServiceFactory.class);
+    private static final Logger LOG = Logger.getLogger(FileDirectoryServiceFactory.class);
 
     /** The directory service. */
     private DirectoryService directoryService;

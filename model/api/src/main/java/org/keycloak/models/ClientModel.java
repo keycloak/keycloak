@@ -103,6 +103,9 @@ public interface ClientModel extends RoleContainerModel {
     boolean isConsentRequired();
     void setConsentRequired(boolean consentRequired);
 
+    boolean isServiceAccountsEnabled();
+    void setServiceAccountsEnabled(boolean serviceAccountsEnabled);
+
     Set<RoleModel> getScopeMappings();
     void addScopeMapping(RoleModel role);
     void deleteScopeMapping(RoleModel role);

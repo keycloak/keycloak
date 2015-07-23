@@ -91,6 +91,19 @@ public class LoginPage extends AbstractPage {
         submitButton.click();
     }
 
+    public void missingPassword(String username) {
+        usernameInput.clear();
+        usernameInput.sendKeys(username);
+        passwordInput.clear();
+        submitButton.click();
+
+    }
+    public void missingUsername() {
+        usernameInput.clear();
+        submitButton.click();
+
+    }
+
     public String getUsername() {
         return usernameInput.getAttribute("value");
     }

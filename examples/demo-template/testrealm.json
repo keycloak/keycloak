@@ -71,6 +71,13 @@
             "clientRoles": {
                 "realm-management": [ "realm-admin" ]
             }
+        },
+        {
+            "username" : "service-account-product-sa-client",
+            "enabled": true,
+            "email" : "service-account-product-sa-client@placeholder.org",
+            "serviceAccountClientId": "product-sa-client",
+            "realmRoles": [ "user" ]
         }
     ],
     "roles" : {
@@ -162,6 +169,12 @@
             "publicClient": true,
             "directGrantsOnly": true,
             "consentRequired": true
+        },
+        {
+            "clientId": "product-sa-client",
+            "enabled": true,
+            "secret": "password",
+            "serviceAccountsEnabled": true
         }
     ],
     "clientScopeMappings": {

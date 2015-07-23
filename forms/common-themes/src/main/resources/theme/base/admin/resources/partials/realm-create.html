@@ -1,7 +1,4 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
-
-    <h1>Add Realm</h1>
-
     <form class="form-horizontal" name="realmForm" novalidate>
         <fieldset>
             <legend><span class="text">Import Realm</span></legend>
@@ -15,10 +12,10 @@
                     <span class="kc-uploaded-file" data-ng-show="files.length > 0">{{files[0].name}}</span>
                 </div>
             </div>
-            <div class="form-group" data-ng-show="files.length > 0">
+            <div class="form-group">
                 <div class="col-md-10 col-md-offset-2">
-                    <button type="submit" data-ng-click="uploadFile()" class="btn btn-primary">Upload</button>
-                    <button type="submit" data-ng-click="clearFileSelect()" class="btn btn-default">Cancel</button>
+                    <button type="submit" data-ng-disabled="files.length == 0" data-ng-click="uploadFile()" class="btn btn-primary">Upload</button>
+                    <button type="submit" data-ng-disabled="files.length == 0" data-ng-click="clearFileSelect()" class="btn btn-default">Cancel</button>
                 </div>
             </div>
         </fieldset>
@@ -44,7 +41,7 @@
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2">
-                <button kc-save data-ng-show="changed">Save</button>
+                <button kc-save data-ng-disabled="!changed">Create</button>
             </div>
         </div>
     </form>

@@ -26,6 +26,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private String baseUrl;
     private boolean bearerOnly;
     private boolean consentRequired;
+    private boolean serviceAccountsEnabled;
     private boolean directGrantsOnly;
     private int nodeReRegistrationTimeout;
 
@@ -208,6 +209,14 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setConsentRequired(boolean consentRequired) {
         this.consentRequired = consentRequired;
+    }
+
+    public boolean isServiceAccountsEnabled() {
+        return serviceAccountsEnabled;
+    }
+
+    public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
+        this.serviceAccountsEnabled = serviceAccountsEnabled;
     }
 
     public boolean isDirectGrantsOnly() {

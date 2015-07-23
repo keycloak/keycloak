@@ -272,8 +272,27 @@ public class MongoUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
+    public void removeUserLoginFailure(RealmModel realm, String username) {
+        DBObject query = new QueryBuilder()
+                .and("username").is(username)
+                .and("realmId").is(realm.getId())
+                .get();
+        mongoStore.removeEntities(MongoUsernameLoginFailureEntity.class, query, false, invocationContext);
+    }
+
+    @Override
+    public void removeAllUserLoginFailures(RealmModel realm) {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .get();
+        mongoStore.removeEntities(MongoUsernameLoginFailureEntity.class, query, false, invocationContext);
+
+    }
+
+    @Override
     public void onRealmRemoved(RealmModel realm) {
         removeUserSessions(realm);
+        removeAllUserLoginFailures(realm);
     }
 
     @Override

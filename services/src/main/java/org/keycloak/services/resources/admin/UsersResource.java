@@ -554,7 +554,7 @@ public class UsersResource {
             }
             userModels = session.users().searchForUserByAttributes(attributes, realm, firstResult, maxResults);
         } else {
-            userModels = session.users().getUsers(realm, firstResult, maxResults);
+            userModels = session.users().getUsers(realm, firstResult, maxResults, false);
         }
 
         for (UserModel user : userModels) {

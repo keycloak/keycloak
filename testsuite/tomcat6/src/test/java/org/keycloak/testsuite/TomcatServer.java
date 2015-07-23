@@ -6,16 +6,15 @@ import org.apache.catalina.LifecycleException;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.Embedded;
+import org.jboss.logging.Logger;
 import org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TomcatServer {
     private Embedded server;
     private int port;
     private boolean isRunning;
 
-    private static final Logger LOG = LoggerFactory.getLogger(TomcatServer.class);
+    private static final Logger LOG = Logger.getLogger(TomcatServer.class);
     private static final boolean isInfo = LOG.isInfoEnabled();
     private final Host host;
 
@@ -71,7 +70,7 @@ public class TomcatServer {
      */
     public void start() throws LifecycleException {
         if (isRunning) {
-            LOG.warn("Tomcat server is already running @ port={}; ignoring the start", port);
+            LOG.warnv("Tomcat server is already running @ port={}; ignoring the start", port);
             return;
         }
 
@@ -85,7 +84,7 @@ public class TomcatServer {
         Connector connector = server.createConnector(host.getName(), port, false);
         server.addConnector(connector);
 
-        if (isInfo) LOG.info("Starting the Tomcat server @ port={}", port);
+        if (isInfo) LOG.infov("Starting the Tomcat server @ port={}", port);
 
         server.setAwait(true);
         server.start();
@@ -97,7 +96,7 @@ public class TomcatServer {
      */
     public void stop() throws LifecycleException {
         if (!isRunning) {
-            LOG.warn("Tomcat server is not running @ port={}", port);
+            LOG.warnv("Tomcat server is not running @ port={}", port);
             return;
         }
 

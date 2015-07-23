@@ -33,6 +33,8 @@ public interface UserSessionProvider extends Provider {
 
     UsernameLoginFailureModel getUserLoginFailure(RealmModel realm, String username);
     UsernameLoginFailureModel addUserLoginFailure(RealmModel realm, String username);
+    void removeUserLoginFailure(RealmModel realm, String username);
+    void removeAllUserLoginFailures(RealmModel realm);
 
     void onRealmRemoved(RealmModel realm);
     void onClientRemoved(RealmModel realm, ClientModel client);

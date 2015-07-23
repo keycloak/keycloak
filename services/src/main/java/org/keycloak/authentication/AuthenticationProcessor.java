@@ -3,7 +3,7 @@ package org.keycloak.authentication;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
-import org.keycloak.authentication.authenticators.AbstractFormAuthenticator;
+import org.keycloak.authentication.authenticators.browser.AbstractFormAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -561,9 +561,18 @@ public class AuthenticationProcessor {
         validateUser(authUser);
         AuthenticationFlow authenticationFlow = createFlowExecution(this.flowId, null);
         Response challenge = authenticationFlow.processFlow();
-        if (challenge != null) return challenge;
+        return challenge;
+    }
 
+    public Response attachSessionExecutionRequiredActions() {
+        attachSession();
+        return AuthenticationManager.actionRequired(session, userSession, clientSession, connection, request, uriInfo, event);
+    }
+
+    public void attachSession() {
         String username = clientSession.getAuthenticatedUser().getUsername();
+        String attemptedUsername = clientSession.getNote(AbstractFormAuthenticator.ATTEMPTED_USERNAME);
+        if (attemptedUsername != null) username = attemptedUsername;
         if (userSession == null) { // if no authenticator attached a usersession
             userSession = session.sessions().createUserSession(realm, clientSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), "form", false, null, null);
             userSession.setState(UserSessionModel.State.LOGGING_IN);
@@ -573,8 +582,10 @@ public class AuthenticationProcessor {
         event.user(userSession.getUser())
                 .detail(Details.USERNAME, username)
                 .session(userSession);
+    }
 
-        return AuthenticationManager.actionRequired(session, userSession, clientSession, connection, request, uriInfo, event);
+    public void evaluateRequiredActionTriggers() {
+        AuthenticationManager.evaluateRequiredActionTriggers(session, userSession, clientSession, connection, request, uriInfo, event, realm, clientSession.getAuthenticatedUser());
     }
 
     public Response finishAuthentication() {
@@ -585,9 +596,8 @@ public class AuthenticationProcessor {
     }
 
     public void validateUser(UserModel authenticatedUser) {
-        if (authenticatedUser != null) {
-            if (!authenticatedUser.isEnabled()) throw new AuthException(Error.USER_DISABLED);
-        }
+        if (authenticatedUser == null) return;
+        if (!authenticatedUser.isEnabled()) throw new AuthException(Error.USER_DISABLED);
         if (realm.isBruteForceProtected()) {
             if (protector.isTemporarilyDisabled(session, realm, authenticatedUser.getUsername())) {
                 throw new AuthException(Error.USER_TEMPORARILY_DISABLED);

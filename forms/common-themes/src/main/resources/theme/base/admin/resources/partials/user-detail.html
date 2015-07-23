@@ -5,10 +5,6 @@
         <li data-ng-show="create">Add User</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{user.username|capitalize}}<i id="removeUser" class="pficon pficon-delete clickable" data-ng-show="!create && access.manageUsers && !changed"
-    	data-ng-click="remove()"></i></h1>
-    <h1 data-ng-show="create">Add User</h1>
-
     <kc-tabs-user></kc-tabs-user>
 
     <form class="form-horizontal" name="userForm" novalidate kc-read-only="!access.manageUsers">
@@ -70,6 +66,16 @@
                 </div>
                 <kc-tooltip>A disabled user cannot login.</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="realm.bruteForceProtected && !create">
+                <label class="col-md-2 control-label" for="temporarilyDisabled">User Temporarily Locked</label>
+                <div class="col-md-1">
+                    <input ng-model="temporarilyDisabled" name="temporarilyDisabled" id="temporarilyDisabled" data-ng-readonly="true" data-ng-disabled="true" onoffswitch />
+                </div>
+                <kc-tooltip>The user may have been locked due to failing to login too many times.</kc-tooltip>
+                <div class="col-sm-2">
+                    <button type="submit" data-ng-click="unlockUser()" data-ng-show="temporarilyDisabled" class="btn btn-default">Unlock User</button>
+                </div>
+            </div>
             <div class="form-group clearfix block" data-ng-show="!create && user.federationLink">
                 <label class="col-md-2 control-label" for="userEnabled">Federation Link</label>
                 <div class="col-md-6">
@@ -105,10 +111,19 @@
                     </div>
                 </div>
             </div>
+
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="reqActions">Impersonate user</label>
+
+                <div class="col-md-6">
+                    <button data-ng-show="access.impersonation" class="btn btn-default" data-ng-click="impersonate()">Impersonate</button>
+                </div>
+                <kc-tooltip>Login as this user.  If user is in same realm as you, your current login session will be logged out before you are logged in as this user.</kc-tooltip>
+            </div>
+
         </fieldset>
 
         <div data-ng-include data-src="resourceUrl + '/partials/user-attribute-entry.html'"></div>
-
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageUsers">
@@ -116,10 +131,9 @@
                 <button kc-cancel data-ng-click="cancel()">Cancel</button>
             </div>
 
-            <div class="col-md-10 col-md-offset-2" data-ng-show="!create">
-                <button kc-save  data-ng-show="access.manageUsers && changed">Save</button>
-                <button kc-reset data-ng-show="access.manageUsers && changed">Cancel</button>
-                <button data-ng-show="access.impersonation" class="btn btn-default" data-ng-click="impersonate()" tooltip="Login as this user.  If user is in same realm as you, your current login session will be logged out before you are logged in as this user.">Impersonate</button>
+            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageUsers">
+                <button kc-save  data-ng-disabled="!changed">Save</button>
+                <button kc-reset data-ng-disabled="!changed">Cancel</button>
             </div>
         </div>
 

@@ -122,6 +122,25 @@ public class LoginTotpTest {
     }
 
     @Test
+    public void loginWithMissingTotp() throws Exception {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        loginTotpPage.assertCurrent();
+
+        loginTotpPage.login(null);
+        loginTotpPage.assertCurrent();
+        Assert.assertEquals("Invalid authenticator code.", loginPage.getError());
+
+        //loginPage.assertCurrent();  // Invalid authenticator code.
+        //Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+        events.expectLogin().error("invalid_user_credentials").session((String) null)
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
+    }
+
+    @Test
     public void loginWithTotpSuccess() throws Exception {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");

@@ -47,7 +47,7 @@
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
         <dom4j.version>1.6.1</dom4j.version>
         <xml-apis.version>1.4.01</xml-apis.version>
-        <slf4j.version>1.7.7.jbossorg-1</slf4j.version>
+        <slf4j.version>1.7.7</slf4j.version>
         <wildfly.version>9.0.0.Final</wildfly.version>
         <wildfly.core.version>1.0.0.Final</wildfly.core.version>
         <wildfly.build-tools.version>1.0.0.Alpha8</wildfly.build-tools.version>
@@ -493,20 +493,9 @@
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-simple</artifactId>
-                <version>${slf4j.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
                 <version>${slf4j.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>jcl-over-slf4j</artifactId>
-                <version>${slf4j.version}</version>
             </dependency>
             <!-- Needed for picketlink perf test -->
             <dependency>

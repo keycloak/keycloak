@@ -56,7 +56,7 @@ public class FederationProvidersIntegrationTest {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            FederationTestUtils.addLocalUser(manager.getSession(), appRealm, "mary", "mary@test.com", "password-app");
+            FederationTestUtils.addLocalUser(manager.getSession(), appRealm, "marykeycloak", "mary@test.com", "password-app");
 
             Map<String,String> ldapConfig = ldapRule.getConfig();
             ldapConfig.put(LDAPConstants.SYNC_REGISTRATIONS, "true");
@@ -121,22 +121,22 @@ public class FederationProvidersIntegrationTest {
             RealmModel appRealm = manager.getRealm("test");
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
             LDAPObject jbrown2 = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "JBrown2", "John", "Brown2", "jbrown2@email.org", null, "1234");
-            ldapFedProvider.getLdapIdentityStore().updatePassword(jbrown2, "password");
+            ldapFedProvider.getLdapIdentityStore().updatePassword(jbrown2, "Password1");
             LDAPObject jbrown3 = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "jbrown3", "John", "Brown3", "JBrown3@email.org", null, "1234");
-            ldapFedProvider.getLdapIdentityStore().updatePassword(jbrown3, "password");
+            ldapFedProvider.getLdapIdentityStore().updatePassword(jbrown3, "Password1");
         } finally {
             keycloakRule.stopSession(session, true);
         }
 
-        loginSuccessAndLogout("jbrown2", "password");
-        loginSuccessAndLogout("JBrown2", "password");
-        loginSuccessAndLogout("jbrown2@email.org", "password");
-        loginSuccessAndLogout("JBrown2@email.org", "password");
+        loginSuccessAndLogout("jbrown2", "Password1");
+        loginSuccessAndLogout("JBrown2", "Password1");
+        loginSuccessAndLogout("jbrown2@email.org", "Password1");
+        loginSuccessAndLogout("JBrown2@email.org", "Password1");
 
-        loginSuccessAndLogout("jbrown3", "password");
-        loginSuccessAndLogout("JBrown3", "password");
-        loginSuccessAndLogout("jbrown3@email.org", "password");
-        loginSuccessAndLogout("JBrown3@email.org", "password");
+        loginSuccessAndLogout("jbrown3", "Password1");
+        loginSuccessAndLogout("JBrown3", "Password1");
+        loginSuccessAndLogout("jbrown3@email.org", "Password1");
+        loginSuccessAndLogout("JBrown3@email.org", "Password1");
     }
 
     private void loginSuccessAndLogout(String username, String password) {
@@ -155,9 +155,9 @@ public class FederationProvidersIntegrationTest {
             RealmModel appRealm = manager.getRealm("test");
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
             LDAPObject jbrown2 = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "JBrown4", "John", "Brown4", "jbrown4@email.org", null, "1234");
-            ldapFedProvider.getLdapIdentityStore().updatePassword(jbrown2, "password");
+            ldapFedProvider.getLdapIdentityStore().updatePassword(jbrown2, "Password1");
             LDAPObject jbrown3 = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "jbrown5", "John", "Brown5", "JBrown5@Email.org", null, "1234");
-            ldapFedProvider.getLdapIdentityStore().updatePassword(jbrown3, "password");
+            ldapFedProvider.getLdapIdentityStore().updatePassword(jbrown3, "Password1");
         } finally {
             keycloakRule.stopSession(session, true);
         }
@@ -225,7 +225,7 @@ public class FederationProvidersIntegrationTest {
     @Test
     public void loginClassic() {
         loginPage.open();
-        loginPage.login("mary", "password-app");
+        loginPage.login("marykeycloak", "password-app");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
@@ -488,7 +488,7 @@ public class FederationProvidersIntegrationTest {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
-                FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "mary", "Mary1", "Kelly1", "mary1@email.org", null, "123");
+                FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "marykeycloak", "Mary1", "Kelly1", "mary1@email.org", null, "123");
                 FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "mary-duplicatemail", "Mary2", "Kelly2", "mary@test.com", null, "123");
             }
 

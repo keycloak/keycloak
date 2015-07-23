@@ -323,15 +323,25 @@ public class MemUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public void onRealmRemoved(RealmModel realm) {
-        removeUserSessions(realm);
+    public void removeUserLoginFailure(RealmModel realm, String username) {
+        loginFailures.remove(new UsernameLoginFailureKey(realm.getId(), username));
+    }
 
+    @Override
+    public void removeAllUserLoginFailures(RealmModel realm) {
         Iterator<UsernameLoginFailureEntity> itr = loginFailures.values().iterator();
         while (itr.hasNext()) {
             if (itr.next().getRealm().equals(realm.getId())) {
                 itr.remove();
             }
         }
+
+    }
+
+    @Override
+    public void onRealmRemoved(RealmModel realm) {
+        removeUserSessions(realm);
+        removeAllUserLoginFailures(realm);
     }
 
     @Override

@@ -105,6 +105,16 @@ public class MongoUserProvider implements UserProvider {
         return userEntity == null ? null : new UserAdapter(session, realm, userEntity, invocationContext);
     }
 
+    @Override
+    public UserModel getUserByServiceAccountClient(ClientModel client) {
+        DBObject query = new QueryBuilder()
+                .and("serviceAccountClientLink").is(client.getId())
+                .and("realmId").is(client.getRealm().getId())
+                .get();
+        MongoUserEntity userEntity = getMongoStore().loadSingleEntity(MongoUserEntity.class, query, invocationContext);
+        return userEntity == null ? null : new UserAdapter(session, client.getRealm(), userEntity, invocationContext);
+    }
+
     protected List<UserModel> convertUserEntities(RealmModel realm, List<MongoUserEntity> userEntities) {
         List<UserModel> userModels = new ArrayList<UserModel>();
         for (MongoUserEntity user : userEntities) {
@@ -115,8 +125,8 @@ public class MongoUserProvider implements UserProvider {
 
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return getUsers(realm, -1, -1);
+    public List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts) {
+        return getUsers(realm, -1, -1, includeServiceAccounts);
     }
 
     @Override
@@ -128,10 +138,15 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        DBObject query = new QueryBuilder()
-                .and("realmId").is(realm.getId())
-                .get();
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
+        QueryBuilder queryBuilder = new QueryBuilder()
+                .and("realmId").is(realm.getId());
+
+        if (!includeServiceAccounts) {
+            queryBuilder = queryBuilder.and("serviceAccountClientLink").is(null);
+        }
+
+        DBObject query = queryBuilder.get();
         DBObject sort = new BasicDBObject("username", 1);
         List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, query, sort, firstResult, maxResults, invocationContext);
         return convertUserEntities(realm, users);
@@ -170,6 +185,7 @@ public class MongoUserProvider implements UserProvider {
 
         QueryBuilder builder = new QueryBuilder().and(
                 new QueryBuilder().and("realmId").is(realm.getId()).get(),
+                new QueryBuilder().and("serviceAccountClientLink").is(null).get(),
                 new QueryBuilder().or(
                         new QueryBuilder().put("username").regex(caseInsensitivePattern).get(),
                         new QueryBuilder().put("email").regex(caseInsensitivePattern).get(),
@@ -211,6 +227,19 @@ public class MongoUserProvider implements UserProvider {
         DBObject sort = new BasicDBObject("username", 1);
 
         List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, queryBuilder.get(), sort, firstResult, maxResults, invocationContext);
+        return convertUserEntities(realm, users);
+    }
+
+    @Override
+    public List<UserModel> searchForUserByUserAttributes(Map<String, String> attributes, RealmModel realm) {
+        QueryBuilder queryBuilder = new QueryBuilder()
+                .and("realmId").is(realm.getId());
+
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+            queryBuilder.and("attributes." + entry.getKey()).is(entry.getValue());
+        }
+
+        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, queryBuilder.get(), invocationContext);
         return convertUserEntities(realm, users);
     }
 

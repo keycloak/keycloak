@@ -7,6 +7,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.services.managers.ClientManager;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -147,6 +148,7 @@ public class UserModelTest extends AbstractModelTest {
     public void testUserMultipleAttributes() throws Exception {
         RealmModel realm = realmManager.createRealm("original");
         UserModel user = session.users().addUser(realm, "user");
+        UserModel userNoAttrs = session.users().addUser(realm, "user-noattrs");
 
         user.setSingleAttribute("key1", "value1");
         List<String> attrVals = new ArrayList<>(Arrays.asList( "val21", "val22" ));
@@ -177,13 +179,6 @@ public class UserModelTest extends AbstractModelTest {
         Assert.assertEquals(allAttrVals.get("key1"), user.getAttribute("key1"));
         Assert.assertEquals(allAttrVals.get("key2"), user.getAttribute("key2"));
 
-        // Test searching
-        Map<String, String> attributes = new HashMap<String, String>();
-        attributes.put("key2", "val22");
-        List<UserModel> users = session.users().searchForUserByAttributes(attributes, realm);
-        Assert.assertEquals(1, users.size());
-        Assert.assertEquals(users.get(0), user);
-
         // Test remove and rewrite attribute
         user.removeAttribute("key1");
         user.setSingleAttribute("key2", "val23");
@@ -196,6 +191,95 @@ public class UserModelTest extends AbstractModelTest {
         attrVals = user.getAttribute("key2");
         Assert.assertEquals(1, attrVals.size());
         Assert.assertEquals("val23", attrVals.get(0));
+    }
+
+    @Test
+    public void testSearchByUserAttributes() throws Exception {
+        RealmModel realm = realmManager.createRealm("original");
+        UserModel user1 = session.users().addUser(realm, "user1");
+        UserModel user2 = session.users().addUser(realm, "user2");
+        UserModel user3 = session.users().addUser(realm, "user3");
+
+        user1.setSingleAttribute("key1", "value1");
+        user1.setSingleAttribute("key2", "value21");
+
+        user2.setSingleAttribute("key1", "value1");
+        user2.setSingleAttribute("key2", "value22");
+
+        user3.setSingleAttribute("key2", "value21");
+
+        commit();
+
+        Map<String, String> attributes = new HashMap<String, String>();
+        attributes.put("key1", "value1");
+        List<UserModel> users = session.users().searchForUserByUserAttributes(attributes, realm);
+        Assert.assertEquals(2, users.size());
+        Assert.assertTrue(users.contains(user1));
+        Assert.assertTrue(users.contains(user2));
+
+        attributes.put("key2", "value21");
+        users = session.users().searchForUserByUserAttributes(attributes, realm);
+        Assert.assertEquals(1, users.size());
+        Assert.assertTrue(users.contains(user1));
+
+        attributes.put("key3", "value3");
+        users = session.users().searchForUserByUserAttributes(attributes, realm);
+        Assert.assertEquals(0, users.size());
+    }
+
+    @Test
+    public void testServiceAccountLink() throws Exception {
+        RealmModel realm = realmManager.createRealm("original");
+        ClientModel client = realm.addClient("foo");
+
+        UserModel user1 = session.users().addUser(realm, "user1");
+        user1.setFirstName("John");
+        user1.setLastName("Doe");
+
+        UserModel user2 = session.users().addUser(realm, "user2");
+        user2.setFirstName("John");
+        user2.setLastName("Doe");
+
+        // Search
+        Assert.assertNull(session.users().getUserByServiceAccountClient(client));
+        List<UserModel> users = session.users().searchForUser("John Doe", realm);
+        Assert.assertEquals(2, users.size());
+        Assert.assertTrue(users.contains(user1));
+        Assert.assertTrue(users.contains(user2));
+
+        // Link service account
+        user1.setServiceAccountClientLink(client.getId());
+
+        commit();
+
+        // Search and assert service account user not found
+        realm = realmManager.getRealmByName("original");
+        UserModel searched = session.users().getUserByServiceAccountClient(client);
+        Assert.assertEquals(searched, user1);
+        users = session.users().searchForUser("John Doe", realm);
+        Assert.assertEquals(1, users.size());
+        Assert.assertFalse(users.contains(user1));
+        Assert.assertTrue(users.contains(user2));
+
+        users = session.users().getUsers(realm, false);
+        Assert.assertEquals(1, users.size());
+        Assert.assertFalse(users.contains(user1));
+        Assert.assertTrue(users.contains(user2));
+
+        users = session.users().getUsers(realm, true);
+        Assert.assertEquals(2, users.size());
+        Assert.assertTrue(users.contains(user1));
+        Assert.assertTrue(users.contains(user2));
+
+        Assert.assertEquals(2, session.users().getUsersCount(realm));
+
+        // Remove client
+        new ClientManager(realmManager).removeClient(realm, client);
+        commit();
+
+        // Assert service account removed as well
+        realm = realmManager.getRealmByName("original");
+        Assert.assertNull(session.users().getUserByUsername("user1", realm));
     }
 
     public static void assertEquals(UserModel expected, UserModel actual) {

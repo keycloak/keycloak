@@ -28,6 +28,7 @@
                 <!ENTITY Email SYSTEM "modules/email.xml">
                 <!ENTITY Roles SYSTEM "modules/roles.xml">
                 <!ENTITY DirectAccess SYSTEM "modules/direct-access.xml">
+                <!ENTITY ServiceAccounts SYSTEM "modules/service-accounts.xml">
                 <!ENTITY CORS SYSTEM "modules/cors.xml">
                 <!ENTITY Timeouts SYSTEM "modules/timeouts.xml">
                 <!ENTITY Events SYSTEM "modules/events.xml">
@@ -122,6 +123,7 @@ This one is short
     &AccessTypes;
     &Roles;
     &DirectAccess;
+    &ServiceAccounts;
     &CORS;
     &Timeouts;
     &AdminApi;

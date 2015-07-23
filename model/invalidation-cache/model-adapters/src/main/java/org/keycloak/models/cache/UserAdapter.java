@@ -244,6 +244,18 @@ public class UserAdapter implements UserModel {
    }
 
     @Override
+    public String getServiceAccountClientLink() {
+        if (updated != null) return updated.getServiceAccountClientLink();
+        return cached.getServiceAccountClientLink();
+    }
+
+    @Override
+    public void setServiceAccountClientLink(String clientInternalId) {
+        getDelegateForUpdate();
+        updated.setServiceAccountClientLink(clientInternalId);
+    }
+
+    @Override
     public Set<RoleModel> getRealmRoleMappings() {
         if (updated != null) return updated.getRealmRoleMappings();
         Set<RoleModel> roleMappings = getRoleMappings();

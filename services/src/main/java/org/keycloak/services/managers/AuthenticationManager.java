@@ -429,66 +429,7 @@ public class AuthenticationManager {
         final UserModel user = userSession.getUser();
         final ClientModel client = clientSession.getClient();
 
-        RequiredActionContext context = new RequiredActionContext() {
-            @Override
-            public EventBuilder getEvent() {
-                return event;
-            }
-
-            @Override
-            public UserModel getUser() {
-                return user;
-            }
-
-            @Override
-            public RealmModel getRealm() {
-                return realm;
-            }
-
-            @Override
-            public ClientSessionModel getClientSession() {
-                return clientSession;
-            }
-
-            @Override
-            public UserSessionModel getUserSession() {
-                return userSession;
-            }
-
-            @Override
-            public ClientConnection getConnection() {
-                return clientConnection;
-            }
-
-            @Override
-            public UriInfo getUriInfo() {
-                return uriInfo;
-            }
-
-            @Override
-            public KeycloakSession getSession() {
-                return session;
-            }
-
-            @Override
-            public HttpRequest getHttpRequest() {
-                return request;
-            }
-
-            @Override
-            public String generateAccessCode(String action) {
-                ClientSessionCode code = new ClientSessionCode(getRealm(), getClientSession());
-                code.setAction(action);
-                return code.getCode();
-            }
-        };
-
-        // see if any required actions need triggering, i.e. an expired password
-        for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
-            if (!model.isEnabled()) continue;
-            RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
-            provider.evaluateTriggers(context);
-        }
+        RequiredActionContext context = evaluateRequiredActionTriggers(session, userSession, clientSession, clientConnection, request, uriInfo, event, realm, user);
 
 
         logger.debugv("processAccessCode: go to oauth page?: {0}", client.isConsentRequired());
@@ -554,6 +495,70 @@ public class AuthenticationManager {
 
     }
 
+    public static RequiredActionContext evaluateRequiredActionTriggers(final KeycloakSession session, final UserSessionModel userSession, final ClientSessionModel clientSession, final ClientConnection clientConnection, final HttpRequest request, final UriInfo uriInfo, final EventBuilder event, final RealmModel realm, final UserModel user) {
+        RequiredActionContext context = new RequiredActionContext() {
+            @Override
+            public EventBuilder getEvent() {
+                return event;
+            }
+
+            @Override
+            public UserModel getUser() {
+                return user;
+            }
+
+            @Override
+            public RealmModel getRealm() {
+                return realm;
+            }
+
+            @Override
+            public ClientSessionModel getClientSession() {
+                return clientSession;
+            }
+
+            @Override
+            public UserSessionModel getUserSession() {
+                return userSession;
+            }
+
+            @Override
+            public ClientConnection getConnection() {
+                return clientConnection;
+            }
+
+            @Override
+            public UriInfo getUriInfo() {
+                return uriInfo;
+            }
+
+            @Override
+            public KeycloakSession getSession() {
+                return session;
+            }
+
+            @Override
+            public HttpRequest getHttpRequest() {
+                return request;
+            }
+
+            @Override
+            public String generateAccessCode(String action) {
+                ClientSessionCode code = new ClientSessionCode(getRealm(), getClientSession());
+                code.setAction(action);
+                return code.getCode();
+            }
+        };
+
+        // see if any required actions need triggering, i.e. an expired password
+        for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
+            if (!model.isEnabled()) continue;
+            RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
+            provider.evaluateTriggers(context);
+        }
+        return context;
+    }
+
 
     protected static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, String tokenString, HttpHeaders headers) {
         try {
@@ -585,121 +590,6 @@ public class AuthenticationManager {
             logger.debug("Failed to verify identity token", e);
         }
         return null;
-    }
-
-    public AuthenticationStatus authenticateForm(KeycloakSession session, ClientConnection clientConnection, RealmModel realm, MultivaluedMap<String, String> formData) {
-        String username = formData.getFirst(FORM_USERNAME);
-        if (username == null) {
-            logger.debug("Username not provided");
-            return AuthenticationStatus.INVALID_USER;
-        }
-
-        if (realm.isBruteForceProtected()) {
-            if (protector.isTemporarilyDisabled(session, realm, username)) {
-                return AuthenticationStatus.ACCOUNT_TEMPORARILY_DISABLED;
-            }
-        }
-
-        AuthenticationStatus status = authenticateInternal(session, realm, formData, username);
-        if (realm.isBruteForceProtected()) {
-            switch (status) {
-                case SUCCESS:
-                    protector.successfulLogin(realm, username, clientConnection);
-                    break;
-                case FAILED:
-                case MISSING_TOTP:
-                case MISSING_PASSWORD:
-                case INVALID_CREDENTIALS:
-                    protector.failedLogin(realm, username, clientConnection);
-                    break;
-                case INVALID_USER:
-                    protector.invalidUser(realm, username, clientConnection);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        return status;
-    }
-
-    protected AuthenticationStatus authenticateInternal(KeycloakSession session, RealmModel realm, MultivaluedMap<String, String> formData, String username) {
-        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
-
-        if (user == null) {
-            logger.debugv("User {0} not found", username);
-            return AuthenticationStatus.INVALID_USER;
-        }
-
-        Set<String> types = new HashSet<String>();
-
-        for (RequiredCredentialModel credential : realm.getRequiredCredentials()) {
-            types.add(credential.getType());
-        }
-
-        if (types.contains(CredentialRepresentation.PASSWORD)) {
-            List<UserCredentialModel> credentials = new LinkedList<UserCredentialModel>();
-
-            String password = formData.getFirst(CredentialRepresentation.PASSWORD);
-            if (password != null) {
-                credentials.add(UserCredentialModel.password(password));
-            }
-
-            String passwordToken = formData.getFirst(CredentialRepresentation.PASSWORD_TOKEN);
-            if (passwordToken != null) {
-                credentials.add(UserCredentialModel.passwordToken(passwordToken));
-            }
-
-            String totp = formData.getFirst(CredentialRepresentation.TOTP);
-            if (totp != null) {
-                credentials.add(UserCredentialModel.totp(totp));
-            }
-
-            if ((password == null || password.isEmpty()) && (passwordToken == null || passwordToken.isEmpty())) {
-                logger.debug("Password not provided");
-                return AuthenticationStatus.MISSING_PASSWORD;
-            }
-
-            logger.debugv("validating password for user: {0}", username);
-
-            if (!session.users().validCredentials(realm, user, credentials)) {
-                return AuthenticationStatus.INVALID_CREDENTIALS;
-            }
-
-            if (!user.isEnabled()) {
-                return AuthenticationStatus.ACCOUNT_DISABLED;
-            }
-
-            if (user.isTotp() && totp == null) {
-                return AuthenticationStatus.MISSING_TOTP;
-            }
-
-            if (!user.getRequiredActions().isEmpty()) {
-                return AuthenticationStatus.ACTIONS_REQUIRED;
-            } else {
-                return AuthenticationStatus.SUCCESS;
-            }
-        } else if (types.contains(CredentialRepresentation.SECRET)) {
-            String secret = formData.getFirst(CredentialRepresentation.SECRET);
-            if (secret == null) {
-                logger.debug("Secret not provided");
-                return AuthenticationStatus.MISSING_PASSWORD;
-            }
-            if (!session.users().validCredentials(realm, user, UserCredentialModel.secret(secret))) {
-                return AuthenticationStatus.INVALID_CREDENTIALS;
-            }
-            if (!user.isEnabled()) {
-                return AuthenticationStatus.ACCOUNT_DISABLED;
-            }
-            if (!user.getRequiredActions().isEmpty()) {
-                return AuthenticationStatus.ACTIONS_REQUIRED;
-            } else {
-                return AuthenticationStatus.SUCCESS;
-            }
-        } else {
-            logger.warn("Do not know how to authenticate user");
-            return AuthenticationStatus.FAILED;
-        }
     }
 
     public enum AuthenticationStatus {

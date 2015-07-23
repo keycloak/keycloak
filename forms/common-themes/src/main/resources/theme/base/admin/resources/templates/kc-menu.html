@@ -27,7 +27,7 @@
     || path[2] == 'cache-settings'
     || path[2] == 'defense'
     || path[2] == 'keys-settings' || path[2] == 'smtp-settings' || path[2] == 'ldap-settings' || path[2] == 'auth-settings') && path[3] != 'clients') && 'active'">
-                <a href="#/realms/{{realm.realm}}"><span class="pficon pficon-settings"></span> Settings</a>
+                <a href="#/realms/{{realm.realm}}"><span class="pficon pficon-settings"></span> Realm Settings</a>
             </li>
             <li data-ng-show="access.viewClients" data-ng-class="(path[2] == 'clients' || path[1] == 'client' || path[3] == 'clients') && 'active'"><a href="#/realms/{{realm.realm}}/clients"><i class="fa fa-cubes"></i> Clients</a></li>
             <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'roles' || path[2] == 'default-roles' || (path[1] == 'role' && path[3] != 'clients')) && 'active'"><a href="#/realms/{{realm.realm}}/roles"><i class="fa fa-tasks"></i> Roles</a></li>

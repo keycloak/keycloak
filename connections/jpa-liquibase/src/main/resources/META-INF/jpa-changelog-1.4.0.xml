@@ -8,6 +8,12 @@
         <delete tableName="CLIENT_SESSION"/>
         <delete tableName="USER_SESSION_NOTE"/>
         <delete tableName="USER_SESSION"/>
+
+        <addColumn tableName="CLIENT">
+            <column name="SERVICE_ACCOUNTS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
         <addColumn tableName="CLIENT_SESSION">
             <column name="CURRENT_ACTION" type="VARCHAR(36)">
                 <constraints nullable="true"/>
@@ -136,6 +142,7 @@
         <dropColumn tableName="CLIENT_SESSION" columnName="ACTION"/>
         <addColumn tableName="USER_ENTITY">
             <column name="CREATED_TIMESTAMP" type="BIGINT"/>
+            <column name="SERVICE_ACCOUNT_CLIENT_LINK" type="VARCHAR(36)"/>
         </addColumn>
     </changeSet>
 </databaseChangeLog>

@@ -74,7 +74,7 @@ public class LDAPConstants {
     public static final String COMMA = ",";
     public static final String EQUAL = "=";
     public static final String EMPTY_ATTRIBUTE_VALUE = " ";
-    public static final String EMPTY_MEMBER_ATTRIBUTE_VALUE = "";
+    public static final String EMPTY_MEMBER_ATTRIBUTE_VALUE = "cn=empty-membership-placeholder";
 
     public static final String CUSTOM_ATTRIBUTE_ENABLED = "enabled";
     public static final String CUSTOM_ATTRIBUTE_CREATE_DATE = "createDate";

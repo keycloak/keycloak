@@ -5,7 +5,7 @@
         <caption data-ng-show="users" class="hidden">Table of realm users</caption>
         <thead>
         <tr>
-            <th colspan="{{access.impersonation == true ? '5' : '4'}}">
+            <th colspan="{{access.impersonation == true ? '7' : '6'}}">
                 <div class="form-inline">
                     <div class="form-group">
                         <div class="input-group">
@@ -18,6 +18,7 @@
                     <button id="viewAllUsers" class="btn btn-default" ng-click="query.search = null; firstPage()">View all users</button>
 
                     <div class="pull-right" data-ng-show="access.manageUsers">
+                        <button data-ng-click="unlockUsers()" class="btn btn-default">Unlock Users</button>
                         <a id="createUser" class="btn btn-default" href="#/create/user/{{realm.realm}}">Add User</a>
                     </div>
                 </div>
@@ -29,7 +30,7 @@
             <th>Last Name</th>
             <th>First Name</th>
             <th>Email</th>
-            <th data-ng-show="access.impersonation"></th>
+            <th colspan="{{access.impersonation == true ? '3' : '2'}}">Actions</th>
         </tr>
         </tr>
         </thead>
@@ -50,7 +51,15 @@
             <td>{{user.lastName}}</td>
             <td>{{user.firstName}}</td>
             <td>{{user.email}}</td>
-            <td data-ng-show="access.impersonation"><button class="btn btn-default" data-ng-click="impersonate(user.id)" tooltip="Login as this user.  If user is in same realm as you, your current login session will be logged out before you are logged in as this user.">Impersonate</button></td>
+            <td class="kc-action-cell">
+                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/users/{{user.id}}">Edit</button>
+            </td>
+            <td data-ng-show="access.impersonation" class="kc-action-cell">
+                <button class="btn btn-default btn-block btn-sm" data-ng-click="impersonate(user.id)">Impersonate</button>
+            </td>
+            <td data-ng-show="access.manageUsers" class="kc-action-cell">
+                <button class="btn btn-default btn-block btn-sm" data-ng-click="removeUser(user)">Delete</button>
+            </td>
         </tr>
         <tr data-ng-show="!users || users.length == 0">
             <td class="text-muted" data-ng-show="!users">Please enter a search, or click on view all users</td>
