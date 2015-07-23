@@ -55,7 +55,7 @@
                 <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/users/{{user.id}}">Edit</button>
             </td>
             <td data-ng-show="access.impersonation" class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" data-ng-click="impersonate(user.id)" tooltip="Login as this user.  If user is in same realm as you, your current login session will be logged out before you are logged in as this user.">Impersonate</button>
+                <button class="btn btn-default btn-block btn-sm" data-ng-click="impersonate(user.id)">Impersonate</button>
             </td>
             <td data-ng-show="access.manageUsers" class="kc-action-cell">
                 <button class="btn btn-default btn-block btn-sm" data-ng-click="removeUser(user)">Delete</button>

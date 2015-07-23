@@ -111,10 +111,19 @@
                     </div>
                 </div>
             </div>
+
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="reqActions">Impersonate user</label>
+
+                <div class="col-md-6">
+                    <button data-ng-show="access.impersonation" class="btn btn-default" data-ng-click="impersonate()">Impersonate</button>
+                </div>
+                <kc-tooltip>Login as this user.  If user is in same realm as you, your current login session will be logged out before you are logged in as this user.</kc-tooltip>
+            </div>
+
         </fieldset>
 
         <div data-ng-include data-src="resourceUrl + '/partials/user-attribute-entry.html'"></div>
-
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageUsers">
@@ -125,7 +134,6 @@
             <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageUsers">
                 <button kc-save  data-ng-disabled="!changed">Save</button>
                 <button kc-reset data-ng-disabled="!changed">Cancel</button>
-                <button data-ng-show="access.impersonation" class="btn btn-default" data-ng-click="impersonate()" tooltip="Login as this user.  If user is in same realm as you, your current login session will be logged out before you are logged in as this user.">Impersonate</button>
             </div>
         </div>
 
