@@ -31,7 +31,7 @@
         <module>installed</module>
         <module>admin-client</module>
         <module>osgi-adapter</module>
-        <module>spring-boot</module>
-        <module>spring-security</module>
+        <!--<module>spring-boot</module>-->
+        <!--<module>spring-security</module>-->
     </modules>
 </project>

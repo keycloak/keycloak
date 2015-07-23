@@ -16,8 +16,8 @@
     <modules>
         <module>tomcat-adapter-spi</module>
         <module>tomcat-core</module>
-        <module>tomcat6</module>
-        <module>tomcat7</module>
-        <module>tomcat8</module>
+        <!--<module>tomcat6</module>-->
+        <!--<module>tomcat7</module>-->
+        <!--<module>tomcat8</module>-->
     </modules>
 </project>

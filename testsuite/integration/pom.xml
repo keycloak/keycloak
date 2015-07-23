@@ -13,6 +13,18 @@
     <name>Keycloak Integration TestSuite</name>
     <description />
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.undertow</groupId>
+                <artifactId>undertow-parent</artifactId>
+                <version>${undertow.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -42,14 +54,20 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>jaxrs-api</artifactId>
+            <version>3.0.10.Final</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>async-http-servlet-3.0</artifactId>
+            <version>3.0.10.Final</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>
+            <version>3.0.10.Final</version>
+            <scope>test</scope>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -68,18 +86,26 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-client</artifactId>
+            <version>3.0.10.Final</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-undertow</artifactId>
+            <version>3.0.10.Final</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-multipart-provider</artifactId>
+            <version>3.0.10.Final</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jackson-provider</artifactId>
+            <version>3.0.10.Final</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.google.zxing</groupId>
@@ -88,6 +114,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
+            <version>4.3.6.redhat-1</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -169,6 +196,11 @@
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-entitymanager</artifactId>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.hibernate.common</groupId>-->
+<!--            <artifactId>hibernate-commons-annotations</artifactId>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>com.icegreen</groupId>
             <artifactId>greenmail</artifactId>
@@ -207,6 +239,16 @@
             <artifactId>picketlink-wildfly-common</artifactId>
             <scope>test</scope>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.picketlink</groupId>-->
+<!--            <artifactId>picketlink-config</artifactId>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.picketlink</groupId>-->
+<!--            <artifactId>picketlink-federation</artifactId>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-undertow</artifactId>

@@ -15,14 +15,14 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>wf9-adapter</module>
-        <module>tomcat6-adapter-zip</module>
-        <module>tomcat7-adapter-zip</module>
-        <module>tomcat8-adapter-zip</module>
-        <module>jetty81-adapter-zip</module>
+        <!--<module>wf9-adapter</module>-->
+        <!--<module>tomcat6-adapter-zip</module>-->
+        <!--<module>tomcat7-adapter-zip</module>-->
+        <!--<module>tomcat8-adapter-zip</module>-->
+        <!--<module>jetty81-adapter-zip</module>-->
         <!-- jetty 9.1 doesn't work right now
         <module>jetty91-adapter-zip</module> -->
-        <module>jetty92-adapter-zip</module>
+        <!--<module>jetty92-adapter-zip</module>-->
         <module>as7-eap6-adapter</module>
     </modules>
 </project>
