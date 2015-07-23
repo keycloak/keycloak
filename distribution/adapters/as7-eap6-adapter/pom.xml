@@ -15,7 +15,7 @@
 
     <modules>
         <module>as7-modules</module>
-        <module>as7-adapter-zip</module>
+        <!--<module>as7-adapter-zip</module>-->
         <module>eap6-adapter-zip</module>
     </modules>
 </project>
