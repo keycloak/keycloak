@@ -28,9 +28,7 @@
         <apache.httpcomponents.httpcore.version>4.3.3</apache.httpcomponents.httpcore.version>
         <resteasy.version>2.3.7.Final</resteasy.version>
         <resteasy.latest.version>3.0.9.Final</resteasy.latest.version>
-        <joda-time.version>2.7</joda-time.version>
         <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
-        <!-- <undertow.version>1.1.0.Final</undertow.version> -->
         <undertow.version>1.1.1.Final</undertow.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
         <mongo.driver.version>2.11.3</mongo.driver.version>
@@ -40,22 +38,20 @@
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>1.0.4.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>
         <io.netty.version>4.0.26.Final</io.netty.version> 
         <xnio.netty.netty-xnio-transport.version>0.1.1.Final</xnio.netty.netty-xnio-transport.version>
-        <hibernate.javax.persistence.version>1.0.1.Final</hibernate.javax.persistence.version>
-        <hibernate.entitymanager.version>4.0.1.Final</hibernate.entitymanager.version>
+        <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
+        <hibernate.entitymanager.version>4.3.10.Final</hibernate.entitymanager.version>
         <h2.version>1.4.187</h2.version>
         <mysql.version>5.1.29</mysql.version>
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
         <dom4j.version>1.6.1</dom4j.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <slf4j.version>1.7.7</slf4j.version>
-        <wildfly.version>9.0.0.Final</wildfly.version>
-        <wildfly.core.version>1.0.0.Final</wildfly.core.version>
-        <wildfly.build-tools.version>1.0.0.Alpha8</wildfly.build-tools.version>
+        <wildfly.version>9.0.1.Final</wildfly.version>
+        <wildfly.core.version>1.0.1.Final</wildfly.core.version>
+        <wildfly.build-tools.version>1.0.0.Final</wildfly.build-tools.version>
 
         <!-- this is EAP 6.4 alpha, publicly available -->
         <jboss.version>7.5.0.Final-redhat-15</jboss.version>
-
-        <!--jboss.version>7.1.1.Final</jboss.version-->
 
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <google.zxing.version>2.2</google.zxing.version>
@@ -184,36 +180,6 @@
                 <groupId>com.sun.xsom</groupId>
                 <artifactId>xsom</artifactId>
                 <version>${sun.xsom.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jaxb</groupId>
-                <artifactId>jaxb-core</artifactId>
-                <version>${sun.jaxb.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jaxb</groupId>
-                <artifactId>jaxb-runtime</artifactId>
-                <version>${sun.jaxb.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jaxb</groupId>
-                <artifactId>jaxb-xjc</artifactId>
-                <version>${sun.jaxb.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jaxb</groupId>
-                <artifactId>codemodel</artifactId>
-                <version>${sun.jaxb.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jaxb</groupId>
-                <artifactId>txw2</artifactId>
-                <version>${sun.jaxb.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>joda-time</groupId>
-                <artifactId>joda-time</artifactId>
-                <version>${joda-time.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
@@ -356,7 +322,7 @@
             </dependency>
             <dependency>
                 <groupId>org.hibernate.javax.persistence</groupId>
-                <artifactId>hibernate-jpa-2.0-api</artifactId>
+                <artifactId>hibernate-jpa-2.1-api</artifactId>
                 <version>${hibernate.javax.persistence.version}</version>
             </dependency>
             <dependency>

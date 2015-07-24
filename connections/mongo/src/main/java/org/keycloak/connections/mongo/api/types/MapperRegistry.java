@@ -47,6 +47,10 @@ public class MapperRegistry {
 
 
     public <S> S convertDBObjectToApplicationObject(MapperContext<Object, S> context) {
+        if (context.getObjectToConvert() == null) {
+            return null;
+        }
+
         Object dbObject = context.getObjectToConvert();
         Class<?> expectedApplicationObjectType = context.getExpectedReturnType();
 
@@ -74,6 +78,10 @@ public class MapperRegistry {
 
 
     public <S> S convertApplicationObjectToDBObject(Object applicationObject, Class<S> expectedDBObjectType) {
+        if (applicationObject == null) {
+            return null;
+        }
+
         Class<?> appObjectType = applicationObject.getClass();
         Mapper<Object, S> mapper = (Mapper<Object, S>)getAppConverterForType(appObjectType, appObjectMappers);
         if (mapper == null) {

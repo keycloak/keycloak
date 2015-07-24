@@ -249,7 +249,7 @@ public class Update1_2_0_Beta1 extends Update {
                     dbMapper.put("protocolMapper", protocolMapper.getProtocolMapper());
 
                     Map<String, String> config = protocolMapper.getConfig();
-                    BasicDBObject dbConfig = MapMapper.convertMap(config);
+                    BasicDBObject dbConfig = MapMapper.convertMap(config, null);
                     dbMapper.put("config", dbConfig);
 
                     dbProtocolMappers.add(dbMapper);

@@ -79,9 +79,9 @@ public class MongoStoreImpl implements MongoStore {
         mapperRegistry.addAppObjectMapper(new ListMapper(mapperRegistry, Set.class));
         mapperRegistry.addDBObjectMapper(new BasicDBListToSetMapper(mapperRegistry));
 
-        mapperRegistry.addAppObjectMapper(new MapMapper(HashMap.class));
-        mapperRegistry.addAppObjectMapper(new MapMapper(Map.class));
-        mapperRegistry.addDBObjectMapper(new BasicDBObjectToMapMapper());
+        mapperRegistry.addAppObjectMapper(new MapMapper(mapperRegistry, HashMap.class));
+        mapperRegistry.addAppObjectMapper(new MapMapper(mapperRegistry, Map.class));
+        mapperRegistry.addDBObjectMapper(new BasicDBObjectToMapMapper(mapperRegistry));
 
         // Enum converters
         mapperRegistry.addAppObjectMapper(new EnumToStringMapper());

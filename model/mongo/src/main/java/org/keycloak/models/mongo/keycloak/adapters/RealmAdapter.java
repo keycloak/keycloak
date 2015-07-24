@@ -1310,6 +1310,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         model.setDescription(entity.getDescription());
         model.setBuiltIn(entity.isBuiltIn());
         model.setTopLevel(entity.isTopLevel());
+        model.setProviderId(entity.getProviderId());
         return model;
     }
 
