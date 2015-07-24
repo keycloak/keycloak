@@ -82,8 +82,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
-                serverInfo : function(ServerInfoLoader) {
-                    return ServerInfoLoader();
+                serverInfo : function(ServerInfo) {
+                    return ServerInfo.delay;
                 }
             },
             controller : 'RealmLoginSettingsCtrl'
@@ -1135,11 +1135,20 @@ module.config([ '$routeProvider', function($routeProvider) {
         .when('/server-info', {
             templateUrl : resourceUrl + '/partials/server-info.html',
             resolve : {
-            	serverInfoPage : function(ServerInfoPageLoader) {
-                return ServerInfoPageLoader();
+            	serverInfo : function(ServerInfoLoader) {
+                return ServerInfoLoader();
             	}
             },
-            controller : 'ServerInfoPageCtrl'
+            controller : 'ServerInfoCtrl'
+        })
+        .when('/server-info/providers', {
+            templateUrl : resourceUrl + '/partials/server-info-providers.html',
+            resolve : {
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'ServerInfoCtrl'
         })
         .when('/logout', {
             templateUrl : resourceUrl + '/partials/home.html',

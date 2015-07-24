@@ -35,12 +35,10 @@ module.factory('RealmListLoader', function(Loader, Realm, $q) {
 	return Loader.get(Realm);
 });
 
-module.factory('ServerInfoLoader', function(Loader, ServerInfo, $q) {
-    return Loader.get(ServerInfo);
-});
-
-module.factory('ServerInfoPageLoader', function(Loader, ServerInfoPage, $q) {
-  return Loader.get(ServerInfoPage);
+module.factory('ServerInfoLoader', function(Loader, ServerInfo) {
+    return function() {
+        return ServerInfo.promise;
+    };
 });
 
 module.factory('RealmLoader', function(Loader, Realm, $route, $q) {

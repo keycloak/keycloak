@@ -20,6 +20,7 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -214,32 +215,6 @@ public class AdminRoot {
         Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
 
         ServerInfoAdminResource adminResource = new ServerInfoAdminResource();
-        ResteasyProviderFactory.getInstance().injectProperties(adminResource);
-        return adminResource;
-    }
-
-    /**
-     * Operational information about the server for "Server Info" page
-     *
-     * @param headers
-     * @return
-     */
-    @Path("serverinfopage")
-    public ServerInfoPageAdminResource getServerInfoPage(@Context final HttpHeaders headers) {
-        handlePreflightRequest();
-
-        AdminAuth auth = authenticateRealmAdminRequest(headers);
-        if (!isAdmin(auth)) {
-            throw new ForbiddenException();
-        }
-
-        if (auth != null) {
-            logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
-        }
-
-        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
-
-        ServerInfoPageAdminResource adminResource = new ServerInfoPageAdminResource();
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         return adminResource;
     }
