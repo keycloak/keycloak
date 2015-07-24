@@ -57,6 +57,7 @@ import org.keycloak.testsuite.util.ApiUtil;
 import static org.keycloak.testsuite.util.RealmAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.Time;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -291,23 +292,39 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     }
 
     @Test
-    @Jira("KEYCLOAK-1478")
+    @Jira(value = "KEYCLOAK-1478")
     public void testLoginSSOIdleRemoveExpiredUserSessions() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
+        System.out.println("Current url: " + driver.getCurrentUrl());
         SeleniumUtils.waitGuiForElement(loginPage.getUsernameInput());
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         loginPage.login("bburke@redhat.com", "password");
-        assertEquals(driver.getCurrentUrl(), customerPortal + slash);
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        assertCurrentUrl(customerPortal);
         String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         RealmRepresentation demoRealm = keycloak.realm("demo").toRepresentation();
         int originalIdle = demoRealm.getSsoSessionIdleTimeout();
         demoRealm.setSsoSessionIdleTimeout(1);
-        keycloak.realm("demo").update(demoRealm);
+//        keycloak.realm("demo").update(demoRealm);
 
-        //TODO finish the test
+        Time.setOffset(2);
+
+        // FIXME
+        // KEYCLOAK-1478 - no REST API alternative for removeExpiredUserSessions()
+        
+        // test SSO
+        productPortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+
+        // need to cleanup so other tests don't fail, so invalidate http sessions on remote clients.
+        demoRealm.setSsoSessionIdleTimeout(originalIdle);
+        // note: sessions invalidated after each test, see: AbstractKeycloakTest.afterAbstractKeycloakTest()
+
+        Time.setOffset(0);
     }
 
     @Test
