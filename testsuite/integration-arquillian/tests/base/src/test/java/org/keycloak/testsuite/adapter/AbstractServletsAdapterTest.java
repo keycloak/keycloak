@@ -46,7 +46,10 @@ import org.keycloak.testsuite.page.adapter.InputPortal;
 import org.keycloak.testsuite.page.adapter.ProductPortal;
 import org.keycloak.testsuite.page.adapter.SecurePortal;
 import org.keycloak.testsuite.page.adapter.SessionPortal;
+import org.keycloak.testsuite.page.console.AdminConsole;
+import static org.keycloak.testsuite.page.console.AdminConsole.CONSOLE_REALM;
 import static org.keycloak.testsuite.page.console.Realm.DEMO;
+import static org.keycloak.testsuite.page.console.Realm.REALM;
 import org.keycloak.testsuite.page.console.login.LoginPage;
 import org.keycloak.testsuite.util.SeleniumUtils;
 import org.keycloak.testsuite.util.ApiUtil;
@@ -75,6 +78,9 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
     @Page
     private AccountSessionsPage accountSessionsPage;
+
+    @Page
+    private AdminConsole adminConsoleTestRealm;
 
     protected static WebArchive servletDeployment(String name, Class... servletClasses) {
         return servletDeployment(name, "keycloak.json", servletClasses);
@@ -141,6 +147,9 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void setPageUriTemplateValues() {
         super.setPageUriTemplateValues();
         testRealm.setTemplateValues(DEMO);
+        adminConsoleTestRealm
+                .setTemplateValue(CONSOLE_REALM, DEMO)
+                .setTemplateValue(REALM, DEMO);
     }
 
     private final String slash = "";
@@ -526,7 +535,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void testAccountManagementSessionsLogout() {
         // login as bburke
         loginAndCheckSession(driver, loginPage);
-        adminConsole.navigateTo();
+        adminConsoleTestRealm.navigateTo();
         menuPage.goToAccountManagement();
         accountSessionsPage.sessions();
         accountSessionsPage.logoutAll();
