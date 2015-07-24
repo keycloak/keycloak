@@ -28,7 +28,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     }
 
     @Override
-    public void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms) {
+    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation jsConsoleRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/js-console/example-realm.json"));
 
         fixClientUrisUsingDeploymentUrl(jsConsoleRealm,
@@ -40,9 +40,9 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     }
 
     @Override
-    public void setPageUriTemplateValues() {
-        super.setPageUriTemplateValues();
-        testRealm.setAdminRealm("example");
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealm.setConsoleRealm("example");
     }
 
     @Test

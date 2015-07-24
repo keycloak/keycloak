@@ -28,14 +28,14 @@ public abstract class AbstractBasicAuthExampleAdapterTest extends AbstractExampl
     }
 
     @Override
-    public void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms) {
+    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(loadRealm(new File(EXAMPLES_HOME_DIR + "/basic-auth/basicauthrealm.json")));
     }
 
     @Override
-    public void setPageUriTemplateValues() {
-        super.setPageUriTemplateValues();
-        testRealm.setAdminRealm("example");
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealm.setConsoleRealm("example");
     }
 
     @Test

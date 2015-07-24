@@ -80,9 +80,6 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Page
     private AccountSessionsPage accountSessionsPage;
 
-    @Page
-    private AdminConsole adminConsoleTestRealm;
-
     protected static WebArchive servletDeployment(String name, Class... servletClasses) {
         return servletDeployment(name, "keycloak.json", servletClasses);
     }
@@ -140,17 +137,14 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     }
 
     @Override
-    public void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms) {
+    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(loadRealm("/adapter-test/demorealm.json"));
     }
 
     @Override
-    public void setPageUriTemplateValues() {
-        super.setPageUriTemplateValues();
-        testRealm.setAdminRealm(DEMO);
-        adminConsoleTestRealm
-                .setUriParameter(ADMIN_REALM, DEMO)
-                .setUriParameter(CONSOLE_REALM, DEMO);
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealm.setConsoleRealm(DEMO);
     }
 
     private final String slash = "";
@@ -561,7 +555,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void testAccountManagementSessionsLogout() {
         // login as bburke
         loginAndCheckSession(driver, loginPage);
-        adminConsoleTestRealm.navigateTo();
+        loginAsAdmin();
+        testRealm.navigateTo();
         menuPage.goToAccountManagement();
         accountSessionsPage.sessions();
         accountSessionsPage.logoutAll();

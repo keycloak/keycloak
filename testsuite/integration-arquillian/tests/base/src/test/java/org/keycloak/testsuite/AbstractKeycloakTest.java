@@ -62,7 +62,7 @@ public abstract class AbstractKeycloakTest {
 
     @Before
     public void beforeAbstractKeycloakTest() {
-        setPageUriTemplateValues();
+        setDefaultPageUriParameters();
 
         driverSettings();
 
@@ -125,24 +125,24 @@ public abstract class AbstractKeycloakTest {
         driver.manage().window().maximize();
     }
 
-    public void setPageUriTemplateValues() {
+    public void setDefaultPageUriParameters() {
         adminConsole.setAdminRealm(MASTER);
     }
 
-    public abstract void loadTestRealmsInto(List<RealmRepresentation> testRealms);
+    public abstract void addTestRealms(List<RealmRepresentation> testRealms);
 
-    private void loadTestRealms() {
+    private void addTestRealms() {
         System.out.println("loading test realms");
         if (testRealms == null) {
             testRealms = new ArrayList<>();
         }
         if (testRealms.isEmpty()) {
-            loadTestRealmsInto(testRealms);
+            addTestRealms(testRealms);
         }
     }
 
     public void importTestRealms() {
-        loadTestRealms();
+        addTestRealms();
         System.out.println("importing test realms");
         for (RealmRepresentation testRealm : testRealms) {
             importRealm(keycloak, testRealm);

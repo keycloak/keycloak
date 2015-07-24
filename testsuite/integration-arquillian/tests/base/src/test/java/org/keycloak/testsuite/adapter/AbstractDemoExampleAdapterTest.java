@@ -54,16 +54,16 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     }
 
     @Override
-    public void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms) {
+    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(
                 loadRealm(new File(EXAMPLES_HOME_DIR + "/preconfigured-demo/testrealm.json")));
     }
 
     @Override
-    public void setPageUriTemplateValues() {
-        super.setPageUriTemplateValues();
-        testRealm.setAdminRealm(DEMO);
-        testRealmUsers.setAdminRealm(DEMO);
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealm.setConsoleRealm(DEMO);
+        testRealmUsers.setConsoleRealm(DEMO);
     }
 
     @Test

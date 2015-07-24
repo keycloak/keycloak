@@ -39,6 +39,9 @@ public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends A
     protected P page;
 
     @Page
+    protected Realm masterRealm;
+    
+    @Page
     protected Realm testRealm;
 
     @Before
@@ -53,14 +56,14 @@ public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends A
     }
 
     @Override
-    public void setPageUriTemplateValues() {
-        super.setPageUriTemplateValues();
-        testRealm.setAdminRealm(MASTER);
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        masterRealm.setConsoleRealm(MASTER);
         testRealm.setConsoleRealm(TEST);
     }
 
     @Override
-    public void loadTestRealmsInto(List<RealmRepresentation> testRealms) {
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation testRealmRep = new RealmRepresentation();
         testRealmRep.setRealm(TEST);
         testRealmRep.setEnabled(true);

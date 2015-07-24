@@ -54,7 +54,7 @@ public abstract class AbstractMultitenancyAdapterTest extends AbstractAdapterTes
     }
 
     @Override
-    public void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms) {
+    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(loadRealm("/adapter-test/tenant1-realm.json"));
         testRealms.add(loadRealm("/adapter-test/tenant2-realm.json"));
     }

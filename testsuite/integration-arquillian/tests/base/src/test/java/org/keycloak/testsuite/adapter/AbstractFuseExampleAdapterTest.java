@@ -22,15 +22,15 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
     protected CustomerPortalFuseExample customerPortalFuseExample;
 
     @Override
-    public void loadAdapterTestRealmsTo(List<RealmRepresentation> testRealms) {
+    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation fureRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/fuse/testrealm.json"));
         testRealms.add(fureRealm);
     }
 
     @Override
-    public void setPageUriTemplateValues() {
-        super.setPageUriTemplateValues();
-        testRealm.setAdminRealm(DEMO);
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealm.setConsoleRealm(DEMO);
     }
 
 //  // no deployments via arquillian - examples already pre-installed by the maven profile    
