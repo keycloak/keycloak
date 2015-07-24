@@ -20,9 +20,9 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>feature-packs-parent</artifactId>
-        <version>1.3.0.Final-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>1.4.0.Final-SNAPSHOT</version>
     </parent>
+
     <modelVersion>4.0.0</modelVersion>
     
     <groupId>org.keycloak</groupId>
@@ -33,92 +33,24 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.github.relaxng</groupId>
-            <artifactId>relaxngDatatype</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.istack</groupId>
-            <artifactId>istack-commons-runtime</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.istack</groupId>
-            <artifactId>istack-commons-tools</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind.external</groupId>
-            <artifactId>rngom</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xsom</groupId>
-            <artifactId>xsom</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-runtime</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-xjc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>codemodel</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>txw2</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.spec.javax.xml.bind</groupId>
-            <artifactId>jboss-jaxb-api_2.2_spec</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.xnio.netty</groupId>
-            <artifactId>netty-xnio-transport</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpmime</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.james</groupId>
-            <artifactId>apache-mime4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-wf9-subsystem</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wildfly-adapter-subsystem</artifactId>
+            <artifactId>keycloak-wildfly-adapter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-servlet-oauth-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-undertow-adapter</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jcl-over-slf4j</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-web-feature-pack</artifactId>
+            <artifactId>wildfly-feature-pack</artifactId>
             <type>zip</type>
         </dependency>
     </dependencies>
