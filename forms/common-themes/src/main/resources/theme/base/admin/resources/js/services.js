@@ -219,6 +219,9 @@ module.factory('ServerInfo', function($resource) {
     return $resource(authUrl + '/admin/serverinfo');
 });
 
+module.factory('ServerInfoPage', function($resource) {
+  return $resource(authUrl + '/admin/serverinfopage');
+});
 
 
 module.factory('ClientProtocolMapper', function($resource) {
@@ -894,6 +897,13 @@ module.factory('ClientOrigins', function($resource) {
             method : 'PUT',
             isArray : true
         }
+    });
+});
+
+module.factory('ClientServiceAccountUser', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/service-account-user', {
+        realm : '@realm',
+        client : '@client'
     });
 });
 

@@ -28,6 +28,8 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
     private Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<Class<? extends Provider>, Map<String, ProviderFactory>>();
     protected CopyOnWriteArrayList<ProviderEventListener> listeners = new CopyOnWriteArrayList<ProviderEventListener>();
 
+    protected long serverStartupTimestamp;
+    
     @Override
     public void register(ProviderEventListener listener) {
         listeners.add(listener);
@@ -46,6 +48,8 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
     }
 
     public void init() {
+        serverStartupTimestamp = System.currentTimeMillis();
+        
         ProviderManager pm = new ProviderManager(getClass().getClassLoader(), Config.scope().getArray("providers"));
 
         for (Spi spi : ServiceLoader.load(Spi.class, getClass().getClassLoader())) {
@@ -146,6 +150,14 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
 
     private boolean isInternal(ProviderFactory<?> factory) {
         return factory.getClass().getPackage().getName().startsWith("org.keycloak");
+    }
+
+    /**
+     * @return timestamp of Keycloak server startup
+     */
+    @Override
+    public long getServerStartupTimestamp() {
+        return serverStartupTimestamp;
     }
 
 }

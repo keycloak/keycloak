@@ -107,8 +107,18 @@ public class FileUserProvider implements UserProvider {
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return getUsers(realm, -1, -1);
+    public UserModel getUserByServiceAccountClient(ClientModel client) {
+        for (UserModel user : inMemoryModel.getUsers(client.getRealm().getId())) {
+            if (client.getId().equals(user.getServiceAccountClientLink())) {
+                return user;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts) {
+        return getUsers(realm, -1, -1, includeServiceAccounts);
     }
 
     @Override
@@ -117,10 +127,25 @@ public class FileUserProvider implements UserProvider {
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        List users = new ArrayList(inMemoryModel.getUsers(realm.getId()));
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
+        List<UserModel> users = new ArrayList<>(inMemoryModel.getUsers(realm.getId()));
+
+        if (!includeServiceAccounts) {
+            users = filterServiceAccountUsers(users);
+        }
+
         List<UserModel> sortedList = sortedSubList(users, firstResult, maxResults);
         return sortedList;
+    }
+
+    private List<UserModel> filterServiceAccountUsers(List<UserModel> users) {
+        List<UserModel> result = new ArrayList<>();
+        for (UserModel user : users) {
+            if (user.getServiceAccountClientLink() == null) {
+                result.add(user);
+            }
+        }
+        return result;
     }
 
     protected List<UserModel> sortedSubList(List list, int firstResult, int maxResults) {
@@ -182,6 +207,9 @@ public class FileUserProvider implements UserProvider {
                 found.add(user);
             }
         }
+
+        // Remove users with service account link
+        found = filterServiceAccountUsers(found);
 
         return sortedSubList(found, firstResult, maxResults);
     }

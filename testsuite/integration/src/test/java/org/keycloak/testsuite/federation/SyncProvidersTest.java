@@ -227,7 +227,7 @@ public class SyncProvidersTest {
             RealmModel testRealm = session.realms().getRealm("test");
 
             // Remove all users from model
-            for (UserModel user : session.userStorage().getUsers(testRealm)) {
+            for (UserModel user : session.userStorage().getUsers(testRealm, true)) {
                 session.userStorage().removeUser(testRealm, user);
             }
 
