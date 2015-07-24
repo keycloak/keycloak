@@ -19,7 +19,6 @@ package org.keycloak.testsuite.console.page.settings.user;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.testsuite.model.User;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 

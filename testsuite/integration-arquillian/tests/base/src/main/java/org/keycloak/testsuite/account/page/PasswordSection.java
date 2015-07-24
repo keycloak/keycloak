@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.console.page.account;
+package org.keycloak.testsuite.account.page;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.openqa.selenium.WebElement;
@@ -26,7 +26,7 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author Petr Mensik
  */
-public class PasswordPage {
+public class PasswordSection {
 
     @FindBy(id = "password")
     private WebElement passwordInput;

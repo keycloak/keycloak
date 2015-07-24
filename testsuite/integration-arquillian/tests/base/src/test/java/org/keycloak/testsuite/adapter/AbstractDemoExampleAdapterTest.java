@@ -19,7 +19,7 @@ import org.keycloak.testsuite.model.RequiredUserAction;
 import org.keycloak.testsuite.model.User;
 import static org.keycloak.testsuite.console.page.Realm.DEMO;
 import org.keycloak.testsuite.console.page.settings.user.UserPage;
-import org.keycloak.testsuite.console.page.UpdateAccountPage;
+import org.keycloak.testsuite.page.auth.UpdateAccountPage;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
 import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 import org.openqa.selenium.By;

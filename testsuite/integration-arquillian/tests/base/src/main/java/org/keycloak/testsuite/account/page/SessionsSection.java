@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.console.page.account;
+package org.keycloak.testsuite.account.page;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -27,25 +27,25 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author <a href="mailto:pmensik@redhat.com">Petr Mensik</a>
  */
-public class AccountSessionsPage extends AbstractAccountPage {
+public class SessionsSection extends AccountPage {
 
-	@FindBy(id = "logout-all-sessions")
-	private WebElement logoutAllLink;
+    @FindBy(id = "logout-all-sessions")
+    private WebElement logoutAllLink;
 
-	public void logoutAll() {
-		logoutAllLink.click();
-	}
+    public void logoutAll() {
+        logoutAllLink.click();
+    }
 
-	public List<List<String>> getSessions() {
-		List<List<String>> table = new LinkedList<List<String>>();
-		for (WebElement r : driver.findElements(By.tagName("tr"))) {
-			List<String> row = new LinkedList<String>();
-			for (WebElement col : r.findElements(By.tagName("td"))) {
-				row.add(col.getText());
-			}
-			table.add(row);
-		}
-		table.remove(0);
-		return table;
-	}
+    public List<List<String>> getSessions() {
+        List<List<String>> table = new LinkedList<List<String>>();
+        for (WebElement r : driver.findElements(By.tagName("tr"))) {
+            List<String> row = new LinkedList<String>();
+            for (WebElement col : r.findElements(By.tagName("td"))) {
+                row.add(col.getText());
+            }
+            table.add(row);
+        }
+        table.remove(0);
+        return table;
+    }
 }

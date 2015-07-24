@@ -15,15 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.keycloak.testsuite.console.page.login;
+package org.keycloak.testsuite.page.auth;
 
 import org.keycloak.testsuite.model.User;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import java.util.concurrent.TimeUnit;
-import org.keycloak.testsuite.console.page.AdminConsole;
+import javax.ws.rs.core.UriBuilder;
 
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 
@@ -31,7 +30,13 @@ import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
  *
  * @author Filip Kiss
  */
-public class RegisterPage extends AdminConsole {
+public class Registration extends LoginActions {
+
+    @Override
+    public UriBuilder createUriBuilder() {
+        return super.createUriBuilder()
+                .path("registration");
+    }
 
     @FindBy(id = "username")
     private WebElement usernameInput;
@@ -53,14 +58,17 @@ public class RegisterPage extends AdminConsole {
 
     @FindBy(css = "span.kc-feedback-text")
     private WebElement feedbackError;
-	
-	@FindBy(css = "div[id='kc-form-options'] span a")
-	private WebElement backToLoginForm;
 
-	public void registerNewUser(User user) {
-		registerNewUser(user, user.getPassword());
-	}
-	
+    @FindBy(css = "div[id='kc-form-options'] span a")
+    private WebElement backToLoginForm;
+
+    @FindBy(xpath = "//input[@type='submit']")
+    private WebElement registerButton;
+
+    public void registerNewUser(User user) {
+        registerNewUser(user, user.getPassword());
+    }
+
     public void registerNewUser(User user, String confirmPassword) {
         driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
         waitGuiForElement(passwordConfirmInput, "Register form should be visible");
@@ -70,12 +78,12 @@ public class RegisterPage extends AdminConsole {
         clearAndType(emailInput, user.getEmail());
         clearAndType(passwordInput, user.getPassword());
         clearAndType(passwordConfirmInput, confirmPassword);
-        primaryButton.click();
+        registerButton.submit();
     }
 
     public void clearAndType(WebElement webElement, String text) {
-            webElement.clear();
-            webElement.sendKeys(text);
+        webElement.clear();
+        webElement.sendKeys(text);
     }
 
     public boolean isInvalidEmail() {
@@ -92,9 +100,9 @@ public class RegisterPage extends AdminConsole {
         waitGuiForElement(feedbackError, "Feedback message should be visible");
         return !feedbackError.getText().equals("Password confirmation doesn't match.");
     }
-	
-	public void backToLoginPage() {
-		backToLoginForm.click();
-	}
+
+    public void backToLoginPage() {
+        backToLoginForm.click();
+    }
 
 }

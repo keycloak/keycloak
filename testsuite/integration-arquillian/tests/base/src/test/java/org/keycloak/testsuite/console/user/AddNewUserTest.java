@@ -35,79 +35,79 @@ import static org.keycloak.testsuite.util.Users.TEST_USER1;
  */
 public class AddNewUserTest extends AbstractAdminConsoleTest<UserPage> {
 
-	@FindByJQuery(".alert")
-	private FlashMessage flashMessage;
+    @FindByJQuery(".alert")
+    private FlashMessage flashMessage;
 
-	@Before
-	public void beforeAddNewUserTest() {
-		navigation.users();
-	}
+    @Before
+    public void beforeAddNewUserTest() {
+        navigation.users();
+    }
 
-	@Test
-	public void addUserWithInvalidEmailTest() {
-		String testUsername = "testUserInvEmail";
-		String invalidEmail = "user.redhat.com";
-		User testUser = new User(testUsername, "pass", invalidEmail);
-		page.addUser(testUser);
-		flashMessage.waitUntilPresent();
-		assertTrue(flashMessage.getText(), flashMessage.isDanger());
-		navigation.users();
-		assertNull(page.findUser(testUsername));
-	}
+    @Test
+    public void addUserWithInvalidEmailTest() {
+        String testUsername = "testUserInvEmail";
+        String invalidEmail = "user.redhat.com";
+        User testUser = new User(testUsername, "pass", invalidEmail);
+        page.addUser(testUser);
+        flashMessage.waitUntilPresent();
+        assertTrue(flashMessage.getText(), flashMessage.isDanger());
+        navigation.users();
+        assertNull(page.findUser(testUsername));
+    }
 
-	@Test
-	public void addUserWithNoUsernameTest() {
-		User testUser = new User();
-		page.addUser(testUser);
-		flashMessage.waitUntilPresent();
-		assertTrue(flashMessage.getText(), flashMessage.isDanger());
-	}
+    @Test
+    public void addUserWithNoUsernameTest() {
+        User testUser = new User();
+        page.addUser(testUser);
+        flashMessage.waitUntilPresent();
+        assertTrue(flashMessage.getText(), flashMessage.isDanger());
+    }
 
-	@Ignore
-	@Test
-	public void addUserWithLongNameTest() {
-		String longUserName = "thisisthelongestnameeveranditcannotbeusedwhencreatingnewuserinkeycloak";
-		User testUser = new User(longUserName);
-		navigation.users();
-		page.addUser(testUser);
-		flashMessage.waitUntilPresent();
-		assertTrue(flashMessage.getText(), flashMessage.isDanger());
-		assertNull(page.findUser(testUser.getUserName()));
-	}
+    @Ignore
+    @Test
+    public void addUserWithLongNameTest() {
+        String longUserName = "thisisthelongestnameeveranditcannotbeusedwhencreatingnewuserinkeycloak";
+        User testUser = new User(longUserName);
+        navigation.users();
+        page.addUser(testUser);
+        flashMessage.waitUntilPresent();
+        assertTrue(flashMessage.getText(), flashMessage.isDanger());
+        assertNull(page.findUser(testUser.getUserName()));
+    }
 
-	@Test
-	public void addDuplicatedUser() {
-		String testUsername = "test_duplicated_user";
-		User testUser = new User(testUsername);
-		page.addUser(testUser);
-		flashMessage.waitUntilPresent();
-		assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-		navigation.users();
-		assertNotNull(page.findUser(testUsername));
+    @Test
+    public void addDuplicatedUser() {
+        String testUsername = "test_duplicated_user";
+        User testUser = new User(testUsername);
+        page.addUser(testUser);
+        flashMessage.waitUntilPresent();
+        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
+        navigation.users();
+        assertNotNull(page.findUser(testUsername));
 
-		User testUser2 = new User(testUsername);
-		page.addUser(testUser2);
-		flashMessage.waitUntilPresent();
-		assertTrue(flashMessage.getText(), flashMessage.isDanger());
-		navigation.users();
-		page.deleteUser(testUsername);
-		flashMessage.waitUntilPresent();
-		assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-		assertNull(page.findUser(testUser2.getUserName()));
-	}
+        User testUser2 = new User(testUsername);
+        page.addUser(testUser2);
+        flashMessage.waitUntilPresent();
+        assertTrue(flashMessage.getText(), flashMessage.isDanger());
+        navigation.users();
+        page.deleteUser(testUsername);
+        flashMessage.waitUntilPresent();
+        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
+        assertNull(page.findUser(testUser2.getUserName()));
+    }
 
-	@Test
-	public void addDisabledUser() {
-		User disabledUser = new User(TEST_USER1);
-		disabledUser.setUserEnabled(false);
-		disabledUser.setUserName("disabled_user");
-		page.addUser(disabledUser);
-		assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-		navigation.users();
-		page.deleteUser(disabledUser.getUserName());
-		flashMessage.waitUntilPresent();
-		assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-		assertNull(page.findUser(disabledUser.getUserName()));
-	}
+    @Test
+    public void addDisabledUser() {
+        User disabledUser = new User(TEST_USER1);
+        disabledUser.setUserEnabled(false);
+        disabledUser.setUserName("disabled_user");
+        page.addUser(disabledUser);
+        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
+        navigation.users();
+        page.deleteUser(disabledUser.getUserName());
+        flashMessage.waitUntilPresent();
+        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
+        assertNull(page.findUser(disabledUser.getUserName()));
+    }
 
 }

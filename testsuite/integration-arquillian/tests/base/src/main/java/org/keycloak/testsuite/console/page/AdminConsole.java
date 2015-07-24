@@ -17,6 +17,7 @@
  */
 package org.keycloak.testsuite.console.page;
 
+import org.keycloak.testsuite.page.auth.AuthServer;
 import java.util.List;
 import javax.ws.rs.core.UriBuilder;
 import static org.keycloak.testsuite.console.page.Realm.MASTER;

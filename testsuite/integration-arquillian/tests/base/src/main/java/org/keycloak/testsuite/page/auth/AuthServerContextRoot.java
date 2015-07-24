@@ -1,9 +1,10 @@
-package org.keycloak.testsuite.console.page;
+package org.keycloak.testsuite.page.auth;
 
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import java.net.URL;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
+import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 
 /**
  *

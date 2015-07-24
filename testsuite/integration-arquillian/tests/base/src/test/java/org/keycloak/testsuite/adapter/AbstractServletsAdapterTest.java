@@ -28,7 +28,7 @@ import org.keycloak.testsuite.adapter.servlet.ErrorServlet;
 import org.keycloak.testsuite.adapter.servlet.InputServlet;
 import org.keycloak.testsuite.adapter.servlet.ProductServlet;
 import org.keycloak.testsuite.adapter.servlet.SessionServlet;
-import org.keycloak.testsuite.console.page.account.AccountSessionsPage;
+import org.keycloak.testsuite.account.page.SessionsSection;
 import static org.junit.Assert.*;
 import org.keycloak.Version;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -46,11 +46,8 @@ import org.keycloak.testsuite.adapter.page.InputPortal;
 import org.keycloak.testsuite.adapter.page.ProductPortal;
 import org.keycloak.testsuite.adapter.page.SecurePortal;
 import org.keycloak.testsuite.adapter.page.SessionPortal;
-import org.keycloak.testsuite.console.page.AdminConsole;
-import static org.keycloak.testsuite.console.page.AdminConsole.ADMIN_REALM;
 import static org.keycloak.testsuite.console.page.Realm.DEMO;
-import static org.keycloak.testsuite.console.page.Realm.CONSOLE_REALM;
-import org.keycloak.testsuite.console.page.login.LoginPage;
+import org.keycloak.testsuite.page.auth.Login;
 import org.keycloak.testsuite.util.SeleniumUtils;
 import org.keycloak.testsuite.util.ApiUtil;
 import static org.keycloak.testsuite.util.RealmAssert.assertCurrentUrlStartsWithLoginUrlOf;
@@ -78,7 +75,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     private InputPortal inputPortal;
 
     @Page
-    private AccountSessionsPage accountSessionsPage;
+    private SessionsSection accountSessionsPage;
 
     protected static WebArchive servletDeployment(String name, Class... servletClasses) {
         return servletDeployment(name, "keycloak.json", servletClasses);
@@ -564,7 +561,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         loginAndCheckSession(driver, loginPage);
     }
 
-    private void loginAndCheckSession(WebDriver driver, LoginPage loginPage) {
+    private void loginAndCheckSession(WebDriver driver, Login loginPage) {
         sessionPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         loginPage.login("bburke@redhat.com", "password");

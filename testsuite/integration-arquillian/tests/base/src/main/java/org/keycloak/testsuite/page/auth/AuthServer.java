@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.console.page;
+package org.keycloak.testsuite.page.auth;
 
 import javax.ws.rs.core.UriBuilder;
 

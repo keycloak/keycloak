@@ -15,9 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.testsuite.account;
 
-package org.keycloak.testsuite.console.account;
-
+import java.util.List;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -27,44 +27,44 @@ import static org.keycloak.testsuite.util.Constants.ADMIN_PSSWD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
-import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.model.Account;
-import org.keycloak.testsuite.console.page.account.AccountPage;
-import org.keycloak.testsuite.console.page.account.PasswordPage;
+import org.keycloak.testsuite.account.page.AccountSection;
+import org.keycloak.testsuite.account.page.AccountPage;
 
 /**
  *
  * @author Petr Mensik
  */
-public class AccountManagementTest extends AbstractAdminConsoleTest<AccountPage> {
+public class AccountManagementTest extends AbstractKeycloakTest {
 
-	@FindByJQuery(".alert")
+    @Page AccountPage account;
+    
+    @FindByJQuery(".alert")
     private FlashMessage flashMessage;
-	
-    @Page
-    private AccountPage accountPage;
 
     @Page
-    private PasswordPage passwordPage;
-	
+    private AccountSection accountPage;
+
     private static final String USERNAME = "admin";
     private static final String NEW_PASSWORD = "newpassword";
     private static final String WRONG_PASSWORD = "wrongpassword";
 
-	@Before
-	public void beforeAccountTest() {
-		menuPage.goToAccountManagement();
-	}
-	
-	@After
-	public void afterAccountTest() {
-		accountPage.keycloakConsole();
-	}
-	
-	@Test
+    @Before
+    public void beforeAccountTest() {
+        menuPage.goToAccountManagement();
+    }
+
+    @After
+    public void afterAccountTest() {
+        accountPage.keycloakConsole();
+    }
+
+    @Test
     public void passwordPageValidationTest() {
-	    page.password();
+        account.password();
         passwordPage.save();
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isError());
@@ -84,14 +84,14 @@ public class AccountManagementTest extends AbstractAdminConsoleTest<AccountPage>
 
     @Test
     public void changePasswordTest() {
-        page.password();
+        account.password();
         passwordPage.setPassword(ADMIN_PSSWD, NEW_PASSWORD);
         passwordPage.save();
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        page.signOut();
+        account.signOut();
         loginPage.login(USERNAME, NEW_PASSWORD);
-        page.password();
+        account.password();
         passwordPage.setPassword(NEW_PASSWORD, ADMIN_PSSWD);
         passwordPage.save();
         flashMessage.waitUntilPresent();
@@ -100,7 +100,7 @@ public class AccountManagementTest extends AbstractAdminConsoleTest<AccountPage>
 
     @Test
     public void accountPageTest() {
-        page.account();
+        account.account();
         Account adminAccount = accountPage.getAccount();
         assertEquals(adminAccount.getUsername(), USERNAME);
         adminAccount.setEmail("a@b");
@@ -111,11 +111,15 @@ public class AccountManagementTest extends AbstractAdminConsoleTest<AccountPage>
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
-        page.signOut();
+        account.signOut();
         loginPage.login(USERNAME, ADMIN_PSSWD);
 
-        page.account();
+        account.account();
         assertEquals(adminAccount, accountPage.getAccount());
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
     }
 
 }

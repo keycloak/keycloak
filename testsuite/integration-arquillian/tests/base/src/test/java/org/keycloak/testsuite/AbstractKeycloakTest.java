@@ -18,14 +18,14 @@ import static org.keycloak.testsuite.util.RealmUtils.removeRealm;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.testsuite.arquillian.ContainersTestEnricher.AdminPasswordUpdateTracker;
 import org.keycloak.testsuite.console.page.AdminConsole;
-import org.keycloak.testsuite.console.page.AuthServer;
-import org.keycloak.testsuite.console.page.AuthServerContextRoot;
+import org.keycloak.testsuite.page.auth.AuthServer;
+import org.keycloak.testsuite.page.auth.AuthServerContextRoot;
 import static org.keycloak.testsuite.console.page.Realm.MASTER;
 import static org.keycloak.testsuite.util.PageAssert.*;
 import org.keycloak.testsuite.console.page.fragment.MenuPage;
 import org.keycloak.testsuite.console.page.fragment.Navigation;
-import org.keycloak.testsuite.console.page.login.LoginPage;
-import org.keycloak.testsuite.console.page.account.PasswordPage;
+import org.keycloak.testsuite.page.auth.Login;
+import org.keycloak.testsuite.account.page.PasswordSection;
 import static org.keycloak.testsuite.util.Constants.ADMIN_PSSWD;
 
 /**
@@ -52,9 +52,9 @@ public abstract class AbstractKeycloakTest {
     protected AdminConsole adminConsole;
 
     @Page
-    protected LoginPage loginPage;
+    protected Login loginPage;
     @Page
-    protected PasswordPage passwordPage;
+    protected PasswordSection passwordPage;
     @Page
     protected MenuPage menuPage;
     @Page
