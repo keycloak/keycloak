@@ -49,7 +49,6 @@
                                     <version>${tomcat.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${containers.home}</outputDirectory>
-                                    <overWrite>false</overWrite>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
@@ -57,9 +56,9 @@
                                     <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${tomcat.home}/lib</outputDirectory>
-                                    <overWrite>true</overWrite>
                                 </artifactItem>
                             </artifactItems>
+                            <overWriteIfNewer>true</overWriteIfNewer>
                         </configuration>
                     </execution>
                     <execution>
@@ -89,7 +88,7 @@
                                 </artifactItem>
                             </artifactItems>
                             <outputDirectory>${tomcat.home}/lib</outputDirectory>
-                            <overWrite>true</overWrite>
+                            <overWriteIfNewer>true</overWriteIfNewer>
                         </configuration>
                     </execution>
                 </executions>
@@ -97,7 +96,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>xml-maven-plugin</artifactId>
-                <version>1.0</version>
                 <executions>
                     <execution>
                         <id>add-tomcat-manager-user</id>

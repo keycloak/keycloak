@@ -246,6 +246,7 @@
                 <dependency>
                     <groupId>org.hibernate.javax.persistence</groupId>
                     <artifactId>hibernate-jpa-2.0-api</artifactId>
+                    <version>${hibernate.javax.persistence.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>com.h2database</groupId>
@@ -321,7 +322,7 @@
                                             </artifactItem>
                                         </artifactItems>
                                         <outputDirectory>${containers.home}</outputDirectory>
-                                        <overWrite>false</overWrite>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
                                     </configuration>
                                 </execution>
                             </executions>
