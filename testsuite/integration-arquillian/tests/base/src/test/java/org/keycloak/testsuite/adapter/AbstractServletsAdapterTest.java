@@ -30,7 +30,6 @@ import org.keycloak.testsuite.servlet.adapter.ProductServlet;
 import org.keycloak.testsuite.servlet.adapter.SessionServlet;
 import org.keycloak.testsuite.page.console.account.AccountSessionsPage;
 import static org.junit.Assert.*;
-import org.junit.Ignore;
 import org.keycloak.Version;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -457,15 +456,18 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
     }
 
+    @Drone
+    @SecondBrowser
+    protected WebDriver driver2;    
+    
     @Jira("KEYCLOAK-732")
     @Test
-    @Ignore("problem with second browser") // FIXME
-    public void testSingleSessionInvalidated(@Drone @SecondBrowser WebDriver driver2) {
+    public void testSingleSessionInvalidated() {
 
         loginAndCheckSession(driver, loginPage);
 
         // cannot pass to loginAndCheckSession becayse loginPage is not working together with driver2, therefore copypasta
-        sessionPortal.navigateToUsing(driver2);
+        driver2.navigate().to(sessionPortal.toString());
         assertCurrentUrlStartsWithLoginUrlOf(driver2, testRealm);
         driver2.findElement(By.id("username")).sendKeys("bburke@redhat.com");
         driver2.findElement(By.id("password")).sendKeys("password");
@@ -474,7 +476,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         String pageSource = driver2.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));
         // Counter increased now
-        sessionPortal.navigateToUsing(driver2);
+        driver2.navigate().to(sessionPortal.toString());
         pageSource = driver2.getPageSource();
         assertTrue(pageSource.contains("Counter=2"));
 
@@ -489,7 +491,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
         // Assert that I am still logged in browser2 and same session is still preserved
-        sessionPortal.navigateToUsing(driver2);
+        driver2.navigate().to(sessionPortal.toString());
         assertCurrentUrl(driver2, sessionPortal.toString());
         pageSource = driver2.getPageSource();
         assertTrue(pageSource.contains("Counter=3"));

@@ -53,14 +53,10 @@ public abstract class AbstractPage {
     }
 
     public AbstractPage navigateTo() {
-        navigateToUsing(driver);
-        return this;
-    }
-
-    public void navigateToUsing(WebDriver driver) {
         String uri = getUri().toASCIIString();
         System.out.println("navigating to " + uri);
-        driver.get(uri);
+        driver.navigate().to(uri);
+        return this;
     }
 
     public WebDriver getDriver() {
