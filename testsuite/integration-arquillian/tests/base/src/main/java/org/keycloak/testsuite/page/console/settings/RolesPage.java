@@ -55,12 +55,18 @@ public class RolesPage extends AdminConsole {
     @FindBy(className = "onoffswitch-switch")
     private WebElement compositeSwitchToggle;
 
+    @FindBy(id = "createRole")
+    private WebElement addRoleButton;
+
+    @FindBy(id = "removeRole")
+    private WebElement removeRoleButton;
+
     public boolean isRoleComposite(String roleName) {
         return findRole(roleName).isComposite();
     }
 
     public void addRole(Role role) {
-		primaryButton.click();
+        addRoleButton.click();
 		waitAjaxForElement(nameInput);
         nameInput.sendKeys(role.getName());
         descriptionInput.sendKeys(role.getDescription());
@@ -92,8 +98,8 @@ public class RolesPage extends AdminConsole {
 
     public void deleteRole(Role role) {
         driver.findElement(linkText(role.getName())).click();
-        waitAjaxForElement(dangerButton);
-		dangerButton.click();
+        waitAjaxForElement(removeRoleButton);
+        removeRoleButton.click();
 		deleteConfirmationButton.click();
     }
 

@@ -19,6 +19,7 @@ package org.keycloak.testsuite.page.console.settings.user;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.testsuite.model.User;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -54,7 +55,7 @@ public class UserPage extends Realm {
     @FindBy(css = "label[for='userEnabled']")
     private WebElement userEnabledSwitchToggle;
 
-    @FindBy(css = "input[class*='select2-input']")
+    @FindBy(css = "input[id='s2id_autogen3']")
     private WebElement requiredUserActionsInput;
 
     @FindBy(className = "select2-result-label")
@@ -84,13 +85,19 @@ public class UserPage extends Realm {
     @FindBy(css = "div[class='input-group-addon'] i")
     private WebElement searchButton;
 
+    @FindBy(id = "createUser")
+    private WebElement addUserButton;
+
+    @FindBy(id = "removeUser")
+    private WebElement removeUserButton;
+
     @Override
     public String getFragment() {
         return super.getFragment() + "/users";
     }
 
     public void addUser(User user) {
-        primaryButtons.get(1).click();
+        addUserButton.click();
         waitAjaxForElement(usernameInput);
         usernameInput.sendKeys(user.getUserName());
         emailInput.sendKeys(user.getEmail());
@@ -102,13 +109,17 @@ public class UserPage extends Realm {
         if (user.isEmailVerified()) {
             emailVerifiedSwitchToggle.click();
         }
-        for (RequiredUserAction action : user.getRequiredUserActions()) {
-            requiredUserActionsInput.sendKeys(action.getActionName());
-            requiredUserActionsConfirm.click();
+        if(!user.getRequiredUserActions().isEmpty()){
+            for (RequiredUserAction action : user.getRequiredUserActions()) {
+                //driver.findElement(By.cssSelector("..select2-choices")).click();
+                requiredUserActionsInput.sendKeys(action.getActionName());
+                requiredUserActionsConfirm.click();
+            }
         }
-        requiredUserActionsConfirm.click();
         primaryButton.click();
-    }
+        }
+
+
 
     public void addPasswordForUser(User user) {
         password.sendKeys(user.getPassword());
@@ -160,8 +171,8 @@ public class UserPage extends Realm {
     public void deleteUser(String username) {
         findUser(username);
         goToUser(username);
-        waitAjaxForElement(dangerButton);
-        dangerButton.click();
+        waitAjaxForElement(removeUserButton);
+        removeUserButton.click();
         waitAjaxForElement(deleteConfirmationButton);
         deleteConfirmationButton.click();
     }
