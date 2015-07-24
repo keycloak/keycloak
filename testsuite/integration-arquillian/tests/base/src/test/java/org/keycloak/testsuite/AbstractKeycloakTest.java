@@ -37,6 +37,7 @@ import static org.keycloak.testsuite.util.Constants.ADMIN_PSSWD;
 public abstract class AbstractKeycloakTest {
 
     protected Keycloak keycloak;
+    private boolean keycloakOpen = false;
 
     protected List<RealmRepresentation> testRealms;
 
@@ -62,15 +63,18 @@ public abstract class AbstractKeycloakTest {
     @Before
     public void beforeAbstractKeycloakTest() {
         setPageUriTemplateValues();
-        
+
         driverSettings();
 
         if (!isAdminPasswordUpdated()) {
             updateAdminPassword();
         }
 
-        keycloak = Keycloak.getInstance(authServer.toString(),
-                "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
+        if (!keycloakOpen) {
+            keycloak = Keycloak.getInstance(authServer.toString(),
+                    "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
+            keycloakOpen = true;
+        }
 
         importTestRealms();
     }
@@ -78,7 +82,7 @@ public abstract class AbstractKeycloakTest {
     @After
     public void afterAbstractKeycloakTest() {
 //        removeTestRealms();
-        keycloak.close();
+//        keycloak.close();
         driver.manage().deleteAllCookies();
     }
 
@@ -94,9 +98,9 @@ public abstract class AbstractKeycloakTest {
     public void loginAsAdmin() {
         adminConsole.navigateTo();
         loginPage.loginAsAdmin();
-		if(isAdminPasswordUpdated()) {
-			assertCurrentUrlStartsWith(adminConsole);
-		}
+        if (isAdminPasswordUpdated()) {
+            assertCurrentUrlStartsWith(adminConsole);
+        }
     }
 
     public void updateAdminPassword() {
@@ -120,7 +124,7 @@ public abstract class AbstractKeycloakTest {
         driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
         driver.manage().window().maximize();
     }
-    
+
     public void setPageUriTemplateValues() {
         adminConsole.setTemplateValues(MASTER);
     }
@@ -136,7 +140,7 @@ public abstract class AbstractKeycloakTest {
             loadTestRealmsInto(testRealms);
         }
     }
-    
+
     public void importTestRealms() {
         loadTestRealms();
         System.out.println("importing test realms");
