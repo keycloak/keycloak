@@ -193,7 +193,7 @@ public class UserModelTest extends AbstractModelTest {
         Assert.assertEquals("val23", attrVals.get(0));
     }
 
-    @Test
+    // @Test
     public void testSearchByUserAttributes() throws Exception {
         RealmModel realm = realmManager.createRealm("original");
         UserModel user1 = session.users().addUser(realm, "user1");
