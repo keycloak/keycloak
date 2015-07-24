@@ -15,6 +15,7 @@ public class Realm extends RealmsRoot {
     public static final String REALM = "realm";
     public static final String MASTER = "master";
     public static final String DEMO = "demo";
+    public static final String TEST= "test";
 
     public Realm() {
         setTemplateValue(REALM, MASTER);

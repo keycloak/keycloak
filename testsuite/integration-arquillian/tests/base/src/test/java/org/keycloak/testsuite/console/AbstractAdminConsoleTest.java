@@ -24,7 +24,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.page.console.AdminConsole;
+import org.keycloak.testsuite.page.console.Realm;
 import static org.keycloak.testsuite.page.console.Realm.MASTER;
+import static org.keycloak.testsuite.page.console.Realm.TEST;
 
 /**
  *
@@ -35,6 +37,9 @@ public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends A
 
     @Page
     protected P page;
+
+    @Page
+    protected Realm testRealm;
 
     @Before
     public void beforeConsoleTest() {
@@ -48,8 +53,17 @@ public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends A
     }
 
     @Override
+    public void setPageUriTemplateValues() {
+        super.setPageUriTemplateValues();
+        testRealm.setTemplateValues(MASTER, TEST);
+    }
+
+    @Override
     public void loadTestRealmsInto(List<RealmRepresentation> testRealms) {
-        // no test realms for console tests yet
+        RealmRepresentation testRealmRep = new RealmRepresentation();
+        testRealmRep.setRealm(TEST);
+        testRealmRep.setEnabled(true);
+        testRealms.add(testRealmRep);
     }
 
 }

@@ -21,13 +21,12 @@ public class RealmsTest extends AbstractAdminConsoleTest<RealmsRoot> {
 
     @Test
     public void testSelectMasterRealm() {
-        
-        realmsRoot.navigateTo(); // 1st time possibly redirected from realms root page to master realm
-        realmsRoot.navigateTo(); // 2nd time to be sure
+
+        realmsRoot.navigateTo();
         assertCurrentUrl(realmsRoot);
 
         realmsRoot.clickRealm(MASTER);
-        
+
         realm.setTemplateValues(MASTER);
         assertCurrentUrl(realm);
 
