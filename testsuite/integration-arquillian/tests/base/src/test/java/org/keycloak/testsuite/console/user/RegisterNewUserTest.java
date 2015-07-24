@@ -50,8 +50,8 @@ public class RegisterNewUserTest extends AbstractAdminConsoleTest<RegisterPage> 
 	
 	@Before
 	public void beforeUserRegistration() {
-		navigation.settings();
-		navigation.login();
+		navigation.settings("master");
+		navigation.login("master");
 		loginSettingsPage.enableUserRegistration();
 		logOut();
 		loginPage.goToUserRegistration();
@@ -59,8 +59,8 @@ public class RegisterNewUserTest extends AbstractAdminConsoleTest<RegisterPage> 
 	
 	@After
 	public void afterUserRegistration() {
-		navigation.settings();
-		navigation.login();
+		navigation.settings("master");
+		navigation.login("master");
 		loginSettingsPage.disableUserRegistration();
 	}
 

@@ -94,8 +94,10 @@ public class Navigation {
         driver.findElement(By.linkText(realmName)).click();
     }
 
-    public void settings() {
-        openPage(settingsLink, "Settings");
+    public void settings(String realmName) {
+        String realmNameCapitalized = Character.toUpperCase(realmName.charAt(0))
+                + realmName.substring(1);
+        openPage(settingsLink, realmNameCapitalized);
     }
 
     public void users() {
@@ -134,8 +136,10 @@ public class Navigation {
         openPage(eventsLink, "Events");
     }
 
-    public void login() {
-        openPage(loginLink, "Settings");
+    public void login(String realmName) {
+        String realmNameCapitalized = Character.toUpperCase(realmName.charAt(0))
+                + realmName.substring(1);
+        openPage(loginLink, realmNameCapitalized);
     }
 
     public void themes() {

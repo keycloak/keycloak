@@ -58,6 +58,12 @@ public class ClientPage extends AdminConsole {
     @FindBy(css = "input[class*='search']")
     private WebElement searchInput;
 
+    @FindBy(id = "createClient")
+    private WebElement createClientButton;
+
+    @FindBy(id = "removeClient")
+    private WebElement removeClientButton;
+
     public void addClient(Client client) {
         primaryButton.click();
         waitAjaxForElement(clientId);
@@ -85,8 +91,8 @@ public class ClientPage extends AdminConsole {
     public void deleteClient(String clientName) {
         searchInput.sendKeys(clientName);
         driver.findElement(linkText(clientName)).click();
-        waitAjaxForElement(dangerButton);
-        dangerButton.click();
+        waitAjaxForElement(removeClientButton);
+        removeClientButton.click();
         waitAjaxForElement(deleteConfirmationButton);
         deleteConfirmationButton.click();
     }
@@ -127,6 +133,6 @@ public class ClientPage extends AdminConsole {
     }
 
     public void goToCreateClient() {
-        driver.findElements(ByJQuery.selector(".btn.btn-primary")).get(0).click();
+        createClientButton.click();
     }
 }
