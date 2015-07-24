@@ -19,6 +19,13 @@
                 <module>wildfly</module>
             </modules>
         </profile>
+        <profile>
+            <id>auth-server-eap6</id>
+            <modules>
+                <!--doesn't work yet, WIP-->
+                <module>eap6</module>
+            </modules>
+        </profile>
     </profiles>    
 
 </project>
