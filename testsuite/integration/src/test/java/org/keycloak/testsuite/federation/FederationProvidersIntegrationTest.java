@@ -9,6 +9,7 @@ import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
@@ -353,20 +354,31 @@ public class FederationProvidersIntegrationTest {
 
     @Test
     public void testDotInUsername() {
-        // Add LDAP user with same email like existing model user
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+        KeycloakSession session = keycloakRule.startSession();
+        boolean skip = false;
 
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+
+            // Workaround as dot is not allowed in sAMAccountName on active directory. So we will skip the test for this configuration
+            LDAPConfig config = ldapFedProvider.getLdapIdentityStore().getConfig();
+            if (config.isActiveDirectory() && config.getUsernameLdapAttribute().equals(LDAPConstants.SAM_ACCOUNT_NAME)) {
+                skip = true;
+            }
+
+            if (!skip) {
                 LDAPObject johnDot = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "john,dot", "John", "Dot", "johndot@email.org", null, "12387");
                 ldapFedProvider.getLdapIdentityStore().updatePassword(johnDot, "Password1");
             }
+        } finally {
+            keycloakRule.stopSession(session, false);
+        }
 
-        });
-
-        // Try to import the duplicated LDAP user into Keycloak
-        loginSuccessAndLogout("john,dot", "Password1");
+        if (!skip) {
+            // Try to import the user with dot in username into Keycloak
+            loginSuccessAndLogout("john,dot", "Password1");
+        }
     }
 
     @Test
