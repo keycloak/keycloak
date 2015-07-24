@@ -35,6 +35,7 @@ import org.keycloak.Version;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.TestRealms.*;
 import org.keycloak.testsuite.arquillian.jira.Jira;
@@ -486,7 +487,13 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void testSessionInvalidatedAfterFailedRefresh() {
         RealmResource demoRealm = keycloak.realm("demo");
         RealmRepresentation demoRealmRep = demoRealm.toRepresentation();
-        ClientResource sessionPortalRes = demoRealm.clients().get("session-portal");
+        ClientResource sessionPortalRes = null;
+        for (ClientRepresentation clientRep : demoRealm.clients().findAll()) {
+            if ("session-portal".equals(clientRep.getClientId())) {
+                sessionPortalRes = demoRealm.clients().get(clientRep.getId());
+            }
+        }
+        assertNotNull(sessionPortalRes);
         sessionPortalRes.toRepresentation().setAdminUrl("");
         int origTokenLifespan = demoRealmRep.getAccessCodeLifespan();
         demoRealmRep.setAccessCodeLifespan(1);
