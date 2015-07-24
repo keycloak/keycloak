@@ -20,9 +20,9 @@ package org.keycloak.testsuite.console.settings;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import static org.junit.Assert.*;
 import org.junit.Test;
-import org.keycloak.testsuite.page.console.settings.SocialSettingsPage;
+import org.keycloak.testsuite.console.page.settings.SocialSettingsPage;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
-import org.keycloak.testsuite.page.console.fragment.FlashMessage;
+import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.model.Provider;
 import org.keycloak.testsuite.model.SocialProvider;
 

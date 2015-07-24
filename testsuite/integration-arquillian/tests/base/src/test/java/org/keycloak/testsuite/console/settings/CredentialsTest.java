@@ -23,7 +23,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.model.PasswordPolicy;
-import org.keycloak.testsuite.page.console.settings.CredentialsPage;
+import org.keycloak.testsuite.console.page.settings.CredentialsPage;
 
 /**
  *

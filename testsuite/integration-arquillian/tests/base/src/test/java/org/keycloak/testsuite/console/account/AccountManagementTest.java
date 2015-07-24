@@ -28,10 +28,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
-import org.keycloak.testsuite.page.console.fragment.FlashMessage;
+import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.model.Account;
-import org.keycloak.testsuite.page.console.account.AccountPage;
-import org.keycloak.testsuite.page.console.account.PasswordPage;
+import org.keycloak.testsuite.console.page.account.AccountPage;
+import org.keycloak.testsuite.console.page.account.PasswordPage;
 
 /**
  *

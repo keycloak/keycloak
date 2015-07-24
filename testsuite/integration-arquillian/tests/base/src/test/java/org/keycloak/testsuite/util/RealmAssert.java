@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.util;
 
-import org.keycloak.testsuite.page.console.Realm;
+import org.keycloak.testsuite.console.page.Realm;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import org.openqa.selenium.WebDriver;
 

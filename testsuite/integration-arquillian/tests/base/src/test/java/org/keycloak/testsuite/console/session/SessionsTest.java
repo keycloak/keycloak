@@ -21,7 +21,7 @@ package org.keycloak.testsuite.console.session;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
-import org.keycloak.testsuite.page.console.session.SessionsPage;
+import org.keycloak.testsuite.console.page.session.SessionsPage;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 
 /**

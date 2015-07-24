@@ -8,15 +8,15 @@ package org.keycloak.testsuite.console.role;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
-import org.keycloak.testsuite.page.console.settings.RolesPage;
+import org.keycloak.testsuite.console.page.settings.RolesPage;
 import org.keycloak.testsuite.model.Role;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
-import org.keycloak.testsuite.page.console.fragment.FlashMessage;
-import org.keycloak.testsuite.page.console.settings.user.UserPage;
+import org.keycloak.testsuite.console.page.fragment.FlashMessage;
+import org.keycloak.testsuite.console.page.settings.user.UserPage;
 import static org.openqa.selenium.By.id;
 import org.openqa.selenium.support.ui.Select;
 

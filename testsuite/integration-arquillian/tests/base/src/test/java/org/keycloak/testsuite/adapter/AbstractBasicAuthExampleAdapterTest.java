@@ -13,9 +13,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
-import static org.keycloak.testsuite.TestRealms.loadRealm;
+import static org.keycloak.testsuite.util.RealmUtils.loadRealm;
 import static org.keycloak.testsuite.adapter.AbstractExampleAdapterTest.exampleDeployment;
-import org.keycloak.testsuite.page.adapter.BasicAuthExample;
+import org.keycloak.testsuite.adapter.page.BasicAuthExample;
 
 public abstract class AbstractBasicAuthExampleAdapterTest extends AbstractExampleAdapterTest {
 

@@ -12,13 +12,13 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.keycloak.representations.idm.RealmRepresentation;
-import static org.keycloak.testsuite.TestRealms.loadRealm;
+import static org.keycloak.testsuite.util.RealmUtils.loadRealm;
 import static org.keycloak.testsuite.adapter.AbstractDemoExampleAdapterTest.exampleDeployment;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
-import org.keycloak.testsuite.page.adapter.MultiTenant;
-import org.keycloak.testsuite.page.adapter.MultiTenantExample;
-import org.keycloak.testsuite.servlet.adapter.MultiTenantResolver;
-import org.keycloak.testsuite.servlet.adapter.MultiTenantServlet;
+import org.keycloak.testsuite.adapter.page.MultiTenant;
+import org.keycloak.testsuite.adapter.page.MultiTenantExample;
+import org.keycloak.testsuite.adapter.servlet.MultiTenantResolver;
+import org.keycloak.testsuite.adapter.servlet.MultiTenantServlet;
 
 public abstract class AbstractMultitenancyAdapterTest extends AbstractAdapterTest {
 

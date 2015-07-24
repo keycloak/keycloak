@@ -23,10 +23,10 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.page.console.AdminConsole;
-import org.keycloak.testsuite.page.console.Realm;
-import static org.keycloak.testsuite.page.console.Realm.MASTER;
-import static org.keycloak.testsuite.page.console.Realm.TEST;
+import org.keycloak.testsuite.console.page.AdminConsole;
+import org.keycloak.testsuite.console.page.Realm;
+import static org.keycloak.testsuite.console.page.Realm.MASTER;
+import static org.keycloak.testsuite.console.page.Realm.TEST;
 
 /**
  *

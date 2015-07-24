@@ -20,7 +20,7 @@ package org.keycloak.testsuite.console.session;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.testsuite.page.console.settings.TokensPage;
+import org.keycloak.testsuite.console.page.settings.TokensPage;
 
 import static org.jboss.arquillian.graphene.Graphene.waitModel;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;

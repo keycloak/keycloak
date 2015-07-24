@@ -20,9 +20,9 @@ package org.keycloak.testsuite.console.client;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.junit.Test;
-import org.keycloak.testsuite.page.console.fragment.FlashMessage;
+import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.model.Client;
-import org.keycloak.testsuite.page.console.settings.ClientPage;
+import org.keycloak.testsuite.console.page.settings.ClientPage;
 
 
 import static org.junit.Assert.assertNull;

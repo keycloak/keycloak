@@ -20,7 +20,7 @@ package org.keycloak.testsuite.console.settings;
 
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
-import org.keycloak.testsuite.page.console.settings.SecurityPage;
+import org.keycloak.testsuite.console.page.settings.SecurityPage;
 
 /**
  *

@@ -22,15 +22,15 @@ import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Test;
-import org.keycloak.testsuite.page.console.fragment.FlashMessage;
+import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.model.User;
-import org.keycloak.testsuite.page.console.login.RegisterPage;
-import org.keycloak.testsuite.page.console.settings.user.UserPage;
+import org.keycloak.testsuite.console.page.login.RegisterPage;
+import org.keycloak.testsuite.console.page.settings.user.UserPage;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
-import org.keycloak.testsuite.page.console.settings.LoginSettingsPage;
+import org.keycloak.testsuite.console.page.settings.LoginSettingsPage;
 import static org.keycloak.testsuite.util.Users.*;
 
 /**

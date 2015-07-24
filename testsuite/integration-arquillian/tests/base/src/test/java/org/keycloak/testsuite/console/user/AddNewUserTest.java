@@ -19,9 +19,9 @@ package org.keycloak.testsuite.console.user;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.junit.Test;
-import org.keycloak.testsuite.page.console.fragment.FlashMessage;
+import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.model.User;
-import org.keycloak.testsuite.page.console.settings.user.UserPage;
+import org.keycloak.testsuite.console.page.settings.user.UserPage;
 
 import static org.junit.Assert.*;
 import org.junit.Before;

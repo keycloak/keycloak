@@ -22,7 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.model.Theme;
-import org.keycloak.testsuite.page.console.settings.ThemesSettingsPage;
+import org.keycloak.testsuite.console.page.settings.ThemesSettingsPage;
 
 
 /**

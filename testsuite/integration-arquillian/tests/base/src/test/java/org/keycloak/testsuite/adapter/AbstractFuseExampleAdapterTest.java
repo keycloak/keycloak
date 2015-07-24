@@ -5,10 +5,10 @@ import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
-import static org.keycloak.testsuite.TestRealms.loadRealm;
+import static org.keycloak.testsuite.util.RealmUtils.loadRealm;
 import static org.keycloak.testsuite.adapter.AbstractExampleAdapterTest.EXAMPLES_HOME_DIR;
-import org.keycloak.testsuite.page.adapter.fuse.CustomerPortalFuseExample;
-import static org.keycloak.testsuite.page.console.Realm.DEMO;
+import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
+import static org.keycloak.testsuite.console.page.Realm.DEMO;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 

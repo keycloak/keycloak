@@ -2,9 +2,9 @@ package org.keycloak.testsuite.console;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
-import org.keycloak.testsuite.page.console.Realm;
-import static org.keycloak.testsuite.page.console.Realm.MASTER;
-import org.keycloak.testsuite.page.console.RealmsRoot;
+import org.keycloak.testsuite.console.page.Realm;
+import static org.keycloak.testsuite.console.page.Realm.MASTER;
+import org.keycloak.testsuite.console.page.RealmsRoot;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
 
 /**

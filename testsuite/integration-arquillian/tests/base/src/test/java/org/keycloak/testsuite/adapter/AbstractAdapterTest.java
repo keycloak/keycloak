@@ -13,8 +13,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.ContainersTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.page.adapter.AppServerContextRoot;
-import org.keycloak.testsuite.page.console.Realm;
+import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
+import org.keycloak.testsuite.console.page.Realm;
 
 /**
  *
