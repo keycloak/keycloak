@@ -141,6 +141,11 @@
                     "userName": "mySocialUser@gmail.com"
                 }
             ]
+        },
+        {
+            "username": "my-service-user",
+            "enabled": true,
+            "serviceAccountClientId": "OtherApp"
         }
     ],
     "clients": [
@@ -158,6 +163,7 @@
             "clientId": "OtherApp",
             "name": "Other Application",
             "enabled": true,
+            "serviceAccountsEnabled": true,
             "protocolMappers" : [
                 {
                     "name" : "gss delegation credential",

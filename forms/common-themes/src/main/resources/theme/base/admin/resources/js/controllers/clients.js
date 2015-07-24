@@ -549,7 +549,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
         "bearer-only"
     ];
 
-    $scope.protocols = serverInfo.protocols;
+    $scope.protocols = Object.keys(serverInfo.providers['login-protocol'].providers);
 
     $scope.signatureAlgorithms = [
         "RSA_SHA1",
@@ -1322,26 +1322,6 @@ module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serv
 
 
 });
-
-module.controller('ClientServiceAccountsCtrl', function($scope, $http, realm, client, Notifications, Client) {
-    $scope.realm = realm;
-    $scope.client = angular.copy(client);
-
-    $scope.serviceAccountsEnabledChanged = function() {
-        if (client.serviceAccountsEnabled != $scope.client.serviceAccountsEnabled) {
-            Client.update({
-                realm : realm.realm,
-                client : client.id
-            }, $scope.client, function() {
-                $scope.changed = false;
-                client = angular.copy($scope.client);
-                Notifications.success("Service Account settings updated.");
-            });
-        }
-    }
-
-});
-
 
 
 

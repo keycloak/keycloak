@@ -35,8 +35,10 @@ module.factory('RealmListLoader', function(Loader, Realm, $q) {
 	return Loader.get(Realm);
 });
 
-module.factory('ServerInfoLoader', function(Loader, ServerInfo, $q) {
-    return Loader.get(ServerInfo);
+module.factory('ServerInfoLoader', function(Loader, ServerInfo) {
+    return function() {
+        return ServerInfo.promise;
+    };
 });
 
 module.factory('RealmLoader', function(Loader, Realm, $route, $q) {
@@ -278,6 +280,15 @@ module.factory('ClientListLoader', function(Loader, Client, $route, $q) {
     return Loader.query(Client, function() {
         return {
             realm : $route.current.params.realm
+        }
+    });
+});
+
+module.factory('ClientServiceAccountUserLoader', function(Loader, ClientServiceAccountUser, $route, $q) {
+    return Loader.get(ClientServiceAccountUser, function() {
+        return {
+            realm : $route.current.params.realm,
+            client : $route.current.params.client
         }
     });
 });

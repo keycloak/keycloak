@@ -215,10 +215,27 @@ module.factory('RealmLDAPConnectionTester', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/testLDAPConnection');
 });
 
-module.factory('ServerInfo', function($resource) {
-    return $resource(authUrl + '/admin/serverinfo');
-});
+module.service('ServerInfo', function($resource, $q, $http) {
+    var info = {};
+    var delay = $q.defer();
 
+    $http.get(authUrl + '/admin/serverinfo').success(function(data) {
+        info = data;
+        delay.resolve(info);
+    });
+
+    return {
+        get: function() {
+            return info;
+        },
+        reload: function() {
+            $http.get(authUrl + '/admin/serverinfo').success(function(data) {
+                angular.copy(data, info);
+            });
+        },
+        promise: delay.promise
+    }
+});
 
 
 module.factory('ClientProtocolMapper', function($resource) {
@@ -894,6 +911,13 @@ module.factory('ClientOrigins', function($resource) {
             method : 'PUT',
             isArray : true
         }
+    });
+});
+
+module.factory('ClientServiceAccountUser', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/service-account-user', {
+        realm : '@realm',
+        client : '@client'
     });
 });
 

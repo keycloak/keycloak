@@ -1,9 +1,7 @@
-package org.keycloak.services.resources.admin;
+package org.keycloak.services.resources.admin.info;
 
-import org.keycloak.Version;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
-import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.exportimport.ClientImporter;
@@ -18,6 +16,7 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -26,14 +25,7 @@ import org.keycloak.social.SocialIdentityProvider;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.core.Context;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -53,13 +45,12 @@ public class ServerInfoAdminResource {
     @GET
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
-        info.version = Version.VERSION;
-        info.serverTime = new Date().toString();
+        info.setSystemInfo(SystemInfoRepresentation.create(session));
+        info.setMemoryInfo(MemoryInfoRepresentation.create());
+
         setSocialProviders(info);
         setIdentityProviders(info);
         setThemes(info);
-        setEventListeners(info);
-        setProtocols(info);
         setClientImporters(info);
         setProviders(info);
         setProtocolMapperTypes(info);
@@ -69,42 +60,55 @@ public class ServerInfoAdminResource {
     }
 
     private void setProviders(ServerInfoRepresentation info) {
-        List<SpiInfoRepresentation> providers = new LinkedList<>();
+        Map<String, SpiInfoRepresentation> spis = new HashMap<>();
         for (Spi spi : ServiceLoader.load(Spi.class)) {
             SpiInfoRepresentation spiRep = new SpiInfoRepresentation();
-            spiRep.setName(spi.getName());
             spiRep.setInternal(spi.isInternal());
-            spiRep.setImplementations(session.listProviderIds(spi.getProviderClass()));
-            providers.add(spiRep);
+            spiRep.setSystemInfo(ServerInfoAwareProviderFactory.class.isAssignableFrom(spi.getProviderFactoryClass()));
+            Set<String> providerIds = session.listProviderIds(spi.getProviderClass());
+            Map<String, ProviderRepresentation> providers = new HashMap<>();
+
+            if (providerIds != null) {
+                for (String name : providerIds) {
+                    ProviderRepresentation provider = new ProviderRepresentation();
+                    if (spiRep.isSystemInfo()) {
+                        provider.setOperationalInfo(((ServerInfoAwareProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(spi.getProviderClass(), name)).getOperationalInfo());
+                    }
+                    providers.put(name, provider);
+                }
+            }
+            spiRep.setProviders(providers);
+
+            spis.put(spi.getName(), spiRep);
         }
-        info.providers = providers;
+        info.setProviders(spis);
     }
 
     private void setThemes(ServerInfoRepresentation info) {
         ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-        info.themes = new HashMap<String, List<String>>();
+        info.setThemes(new HashMap<String, List<String>>());
 
         for (Theme.Type type : Theme.Type.values()) {
             List<String> themes = new LinkedList<String>(themeProvider.nameSet(type));
             Collections.sort(themes);
 
-            info.themes.put(type.toString().toLowerCase(), themes);
+            info.getThemes().put(type.toString().toLowerCase(), themes);
         }
     }
 
     private void setSocialProviders(ServerInfoRepresentation info) {
-        info.socialProviders = new LinkedList<>();
+        info.setSocialProviders(new LinkedList<Map<String, String>>());
         List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(SocialIdentityProvider.class);
-        setIdentityProviders(providerFactories, info.socialProviders, "Social");
+        setIdentityProviders(providerFactories, info.getSocialProviders(), "Social");
     }
 
     private void setIdentityProviders(ServerInfoRepresentation info) {
-        info.identityProviders = new LinkedList<>();
+        info.setIdentityProviders(new LinkedList<Map<String, String>>());
         List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(IdentityProvider.class);
-        setIdentityProviders(providerFactories, info.identityProviders, "User-defined");
+        setIdentityProviders(providerFactories, info.getIdentityProviders(), "User-defined");
 
         providerFactories = session.getKeycloakSessionFactory().getProviderFactories(SocialIdentityProvider.class);
-        setIdentityProviders(providerFactories, info.identityProviders, "Social");
+        setIdentityProviders(providerFactories, info.getIdentityProviders(), "Social");
     }
 
     public void setIdentityProviders(List<ProviderFactory> factories, List<Map<String, String>> providers, String groupName) {
@@ -119,31 +123,14 @@ public class ServerInfoAdminResource {
         }
     }
 
-    private void setEventListeners(ServerInfoRepresentation info) {
-        info.eventListeners = new LinkedList<String>();
-
-        Set<String> providers = session.listProviderIds(EventListenerProvider.class);
-        if (providers != null) {
-            info.eventListeners.addAll(providers);
-        }
-    }
-
-    private void setProtocols(ServerInfoRepresentation info) {
-        info.protocols = new LinkedList<String>();
-        for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(LoginProtocol.class)) {
-            info.protocols.add(p.getId());
-        }
-        Collections.sort(info.protocols);
-    }
-
     private void setProtocolMapperTypes(ServerInfoRepresentation info) {
-        info.protocolMapperTypes = new HashMap<String, List<ProtocolMapperTypeRepresentation>>();
+        info.setProtocolMapperTypes(new HashMap<String, List<ProtocolMapperTypeRepresentation>>());
         for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(ProtocolMapper.class)) {
             ProtocolMapper mapper = (ProtocolMapper)p;
-            List<ProtocolMapperTypeRepresentation> types = info.protocolMapperTypes.get(mapper.getProtocol());
+            List<ProtocolMapperTypeRepresentation> types = info.getProtocolMapperTypes().get(mapper.getProtocol());
             if (types == null) {
                 types = new LinkedList<ProtocolMapperTypeRepresentation>();
-                info.protocolMapperTypes.put(mapper.getProtocol(), types);
+                info.getProtocolMapperTypes().put(mapper.getProtocol(), types);
             }
             ProtocolMapperTypeRepresentation rep = new ProtocolMapperTypeRepresentation();
             rep.setId(mapper.getId());
@@ -166,136 +153,25 @@ public class ServerInfoAdminResource {
     }
 
     private void setBuiltinProtocolMappers(ServerInfoRepresentation info) {
-        info.builtinProtocolMappers = new HashMap<>();
+        info.setBuiltinProtocolMappers(new HashMap<String, List<ProtocolMapperRepresentation>>());
         for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(LoginProtocol.class)) {
             LoginProtocolFactory factory = (LoginProtocolFactory)p;
             List<ProtocolMapperRepresentation> mappers = new LinkedList<>();
             for (ProtocolMapperModel mapper : factory.getBuiltinMappers()) {
                 mappers.add(ModelToRepresentation.toRepresentation(mapper));
             }
-            info.builtinProtocolMappers.put(p.getId(), mappers);
+            info.getBuiltinProtocolMappers().put(p.getId(), mappers);
         }
     }
 
     private void setClientImporters(ServerInfoRepresentation info) {
-        info.clientImporters = new LinkedList<Map<String, String>>();
+        info.setClientImporters(new LinkedList<Map<String, String>>());
         for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(ClientImporter.class)) {
             ClientImporterFactory factory = (ClientImporterFactory)p;
             Map<String, String> data = new HashMap<String, String>();
             data.put("id", factory.getId());
             data.put("name", factory.getDisplayName());
-            info.clientImporters.add(data);
-        }
-    }
-
-    public static class ServerInfoRepresentation {
-
-        private String version;
-
-        private String serverTime;
-
-        private Map<String, List<String>> themes;
-
-        private List<Map<String, String>> socialProviders;
-        public List<Map<String, String>> identityProviders;
-        private List<String> protocols;
-        private List<Map<String, String>> clientImporters;
-
-        private List<SpiInfoRepresentation> providers;
-
-        private List<String> eventListeners;
-        private Map<String, List<ProtocolMapperTypeRepresentation>> protocolMapperTypes;
-        private Map<String, List<ProtocolMapperRepresentation>> builtinProtocolMappers;
-
-        private Map<String, List<String>> enums;
-
-        public ServerInfoRepresentation() {
-        }
-
-        public String getServerTime() {
-            return serverTime;
-        }
-
-        public String getVersion() {
-            return version;
-        }
-
-        public Map<String, List<String>> getThemes() {
-            return themes;
-        }
-
-        public List<Map<String, String>> getSocialProviders() {
-            return socialProviders;
-        }
-
-        public List<Map<String, String>> getIdentityProviders() {
-            return this.identityProviders;
-        }
-
-        public List<String> getEventListeners() {
-            return eventListeners;
-        }
-
-        public List<String> getProtocols() {
-            return protocols;
-        }
-
-        public List<Map<String, String>> getClientImporters() {
-            return clientImporters;
-        }
-
-        public List<SpiInfoRepresentation> getProviders() {
-            return providers;
-        }
-
-        public Map<String, List<ProtocolMapperTypeRepresentation>> getProtocolMapperTypes() {
-            return protocolMapperTypes;
-        }
-
-        public Map<String, List<ProtocolMapperRepresentation>> getBuiltinProtocolMappers() {
-            return builtinProtocolMappers;
-        }
-
-        public void setBuiltinProtocolMappers(Map<String, List<ProtocolMapperRepresentation>> builtinProtocolMappers) {
-            this.builtinProtocolMappers = builtinProtocolMappers;
-        }
-
-        public Map<String, List<String>> getEnums() {
-            return enums;
-        }
-
-        public void setEnums(Map<String, List<String>> enums) {
-            this.enums = enums;
-        }
-    }
-
-    public static class SpiInfoRepresentation {
-        private String name;
-        private boolean internal;
-        private Set<String> implementations;
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public boolean isInternal() {
-            return internal;
-        }
-
-        public void setInternal(boolean internal) {
-            this.internal = internal;
-        }
-
-        public Set<String> getImplementations() {
-            return implementations;
-        }
-
-        public void setImplementations(Set<String> implementations) {
-            this.implementations = implementations;
+            info.getClientImporters().add(data);
         }
     }
 

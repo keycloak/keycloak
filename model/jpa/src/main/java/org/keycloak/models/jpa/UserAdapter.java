@@ -544,6 +544,16 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
+    public String getServiceAccountClientLink() {
+        return user.getServiceAccountClientLink();
+    }
+
+    @Override
+    public void setServiceAccountClientLink(String clientInternalId) {
+        user.setServiceAccountClientLink(clientInternalId);
+    }
+
+    @Override
     public void addConsent(UserConsentModel consent) {
         String clientId = consent.getClient().getId();
 

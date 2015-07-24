@@ -814,7 +814,7 @@ public abstract class AbstractIdentityProviderTest {
 
     private void removeTestUsers() {
         RealmModel realm = getRealm();
-        List<UserModel> users = this.session.users().getUsers(realm);
+        List<UserModel> users = this.session.users().getUsers(realm, true);
 
         for (UserModel user : users) {
             Set<FederatedIdentityModel> identities = this.session.users().getFederatedIdentities(user, realm);

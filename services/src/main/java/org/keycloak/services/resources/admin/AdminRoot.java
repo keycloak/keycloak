@@ -20,6 +20,7 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

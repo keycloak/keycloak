@@ -33,9 +33,9 @@
             <kc-tooltip>Helper utility for generating various client adapter configuration formats which you can download or cut and paste to configure your clients.</kc-tooltip>
         </li>
 
-        <li ng-class="{active: path[4] == 'service-accounts'}" data-ng-show="!client.publicClient && !client.bearerOnly">
-            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/service-accounts">Service Accounts</a>
-            <kc-tooltip>Allows you to authenticate this client to Keycloak and retrieve access tokens dedicated to this client.</kc-tooltip>
+        <li ng-class="{active: path[4] == 'service-account-roles'}" data-ng-show="client.serviceAccountsEnabled">
+            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/service-account-roles">Service Account Roles</a>
+            <kc-tooltip>Allows you to authenticate role mappings for the service account dedicated to this client.</kc-tooltip>
         </li>
     </ul>
 </div>

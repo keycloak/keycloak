@@ -208,6 +208,16 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
+    public String getServiceAccountClientLink() {
+        return delegate.getServiceAccountClientLink();
+    }
+
+    @Override
+    public void setServiceAccountClientLink(String clientInternalId) {
+        delegate.setServiceAccountClientLink(clientInternalId);
+    }
+
+    @Override
     public void addConsent(UserConsentModel consent) {
         delegate.addConsent(consent);
     }

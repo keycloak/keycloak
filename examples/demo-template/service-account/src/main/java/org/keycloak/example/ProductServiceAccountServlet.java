@@ -140,15 +140,7 @@ public class ProductServiceAccountServlet extends HttpServlet {
             int status = response.getStatusLine().getStatusCode();
             if (status != 200) {
                 String json = getContent(entity);
-                String error = "Failed retrieve products.";
-
-                if (status == 401) {
-                    error = error + " You need to login first with the service account.";
-                } else if (status == 403) {
-                    error = error + " Maybe service account user doesn't have needed role? Assign role 'user' in Keycloak admin console to user '" +
-                            ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + getKeycloakDeployment().getResourceName() + "' and then logout and login again.";
-                }
-                error = error + " Status: " + status + ", Response: " + json;
+                String error = "Failed retrieve products. Status: " + status + ", Response: " + json;
                 req.setAttribute(ERROR, error);
             } else if (entity == null) {
                 req.setAttribute(ERROR, "No entity");

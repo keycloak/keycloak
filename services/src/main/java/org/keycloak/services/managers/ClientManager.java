@@ -51,6 +51,12 @@ public class ClientManager {
             if (sessions != null) {
                 sessions.onClientRemoved(realm, client);
             }
+
+            UserModel serviceAccountUser = realmManager.getSession().users().getUserByServiceAccountClient(client);
+            if (serviceAccountUser != null) {
+                realmManager.getSession().users().removeUser(realm, serviceAccountUser);
+            }
+
             return true;
         } else {
             return false;
@@ -93,18 +99,15 @@ public class ClientManager {
         client.setServiceAccountsEnabled(true);
 
         // Add dedicated user for this service account
-        RealmModel realm = client.getRealm();
-        Map<String, String> search = new HashMap<>();
-        search.put(ServiceAccountConstants.SERVICE_ACCOUNT_CLIENT_ATTRIBUTE, client.getId());
-        List<UserModel> serviceAccountUsers = realmManager.getSession().users().searchForUserByUserAttributes(search, realm);
-        if (serviceAccountUsers.size() == 0) {
+        if (realmManager.getSession().users().getUserByServiceAccountClient(client) == null) {
             String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId();
             logger.infof("Creating service account user '%s'", username);
 
-            UserModel user = realmManager.getSession().users().addUser(realm, username);
+            // Don't use federation for service account user
+            UserModel user = realmManager.getSession().userStorage().addUser(client.getRealm(), username);
             user.setEnabled(true);
             user.setEmail(username + "@placeholder.org");
-            user.setSingleAttribute(ServiceAccountConstants.SERVICE_ACCOUNT_CLIENT_ATTRIBUTE, client.getId());
+            user.setServiceAccountClientLink(client.getId());
         }
 
         // Add protocol mappers to retrieve clientId in access token

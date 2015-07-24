@@ -52,13 +52,13 @@
         <div class="form-group">
                 <label class="col-md-2 control-label" class="control-label">
                     <span>Client Roles</span>
-                    <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="client" ng-options="a.clientId for a in clients" ng-disabled="false"></select>
+                    <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="targetClient" ng-options="a.clientId for a in clients" ng-disabled="false"></select>
                 </label>
                 <div class="col-md-10" kc-read-only="!access.manageUsers">
-                    <div class="row" data-ng-hide="client">
+                    <div class="row" data-ng-hide="targetClient">
                         <div class="col-md-4"><span class="text-muted">Select client to view roles for client</span></div>
                     </div>
-                    <div class="row" data-ng-show="client">
+                    <div class="row" data-ng-show="targetClient">
                         <div class="col-md-3">
                             <label class="control-label" for="available-client">Available Roles</label>
                             <kc-tooltip>Assignable roles from this client.</kc-tooltip>
