@@ -66,11 +66,31 @@ public class LDAPDn {
     }
 
     public void addFirst(String rdnName, String rdnValue) {
+        rdnValue = escape(rdnValue);
         entries.addFirst(new Entry(rdnName, rdnValue));
     }
 
-    public void addLast(String rdnName, String rdnValue) {
+    private void addLast(String rdnName, String rdnValue) {
         entries.addLast(new Entry(rdnName, rdnValue));
+    }
+
+    // Need to escape "john,dot" to be "john\,dot"
+    private String escape(String rdnValue) {
+        if (rdnValue.contains(",")) {
+            StringBuilder result = new StringBuilder();
+            boolean first = true;
+            for (String split : rdnValue.split(",")) {
+                if (!first) {
+                    result.append("\\,");
+                } else {
+                    first = false;
+                }
+                result.append(split);
+            }
+            return result.toString();
+        } else {
+            return rdnValue;
+        }
     }
 
 

@@ -352,6 +352,24 @@ public class FederationProvidersIntegrationTest {
     }
 
     @Test
+    public void testDotInUsername() {
+        // Add LDAP user with same email like existing model user
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+                LDAPObject johnDot = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "john,dot", "John", "Dot", "johndot@email.org", null, "12387");
+                ldapFedProvider.getLdapIdentityStore().updatePassword(johnDot, "Password1");
+            }
+
+        });
+
+        // Try to import the duplicated LDAP user into Keycloak
+        loginSuccessAndLogout("john,dot", "Password1");
+    }
+
+    @Test
     public void testDirectLDAPUpdate() {
         KeycloakSession session = keycloakRule.startSession();
 
