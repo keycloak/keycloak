@@ -211,9 +211,17 @@ public class SyncProvidersTest {
             // Assert user successfully synced now
             result = new UsersSyncManager().syncAllUsers(session.getKeycloakSessionFactory(), "test", ldapModel);
             Assert.assertEquals(0, result.getFailed());
-            FederationTestUtils.assertUserImported(session.userStorage(), testRealm, "user7-something", "User7FNN", "User7LNL", "user7-changed@email.org", "126");
         } finally {
             keycloakRule.stopSession(session, true);
+        }
+
+        // Assert user imported in another transaction
+        session = keycloakRule.startSession();
+        try {
+            RealmModel testRealm = session.realms().getRealm("test");
+            FederationTestUtils.assertUserImported(session.userStorage(), testRealm, "user7-something", "User7FNN", "User7LNL", "user7-changed@email.org", "126");
+        } finally {
+            keycloakRule.stopSession(session, false);
         }
     }
 

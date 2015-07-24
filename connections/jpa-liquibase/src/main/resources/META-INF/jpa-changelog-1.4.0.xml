@@ -102,7 +102,7 @@
             <column name="NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="VALUE" type="VARCHAR(255)"/>
+            <column name="VALUE" type="VARCHAR(2048)"/>
             <column name="CLIENT_SESSION" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
