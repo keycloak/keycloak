@@ -549,7 +549,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
         "bearer-only"
     ];
 
-    $scope.protocols = Object.keys(serverInfo.providers['login-protocol'].providers);
+    $scope.protocols = Object.keys(serverInfo.providers['login-protocol'].providers).sort();
 
     $scope.signatureAlgorithms = [
         "RSA_SHA1",

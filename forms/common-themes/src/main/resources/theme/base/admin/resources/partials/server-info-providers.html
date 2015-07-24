@@ -28,7 +28,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr data-ng-repeat="spi in (providers | orderBy:'name' | filter:search)">
+        <tr data-ng-repeat="spi in (providers | filter:search)">
             <td>{{spi.name}}</td>
             <td>
                 <div data-ng-repeat="(providerName, provider) in spi.providers">

@@ -60,12 +60,27 @@ public class ServerInfoAdminResource {
     }
 
     private void setProviders(ServerInfoRepresentation info) {
-        Map<String, SpiInfoRepresentation> spis = new HashMap<>();
+        LinkedHashMap<String, SpiInfoRepresentation> spiReps = new LinkedHashMap<>();
+
+        List<Spi> spis = new LinkedList<>();
         for (Spi spi : ServiceLoader.load(Spi.class)) {
+            spis.add(spi);
+        }
+        Collections.sort(spis, new Comparator<Spi>() {
+            @Override
+            public int compare(Spi s1, Spi s2) {
+                return s1.getName().compareTo(s2.getName());
+            }
+        });
+
+        for (Spi spi : spis) {
             SpiInfoRepresentation spiRep = new SpiInfoRepresentation();
             spiRep.setInternal(spi.isInternal());
             spiRep.setSystemInfo(ServerInfoAwareProviderFactory.class.isAssignableFrom(spi.getProviderFactoryClass()));
-            Set<String> providerIds = session.listProviderIds(spi.getProviderClass());
+
+            List<String> providerIds = new LinkedList<>(session.listProviderIds(spi.getProviderClass()));
+            Collections.sort(providerIds);
+
             Map<String, ProviderRepresentation> providers = new HashMap<>();
 
             if (providerIds != null) {
@@ -79,9 +94,9 @@ public class ServerInfoAdminResource {
             }
             spiRep.setProviders(providers);
 
-            spis.put(spi.getName(), spiRep);
+            spiReps.put(spi.getName(), spiRep);
         }
-        info.setProviders(spis);
+        info.setProviders(spiReps);
     }
 
     private void setThemes(ServerInfoRepresentation info) {
