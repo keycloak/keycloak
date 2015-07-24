@@ -39,7 +39,7 @@
             </column>
         </addColumn>
         <addColumn tableName="USER_ATTRIBUTE">
-            <column name="ID" type="VARCHAR(36)">
+            <column name="ID" type="VARCHAR(36)" defaultValue="sybase-needs-something-here">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
@@ -131,6 +131,8 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate1_4_0_Final"/>
 
         <dropPrimaryKey constraintName="CONSTRAINT_6" tableName="USER_ATTRIBUTE"/>
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_USER_ATTRIBUTE_PK" tableName="USER_ATTRIBUTE"/>
