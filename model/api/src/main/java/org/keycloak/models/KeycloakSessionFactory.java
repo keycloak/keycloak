@@ -18,6 +18,8 @@ public interface KeycloakSessionFactory extends ProviderEventManager {
     <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz, String id);
 
     List<ProviderFactory> getProviderFactories(Class<? extends Provider> clazz);
+    
+    long getServerStartupTimestamp();
 
     void close();
 }
