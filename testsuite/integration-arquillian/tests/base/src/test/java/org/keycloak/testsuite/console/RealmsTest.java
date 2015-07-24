@@ -27,7 +27,7 @@ public class RealmsTest extends AbstractAdminConsoleTest<RealmsRoot> {
 
         realmsRoot.clickRealm(MASTER);
 
-        realm.setTemplateValues(MASTER);
+        realm.setAdminRealm(MASTER);
         assertCurrentUrl(realm);
 
     }

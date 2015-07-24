@@ -35,7 +35,7 @@ public abstract class AbstractBasicAuthExampleAdapterTest extends AbstractExampl
     @Override
     public void setPageUriTemplateValues() {
         super.setPageUriTemplateValues();
-        testRealm.setTemplateValues("example");
+        testRealm.setAdminRealm("example");
     }
 
     @Test
@@ -44,19 +44,19 @@ public abstract class AbstractBasicAuthExampleAdapterTest extends AbstractExampl
         Client client = ClientBuilder.newClient();
 
         Response response = client.target(basicAuthExample
-                .setTemplateValues("admin", "password", value).getUri()).request().get();
+                .setTemplateValues("admin", "password", value).buildUri()).request().get();
         assertEquals(200, response.getStatus());
         assertEquals(value, response.readEntity(String.class));
         response.close();
 
         response = client.target(basicAuthExample
-                .setTemplateValues("invalid-user", "password", value).getUri()).request().get();
+                .setTemplateValues("invalid-user", "password", value).buildUri()).request().get();
         assertEquals(401, response.getStatus());
         assertTrue(response.readEntity(String.class).contains("Unauthorized"));
         response.close();
 
         response = client.target(basicAuthExample
-                .setTemplateValues("admin", "invalid-password", value).getUri()).request().get();
+                .setTemplateValues("admin", "invalid-password", value).buildUri()).request().get();
         assertEquals(401, response.getStatus());
         assertTrue(response.readEntity(String.class).contains("Unauthorized"));
         response.close();

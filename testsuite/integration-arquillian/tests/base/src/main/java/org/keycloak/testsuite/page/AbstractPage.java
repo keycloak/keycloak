@@ -15,7 +15,7 @@ public abstract class AbstractPage {
 
     private static final long serialVersionUID = 1L;
 
-    private final Map<String, Object> templateValues = new HashMap<>();
+    private final Map<String, Object> uriParameters = new HashMap<>();
 
     @Drone
     protected WebDriver driver;
@@ -39,21 +39,21 @@ public abstract class AbstractPage {
         return builder;
     }
 
-    public AbstractPage setTemplateValue(String template, Object value) {
-        templateValues.put(template, value);
+    public AbstractPage setUriParameter(String name, Object value) {
+        uriParameters.put(name, value);
         return this;
     }
 
-    public Object getTemplateValue(String template) {
-        return templateValues.get(template);
+    public Object getUriParameter(String name) {
+        return uriParameters.get(name);
     }
 
-    public URI getUri() {
-        return getUriBuilder().buildFromMap(templateValues);
+    public URI buildUri() {
+        return getUriBuilder().buildFromMap(uriParameters);
     }
 
     public AbstractPage navigateTo() {
-        String uri = getUri().toASCIIString();
+        String uri = buildUri().toASCIIString();
         System.out.println("navigating to " + uri);
         driver.navigate().to(uri);
         return this;
@@ -65,7 +65,7 @@ public abstract class AbstractPage {
 
     @Override
     public String toString() {
-        return getUri().toASCIIString();
+        return buildUri().toASCIIString();
     }
 
 }

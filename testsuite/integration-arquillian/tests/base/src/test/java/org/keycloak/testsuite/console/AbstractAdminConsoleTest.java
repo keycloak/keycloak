@@ -48,14 +48,15 @@ public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends A
 
     @After
     public void afterConsoleTest() {
-        adminConsole.setTemplateValues(MASTER);
+        adminConsole.setAdminRealm(MASTER);
         logOut();
     }
 
     @Override
     public void setPageUriTemplateValues() {
         super.setPageUriTemplateValues();
-        testRealm.setTemplateValues(MASTER, TEST);
+        testRealm.setAdminRealm(MASTER);
+        testRealm.setConsoleRealm(TEST);
     }
 
     @Override

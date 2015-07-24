@@ -27,26 +27,25 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author Petr Mensik
  */
-public class AdminConsole extends AdminRoot {
+public class AdminConsole extends AuthServer {
 
-    public static final String CONSOLE_REALM = "consoleRealm";
+    public static final String ADMIN_REALM = "adminRealm";
 
     public AdminConsole() {
-        setTemplateValue(CONSOLE_REALM, MASTER);
-    }
-
-    public AdminConsole setTemplateValues() {
-        return setTemplateValues(MASTER);
+        setUriParameter(ADMIN_REALM, MASTER);
     }
     
-    public AdminConsole setTemplateValues(String consoleRealm) {
-        setTemplateValue(CONSOLE_REALM, consoleRealm);
+    public AdminConsole setAdminRealm(String consoleRealm) {
+        setUriParameter(ADMIN_REALM, consoleRealm);
         return this;
+    }
+    public String getAdminRealm() {
+        return getUriParameter(ADMIN_REALM).toString();
     }
 
     @Override
     public UriBuilder createUriBuilder() {
-        return super.createUriBuilder().path("{" + CONSOLE_REALM + "}/console");
+        return super.createUriBuilder().path("admin/{" + ADMIN_REALM + "}/console");
     }
 
     @FindBy(css = ".btn-danger")

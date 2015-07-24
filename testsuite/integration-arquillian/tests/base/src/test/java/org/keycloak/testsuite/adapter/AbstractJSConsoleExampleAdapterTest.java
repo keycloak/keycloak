@@ -32,7 +32,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         RealmRepresentation jsConsoleRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/js-console/example-realm.json"));
 
         fixClientUrisUsingDeploymentUrl(jsConsoleRealm,
-                JSConsoleExample.CLIENT_ID, jsConsoleExample.getUri().toASCIIString());
+                JSConsoleExample.CLIENT_ID, jsConsoleExample.buildUri().toASCIIString());
 
         jsConsoleRealm.setAccessTokenLifespan(30 + TOKEN_LIFESPAN_LEEWAY); // seconds
 
@@ -42,7 +42,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     @Override
     public void setPageUriTemplateValues() {
         super.setPageUriTemplateValues();
-        testRealm.setTemplateValues("example");
+        testRealm.setAdminRealm("example");
     }
 
     @Test

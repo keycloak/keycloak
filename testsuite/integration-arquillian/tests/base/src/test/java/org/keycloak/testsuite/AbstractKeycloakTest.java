@@ -126,7 +126,7 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void setPageUriTemplateValues() {
-        adminConsole.setTemplateValues(MASTER);
+        adminConsole.setAdminRealm(MASTER);
     }
 
     public abstract void loadTestRealmsInto(List<RealmRepresentation> testRealms);

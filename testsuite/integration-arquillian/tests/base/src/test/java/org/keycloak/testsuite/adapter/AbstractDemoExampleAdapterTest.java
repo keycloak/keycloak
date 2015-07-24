@@ -62,8 +62,8 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     @Override
     public void setPageUriTemplateValues() {
         super.setPageUriTemplateValues();
-        testRealm.setTemplateValues(DEMO);
-        testRealmUsers.setTemplateValues(DEMO);
+        testRealm.setAdminRealm(DEMO);
+        testRealmUsers.setAdminRealm(DEMO);
     }
 
     @Test

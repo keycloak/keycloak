@@ -12,30 +12,28 @@ import org.openqa.selenium.WebElement;
  */
 public class Realm extends RealmsRoot {
 
-    public static final String REALM = "realm";
+    public static final String CONSOLE_REALM = "consoleRealm";
+    
     public static final String MASTER = "master";
     public static final String DEMO = "demo";
-    public static final String TEST= "test";
+    public static final String TEST = "test";
 
     public Realm() {
-        setTemplateValue(REALM, MASTER);
+        setUriParameter(CONSOLE_REALM, MASTER);
     }
 
-    @Override
-    public RealmsRoot setTemplateValues(String realm) {
-        setTemplateValues(MASTER, realm);
+    public Realm setConsoleRealm(String realm) {
+        setUriParameter(CONSOLE_REALM, realm);
         return this;
     }
 
-    public RealmsRoot setTemplateValues(String consoleRealm, String realm) {
-        setTemplateValue(CONSOLE_REALM, consoleRealm);
-        setTemplateValue(REALM, realm);
-        return this;
+    public String getConsoleRealm() {
+        return getUriParameter(CONSOLE_REALM).toString();
     }
 
     @Override
     public String getFragment() {
-        return super.getFragment() + "/{" + REALM + "}";
+        return super.getFragment() + "/{" + CONSOLE_REALM + "}";
     }
 
     @FindByJQuery("a:contains('Users')")
@@ -46,13 +44,13 @@ public class Realm extends RealmsRoot {
     }
 
     public String getAuthRoot() {
-        URI uri = getUri();
+        URI uri = buildUri();
         return uri.getScheme() + "://" + uri.getAuthority() + "/auth";
     }
 
     public URI getOIDCLoginUrl() {
         return OIDCLoginProtocolService.authUrl(UriBuilder.fromPath(getAuthRoot()))
-                .build(getTemplateValue(REALM));
+                .build(getConsoleRealm());
     }
 
 }

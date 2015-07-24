@@ -30,7 +30,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
     @Override
     public void setPageUriTemplateValues() {
         super.setPageUriTemplateValues();
-        testRealm.setTemplateValues(DEMO);
+        testRealm.setAdminRealm(DEMO);
     }
 
 //  // no deployments via arquillian - examples already pre-installed by the maven profile    

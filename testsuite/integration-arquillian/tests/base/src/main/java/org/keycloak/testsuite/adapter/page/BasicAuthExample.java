@@ -32,9 +32,9 @@ public class BasicAuthExample extends AbstractPageWithInjectedUrl {
     }
 
     public BasicAuthExample setTemplateValues(String user, String password, String value) {
-        setTemplateValue("user", user);
-        setTemplateValue("password", password);
-        setTemplateValue("value", value);
+        setUriParameter("user", user);
+        setUriParameter("password", password);
+        setUriParameter("value", value);
         return this;
     }
 

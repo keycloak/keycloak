@@ -47,9 +47,9 @@ import org.keycloak.testsuite.adapter.page.ProductPortal;
 import org.keycloak.testsuite.adapter.page.SecurePortal;
 import org.keycloak.testsuite.adapter.page.SessionPortal;
 import org.keycloak.testsuite.console.page.AdminConsole;
-import static org.keycloak.testsuite.console.page.AdminConsole.CONSOLE_REALM;
+import static org.keycloak.testsuite.console.page.AdminConsole.ADMIN_REALM;
 import static org.keycloak.testsuite.console.page.Realm.DEMO;
-import static org.keycloak.testsuite.console.page.Realm.REALM;
+import static org.keycloak.testsuite.console.page.Realm.CONSOLE_REALM;
 import org.keycloak.testsuite.console.page.login.LoginPage;
 import org.keycloak.testsuite.util.SeleniumUtils;
 import org.keycloak.testsuite.util.ApiUtil;
@@ -147,10 +147,10 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Override
     public void setPageUriTemplateValues() {
         super.setPageUriTemplateValues();
-        testRealm.setTemplateValues(DEMO);
+        testRealm.setAdminRealm(DEMO);
         adminConsoleTestRealm
-                .setTemplateValue(CONSOLE_REALM, DEMO)
-                .setTemplateValue(REALM, DEMO);
+                .setUriParameter(ADMIN_REALM, DEMO)
+                .setUriParameter(CONSOLE_REALM, DEMO);
     }
 
     private final String slash = "";
