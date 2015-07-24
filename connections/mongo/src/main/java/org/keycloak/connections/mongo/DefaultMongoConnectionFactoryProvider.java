@@ -5,6 +5,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
+
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.mongo.api.MongoStore;
@@ -18,6 +19,8 @@ import javax.net.ssl.SSLSocketFactory;
 import java.lang.reflect.Method;
 import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -57,6 +60,8 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
     private MongoStore mongoStore;
     private DB db;
     protected Config.Scope config;
+    
+    private Map<String,String> operationalInfo;
 
     @Override
     public MongoConnectionProvider create(KeycloakSession session) {
@@ -159,7 +164,13 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
         } else {
             client = new MongoClient(new ServerAddress(host, port), clientOptions);
         }
-
+        
+        operationalInfo = new LinkedHashMap<>();
+        operationalInfo.put("mongoServerAddress", client.getAddress().toString());
+        operationalInfo.put("mongoDatabaseName", dbName);
+        operationalInfo.put("mongoUser", user);
+        operationalInfo.put("mongoDriverVersion", client.getVersion());
+    		
         logger.debugv("Initialized mongo model. host: %s, port: %d, db: %s", host, port, dbName);
         return client;
     }
@@ -206,5 +217,10 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             }
         }
     }
+    
+    @Override
+  	public Map<String,String> getOperationalInfo() {
+  		return operationalInfo;
+  	}
 
 }

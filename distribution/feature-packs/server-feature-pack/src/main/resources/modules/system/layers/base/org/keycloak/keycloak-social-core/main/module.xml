@@ -2,7 +2,7 @@
 
 
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-social-core">
+<module xmlns="urn:jboss:module:1.3" name="org.keycloak.keycloak-social-core">
     <resources>
         <artifact name="${org.keycloak:keycloak-social-core}"/>
     </resources>

@@ -7,9 +7,6 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $
     $scope.resourceUrl = resourceUrl;
     $scope.auth = Auth;
     $scope.serverInfo = ServerInfo.get();
-    $scope.serverInfoUpdate = function() {
-        $scope.serverInfo = ServerInfo.get();
-    };
 
     function hasAnyAccess() {
         var realmAccess = Auth.user && Auth.user['realm_access'];
@@ -123,6 +120,25 @@ module.controller('RealmTabCtrl', function(Dialog, $scope, Current, Realm, Notif
             });
         });
     };
+});
+
+module.controller('ServerInfoCtrl', function($scope, ServerInfo) {
+    ServerInfo.reload();
+
+    $scope.serverInfo = ServerInfo.get();
+
+    $scope.$watch($scope.serverInfo, function() {
+        $scope.providers = [];
+        for(var spi in $scope.serverInfo.providers) {
+            var p = angular.copy($scope.serverInfo.providers[spi]);
+            p.name = spi;
+            $scope.providers.push(p)
+        }
+    });
+
+    $scope.serverInfoReload = function() {
+        ServerInfo.reload();
+    }
 });
 
 module.controller('RealmListCtrl', function($scope, Realm, Current) {
@@ -1217,7 +1233,7 @@ module.controller('RealmEventsConfigCtrl', function($scope, eventsConfig, RealmE
         }
     });
 
-    $scope.eventListeners = serverInfo.eventListeners;
+    $scope.eventListeners = Object.keys(serverInfo.providers.eventsListener.providers);
 
     $scope.eventSelectOptions = {
         'multiple': true,
