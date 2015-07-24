@@ -218,6 +218,32 @@ public class AdminRoot {
         return adminResource;
     }
 
+    /**
+     * Operational information about the server for "Server Info" page
+     *
+     * @param headers
+     * @return
+     */
+    @Path("serverinfopage")
+    public ServerInfoPageAdminResource getServerInfoPage(@Context final HttpHeaders headers) {
+        handlePreflightRequest();
+
+        AdminAuth auth = authenticateRealmAdminRequest(headers);
+        if (!isAdmin(auth)) {
+            throw new ForbiddenException();
+        }
+
+        if (auth != null) {
+            logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
+        }
+
+        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
+
+        ServerInfoPageAdminResource adminResource = new ServerInfoPageAdminResource();
+        ResteasyProviderFactory.getInstance().injectProperties(adminResource);
+        return adminResource;
+    }
+
     protected boolean isAdmin(AdminAuth auth) {
 
         RealmManager realmManager = new RealmManager(session);
