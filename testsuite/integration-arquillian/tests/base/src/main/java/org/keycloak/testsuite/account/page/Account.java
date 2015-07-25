@@ -17,7 +17,6 @@
  */
 package org.keycloak.testsuite.account.page;
 
-import org.keycloak.testsuite.model.Account;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -25,7 +24,7 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author Petr Mensik
  */
-public class AccountSection extends AccountPage {
+public class Account extends AccountRoot {
 
     @FindBy(id = "username")
     private WebElement username;
@@ -39,21 +38,35 @@ public class AccountSection extends AccountPage {
     @FindBy(id = "firstName")
     private WebElement firstName;
 
-    public Account getAccount() {
-        return new Account(
-                username.getAttribute("value"),
-                email.getAttribute("value"),
-                lastName.getAttribute("value"),
-                firstName.getAttribute("value"));
+    public String getUsername() {
+        return username.getAttribute("value");
     }
 
-    public void setAccount(Account account) {
+    public String getEmail() {
+        return email.getAttribute("value");
+    }
+
+    public String getFirstName() {
+        return firstName.getAttribute("value");
+    }
+
+    public String getLastName() {
+        return lastName.getAttribute("value");
+    }
+
+    public void setEmail(String value) {
         email.clear();
-        email.sendKeys(account.getEmail());
-        lastName.clear();
-        lastName.sendKeys(account.getLastName());
+        email.sendKeys(value);
+    }
+
+    public void setFirstName(String value) {
         firstName.clear();
-        firstName.sendKeys(account.getFirstName());
+        firstName.sendKeys(value);
+    }
+
+    public void setLastName(String value) {
+        lastName.clear();
+        lastName.sendKeys(value);
     }
 
 }

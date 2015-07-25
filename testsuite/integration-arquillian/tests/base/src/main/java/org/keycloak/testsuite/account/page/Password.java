@@ -26,7 +26,7 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author Petr Mensik
  */
-public class PasswordSection {
+public class Password {
 
     @FindBy(id = "password")
     private WebElement passwordInput;

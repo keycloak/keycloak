@@ -30,9 +30,9 @@ import org.junit.Before;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
-import org.keycloak.testsuite.model.Account;
-import org.keycloak.testsuite.account.page.AccountSection;
-import org.keycloak.testsuite.account.page.AccountPage;
+import org.keycloak.testsuite.account.page.Account;
+import org.keycloak.testsuite.account.page.AccountRoot;
+import org.keycloak.testsuite.page.auth.Login;
 
 /**
  *
@@ -40,31 +40,45 @@ import org.keycloak.testsuite.account.page.AccountPage;
  */
 public class AccountManagementTest extends AbstractKeycloakTest {
 
-    @Page AccountPage account;
-    
-    @FindByJQuery(".alert")
-    private FlashMessage flashMessage;
-
-    @Page
-    private AccountSection accountPage;
-
     private static final String USERNAME = "admin";
     private static final String NEW_PASSWORD = "newpassword";
     private static final String WRONG_PASSWORD = "wrongpassword";
 
+    private static final String EMAIL = "admin@email.test";
+    private static final String FIRST_NAME = "John";
+    private static final String LAST_NAME = "Smith";
+    
+    @Page
+    protected Login login;
+
+    @Page
+    protected AccountRoot accountRoot;
+
+    @Page
+    protected Account account;
+
+    @FindByJQuery(".alert")
+    private FlashMessage flashMessage;
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        // TODO so far testing with master
+    }
+    
     @Before
     public void beforeAccountTest() {
-        menuPage.goToAccountManagement();
+        accountRoot.navigateTo();
+        login.loginAsAdmin();
     }
 
     @After
     public void afterAccountTest() {
-        accountPage.keycloakConsole();
+        accountRoot.signOut();
     }
 
     @Test
     public void passwordPageValidationTest() {
-        account.password();
+        accountRoot.password();
         passwordPage.save();
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isError());
@@ -84,14 +98,14 @@ public class AccountManagementTest extends AbstractKeycloakTest {
 
     @Test
     public void changePasswordTest() {
-        account.password();
+        accountRoot.password();
         passwordPage.setPassword(ADMIN_PSSWD, NEW_PASSWORD);
         passwordPage.save();
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        account.signOut();
+        accountRoot.signOut();
         loginPage.login(USERNAME, NEW_PASSWORD);
-        account.password();
+        accountRoot.password();
         passwordPage.setPassword(NEW_PASSWORD, ADMIN_PSSWD);
         passwordPage.save();
         flashMessage.waitUntilPresent();
@@ -99,27 +113,23 @@ public class AccountManagementTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void accountPageTest() {
-        account.account();
-        Account adminAccount = accountPage.getAccount();
-        assertEquals(adminAccount.getUsername(), USERNAME);
-        adminAccount.setEmail("a@b");
-        adminAccount.setFirstName("John");
-        adminAccount.setLastName("Smith");
-        accountPage.setAccount(adminAccount);
-        accountPage.save();
+    public void testEditAccount() {
+        accountRoot.account();
+        assertEquals(account.getUsername(), USERNAME);
+        account.setEmail(EMAIL);
+        account.setFirstName(FIRST_NAME);
+        account.setLastName(LAST_NAME);
+        account.save();
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
-        account.signOut();
+        accountRoot.signOut();
         loginPage.login(USERNAME, ADMIN_PSSWD);
 
-        account.account();
-        assertEquals(adminAccount, accountPage.getAccount());
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        accountRoot.account();
+        assertEquals(account.getEmail(), EMAIL);
+        assertEquals(account.getFirstName(), FIRST_NAME);
+        assertEquals(account.getLastName(), LAST_NAME);
     }
 
 }

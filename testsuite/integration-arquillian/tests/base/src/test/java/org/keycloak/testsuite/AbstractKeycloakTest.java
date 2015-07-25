@@ -25,7 +25,7 @@ import static org.keycloak.testsuite.util.PageAssert.*;
 import org.keycloak.testsuite.console.page.fragment.MenuPage;
 import org.keycloak.testsuite.console.page.fragment.Navigation;
 import org.keycloak.testsuite.page.auth.Login;
-import org.keycloak.testsuite.account.page.PasswordSection;
+import org.keycloak.testsuite.account.page.Password;
 import static org.keycloak.testsuite.util.Constants.ADMIN_PSSWD;
 
 /**
@@ -54,7 +54,7 @@ public abstract class AbstractKeycloakTest {
     @Page
     protected Login loginPage;
     @Page
-    protected PasswordSection passwordPage;
+    protected Password passwordPage;
     @Page
     protected MenuPage menuPage;
     @Page

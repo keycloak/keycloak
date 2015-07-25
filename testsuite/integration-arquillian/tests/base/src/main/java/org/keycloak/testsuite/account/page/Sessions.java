@@ -27,7 +27,7 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author <a href="mailto:pmensik@redhat.com">Petr Mensik</a>
  */
-public class SessionsSection extends AccountPage {
+public class Sessions extends AccountRoot {
 
     @FindBy(id = "logout-all-sessions")
     private WebElement logoutAllLink;

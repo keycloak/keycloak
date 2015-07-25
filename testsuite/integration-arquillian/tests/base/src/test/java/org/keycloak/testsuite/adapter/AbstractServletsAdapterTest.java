@@ -28,7 +28,7 @@ import org.keycloak.testsuite.adapter.servlet.ErrorServlet;
 import org.keycloak.testsuite.adapter.servlet.InputServlet;
 import org.keycloak.testsuite.adapter.servlet.ProductServlet;
 import org.keycloak.testsuite.adapter.servlet.SessionServlet;
-import org.keycloak.testsuite.account.page.SessionsSection;
+import org.keycloak.testsuite.account.page.Sessions;
 import static org.junit.Assert.*;
 import org.keycloak.Version;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -75,7 +75,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     private InputPortal inputPortal;
 
     @Page
-    private SessionsSection accountSessionsPage;
+    private Sessions accountSessionsPage;
 
     protected static WebArchive servletDeployment(String name, Class... servletClasses) {
         return servletDeployment(name, "keycloak.json", servletClasses);
