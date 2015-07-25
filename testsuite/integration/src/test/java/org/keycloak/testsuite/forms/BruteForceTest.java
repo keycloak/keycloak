@@ -241,6 +241,47 @@ public class BruteForceTest {
             events.clear();
         }
 
+    }   @Test
+        public void testGrantMissingOtp() throws Exception {
+        {
+            String totpSecret = totp.generate("totpSecret");
+            OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
+            Assert.assertNotNull(response.getAccessToken());
+            Assert.assertNull(response.getError());
+            events.clear();
+        }
+        {
+            OAuthClient.AccessTokenResponse response = getTestToken("password", null);
+            Assert.assertNull(response.getAccessToken());
+            Assert.assertEquals(response.getError(), "invalid_grant");
+            Assert.assertEquals(response.getErrorDescription(), "Invalid user credentials");
+            events.clear();
+        }
+        {
+            OAuthClient.AccessTokenResponse response = getTestToken("password", null);
+            Assert.assertNull(response.getAccessToken());
+            Assert.assertEquals(response.getError(), "invalid_grant");
+            Assert.assertEquals(response.getErrorDescription(), "Invalid user credentials");
+            events.clear();
+        }
+        {
+            String totpSecret = totp.generate("totpSecret");
+            OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
+            Assert.assertNull(response.getAccessToken());
+            Assert.assertNotNull(response.getError());
+            Assert.assertEquals(response.getError(), "invalid_grant");
+            Assert.assertEquals(response.getErrorDescription(), "Account temporarily disabled");
+            events.clear();
+        }
+        clearUserFailures();
+        {
+            String totpSecret = totp.generate("totpSecret");
+            OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
+            Assert.assertNotNull(response.getAccessToken());
+            Assert.assertNull(response.getError());
+            events.clear();
+        }
+
     }
 
 

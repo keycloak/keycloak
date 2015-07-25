@@ -31,6 +31,7 @@ import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
@@ -407,6 +408,7 @@ public class AuthenticationManager {
         protocol.setRealm(realm)
                 .setHttpHeaders(request.getHttpHeaders())
                 .setUriInfo(uriInfo);
+        RestartLoginCookie.expireRestartCookie(realm, clientConnection, uriInfo);
         return protocol.authenticated(userSession, new ClientSessionCode(realm, clientSession));
 
     }

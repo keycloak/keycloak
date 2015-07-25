@@ -96,6 +96,7 @@ public class RSAVerifierTest {
         String encoded = new JWSBuilder()
                 .jsonContent(token)
                 .rsa256(idpPair.getPrivate());
+        System.out.print("encoded size: " + encoded.length());
         AccessToken token = verifySkeletonKeyToken(encoded);
         Assert.assertTrue(token.getResourceAccess("service").getRoles().contains("admin"));
         Assert.assertEquals("CN=Client", token.getSubject());

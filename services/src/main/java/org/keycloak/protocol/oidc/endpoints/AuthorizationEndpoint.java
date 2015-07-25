@@ -19,6 +19,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPageException;
@@ -261,6 +262,7 @@ public class AuthorizationEndpoint {
         }
         clientSession.setNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
 
+
         AuthenticationFlowModel flow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
         String flowId = flow.getId();
         AuthenticationProcessor processor = new AuthenticationProcessor();
@@ -295,6 +297,7 @@ public class AuthorizationEndpoint {
         if (challenge == null) {
             return processor.finishAuthentication();
         } else {
+            RestartLoginCookie.setRestartCookie(realm, clientConnection, uriInfo, clientSession);
             return challenge;
         }
     }

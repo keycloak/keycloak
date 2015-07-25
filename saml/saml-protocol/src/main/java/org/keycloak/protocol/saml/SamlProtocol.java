@@ -22,6 +22,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.saml.mappers.SAMLAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.SAMLLoginResponseMapper;
 import org.keycloak.protocol.saml.mappers.SAMLRoleListMapper;
@@ -141,6 +142,7 @@ public class SamlProtocol implements LoginProtocol {
 
     @Override
     public Response cancelLogin(ClientSessionModel clientSession) {
+        RestartLoginCookie.expireRestartCookie(realm, session.getContext().getConnection(), uriInfo);
         if ("true".equals(clientSession.getClient().getAttribute(SAML_IDP_INITIATED_LOGIN))) {
             UriBuilder builder = RealmsResource.protocolUrl(uriInfo).path(SamlService.class, "idpInitiatedSSO");
             Map<String, String> params = new HashMap<>();
@@ -443,6 +445,7 @@ public class SamlProtocol implements LoginProtocol {
 
     @Override
     public Response consentDenied(ClientSessionModel clientSession) {
+        RestartLoginCookie.expireRestartCookie(realm, session.getContext().getConnection(), uriInfo);
         if ("true".equals(clientSession.getClient().getAttribute(SAML_IDP_INITIATED_LOGIN))) {
             session.sessions().removeClientSession(realm, clientSession);
             return ErrorPage.error(session, Messages.CONSENT_DENIED);

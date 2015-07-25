@@ -20,10 +20,6 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
     protected static Logger logger = Logger.getLogger(UpdateProfile.class);
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
-        if (context.getRealm().isVerifyEmail() && !context.getUser().isEmailVerified()) {
-            context.getUser().addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
-            logger.debug("User is required to verify email");
-        }
     }
 
     @Override
