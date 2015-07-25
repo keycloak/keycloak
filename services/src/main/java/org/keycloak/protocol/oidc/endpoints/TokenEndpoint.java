@@ -321,6 +321,7 @@ public class TokenEndpoint {
         event.detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, "token");
 
         if (client.isConsentRequired()) {
+            event.error(Errors.CONSENT_DENIED);
             throw new ErrorResponseException("invalid_client", "Client requires user consent", Response.Status.BAD_REQUEST);
         }
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
@@ -347,6 +348,7 @@ public class TokenEndpoint {
         processor.evaluateRequiredActionTriggers();
         UserModel user = clientSession.getAuthenticatedUser();
         if (user.getRequiredActions() != null && user.getRequiredActions().size() > 0) {
+            event.error(Errors.RESOLVE_REQUIRED_ACTIONS);
             throw new ErrorResponseException("invalid_grant", "Account is not fully set up", Response.Status.BAD_REQUEST);
 
         }
