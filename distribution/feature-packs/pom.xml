@@ -14,7 +14,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <!--<module>adapter-feature-pack</module>-->
+        <module>adapter-feature-pack</module>
         <module>server-feature-pack</module>
     </modules>
 </project>

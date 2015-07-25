@@ -56,9 +56,24 @@ public class ModelVersion {
     }
 
     public boolean lessThan(ModelVersion version) {
-        if (major < version.major) return true;
-        if (minor < version.minor) return true;
-        if (micro < version.micro) return true;
+        if (major < version.major) {
+            return true;
+        } else if (major > version.major) {
+            return false;
+        }
+
+        if (minor < version.minor) {
+            return true;
+        } else if (minor > version.minor) {
+            return false;
+        }
+
+        if (micro < version.micro) {
+            return true;
+        } else if (minor > version.minor) {
+            return false;
+        }
+
         if (qualifier != null && qualifier.equals(version.qualifier)) return false;
         if (qualifier == null) return false;
         if (version.qualifier == null) return true;

@@ -163,7 +163,7 @@ public abstract class AbstractFormAuthenticator implements Authenticator {
     public boolean validatePassword(AuthenticatorContext context, MultivaluedMap<String, String> inputData) {
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
-        if (password == null) {
+        if (password == null || password.isEmpty()) {
             if (context.getUser() != null) {
                 context.getEvent().user(context.getUser());
             }

@@ -2,7 +2,7 @@
 
 
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-wildfly-adapter">
+<module xmlns="urn:jboss:module:1.3" name="org.keycloak.keycloak-wildfly-adapter">
     <resources>
         <artifact name="${org.keycloak:keycloak-wildfly-adapter}"/>
     </resources>
@@ -12,7 +12,7 @@
         <module name="org.codehaus.jackson.jackson-core-asl"/>
         <module name="org.codehaus.jackson.jackson-mapper-asl"/>
         <module name="org.codehaus.jackson.jackson-xc"/>
-        <module name="org.apache.httpcomponents" />
+        <module name="org.apache.httpcomponents"/>
         <module name="javax.servlet.api"/>
         <module name="org.jboss.logging"/>
         <module name="io.undertow.core"/>
@@ -21,7 +21,6 @@
         <module name="org.keycloak.keycloak-undertow-adapter"/>
         <module name="org.keycloak.keycloak-adapter-core"/>
         <module name="org.keycloak.keycloak-core"/>
-        <module name="org.jboss.xnio"/>
     </dependencies>
 
 </module>

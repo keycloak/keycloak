@@ -43,21 +43,13 @@ is in your `/etc/hosts` before other records for the 127.0.0.1 host to avoid iss
 for credential delegation example, as application needs to forward Kerberos ticket and authenticate with it against LDAP server. 
 See [this file](https://github.com/keycloak/keycloak/blob/master/testsuite/integration/src/test/resources/kerberos/test-krb5.conf) for inspiration.
 
-**6)**  Run ApacheDS based Kerberos server . The [LDAP Example](../ldap) contains the embedded server, which you can run for example 
-with these commands (assuming you're in `kerberos` directory with this example)
+**6)**  Run ApacheDS based LDAP server. You can run the command like this (assuming you're in the "kerberos" directory with this example): 
 
 ```
-cd ../ldap
-mvn clean install
-cd ..
-java -jar ldap/embedded-ldap/target/embedded-ldap.jar kerberos
+mvn exec:java -Pkerberos
 ```
 
-This will also automatically import the LDIF from `users.ldif` of kerberos example into the LDAP server. If you want to import your own LDIF file, 
-you can add the system property `ldap.ldif` with the path of the LDIF file to the command. For example:
-```
-java -jar -Dldap.ldif=/tmp/my-users.ldif ldap/embedded-ldap/target/embedded-ldap.jar kerberos
-```  
+This will also automatically import the LDIF from `kerberos-example-users.ldif` of kerberos example into the LDAP server. Replace with your own LDIF file if you want different users.
 
 A bit more details about embedded Kerberos server in [testsuite README](https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#kerberos-server).
 

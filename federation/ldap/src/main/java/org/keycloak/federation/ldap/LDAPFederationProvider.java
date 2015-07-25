@@ -301,6 +301,12 @@ public class LDAPFederationProvider implements UserFederationProvider {
             return null;
         }
 
+        // Check here if user already exists
+        String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
+        if (session.userStorage().getUserByUsername(ldapUsername, realm) != null) {
+            throw new ModelDuplicateException("User with username '" + ldapUsername + "' already exists in Keycloak. It conflicts with LDAP user with email '" + email + "'");
+        }
+
         return importUserFromLDAP(session, realm, ldapUser);
     }
 
