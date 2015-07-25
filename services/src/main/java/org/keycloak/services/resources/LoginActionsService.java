@@ -164,7 +164,7 @@ public class LoginActionsService {
                 event.clone().error(Errors.EXPIRED_CODE);
                 if (clientCode.getClientSession().getAction().equals(ClientSessionModel.Action.AUTHENTICATE.name())) {
                     AuthenticationProcessor.resetFlow(clientCode.getClientSession());
-                    response = processAuthentication(null, clientCode.getClientSession());
+                    response = processAuthentication(null, clientCode.getClientSession(), Messages.LOGIN_TIMEOUT);
                     return false;
                 }
                 response = ErrorPage.error(session, Messages.EXPIRED_CODE);
@@ -187,7 +187,7 @@ public class LoginActionsService {
                 event.clone().error(Errors.EXPIRED_CODE);
                 if (clientCode.getClientSession().getAction().equals(ClientSessionModel.Action.AUTHENTICATE.name())) {
                     AuthenticationProcessor.resetFlow(clientCode.getClientSession());
-                    response = processAuthentication(null, clientCode.getClientSession());
+                    response = processAuthentication(null, clientCode.getClientSession(), Messages.LOGIN_TIMEOUT);
                 } else {
                     if (clientCode.getClientSession().getUserSession() == null) {
                         session.sessions().removeClientSession(realm, clientCode.getClientSession());
@@ -219,7 +219,7 @@ public class LoginActionsService {
                         ClientSessionModel clientSession = RestartLoginCookie.restartSession(session, realm, code);
                         if (clientSession != null) {
                             event.clone().detail(Details.RESTART_AFTER_TIMEOUT, "true").error(Errors.EXPIRED_CODE);
-                            response = processFlow(null, clientSession, flow);
+                            response = processFlow(null, clientSession, flow, Messages.LOGIN_TIMEOUT);
                             return false;
                         }
                     } catch (Exception e) {
@@ -279,15 +279,15 @@ public class LoginActionsService {
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
         }
 
-        return processAuthentication(execution, clientSession);
+        return processAuthentication(execution, clientSession, null);
     }
 
-    protected Response processAuthentication(String execution, ClientSessionModel clientSession) {
+    protected Response processAuthentication(String execution, ClientSessionModel clientSession, String errorMessage) {
         String flowAlias = DefaultAuthenticationFlows.BROWSER_FLOW;
-        return processFlow(execution, clientSession, flowAlias);
+        return processFlow(execution, clientSession, flowAlias, errorMessage);
     }
 
-    protected Response processFlow(String execution, ClientSessionModel clientSession, String flowAlias) {
+    protected Response processFlow(String execution, ClientSessionModel clientSession, String flowAlias, String errorMessage) {
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setClientSession(clientSession)
@@ -295,6 +295,7 @@ public class LoginActionsService {
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
                 .setProtector(authManager.getProtector())
+                .setForwardedErrorMessage(errorMessage)
                 .setRealm(realm)
                 .setSession(session)
                 .setUriInfo(uriInfo)
@@ -329,12 +330,12 @@ public class LoginActionsService {
         final ClientSessionCode clientCode = checks.clientCode;
         final ClientSessionModel clientSession = clientCode.getClientSession();
 
-        return processAuthentication(execution, clientSession);
+        return processAuthentication(execution, clientSession, null);
     }
 
-    protected Response processRegistration(String execution, ClientSessionModel clientSession) {
+    protected Response processRegistration(String execution, ClientSessionModel clientSession, String errorMessage) {
         String flowAlias = DefaultAuthenticationFlows.REGISTRATION_FLOW;
-        return processFlow(execution, clientSession, flowAlias);
+        return processFlow(execution, clientSession, flowAlias, errorMessage);
     }
 
 
@@ -365,7 +366,7 @@ public class LoginActionsService {
 
         authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
-        return processRegistration(execution, clientSession);
+        return processRegistration(execution, clientSession, null);
     }
 
 
@@ -392,7 +393,7 @@ public class LoginActionsService {
         ClientSessionCode clientCode = checks.clientCode;
         ClientSessionModel clientSession = clientCode.getClientSession();
 
-        return processRegistration(execution, clientSession);
+        return processRegistration(execution, clientSession, null);
     }
 
     /**
