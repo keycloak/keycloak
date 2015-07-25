@@ -146,5 +146,11 @@
             <column name="CREATED_TIMESTAMP" type="BIGINT"/>
             <column name="SERVICE_ACCOUNT_CLIENT_LINK" type="VARCHAR(36)"/>
         </addColumn>
+
+        <!-- Sybase specific hacks -->
+        <modifySql dbms="sybase">
+            <replace replace="[USER_ATTRIBUTE] DROP PRIMARY KEY" with="[USER_ATTRIBUTE] DROP CONSTRAINT CONSTRAINT_6" />
+        </modifySql>
+
     </changeSet>
 </databaseChangeLog>
