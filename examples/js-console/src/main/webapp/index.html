@@ -10,6 +10,7 @@
     <button onclick="refreshToken(9999)">Refresh Token</button>
     <button onclick="refreshToken(30)">Refresh Token (if <30s validity)</button>
     <button onclick="loadProfile()">Get Profile</button>
+    <button onclick="loadUserInfo()">Get User Info</button>
     <button onclick="output(keycloak.tokenParsed)">Show Token</button>
     <button onclick="output(keycloak.refreshTokenParsed)">Show Refresh Token</button>
     <button onclick="output(keycloak.idTokenParsed)">Show ID Token</button>
@@ -32,6 +33,14 @@
             output(profile);
         }).error(function() {
             output('Failed to load profile');
+        });
+    }
+
+    function loadUserInfo() {
+        keycloak.loadUserInfo().success(function(userInfo) {
+            output(userInfo);
+        }).error(function() {
+            output('Failed to load user info');
         });
     }
 
