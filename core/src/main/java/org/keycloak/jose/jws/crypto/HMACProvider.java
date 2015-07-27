@@ -63,7 +63,7 @@ public class HMACProvider implements SignatureProvider {
 
     public static boolean verify(JWSInput input, SecretKey key) {
         try {
-            byte[] signature = sign(input.getContent(), input.getHeader().getAlgorithm(), key);
+            byte[] signature = sign(input.getEncodedSignatureInput().getBytes("UTF-8"), input.getHeader().getAlgorithm(), key);
             String x = Base64Url.encode(signature);
             return x.equals(input.getEncodedSignature());
         } catch (Exception e) {

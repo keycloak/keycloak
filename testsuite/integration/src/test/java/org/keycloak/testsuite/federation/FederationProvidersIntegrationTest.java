@@ -520,6 +520,8 @@ public class FederationProvidersIntegrationTest {
                 LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
                 FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "marykeycloak", "Mary1", "Kelly1", "mary1@email.org", null, "123");
                 FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "mary-duplicatemail", "Mary2", "Kelly2", "mary@test.com", null, "123");
+                LDAPObject marynoemail = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "marynoemail", "Mary1", "Kelly1", null, null, "123");
+                ldapFedProvider.getLdapIdentityStore().updatePassword(marynoemail, "Password1");
             }
 
         });
@@ -531,6 +533,8 @@ public class FederationProvidersIntegrationTest {
 
         loginPage.login("mary1@email.org", "password");
         Assert.assertEquals("Username already exists.", loginPage.getError());
+
+        loginSuccessAndLogout("marynoemail", "Password1");
     }
 
     @Test

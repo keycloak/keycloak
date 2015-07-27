@@ -26,6 +26,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -513,6 +514,7 @@ public class SamlService {
                 .setRequest(request);
 
         try {
+            RestartLoginCookie.setRestartCookie(realm, clientConnection, uriInfo, clientSession);
             return processor.authenticate();
         } catch (Exception e) {
             return processor.handleBrowserException(e);

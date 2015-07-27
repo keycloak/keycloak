@@ -4,11 +4,13 @@ import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -26,12 +28,24 @@ public class MigrateTo1_4_0 {
                 DefaultRequiredActions.addActions(realm);
             }
             ImpersonationConstants.setupImpersonationService(session, realm);
+
+            migrateLDAPMappers(session, realm);
             migrateUsers(session, realm);
         }
 
     }
 
-    public void migrateUsers(KeycloakSession session, RealmModel realm) {
+    private void migrateLDAPMappers(KeycloakSession session, RealmModel realm) {
+        List<String> mandatoryInLdap = Arrays.asList("username", "username-cn", "first name", "last name");
+        for (UserFederationMapperModel ldapMapper : realm.getUserFederationMappers()) {
+            if (mandatoryInLdap.contains(ldapMapper.getName())) {
+                ldapMapper.getConfig().put("is.mandatory.in.ldap", "true");
+                realm.updateUserFederationMapper(ldapMapper);
+            }
+        }
+    }
+
+    private void migrateUsers(KeycloakSession session, RealmModel realm) {
         List<UserModel> users = session.userStorage().getUsers(realm, false);
         for (UserModel user : users) {
             String email = user.getEmail();

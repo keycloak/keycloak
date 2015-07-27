@@ -9,7 +9,7 @@
             <th colspan="6" class="kc-table-actions">
                 <div class="dropdown pull-left">
                     <select class="form-control" ng-model="flow"
-                            ng-options="flow.alias for flow in flows"
+                            ng-options="(flow.alias|capitalize) for flow in flows"
                             data-ng-change="setupForm()">
                     </select>
                 </div>
@@ -24,7 +24,7 @@
         <tbody>
         <tr ng-repeat="execution in executions" data-ng-show="executions.length > 0">
             <td ng-show="execution.subFlow"></td>
-            <td><h2>{{execution.referenceType}}</h2></td>
+            <td>{{execution.referenceType|capitalize}}</td>
             <td ng-hide="execution.subFlow"></td>
             <td ng-repeat="choice in execution.requirementChoices">
                 <!--

@@ -59,6 +59,11 @@
             <destName>standalone-keycloak.xml</destName>
         </file>
         <file>
+            <source>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/standalone-ha.xml</source>
+            <outputDirectory>standalone/configuration</outputDirectory>
+            <destName>standalone-keycloak-ha.xml</destName>
+        </file>
+        <file>
             <source>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/keycloak-server.json</source>
             <outputDirectory>standalone/configuration</outputDirectory>
         </file>

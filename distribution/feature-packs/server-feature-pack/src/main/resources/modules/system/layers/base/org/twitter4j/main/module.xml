@@ -2,7 +2,7 @@
 
 
 
-<module xmlns="urn:jboss:module:1.1" name="org.twitter4j">
+<module xmlns="urn:jboss:module:1.3" name="org.twitter4j">
     <resources>
         <artifact name="${org.twitter4j:twitter4j-core}"/>
     </resources>

@@ -172,6 +172,7 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
 
     @Override
     public UserModel getUserByEmail(String email, RealmModel realm) {
+        if (email == null) return null;
         
         email = email.toLowerCase();
         

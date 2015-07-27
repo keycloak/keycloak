@@ -2,15 +2,6 @@ html,body {
     height: 100%;
 }
 
-/**
-.navbar-pf .navbar-brand {
-    background: url('../img/brand.svg') no-repeat 0px 5px;
-    display: block;
-    height: 25px;
-    width: 200px;
-}
-**/
-
 form {
     margin-top: 20px;
 }
@@ -269,15 +260,15 @@ table {
   border-top: none!important;
 }
 
-.navbar-brand{
-  padding: 0!important;
-  height: 56px!important;
+.navbar-pf .navbar-brand {
+  padding: 0;
+  height: 56px;
   line-height: 56px;
-  background-position: center center!important;
-  background-image: url('../img/keyclok-logo.svg')!important;
-  background-size: 148px 36px !important;
-background-repeat: no-repeat;
-  width: 148px!important;
+  background-position: center center;
+  background-image: url('../img/keyclok-logo.svg');
+  background-size: 148px 36px;
+  background-repeat: no-repeat;
+  width: 148px;
 }
 
 .navbar-pf .navbar-utility > li > a{

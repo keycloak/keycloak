@@ -278,12 +278,22 @@ public class ClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public void setExecutionStatus(String authenticator, ExecutionStatus status) {
-        ClientSessionAuthStatusEntity authStatus = new ClientSessionAuthStatusEntity();
-        authStatus.setAuthenticator(authenticator);
-        authStatus.setClientSession(entity);
-        authStatus.setStatus(status);
-        em.persist(authStatus);
-        entity.getAuthanticatorStatus().add(authStatus);
+        boolean exists = false;
+        for (ClientSessionAuthStatusEntity authStatus : entity.getAuthanticatorStatus()) {
+            if (authStatus.getAuthenticator().equals(authenticator)) {
+                authStatus.setStatus(status);
+                exists = true;
+            }
+        }
+
+        if (!exists) {
+            ClientSessionAuthStatusEntity authStatus = new ClientSessionAuthStatusEntity();
+            authStatus.setAuthenticator(authenticator);
+            authStatus.setClientSession(entity);
+            authStatus.setStatus(status);
+            em.persist(authStatus);
+            entity.getAuthanticatorStatus().add(authStatus);
+        }
         em.flush();
 
 
