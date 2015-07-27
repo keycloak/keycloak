@@ -8,11 +8,11 @@
 
     <servlet>
         <servlet-name>Servlet</servlet-name>
-        <servlet-class>org.keycloak.testsuite.servlet.adapter.CustomerDatabaseServlet</servlet-class>
+        <servlet-class>org.keycloak.testsuite.adapter.servlet.CustomerDatabaseServlet</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>Error Servlet</servlet-name>
-        <servlet-class>org.keycloak.testsuite.servlet.adapter.ErrorServlet</servlet-class>
+        <servlet-class>org.keycloak.testsuite.adapter.servlet.ErrorServlet</servlet-class>
     </servlet>
 
     <servlet-mapping>

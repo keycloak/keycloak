@@ -52,6 +52,7 @@ import org.keycloak.testsuite.util.SeleniumUtils;
 import org.keycloak.testsuite.util.ApiUtil;
 import static org.keycloak.testsuite.util.RealmAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import org.keycloak.testsuite.util.SecondBrowser;
+import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.Time;
 import org.openqa.selenium.By;
@@ -305,7 +306,6 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
         // FIXME
         // KEYCLOAK-1478 - no REST API alternative for removeExpiredUserSessions()
-        
         // test SSO
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
@@ -438,9 +438,12 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
+        pause(1000);
+        
         // test logout
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
                 .queryParam(OAuth2Constants.REDIRECT_URI, securePortal).build("demo").toString();
+        System.out.println("navigating to logoutUri: " + logoutUri);
         driver.navigate().to(logoutUri);
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         securePortal.navigateTo();
@@ -449,8 +452,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
     @Drone
     @SecondBrowser
-    protected WebDriver driver2;    
-    
+    protected WebDriver driver2;
+
     @Jira("KEYCLOAK-732")
     @Test
     public void testSingleSessionInvalidated() {

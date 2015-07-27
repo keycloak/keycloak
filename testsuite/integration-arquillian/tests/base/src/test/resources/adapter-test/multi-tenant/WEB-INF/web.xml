@@ -8,12 +8,12 @@
 
     <servlet>
         <servlet-name>MultiTenantServlet</servlet-name>
-        <servlet-class>org.keycloak.testsuite.servlet.adapter.MultiTenantServlet</servlet-class>
+        <servlet-class>org.keycloak.testsuite.adapter.servlet.MultiTenantServlet</servlet-class>
     </servlet>
     
     <context-param>
         <param-name>keycloak.config.resolver</param-name>
-        <param-value>org.keycloak.testsuite.servlet.adapter.MultiTenantResolver</param-value>
+        <param-value>org.keycloak.testsuite.adapter.servlet.MultiTenantResolver</param-value>
     </context-param>
     
     <servlet-mapping>
