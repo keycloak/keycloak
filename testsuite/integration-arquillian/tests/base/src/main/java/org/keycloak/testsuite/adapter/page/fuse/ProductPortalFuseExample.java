@@ -17,18 +17,34 @@ public class ProductPortalFuseExample extends AbstractFuseExample {
         return DEPLOYMENT_CONTEXT;
     }
 
-    @FindBy(xpath = "//p[contains(text(),'Product with ID 1 - unsecured request')]")
-    public WebElement product1Unsecured;
-    @FindBy(xpath = "//p[contains(text(),'Product with ID 1 - secured request')]")
-    public WebElement product1Secured;
-    @FindBy(xpath = "//p[contains(text(),'Product with ID 2 - secured request')]")
-    public WebElement product2Secured;
-
     @FindBy(linkText = "products")
-    public WebElement productsLink;
+    protected WebElement productsLink;
     @FindBy(linkText = "logout")
-    public WebElement logOutLink;
+    protected WebElement logOutLink;
     @FindBy(linkText = "manage acct")
-    public WebElement accountManagementLink;
+    protected WebElement accountManagementLink;
+
+    @FindBy(xpath = "//p[contains(text(),'Product with ID 1 - unsecured request')]")
+    protected WebElement product1Unsecured;
+    @FindBy(xpath = "//p[contains(text(),'Product with ID 1 - secured request')]")
+    protected WebElement product1Secured;
+    @FindBy(xpath = "//p[contains(text(),'Product with ID 2 - secured request')]")
+    protected WebElement product2Secured;
+
+    public String getProduct1UnsecuredText() {
+        return product1Unsecured.getText();
+    }
+
+    public String getProduct1SecuredText() {
+        return product1Secured.getText();
+    }
+
+    public String getProduct2SecuredText() {
+        return product2Secured.getText();
+    }
+
+    public void clickLogOutLink() {
+        logOutLink.click();
+    }
 
 }

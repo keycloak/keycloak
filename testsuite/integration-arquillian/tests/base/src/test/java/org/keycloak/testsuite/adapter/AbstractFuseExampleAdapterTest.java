@@ -48,20 +48,12 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testRealm.setConsoleRealm(DEMO);
-        
+
         account.setAccountRealm(DEMO);
     }
 
-//  // no deployments via arquillian - examples already pre-installed by the maven profile    
-//    @Deployment(name = CustomerPortalFuseExample.DEPLOYMENT_NAME)
-//    public static WebArchive customerPortalFuseExample() throws IOException {
-//        return exampleDeployment(CustomerPortalFuseExample.DEPLOYMENT_NAME);
-//    }
-//
-//    @Deployment(name = ProductPortalFuseExample.DEPLOYMENT_NAME, testable = false)
-//    public static JavaArchive productPortalFuseExample() {
-//        return exampleJarDeployment(ProductPortalFuseExample.DEPLOYMENT_NAME);
-//    }
+    // no Arquillian deployments - examples already installed by maven
+
     @Test
     public void testCustomerListingAndAccountManagement() {
         customerPortal.navigateTo();
@@ -127,11 +119,11 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         login.login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(productPortal);
 
-        assertTrue(productPortal.product1Unsecured.getText().contains("401: Unauthorized"));
-        assertTrue(productPortal.product1Secured.getText().contains("Product received: id=1"));
-        assertTrue(productPortal.product2Secured.getText().contains("Product received: id=2"));
+        assertTrue(productPortal.getProduct1UnsecuredText().contains("401: Unauthorized"));
+        assertTrue(productPortal.getProduct1SecuredText().contains("Product received: id=1"));
+        assertTrue(productPortal.getProduct2SecuredText().contains("Product received: id=2"));
 
-        productPortal.logOutLink.click();
+        productPortal.clickLogOutLink();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
     }
 
