@@ -13,6 +13,7 @@
 
     <properties>
         <exclude.console>-</exclude.console>
+        <exclude.account>-</exclude.account>
     </properties>
 
     <build>
@@ -35,6 +36,7 @@
                 <configuration>
                     <excludes>
                         <exclude>${exclude.console}</exclude>
+                        <exclude>${exclude.account}</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -47,6 +49,20 @@
             <properties>
                 <!-- Exclude all admin console tests. -->
                 <exclude.console>**/console/**/*Test.java</exclude.console>           
+            </properties>
+        </profile>
+        <profile>
+            <id>no-account</id>
+            <properties>
+                <!-- Exclude all account management tests. -->
+                <exclude.account>**/account/**/*Test.java</exclude.account>
+            </properties>
+        </profile>
+        <profile>
+            <id>adapters-only</id>
+            <properties>
+                <exclude.console>**/console/**/*Test.java</exclude.console>           
+                <exclude.account>**/account/**/*Test.java</exclude.account>
             </properties>
         </profile>
     </profiles>

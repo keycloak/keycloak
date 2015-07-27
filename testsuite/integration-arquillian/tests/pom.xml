@@ -91,6 +91,7 @@
                                 <value>org.keycloak.testsuite.util.TestConsoleLogger</value>
                             </property>
                         </properties>
+                        <failIfNoTests>false</failIfNoTests>
                     </configuration>
                 </plugin>
             </plugins>
