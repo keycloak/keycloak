@@ -36,6 +36,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.Urls;
 
@@ -117,13 +118,17 @@ public class UserInfoEndpoint {
 
         AccessToken token = null;
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+            token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()), true);
         } catch (Exception e) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Token invalid", Status.FORBIDDEN);
         }
 
         UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
         ClientSessionModel clientSession = session.sessions().getClientSession(token.getClientSession());
+        if (userSession == null || clientSession == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Token invalid", Status.FORBIDDEN);
+        }
+
         ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
         UserModel userModel = userSession.getUser();
         AccessToken userInfo = new AccessToken();
