@@ -2,6 +2,7 @@ package org.keycloak.models.sessions.infinispan;
 
 import org.infinispan.Cache;
 import org.infinispan.distexec.mapreduce.MapReduceTask;
+import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -40,6 +41,8 @@ import java.util.Map;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class InfinispanUserSessionProvider implements UserSessionProvider {
+
+    private static final Logger log = Logger.getLogger(InfinispanUserSessionProvider.class);
 
     private final KeycloakSession session;
     private final Cache<String, SessionEntity> sessionCache;
@@ -473,6 +476,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
 
         public void put(Cache cache, Object key, Object value) {
+            log.tracev("Adding cache operation: {0} on {1}", CacheOperation.ADD, key);
+
             if (tasks.containsKey(key)) {
                 throw new IllegalStateException("Can't add session: task in progress for session");
             } else {
@@ -481,6 +486,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
 
         public void replace(Cache cache, Object key, Object value) {
+            log.tracev("Adding cache operation: {0} on {1}", CacheOperation.REPLACE, key);
+
             CacheTask current = tasks.get(key);
             if (current != null) {
                 switch (current.operation) {
@@ -489,7 +496,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                         current.value = value;
                         return;
                     case REMOVE:
-                        throw new IllegalStateException("Can't remove session: task in progress for session");
+                        return;
                 }
             } else {
                 tasks.put(key, new CacheTask(cache, CacheOperation.REPLACE, key, value));
@@ -497,6 +504,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
 
         public void remove(Cache cache, Object key) {
+            log.tracev("Adding cache operation: {0} on {1}", CacheOperation.REMOVE, key);
+
             tasks.put(key, new CacheTask(cache, CacheOperation.REMOVE, key, null));
         }
 
@@ -514,6 +523,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             }
 
             public void execute() {
+                log.tracev("Executing cache operation: {0} on {1}", operation, key);
+
                 switch (operation) {
                     case ADD:
                         cache.put(key, value);
