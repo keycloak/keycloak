@@ -17,42 +17,48 @@
  */
 package org.keycloak.testsuite.account.page;
 
-import java.util.LinkedList;
 import java.util.List;
 import javax.ws.rs.core.UriBuilder;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**
  *
- * @author <a href="mailto:pmensik@redhat.com">Petr Mensik</a>
+ * @author Petr Mensik
  */
-public class Sessions extends AccountManagement {
+public class Applications extends AccountManagement {
 
     @Override
     public UriBuilder createUriBuilder() {
         return super.createUriBuilder()
-                .path("sessions");
+                .path("applications");
     }
 
-    @FindBy(id = "logout-all-sessions")
-    private WebElement logoutAllLink;
+    public static final String XPATH_APP_TABLE = "//table[./thead[//td[text()='Application']]]";
 
-    public void logoutAll() {
-        logoutAllLink.click();
-    }
+    @FindBy(xpath = XPATH_APP_TABLE)
+    protected WebElement appTable;
 
-    public List<List<String>> getSessions() {
-        List<List<String>> table = new LinkedList<List<String>>();
-        for (WebElement r : driver.findElements(By.tagName("tr"))) {
-            List<String> row = new LinkedList<String>();
-            for (WebElement col : r.findElements(By.tagName("td"))) {
-                row.add(col.getText());
+    @FindBy(xpath = XPATH_APP_TABLE + "//a")
+    protected List<WebElement> applicationLinks;
+    
+    public boolean containsApplication(String application) {
+        boolean contains = false;
+        for (WebElement appLink : applicationLinks) {
+            if (appLink.getText().equals(application)) {
+                contains = true;
+                break;
             }
-            table.add(row);
         }
-        table.remove(0);
-        return table;
+        return contains;
     }
+    
+    public void clickApplication(String application) {
+        for (WebElement appLink : applicationLinks) {
+            if (appLink.getText().equals(application)) {
+                appLink.click();
+            }
+        }
+    }
+
 }

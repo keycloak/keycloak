@@ -24,7 +24,7 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author Petr Mensik
  */
-public class Account extends AccountRoot {
+public class Account extends AccountManagement {
 
     @FindBy(id = "username")
     private WebElement username;

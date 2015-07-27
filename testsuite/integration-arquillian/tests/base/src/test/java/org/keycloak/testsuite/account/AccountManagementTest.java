@@ -29,8 +29,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.account.page.Account;
-import org.keycloak.testsuite.account.page.AccountRoot;
-import org.keycloak.testsuite.page.auth.Login;
+import org.keycloak.testsuite.account.page.AccountManagement;
 
 /**
  *
@@ -47,10 +46,7 @@ public class AccountManagementTest extends AbstractAuthTest {
     private static final String LAST_NAME = "Smith";
     
     @Page
-    protected Login login;
-
-    @Page
-    protected AccountRoot accountRoot;
+    protected AccountManagement accountManagement;
 
     @Page
     protected Account account;
@@ -60,18 +56,18 @@ public class AccountManagementTest extends AbstractAuthTest {
 
     @Before
     public void beforeAccountTest() {
-        accountRoot.navigateTo();
+        accountManagement.navigateTo();
         login.loginAsAdmin();
     }
 
     @After
     public void afterAccountTest() {
-        accountRoot.signOut();
+        accountManagement.signOut();
     }
 
     @Test
     public void passwordPageValidationTest() {
-        accountRoot.password();
+        accountManagement.password();
         passwordPage.save();
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isError());
@@ -91,14 +87,14 @@ public class AccountManagementTest extends AbstractAuthTest {
 
     @Test
     public void changePasswordTest() {
-        accountRoot.password();
+        accountManagement.password();
         passwordPage.setPassword(ADMIN_PSSWD, NEW_PASSWORD);
         passwordPage.save();
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        accountRoot.signOut();
+        accountManagement.signOut();
         super.login.login(USERNAME, NEW_PASSWORD);
-        accountRoot.password();
+        accountManagement.password();
         passwordPage.setPassword(NEW_PASSWORD, ADMIN_PSSWD);
         passwordPage.save();
         flashMessage.waitUntilPresent();
@@ -107,7 +103,7 @@ public class AccountManagementTest extends AbstractAuthTest {
 
     @Test
     public void testEditAccount() {
-        accountRoot.account();
+        accountManagement.account();
         assertEquals(account.getUsername(), USERNAME);
         account.setEmail(EMAIL);
         account.setFirstName(FIRST_NAME);
@@ -116,10 +112,10 @@ public class AccountManagementTest extends AbstractAuthTest {
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
-        accountRoot.signOut();
+        accountManagement.signOut();
         super.login.login(USERNAME, ADMIN_PSSWD);
 
-        accountRoot.account();
+        accountManagement.account();
         assertEquals(account.getEmail(), EMAIL);
         assertEquals(account.getFirstName(), FIRST_NAME);
         assertEquals(account.getLastName(), LAST_NAME);

@@ -27,7 +27,7 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author Petr Mensik
  */
-public class Password extends AccountRoot {
+public class Password extends AccountManagement {
 
     @Override
     public UriBuilder createUriBuilder() {

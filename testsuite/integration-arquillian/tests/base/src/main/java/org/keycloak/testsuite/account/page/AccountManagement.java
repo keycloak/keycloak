@@ -28,11 +28,11 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author <a href="mailto:pmensik@redhat.com">Petr Mensik</a>
  */
-public class AccountRoot extends AuthServer {
+public class AccountManagement extends AuthServer {
     
     public static final String ACCOUNT_REALM = "accountRealm";
     
-    public AccountRoot() {
+    public AccountManagement() {
         setUriParameter(ACCOUNT_REALM, MASTER);
     }
     
@@ -97,6 +97,10 @@ public class AccountRoot extends AuthServer {
     
     public void sessions() {
         sessionsLink.click();
+    }
+    
+    public void applications() {
+        applicationsLink.click();
     }
     
     public void save() {
