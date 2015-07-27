@@ -570,6 +570,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
         "persistent"
     ];
 
+    $scope.canonicalization = [
+        {name: "EXCLUSIVE", value:  "http://www.w3.org/2001/10/xml-exc-c14n#"  },
+        {name: "EXCLUSIVE_WITH_COMMENTS", value: "http://www.w3.org/2001/10/xml-exc-c14n#WithComments"},
+        {name: "INCLUSIVE", value: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315" },
+        {name: "INCLUSIVE_WITH_COMMENTS", value: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"}
+    ];
+
     $scope.realm = realm;
     $scope.create = !client.clientId;
     $scope.samlAuthnStatement = false;
@@ -614,9 +621,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
         } else if (client.attributes['saml_name_id_format'] == 'persistent') {
             $scope.nameIdFormat = $scope.nameIdFormats[3];
         }
-
     } else {
         $scope.client = { enabled: true, attributes: {}};
+        $scope.client.attributes['saml_signature_canonicalization_method'] = $scope.canonicalization[0].value;
         $scope.client.redirectUris = [];
         $scope.accessType = $scope.accessTypes[0];
         $scope.protocol = $scope.protocols[0];
