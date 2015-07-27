@@ -255,6 +255,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         ClientSessionModel clientSession = clientCode.getClientSession();
+
+        session.getContext().setClient(clientSession.getClient());
+
         context.getIdp().preprocessFederatedIdentity(session, realmModel, context);
         Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(context.getIdpConfig().getAlias());
         if (mappers != null) {
