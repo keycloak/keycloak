@@ -113,6 +113,18 @@
                 </div>
                 <kc-tooltip>The signature algorithm to use to sign documents.</kc-tooltip>
             </div>
+            <div class="form-group" data-ng-show="(samlAssertionSignature || samlServerSignature) && protocol == 'saml'">
+                <label class="col-md-2 control-label" for="canonicalization">Canonicalization Method</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="canonicalization"
+                                ng-model="client.attributes['saml_signature_canonicalization_method']"
+                                ng-options="canon.value as canon.name for canon in canonicalization">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>Canonicalization Method for XML signatures.</kc-tooltip>
+            </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="samlEncrypt">Encrypt Assertions</label>
                 <div class="col-sm-6">

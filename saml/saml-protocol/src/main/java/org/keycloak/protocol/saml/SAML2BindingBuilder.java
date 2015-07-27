@@ -21,6 +21,7 @@ import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.net.URI;
@@ -53,6 +54,12 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
     protected PublicKey encryptionPublicKey;
     protected String encryptionAlgorithm = "AES";
     protected boolean encrypt;
+    protected String canonicalizationMethodType = CanonicalizationMethod.EXCLUSIVE;
+
+    public T canonicalizationMethod(String method) {
+        this.canonicalizationMethodType = method;
+        return (T)this;
+    }
 
     public T signDocument() {
         this.sign = true;
@@ -260,7 +267,7 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
             samlSignature.setX509Certificate(signingCertificate);
         }
 
-        samlSignature.signSAMLDocument(samlDocument, signingKeyPair);
+        samlSignature.signSAMLDocument(samlDocument, signingKeyPair, canonicalizationMethodType);
     }
 
     protected void signAssertion(Document samlDocument) throws ProcessingException {

@@ -120,72 +120,9 @@ public class SAML2Signature {
     }
 
     /**
-     * Sign an RequestType at the root
-     *
-     * @param request
-     * @param keypair Key Pair
-     * @param digestMethod (Example: DigestMethod.SHA1)
-     * @param signatureMethod (Example: SignatureMethod.DSA_SHA1)
-     *
-     * @return
-     *
-     * @throws ParserConfigurationException
-     * @throws IOException
-     * @throws SAXException
-     * @throws XMLSignatureException
-     * @throws MarshalException
-     * @throws GeneralSecurityException
-     */
-    public Document sign(RequestAbstractType request, KeyPair keypair) throws SAXException, IOException,
-            ParserConfigurationException, GeneralSecurityException, MarshalException, XMLSignatureException {
-        SAML2Request saml2Request = new SAML2Request();
-        Document doc = saml2Request.convert(request);
-        doc.normalize();
-
-        Node theSibling = getNextSiblingOfIssuer(doc);
-        if (theSibling != null) {
-            this.sibling = theSibling;
-        }
-
-        return sign(doc, request.getID(), keypair);
-    }
-
-    /**
-     * Sign an ResponseType at the root
-     *
-     * @param response
-     * @param keypair Key Pair
-     * @param digestMethod (Example: DigestMethod.SHA1)
-     * @param signatureMethod (Example: SignatureMethod.DSA_SHA1)
-     *
-     * @return
-     *
-     * @throws ParserConfigurationException
-     * @throws XMLSignatureException
-     * @throws MarshalException
-     * @throws GeneralSecurityException
-     */
-    public Document sign(ResponseType response, KeyPair keypair) throws ParserConfigurationException, GeneralSecurityException,
-            MarshalException, XMLSignatureException {
-        SAML2Response saml2Request = new SAML2Response();
-        Document doc = saml2Request.convert(response);
-        doc.normalize();
-
-        Node theSibling = getNextSiblingOfIssuer(doc);
-        if (theSibling != null) {
-            this.sibling = theSibling;
-        }
-
-        return sign(doc, response.getID(), keypair);
-    }
-
-    /**
      * Sign an Document at the root
      *
-     * @param response
      * @param keyPair Key Pair
-     * @param digestMethod (Example: DigestMethod.SHA1)
-     * @param signatureMethod (Example: SignatureMethod.DSA_SHA1)
      *
      * @return
      *
@@ -194,7 +131,7 @@ public class SAML2Signature {
      * @throws MarshalException
      * @throws GeneralSecurityException
      */
-    public Document sign(Document doc, String referenceID, KeyPair keyPair) throws ParserConfigurationException,
+    public Document sign(Document doc, String referenceID, KeyPair keyPair, String canonicalizationMethodType) throws ParserConfigurationException,
             GeneralSecurityException, MarshalException, XMLSignatureException {
         String referenceURI = "#" + referenceID;
 
@@ -213,66 +150,9 @@ public class SAML2Signature {
                 dto.setX509Certificate(x509Certificate);
             }
 
-            return XMLSignatureUtil.sign(dto);
+            return XMLSignatureUtil.sign(dto, canonicalizationMethodType);
         }
-        return XMLSignatureUtil.sign(doc, keyPair, digestMethod, signatureMethod, referenceURI);
-    }
-
-    /**
-     * Sign an assertion whose id value is provided in the response type
-     *
-     * @param response
-     * @param idValueOfAssertion
-     * @param keypair
-     * @param referenceURI
-     *
-     * @return
-     *
-     * @throws ParserConfigurationException
-     * @throws TransformerException
-     * @throws TransformerFactoryConfigurationError
-     * @throws XPathException
-     * @throws XMLSignatureException
-     * @throws MarshalException
-     * @throws GeneralSecurityException
-     */
-    public Document sign(ResponseType response, String idValueOfAssertion, KeyPair keypair, String referenceURI)
-            throws ParserConfigurationException, XPathException, TransformerFactoryConfigurationError, TransformerException,
-            GeneralSecurityException, MarshalException, XMLSignatureException {
-        SAML2Response saml2Response = new SAML2Response();
-        Document doc = saml2Response.convert(response);
-        doc.normalize();
-
-        Node theSibling = getNextSiblingOfIssuer(doc);
-        if (theSibling != null) {
-            this.sibling = theSibling;
-        }
-
-        return sign(doc, idValueOfAssertion, keypair, referenceURI);
-    }
-
-    /**
-     * Sign a document
-     *
-     * @param doc
-     * @param idValueOfAssertion
-     * @param keypair
-     * @param referenceURI
-     *
-     * @return
-     *
-     * @throws ParserConfigurationException
-     * @throws XPathException
-     * @throws TransformerFactoryConfigurationError
-     * @throws TransformerException
-     * @throws GeneralSecurityException
-     * @throws MarshalException
-     * @throws XMLSignatureException
-     */
-    public Document sign(Document doc, String idValueOfAssertion, KeyPair keypair, String referenceURI)
-            throws ParserConfigurationException, XPathException, TransformerFactoryConfigurationError, TransformerException,
-            GeneralSecurityException, MarshalException, XMLSignatureException {
-        return sign(doc, idValueOfAssertion, keypair);
+        return XMLSignatureUtil.sign(doc, keyPair, digestMethod, signatureMethod, referenceURI, canonicalizationMethodType);
     }
 
     /**
@@ -283,11 +163,11 @@ public class SAML2Signature {
      *
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
-    public void signSAMLDocument(Document samlDocument, KeyPair keypair) throws ProcessingException {
+    public void signSAMLDocument(Document samlDocument, KeyPair keypair, String canonicalizationMethodType) throws ProcessingException {
         // Get the ID from the root
         String id = samlDocument.getDocumentElement().getAttribute(ID_ATTRIBUTE_NAME);
         try {
-            sign(samlDocument, id, keypair);
+            sign(samlDocument, id, keypair, canonicalizationMethodType);
         } catch (Exception e) {
             throw new ProcessingException(logger.signatureError(e));
         }
