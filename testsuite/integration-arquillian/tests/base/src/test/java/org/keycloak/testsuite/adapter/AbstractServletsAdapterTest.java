@@ -143,6 +143,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testRealm.setConsoleRealm(DEMO);
+        accountSessionsPage.setAccountRealm(DEMO);
     }
 
     private final String slash = "";
@@ -434,16 +435,12 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         securePortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         login.login("bburke@redhat.com", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), securePortal + slash);
+        assertCurrentUrl(securePortal);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
-
-        pause(1000);
-        
         // test logout
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
                 .queryParam(OAuth2Constants.REDIRECT_URI, securePortal).build("demo").toString();
-        System.out.println("navigating to logoutUri: " + logoutUri);
         driver.navigate().to(logoutUri);
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         securePortal.navigateTo();
@@ -555,10 +552,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void testAccountManagementSessionsLogout() {
         // login as bburke
         loginAndCheckSession(driver, login);
-        loginAsAdmin();
-        testRealm.navigateTo();
-        menuPage.goToAccountManagement();
-        accountSessionsPage.sessions();
+        accountSessionsPage.navigateTo();
         accountSessionsPage.logoutAll();
         // Assert I need to login again (logout was propagated to the app)
         loginAndCheckSession(driver, login);

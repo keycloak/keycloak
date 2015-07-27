@@ -21,7 +21,7 @@
                 { "type" : "password",
                     "value" : "password" }
             ],
-            "realmRoles": [ "user" ],
+            "realmRoles": [ "user", "admin" ],
             "applicationRoles": {
                 "account": [ "manage-account" ]
             }
