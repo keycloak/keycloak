@@ -39,4 +39,15 @@
         </configuration>
     </container>
     
+    <container qualifier="auth-server-eap6" mode="manual" >
+        <configuration>
+            <property name="enabled">${auth.server.eap6}</property>
+            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
+            <property name="jbossHome">${auth.server.eap6.home}</property>
+            <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m ${adapter.test.props}</property>
+            <property name="managementPort">${auth.server.management.port}</property>
+            <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
+        </configuration>
+    </container>
+    
 </arquillian>

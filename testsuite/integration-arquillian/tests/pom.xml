@@ -343,6 +343,70 @@
             </build>
         </profile>
         
+        <profile>
+            <id>auth-server-eap6</id>
+            <properties>
+                <auth.server.container>auth-server-eap6</auth.server.container>
+                <auth.server.eap6.home>${containers.home}/keycloak-${project.version}</auth.server.eap6.home>
+                <startup.timeout.sec>30</startup.timeout.sec>
+                <adapter.test.props/>
+            </properties>
+            <dependencies>
+<!--                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-arquillian-container-managed</artifactId>
+                </dependency>-->
+                <dependency>
+                    <groupId>org.jboss.as</groupId>
+                    <artifactId>jboss-as-arquillian-container-managed</artifactId>
+                    <version>7.2.0.Final</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <version>2.10</version>
+                            <executions>
+                                <execution>
+                                    <id>unpack</id>
+                                    <phase>generate-test-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-server-eap6</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <outputDirectory>${containers.home}</outputDirectory>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <auth.server.eap6>true</auth.server.eap6>
+                                    <auth.server.eap6.home>${auth.server.eap6.home}</auth.server.eap6.home>
+                                    <adapter.test.props>${adapter.test.props}</adapter.test.props>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        
     </profiles>
     
 </project>
