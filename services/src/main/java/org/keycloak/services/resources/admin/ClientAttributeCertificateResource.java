@@ -11,6 +11,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.util.CertificateUtils;
 import org.keycloak.util.PemUtils;
 
@@ -21,6 +22,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import java.io.ByteArrayOutputStream;
@@ -281,10 +283,10 @@ public class ClientAttributeCertificateResource {
             throw new NotFoundException("keypair not generated for client");
         }
         if (privatePem != null && config.getKeyPassword() == null) {
-            throw new BadRequestException("Need to specify a key password for jks download");
+            throw new ErrorResponseException("password-missing", "Need to specify a key password for jks download", Response.Status.BAD_REQUEST);
         }
         if (config.getStorePassword() == null) {
-            throw new BadRequestException("Need to specify a store password for jks download");
+            throw new ErrorResponseException("password-missing", "Need to specify a store password for jks download", Response.Status.BAD_REQUEST);
         }
         final KeyStore keyStore;
         try {

@@ -23,15 +23,15 @@
     },
 
     "userSessions": {
-        "provider" : "${keycloak.userSessions.provider:mem}"
+        "provider" : "${keycloak.userSessions.provider:infinispan}"
     },
 
     "realmCache": {
-        "provider": "${keycloak.realm.cache.provider:mem}"
+        "provider": "${keycloak.realm.cache.provider:infinispan}"
     },
 
     "userCache": {
-        "provider": "${keycloak.user.cache.provider:mem}",
+        "provider": "${keycloak.user.cache.provider:infinispan}",
         "mem": {
             "maxSize": 20000
         }

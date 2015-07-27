@@ -310,17 +310,23 @@ module.controller('ClientCertificateExportCtrl', function($scope, $location, $ht
             data: $scope.jks,
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'client/octet-stream'
+                'Accept': 'application/octet-stream'
             }
         }).success(function(data){
             var blob = new Blob([data], {
-                type: 'client/octet-stream'
+                type: 'application/octet-stream'
             });
             var ext = ".jks";
             if ($scope.jks.format == 'PKCS12') ext = ".p12";
             saveAs(blob, 'keystore' + ext);
-        }).error(function(){
-            Notifications.error("Error downloading.");
+        }).error(function(data) {
+            var errorMsg = 'Error downloading';
+            try {
+                var error = JSON.parse(String.fromCharCode.apply(null, new Uint8Array(data)));
+                errorMsg = error['error_description'] ? error['error_description'] : errorMsg;
+            } catch (err) {
+            }
+            Notifications.error(errorMsg);
         });
     }
 
