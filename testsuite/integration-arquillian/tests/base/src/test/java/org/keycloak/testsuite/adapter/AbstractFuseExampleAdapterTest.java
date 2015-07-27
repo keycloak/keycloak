@@ -3,13 +3,20 @@ package org.keycloak.testsuite.adapter;
 import java.io.File;
 import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.account.page.Account;
 import static org.keycloak.testsuite.util.RealmUtils.loadRealm;
 import static org.keycloak.testsuite.adapter.AbstractExampleAdapterTest.EXAMPLES_HOME_DIR;
+import org.keycloak.testsuite.adapter.page.fuse.AdminInterface;
+import org.keycloak.testsuite.adapter.page.fuse.CustomerListing;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
+import org.keycloak.testsuite.adapter.page.fuse.ProductPortalFuseExample;
 import static org.keycloak.testsuite.console.page.Realm.DEMO;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.RealmAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 
 /**
@@ -19,7 +26,17 @@ import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdapterTest {
 
     @Page
-    protected CustomerPortalFuseExample customerPortalFuseExample;
+    protected CustomerPortalFuseExample customerPortal;
+    @Page
+    protected CustomerListing customerListing;
+    @Page
+    protected AdminInterface adminInterface;
+
+    @Page
+    protected ProductPortalFuseExample productPortal;
+
+    @Page
+    protected Account account;
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
@@ -31,6 +48,8 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testRealm.setConsoleRealm(DEMO);
+        
+        account.setAccountRealm(DEMO);
     }
 
 //  // no deployments via arquillian - examples already pre-installed by the maven profile    
@@ -43,13 +62,77 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
 //    public static JavaArchive productPortalFuseExample() {
 //        return exampleJarDeployment(ProductPortalFuseExample.DEPLOYMENT_NAME);
 //    }
+    @Test
+    public void testCustomerListingAndAccountManagement() {
+        customerPortal.navigateTo();
+        assertCurrentUrlStartsWith(customerPortal);
+
+        customerPortal.clickCustomerListingLink();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+
+        login.login("bburke@redhat.com", "password");
+        assertCurrentUrlStartsWith(customerListing);
+
+        String src = driver.getPageSource();
+        assertTrue(src.contains("Username: bburke@redhat.com")
+                && src.contains("Bill Burke")
+                && src.contains("Stian Thorgersen")
+        );
+
+        // account mgmt
+        customerListing.clickAccountManagement();
+
+        assertCurrentUrlStartsWith(account);
+        assertEquals(account.getUsername(), "bburke@redhat.com");
+
+        driver.navigate().back();
+        customerListing.clickLogOut();
+
+        // assert user not logged in
+        customerPortal.clickCustomerListingLink();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+
+    }
 
     @Test
-    public void testAppServerAvailable() {
-        customerPortalFuseExample.navigateTo();
-        assertCurrentUrlStartsWith(customerPortalFuseExample);
+    public void testAdminInterface() {
+        customerPortal.navigateTo();
+        assertCurrentUrlStartsWith(customerPortal);
 
-        pause(10000);
+        customerPortal.clickAdminInterfaceLink();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+
+        login.login("admin", "password");
+        assertCurrentUrlStartsWith(adminInterface);
+        assertTrue(driver.getPageSource().contains("Hello admin!"));
+
+        customerListing.navigateTo();
+        customerListing.clickLogOut();
+        pause(500);
+        assertCurrentUrlStartsWith(customerPortal);
+
+        customerPortal.clickAdminInterfaceLink();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+
+        login.login("bburke@redhat.com", "password");
+        assertCurrentUrlStartsWith(adminInterface);
+        assertTrue(driver.getPageSource().contains("Status code is 403"));
+    }
+
+    @Test
+    public void testProductPortal() {
+        productPortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+
+        login.login("bburke@redhat.com", "password");
+        assertCurrentUrlStartsWith(productPortal);
+
+        assertTrue(productPortal.product1Unsecured.getText().contains("401: Unauthorized"));
+        assertTrue(productPortal.product1Secured.getText().contains("Product received: id=1"));
+        assertTrue(productPortal.product2Secured.getText().contains("Product received: id=2"));
+
+        productPortal.logOutLink.click();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
     }
 
 }

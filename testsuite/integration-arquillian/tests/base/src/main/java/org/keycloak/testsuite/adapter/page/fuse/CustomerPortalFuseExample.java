@@ -1,5 +1,8 @@
 package org.keycloak.testsuite.adapter.page.fuse;
 
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+
 /**
  *
  * @author tkyjovsk
@@ -14,4 +17,18 @@ public class CustomerPortalFuseExample extends AbstractFuseExample {
         return DEPLOYMENT_CONTEXT;
     }
 
+    @FindBy(linkText = "Customer Listing - CXF RS endpoint")
+    protected WebElement customerListingLink;
+
+    @FindBy(linkText = "Admin Interface - Apache Camel endpoint")
+    protected WebElement adminInterfaceLink;
+
+    public void clickCustomerListingLink() {
+        customerListingLink.click();
+    }
+
+    public void clickAdminInterfaceLink() {
+        adminInterfaceLink.click();
+    }
+    
 }

@@ -52,7 +52,6 @@ import org.keycloak.testsuite.util.SeleniumUtils;
 import org.keycloak.testsuite.util.ApiUtil;
 import static org.keycloak.testsuite.util.RealmAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import org.keycloak.testsuite.util.SecondBrowser;
-import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.Time;
 import org.openqa.selenium.By;
