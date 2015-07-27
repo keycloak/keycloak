@@ -178,7 +178,7 @@ public class ClientSessionAdapter implements ClientSessionModel {
         if (entity.getUserSessionNotes() == null) {
             entity.setUserSessionNotes(new HashMap<String, String>());
         }
-        entity.getNotes().put(name, value);
+        entity.getUserSessionNotes().put(name, value);
         update();
 
     }

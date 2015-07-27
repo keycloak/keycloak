@@ -470,16 +470,23 @@ public class LoginTest {
         try {
             loginPage.open();
             Time.setOffset(5000);
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                   manager.getSession().sessions().removeExpiredUserSessions(appRealm);
+                }
+            });
+
             loginPage.login("login@test.com", "password");
 
             //loginPage.assertCurrent();
-            errorPage.assertCurrent();
+            loginPage.assertCurrent();
 
             //Assert.assertEquals("Login timeout. Please login again.", loginPage.getError());
 
             events.expectLogin().user((String) null).session((String) null).error("expired_code").clearDetails()
-                    .detail(Details.CODE_ID, AssertEvents.isCodeId())
-                    .removeDetail(Details.CONSENT)
+                    .detail(Details.RESTART_AFTER_TIMEOUT, "true")
+                    .client((String) null)
                     .assertEvent();
 
         } finally {

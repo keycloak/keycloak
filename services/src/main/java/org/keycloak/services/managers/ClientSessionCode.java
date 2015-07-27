@@ -54,6 +54,50 @@ public class ClientSessionCode {
         }
     }
 
+    public static class ParseResult {
+        ClientSessionCode code;
+        boolean clientSessionNotFound;
+        boolean illegalHash;
+
+        public ClientSessionCode getCode() {
+            return code;
+        }
+
+        public boolean isClientSessionNotFound() {
+            return clientSessionNotFound;
+        }
+
+        public boolean isIllegalHash() {
+            return illegalHash;
+        }
+    }
+
+    public static ParseResult parseResult(String code, KeycloakSession session, RealmModel realm) {
+        try {
+            ParseResult result = new ParseResult();
+            String[] parts = code.split("\\.");
+            String id = parts[1];
+
+            ClientSessionModel clientSession = session.sessions().getClientSession(realm, id);
+            if (clientSession == null) {
+                result.clientSessionNotFound = true;
+                return result;
+            }
+
+            String hash = createHash(realm, clientSession);
+            if (!hash.equals(parts[0])) {
+                result.illegalHash = true;
+                return result;
+            }
+
+            result.code = new ClientSessionCode(realm, clientSession);
+            return result;
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+
 
     public static ClientSessionCode parse(String code, KeycloakSession session, RealmModel realm) {
         try {

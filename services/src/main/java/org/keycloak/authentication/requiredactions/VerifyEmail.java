@@ -28,29 +28,11 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     protected static Logger logger = Logger.getLogger(VerifyEmail.class);
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
-        int daysToExpirePassword = context.getRealm().getPasswordPolicy().getDaysToExpirePassword();
-        if(daysToExpirePassword != -1) {
-            for (UserCredentialValueModel entity : context.getUser().getCredentialsDirectly()) {
-                if (entity.getType().equals(UserCredentialModel.PASSWORD)) {
-
-                    if(entity.getCreatedDate() == null) {
-                        context.getUser().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                        logger.debug("User is required to update password");
-                    } else {
-                        long timeElapsed = Time.toMillis(Time.currentTime()) - entity.getCreatedDate();
-                        long timeToExpire = TimeUnit.DAYS.toMillis(daysToExpirePassword);
-
-                        if(timeElapsed > timeToExpire) {
-                            context.getUser().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                            logger.debug("User is required to update password");
-                        }
-                    }
-                    break;
-                }
-            }
+        if (context.getRealm().isVerifyEmail() && !context.getUser().isEmailVerified()) {
+            context.getUser().addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
+            logger.debug("User is required to verify email");
         }
     }
-
     @Override
     public Response invokeRequiredAction(RequiredActionContext context) {
         if (Validation.isBlank(context.getUser().getEmail())) {

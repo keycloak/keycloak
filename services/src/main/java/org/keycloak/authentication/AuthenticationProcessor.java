@@ -498,6 +498,7 @@ public class AuthenticationProcessor {
     }
 
     public static void resetFlow(ClientSessionModel clientSession) {
+        clientSession.setTimestamp(Time.currentTime());
         clientSession.setAuthenticatedUser(null);
         clientSession.clearExecutionStatus();
         clientSession.clearUserSessionNotes();
@@ -574,7 +575,8 @@ public class AuthenticationProcessor {
         String attemptedUsername = clientSession.getNote(AbstractFormAuthenticator.ATTEMPTED_USERNAME);
         if (attemptedUsername != null) username = attemptedUsername;
         if (userSession == null) { // if no authenticator attached a usersession
-            userSession = session.sessions().createUserSession(realm, clientSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), "form", false, null, null);
+            boolean remember = "true".equals(clientSession.getNote(Details.REMEMBER_ME));
+            userSession = session.sessions().createUserSession(realm, clientSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), "form", remember, null, null);
             userSession.setState(UserSessionModel.State.LOGGING_IN);
             userSessionCreated = true;
         }
