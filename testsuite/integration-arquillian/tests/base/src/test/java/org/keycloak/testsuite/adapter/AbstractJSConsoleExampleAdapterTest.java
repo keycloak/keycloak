@@ -53,13 +53,13 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         pause(1000);
 
         jsConsoleExample.logIn();
-        loginPage.login("user", "invalid-password");
+        login.login("user", "invalid-password");
         assertCurrentUrlDoesntStartWith(jsConsoleExample);
 
-        loginPage.login("invalid-user", "password");
+        login.login("invalid-user", "password");
         assertCurrentUrlDoesntStartWith(jsConsoleExample);
 
-        loginPage.login("user", "password");
+        login.login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Init Success (Authenticated)"));
         assertTrue(driver.getPageSource().contains("Auth Success"));
@@ -80,7 +80,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(driver.getPageSource().contains("Failed to refresh token"));
 
         jsConsoleExample.logIn();
-        loginPage.login("user", "password");
+        login.login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Auth Success"));
 
@@ -97,7 +97,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(driver.getPageSource().contains("Failed to refresh token"));
 
         jsConsoleExample.logIn();
-        loginPage.login("user", "password");
+        login.login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Auth Success"));
 
@@ -119,7 +119,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(driver.getPageSource().contains("Failed to load profile"));
         
         jsConsoleExample.logIn();
-        loginPage.login("user", "password");
+        login.login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Auth Success"));
 

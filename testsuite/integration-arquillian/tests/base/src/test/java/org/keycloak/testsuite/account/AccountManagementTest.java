@@ -17,7 +17,7 @@
  */
 package org.keycloak.testsuite.account;
 
-import java.util.List;
+import org.keycloak.testsuite.AbstractAuthTest;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -27,8 +27,6 @@ import static org.keycloak.testsuite.util.Constants.ADMIN_PSSWD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.account.page.Account;
 import org.keycloak.testsuite.account.page.AccountRoot;
@@ -38,7 +36,7 @@ import org.keycloak.testsuite.page.auth.Login;
  *
  * @author Petr Mensik
  */
-public class AccountManagementTest extends AbstractKeycloakTest {
+public class AccountManagementTest extends AbstractAuthTest {
 
     private static final String USERNAME = "admin";
     private static final String NEW_PASSWORD = "newpassword";
@@ -60,11 +58,6 @@ public class AccountManagementTest extends AbstractKeycloakTest {
     @FindByJQuery(".alert")
     private FlashMessage flashMessage;
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        // TODO so far testing with master
-    }
-    
     @Before
     public void beforeAccountTest() {
         accountRoot.navigateTo();
@@ -104,7 +97,7 @@ public class AccountManagementTest extends AbstractKeycloakTest {
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         accountRoot.signOut();
-        loginPage.login(USERNAME, NEW_PASSWORD);
+        super.login.login(USERNAME, NEW_PASSWORD);
         accountRoot.password();
         passwordPage.setPassword(NEW_PASSWORD, ADMIN_PSSWD);
         passwordPage.save();
@@ -124,7 +117,7 @@ public class AccountManagementTest extends AbstractKeycloakTest {
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         accountRoot.signOut();
-        loginPage.login(USERNAME, ADMIN_PSSWD);
+        super.login.login(USERNAME, ADMIN_PSSWD);
 
         accountRoot.account();
         assertEquals(account.getEmail(), EMAIL);

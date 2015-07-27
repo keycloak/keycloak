@@ -18,6 +18,7 @@
 
 package org.keycloak.testsuite.account.page;
 
+import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -26,8 +27,14 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author Petr Mensik
  */
-public class Password {
+public class Password extends AccountRoot {
 
+    @Override
+    public UriBuilder createUriBuilder() {
+        return super.createUriBuilder()
+                .path("password");
+    }
+    
     @FindBy(id = "password")
     private WebElement passwordInput;
 
@@ -69,10 +76,6 @@ public class Password {
     public void setConfirmField(String confirmPassword) {
         confirmInput.clear();
         confirmInput.sendKeys(confirmPassword);
-    }
-
-    public void save() {
-        save.click();
     }
 
     public void submit() {

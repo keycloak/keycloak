@@ -15,8 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.console.user;
+package org.keycloak.testsuite.account;
 
+import java.util.List;
+import org.keycloak.testsuite.AbstractAuthTest;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -28,50 +30,56 @@ import org.keycloak.testsuite.console.page.settings.user.UserPage;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
-import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
-import org.keycloak.testsuite.console.page.settings.LoginSettingsPage;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.account.page.Account;
+import static org.keycloak.testsuite.console.page.Realm.MASTER;
 import static org.keycloak.testsuite.util.Users.*;
 
 /**
  *
  * @author Petr Mensik
  */
-public class RegisterNewUserTest extends AbstractAdminConsoleTest {
+public class RegisterNewUserTest extends AbstractAuthTest {
+
+    @Page
+    private Account account;
 
     @Page
     private Registration registration;
-    
-    @Page
-    private UserPage userPage;
 
     @Page
-    private LoginSettingsPage loginSettingsPage;
+    private UserPage userPage;
 
     @FindByJQuery(".alert")
     private FlashMessage flashMessage;
 
     @Before
     public void beforeUserRegistration() {
-        navigation.settings("master");
-        navigation.login("master");
-        loginSettingsPage.enableUserRegistration();
-        logOut();
-        loginPage.goToUserRegistration();
+        RealmRepresentation realm = keycloak.realm(MASTER).toRepresentation();
+        realm.setRegistrationAllowed(true);
+        keycloak.realm(MASTER).update(realm);
+
+        account.navigateTo();
+        login.registration();
     }
 
     @After
     public void afterUserRegistration() {
-        navigation.settings("master");
-        navigation.login("master");
-        loginSettingsPage.disableUserRegistration();
+        RealmRepresentation realm = keycloak.realm(MASTER).toRepresentation();
+        realm.setRegistrationAllowed(false);
+        keycloak.realm(MASTER).update(realm);
     }
 
     @Test
     public void registerNewUserTest() {
         registration.registerNewUser(TEST_USER1);
-        logOut();
-        loginAsAdmin();
-        navigation.users();
+
+        List<UserRepresentation> ur = keycloak.realm(MASTER).users().search(TEST_USER1.getUserName(), null, null);
+        assertTrue(ur.size() == 1);
+
+        
+        
         userPage.deleteUser(TEST_USER1.getUserName());
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());

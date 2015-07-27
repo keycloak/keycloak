@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.console.page.settings;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
@@ -28,36 +27,36 @@ import org.keycloak.testsuite.console.page.AdminConsole;
  */
 public class LoginSettingsPage extends AdminConsole {
 
-	@FindByJQuery("div[class='onoffswitch']:eq(0)")
-	private OnOffSwitch registrationAllowed;
+    @FindByJQuery("div[class='onoffswitch']:eq(0)")
+    private OnOffSwitch registrationAllowed;
 
-	@FindByJQuery("div[class='onoffswitch']:eq(1)")
-	private OnOffSwitch resetPasswordAllowed;
-		
-	@FindByJQuery("div[class='onoffswitch']:eq(2)")
-	private OnOffSwitch rememberMeEnabled;
+    @FindByJQuery("div[class='onoffswitch']:eq(1)")
+    private OnOffSwitch resetPasswordAllowed;
 
-	@FindByJQuery("div[class='onoffswitch']:eq(3)")
-	private OnOffSwitch verifyEmailEnabled;
+    @FindByJQuery("div[class='onoffswitch']:eq(2)")
+    private OnOffSwitch rememberMeEnabled;
 
-	@FindByJQuery("div[class='onoffswitch']:eq(4)")
-	private OnOffSwitch directGrantApiEnabled;
+    @FindByJQuery("div[class='onoffswitch']:eq(3)")
+    private OnOffSwitch verifyEmailEnabled;
 
-	@FindByJQuery("div[class='onoffswitch']:eq(5)")
-	private OnOffSwitch requireSsl;
-	
-	public boolean isUserRegistrationAllowed() {
-		return registrationAllowed.isEnabled();
-	}
-	
-	public void enableUserRegistration() {
-		registrationAllowed.enable();
-		primaryButton.click();
-	}
-	
-	public void disableUserRegistration() {
-		registrationAllowed.disable();
-		primaryButton.click();
-	}
-	
+    @FindByJQuery("div[class='onoffswitch']:eq(4)")
+    private OnOffSwitch directGrantApiEnabled;
+
+    @FindByJQuery("div[class='onoffswitch']:eq(5)")
+    private OnOffSwitch requireSsl;
+
+    public boolean isUserRegistrationAllowed() {
+        return registrationAllowed.isEnabled();
+    }
+
+    public void enableUserRegistration() {
+        registrationAllowed.enable();
+        primaryButton.click();
+    }
+
+    public void disableUserRegistration() {
+        registrationAllowed.disable();
+        primaryButton.click();
+    }
+
 }

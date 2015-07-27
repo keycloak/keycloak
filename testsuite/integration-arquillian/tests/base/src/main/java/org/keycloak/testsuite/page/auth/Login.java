@@ -61,7 +61,7 @@ public class Login extends AuthRealm {
         login("admin", ADMIN_PSSWD);
     }
 
-    public void goToUserRegistration() {
+    public void registration() {
         waitGuiForElement(usernameInput, "Login form should be visible");
         registerLink.click();
     }

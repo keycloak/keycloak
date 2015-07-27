@@ -50,9 +50,9 @@ public abstract class AbstractKeycloakTest {
     protected AuthServer authServer;
     @Page
     protected AdminConsole adminConsole;
-
+    
     @Page
-    protected Login loginPage;
+    protected Login login;
     @Page
     protected Password passwordPage;
     @Page
@@ -97,7 +97,7 @@ public abstract class AbstractKeycloakTest {
 
     public void loginAsAdmin() {
         adminConsole.navigateTo();
-        loginPage.loginAsAdmin();
+        login.loginAsAdmin();
         if (isAdminPasswordUpdated()) {
             assertCurrentUrlStartsWith(adminConsole);
         }

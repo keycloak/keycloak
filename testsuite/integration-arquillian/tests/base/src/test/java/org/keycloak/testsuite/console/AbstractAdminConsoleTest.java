@@ -17,12 +17,10 @@
  */
 package org.keycloak.testsuite.console;
 
-import java.util.List;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.console.page.Realm;
 import static org.keycloak.testsuite.console.page.Realm.MASTER;
@@ -33,14 +31,14 @@ import static org.keycloak.testsuite.console.page.Realm.TEST;
  * @author Petr Mensik
  * @param <P>
  */
-public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends AbstractKeycloakTest {
+public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends AbstractAuthTest {
 
     @Page
     protected P page;
 
     @Page
     protected Realm masterRealm;
-    
+
     @Page
     protected Realm testRealm;
 
@@ -60,14 +58,6 @@ public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends A
         super.setDefaultPageUriParameters();
         masterRealm.setConsoleRealm(MASTER);
         testRealm.setConsoleRealm(TEST);
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation testRealmRep = new RealmRepresentation();
-        testRealmRep.setRealm(TEST);
-        testRealmRep.setEnabled(true);
-        testRealms.add(testRealmRep);
     }
 
 }

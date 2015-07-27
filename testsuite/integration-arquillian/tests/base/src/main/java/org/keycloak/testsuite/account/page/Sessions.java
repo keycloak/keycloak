@@ -19,6 +19,7 @@ package org.keycloak.testsuite.account.page;
 
 import java.util.LinkedList;
 import java.util.List;
+import javax.ws.rs.core.UriBuilder;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -28,6 +29,12 @@ import org.openqa.selenium.support.FindBy;
  * @author <a href="mailto:pmensik@redhat.com">Petr Mensik</a>
  */
 public class Sessions extends AccountRoot {
+
+    @Override
+    public UriBuilder createUriBuilder() {
+        return super.createUriBuilder()
+                .path("sessions");
+    }
 
     @FindBy(id = "logout-all-sessions")
     private WebElement logoutAllLink;

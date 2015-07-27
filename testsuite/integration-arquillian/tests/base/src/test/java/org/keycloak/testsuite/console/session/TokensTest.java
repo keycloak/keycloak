@@ -45,8 +45,8 @@ public class TokensTest extends AbstractAdminConsoleTest<TokensPage> {
         page.setSessionTimeout(TIMEOUT, TIME_UNIT);
         TIME_UNIT.sleep(TIMEOUT + 2); //add 2 secs to timeout
         driver.navigate().refresh();
-        waitGuiForElement(loginPage.getLoginPageHeader(), "Home page should be visible after session timeout");
-        loginPage.loginAsAdmin();
+        waitGuiForElement(login.getLoginPageHeader(), "Home page should be visible after session timeout");
+        login.loginAsAdmin();
         page.setSessionTimeout(30, TimeUnit.MINUTES);
     }
 
@@ -58,10 +58,10 @@ public class TokensTest extends AbstractAdminConsoleTest<TokensPage> {
         waitModel().withTimeout(TIMEOUT + 2, TIME_UNIT) //adds 2 seconds to the timeout
                 .pollingEvery(1, TIME_UNIT)
                 .until("Home page should be visible after session timeout")
-                .element(loginPage.getLoginPageHeader())
+                .element(login.getLoginPageHeader())
                 .is()
                 .present();
-        loginPage.loginAsAdmin();
+        login.loginAsAdmin();
         navigation.tokens();
         page.setSessionTimeoutLifespan(10, TimeUnit.HOURS);
     }

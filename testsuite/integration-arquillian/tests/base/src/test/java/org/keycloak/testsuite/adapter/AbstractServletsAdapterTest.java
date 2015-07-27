@@ -154,7 +154,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         inputPortal.execute("hello");
 
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        loginPage.login("bburke@redhat.com", "password");
+        login.login("bburke@redhat.com", "password");
         assertEquals(driver.getCurrentUrl(), inputPortal + "/secured/post");
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("parameter=hello"));
@@ -182,9 +182,9 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void testLoginSSOAndLogout() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        SeleniumUtils.waitGuiForElement(loginPage.getUsernameInput());
+        SeleniumUtils.waitGuiForElement(login.getUsernameInput());
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        loginPage.login("bburke@redhat.com", "password");
+        login.login("bburke@redhat.com", "password");
         assertEquals(driver.getCurrentUrl(), customerPortal + slash);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
@@ -221,7 +221,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         customerPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        loginPage.cancel();
+        login.cancel();
         assertTrue(driver.getPageSource().contains("Error Page"));
     }
 
@@ -230,7 +230,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        loginPage.login("bburke@redhat.com", "password");
+        login.login("bburke@redhat.com", "password");
         assertEquals(driver.getCurrentUrl(), customerPortal + slash);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
@@ -261,9 +261,9 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void testLoginSSOIdle() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        SeleniumUtils.waitGuiForElement(loginPage.getUsernameInput());
+        SeleniumUtils.waitGuiForElement(login.getUsernameInput());
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        loginPage.login("bburke@redhat.com", "password");
+        login.login("bburke@redhat.com", "password");
         assertEquals(driver.getCurrentUrl(), customerPortal + slash);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
@@ -287,9 +287,9 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
         System.out.println("Current url: " + driver.getCurrentUrl());
-        SeleniumUtils.waitGuiForElement(loginPage.getUsernameInput());
+        SeleniumUtils.waitGuiForElement(login.getUsernameInput());
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        loginPage.login("bburke@redhat.com", "password");
+        login.login("bburke@redhat.com", "password");
         System.out.println("Current url: " + driver.getCurrentUrl());
         assertCurrentUrl(customerPortal);
         String pageSource = driver.getPageSource();
@@ -321,9 +321,9 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void testLoginSSOMax() throws InterruptedException {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        SeleniumUtils.waitGuiForElement(loginPage.getUsernameInput());
+        SeleniumUtils.waitGuiForElement(login.getUsernameInput());
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        loginPage.login("bburke@redhat.com", "password");
+        login.login("bburke@redhat.com", "password");
         assertEquals(driver.getCurrentUrl(), customerPortal + slash);
         String pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
@@ -433,7 +433,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         // test login to customer-portal which does a bearer request to customer-db
         securePortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        loginPage.login("bburke@redhat.com", "password");
+        login.login("bburke@redhat.com", "password");
         Assert.assertEquals(driver.getCurrentUrl(), securePortal + slash);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
@@ -455,7 +455,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Test
     public void testSingleSessionInvalidated() {
 
-        loginAndCheckSession(driver, loginPage);
+        loginAndCheckSession(driver, login);
 
         // cannot pass to loginAndCheckSession becayse loginPage is not working together with driver2, therefore copypasta
         driver2.navigate().to(sessionPortal.toString());
@@ -510,7 +510,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         demoRealm.update(demoRealmRep);
 
         // Login
-        loginAndCheckSession(driver, loginPage);
+        loginAndCheckSession(driver, login);
 
         // Logout
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
@@ -520,7 +520,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         // Assert that http session was invalidated
         sessionPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        loginPage.login("bburke@redhat.com", "password");
+        login.login("bburke@redhat.com", "password");
         assertEquals(driver.getCurrentUrl(), this.sessionPortal + slash);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));
@@ -534,7 +534,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Jira("KEYCLOAK-942")
     public void testAdminApplicationLogout() {
         // login as bburke
-        loginAndCheckSession(driver, loginPage);
+        loginAndCheckSession(driver, login);
         // logout mposolda with admin client
         ApiUtil.findClientByClientId(keycloak.realm("demo"), "session-portal").logoutUser("mposolda");
         // bburke should be still logged with original httpSession in our browser window
@@ -551,14 +551,14 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Jira("KEYCLOAK-1216, KEYCLOAK-1485")
     public void testAccountManagementSessionsLogout() {
         // login as bburke
-        loginAndCheckSession(driver, loginPage);
+        loginAndCheckSession(driver, login);
         loginAsAdmin();
         testRealm.navigateTo();
         menuPage.goToAccountManagement();
         accountSessionsPage.sessions();
         accountSessionsPage.logoutAll();
         // Assert I need to login again (logout was propagated to the app)
-        loginAndCheckSession(driver, loginPage);
+        loginAndCheckSession(driver, login);
     }
 
     private void loginAndCheckSession(WebDriver driver, Login loginPage) {

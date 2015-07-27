@@ -72,7 +72,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
 
-        loginPage.login("bburke@redhat.com", "password");
+        login.login("bburke@redhat.com", "password");
 
         assertCurrentUrlStartsWith(customerPortalExample);
         customerPortalExample.waitForCustomerListingHeader();
@@ -88,7 +88,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
-        loginPage.login("bburke@redhat.com", "password");
+        login.login("bburke@redhat.com", "password");
         waitGui().until()
                 .element(By.className("kc-feedback-text"))
                 .text()
@@ -102,7 +102,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
-        loginPage.login("bburke@redhat.com", "password");
+        login.login("bburke@redhat.com", "password");
         waitGui().until()
                 .element(By.className("kc-feedback-text"))
                 .text()

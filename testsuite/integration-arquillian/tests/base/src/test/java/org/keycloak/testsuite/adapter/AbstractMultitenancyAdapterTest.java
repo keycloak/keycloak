@@ -100,7 +100,7 @@ public abstract class AbstractMultitenancyAdapterTest extends AbstractAdapterTes
         multiTenant.navigateToRealm(ADAPTER_TENANT1);
         assertCurrentUrlStartsWith(authServer);
 
-        loginPage.login("user-tenant2", "user-tenant2");
+        login.login("user-tenant2", "user-tenant2");
         assertCurrentUrlStartsWith(authServer);
     }
 
@@ -127,7 +127,7 @@ public abstract class AbstractMultitenancyAdapterTest extends AbstractAdapterTes
         System.out.println("Current url: " + driver.getCurrentUrl());
 
         assertTrue(driver.getCurrentUrl().startsWith(tenantLoginUrl));
-        loginPage.login("bburke@redhat.com", "password");
+        login.login("bburke@redhat.com", "password");
         System.out.println("Current url: " + driver.getCurrentUrl());
 
         assertEquals(multiTenant.getTenantRealmUrl(tenant).toExternalForm(), driver.getCurrentUrl());
