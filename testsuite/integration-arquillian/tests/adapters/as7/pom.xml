@@ -12,9 +12,9 @@
     <name>Adapter Tests on JBossAS 7</name>
     
     <properties>
-        <app.server.wildfly.home>${containers.home}/wildfly-${wildfly.version}</app.server.wildfly.home>
-        <as7.version>${jboss.version}</as7.version>
-        <as7.home>${containers.home}/jboss-as-${as7.version}</as7.home>
+        <as7.version>7.1.1.Final</as7.version>
+        <app.server.as7.home>${containers.home}/jboss-as-${as7.version}</app.server.as7.home>
+        <adapter.libs.as7>${containers.home}/keycloak-as7-adapter-dist</adapter.libs.as7>
     </properties>
 
     <dependencies>
@@ -30,20 +30,28 @@
             <type>zip</type>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-arquillian-container-managed</artifactId>
-        </dependency>                
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-arquillian-container-managed</artifactId>
+            <version>7.2.0.Final</version>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>  
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>unpack-as7-and-adapter</id>
-                        <phase>generate-test-resources</phase>
+                        <phase>generate-resources</phase>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
@@ -55,50 +63,15 @@
                                     <version>${as7.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${containers.home}</outputDirectory>
-                                    <overWrite>false</overWrite>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.jboss.as</groupId>
-                                    <artifactId>jboss-as-dist</artifactId>
-                                    <version>${as7.version}</version>
-                                    <type>zip</type>
-                                    <outputDirectory>${containers.home}</outputDirectory>
-                                    <includes>*/standalone/configuration/standalone.xml</includes>
-                                    <overWrite>true</overWrite>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-as7-adapter-dist</artifactId>
                                     <type>zip</type>
-                                    <outputDirectory>${as7.home}</outputDirectory>
-                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${adapter.libs.as7}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>xml-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>configure-as7-adapter</id>
-                        <phase>process-test-resources</phase>
-                        <goals>
-                            <goal>transform</goal>
-                        </goals>
-                        <configuration>
-                            <transformationSets>
-                                <transformationSet>
-                                    <dir>${as7.home}/standalone/configuration</dir>
-                                    <stylesheet>src/main/xslt/as7/standalone.xsl</stylesheet>
-                                    <includes>
-                                        <include>standalone.xml</include>
-                                    </includes>
-                                    <outputDir>${as7.home}/standalone/configuration</outputDir>
-                                </transformationSet>
-                            </transformationSets>
+                            <overWriteIfNewer>true</overWriteIfNewer>
                         </configuration>
                     </execution>
                 </executions>
@@ -109,11 +82,56 @@
                 <configuration>
                     <systemPropertyVariables>
                         <app.server.as7>true</app.server.as7>
-                        <as7.home>${as7.home}</as7.home>
+                        <app.server.as7.home>${app.server.as7.home}</app.server.as7.home>
+                        <adapter.libs.as7>${adapter.libs.as7}</adapter.libs.as7>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+    
+    
+    <profiles>
+        <profile>
+            <id>adapter-libs-provided</id>
+            <activation>    
+                <property>
+                    <name>!adapter.libs.bundled</name>
+                </property>
+            </activation>
+            <properties>
+                <adapter.libs.as7>${app.server.as7.home}</adapter.libs.as7>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>configure-adapter-subsystem</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${app.server.as7.home}/standalone/configuration</dir>
+                                            <includes>
+                                                <include>standalone.xml</include>
+                                            </includes>
+                                            <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
+                                            <outputDir>${app.server.as7.home}/standalone/configuration</outputDir>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>        
     
 </project>

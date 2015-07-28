@@ -15,13 +15,11 @@
                 <configuration>
                     <property name="enabled">${app.server.as7}</property>
                     <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-                    <property name="jbossHome">${as7.home}</property>
+                    <property name="jbossHome">${app.server.as7.home}</property>
                     <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${app.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m ${adapter.test.props}</property>
-                    <property name="managementPort">${app.server.management.port}</property>
+                    <property name="managementAddress">localhost</property>
+                    <property name="managementPort">${app.server.management.port.jmx}</property>
                 </configuration>
-                <!--        <protocol type="jmx-as7">
-                    <property name="executionType">REMOTE</property>
-                </protocol>-->
             </container>
 
         </xsl:copy>

@@ -25,6 +25,7 @@
         <auth.server.port.offset>100</auth.server.port.offset>
         <auth.server.http.port>8180</auth.server.http.port>
         <auth.server.management.port>10090</auth.server.management.port>
+        <auth.server.management.port.jmx>10099</auth.server.management.port.jmx>
         <startup.timeout.sec>60</startup.timeout.sec>
         
         <browser>phantomjs</browser>
@@ -83,6 +84,7 @@
                             <auth.server.port.offset>${auth.server.port.offset}</auth.server.port.offset>
                             <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>
                             <auth.server.management.port>${auth.server.management.port}</auth.server.management.port>
+                            <auth.server.management.port.jmx>${auth.server.management.port.jmx}</auth.server.management.port.jmx>
                             <startup.timeout.sec>${startup.timeout.sec}</startup.timeout.sec>
                         </systemPropertyVariables>
                         <properties>
@@ -348,14 +350,10 @@
             <properties>
                 <auth.server.container>auth-server-eap6</auth.server.container>
                 <auth.server.eap6.home>${containers.home}/keycloak-${project.version}</auth.server.eap6.home>
-                <startup.timeout.sec>30</startup.timeout.sec>
+                <startup.timeout.sec>150</startup.timeout.sec>
                 <adapter.test.props/>
             </properties>
             <dependencies>
-<!--                <dependency>
-                    <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-arquillian-container-managed</artifactId>
-                </dependency>-->
                 <dependency>
                     <groupId>org.jboss.as</groupId>
                     <artifactId>jboss-as-arquillian-container-managed</artifactId>

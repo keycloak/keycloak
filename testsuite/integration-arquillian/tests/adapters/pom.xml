@@ -16,6 +16,7 @@
         <app.server.port.offset>200</app.server.port.offset>
         <app.server.http.port>8280</app.server.http.port>
         <app.server.management.port>10190</app.server.management.port>
+        <app.server.management.port.jmx>10199</app.server.management.port.jmx>
         <adapter.test.props>-Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</adapter.test.props>
     </properties>
     
@@ -82,6 +83,7 @@
                             <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
                             <app.server.http.port>${app.server.http.port}</app.server.http.port>
                             <app.server.management.port>${app.server.management.port}</app.server.management.port>
+                            <app.server.management.port.jmx>${app.server.management.port.jmx}</app.server.management.port.jmx>
                             
                             <adapter.test.props>${adapter.test.props}</adapter.test.props>
 
