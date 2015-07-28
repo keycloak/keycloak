@@ -42,9 +42,7 @@ public class SingleFileImportProvider implements ImportProvider {
 
             @Override
             protected void runExportImportTask(KeycloakSession session) throws IOException {
-                for (RealmRepresentation realmRep : realmReps.values()) {
-                    ImportUtils.importRealm(session, realmRep, strategy);
-                }
+                ImportUtils.importRealms(session, realmReps.values(), strategy);
             }
 
         });

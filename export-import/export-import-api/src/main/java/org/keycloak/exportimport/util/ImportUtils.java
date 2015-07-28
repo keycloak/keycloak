@@ -20,10 +20,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import org.keycloak.exportimport.ExportImportConfig;
 
 /**
@@ -33,6 +31,21 @@ public class ImportUtils {
 
     private static final Logger logger = Logger.getLogger(ImportUtils.class);
 
+    public static void importRealms(KeycloakSession session, Collection<RealmRepresentation> realms, Strategy strategy) {
+        // Import admin realm first
+        for (RealmRepresentation realm : realms) {
+            if (Config.getAdminRealm().equals(realm.getRealm())) {
+                importRealm(session, realm, strategy);
+            }
+        }
+
+        for (RealmRepresentation realm : realms) {
+            if (!Config.getAdminRealm().equals(realm.getRealm())) {
+                importRealm(session, realm, strategy);
+            }
+        }
+    }
+
     /**
      * Fully import realm from representation, save it to model and return model of newly created realm
      *
@@ -41,7 +54,7 @@ public class ImportUtils {
      * @param strategy specifies whether to overwrite or ignore existing realm or user entries
      * @return newly imported realm (or existing realm if ignoreExisting is true and realm of this name already exists)
      */
-    public static RealmModel importRealm(KeycloakSession session, RealmRepresentation rep, Strategy strategy) {
+    public static void importRealm(KeycloakSession session, RealmRepresentation rep, Strategy strategy) {
         String realmName = rep.getRealm();
         RealmProvider model = session.realms();
         RealmModel realm = model.getRealmByName(realmName);
@@ -49,7 +62,7 @@ public class ImportUtils {
         if (realm != null) {
             if (strategy == Strategy.IGNORE_EXISTING) {
                 logger.infof("Realm '%s' already exists. Import skipped", realmName);
-                return realm;
+                return;
             } else {
                 logger.infof("Realm '%s' already exists. Removing it before import", realmName);
                 if (Config.getAdminRealm().equals(realm.getId())) {
@@ -73,7 +86,7 @@ public class ImportUtils {
             logger.infof("Realm '%s' imported", realmName);
         }
         
-        return realm;
+        return;
     }
 
     private static void refreshMasterAdminApps(RealmProvider model, RealmModel realm) {
@@ -145,9 +158,7 @@ public class ImportUtils {
      */
     public static void importFromStream(KeycloakSession session, ObjectMapper mapper, InputStream is, Strategy strategy) throws IOException {
         Map<String, RealmRepresentation> realmReps = getRealmsFromStream(mapper, is);
-        for (RealmRepresentation realmRep : realmReps.values()) {
-            importRealm(session, realmRep, strategy);
-        }
+        importRealms(session, realmReps.values(), strategy);
     }
 
     public static Map<String, RealmRepresentation> getRealmsFromStream(ObjectMapper mapper, InputStream is) throws IOException {

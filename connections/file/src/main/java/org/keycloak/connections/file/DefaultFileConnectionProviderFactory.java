@@ -90,18 +90,7 @@ public class DefaultFileConnectionProviderFactory implements FileConnectionProvi
                 ImportUtils.importFromStream(session, JsonSerialization.mapper, fis, Strategy.IGNORE_EXISTING);
                 session.realms().getMigrationModel().setStoredVersion(model.getModelVersion());
 
-                List<RealmRepresentation> realmReps = new ArrayList<RealmRepresentation>();
-                for (RealmRepresentation realmRep : model.getRealms()) {
-                    if (Config.getAdminRealm().equals(realmRep.getRealm())) {
-                        realmReps.add(0, realmRep);
-                    } else {
-                        realmReps.add(realmRep);
-                    }
-                }
-                for (RealmRepresentation realmRep : realmReps) {
-                    ImportUtils.importRealm(session, realmRep, Strategy.IGNORE_EXISTING);
-                }
-
+                ImportUtils.importRealms(session, model.getRealms(), Strategy.IGNORE_EXISTING);
             } catch (IOException ioe) {
                 logger.error("Unable to read model file " + kcdata.getAbsolutePath(), ioe);
             } finally {
