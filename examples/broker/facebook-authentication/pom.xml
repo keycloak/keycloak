@@ -6,7 +6,7 @@
     <parent>
         <artifactId>keycloak-examples-broker-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.4.0.Final-SNAPSHOT</version>
+        <version>1.5.0.Final-SNAPSHOT</version>
     </parent>
 
     <name>Keycloak Broker Examples - Facebook Authentication</name>
