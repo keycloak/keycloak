@@ -12,10 +12,10 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation testRealmRep = new RealmRepresentation();
+        /*RealmRepresentation testRealmRep = new RealmRepresentation();
         testRealmRep.setRealm(TEST);
         testRealmRep.setEnabled(true);
-        testRealms.add(testRealmRep);
+        testRealms.add(testRealmRep);*/
     }
 
 }

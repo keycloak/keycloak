@@ -90,6 +90,9 @@ public class UserPage extends Realm {
     @FindBy(id = "removeUser")
     private WebElement removeUserButton;
 
+    @FindBy(id = "viewAllUsers")
+    private WebElement viewAllUsersButton;
+
     @Override
     public String getFragment() {
         return super.getFragment() + "/users";
@@ -181,7 +184,7 @@ public class UserPage extends Realm {
     }
 
     public void showAllUsers() {
-        primaryButtons.get(0).click();
+        viewAllUsersButton.click();
     }
 
     public void goToUser(User user) {

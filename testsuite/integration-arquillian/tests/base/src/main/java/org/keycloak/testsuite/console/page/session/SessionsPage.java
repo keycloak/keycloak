@@ -19,6 +19,8 @@
 package org.keycloak.testsuite.console.page.session;
 
 import org.keycloak.testsuite.console.page.AdminConsole;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 /**
  *
@@ -26,7 +28,10 @@ import org.keycloak.testsuite.console.page.AdminConsole;
  */
 public class SessionsPage extends AdminConsole {
 
+	@FindBy(id = "logoutAllSessions")
+	private WebElement logoutAllButton;
+
 	public void logoutAllSessions() {
-		primaryButton.click();
+		logoutAllButton.click();
 	}
 }

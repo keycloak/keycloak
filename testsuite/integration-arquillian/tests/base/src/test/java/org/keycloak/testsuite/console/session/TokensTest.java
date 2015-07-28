@@ -37,7 +37,7 @@ public class TokensTest extends AbstractAdminConsoleTest<TokensPage> {
 
     @Before
     public void beforeTokensTest() {
-        navigation.tokens();
+        navigation.tokens("master");
     }
 
     @Test
@@ -54,7 +54,7 @@ public class TokensTest extends AbstractAdminConsoleTest<TokensPage> {
     public void testLifespanOfRealmSession() {
         page.setSessionTimeoutLifespan(TIMEOUT, TIME_UNIT);
         logOut();
-        loginAsAdmin();
+        //loginAsAdmin();
         waitModel().withTimeout(TIMEOUT + 2, TIME_UNIT) //adds 2 seconds to the timeout
                 .pollingEvery(1, TIME_UNIT)
                 .until("Home page should be visible after session timeout")
@@ -62,7 +62,7 @@ public class TokensTest extends AbstractAdminConsoleTest<TokensPage> {
                 .is()
                 .present();
         login.loginAsAdmin();
-        navigation.tokens();
+        navigation.tokens("master");
         page.setSessionTimeoutLifespan(10, TimeUnit.HOURS);
     }
 }

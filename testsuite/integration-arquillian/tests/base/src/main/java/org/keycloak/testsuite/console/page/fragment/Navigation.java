@@ -120,16 +120,20 @@ public class Navigation {
         openPage(oauthLink, "OAuth Clients");
     }
 
-    public void tokens() {
-        openPage(tokensLink, "Settings");
+    public void tokens(String realmName) {
+        String realmNameCapitalized = Character.toUpperCase(realmName.charAt(0))
+                + realmName.substring(1);
+        openPage(tokensLink, realmNameCapitalized);
     }
 
     public void sessions() {
         openPage(sessionLink, "Sessions");
     }
 
-    public void security() {
-        openPage(securityLink, "Settings");
+    public void security(String realmName) {
+        String realmNameCapitalized = Character.toUpperCase(realmName.charAt(0))
+                + realmName.substring(1);
+        openPage(securityLink, realmNameCapitalized);
     }
 
     public void events() {
@@ -142,8 +146,10 @@ public class Navigation {
         openPage(loginLink, realmNameCapitalized);
     }
 
-    public void themes() {
-        openPage(themesLink, "Settings");
+    public void themes(String realmName) {
+        String realmNameCapitalized = Character.toUpperCase(realmName.charAt(0))
+                + realmName.substring(1);
+        openPage(themesLink, realmNameCapitalized);
     }
 
     public void roleMappings(String username) {
