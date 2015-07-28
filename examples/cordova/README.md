@@ -24,6 +24,7 @@ Install to Android phone or emulator
 
     mkdir platforms plugins
     cordova plugin add org.apache.cordova.inappbrowser
+    cordova plugin add cordova-plugin-whitelist
     cordova platform add android
     cordova run android
 
