@@ -50,9 +50,9 @@
         </fieldset>
 
         <div class="form-group">
-            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageRealm">
-                <button kc-save  data-ng-show="changed">Save</button>
-                <button kc-reset data-ng-disabled="!changed">Clear changes</button>
+            <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
+                <button kc-save  data-ng-disabled="!changed">Save</button>
+                <button kc-reset data-ng-disabled="!changed">Cancel</button>
             </div>
         </div>
     </form>
