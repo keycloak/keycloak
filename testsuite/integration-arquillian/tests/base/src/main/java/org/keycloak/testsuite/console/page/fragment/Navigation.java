@@ -90,6 +90,9 @@ public class Navigation {
     @FindBy(css = "div h1")
     private WebElement currentHeader;
 
+    @FindBy(css = "div > h1.ng-binding")
+    private WebElement tabHeader;
+
     public void selectRealm(String realmName) {
         driver.findElement(By.linkText(realmName)).click();
     }
@@ -111,7 +114,7 @@ public class Navigation {
     public void rolesTab(String clientName) {
         String clientNameCapitalized = Character.toUpperCase(clientName.charAt(0))
                 + clientName.substring(1);
-        openPage(rolesTab, clientNameCapitalized);
+        openTab(rolesTab, clientNameCapitalized);
     }
 
     public void clients() { openPage(clientsLink, "Clients"); }
@@ -174,5 +177,11 @@ public class Navigation {
         waitGuiForElement(page);
         page.click();
         waitModel().until().element(currentHeader).text().contains(headerText);
+    }
+
+    private void openTab(WebElement page, String headerText) {
+        waitGuiForElement(page);
+        page.click();
+        waitModel().until().element(tabHeader).text().contains(headerText);
     }
 }

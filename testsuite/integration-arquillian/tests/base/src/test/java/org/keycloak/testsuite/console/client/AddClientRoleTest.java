@@ -45,7 +45,6 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest<ClientPage> {
         navigation.clients();
     }
 
-    @Ignore
     @Test
     public void testAddClientRole() {
         Client newClient = new Client("test-client1", "http://example.com/*");

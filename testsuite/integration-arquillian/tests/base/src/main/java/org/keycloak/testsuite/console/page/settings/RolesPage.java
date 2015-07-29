@@ -21,6 +21,7 @@ package org.keycloak.testsuite.console.page.settings;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.fragment.RoleMappings;
 import org.keycloak.testsuite.console.page.AdminConsole;
@@ -55,7 +56,7 @@ public class RolesPage extends AdminConsole {
     @FindBy(className = "onoffswitch-switch")
     private WebElement compositeSwitchToggle;
 
-    @FindBy(id = "createRole")
+    @FindByJQuery("a:contains('Add Role')")
     private WebElement addRoleButton;
 
     @FindBy(id = "removeRole")
