@@ -7,6 +7,12 @@
     </subsystem>
     <supplement name="default">
         <replacement placeholder="CACHE-CONTAINERS">
+            <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
+                <local-cache name="realms"/>
+                <local-cache name="users"/>
+                <local-cache name="sessions"/>
+                <local-cache name="loginFailures"/>
+            </cache-container>
             <cache-container name="server" default-cache="default" module="org.wildfly.clustering.server">
                 <local-cache name="default">
                     <transaction mode="BATCH"/>

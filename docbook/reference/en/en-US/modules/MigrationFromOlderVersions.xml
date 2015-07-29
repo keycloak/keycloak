@@ -80,6 +80,21 @@
     <section>
         <title>Version specific migration</title>
         <section>
+            <title>Migrating to 1.5.0.Final</title>
+            <simplesect>
+                <title>Infinispan set to default cache and user session providers</title>
+                <para>
+                    Infinispan is now the default cache and user session provider.
+                </para>
+            </simplesect>
+            <simplesect>
+                <title>Mem user session provider</title>
+                <para>
+                    The mem user session provider has been removed. Instead the Infinispan user session provider with a local cache should be used.
+                </para>
+            </simplesect>
+        </section>
+        <section>
             <title>Migrating to 1.3.0.Final</title>
             <simplesect>
                 <title>Direct Grant API always enabled</title>
