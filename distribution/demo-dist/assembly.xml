@@ -10,7 +10,7 @@
 
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>
+            <directory>${project.build.directory}/unpacked/wildfly-${wildfly.parent.version}</directory>
             <outputDirectory>keycloak</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
@@ -18,7 +18,7 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>
+            <directory>${project.build.directory}/unpacked/wildfly-${wildfly.parent.version}</directory>
             <outputDirectory>keycloak</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
