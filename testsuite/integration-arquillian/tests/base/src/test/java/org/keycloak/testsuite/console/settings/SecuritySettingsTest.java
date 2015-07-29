@@ -21,6 +21,7 @@ package org.keycloak.testsuite.console.settings;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.console.page.settings.SecurityPage;
+import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 
 /**
  *
@@ -30,7 +31,7 @@ public class SecuritySettingsTest extends AbstractAdminConsoleTest<SecurityPage>
 
     @Test
     public void securitySettingsTest() {
-        navigation.security(masterRealm.MASTER);
+        navigation.security(TEST);
         page.goToAndEnableBruteForceProtectionTab();
         //TODO:
 

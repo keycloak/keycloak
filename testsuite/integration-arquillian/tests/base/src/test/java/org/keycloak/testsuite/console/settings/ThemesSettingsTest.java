@@ -24,6 +24,7 @@ import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.model.Theme;
 import org.keycloak.testsuite.console.page.settings.ThemesSettingsPage;
 import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
+import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 
 
 /**
@@ -34,7 +35,7 @@ public class ThemesSettingsTest extends AbstractAdminConsoleTest<ThemesSettingsP
 
     @Before
     public void beforeThemeTest() {
-        navigation.themes(masterRealm.MASTER);
+        navigation.themes(TEST);
     }
 
     @Test

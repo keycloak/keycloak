@@ -24,6 +24,7 @@ import org.keycloak.testsuite.console.page.settings.TokensPage;
 
 import static org.jboss.arquillian.graphene.Graphene.waitModel;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
+import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 
 /**
@@ -37,7 +38,7 @@ public class TokensTest extends AbstractAdminConsoleTest<TokensPage> {
 
     @Before
     public void beforeTokensTest() {
-        navigation.tokens(masterRealm.MASTER);
+        navigation.tokens(TEST);
     }
 
     @Test
@@ -62,7 +63,7 @@ public class TokensTest extends AbstractAdminConsoleTest<TokensPage> {
                 .is()
                 .present();
         login.loginAsAdmin();
-        navigation.tokens(masterRealm.MASTER);
+        navigation.tokens(TEST);
         page.setSessionTimeoutLifespan(10, TimeUnit.HOURS);
     }
 }
