@@ -12,7 +12,7 @@
     <name>Adapter Tests on Wildfly 8</name>
     
     <properties>
-        <wildfly.version>8.2.0.Final</wildfly.version>
+        <wildfly.version>8.2.1.Final</wildfly.version>
         
         <app.server.wildfly.home>${containers.home}/wildfly-${wildfly.version}</app.server.wildfly.home>
         <adapter.libs.wildfly>${containers.home}/keycloak-wf8-adapter-dist</adapter.libs.wildfly>
