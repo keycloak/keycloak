@@ -7,11 +7,12 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
-import org.keycloak.testsuite.model.User;
 import org.keycloak.testsuite.console.page.fragment.RoleMappings;
 import org.keycloak.testsuite.console.page.settings.user.UserPage;
 
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import org.keycloak.representations.idm.UserRepresentation;
 import static org.openqa.selenium.By.linkText;
 
 /**
@@ -21,6 +22,8 @@ public class UserRoleMappingsTest extends AbstractAdminConsoleTest<RoleMappings>
 
     @Page
     private UserPage userPage;
+    
+    private UserRepresentation testUser;
 
     @FindByJQuery(".alert")
     private FlashMessage flashMessage;
@@ -28,12 +31,14 @@ public class UserRoleMappingsTest extends AbstractAdminConsoleTest<RoleMappings>
     @Before
     public void beforeRoleMappingsTest() {
         navigation.users();
+        testUser = new UserRepresentation();
     }
 
     @Test
     public void addUserAndAssignRole() {
         String testUsername = "tester1";
-        User testUser = new User(testUsername, "pass");
+        testUser.setUsername(testUsername);
+        testUser.credential(PASSWORD, "pass");
         userPage.addUser(testUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
@@ -52,7 +57,8 @@ public class UserRoleMappingsTest extends AbstractAdminConsoleTest<RoleMappings>
     @Test
     public void addAndRemoveUserAndAssignRole() {
         String testUsername = "tester2";
-        User testUser = new User(testUsername, "pass");
+        testUser.setUsername(testUsername);
+        testUser.credential(PASSWORD, "pass");
         userPage.addUser(testUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());

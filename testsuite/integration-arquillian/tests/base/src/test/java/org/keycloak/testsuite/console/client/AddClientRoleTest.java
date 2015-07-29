@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.*;
+import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import org.keycloak.representations.idm.UserRepresentation;
 import static org.openqa.selenium.By.linkText;
 
 /**
@@ -76,7 +78,9 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest<ClientPage> {
         Client newClient = new Client("test-client2", "http://example.com/*");
         Role newRole = new Role("client-role2");
         String testUsername = "test-user2";
-        User newUser = new User(testUsername, "pass");
+        UserRepresentation newUser = new UserRepresentation();
+        newUser.setUsername(testUsername);
+        newUser.credential(PASSWORD, "pass");
 
         page.addClient(newClient);
         flashMessage.waitUntilPresent();
@@ -119,14 +123,16 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest<ClientPage> {
         assertNull(page.findClient(newClient.getName()));
     }
 
-
     @Ignore //KEYCLOAK-1496, KEYCLOAK-1497
     @Test
     public void testAddCompositeRealmClientRoleToUser() {
         Client newClient = new Client("test-client3", "http://example.com/*");
         Role clientCompositeRole = new Role("client-composite-role");
         String testUsername = "test-user3";
-        User newUser = new User(testUsername, "pass");
+        UserRepresentation newUser = new UserRepresentation();
+        newUser.setUsername(testUsername);
+        newUser.credential(PASSWORD, "pass");
+
         Role subRole1 = new Role("sub-role1");
         Role subRole2 = new Role("sub-role2");
         List<Role> roles = new ArrayList<>();
@@ -205,7 +211,10 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest<ClientPage> {
         Client newClient = new Client("test-client4", "http://example.com/*");
         Role clientCompositeRole = new Role("client-composite-role2");
         String testUsername = "test-user4";
-        User newUser = new User(testUsername, "pass");
+        UserRepresentation newUser = new UserRepresentation();
+        newUser.setUsername(testUsername);
+        newUser.credential(PASSWORD, "pass");
+
         Role subRole1 = new Role("client-sub-role1");
         Role subRole2 = new Role("client-sub-role2");
         List<Role> roles = new ArrayList<>();

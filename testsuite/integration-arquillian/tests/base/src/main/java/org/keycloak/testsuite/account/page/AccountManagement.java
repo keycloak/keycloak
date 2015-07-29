@@ -19,7 +19,7 @@ package org.keycloak.testsuite.account.page;
 
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
-import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
+import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 import org.keycloak.testsuite.page.auth.AuthServer;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -33,7 +33,7 @@ public class AccountManagement extends AuthServer {
     public static final String ACCOUNT_REALM = "accountRealm";
     
     public AccountManagement() {
-        setUriParameter(ACCOUNT_REALM, MASTER);
+        setUriParameter(ACCOUNT_REALM, TEST);
     }
     
     @Override

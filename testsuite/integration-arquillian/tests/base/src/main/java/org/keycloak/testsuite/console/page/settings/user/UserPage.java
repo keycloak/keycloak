@@ -24,6 +24,7 @@ import org.openqa.selenium.support.FindBy;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import org.keycloak.testsuite.model.RequiredUserAction;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
@@ -98,30 +99,28 @@ public class UserPage extends AdminConsoleRealm {
         return super.getFragment() + "/users";
     }
 
-    public void addUser(User user) {
+    public void addUser(UserRepresentation user) {
         addUserButton.click();
         waitAjaxForElement(usernameInput);
-        usernameInput.sendKeys(user.getUserName());
+        usernameInput.sendKeys(user.getUsername());
         emailInput.sendKeys(user.getEmail());
         firstNameInput.sendKeys(user.getFirstName());
         lastNameInput.sendKeys(user.getLastName());
-        if (!user.isUserEnabled()) {
+        if (!user.isEnabled()) {
             userEnabledSwitchToggle.click();
         }
         if (user.isEmailVerified()) {
             emailVerifiedSwitchToggle.click();
         }
-        if(!user.getRequiredUserActions().isEmpty()){
-            for (RequiredUserAction action : user.getRequiredUserActions()) {
+        if (!user.getRequiredActions().isEmpty()) {
+            for (String action : user.getRequiredActions()) {
                 //driver.findElement(By.cssSelector("..select2-choices")).click();
-                requiredUserActionsInput.sendKeys(action.getActionName());
+                requiredUserActionsInput.sendKeys(action);
                 requiredUserActionsConfirm.click();
             }
         }
         primaryButton.click();
-        }
-
-
+    }
 
     public void addPasswordForUser(User user) {
         password.sendKeys(user.getPassword());
@@ -146,7 +145,7 @@ public class UserPage extends AdminConsoleRealm {
     }
 
     public void updateUser(User user) {
-        goToUser(user);
+        goToUser(user.getUserName());
         waitAjaxForElement(usernameInput);
         usernameInput.sendKeys(user.getUserName());
         emailInput.clear();
@@ -187,13 +186,9 @@ public class UserPage extends AdminConsoleRealm {
         viewAllUsersButton.click();
     }
 
-    public void goToUser(User user) {
+    public void goToUser(String username) {
         waitAjaxForElement(tableRow);
-        dataTable.findElement(linkText(user.getUserName())).click();
-    }
-
-    public void goToUser(String name) {
-        goToUser(new User(name));
+        dataTable.findElement(linkText(username)).click();
     }
 
     private List<User> getAllRows() {

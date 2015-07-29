@@ -15,22 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.util;
 
-import org.keycloak.testsuite.model.User;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 /**
  *
  * @author Petr Mensik
+ * @author tkyjovsk
  */
-public final class Users {
+public class Users {
 
-	private Users() {
-	}
-	
-	public static final User ADMIN = new User("admin", "admin");
-	public static final User EMPTY_USER = new User();
-	public static final User TEST_USER1 = new User("user", "password", "user@redhat.com", "user", "test");
-	
+    public static CredentialRepresentation getPasswordCredentialOf(UserRepresentation user) {
+        CredentialRepresentation password = null;
+        for (CredentialRepresentation c : user.getCredentials()) {
+            if (CredentialRepresentation.PASSWORD.equals(c.getType())) {
+                password = c;
+            }
+        }
+        if (password == null) {
+            throw new AssertionError("User '" + user.getUsername() + "' doesn't have a password credential set.");
+        }
+        return password;
+    }
+    
 }

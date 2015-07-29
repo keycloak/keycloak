@@ -13,6 +13,8 @@ import org.keycloak.testsuite.console.page.settings.RolesPage;
 import org.keycloak.testsuite.console.page.settings.user.UserPage;
 
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import org.keycloak.representations.idm.UserRepresentation;
 
 /**
  * Created by fkiss.
@@ -47,7 +49,9 @@ public class DefaultRolesTest extends AbstractAdminConsoleTest<RolesPage> {
         roleMappings.addAvailableRole(defaultRole);
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
-        User testUser = new User(testUsername, "pass");
+        UserRepresentation testUser = new UserRepresentation();
+        testUser.setUsername(testUsername);
+        testUser.credential(PASSWORD, "pass");
         navigation.users();
         userPage.addUser(testUser);
         flashMessage.waitUntilPresent();

@@ -16,6 +16,8 @@ import org.keycloak.testsuite.console.page.settings.user.UserPage;
 
 import java.util.ArrayList;
 import java.util.List;
+import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import org.keycloak.representations.idm.UserRepresentation;
 
 /**
  * Created by fkiss.
@@ -42,7 +44,9 @@ public class AddCompositeRoleTest extends AbstractAdminConsoleTest<RolesPage> {
     @Ignore//KEYCLOAK-1497
     @Test
     public void testAddCompositeRole() {
-        User user = new User("usercomposite");
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("usercomposite");
+
         Role compositeRole = new Role("compositeRole");
         Role subRole1 = new Role("subRole1");
         Role subRole2 = new Role("subRole2");
@@ -65,7 +69,6 @@ public class AddCompositeRoleTest extends AbstractAdminConsoleTest<RolesPage> {
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
-
         //adding subroles to composite role
         navigation.roles();
         page.findRole(compositeRole.getName());
@@ -77,11 +80,11 @@ public class AddCompositeRoleTest extends AbstractAdminConsoleTest<RolesPage> {
 
         //check if subroles work as expected
         navigation.users();
-        userPage.findUser(user.getUserName());
-        userPage.goToUser(user);
-        navigation.roleMappings(user.getUserName());
+        userPage.findUser(user.getUsername());
+        userPage.goToUser(user.getUsername());
+        navigation.roleMappings(user.getUsername());
         roleMappings.addAvailableRole(compositeRole.getName());
-        assertTrue(roleMappings.checkIfEffectiveRealmRolesAreComplete(compositeRole, subRole1,subRole2));
+        assertTrue(roleMappings.checkIfEffectiveRealmRolesAreComplete(compositeRole, subRole1, subRole2));
 
         //delete everything
         navigation.roles();
@@ -93,11 +96,10 @@ public class AddCompositeRoleTest extends AbstractAdminConsoleTest<RolesPage> {
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
-           e.printStackTrace();
+            e.printStackTrace();
         }
         navigation.users();
-        userPage.deleteUser(user.getUserName());
+        userPage.deleteUser(user.getUsername());
     }
-
 
 }

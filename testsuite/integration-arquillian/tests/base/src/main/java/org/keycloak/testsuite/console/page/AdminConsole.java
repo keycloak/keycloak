@@ -20,7 +20,7 @@ package org.keycloak.testsuite.console.page;
 import org.keycloak.testsuite.page.auth.AuthServer;
 import java.util.List;
 import javax.ws.rs.core.UriBuilder;
-import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
+import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -33,7 +33,7 @@ public class AdminConsole extends AuthServer {
     public static final String ADMIN_REALM = "adminRealm";
 
     public AdminConsole() {
-        setUriParameter(ADMIN_REALM, TEST);
+        setUriParameter(ADMIN_REALM, MASTER);
     }
     
     public AdminConsole setAdminRealm(String consoleRealm) {

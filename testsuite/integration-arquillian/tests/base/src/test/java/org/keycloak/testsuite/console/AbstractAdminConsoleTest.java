@@ -42,9 +42,6 @@ public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends A
     protected AuthRealm authRealm;
 
     @Page
-    protected AdminConsole adminConsole;
-    
-    @Page
     protected AdminConsoleRealm adminConsoleRealm;
 
     @Before
@@ -54,7 +51,7 @@ public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends A
 
     @After
     public void afterConsoleTest() {
-        logOut();
+//        logOut; // no need to log out, abstract test clears cookies after
     }
 
     @Override

@@ -20,14 +20,14 @@ package org.keycloak.testsuite.console.user;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.junit.Test;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
-import org.keycloak.testsuite.model.User;
 import org.keycloak.testsuite.console.page.settings.user.UserPage;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Ignore;
+import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
-import static org.keycloak.testsuite.util.Users.TEST_USER1;
 
 /**
  *
@@ -38,16 +38,21 @@ public class AddNewUserTest extends AbstractAdminConsoleTest<UserPage> {
     @FindByJQuery(".alert")
     private FlashMessage flashMessage;
 
+    private UserRepresentation testUser;
+    
     @Before
     public void beforeAddNewUserTest() {
         navigation.users();
+        testUser = new UserRepresentation();
     }
 
     @Test
     public void addUserWithInvalidEmailTest() {
         String testUsername = "testUserInvEmail";
         String invalidEmail = "user.redhat.com";
-        User testUser = new User(testUsername, "pass", invalidEmail);
+        testUser.setUsername(testUsername);
+        testUser.credential(PASSWORD, "pass");
+        testUser.setEmail(invalidEmail);
         page.addUser(testUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
@@ -57,7 +62,6 @@ public class AddNewUserTest extends AbstractAdminConsoleTest<UserPage> {
 
     @Test
     public void addUserWithNoUsernameTest() {
-        User testUser = new User();
         page.addUser(testUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
@@ -67,25 +71,26 @@ public class AddNewUserTest extends AbstractAdminConsoleTest<UserPage> {
     @Test
     public void addUserWithLongNameTest() {
         String longUserName = "thisisthelongestnameeveranditcannotbeusedwhencreatingnewuserinkeycloak";
-        User testUser = new User(longUserName);
+        testUser.setUsername(longUserName);
         navigation.users();
         page.addUser(testUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
-        assertNull(page.findUser(testUser.getUserName()));
+        assertNull(page.findUser(testUser.getUsername()));
     }
 
     @Test
     public void addDuplicatedUser() {
         String testUsername = "test_duplicated_user";
-        User testUser = new User(testUsername);
+        testUser.setUsername(testUsername);
         page.addUser(testUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         navigation.users();
         assertNotNull(page.findUser(testUsername));
 
-        User testUser2 = new User(testUsername);
+        UserRepresentation testUser2 = new UserRepresentation();
+        testUser2.setUsername(testUsername);
         page.addUser(testUser2);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
@@ -93,21 +98,21 @@ public class AddNewUserTest extends AbstractAdminConsoleTest<UserPage> {
         page.deleteUser(testUsername);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(page.findUser(testUser2.getUserName()));
+        assertNull(page.findUser(testUser2.getUsername()));
     }
 
     @Test
     public void addDisabledUser() {
-        User disabledUser = new User(TEST_USER1);
-        disabledUser.setUserEnabled(false);
-        disabledUser.setUserName("disabled_user");
+        UserRepresentation disabledUser = new UserRepresentation();
+        disabledUser.setEnabled(false);
+        disabledUser.setUsername("disabled_user");
         page.addUser(disabledUser);
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         navigation.users();
-        page.deleteUser(disabledUser.getUserName());
+        page.deleteUser(disabledUser.getUsername());
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(page.findUser(disabledUser.getUserName()));
+        assertNull(page.findUser(disabledUser.getUsername()));
     }
 
 }

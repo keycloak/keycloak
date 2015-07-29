@@ -17,14 +17,15 @@
  */
 package org.keycloak.testsuite.page.auth;
 
-import org.keycloak.testsuite.model.User;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.core.UriBuilder;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.Users.getPasswordCredentialOf;
 
 /**
  *
@@ -65,18 +66,18 @@ public class Registration extends LoginActions {
     @FindBy(xpath = "//input[@type='submit']")
     private WebElement registerButton;
 
-    public void registerNewUser(User user) {
-        registerNewUser(user, user.getPassword());
+    public void registerNewUser(UserRepresentation user) {
+        registerNewUser(user, getPasswordCredentialOf(user).getValue());
     }
 
-    public void registerNewUser(User user, String confirmPassword) {
+    public void registerNewUser(UserRepresentation user, String confirmPassword) {
         driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
         waitGuiForElement(passwordConfirmInput, "Register form should be visible");
-        clearAndType(usernameInput, user.getUserName());
+        clearAndType(usernameInput, user.getUsername());
         clearAndType(firstNameInput, user.getFirstName());
         clearAndType(lastNameInput, user.getLastName());
         clearAndType(emailInput, user.getEmail());
-        clearAndType(passwordInput, user.getPassword());
+        clearAndType(passwordInput, getPasswordCredentialOf(user).getValue());
         clearAndType(passwordConfirmInput, confirmPassword);
         registerButton.submit();
     }

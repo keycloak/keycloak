@@ -17,24 +17,18 @@
  */
 package org.keycloak.testsuite.account;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
 import org.junit.Test;
-import org.keycloak.testsuite.model.User;
 import org.keycloak.testsuite.page.auth.Registration;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.account.page.Account;
-import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
 import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
-import static org.keycloak.testsuite.util.Users.TEST_USER1;
 
 /**
  *
@@ -51,41 +45,26 @@ public class RegisterNewUserTest extends AbstractAccountManagementTest {
     @Page
     private Registration registration;
 
-//    @Page
-//    private UserPage userPage;
-
     @Before
     public void beforeUserRegistration() {
         RealmRepresentation realm = keycloak.realm(TEST).toRepresentation();
         realm.setRegistrationAllowed(true);
-        keycloak.realm(MASTER).update(realm);
+        keycloak.realm(TEST).update(realm);
 
         account.navigateTo();
         login.registration();
 
         testUser = new UserRepresentation();
         testUser.setUsername("user");
-        List<CredentialRepresentation> credentials = new ArrayList<>();
-        CredentialRepresentation cr = new CredentialRepresentation();
-        cr.setType(PASSWORD);
-        cr.setValue("password");
-        credentials.add(cr);
-        testUser.setCredentials(credentials);
+        testUser.credential(PASSWORD, "password");
         testUser.setEmail("user@redhat.com");
         testUser.setFirstName("user");
         testUser.setLastName("test");
     }
 
-    @After
-    public void afterUserRegistration() {
-        RealmRepresentation realm = keycloak.realm(MASTER).toRepresentation();
-        realm.setRegistrationAllowed(false);
-        keycloak.realm(MASTER).update(realm);
-    }
-
     public UserRepresentation findUserByUserName(String userName) {
         UserRepresentation user = null;
-        List<UserRepresentation> ur = keycloak.realm(MASTER).users().search(userName, null, null);
+        List<UserRepresentation> ur = keycloak.realm(TEST).users().search(userName, null, null);
         if (ur.size() == 1) {
             user = ur.get(0);
         }
@@ -94,25 +73,24 @@ public class RegisterNewUserTest extends AbstractAccountManagementTest {
 
     @Test
     public void registerNewUserTest() {
-        registration.registerNewUser(TEST_USER1);
-        assertNotNull(findUserByUserName(TEST_USER1.getUserName()));
+        registration.registerNewUser(testUser);
+        assertNotNull(findUserByUserName(testUser.getUsername()));
     }
 
     @Test
     public void registerNewUserWithWrongEmail() {
-        User testUser = new User(TEST_USER1);
         testUser.setEmail("newUser.redhat.com");
         registration.registerNewUser(testUser);
         assertTrue(registration.isInvalidEmail());
         registration.backToLoginPage();
         loginAsAdmin();
         navigation.users();
-        assertNull(findUserByUserName(TEST_USER1.getUserName()));
+        assertNull(findUserByUserName(testUser.getUsername()));
     }
 
     @Test
     public void registerNewUserWithWrongAttributes() {
-        User testUser = new User();
+        testUser = new UserRepresentation();
 
         registration.registerNewUser(testUser);
         assertFalse(registration.isAttributeSpecified("first name"));
@@ -125,19 +103,20 @@ public class RegisterNewUserTest extends AbstractAccountManagementTest {
         testUser.setEmail("mail@redhat.com");
         registration.registerNewUser(testUser);
         assertFalse(registration.isAttributeSpecified("username"));
-        testUser.setUserName("user");
+        testUser.setUsername("user");
         registration.registerNewUser(testUser);
         assertFalse(registration.isAttributeSpecified("password"));
-        testUser.setPassword("password");
+        testUser.credential(PASSWORD, "password");
         registration.registerNewUser(testUser);
-
+        assertNotNull(findUserByUserName(testUser.getUsername()));
     }
 
     @Test
     public void registerNewUserWithNotMatchingPasswords() {
-        registration.registerNewUser(TEST_USER1, "psswd");
+        registration.registerNewUser(testUser, "psswd");
         assertFalse(registration.isPasswordSame());
-        registration.registerNewUser(TEST_USER1);
+        registration.registerNewUser(testUser);
+        assertNotNull(findUserByUserName(testUser.getUsername()));
     }
 
 }
