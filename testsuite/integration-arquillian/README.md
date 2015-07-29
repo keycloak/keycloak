@@ -19,7 +19,8 @@ A different container can be selected with profile, e.g. `-Pauth-server-wildfly`
 | Container | Arquillian Qualifier | Maven | Dependencies |
 | --- | --- | --- | --- |
 | **Undertow** | `auth-server-undertow` | **default** | `undertow-core`, `resteasy-undertow` |
-| **Wildfly 9** | `auth-server-wildfly` | `-Pauth-server-wildfly` | `keycloak-server-dist` |
+| **Wildfly 9** | `auth-server-wildfly` | `-Pauth-server-wildfly` | `keycloak-server-dist` or `wildfly-dist`+`keycloak-server-overlay` |
+| **EAP 6.4** | `auth-server-eap6` | `-Pauth-server-eap6` | `keycloak-server-dist` or `eap6-dist`+`keycloak-server-overlay` |
 
 See the relevant container definitions in `arquillian.xml` located in the **test resources** folder.
 
@@ -80,13 +81,20 @@ This will allow Maven to continue building other modules even if some of them ha
 
 | Container | Arquillian Qualifier | Maven | Dependencies |
 | --- | --- | --- | --- |
-| **Wildfly 9** Relative | `auth-server-wildfly` | `-Pauth-server-wildfly` | `keycloak-demo-dist` serves both as auth-server and app-server (relative test scenario) |
+| **Wildfly 9** Relative | `auth-server-wildfly` | `-Pauth-server-wildfly` | `keycloak-server-dist` or `wildfly-dist`+`keycloak-server-overlay`, `keycloak-adapter-dist-wf9` |
 | **Wildfly 9** | `app-server-wildfly` | `-Papp-server-wildfly` | `wildfly-dist`, `keycloak-adapter-dist-wf9` |
-| ~~**JBoss AS 7**~~ WIP | `app-server-as7` | `-Papp-server-as7` | `jboss-as-dist`, `keycloak-adapter-dist-as7` |
+| **Wildfly 8** | `app-server-wildfly` | `-Papp-server-wildfly8` | `wildfly-dist:8.2.1.Final`, `keycloak-adapter-dist-wf8` |
+| **JBoss AS 7** | `app-server-as7` | `-Papp-server-as7` | `jboss-as-dist`, `keycloak-adapter-dist-as7` |
 | **Tomcat 8** | `app-server-tomcat` | `-Papp-server-tomcat` | `tomcat`, `keycloak-tomcat8-adapter-dist` |
 | **Karaf 3** | `app-server-karaf` | `-Papp-server-karaf` | `apache-camel`, `apache-cxf`, `keycloak-osgi-features`, `keycloak-fuse-example-features` |
 
-See the relevant container definitions in `arquillian.xml` located in the **test resources** folder.
+See the relevant container definitions in `tests/adapter/<container>/src/main/xslt/arquillian.xsl`.
+
+***Important:*** Arquillian cannot load multiple controllers for JBossAS/Wildfly containers in a single run (because same class name)
+but a different controller is required for JBossAS7/EAP6 than for WF8/9. Because of this:
+
+ - Adapter tests for *Wildfly 8/9* cannot be run against server on *EAP 6*. `-Papp-server-wildfly*` ⇒ `!auth-server-eap6`
+ - Adapter tests for *JBossAS 7* can only be run against server on *EAP 6*. `-Papp-server-as7,auth-server-eap6`
 
 ### Adapter Test Types
 
@@ -149,7 +157,7 @@ It automatically modifies imported test realms and deployments' adapter configs 
 | Themes |  |
 | Multitenancy | WIP |  |
 | **Basic Auth** | Good | All |
-| **Fuse** | WIP | `app-server-karaf` |
+| **Fuse** | Good | `app-server-karaf` |
 | SAML |  |
 | LDAP |  |
 | Kerberos |  |
