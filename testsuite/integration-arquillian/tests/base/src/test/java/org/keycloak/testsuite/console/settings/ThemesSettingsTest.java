@@ -33,7 +33,7 @@ public class ThemesSettingsTest extends AbstractAdminConsoleTest<ThemesSettingsP
 
     @Before
     public void beforeThemeTest() {
-        navigation.themes("master");
+        navigation.themes(masterRealm.MASTER);
     }
 
     @Test
@@ -44,7 +44,7 @@ public class ThemesSettingsTest extends AbstractAdminConsoleTest<ThemesSettingsP
         page.verifyBaseTheme();
 
         loginAsAdmin();
-        navigation.themes("master");
+        navigation.themes(masterRealm.MASTER);
         page.changeLoginTheme(Theme.KEYCLOAK.getName());
         page.saveTheme();
         logOut();

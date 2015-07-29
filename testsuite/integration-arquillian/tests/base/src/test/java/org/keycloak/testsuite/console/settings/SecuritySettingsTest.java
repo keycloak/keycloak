@@ -30,7 +30,7 @@ public class SecuritySettingsTest extends AbstractAdminConsoleTest<SecurityPage>
 
     @Test
     public void securitySettingsTest() {
-        navigation.security("master");
+        navigation.security(masterRealm.MASTER);
         page.goToAndEnableBruteForceProtectionTab();
         //TODO:
 

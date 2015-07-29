@@ -37,7 +37,7 @@ public class TokensTest extends AbstractAdminConsoleTest<TokensPage> {
 
     @Before
     public void beforeTokensTest() {
-        navigation.tokens("master");
+        navigation.tokens(masterRealm.MASTER);
     }
 
     @Test
@@ -62,7 +62,7 @@ public class TokensTest extends AbstractAdminConsoleTest<TokensPage> {
                 .is()
                 .present();
         login.loginAsAdmin();
-        navigation.tokens("master");
+        navigation.tokens(masterRealm.MASTER);
         page.setSessionTimeoutLifespan(10, TimeUnit.HOURS);
     }
 }
