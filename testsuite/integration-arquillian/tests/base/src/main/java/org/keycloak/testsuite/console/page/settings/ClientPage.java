@@ -17,6 +17,7 @@
  */
 package org.keycloak.testsuite.console.page.settings;
 
+import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.testsuite.model.Client;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.openqa.selenium.WebElement;
@@ -64,7 +65,7 @@ public class ClientPage extends AdminConsole {
     private WebElement removeClientButton;
 
     public void addClient(Client client) {
-        primaryButton.click();
+        createClientButton.click();
         waitAjaxForElement(clientId);
         clientId.sendKeys(client.getClientId());
         nameInput.sendKeys(client.getName());
