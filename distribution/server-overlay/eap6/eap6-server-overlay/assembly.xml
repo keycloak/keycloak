@@ -34,7 +34,7 @@
             <destName>standalone-keycloak-ha.xml</destName>
         </file>
         <file>
-            <source>src/main/keycloak-server.json</source>
+            <source>../../../feature-packs/server-feature-pack/src/main/resources/content/standalone/configuration/keycloak-server.json</source>
             <outputDirectory>standalone/configuration</outputDirectory>
         </file>
         <file>
