@@ -42,7 +42,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealm.setConsoleRealm("example");
+        authRealm.setAuthRealm("example");
     }
 
     @Test

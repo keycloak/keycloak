@@ -17,30 +17,35 @@
  */
 package org.keycloak.testsuite.console;
 
+import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
-import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.console.page.AdminConsole;
-import org.keycloak.testsuite.console.page.Realm;
-import static org.keycloak.testsuite.console.page.Realm.MASTER;
-import static org.keycloak.testsuite.console.page.Realm.TEST;
+import org.keycloak.testsuite.console.page.AdminConsoleRealm;
+import org.keycloak.testsuite.page.auth.AuthRealm;
+import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 
 /**
  *
  * @author Petr Mensik
  * @param <P>
  */
-public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends AbstractAuthTest {
+public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends AbstractKeycloakTest {
 
     @Page
     protected P page;
 
     @Page
-    protected Realm masterRealm;
+    protected AuthRealm authRealm;
 
     @Page
-    protected Realm testRealm;
+    protected AdminConsole adminConsole;
+    
+    @Page
+    protected AdminConsoleRealm adminConsoleRealm;
 
     @Before
     public void beforeConsoleTest() {
@@ -49,15 +54,20 @@ public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends A
 
     @After
     public void afterConsoleTest() {
-        adminConsole.setAdminRealm(MASTER);
         logOut();
     }
 
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        masterRealm.setConsoleRealm(MASTER);
-        testRealm.setConsoleRealm(TEST);
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        RealmRepresentation testRealmRep = new RealmRepresentation();
+        testRealmRep.setRealm(TEST);
+        testRealmRep.setEnabled(true);
+        testRealms.add(testRealmRep);
     }
 
 }

@@ -19,8 +19,8 @@ package org.keycloak.testsuite.account.page;
 
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
+import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
 import org.keycloak.testsuite.page.auth.AuthServer;
-import static org.keycloak.testsuite.console.page.Realm.MASTER;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 

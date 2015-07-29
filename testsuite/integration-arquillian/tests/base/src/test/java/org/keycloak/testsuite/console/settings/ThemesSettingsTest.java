@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.model.Theme;
 import org.keycloak.testsuite.console.page.settings.ThemesSettingsPage;
+import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
 
 
 /**
@@ -44,7 +45,7 @@ public class ThemesSettingsTest extends AbstractAdminConsoleTest<ThemesSettingsP
         page.verifyBaseTheme();
 
         loginAsAdmin();
-        navigation.themes("master");
+        navigation.themes(MASTER);
         page.changeLoginTheme(Theme.KEYCLOAK.getName());
         page.saveTheme();
         logOut();

@@ -15,10 +15,11 @@ import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.adapter.page.CustomerPortalExample;
 import org.keycloak.testsuite.adapter.page.DatabaseServiceExample;
 import org.keycloak.testsuite.adapter.page.ProductPortalExample;
+import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.model.RequiredUserAction;
 import org.keycloak.testsuite.model.User;
-import static org.keycloak.testsuite.console.page.Realm.DEMO;
 import org.keycloak.testsuite.console.page.settings.user.UserPage;
+import static org.keycloak.testsuite.page.auth.AuthRealm.DEMO;
 import org.keycloak.testsuite.page.auth.UpdateAccountPage;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
 import static org.keycloak.testsuite.util.SeleniumUtils.pause;
@@ -34,7 +35,9 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     private DatabaseServiceExample databaseServiceExample;
 
     @Page
-    private UserPage testRealmUsers;
+    protected AdminConsoleRealm adminConsole;
+    @Page
+    private UserPage users;
     @Page
     private UpdateAccountPage accountPage;
 
@@ -62,8 +65,13 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealm.setConsoleRealm(DEMO);
-        testRealmUsers.setConsoleRealm(DEMO);
+        authRealm.setAuthRealm(DEMO);
+        
+        adminConsole.setAdminRealm(DEMO);
+        adminConsole.setConsoleRealm(DEMO);
+        
+        users.setAdminRealm(DEMO);
+        users.setConsoleRealm(DEMO);
     }
 
     @Test
@@ -124,14 +132,14 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     private void addRequiredAction(RequiredUserAction action) {
         loginAsAdmin();
         pause(2000);
-        testRealm.navigateTo();
-        testRealm.clickUsers();
+        adminConsole.navigateTo();
+        adminConsole.clickUsers();
         pause(1000);
-        assertCurrentUrl(testRealmUsers);
-        User bburke = testRealmUsers.findUser("bburke@redhat.com");
+        assertCurrentUrl(users);
+        User bburke = users.findUser("bburke@redhat.com");
         pause(1000);
         bburke.addRequiredUserAction(action);
-        testRealmUsers.updateUser(bburke);
+        users.updateUser(bburke);
         pause(1000);
         logOut();
         pause(1000);
@@ -140,13 +148,13 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     private void removeRequiredAction(RequiredUserAction action) {
         loginAsAdmin();
         pause(2000);
-        testRealm.navigateTo();
-        testRealm.clickUsers();
+        adminConsole.navigateTo();
+        adminConsole.clickUsers();
         pause(1000);
-        User bburke = testRealmUsers.findUser("bburke@redhat.com");
+        User bburke = users.findUser("bburke@redhat.com");
         pause(1000);
         bburke.removeRequiredUserAction(action);
-        testRealmUsers.updateUser(bburke);
+        users.updateUser(bburke);
         logOut();
     }
 }

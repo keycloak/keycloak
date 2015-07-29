@@ -9,7 +9,7 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author tkyjovsk
  */
-public class RealmsRoot extends AdminConsole {
+public class AdminConsoleRealmsRoot extends AdminConsole {
 
     @FindBy(xpath = "//tr[@data-ng-repeat='r in realms']//a[contains(@class,'ng-binding')]")
     private List<WebElement> realmLinks;

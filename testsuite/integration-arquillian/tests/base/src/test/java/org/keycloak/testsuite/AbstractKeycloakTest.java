@@ -20,12 +20,12 @@ import org.keycloak.testsuite.arquillian.ContainersTestEnricher.AdminPasswordUpd
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.page.auth.AuthServer;
 import org.keycloak.testsuite.page.auth.AuthServerContextRoot;
-import static org.keycloak.testsuite.console.page.Realm.MASTER;
 import static org.keycloak.testsuite.util.PageAssert.*;
 import org.keycloak.testsuite.console.page.fragment.MenuPage;
 import org.keycloak.testsuite.console.page.fragment.Navigation;
 import org.keycloak.testsuite.page.auth.Login;
 import org.keycloak.testsuite.account.page.Password;
+import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
 import static org.keycloak.testsuite.util.Constants.ADMIN_PSSWD;
 
 /**
@@ -49,7 +49,7 @@ public abstract class AbstractKeycloakTest {
     @Page
     protected AuthServer authServer;
     @Page
-    protected AdminConsole adminConsole;
+    private AdminConsole adminConsoleMaster;
     
     @Page
     protected Login login;
@@ -96,10 +96,10 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void loginAsAdmin() {
-        adminConsole.navigateTo();
+        adminConsoleMaster.navigateTo();
         login.loginAsAdmin();
         if (isAdminPasswordUpdated()) {
-            assertCurrentUrlStartsWith(adminConsole);
+            assertCurrentUrlStartsWith(adminConsoleMaster);
         }
     }
 
@@ -107,14 +107,14 @@ public abstract class AbstractKeycloakTest {
         loginAsAdmin();
         passwordPage.confirmNewPassword(ADMIN_PSSWD);
         passwordPage.submit();
-        assertCurrentUrlStartsWith(adminConsole);
+        assertCurrentUrlStartsWith(adminConsoleMaster);
         logOut();
         setAdminPasswordUpdated(true);
     }
 
     public void logOut() {
-        adminConsole.navigateTo();
-        assertCurrentUrlStartsWith(adminConsole);
+        adminConsoleMaster.navigateTo();
+        assertCurrentUrlStartsWith(adminConsoleMaster);
         menuPage.logOut();
     }
 
@@ -126,7 +126,7 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void setDefaultPageUriParameters() {
-        adminConsole.setAdminRealm(MASTER);
+        adminConsoleMaster.setAdminRealm(MASTER);
     }
 
     public abstract void addTestRealms(List<RealmRepresentation> testRealms);

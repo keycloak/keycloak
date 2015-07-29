@@ -24,7 +24,6 @@ import org.openqa.selenium.support.FindBy;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.jboss.arquillian.graphene.findby.ByJQuery;
 
 import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
 import static org.openqa.selenium.By.cssSelector;

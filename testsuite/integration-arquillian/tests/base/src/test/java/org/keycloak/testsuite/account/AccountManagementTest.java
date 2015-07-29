@@ -17,7 +17,6 @@
  */
 package org.keycloak.testsuite.account;
 
-import org.keycloak.testsuite.AbstractAuthTest;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -27,15 +26,15 @@ import static org.keycloak.testsuite.util.Constants.ADMIN_PSSWD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
-import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.account.page.Account;
 import org.keycloak.testsuite.account.page.AccountManagement;
+import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 
 /**
  *
  * @author Petr Mensik
  */
-public class AccountManagementTest extends AbstractAuthTest {
+public class AccountManagementTest extends AbstractAccountManagementTest {
 
     private static final String USERNAME = "admin";
     private static final String NEW_PASSWORD = "newpassword";

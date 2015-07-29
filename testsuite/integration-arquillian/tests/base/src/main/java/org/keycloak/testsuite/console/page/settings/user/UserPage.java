@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.testsuite.model.RequiredUserAction;
-import org.keycloak.testsuite.console.page.Realm;
+import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
 import static org.openqa.selenium.By.*;
 
@@ -34,7 +34,7 @@ import static org.openqa.selenium.By.*;
  *
  * @author Filip Kiss
  */
-public class UserPage extends Realm {
+public class UserPage extends AdminConsoleRealm {
 
     @FindBy(id = "username")
     private WebElement usernameInput;

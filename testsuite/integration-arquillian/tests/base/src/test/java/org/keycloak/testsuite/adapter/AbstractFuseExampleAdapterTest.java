@@ -14,7 +14,7 @@ import org.keycloak.testsuite.adapter.page.fuse.AdminInterface;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerListing;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
 import org.keycloak.testsuite.adapter.page.fuse.ProductPortalFuseExample;
-import static org.keycloak.testsuite.console.page.Realm.DEMO;
+import static org.keycloak.testsuite.page.auth.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.RealmAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.SeleniumUtils.pause;
@@ -47,7 +47,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealm.setConsoleRealm(DEMO);
+        authRealm.setAuthRealm(DEMO);
 
         account.setAccountRealm(DEMO);
     }
@@ -60,7 +60,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         assertCurrentUrlStartsWith(customerPortal);
 
         customerPortal.clickCustomerListingLink();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
 
         login.login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(customerListing);
@@ -82,7 +82,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
 
         // assert user not logged in
         customerPortal.clickCustomerListingLink();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
 
     }
 
@@ -92,7 +92,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         assertCurrentUrlStartsWith(customerPortal);
 
         customerPortal.clickAdminInterfaceLink();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
 
         login.login("admin", "password");
         assertCurrentUrlStartsWith(adminInterface);
@@ -104,7 +104,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         assertCurrentUrlStartsWith(customerPortal);
 
         customerPortal.clickAdminInterfaceLink();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
 
         login.login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(adminInterface);
@@ -114,7 +114,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
     @Test
     public void testProductPortal() {
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
 
         login.login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(productPortal);
@@ -124,7 +124,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         assertTrue(productPortal.getProduct2SecuredText().contains("Product received: id=2"));
 
         productPortal.clickLogOutLink();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
     }
 
 }

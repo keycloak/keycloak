@@ -14,7 +14,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.ContainersTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
-import org.keycloak.testsuite.console.page.Realm;
+import org.keycloak.testsuite.page.auth.AuthRealm;
 
 /**
  *
@@ -34,7 +34,7 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
             .getResource("/adapter-test/" + TOMCAT_CONTEXT_XML);
 
     @Page
-    protected Realm testRealm;
+    protected AuthRealm authRealm;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
