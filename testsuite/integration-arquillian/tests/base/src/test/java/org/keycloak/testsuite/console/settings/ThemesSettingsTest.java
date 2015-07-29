@@ -34,7 +34,7 @@ public class ThemesSettingsTest extends AbstractAdminConsoleTest<ThemesSettingsP
 
     @Before
     public void beforeThemeTest() {
-        navigation.themes("master");
+        navigation.themes(masterRealm.MASTER);
     }
 
     @Test
