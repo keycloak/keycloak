@@ -9,12 +9,12 @@ import static org.junit.Assert.*;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.console.page.fragment.RoleMappings;
-import org.keycloak.testsuite.model.Role;
 import org.keycloak.testsuite.console.page.settings.RolesPage;
 import org.keycloak.testsuite.console.page.settings.user.UserPage;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 /**
@@ -48,17 +48,17 @@ public class AddCompositeRoleTest extends AbstractAdminConsoleTest {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("usercomposite");
 
-        Role compositeRole = new Role("compositeRole");
-        Role subRole1 = new Role("subRole1");
-        Role subRole2 = new Role("subRole2");
-        List<Role> roles = new ArrayList<>();
+        RoleRepresentation compositeRole = new RoleRepresentation("compositeRole", "");
+        RoleRepresentation subRole1 = new RoleRepresentation("subRole1", "");
+        RoleRepresentation subRole2 = new RoleRepresentation("subRole2", "");
+        List<RoleRepresentation> roles = new ArrayList<>();
         compositeRole.setComposite(true);
         roles.add(compositeRole);
         roles.add(subRole1);
         roles.add(subRole2);
 
         //create roles and user
-        for (Role role : roles) {
+        for (RoleRepresentation role : roles) {
             page.addRole(role);
             flashMessage.waitUntilPresent();
             assertTrue(flashMessage.getText(), flashMessage.isSuccess());

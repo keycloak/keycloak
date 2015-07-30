@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.console.page.fragment;
 
-import org.keycloak.testsuite.model.Role;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -8,7 +7,9 @@ import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import org.keycloak.representations.idm.RoleRepresentation;
 
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 
@@ -103,32 +104,32 @@ public class RoleMappings extends AdminConsole {
         removeSelectedClientRolesButton.click();
     }
 
-    public boolean checkIfEffectiveRealmRolesAreComplete(Role... roles){
+    public boolean checkIfEffectiveRealmRolesAreComplete(RoleRepresentation... roles){
         List<String> roleNames = new ArrayList<>();
-        for (Role role : roles){
+        for (RoleRepresentation role : roles){
             roleNames.add(role.getName());
         }
         for (WebElement role : effectiveRolesSelect.getOptions()){
             roleNames.contains(role.getText());
             roleNames.remove(role.getText());
         }
-        System.out.println(roles);
+        System.out.println(Arrays.toString(roles));
         System.out.println(roleNames);
         return roleNames.isEmpty();
     }
 
 
 
-    public boolean checkIfEffectiveClientRolesAreComplete(Role... roles){
+    public boolean checkIfEffectiveClientRolesAreComplete(RoleRepresentation... roles){
         List<String> roleNames = new ArrayList<>();
-        for (Role role : roles){
+        for (RoleRepresentation role : roles){
             roleNames.add(role.getName());
         }
         for (WebElement role : effectiveRolesSelect.getOptions()){
             roleNames.contains(role.getText());
             roleNames.remove(role.getText());
         }
-        System.out.println(roles);
+        System.out.println(Arrays.toString(roles));
         System.out.println(roleNames);
         return roleNames.isEmpty();
     }

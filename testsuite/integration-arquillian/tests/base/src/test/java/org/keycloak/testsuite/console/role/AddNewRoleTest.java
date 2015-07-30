@@ -9,11 +9,11 @@ import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.testsuite.console.page.settings.RolesPage;
-import org.keycloak.testsuite.model.Role;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.console.page.settings.user.UserPage;
@@ -42,7 +42,7 @@ public class AddNewRoleTest extends AbstractAdminConsoleTest {
 
     @Test
     public void testAddNewRole() {
-        Role role = new Role("role1");
+        RoleRepresentation role = new RoleRepresentation("role1", "");
         page.addRole(role);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
@@ -55,7 +55,7 @@ public class AddNewRoleTest extends AbstractAdminConsoleTest {
     @Test
     public void testAddNewRoleWithLongName() {
         String name = "hjewr89y1894yh98(*&*&$jhjkashd)*(&y8934h*&@#hjkahsdj";
-        page.addRole(new Role(name));
+        page.addRole(new RoleRepresentation(name, ""));
         assertNotNull(page.findRole(name));
         navigation.roles();
         page.deleteRole(name);
@@ -63,7 +63,7 @@ public class AddNewRoleTest extends AbstractAdminConsoleTest {
 
     @Test
     public void testAddExistingRole() {
-        Role role = new Role("role2");
+        RoleRepresentation role = new RoleRepresentation("role2", "");
         page.addRole(role);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
@@ -77,7 +77,7 @@ public class AddNewRoleTest extends AbstractAdminConsoleTest {
 
     @Test
     public void testRoleIsAvailableForUsers() {
-        Role role = new Role("User role");
+        RoleRepresentation role = new RoleRepresentation("User role", "");
         page.addRole(role);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());

@@ -8,7 +8,6 @@ import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.console.page.fragment.RoleMappings;
-import org.keycloak.testsuite.model.Role;
 import org.keycloak.testsuite.console.page.settings.ClientPage;
 import org.keycloak.testsuite.console.page.settings.RolesPage;
 import org.keycloak.testsuite.console.page.settings.user.UserPage;
@@ -19,6 +18,7 @@ import java.util.List;
 import static org.junit.Assert.*;
 import org.keycloak.representations.idm.ClientRepresentation;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import static org.openqa.selenium.By.linkText;
 
@@ -59,7 +59,7 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
     @Test
     public void testAddClientRole() {
         ClientRepresentation newClient = createClient("test-client1", "http://example.com/*");
-        Role newRole = new Role("client-role");
+        RoleRepresentation newRole = new RoleRepresentation("client-role", "");
 
         page.addClient(newClient);
         flashMessage.waitUntilPresent();
@@ -86,7 +86,7 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
     @Test
     public void testAddClientRoleToUser() {
         ClientRepresentation newClient = createClient("test-client2", "http://example.com/*");
-        Role newRole = new Role("client-role2");
+        RoleRepresentation newRole = new RoleRepresentation("client-role2", "");
         String testUsername = "test-user2";
         UserRepresentation newUser = new UserRepresentation();
         newUser.setUsername(testUsername);
@@ -137,22 +137,22 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
     @Test
     public void testAddCompositeRealmClientRoleToUser() {
         ClientRepresentation newClient = createClient("test-client3", "http://example.com/*");
-        Role clientCompositeRole = new Role("client-composite-role");
+        RoleRepresentation clientCompositeRole = new RoleRepresentation("client-composite-role", "");
         String testUsername = "test-user3";
         UserRepresentation newUser = new UserRepresentation();
         newUser.setUsername(testUsername);
         newUser.credential(PASSWORD, "pass");
 
-        Role subRole1 = new Role("sub-role1");
-        Role subRole2 = new Role("sub-role2");
-        List<Role> roles = new ArrayList<>();
+        RoleRepresentation subRole1 = new RoleRepresentation("sub-role1", "");
+        RoleRepresentation subRole2 = new RoleRepresentation("sub-role2", "");
+        List<RoleRepresentation> roles = new ArrayList<>();
         clientCompositeRole.setComposite(true);
         roles.add(subRole1);
         roles.add(subRole2);
 
         //create sub-roles
         navigation.roles();
-        for (Role role : roles) {
+        for (RoleRepresentation role : roles) {
             rolesPage.addRole(role);
             flashMessage.waitUntilPresent();
             assertTrue(flashMessage.getText(), flashMessage.isSuccess());
@@ -219,15 +219,15 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
     @Test
     public void testAddCompositeClientRoleToUser() {
         ClientRepresentation newClient = createClient("test-client4", "http://example.com/*");
-        Role clientCompositeRole = new Role("client-composite-role2");
+        RoleRepresentation clientCompositeRole = new RoleRepresentation("client-composite-role2", "");
         String testUsername = "test-user4";
         UserRepresentation newUser = new UserRepresentation();
         newUser.setUsername(testUsername);
         newUser.credential(PASSWORD, "pass");
 
-        Role subRole1 = new Role("client-sub-role1");
-        Role subRole2 = new Role("client-sub-role2");
-        List<Role> roles = new ArrayList<>();
+        RoleRepresentation subRole1 = new RoleRepresentation("client-sub-role1", "");
+        RoleRepresentation subRole2 = new RoleRepresentation("client-sub-role2", "");
+        List<RoleRepresentation> roles = new ArrayList<>();
         clientCompositeRole.setComposite(true);
         roles.add(clientCompositeRole);
         roles.add(subRole1);
@@ -240,7 +240,7 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
 
         //create sub-roles
         navigation.rolesTab(newClient.getName());
-        for (Role role : roles) {
+        for (RoleRepresentation role : roles) {
             navigation.clients();
             page.goToClient(newClient);
             navigation.rolesTab(newClient.getName());

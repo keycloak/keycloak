@@ -7,12 +7,12 @@ import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.console.page.fragment.RoleMappings;
-import org.keycloak.testsuite.model.Role;
 import org.keycloak.testsuite.console.page.settings.RolesPage;
 import org.keycloak.testsuite.console.page.settings.user.UserPage;
 
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 /**
@@ -41,7 +41,7 @@ public class DefaultRolesTest extends AbstractAdminConsoleTest {
     public void testSetDefaultRole() {
         String testUsername = "defaultrole tester";
         String defaultRole = "default-role";
-        Role role = new Role(defaultRole);
+        RoleRepresentation role = new RoleRepresentation(defaultRole, "");
         page.addRole(role);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());

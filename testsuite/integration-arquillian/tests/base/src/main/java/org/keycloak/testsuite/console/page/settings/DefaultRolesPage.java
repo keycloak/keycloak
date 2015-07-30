@@ -20,9 +20,9 @@ package org.keycloak.testsuite.console.page.settings;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.console.page.fragment.PickList;
 import org.keycloak.testsuite.console.page.AdminConsole;
-import org.keycloak.testsuite.model.Role;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
@@ -45,9 +45,9 @@ public class DefaultRolesPage extends AdminConsole {
         realmDefaultRoles.addItems(roles);
     }
     
-    public void addDefaultRealmRoles(Role... roles) {
-        List<String> roleList = new ArrayList<String>();
-        for(Role role : roles) {
+    public void addDefaultRealmRoles(RoleRepresentation... roles) {
+        List<String> roleList = new ArrayList<>();
+        for(RoleRepresentation role : roles) {
             roleList.add(role.getName());
         }
         addDefaultRealmRoles(((String []) roleList.toArray()));

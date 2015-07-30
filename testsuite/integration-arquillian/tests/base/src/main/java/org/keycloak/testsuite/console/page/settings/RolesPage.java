@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.console.page.settings;
 
 import java.util.ArrayList;
@@ -23,15 +22,16 @@ import java.util.List;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.console.page.fragment.RoleMappings;
 import org.keycloak.testsuite.console.page.AdminConsole;
-import org.keycloak.testsuite.model.Role;
 import static org.openqa.selenium.By.cssSelector;
 import static org.openqa.selenium.By.linkText;
 import static org.openqa.selenium.By.tagName;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import static org.keycloak.testsuite.util.SeleniumUtils.*;
+
 /**
  *
  * @author Petr Mensik
@@ -66,27 +66,27 @@ public class RolesPage extends AdminConsole {
         return findRole(roleName).isComposite();
     }
 
-    public void addRole(Role role) {
+    public void addRole(RoleRepresentation role) {
         addRoleButton.click();
-		waitAjaxForElement(nameInput);
+        waitAjaxForElement(nameInput);
         nameInput.sendKeys(role.getName());
         descriptionInput.sendKeys(role.getDescription());
-		primaryButton.click();
-	}
+        primaryButton.click();
+    }
 
-    public void addRole(Role role, String... roles) {
+    public void addRole(RoleRepresentation role, String... roles) {
         addRole(role);
         setCompositeRole(role, roles);
     }
 
-    public Role findRole(String roleName) {
-        searchInput.sendKeys(roleName);
-        List<Role> roles = getAllRows();
-        assert 1 ==roles.size();
+    public RoleRepresentation findRole(String name) {
+        searchInput.sendKeys(name);
+        List<RoleRepresentation> roles = getAllRows();
+        assert 1 == roles.size();
         return roles.get(0);
     }
 
-    public void editRole(Role role) {
+    public void editRole(RoleRepresentation role) {
         driver.findElement(linkText(role.getName())).click();
         waitAjaxForElement(nameInput);
         nameInput.sendKeys(role.getName());
@@ -94,30 +94,30 @@ public class RolesPage extends AdminConsole {
             compositeSwitchToggle.click();
         }
         descriptionInput.sendKeys(role.getDescription());
-		primaryButton.click();
-	}
-
-    public void deleteRole(Role role) {
-        driver.findElement(linkText(role.getName())).click();
-        waitAjaxForElement(removeRoleButton);
-        removeRoleButton.click();
-		deleteConfirmationButton.click();
+        primaryButton.click();
     }
 
-    public void goToRole(Role role) {
-        waitAjaxForElement(dataTable);
-        dataTable.findElement(linkText(role.getName())).click();
+    public void goToRole(RoleRepresentation role) {
+        goToRole(role.getName());
     }
 
     public void goToRole(String name) {
-        goToRole(new Role(name));
+        waitAjaxForElement(dataTable);
+        dataTable.findElement(linkText(name)).click();
     }
-	
-	public void deleteRole(String name) {
-		deleteRole(new Role(name));
-	}
 
-    public void setCompositeRole(Role role, String... roles){
+    public void deleteRole(RoleRepresentation role) {
+        deleteRole(role.getName());
+    }
+
+    public void deleteRole(String name) {
+        driver.findElement(linkText(name)).click();
+        waitAjaxForElement(removeRoleButton);
+        removeRoleButton.click();
+        deleteConfirmationButton.click();
+    }
+
+    public void setCompositeRole(RoleRepresentation role, String... roles) {
         if (role.isComposite()) {
             waitAjaxForElement(compositeSwitchToggle);
             compositeSwitchToggle.click();
@@ -125,12 +125,12 @@ public class RolesPage extends AdminConsole {
         }
     }
 
-    private List<Role> getAllRows() {
-        List<Role> rows = new ArrayList<Role>();
+    private List<RoleRepresentation> getAllRows() {
+        List<RoleRepresentation> rows = new ArrayList<>();
         for (WebElement rowElement : dataTable.findElements(cssSelector("tbody tr"))) {
-            Role role = new Role();
+            RoleRepresentation role = new RoleRepresentation();
             List<WebElement> tds = rowElement.findElements(tagName("td"));
-            if(!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
+            if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
                 role.setName(tds.get(0).getText());
                 role.setComposite(Boolean.valueOf(tds.get(1).getText()));
                 role.setDescription(tds.get(2).getText());
