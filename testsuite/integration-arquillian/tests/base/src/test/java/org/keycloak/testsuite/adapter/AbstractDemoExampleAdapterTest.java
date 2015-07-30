@@ -2,27 +2,27 @@ package org.keycloak.testsuite.adapter;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import org.jboss.arquillian.container.test.api.Deployment;
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.util.RealmUtils.loadRealm;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.adapter.page.CustomerPortalExample;
 import org.keycloak.testsuite.adapter.page.DatabaseServiceExample;
 import org.keycloak.testsuite.adapter.page.ProductPortalExample;
-import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.model.RequiredUserAction;
-import org.keycloak.testsuite.model.User;
-import org.keycloak.testsuite.console.page.settings.user.UserPage;
 import static org.keycloak.testsuite.page.auth.AuthRealm.DEMO;
+import org.keycloak.testsuite.page.auth.Login;
 import org.keycloak.testsuite.page.auth.UpdateAccountPage;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
-import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 import org.openqa.selenium.By;
 
 public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdapterTest {
@@ -35,11 +35,12 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     private DatabaseServiceExample databaseServiceExample;
 
     @Page
-    protected AdminConsoleRealm adminConsole;
-    @Page
-    private UserPage users;
+    protected Login loginDemo;
+
     @Page
     private UpdateAccountPage accountPage;
+
+    protected RealmResource demoRealmResource;
 
     @Deployment(name = CustomerPortalExample.DEPLOYMENT_NAME)
     private static WebArchive customerPortalExample() throws IOException {
@@ -66,12 +67,11 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         authRealm.setAuthRealm(DEMO);
-        
-        adminConsole.setAdminRealm(DEMO);
-        adminConsole.setConsoleRealm(DEMO);
-        
-        users.setAdminRealm(DEMO);
-        users.setConsoleRealm(DEMO);
+    }
+
+    @Before
+    public void beforeDemoExampleTest() {
+        demoRealmResource = keycloak.realm(DEMO);
     }
 
     @Test
@@ -80,7 +80,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
 
-        login.login("bburke@redhat.com", "password");
+        loginDemo.login("bburke@redhat.com", "password");
 
         assertCurrentUrlStartsWith(customerPortalExample);
         customerPortalExample.waitForCustomerListingHeader();
@@ -92,25 +92,25 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
     @Test
     public void testChangePasswordRequiredUserAction() {
-        addRequiredAction(RequiredUserAction.UPDATE_PASSWORD);
+        addRequiredAction("bburke@redhat.com", RequiredUserAction.UPDATE_PASSWORD);
 
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
-        login.login("bburke@redhat.com", "password");
+        loginDemo.login("bburke@redhat.com", "password");
         waitGui().until()
                 .element(By.className("kc-feedback-text"))
                 .text()
                 .equalTo("You need to change your password to activate your account.");
-        removeRequiredAction(RequiredUserAction.UPDATE_PASSWORD);
+        removeRequiredAction("bburke@redhat.com", RequiredUserAction.UPDATE_PASSWORD);
     }
 
     @Test
     public void testUpdateProfileRequiredUserAction() {
-        addRequiredAction(RequiredUserAction.UPDATE_PROFILE);
+        addRequiredAction("bburke@redhat.com", RequiredUserAction.UPDATE_PROFILE);
 
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
-        login.login("bburke@redhat.com", "password");
+        loginDemo.login("bburke@redhat.com", "password");
         waitGui().until()
                 .element(By.className("kc-feedback-text"))
                 .text()
@@ -126,35 +126,52 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
                 .text()
                 .equalTo("Customer Listing");
         driver.findElement(By.linkText("logout")).click();
-        removeRequiredAction(RequiredUserAction.UPDATE_PROFILE);
+        removeRequiredAction("bburke@redhat.com", RequiredUserAction.UPDATE_PROFILE);
     }
 
-    private void addRequiredAction(RequiredUserAction action) {
-        loginAsAdmin();
-        pause(2000);
-        adminConsole.navigateTo();
-        adminConsole.clickUsers();
-        pause(1000);
-        assertCurrentUrl(users);
-        User bburke = users.findUser("bburke@redhat.com");
-        pause(1000);
-        bburke.addRequiredUserAction(action);
-        users.updateUser(bburke);
-        pause(1000);
-        logOut();
-        pause(1000);
+    private void addRequiredAction(String username, RequiredUserAction action) {
+        UserRepresentation user = findUserByUsername(demoRealmResource, username);
+        List<String> ra = user.getRequiredActions();
+        if (ra == null) {
+            ra = new ArrayList<>();
+        }
+        ra.add(action.getActionName());
+        keycloak.realm(DEMO).users().get(user.getId()).update(user);
+//        
+//        
+//        loginAsAdmin();
+//        pause(2000);
+//        adminConsole.navigateTo();
+//        adminConsole.clickUsers();
+//        pause(1000);
+//        assertCurrentUrl(users);
+//        User bburke = users.findUser("bburke@redhat.com");
+//        pause(1000);
+//        bburke.addRequiredUserAction(action);
+//        users.updateUser(bburke);
+//        pause(1000);
+//        logOut();
+//        pause(1000);
     }
 
-    private void removeRequiredAction(RequiredUserAction action) {
-        loginAsAdmin();
-        pause(2000);
-        adminConsole.navigateTo();
-        adminConsole.clickUsers();
-        pause(1000);
-        User bburke = users.findUser("bburke@redhat.com");
-        pause(1000);
-        bburke.removeRequiredUserAction(action);
-        users.updateUser(bburke);
-        logOut();
+    private void removeRequiredAction(String username, RequiredUserAction action) {
+        UserRepresentation user = findUserByUsername(demoRealmResource, username);
+        List<String> ra = user.getRequiredActions();
+        if (ra == null) {
+            ra = new ArrayList<>();
+        }
+        ra.remove(action.getActionName());
+        keycloak.realm(DEMO).users().get(user.getId()).update(user);
+
+//        loginAsAdmin();
+//        pause(2000);
+//        adminConsole.navigateTo();
+//        adminConsole.clickUsers();
+//        pause(1000);
+//        User bburke = users.findUser("bburke@redhat.com");
+//        pause(1000);
+//        bburke.removeRequiredUserAction(action);
+//        users.updateUser(bburke);
+//        logOut();
     }
 }

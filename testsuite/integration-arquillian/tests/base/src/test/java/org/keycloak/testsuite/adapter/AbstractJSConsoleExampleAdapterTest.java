@@ -24,7 +24,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
     @Deployment(name = JSConsoleExample.DEPLOYMENT_NAME)
     private static WebArchive jsConsoleExample() throws IOException {
-        return exampleDeployment("js-console");
+        return exampleDeployment(JSConsoleExample.CLIENT_ID);
     }
 
     @Override
@@ -53,13 +53,13 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         pause(1000);
 
         jsConsoleExample.logIn();
-        login.login("user", "invalid-password");
+        masterLogin.login("user", "invalid-password");
         assertCurrentUrlDoesntStartWith(jsConsoleExample);
 
-        login.login("invalid-user", "password");
+        masterLogin.login("invalid-user", "password");
         assertCurrentUrlDoesntStartWith(jsConsoleExample);
 
-        login.login("user", "password");
+        masterLogin.login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Init Success (Authenticated)"));
         assertTrue(driver.getPageSource().contains("Auth Success"));
@@ -80,7 +80,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(driver.getPageSource().contains("Failed to refresh token"));
 
         jsConsoleExample.logIn();
-        login.login("user", "password");
+        masterLogin.login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Auth Success"));
 
@@ -97,7 +97,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(driver.getPageSource().contains("Failed to refresh token"));
 
         jsConsoleExample.logIn();
-        login.login("user", "password");
+        masterLogin.login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Auth Success"));
 
@@ -119,7 +119,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(driver.getPageSource().contains("Failed to load profile"));
         
         jsConsoleExample.logIn();
-        login.login("user", "password");
+        masterLogin.login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Auth Success"));
 

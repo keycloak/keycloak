@@ -112,7 +112,7 @@ public class UserPage extends AdminConsoleRealm {
         if (user.isEmailVerified()) {
             emailVerifiedSwitchToggle.click();
         }
-        if (!user.getRequiredActions().isEmpty()) {
+        if (user.getRequiredActions() != null && !user.getRequiredActions().isEmpty()) {
             for (String action : user.getRequiredActions()) {
                 //driver.findElement(By.cssSelector("..select2-choices")).click();
                 requiredUserActionsInput.sendKeys(action);

@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.console.page;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
-import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
+import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
 import org.openqa.selenium.WebElement;
 
 /**
@@ -13,7 +13,7 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
     public static final String CONSOLE_REALM = "consoleRealm";
     
     public AdminConsoleRealm() {
-        setUriParameter(CONSOLE_REALM, TEST);
+        setUriParameter(CONSOLE_REALM, MASTER);
     }
 
     public AdminConsoleRealm setConsoleRealm(String realm) {

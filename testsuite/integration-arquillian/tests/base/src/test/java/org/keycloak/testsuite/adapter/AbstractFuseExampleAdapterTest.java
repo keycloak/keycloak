@@ -16,7 +16,7 @@ import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
 import org.keycloak.testsuite.adapter.page.fuse.ProductPortalFuseExample;
 import static org.keycloak.testsuite.page.auth.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
-import static org.keycloak.testsuite.util.RealmAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 
 /**
@@ -62,7 +62,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         customerPortal.clickCustomerListingLink();
         assertCurrentUrlStartsWithLoginUrlOf(authRealm);
 
-        login.login("bburke@redhat.com", "password");
+        masterLogin.login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(customerListing);
 
         String src = driver.getPageSource();
@@ -94,7 +94,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         customerPortal.clickAdminInterfaceLink();
         assertCurrentUrlStartsWithLoginUrlOf(authRealm);
 
-        login.login("admin", "password");
+        masterLogin.login("admin", "password");
         assertCurrentUrlStartsWith(adminInterface);
         assertTrue(driver.getPageSource().contains("Hello admin!"));
 
@@ -106,7 +106,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         customerPortal.clickAdminInterfaceLink();
         assertCurrentUrlStartsWithLoginUrlOf(authRealm);
 
-        login.login("bburke@redhat.com", "password");
+        masterLogin.login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(adminInterface);
         assertTrue(driver.getPageSource().contains("Status code is 403"));
     }
@@ -116,7 +116,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(authRealm);
 
-        login.login("bburke@redhat.com", "password");
+        masterLogin.login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(productPortal);
 
         assertTrue(productPortal.getProduct1UnsecuredText().contains("401: Unauthorized"));

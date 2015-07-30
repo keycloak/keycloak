@@ -38,7 +38,7 @@ public class SessionsTest extends AbstractAdminConsoleTest<SessionsPage> {
 	@Test
 	public void testLogoutAllSessions() {
 		page.logoutAllSessions();
-		waitGuiForElement(login.getLoginPageHeader(), "Home page should be visible after logout");
-		login.loginAsAdmin();
+		waitGuiForElement(masterLogin.getLoginPageHeader(), "Home page should be visible after logout");
+		masterLogin.loginAsAdmin();
 	}
 }

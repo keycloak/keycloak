@@ -46,23 +46,23 @@ public class TokensTest extends AbstractAdminConsoleTest<TokensPage> {
         page.setSessionTimeout(TIMEOUT, TIME_UNIT);
         TIME_UNIT.sleep(TIMEOUT + 2); //add 2 secs to timeout
         driver.navigate().refresh();
-        waitGuiForElement(login.getLoginPageHeader(), "Home page should be visible after session timeout");
-        login.loginAsAdmin();
+        waitGuiForElement(masterLogin.getLoginPageHeader(), "Home page should be visible after session timeout");
+        masterLogin.loginAsAdmin();
         page.setSessionTimeout(30, TimeUnit.MINUTES);
     }
 
     @Test
     public void testLifespanOfRealmSession() {
         page.setSessionTimeoutLifespan(TIMEOUT, TIME_UNIT);
-        logOut();
+        logoutFromTestRealm();
         //loginAsAdmin();
         waitModel().withTimeout(TIMEOUT + 2, TIME_UNIT) //adds 2 seconds to the timeout
                 .pollingEvery(1, TIME_UNIT)
                 .until("Home page should be visible after session timeout")
-                .element(login.getLoginPageHeader())
+                .element(masterLogin.getLoginPageHeader())
                 .is()
                 .present();
-        login.loginAsAdmin();
+        masterLogin.loginAsAdmin();
         navigation.tokens(TEST);
         page.setSessionTimeoutLifespan(10, TimeUnit.HOURS);
     }

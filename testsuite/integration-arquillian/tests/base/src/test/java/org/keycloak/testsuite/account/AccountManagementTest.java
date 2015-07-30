@@ -56,7 +56,7 @@ public class AccountManagementTest extends AbstractAccountManagementTest {
     @Before
     public void beforeAccountTest() {
         accountManagement.navigateTo();
-        login.loginAsAdmin();
+        masterLogin.loginAsAdmin();
     }
 
     @After
@@ -67,19 +67,19 @@ public class AccountManagementTest extends AbstractAccountManagementTest {
     @Test
     public void passwordPageValidationTest() {
         accountManagement.password();
-        passwordPage.save();
+        password.save();
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isError());
 
-        passwordPage.setPassword(WRONG_PASSWORD, NEW_PASSWORD);
-        passwordPage.save();
+        password.setPassword(WRONG_PASSWORD, NEW_PASSWORD);
+        password.save();
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isError());
 
-        passwordPage.setOldPasswordField(ADMIN_PSSWD);
-        passwordPage.setNewPasswordField("something");
-        passwordPage.setConfirmField("something else");
-        passwordPage.save();
+        password.setOldPasswordField(ADMIN_PSSWD);
+        password.setNewPasswordField("something");
+        password.setConfirmField("something else");
+        password.save();
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isError());
     }
@@ -87,15 +87,15 @@ public class AccountManagementTest extends AbstractAccountManagementTest {
     @Test
     public void changePasswordTest() {
         accountManagement.password();
-        passwordPage.setPassword(ADMIN_PSSWD, NEW_PASSWORD);
-        passwordPage.save();
+        password.setPassword(ADMIN_PSSWD, NEW_PASSWORD);
+        password.save();
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         accountManagement.signOut();
-        super.login.login(USERNAME, NEW_PASSWORD);
+        super.masterLogin.login(USERNAME, NEW_PASSWORD);
         accountManagement.password();
-        passwordPage.setPassword(NEW_PASSWORD, ADMIN_PSSWD);
-        passwordPage.save();
+        password.setPassword(NEW_PASSWORD, ADMIN_PSSWD);
+        password.save();
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
     }
@@ -112,7 +112,7 @@ public class AccountManagementTest extends AbstractAccountManagementTest {
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         accountManagement.signOut();
-        super.login.login(USERNAME, ADMIN_PSSWD);
+        super.masterLogin.login(USERNAME, ADMIN_PSSWD);
 
         accountManagement.account();
         assertEquals(account.getEmail(), EMAIL);

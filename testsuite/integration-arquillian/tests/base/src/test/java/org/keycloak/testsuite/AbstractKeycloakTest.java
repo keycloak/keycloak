@@ -11,8 +11,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.util.RealmUtils.importRealm;
 import static org.keycloak.testsuite.util.RealmUtils.removeRealm;
 import org.openqa.selenium.WebDriver;
@@ -25,8 +28,12 @@ import org.keycloak.testsuite.console.page.fragment.MenuPage;
 import org.keycloak.testsuite.console.page.fragment.Navigation;
 import org.keycloak.testsuite.page.auth.Login;
 import org.keycloak.testsuite.account.page.Password;
+import org.keycloak.testsuite.page.auth.AuthRealm;
+import static org.keycloak.testsuite.page.auth.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
 import static org.keycloak.testsuite.util.Constants.ADMIN_PSSWD;
+import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 
 /**
  *
@@ -37,7 +44,7 @@ import static org.keycloak.testsuite.util.Constants.ADMIN_PSSWD;
 public abstract class AbstractKeycloakTest {
 
     protected Keycloak keycloak;
-    private boolean keycloakOpen = false;
+    protected boolean keycloakOpen = false;
 
     protected List<RealmRepresentation> testRealms;
 
@@ -48,15 +55,18 @@ public abstract class AbstractKeycloakTest {
     protected AuthServerContextRoot authServerContextRoot;
     @Page
     protected AuthServer authServer;
+
     @Page
-    private AdminConsole adminConsoleMaster;
-    
+    protected AuthRealm masterAuthRealm;
     @Page
-    protected Login login;
+    protected AdminConsole masterAdminConsole;
+
     @Page
-    protected Password passwordPage;
+    protected Login masterLogin;
     @Page
-    protected MenuPage menuPage;
+    protected Password password;
+    @Page
+    protected MenuPage menu;
     @Page
     protected Navigation navigation;
 
@@ -67,14 +77,16 @@ public abstract class AbstractKeycloakTest {
         driverSettings();
 
         if (!isAdminPasswordUpdated()) {
-            updateAdminPassword();
+            updateMasterAdminPassword();
         }
 
         if (!keycloakOpen) {
             keycloak = Keycloak.getInstance(authServer.toString(),
-                    "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
+                    MASTER, ADMIN, ADMIN, Constants.ADMIN_CONSOLE_CLIENT_ID);
             keycloakOpen = true;
         }
+        
+        pause(1000);
 
         importTestRealms();
     }
@@ -83,7 +95,6 @@ public abstract class AbstractKeycloakTest {
     public void afterAbstractKeycloakTest() {
 //        removeTestRealms();
 //        keycloak.close();
-        driver.manage().deleteAllCookies();
     }
 
     public boolean isAdminPasswordUpdated() {
@@ -95,30 +106,33 @@ public abstract class AbstractKeycloakTest {
                 .setAdminPasswordUpdatedFor(this.getClass(), updated);
     }
 
+    private void updateMasterAdminPassword() {
+        loginAsAdmin();
+        password.confirmNewPassword(ADMIN_PSSWD);
+        password.submit();
+        assertCurrentUrlStartsWith(masterAdminConsole);
+        setAdminPasswordUpdated(true);
+        logoutFromMasterRealm();
+    }
+
     public void loginAsAdmin() {
-        adminConsoleMaster.navigateTo();
-        login.loginAsAdmin();
+        masterAdminConsole.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(masterAdminConsole);
+        masterLogin.loginAsAdmin();
         if (isAdminPasswordUpdated()) {
-            assertCurrentUrlStartsWith(adminConsoleMaster);
+            assertCurrentUrlStartsWith(masterAdminConsole);
         }
     }
 
-    public void updateAdminPassword() {
-        loginAsAdmin();
-        passwordPage.confirmNewPassword(ADMIN_PSSWD);
-        passwordPage.submit();
-        assertCurrentUrlStartsWith(adminConsoleMaster);
-        logOut();
-        setAdminPasswordUpdated(true);
-    }
-
-    public void logOut() {
-        adminConsoleMaster.navigateTo();
-        assertCurrentUrlStartsWith(adminConsoleMaster);
-        menuPage.logOut();
+    public void logoutFromMasterRealm() {
+        masterAdminConsole.navigateTo();
+        assertCurrentUrlStartsWith(masterAdminConsole);
+        menu.logOut();
     }
 
     protected void driverSettings() {
+        masterAuthRealm.navigateTo(); // navigate to /auth/realms/master before deleting cookies
+        driver.manage().deleteAllCookies();
         driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
         driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
         driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
@@ -126,7 +140,7 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void setDefaultPageUriParameters() {
-        adminConsoleMaster.setAdminRealm(MASTER);
+        masterAdminConsole.setAdminRealm(MASTER);
     }
 
     public abstract void addTestRealms(List<RealmRepresentation> testRealms);
@@ -154,6 +168,25 @@ public abstract class AbstractKeycloakTest {
         for (RealmRepresentation testRealm : testRealms) {
             removeRealm(keycloak, testRealm);
         }
+    }
+
+    public UserRepresentation findUserByUsername(RealmResource realm, String username) {
+        UserRepresentation user = null;
+        List<UserRepresentation> ur = realm.users().search(username, null, null);
+        if (ur.size() == 1) {
+            user = ur.get(0);
+        }
+        return user;
+    }
+
+    public ClientRepresentation findClientByClientId(RealmResource realm, String clientId) {
+        ClientRepresentation client = null;
+        for (ClientRepresentation c : realm.clients().findAll()) {
+            if (clientId.equals(c.getClientId())) {
+                client = c;
+            }
+        }
+        return client;
     }
 
 }

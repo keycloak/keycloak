@@ -27,17 +27,25 @@ import org.keycloak.representations.idm.UserRepresentation;
  */
 public class Users {
 
+    public static String getPasswordCredentialValueOf(UserRepresentation user) {
+        String value = null;
+        CredentialRepresentation password = getPasswordCredentialOf(user);
+        if (password != null) {
+            value = password.getValue();
+        }
+        return value;
+    }
+
     public static CredentialRepresentation getPasswordCredentialOf(UserRepresentation user) {
         CredentialRepresentation password = null;
-        for (CredentialRepresentation c : user.getCredentials()) {
-            if (CredentialRepresentation.PASSWORD.equals(c.getType())) {
-                password = c;
+        if (user.getCredentials() != null) {
+            for (CredentialRepresentation c : user.getCredentials()) {
+                if (CredentialRepresentation.PASSWORD.equals(c.getType())) {
+                    password = c;
+                }
             }
-        }
-        if (password == null) {
-            throw new AssertionError("User '" + user.getUsername() + "' doesn't have a password credential set.");
         }
         return password;
     }
-    
+
 }

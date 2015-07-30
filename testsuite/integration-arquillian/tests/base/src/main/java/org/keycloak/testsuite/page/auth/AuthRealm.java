@@ -8,7 +8,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
  *
  * @author tkyjovsk
  */
-public class AuthRealm extends AuthServer {
+public class AuthRealm extends AuthServer implements PageWithLoginUrl {
 
     public static final String AUTH_REALM = "authRealm";
 
@@ -16,6 +16,8 @@ public class AuthRealm extends AuthServer {
     public static final String DEMO = "demo";
     public static final String TEST = "test";
 
+    public static final String ADMIN = "admin";
+    
     public AuthRealm() {
         setUriParameter(AUTH_REALM, MASTER);
     }
@@ -34,11 +36,11 @@ public class AuthRealm extends AuthServer {
         return (String) getUriParameter(AUTH_REALM);
     }
 
-    public String getAuthRoot() {
-        URI uri = buildUri();
-        return uri.getScheme() + "://" + uri.getAuthority() + "/auth";
-    }
-
+    /**
+     *
+     * @return OIDC Login URL for authRealm
+     */
+    @Override
     public URI getOIDCLoginUrl() {
         return OIDCLoginProtocolService.authUrl(UriBuilder.fromPath(getAuthRoot()))
                 .build(getAuthRealm());

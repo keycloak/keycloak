@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.console.settings;
 
 import org.junit.Before;
@@ -23,9 +22,7 @@ import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.model.Theme;
 import org.keycloak.testsuite.console.page.settings.ThemesSettingsPage;
-import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
 import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
-
 
 /**
  *
@@ -42,17 +39,17 @@ public class ThemesSettingsTest extends AbstractAdminConsoleTest<ThemesSettingsP
     public void changeLoginThemeTest() {
         page.changeLoginTheme(Theme.BASE.getName());
         page.saveTheme();
-        logOut();
+        logoutFromTestRealm();
         page.verifyBaseTheme();
 
-        loginAsAdmin();
-        navigation.themes(MASTER);
+        loginAsTestUser();
+        navigation.themes(TEST);
         page.changeLoginTheme(Theme.KEYCLOAK.getName());
         page.saveTheme();
-        logOut();
+        logoutFromTestRealm();
         page.verifyKeycloakTheme();
 
-        loginAsAdmin();
+        loginAsTestUser();
     }
 
 }

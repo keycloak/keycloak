@@ -26,6 +26,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 import static org.keycloak.testsuite.util.Users.getPasswordCredentialOf;
+import static org.keycloak.testsuite.util.Users.getPasswordCredentialValueOf;
 
 /**
  *
@@ -67,7 +68,7 @@ public class Registration extends LoginActions {
     private WebElement registerButton;
 
     public void registerNewUser(UserRepresentation user) {
-        registerNewUser(user, getPasswordCredentialOf(user).getValue());
+        registerNewUser(user, getPasswordCredentialValueOf(user));
     }
 
     public void registerNewUser(UserRepresentation user, String confirmPassword) {
@@ -77,7 +78,7 @@ public class Registration extends LoginActions {
         clearAndType(firstNameInput, user.getFirstName());
         clearAndType(lastNameInput, user.getLastName());
         clearAndType(emailInput, user.getEmail());
-        clearAndType(passwordInput, getPasswordCredentialOf(user).getValue());
+        clearAndType(passwordInput, getPasswordCredentialValueOf(user));
         clearAndType(passwordConfirmInput, confirmPassword);
         registerButton.submit();
     }

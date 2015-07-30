@@ -17,13 +17,13 @@
  */
 package org.keycloak.testsuite.account;
 
-import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.testsuite.page.auth.Registration;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
+import org.keycloak.admin.client.resource.RealmResource;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -37,6 +37,7 @@ import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
  */
 public class RegisterNewUserTest extends AbstractAccountManagementTest {
 
+    private RealmResource testRealmResource;
     private UserRepresentation testUser;
 
     @Page
@@ -47,12 +48,14 @@ public class RegisterNewUserTest extends AbstractAccountManagementTest {
 
     @Before
     public void beforeUserRegistration() {
-        RealmRepresentation realm = keycloak.realm(TEST).toRepresentation();
+        testRealmResource = keycloak.realm(TEST);
+        
+        RealmRepresentation realm = testRealmResource.toRepresentation();
         realm.setRegistrationAllowed(true);
-        keycloak.realm(TEST).update(realm);
+        testRealmResource.update(realm);
 
         account.navigateTo();
-        login.registration();
+        masterLogin.registration();
 
         testUser = new UserRepresentation();
         testUser.setUsername("user");
@@ -62,19 +65,10 @@ public class RegisterNewUserTest extends AbstractAccountManagementTest {
         testUser.setLastName("test");
     }
 
-    public UserRepresentation findUserByUserName(String userName) {
-        UserRepresentation user = null;
-        List<UserRepresentation> ur = keycloak.realm(TEST).users().search(userName, null, null);
-        if (ur.size() == 1) {
-            user = ur.get(0);
-        }
-        return user;
-    }
-
     @Test
     public void registerNewUserTest() {
         registration.registerNewUser(testUser);
-        assertNotNull(findUserByUserName(testUser.getUsername()));
+        assertNotNull(findUserByUsername(testRealmResource, testUser.getUsername()));
     }
 
     @Test
@@ -82,10 +76,7 @@ public class RegisterNewUserTest extends AbstractAccountManagementTest {
         testUser.setEmail("newUser.redhat.com");
         registration.registerNewUser(testUser);
         assertTrue(registration.isInvalidEmail());
-        registration.backToLoginPage();
-        loginAsAdmin();
-        navigation.users();
-        assertNull(findUserByUserName(testUser.getUsername()));
+        assertNull(findUserByUsername(testRealmResource, testUser.getUsername()));
     }
 
     @Test
@@ -108,7 +99,7 @@ public class RegisterNewUserTest extends AbstractAccountManagementTest {
         assertFalse(registration.isAttributeSpecified("password"));
         testUser.credential(PASSWORD, "password");
         registration.registerNewUser(testUser);
-        assertNotNull(findUserByUserName(testUser.getUsername()));
+        assertNotNull(findUserByUsername(testRealmResource, testUser.getUsername()));
     }
 
     @Test
@@ -116,7 +107,7 @@ public class RegisterNewUserTest extends AbstractAccountManagementTest {
         registration.registerNewUser(testUser, "psswd");
         assertFalse(registration.isPasswordSame());
         registration.registerNewUser(testUser);
-        assertNotNull(findUserByUserName(testUser.getUsername()));
+        assertNotNull(findUserByUsername(testRealmResource, testUser.getUsername()));
     }
 
 }

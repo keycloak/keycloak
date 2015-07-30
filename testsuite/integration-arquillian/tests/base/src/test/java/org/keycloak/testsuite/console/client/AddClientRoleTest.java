@@ -10,7 +10,6 @@ import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.console.page.fragment.RoleMappings;
 import org.keycloak.testsuite.model.Client;
 import org.keycloak.testsuite.model.Role;
-import org.keycloak.testsuite.model.User;
 import org.keycloak.testsuite.console.page.settings.ClientPage;
 import org.keycloak.testsuite.console.page.settings.RolesPage;
 import org.keycloak.testsuite.console.page.settings.user.UserPage;

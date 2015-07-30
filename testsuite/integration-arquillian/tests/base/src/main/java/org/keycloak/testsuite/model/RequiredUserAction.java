@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.model;
 
 /**
@@ -24,17 +23,19 @@ package org.keycloak.testsuite.model;
  */
 public enum RequiredUserAction {
 
-	UPDATE_PASSWORD("Update Password"), VERIFY_EMAIL("Verify Email"), UPDATE_PROFILE("Update Profile"), CONFIGURE_TOTP("Configure Totp");
-	
-	private final String actionName;
+    UPDATE_PASSWORD("Update Password"),
+    VERIFY_EMAIL("Verify Email"),
+    UPDATE_PROFILE("Update Profile"),
+    CONFIGURE_TOTP("Configure Totp");
 
-	private RequiredUserAction(String actionName) {
-		this.actionName = actionName;
-	}
+    private final String actionName;
 
-	public String getActionName() {
-		return actionName;
-	}
-	
-	
+    private RequiredUserAction(String actionName) {
+        this.actionName = actionName;
+    }
+
+    public String getActionName() {
+        return actionName;
+    }
+
 }

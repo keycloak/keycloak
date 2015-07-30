@@ -29,22 +29,22 @@ import java.net.URI;
  */
 public class ApiUtil {
 
-	public static String getCreatedId(Response response) {
-		URI location = response.getLocation();
-		if (location == null) {
-			return null;
-		}
-		String path = location.getPath();
-		return path.substring(path.lastIndexOf('/') + 1);
-	}
+    public static String getCreatedId(Response response) {
+        URI location = response.getLocation();
+        if (location == null) {
+            return null;
+        }
+        String path = location.getPath();
+        return path.substring(path.lastIndexOf('/') + 1);
+    }
 
-	public static ClientResource findClientByClientId(RealmResource realm, String clientId) {
-		for (ClientRepresentation c : realm.clients().findAll()) {
-			if (c.getClientId().equals(clientId)) {
-				return realm.clients().get(c.getId());
-			}
-		}
-		return null;
-	}
+    public static ClientResource findClientByClientId(RealmResource realm, String clientId) {
+        for (ClientRepresentation c : realm.clients().findAll()) {
+            if (c.getClientId().equals(clientId)) {
+                return realm.clients().get(c.getId());
+            }
+        }
+        return null;
+    }
 
 }
