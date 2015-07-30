@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.console.user;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.console.page.settings.user.UserPage;
@@ -33,7 +34,10 @@ import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
  *
  * @author Filip Kiss
  */
-public class AddNewUserTest extends AbstractAdminConsoleTest<UserPage> {
+public class AddNewUserTest extends AbstractAdminConsoleTest {
+    
+    @Page
+    private UserPage page;
 
     @FindByJQuery(".alert")
     private FlashMessage flashMessage;

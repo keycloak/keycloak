@@ -25,7 +25,10 @@ import static org.openqa.selenium.By.linkText;
 /**
  * Created by fkiss.
  */
-public class AddClientRoleTest extends AbstractAdminConsoleTest<ClientPage> {
+public class AddClientRoleTest extends AbstractAdminConsoleTest {
+    
+    @Page
+    private ClientPage page;
 
     @Page
     private UserPage userPage;

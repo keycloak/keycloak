@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.keycloak.testsuite.console.page.settings.TokensPage;
 
 import static org.jboss.arquillian.graphene.Graphene.waitModel;
+import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
@@ -31,7 +32,10 @@ import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
  *
  * @author Petr Mensik
  */
-public class TokensTest extends AbstractAdminConsoleTest<TokensPage> {
+public class TokensTest extends AbstractAdminConsoleTest {
+
+    @Page
+    private TokensPage page;
 
     private static final int TIMEOUT = 10;
     private static final TimeUnit TIME_UNIT = TimeUnit.SECONDS;

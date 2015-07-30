@@ -17,7 +17,6 @@
  */
 package org.keycloak.testsuite.console.page.settings;
 
-import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.testsuite.model.Client;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.openqa.selenium.WebElement;
@@ -81,7 +80,7 @@ public class ClientPage extends AdminConsole {
         redirectUriInput.sendKeys(uri);
     }
 
-    public void removeUri(Client client) {
+    public void removeUri(ClientPage client) {
     }
 
     public void confirmAddClient() {
@@ -116,7 +115,7 @@ public class ClientPage extends AdminConsole {
     }
 
     private List<Client> getAllRows() {
-        List<Client> rows = new ArrayList<Client>();
+        List<Client> rows = new ArrayList<>();
         List<WebElement> allRows = dataTable.findElements(cssSelector("tbody tr"));
         if (allRows.size() > 1) {
             for (WebElement rowElement : allRows) {

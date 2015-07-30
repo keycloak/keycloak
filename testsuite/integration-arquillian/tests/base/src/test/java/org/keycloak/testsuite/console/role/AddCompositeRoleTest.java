@@ -10,19 +10,20 @@ import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.console.page.fragment.RoleMappings;
 import org.keycloak.testsuite.model.Role;
-import org.keycloak.testsuite.model.User;
 import org.keycloak.testsuite.console.page.settings.RolesPage;
 import org.keycloak.testsuite.console.page.settings.user.UserPage;
 
 import java.util.ArrayList;
 import java.util.List;
-import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.UserRepresentation;
 
 /**
  * Created by fkiss.
  */
-public class AddCompositeRoleTest extends AbstractAdminConsoleTest<RolesPage> {
+public class AddCompositeRoleTest extends AbstractAdminConsoleTest {
+    
+    @Page
+    private RolesPage page;
 
     @Page
     private UserPage userPage;

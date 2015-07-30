@@ -17,6 +17,7 @@
  */
 package org.keycloak.testsuite.console.settings;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
@@ -28,7 +29,10 @@ import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
  *
  * @author Filip Kiss
  */
-public class ThemesSettingsTest extends AbstractAdminConsoleTest<ThemesSettingsPage> {
+public class ThemesSettingsTest extends AbstractAdminConsoleTest {
+
+    @Page
+    private ThemesSettingsPage page;
 
     @Before
     public void beforeThemeTest() {

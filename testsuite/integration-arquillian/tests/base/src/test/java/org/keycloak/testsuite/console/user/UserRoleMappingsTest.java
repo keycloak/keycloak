@@ -18,11 +18,14 @@ import static org.openqa.selenium.By.linkText;
 /**
  * Created by fkiss.
  */
-public class UserRoleMappingsTest extends AbstractAdminConsoleTest<RoleMappings> {
+public class UserRoleMappingsTest extends AbstractAdminConsoleTest {
+
+    @Page
+    private RoleMappings page;
 
     @Page
     private UserPage userPage;
-    
+
     private UserRepresentation testUser;
 
     @FindByJQuery(".alert")

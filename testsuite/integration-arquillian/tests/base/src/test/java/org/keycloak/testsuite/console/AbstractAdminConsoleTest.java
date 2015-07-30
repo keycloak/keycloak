@@ -45,12 +45,8 @@ import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
  *
  * @author Petr Mensik
  * @author tkyjovsk
- * @param <P>
  */
-public abstract class AbstractAdminConsoleTest<P extends AdminConsole> extends AbstractKeycloakTest {
-
-    @Page
-    protected P page;
+public abstract class AbstractAdminConsoleTest extends AbstractKeycloakTest {
 
     @Page
     protected AuthRealm testAuthRealm;

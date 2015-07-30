@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.console.settings;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
+import org.jboss.arquillian.graphene.page.Page;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.keycloak.testsuite.console.page.settings.SocialSettingsPage;
@@ -30,7 +31,10 @@ import org.keycloak.testsuite.model.SocialProvider;
  *
  * @author Petr Mensik
  */
-public class SocialSettingsTest extends AbstractAdminConsoleTest<SocialSettingsPage> {
+public class SocialSettingsTest extends AbstractAdminConsoleTest {
+    
+    @Page
+    private SocialSettingsPage page;
 
     @FindByJQuery(".alert")
     private FlashMessage flashMessage;

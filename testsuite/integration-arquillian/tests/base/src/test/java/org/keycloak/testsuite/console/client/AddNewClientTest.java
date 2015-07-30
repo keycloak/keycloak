@@ -15,35 +15,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.console.client;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
-import org.keycloak.testsuite.model.Client;
-import org.keycloak.testsuite.console.page.settings.ClientPage;
-
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
+import org.keycloak.testsuite.console.page.settings.ClientPage;
+import org.keycloak.testsuite.model.Client;
 
 /**
  *
  * @author Filip Kiss
  */
-public class AddNewClientTest extends AbstractAdminConsoleTest<ClientPage> {
+public class AddNewClientTest extends AbstractAdminConsoleTest {
+
+    @Page
+    private ClientPage page;
 
     @FindByJQuery(".alert")
     private FlashMessage flashMessage;
-	
-	@Before
-	public void beforeClientTest() {
-		navigation.clients();
-		page.goToCreateClient();
-	}
+
+    @Before
+    public void beforeClientTest() {
+        navigation.clients();
+        page.goToCreateClient();
+    }
 
     @Test
     public void addNewClientTest() {

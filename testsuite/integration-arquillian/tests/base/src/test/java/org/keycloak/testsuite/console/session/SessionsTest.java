@@ -15,9 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.console.session;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
@@ -28,17 +28,20 @@ import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
  *
  * @author Petr Mensik
  */
-public class SessionsTest extends AbstractAdminConsoleTest<SessionsPage> {
-	
-	@Before
-	public void beforeSessionTest() {
-		navigation.sessions();
-	}
-	
-	@Test
-	public void testLogoutAllSessions() {
-		page.logoutAllSessions();
-		waitGuiForElement(masterLogin.getLoginPageHeader(), "Home page should be visible after logout");
-		masterLogin.loginAsAdmin();
-	}
+public class SessionsTest extends AbstractAdminConsoleTest {
+
+    @Page
+    private SessionsPage page;
+
+    @Before
+    public void beforeSessionTest() {
+        navigation.sessions();
+    }
+
+    @Test
+    public void testLogoutAllSessions() {
+        page.logoutAllSessions();
+        waitGuiForElement(masterLogin.getLoginPageHeader(), "Home page should be visible after logout");
+        masterLogin.loginAsAdmin();
+    }
 }

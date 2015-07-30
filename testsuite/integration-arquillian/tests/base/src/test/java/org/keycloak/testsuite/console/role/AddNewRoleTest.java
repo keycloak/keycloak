@@ -24,12 +24,15 @@ import org.openqa.selenium.support.ui.Select;
  *
  * @author Petr Mensik
  */
-public class AddNewRoleTest extends AbstractAdminConsoleTest<RolesPage> {
-	
-	@Page
-	private UserPage userPage;
-	
-	@FindByJQuery(".alert")
+public class AddNewRoleTest extends AbstractAdminConsoleTest {
+
+    @Page
+    private RolesPage page;
+
+    @Page
+    private UserPage userPage;
+
+    @FindByJQuery(".alert")
     private FlashMessage flashMessage;
 
     @Before

@@ -15,9 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.console.settings;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -29,17 +29,20 @@ import org.keycloak.testsuite.console.page.settings.CredentialsPage;
  *
  * @author Petr Mensik
  */
-public class CredentialsTest extends AbstractAdminConsoleTest<CredentialsPage> {
-	
-	@Before
-	public void beforeCredentialsTest() {
-		navigation.credentials();
-	}
-	
-	@Test
-        @Ignore("UI changes, see admin console: /#/realms/master/authentication/flows")
-	public void testDigitsNumber() {
-		page.addPolicy(PasswordPolicy.HASH_ITERATIONS, 5);
-		page.removePolicy(PasswordPolicy.DIGITS);
-	}
+public class CredentialsTest extends AbstractAdminConsoleTest {
+
+    @Page
+    private CredentialsPage page;
+
+    @Before
+    public void beforeCredentialsTest() {
+        navigation.credentials();
+    }
+
+    @Test
+    @Ignore("UI changes, see admin console: /#/realms/master/authentication/flows")
+    public void testDigitsNumber() {
+        page.addPolicy(PasswordPolicy.HASH_ITERATIONS, 5);
+        page.removePolicy(PasswordPolicy.DIGITS);
+    }
 }
