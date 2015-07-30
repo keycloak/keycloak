@@ -8,7 +8,6 @@ import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.console.page.fragment.RoleMappings;
-import org.keycloak.testsuite.model.Client;
 import org.keycloak.testsuite.model.Role;
 import org.keycloak.testsuite.console.page.settings.ClientPage;
 import org.keycloak.testsuite.console.page.settings.RolesPage;
@@ -18,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.*;
+import org.keycloak.representations.idm.ClientRepresentation;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.UserRepresentation;
 import static org.openqa.selenium.By.linkText;
@@ -26,7 +26,7 @@ import static org.openqa.selenium.By.linkText;
  * Created by fkiss.
  */
 public class AddClientRoleTest extends AbstractAdminConsoleTest {
-    
+
     @Page
     private ClientPage page;
 
@@ -47,9 +47,18 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         navigation.clients();
     }
 
+    private ClientRepresentation createClient(String name, String redirectUri) {
+        ClientRepresentation client = new ClientRepresentation();
+        client.setName(name);
+        List<String> redirectUris = new ArrayList<>();
+        redirectUris.add(redirectUri);
+        client.setRedirectUris(redirectUris);
+        return client;
+    }
+
     @Test
     public void testAddClientRole() {
-        Client newClient = new Client("test-client1", "http://example.com/*");
+        ClientRepresentation newClient = createClient("test-client1", "http://example.com/*");
         Role newRole = new Role("client-role");
 
         page.addClient(newClient);
@@ -76,7 +85,7 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
     @Ignore //KEYCLOAK-1497
     @Test
     public void testAddClientRoleToUser() {
-        Client newClient = new Client("test-client2", "http://example.com/*");
+        ClientRepresentation newClient = createClient("test-client2", "http://example.com/*");
         Role newRole = new Role("client-role2");
         String testUsername = "test-user2";
         UserRepresentation newUser = new UserRepresentation();
@@ -127,7 +136,7 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
     @Ignore //KEYCLOAK-1496, KEYCLOAK-1497
     @Test
     public void testAddCompositeRealmClientRoleToUser() {
-        Client newClient = new Client("test-client3", "http://example.com/*");
+        ClientRepresentation newClient = createClient("test-client3", "http://example.com/*");
         Role clientCompositeRole = new Role("client-composite-role");
         String testUsername = "test-user3";
         UserRepresentation newUser = new UserRepresentation();
@@ -209,7 +218,7 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
     @Ignore //KEYCLOAK-1504, KEYCLOAK-1497
     @Test
     public void testAddCompositeClientRoleToUser() {
-        Client newClient = new Client("test-client4", "http://example.com/*");
+        ClientRepresentation newClient = createClient("test-client4", "http://example.com/*");
         Role clientCompositeRole = new Role("client-composite-role2");
         String testUsername = "test-user4";
         UserRepresentation newUser = new UserRepresentation();

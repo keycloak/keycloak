@@ -17,13 +17,14 @@
  */
 package org.keycloak.testsuite.console.page.settings;
 
-import org.keycloak.testsuite.model.Client;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.keycloak.representations.idm.ClientRepresentation;
+import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 
 import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
 import static org.openqa.selenium.By.cssSelector;
@@ -63,7 +64,7 @@ public class ClientPage extends AdminConsole {
     @FindBy(id = "removeClient")
     private WebElement removeClientButton;
 
-    public void addClient(Client client) {
+    public void addClient(ClientRepresentation client) {
         createClientButton.click();
         waitAjaxForElement(clientId);
         clientId.sendKeys(client.getClientId());
@@ -71,16 +72,26 @@ public class ClientPage extends AdminConsole {
         if (!client.isEnabled()) {
             enabledSwitchToggle.click();
         }
-        accessTypeDropDownMenu.sendKeys(client.getAccessType());
-        redirectUriInput.sendKeys(client.getUri());
+
+        if (client.isDirectGrantsOnly()) { // TODO verify this one
+            accessTypeDropDownMenu.sendKeys("confidential");
+        }
+        if (client.isBearerOnly()) {
+            accessTypeDropDownMenu.sendKeys("bearer-only");
+        }
+        if (client.isPublicClient()) {
+            accessTypeDropDownMenu.sendKeys("public");
+        }
+
+        for (String redirectUri : client.getRedirectUris()) {
+            addUri(redirectUri);
+            pause(100);
+        }
         primaryButton.click();
     }
 
     public void addUri(String uri) {
         redirectUriInput.sendKeys(uri);
-    }
-
-    public void removeUri(ClientPage client) {
     }
 
     public void confirmAddClient() {
@@ -96,34 +107,35 @@ public class ClientPage extends AdminConsole {
         deleteConfirmationButton.click();
     }
 
-    public Client findClient(String clientName) {
+    public ClientRepresentation findClient(String clientName) {
         waitAjaxForElement(searchInput);
         searchInput.sendKeys(clientName);
-        List<Client> clients = getAllRows();
+        List<ClientRepresentation> clients = getAllRows();
         if (clients.isEmpty()) {
             return null;
-
         } else {
             assert 1 == clients.size();
             return clients.get(0);
         }
     }
 
-    public void goToClient(Client client) {
+    public void goToClient(ClientRepresentation client) {
         waitAjaxForElement(dataTable);
         dataTable.findElement(linkText(client.getName())).click();
     }
 
-    private List<Client> getAllRows() {
-        List<Client> rows = new ArrayList<>();
+    private List<ClientRepresentation> getAllRows() {
+        List<ClientRepresentation> rows = new ArrayList<>();
         List<WebElement> allRows = dataTable.findElements(cssSelector("tbody tr"));
         if (allRows.size() > 1) {
             for (WebElement rowElement : allRows) {
                 if (rowElement.isDisplayed()) {
-                    Client client = new Client();
+                    ClientRepresentation client = new ClientRepresentation();
                     List<WebElement> tds = rowElement.findElements(tagName("td"));
                     client.setClientId(tds.get(0).getText());
-                    client.setUri(tds.get(2).getText());
+                    List<String> redirectUris = new ArrayList<>();
+                    redirectUris.add(tds.get(2).getText()); // FIXME there can be more than 1 redirect uri
+                    client.setRedirectUris(redirectUris);
                     rows.add(client);
                 }
             }
