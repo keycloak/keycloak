@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.console.page.realm;
 
 import java.util.concurrent.TimeUnit;
@@ -26,40 +25,44 @@ import org.openqa.selenium.support.ui.Select;
 import static java.lang.String.valueOf;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 import static org.apache.commons.lang3.text.WordUtils.capitalize;
-import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 
 /**
  *
  * @author Petr Mensik
  */
-public class TokenSettings extends AdminConsoleRealm {
-	
-	@FindBy(id = "ssoSessionIdleTimeout")
-	private WebElement sessionTimeout;
-	
-	@FindBy(name = "ssoSessionIdleTimeoutUnit")
-	private Select sessionTimeoutUnit;
-	
-	@FindBy(id = "ssoSessionMaxLifespan")
-	private WebElement sessionLifespanTimeout;
-	
-	@FindBy(name = "ssoSessionMaxLifespanUnit")
-	private Select sessionLifespanTimeoutUnit;
+public class TokenSettings extends RealmSettings {
 
-	public void setSessionTimeout(int timeout, TimeUnit unit) {
-		setTimeout(sessionTimeoutUnit, sessionTimeout, timeout, unit);
-	}
-	
-	public void setSessionTimeoutLifespan(int time, TimeUnit unit) {
-		setTimeout(sessionLifespanTimeoutUnit, sessionLifespanTimeout, time, unit);
-	}
-	
-	private void setTimeout(Select timeoutElement, WebElement unitElement,
-			int timeout, TimeUnit unit) {
-		waitGuiForElement(sessionTimeout);
-		timeoutElement.selectByValue(capitalize(unit.name().toLowerCase()));
-		unitElement.clear();
-		unitElement.sendKeys(valueOf(timeout));
-		primaryButton.click();
-	}
+    @Override
+    public String getUriFragment() {
+        return super.getUriFragment() + "/token-settings";
+    }
+
+    @FindBy(id = "ssoSessionIdleTimeout")
+    private WebElement sessionTimeout;
+
+    @FindBy(name = "ssoSessionIdleTimeoutUnit")
+    private Select sessionTimeoutUnit;
+
+    @FindBy(id = "ssoSessionMaxLifespan")
+    private WebElement sessionLifespanTimeout;
+
+    @FindBy(name = "ssoSessionMaxLifespanUnit")
+    private Select sessionLifespanTimeoutUnit;
+
+    public void setSessionTimeout(int timeout, TimeUnit unit) {
+        setTimeout(sessionTimeoutUnit, sessionTimeout, timeout, unit);
+    }
+
+    public void setSessionTimeoutLifespan(int time, TimeUnit unit) {
+        setTimeout(sessionLifespanTimeoutUnit, sessionLifespanTimeout, time, unit);
+    }
+
+    private void setTimeout(Select timeoutElement, WebElement unitElement,
+            int timeout, TimeUnit unit) {
+        waitGuiForElement(sessionTimeout);
+        timeoutElement.selectByValue(capitalize(unit.name().toLowerCase()));
+        unitElement.clear();
+        unitElement.sendKeys(valueOf(timeout));
+        primaryButton.click();
+    }
 }

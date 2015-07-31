@@ -15,12 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.console.page.realm;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
-import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.util.SeleniumUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -30,7 +28,12 @@ import org.openqa.selenium.support.ui.Select;
  *
  * @author Filip Kiss
  */
-public class SecurityPage extends AdminConsole {
+public class SecurityDefenses extends RealmSettings {
+
+    @Override
+    public String getUriFragment() {
+        return super.getUriFragment() + "/defense";
+    }
 
     @FindByJQuery("a:contains('Brute Force Detection')")
     private WebElement bruteForceProtectionLink;
@@ -71,37 +74,37 @@ public class SecurityPage extends AdminConsole {
     public void goToAndEnableBruteForceProtectionTab() {
         SeleniumUtils.waitGuiForElement(bruteForceProtectionLink);
         bruteForceProtectionLink.click();
-        if(!protectionEnabled.isEnabled()){
+        if (!protectionEnabled.isEnabled()) {
             protectionEnabled.enable();
         }
     }
 
-    public void setFailureFactorInput(String value){
+    public void setFailureFactorInput(String value) {
         failureFactorInput.clear();
         failureFactorInput.sendKeys(value);
     }
 
-    public void setWaitIncrementInput(String value){
+    public void setWaitIncrementInput(String value) {
         waitIncrementInput.clear();
         waitIncrementInput.sendKeys(value);
     }
 
-    public void setQuickLoginCheckInput(String value){
+    public void setQuickLoginCheckInput(String value) {
         quickLoginCheckInput.clear();
         quickLoginCheckInput.sendKeys(value);
     }
 
-    public void setMinQuickLoginWaitInput(String value){
+    public void setMinQuickLoginWaitInput(String value) {
         minQuickLoginWaitInput.clear();
         minQuickLoginWaitInput.sendKeys(value);
     }
 
-    public void setMaxWaitInput(String value){
+    public void setMaxWaitInput(String value) {
         maxWaitInput.clear();
         maxWaitInput.sendKeys(value);
     }
 
-    public void setFailureResetTimeInput(String value){
+    public void setFailureResetTimeInput(String value) {
         failureResetTimeInput.clear();
         failureResetTimeInput.sendKeys(value);
     }

@@ -21,7 +21,7 @@ package org.keycloak.testsuite.console.realm;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
-import org.keycloak.testsuite.console.page.realm.SecurityPage;
+import org.keycloak.testsuite.console.page.realm.SecurityDefenses;
 import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 
 /**
@@ -31,7 +31,7 @@ import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 public class SecuritySettingsTest extends AbstractAdminConsoleTest{
 
     @Page
-    private SecurityPage page;
+    private SecurityDefenses page;
 
     @Test
     public void securitySettingsTest() {

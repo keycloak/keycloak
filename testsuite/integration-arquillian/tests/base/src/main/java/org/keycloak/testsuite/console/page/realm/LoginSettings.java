@@ -19,13 +19,12 @@ package org.keycloak.testsuite.console.page.realm;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
-import org.keycloak.testsuite.console.page.AdminConsole;
 
 /**
  *
  * @author Petr Mensik
  */
-public class LoginSettings extends AdminConsole {
+public class LoginSettings extends RealmSettings {
 
     @Override
     public String getUriFragment() {
