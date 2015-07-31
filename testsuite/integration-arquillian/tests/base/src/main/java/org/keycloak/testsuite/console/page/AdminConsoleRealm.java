@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.console.page;
 
-import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
+import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -13,7 +13,7 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
     public static final String CONSOLE_REALM = "consoleRealm";
 
     public AdminConsoleRealm() {
-        setUriParameter(CONSOLE_REALM, MASTER);
+        setUriParameter(CONSOLE_REALM, TEST);
     }
 
     public AdminConsoleRealm setConsoleRealm(String realm) {

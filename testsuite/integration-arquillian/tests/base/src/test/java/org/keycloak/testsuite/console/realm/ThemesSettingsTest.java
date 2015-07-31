@@ -46,14 +46,14 @@ public class ThemesSettingsTest extends AbstractAdminConsoleTest {
         logoutFromTestRealm();
         page.verifyBaseTheme();
 
-        loginAsTestUser();
+        loginAsTestAdmin();
         navigation.themes(TEST);
         page.changeLoginTheme(Theme.KEYCLOAK.getName());
         page.saveTheme();
         logoutFromTestRealm();
         page.verifyKeycloakTheme();
 
-        loginAsTestUser();
+        loginAsTestAdmin();
     }
 
 }

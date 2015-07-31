@@ -33,7 +33,7 @@ import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.
 public class PasswordPolicyTest extends AbstractAdminConsoleTest {
 
     @Page
-    private PasswordPolicy page;
+    private PasswordPolicy passwordPolicy;
 
     @Before
     public void beforeCredentialsTest() {
@@ -43,7 +43,7 @@ public class PasswordPolicyTest extends AbstractAdminConsoleTest {
     @Test
     @Ignore("UI changes, see admin console: /#/realms/master/authentication/flows")
     public void testDigitsNumber() {
-        page.addPolicy(HASH_ITERATIONS, 5);
-        page.removePolicy(DIGITS);
+        passwordPolicy.addPolicy(HASH_ITERATIONS, 5);
+        passwordPolicy.removePolicy(DIGITS);
     }
 }

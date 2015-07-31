@@ -25,7 +25,6 @@ import javax.ws.rs.core.UriBuilder;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
-import static org.keycloak.testsuite.util.Users.getPasswordCredentialOf;
 import static org.keycloak.testsuite.util.Users.getPasswordCredentialValueOf;
 
 /**

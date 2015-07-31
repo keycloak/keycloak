@@ -19,7 +19,7 @@ public class AuthRealm extends AuthServer implements PageWithLoginUrl {
     public static final String ADMIN = "admin";
     
     public AuthRealm() {
-        setUriParameter(AUTH_REALM, MASTER);
+        setUriParameter(AUTH_REALM, TEST);
     }
 
     @Override

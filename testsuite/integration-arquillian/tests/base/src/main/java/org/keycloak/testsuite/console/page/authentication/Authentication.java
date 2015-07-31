@@ -8,7 +8,7 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author tkyjovsk
  */
-public class Authentication extends AdminConsoleRealm {
+public abstract class Authentication extends AdminConsoleRealm {
 
     @Override
     public String getUriFragment() {
@@ -22,15 +22,15 @@ public class Authentication extends AdminConsoleRealm {
     @FindBy(linkText = "Password Policy")
     private WebElement passwordPolicyTab;
 
-    public void clickFlows() {
+    public void flows() {
         flowsTab.click();
     }
 
-    public void clickRequiredActions() {
+    public void requiredActions() {
         requiredActionsTab.click();
     }
 
-    public void clickPasswordPolicy() {
+    public void passwordPolicy() {
         passwordPolicyTab.click();
     }
 

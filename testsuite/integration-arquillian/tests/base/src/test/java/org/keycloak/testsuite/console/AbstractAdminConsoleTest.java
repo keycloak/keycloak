@@ -17,27 +17,12 @@
  */
 package org.keycloak.testsuite.console;
 
-import java.util.ArrayList;
-import java.util.List;
-import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
 import org.junit.Before;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.RoleScopeResource;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
-import org.keycloak.testsuite.page.auth.AuthRealm;
-import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
-import org.keycloak.testsuite.page.auth.Login;
 import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 
@@ -46,95 +31,22 @@ import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
  * @author Petr Mensik
  * @author tkyjovsk
  */
-public abstract class AbstractAdminConsoleTest extends AbstractKeycloakTest {
-
-    @Page
-    protected AuthRealm testAuthRealm;
-    @Page
-    protected Login testLogin;
+public abstract class AbstractAdminConsoleTest extends AbstractAuthTest {
 
     @Page
     protected AdminConsole testAdminConsole;
     @Page
     protected AdminConsoleRealm testAdminConsoleRealm;
 
-    protected RealmResource testRealmResource;
-    protected UserRepresentation testUser;
-
-    @Override
-    public void setDefaultPageUriParameters() {
-        super.setDefaultPageUriParameters();
-        testAuthRealm.setAuthRealm(TEST);
-        testLogin.setAuthRealm(TEST);
-        testAdminConsole.setAdminRealm(TEST);
-        testAdminConsoleRealm.setConsoleRealm(TEST).setAdminRealm(TEST);
-    }
-
     @Before
     public void beforeConsoleTest() {
-        testRealmResource = keycloak.realm(TEST);
-
-        createTestUser();
-
-        testAuthRealm.navigateTo();
-        driver.manage().deleteAllCookies();
-        loginAsTestUser();
+        loginAsTestAdmin();
     }
 
-    @After
-    public void afterConsoleTest() {
-//        logoutFromTestRealm();
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation testRealmRep = new RealmRepresentation();
-        testRealmRep.setRealm(TEST);
-        testRealmRep.setEnabled(true);
-        testRealms.add(testRealmRep);
-    }
-
-    public void createTestUser() {
-        System.out.println("creating test user");
-
-        testUser = new UserRepresentation();
-        testUser.setUsername("test");
-        testUser.setEmail("test@email.test");
-        testUser.setFirstName("test");
-        testUser.setLastName("user");
-        testUser.setEnabled(true);
-        Response response = testRealmResource.users().create(testUser);
-        response.close();
-
-        testUser = findUserByUsername(testRealmResource, testUser.getUsername());
-
-        System.out.println(" resetting password");
-
-        UserResource testUserResource = testRealmResource.users().get(testUser.getId());
-        CredentialRepresentation testUserPassword = new CredentialRepresentation();
-        testUserPassword.setType(PASSWORD);
-        testUserPassword.setValue(PASSWORD);
-        testUserPassword.setTemporary(false);
-        testUserResource.resetPassword(testUserPassword);
-
-        System.out.println(" adding realm-admin role");
-
-        ClientRepresentation realmManagementClient = findClientByClientId(testRealmResource, "realm-management");
-        RoleScopeResource rsr = testUserResource.roles().clientLevel(realmManagementClient.getId());
-
-        List<RoleRepresentation> realmMgmtRoles = new ArrayList<>();
-        for (RoleRepresentation rr : rsr.listAvailable()) {
-            if ("realm-admin".equals(rr.getName())) {
-                realmMgmtRoles.add(rr);
-            }
-        }
-        rsr.add(realmMgmtRoles);
-    }
-
-    public void loginAsTestUser() {
+    public void loginAsTestAdmin() {
         testAdminConsole.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testAdminConsole);
-        testLogin.login(testUser.getUsername(), PASSWORD);
+        testLogin.login(testAdmin.getUsername(), PASSWORD);
         assertCurrentUrlStartsWith(testAdminConsole);
     }
 

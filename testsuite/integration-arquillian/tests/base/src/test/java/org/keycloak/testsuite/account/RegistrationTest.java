@@ -23,33 +23,24 @@ import org.keycloak.testsuite.page.auth.Registration;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
-import org.keycloak.admin.client.resource.RealmResource;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.account.page.Account;
-import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 
 /**
  *
  * @author Petr Mensik
  * @author tkyjovsk
  */
-public class RegisterNewUserTest extends AbstractAccountManagementTest {
-
-    private RealmResource testRealmResource;
-    private UserRepresentation testUser;
-
-    @Page
-    private Account account;
+public class RegistrationTest extends AbstractAccountTest {
 
     @Page
     private Registration registration;
 
+    private UserRepresentation testUser;
+
     @Before
     public void beforeUserRegistration() {
-        testRealmResource = keycloak.realm(TEST);
-        
         RealmRepresentation realm = testRealmResource.toRepresentation();
         realm.setRegistrationAllowed(true);
         testRealmResource.update(realm);

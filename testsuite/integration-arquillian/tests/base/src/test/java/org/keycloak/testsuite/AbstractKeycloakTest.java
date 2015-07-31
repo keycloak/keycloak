@@ -140,6 +140,8 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void setDefaultPageUriParameters() {
+        masterAuthRealm.setAuthRealm(MASTER);
+        masterLogin.setAuthRealm(MASTER);
         masterAdminConsole.setAdminRealm(MASTER);
     }
 

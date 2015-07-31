@@ -22,7 +22,7 @@ import org.keycloak.testsuite.page.auth.AuthServer;
 import java.util.List;
 import javax.ws.rs.core.UriBuilder;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
+import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 import org.keycloak.testsuite.page.auth.PageWithLoginUrl;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -36,7 +36,7 @@ public class AdminConsole extends AuthServer implements PageWithLoginUrl {
     public static final String ADMIN_REALM = "adminRealm";
 
     public AdminConsole() {
-        setUriParameter(ADMIN_REALM, MASTER);
+        setUriParameter(ADMIN_REALM, TEST);
     }
 
     public AdminConsole setAdminRealm(String consoleRealm) {
