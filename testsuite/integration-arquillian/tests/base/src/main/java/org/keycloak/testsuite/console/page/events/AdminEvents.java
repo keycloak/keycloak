@@ -7,8 +7,8 @@ package org.keycloak.testsuite.console.page.events;
 public class AdminEvents extends Events {
 
     @Override
-    public String getFragment() {
-        return super.getFragment() + "/admin-events";
+    public String getUriFragment() {
+        return super.getUriFragment() + "/admin-events";
     }
 
 }

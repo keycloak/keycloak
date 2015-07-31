@@ -15,8 +15,8 @@ import org.openqa.selenium.support.ui.Select;
 public class PasswordPolicy extends Authentication {
 
     @Override
-    public String getFragment() {
-        return super.getFragment() + "/password-policy";
+    public String getUriFragment() {
+        return super.getUriFragment() + "/password-policy";
     }
 
     @FindBy(tagName = "select")

@@ -17,7 +17,7 @@ public class RealmSettings extends AdminConsoleRealm {
     @FindBy(linkText = "Keys")
     private WebElement keysSettingsTab;
     @FindBy(linkText = "Email")
-    private WebElement eamilSettingsTab;
+    private WebElement emailSettingsTab;
     @FindBy(linkText = "Themes")
     private WebElement themeSettingsTab;
     @FindBy(linkText = "Cache")

@@ -27,8 +27,8 @@ import org.openqa.selenium.support.FindBy;
 public class RealmSessions extends Sessions {
 
     @Override
-    public String getFragment() {
-        return super.getFragment() + "/realm";
+    public String getUriFragment() {
+        return super.getUriFragment() + "/realm";
     }
 
     @FindBy(id = "logoutAllSessions")

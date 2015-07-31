@@ -1,8 +1,8 @@
 package org.keycloak.testsuite.console.page;
 
-import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 /**
  *
@@ -11,7 +11,7 @@ import org.openqa.selenium.WebElement;
 public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
 
     public static final String CONSOLE_REALM = "consoleRealm";
-    
+
     public AdminConsoleRealm() {
         setUriParameter(CONSOLE_REALM, MASTER);
     }
@@ -26,15 +26,65 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
     }
 
     @Override
-    public String getFragment() {
-        return super.getFragment() + "/{" + CONSOLE_REALM + "}";
+    public String getUriFragment() {
+        return super.getUriFragment() + "/{" + CONSOLE_REALM + "}";
     }
 
-    @FindByJQuery("a:contains('Users')")
+    // Configure
+    @FindBy(partialLinkText = "Realm Settings")
+    private WebElement realmSettingsLink;
+    @FindBy(partialLinkText = "Clients")
+    private WebElement clientsLink;
+    @FindBy(partialLinkText = "Roles")
+    private WebElement rolesLink;
+    @FindBy(partialLinkText = "Identity Providers")
+    private WebElement identityProvidersLink;
+    @FindBy(partialLinkText = "User Feferation")
+    private WebElement userFederationLink;
+    @FindBy(partialLinkText = "Authentication")
+    private WebElement authenticationLink;
+    // Manage
+    @FindBy(partialLinkText = "Users")
     private WebElement usersLink;
+    @FindBy(partialLinkText = "Sessions")
+    private WebElement sessionsLink;
+    @FindBy(partialLinkText = "Events")
+    private WebElement eventsLink;
 
-    public void clickUsers() {
+    public void realmSettings() {
+        realmSettingsLink.click();
+    }
+
+    public void clients() {
+        clientsLink.click();
+    }
+
+    public void roles() {
+        rolesLink.click();
+    }
+
+    public void identityProviders() {
+        identityProvidersLink.click();
+    }
+
+    public void userFederation() {
+        userFederationLink.click();
+    }
+
+    public void authentication() {
+        authenticationLink.click();
+    }
+
+    public void users() {
         usersLink.click();
+    }
+
+    public void sessions() {
+        sessionsLink.click();
+    }
+
+    public void events() {
+        eventsLink.click();
     }
 
 }

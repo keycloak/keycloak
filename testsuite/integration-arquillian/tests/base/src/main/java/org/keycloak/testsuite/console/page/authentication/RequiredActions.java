@@ -7,8 +7,8 @@ package org.keycloak.testsuite.console.page.authentication;
 public class RequiredActions extends Authentication {
 
     @Override
-    public String getFragment() {
-        return super.getFragment() + "/required-actions";
+    public String getUriFragment() {
+        return super.getUriFragment() + "/required-actions";
     }
 
 }

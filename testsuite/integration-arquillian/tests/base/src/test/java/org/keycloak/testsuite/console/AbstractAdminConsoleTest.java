@@ -117,7 +117,7 @@ public abstract class AbstractAdminConsoleTest extends AbstractKeycloakTest {
         testUserPassword.setTemporary(false);
         testUserResource.resetPassword(testUserPassword);
 
-        System.out.println(" adding realm-admin role for the test realm");
+        System.out.println(" adding realm-admin role");
 
         ClientRepresentation realmManagementClient = findClientByClientId(testRealmResource, "realm-management");
         RoleScopeResource rsr = testUserResource.roles().clientLevel(realmManagementClient.getId());

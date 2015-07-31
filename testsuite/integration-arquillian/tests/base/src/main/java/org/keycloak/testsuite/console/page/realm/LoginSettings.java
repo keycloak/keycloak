@@ -28,8 +28,8 @@ import org.keycloak.testsuite.console.page.AdminConsole;
 public class LoginSettings extends AdminConsole {
 
     @Override
-    public String getFragment() {
-        return super.getFragment() + "/login-settings";
+    public String getUriFragment() {
+        return super.getUriFragment() + "/login-settings";
     }
 
     @FindByJQuery("div[class='onoffswitch']:eq(0)")

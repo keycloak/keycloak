@@ -7,8 +7,8 @@ package org.keycloak.testsuite.console.page.sessions;
 public class Revocation extends Sessions {
 
     @Override
-    public String getFragment() {
-        return super.getFragment() + "/revocation";
+    public String getUriFragment() {
+        return super.getUriFragment() + "/revocation";
     }
 
 }

@@ -2,6 +2,7 @@ package org.keycloak.testsuite.console.page;
 
 import java.util.List;
 import javax.ws.rs.core.UriBuilder;
+import org.keycloak.testsuite.console.page.fragment.RealmSelector;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -20,7 +21,7 @@ public class AdminConsoleRealmsRoot extends AdminConsole {
     }
 
     @Override
-    public String getFragment() {
+    public String getUriFragment() {
         return "/realms";
     }
 
@@ -36,5 +37,8 @@ public class AdminConsoleRealmsRoot extends AdminConsole {
             throw new IllegalStateException("A link for realm '" + realm + "' not found on the Realms page.");
         }
     }
+
+    @FindBy(css = "realm-selector")
+    protected RealmSelector realmSelector;
 
 }

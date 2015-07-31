@@ -11,8 +11,8 @@ import org.openqa.selenium.support.FindBy;
 public class Sessions extends AdminConsoleRealm {
 
     @Override
-    public String getFragment() {
-        return super.getFragment() + "/sessions";
+    public String getUriFragment() {
+        return super.getUriFragment() + "/sessions";
     }
 
     @FindBy(linkText = "Realm Sessions")

@@ -39,8 +39,8 @@ import static org.openqa.selenium.By.tagName;
 public class Clients extends AdminConsoleRealm {
 
     @Override
-    public String getFragment() {
-        return super.getFragment() + "/clients";
+    public String getUriFragment() {
+        return super.getUriFragment() + "/clients";
     }
 
     @FindBy(id = "clientId")

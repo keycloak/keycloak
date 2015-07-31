@@ -11,8 +11,8 @@ import org.openqa.selenium.support.FindBy;
 public class Authentication extends AdminConsoleRealm {
 
     @Override
-    public String getFragment() {
-        return super.getFragment() + "/authentication";
+    public String getUriFragment() {
+        return super.getUriFragment() + "/authentication";
     }
 
     @FindBy(linkText = "Flows")

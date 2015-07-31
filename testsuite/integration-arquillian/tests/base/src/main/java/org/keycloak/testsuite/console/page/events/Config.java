@@ -7,8 +7,8 @@ package org.keycloak.testsuite.console.page.events;
 public class Config extends Events {
 
     @Override
-    public String getFragment() {
-        return super.getFragment() + "/events-settings";
+    public String getUriFragment() {
+        return super.getUriFragment() + "/events-settings";
     }
 
 }

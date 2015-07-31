@@ -35,8 +35,8 @@ import org.openqa.selenium.support.ui.Select;
 public class IdentityProviderSettings extends AdminConsoleRealm {
 
     @Override
-    public String getFragment() {
-        return super.getFragment() + "identity-provider-settings";
+    public String getUriFragment() {
+        return super.getUriFragment() + "identity-provider-settings";
     }
 
     @FindBy(tagName = "select")

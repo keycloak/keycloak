@@ -38,8 +38,8 @@ import static org.openqa.selenium.By.*;
 public class Users extends AdminConsoleRealm {
 
     @Override
-    public String getFragment() {
-        return super.getFragment() + "/users";
+    public String getUriFragment() {
+        return super.getUriFragment() + "/users";
     }
 
     @FindBy(id = "username")

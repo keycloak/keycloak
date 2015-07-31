@@ -7,8 +7,8 @@ package org.keycloak.testsuite.console.page.authentication;
 public class Flows extends Authentication {
     
     @Override
-    public String getFragment() {
-        return super.getFragment() + "/flows";
+    public String getUriFragment() {
+        return super.getUriFragment() + "/flows";
     }
 
 }
