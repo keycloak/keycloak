@@ -3,7 +3,6 @@ package org.keycloak.testsuite.console.clients;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
@@ -20,6 +19,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.arquillian.jira.Jira;
 import static org.openqa.selenium.By.linkText;
 
 /**
@@ -82,8 +82,8 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         assertNull(page.findClient(newClient.getName()));
     }
 
-    @Ignore //KEYCLOAK-1497
     @Test
+    @Jira("KEYCLOAK-1497")
     public void testAddClientRoleToUser() {
         ClientRepresentation newClient = createClient("test-client2", "http://example.com/*");
         RoleRepresentation newRole = new RoleRepresentation("client-role2", "");
@@ -133,8 +133,8 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         assertNull(page.findClient(newClient.getName()));
     }
 
-    @Ignore //KEYCLOAK-1496, KEYCLOAK-1497
     @Test
+    @Jira("KEYCLOAK-1496, KEYCLOAK-1497")
     public void testAddCompositeRealmClientRoleToUser() {
         ClientRepresentation newClient = createClient("test-client3", "http://example.com/*");
         RoleRepresentation clientCompositeRole = new RoleRepresentation("client-composite-role", "");
@@ -215,8 +215,8 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         assertNull(page.findClient(newClient.getName()));
     }
 
-    @Ignore //KEYCLOAK-1504, KEYCLOAK-1497
     @Test
+    @Jira("KEYCLOAK-1504, KEYCLOAK-1497")
     public void testAddCompositeClientRoleToUser() {
         ClientRepresentation newClient = createClient("test-client4", "http://example.com/*");
         RoleRepresentation clientCompositeRole = new RoleRepresentation("client-composite-role2", "");
