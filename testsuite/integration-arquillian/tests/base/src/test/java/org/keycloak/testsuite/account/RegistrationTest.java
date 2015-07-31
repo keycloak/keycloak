@@ -46,7 +46,7 @@ public class RegistrationTest extends AbstractAccountTest {
         testRealmResource.update(realm);
 
         account.navigateTo();
-        masterLogin.registration();
+        testLogin.registration();
 
         testUser = new UserRepresentation();
         testUser.setUsername("user");

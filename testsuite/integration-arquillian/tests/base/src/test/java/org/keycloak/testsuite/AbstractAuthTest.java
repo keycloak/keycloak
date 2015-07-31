@@ -6,7 +6,6 @@ import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -95,7 +94,6 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
         testRole = new RoleRepresentation("test-role", "");
         testRealmResource.roles().create(testRole);
-        //Response response = testRealmResource.roles().get(testRole.getName());
     }
 
 }
