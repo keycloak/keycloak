@@ -50,7 +50,7 @@ public class UserRoleMappingsTest extends AbstractAdminConsoleTest {
         driver.findElement(linkText(testUsername)).click();
         navigation.roleMappings(testUsername);
 
-        page.addAvailableRole("create-realm");
+        page.addAvailableRole("test-role");
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         navigation.users();
         userPage.deleteUser(testUsername);
@@ -70,9 +70,9 @@ public class UserRoleMappingsTest extends AbstractAdminConsoleTest {
         driver.findElement(linkText(testUsername)).click();
         navigation.roleMappings(testUsername);
 
-        page.addAvailableRole("create-realm");
+        page.addAvailableRole("test-role");
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        page.removeAssignedRole("create-realm");
+        page.removeAssignedRole("test-role");
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         navigation.users();
         userPage.deleteUser(testUsername);

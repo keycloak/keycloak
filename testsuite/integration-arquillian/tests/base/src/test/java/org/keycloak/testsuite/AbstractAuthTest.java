@@ -6,6 +6,7 @@ import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -31,6 +32,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
     protected RealmResource testRealmResource;
     protected UserRepresentation testAdmin;
+    protected RoleRepresentation testRole;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -45,6 +47,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
         testRealmResource = keycloak.realm(TEST);
 
         createTestUser();
+        createTestRealms();
 
         testAuthRealm.navigateTo();
         driver.manage().deleteAllCookies();
@@ -85,6 +88,14 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
             }
         }
         rsr.add(realmMgmtRoles);
+    }
+
+    public void createTestRealms(){
+        System.out.println("creating test realm");
+
+        testRole = new RoleRepresentation("test-role", "");
+        testRealmResource.roles().create(testRole);
+        //Response response = testRealmResource.roles().get(testRole.getName());
     }
 
 }
