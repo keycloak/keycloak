@@ -89,14 +89,17 @@ public class Clients extends AdminConsoleRealm {
             accessTypeDropDownMenu.sendKeys("public");
         }
 
-        for (String redirectUri : client.getRedirectUris()) {
-            addUri(redirectUri);
-            pause(100);
+        if (client.getRedirectUris() != null){
+            for (String redirectUri : client.getRedirectUris()) {
+                addUri(redirectUri);
+                pause(100);
+            }
         }
         primaryButton.click();
     }
 
     public void addUri(String uri) {
+        redirectUriInput.clear();
         redirectUriInput.sendKeys(uri);
     }
 
@@ -127,7 +130,7 @@ public class Clients extends AdminConsoleRealm {
 
     public void goToClient(ClientRepresentation client) {
         waitAjaxForElement(dataTable);
-        dataTable.findElement(linkText(client.getName())).click();
+        dataTable.findElement(linkText(client.getClientId())).click();
     }
 
     private List<ClientRepresentation> getAllRows() {

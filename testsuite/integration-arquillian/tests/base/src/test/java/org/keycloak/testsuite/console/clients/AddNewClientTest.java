@@ -46,17 +46,20 @@ public class AddNewClientTest extends AbstractAdminConsoleTest {
     @Before
     public void beforeClientTest() {
         navigation.clients();
-        page.goToCreateClient();
     }
 
-    private ClientRepresentation createClient(String name, String redirectUri) {
+    private ClientRepresentation createClient(String clientId, String redirectUri) {
         ClientRepresentation client = new ClientRepresentation();
-        client.setName(name);
+        client.setClientId(clientId);
         if (redirectUri != null) {
             List<String> redirectUris = new ArrayList<>();
             redirectUris.add(redirectUri);
             client.setRedirectUris(redirectUris);
         }
+        client.setEnabled(true);
+        client.setBearerOnly(false);
+        client.setDirectGrantsOnly(false);
+        client.setPublicClient(false);
         return client;
     }
 
@@ -68,9 +71,9 @@ public class AddNewClientTest extends AbstractAdminConsoleTest {
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         navigation.clients();
 
-        page.deleteClient(newClient.getName());
+        page.deleteClient(newClient.getClientId());
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(page.findClient(newClient.getName()));
+        assertNull(page.findClient(newClient.getClientId()));
     }
 
     @Test
@@ -95,9 +98,9 @@ public class AddNewClientTest extends AbstractAdminConsoleTest {
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         navigation.clients();
-        page.deleteClient(newClient.getName());
+        page.deleteClient(newClient.getClientId());
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(page.findClient(newClient.getName()));
+        assertNull(page.findClient(newClient.getClientId()));
     }
 
     @Test
@@ -116,9 +119,9 @@ public class AddNewClientTest extends AbstractAdminConsoleTest {
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         navigation.clients();
-        page.deleteClient(newClient.getName());
+        page.deleteClient(newClient.getClientId());
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(page.findClient(newClient.getName()));
+        assertNull(page.findClient(newClient.getClientId()));
     }
 
 }

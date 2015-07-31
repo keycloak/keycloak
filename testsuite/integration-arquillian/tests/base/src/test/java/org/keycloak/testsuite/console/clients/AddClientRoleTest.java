@@ -47,12 +47,16 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         navigation.clients();
     }
 
-    private ClientRepresentation createClient(String name, String redirectUri) {
+    private ClientRepresentation createClient(String clientId, String redirectUri) {
         ClientRepresentation client = new ClientRepresentation();
-        client.setName(name);
+        client.setClientId(clientId);
         List<String> redirectUris = new ArrayList<>();
         redirectUris.add(redirectUri);
         client.setRedirectUris(redirectUris);
+        client.setEnabled(true);
+        client.setBearerOnly(false);
+        client.setDirectGrantsOnly(false);
+        client.setPublicClient(false);
         return client;
     }
 
@@ -65,21 +69,21 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
-        navigation.rolesTab(newClient.getName());
+        navigation.rolesTab(newClient.getClientId());
         rolesPage.addRole(newRole);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         navigation.clients();
-        page.findClient(newClient.getName());
+        page.findClient(newClient.getClientId());
         page.goToClient(newClient);
-        navigation.rolesTab(newClient.getName());
+        navigation.rolesTab(newClient.getClientId());
         assertNotNull(driver.findElement(linkText(newRole.getName())));
 
         navigation.clients();
-        page.deleteClient(newClient.getName());
+        page.deleteClient(newClient.getClientId());
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(page.findClient(newClient.getName()));
+        assertNull(page.findClient(newClient.getClientId()));
     }
 
     @Ignore //KEYCLOAK-1497
@@ -96,15 +100,15 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
-        navigation.rolesTab(newClient.getName());
+        navigation.rolesTab(newClient.getClientId());
         rolesPage.addRole(newRole);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         navigation.clients();
-        page.findClient(newClient.getName());
+        page.findClient(newClient.getClientId());
         page.goToClient(newClient);
-        navigation.rolesTab(newClient.getName());
+        navigation.rolesTab(newClient.getClientId());
         assertNotNull(driver.findElement(linkText(newRole.getName())));
 
         navigation.users();
@@ -117,7 +121,7 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         userPage.goToUser(testUsername);
 
         navigation.roleMappings(testUsername);
-        roleMappings.selectClientRole(newClient.getName());
+        roleMappings.selectClientRole(newClient.getClientId());
         roleMappings.addAvailableClientRole(newRole.getName());
         //flashMessage.waitUntilPresent();
         //assertTrue(flashMessage.getText(), flashMessage.isSuccess());
@@ -128,9 +132,9 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         userPage.deleteUser(testUsername);
 
         navigation.clients();
-        page.deleteClient(newClient.getName());
+        page.deleteClient(newClient.getClientId());
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(page.findClient(newClient.getName()));
+        assertNull(page.findClient(newClient.getClientId()));
     }
 
     @Ignore //KEYCLOAK-1496, KEYCLOAK-1497
@@ -167,7 +171,7 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         //add client role
-        navigation.rolesTab(newClient.getName());
+        navigation.rolesTab(newClient.getClientId());
         rolesPage.addRole(clientCompositeRole);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
@@ -191,7 +195,7 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         userPage.goToUser(testUsername);
 
         navigation.roleMappings(testUsername);
-        roleMappings.selectClientRole(newClient.getName());
+        roleMappings.selectClientRole(newClient.getClientId());
         roleMappings.addAvailableClientRole(clientCompositeRole.getName());
         //flashMessage.waitUntilPresent();
         //assertTrue(flashMessage.getText(), flashMessage.isSuccess());
@@ -210,9 +214,9 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         rolesPage.deleteRole(subRole2);
 
         navigation.clients();
-        page.deleteClient(newClient.getName());
+        page.deleteClient(newClient.getClientId());
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(page.findClient(newClient.getName()));
+        assertNull(page.findClient(newClient.getClientId()));
     }
 
     @Ignore //KEYCLOAK-1504, KEYCLOAK-1497
@@ -239,11 +243,11 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         //create sub-roles
-        navigation.rolesTab(newClient.getName());
+        navigation.rolesTab(newClient.getClientId());
         for (RoleRepresentation role : roles) {
             navigation.clients();
             page.goToClient(newClient);
-            navigation.rolesTab(newClient.getName());
+            navigation.rolesTab(newClient.getClientId());
             rolesPage.addRole(role);
             flashMessage.waitUntilPresent();
             assertTrue(flashMessage.getText(), flashMessage.isSuccess());
@@ -252,10 +256,10 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         //add client composite roles
         navigation.clients();
         page.goToClient(newClient);
-        navigation.rolesTab(newClient.getName());
+        navigation.rolesTab(newClient.getClientId());
         rolesPage.goToRole(clientCompositeRole);
         rolesPage.setCompositeRole(clientCompositeRole);
-        roleMappings.selectClientRole(newClient.getName());
+        roleMappings.selectClientRole(newClient.getClientId());
         roleMappings.addAvailableClientRole(subRole1.getName(), subRole2.getName());
         //flashMessage.waitUntilPresent();
         //assertTrue(flashMessage.getText(), flashMessage.isSuccess());
@@ -273,7 +277,7 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         userPage.goToUser(testUsername);
 
         navigation.roleMappings(testUsername);
-        roleMappings.selectClientRole(newClient.getName());
+        roleMappings.selectClientRole(newClient.getClientId());
         roleMappings.addAvailableClientRole(clientCompositeRole.getName());
         assertTrue(roleMappings.isAssignedClientRole(clientCompositeRole.getName()));
         assertTrue(roleMappings.checkIfEffectiveClientRolesAreComplete(clientCompositeRole, subRole1, subRole2));
@@ -288,8 +292,8 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         rolesPage.deleteRole(subRole2);
 
         navigation.clients();
-        page.deleteClient(newClient.getName());
+        page.deleteClient(newClient.getClientId());
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(page.findClient(newClient.getName()));
+        assertNull(page.findClient(newClient.getClientId()));
     }
 }
