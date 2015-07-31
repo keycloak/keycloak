@@ -53,6 +53,16 @@ public class AdminConsole extends AuthServer implements PageWithLoginUrl {
         return super.createUriBuilder().path("admin/{" + ADMIN_REALM + "}/console");
     }
 
+    /**
+     *
+     * @return OIDC Login URL for adminRealm parameter
+     */
+    @Override
+    public URI getOIDCLoginUrl() {
+        return OIDCLoginProtocolService.authUrl(UriBuilder.fromPath(getAuthRoot()))
+                .build(getAdminRealm());
+    }
+
     @FindBy(css = ".btn-danger")
     protected WebElement dangerButton;
 
@@ -66,14 +76,7 @@ public class AdminConsole extends AuthServer implements PageWithLoginUrl {
     @FindBy(css = ".ng-binding.btn.btn-danger")
     protected WebElement deleteConfirmationButton;
 
-    /**
-     * 
-     * @return OIDC Login URL for adminRealm
-     */
-    @Override
-    public URI getOIDCLoginUrl() {
-        return OIDCLoginProtocolService.authUrl(UriBuilder.fromPath(getAuthRoot()))
-                .build(getAdminRealm());
-    }
+    @FindBy(css = "navbar-brand")
+    protected WebElement brandLink;
 
 }
