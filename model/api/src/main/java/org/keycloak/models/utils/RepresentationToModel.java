@@ -1077,7 +1077,7 @@ public class RepresentationToModel {
             model.setAuthenticatorConfig(config.getId());
         }
         model.setAuthenticator(rep.getAuthenticator());
-        model.setAutheticatorFlow(rep.isAutheticatorFlow());
+        model.setAuthenticatorFlow(rep.isAutheticatorFlow());
         if (rep.getFlowAlias() != null) {
             AuthenticationFlowModel flow = realm.getFlowByAlias(rep.getFlowAlias());
             model.setFlowId(flow.getId());

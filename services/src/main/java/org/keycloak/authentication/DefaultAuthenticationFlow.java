@@ -49,7 +49,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                     alternativeSuccessful = true;
                 continue;
             }
-            if (model.isAutheticatorFlow()) {
+            if (model.isAuthenticatorFlow()) {
                 AuthenticationFlow authenticationFlow = processor.createFlowExecution(model.getFlowId(), model);
                 return authenticationFlow.processAction(actionExecution);
             } else if (model.getId().equals(actionExecution)) {
@@ -79,7 +79,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 processor.getClientSession().setExecutionStatus(model.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
                 continue;
             }
-            if (model.isAutheticatorFlow()) {
+            if (model.isAuthenticatorFlow()) {
                 AuthenticationFlow authenticationFlow = processor.createFlowExecution(model.getFlowId(), model);
                 Response flowChallenge = authenticationFlow.processFlow();
                 if (flowChallenge == null) {

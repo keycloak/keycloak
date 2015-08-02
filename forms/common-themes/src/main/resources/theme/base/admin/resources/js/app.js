@@ -1080,6 +1080,24 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 flows : function(AuthenticationFlowsLoader) {
                     return AuthenticationFlowsLoader();
+                },
+                selectedFlow : function() {
+                    return null;
+                }
+            },
+            controller : 'AuthenticationFlowsCtrl'
+        })
+        .when('/realms/:realm/authentication/flows/:flow', {
+            templateUrl : resourceUrl + '/partials/authentication-flows.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                flows : function(AuthenticationFlowsLoader) {
+                    return AuthenticationFlowsLoader();
+                },
+                selectedFlow : function($route) {
+                    return $route.current.params.flow;
                 }
             },
             controller : 'AuthenticationFlowsCtrl'

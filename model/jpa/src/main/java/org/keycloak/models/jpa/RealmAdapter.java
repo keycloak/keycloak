@@ -1628,7 +1628,7 @@ public class RealmAdapter implements RealmModel {
         model.setAuthenticator(entity.getAuthenticator());
         model.setFlowId(entity.getFlowId());
         model.setParentFlow(entity.getParentFlow().getId());
-        model.setAutheticatorFlow(entity.isAutheticatorFlow());
+        model.setAuthenticatorFlow(entity.isAutheticatorFlow());
         model.setAuthenticatorConfig(entity.getAuthenticatorConfig());
         return model;
     }
@@ -1655,7 +1655,7 @@ public class RealmAdapter implements RealmModel {
         flow.getExecutions().add(entity);
         entity.setRealm(realm);
         entity.setUserSetupAllowed(model.isUserSetupAllowed());
-        entity.setAutheticatorFlow(model.isAutheticatorFlow());
+        entity.setAutheticatorFlow(model.isAuthenticatorFlow());
         em.persist(entity);
         em.flush();
         model.setId(entity.getId());
@@ -1667,7 +1667,7 @@ public class RealmAdapter implements RealmModel {
     public void updateAuthenticatorExecution(AuthenticationExecutionModel model) {
         AuthenticationExecutionEntity entity = em.find(AuthenticationExecutionEntity.class, model.getId());
         if (entity == null) return;
-        entity.setAutheticatorFlow(model.isAutheticatorFlow());
+        entity.setAutheticatorFlow(model.isAuthenticatorFlow());
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
