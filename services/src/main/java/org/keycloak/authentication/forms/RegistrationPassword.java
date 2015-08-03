@@ -34,7 +34,7 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
 
     @Override
     public String getHelpText() {
-        return null;
+        return "Validates that password matches password confirmation field.  It also will store password in user's credential store.";
     }
 
     @Override
@@ -103,6 +103,11 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
     @Override
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
 
+    }
+
+    @Override
+    public boolean isUserSetupAllowed() {
+        return false;
     }
 
     @Override

@@ -1,7 +1,6 @@
 package org.keycloak.authentication;
 
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
 
 import java.util.LinkedList;
@@ -21,9 +20,11 @@ public class AuthenticatorUtil {
     }
 
     public static void recurseExecutions(RealmModel realm, String flowId, List<AuthenticationExecutionModel> executions) {
-        for (AuthenticationExecutionModel model : realm.getAuthenticationExecutions(flowId)) {
+        List<AuthenticationExecutionModel> authenticationExecutions = realm.getAuthenticationExecutions(flowId);
+        if (authenticationExecutions == null) return;
+        for (AuthenticationExecutionModel model : authenticationExecutions) {
             executions.add(model);
-            if (model.isAutheticatorFlow() && model.isEnabled()) {
+            if (model.isAuthenticatorFlow() && model.isEnabled()) {
                 recurseExecutions(realm, model.getFlowId(), executions);
             }
         }
@@ -31,7 +32,7 @@ public class AuthenticatorUtil {
 
     public static AuthenticationExecutionModel findExecutionByAuthenticator(RealmModel realm, String flowId, String authProviderId) {
         for (AuthenticationExecutionModel model : realm.getAuthenticationExecutions(flowId)) {
-            if (model.isAutheticatorFlow()) {
+            if (model.isAuthenticatorFlow()) {
                 AuthenticationExecutionModel recurse = findExecutionByAuthenticator(realm, model.getFlowId(), authProviderId);
                 if (recurse != null) return recurse;
 

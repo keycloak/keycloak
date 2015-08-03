@@ -1075,7 +1075,6 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<AuthenticationExecutionModel> getAuthenticationExecutions(String flowId) {
         if (updated != null) return updated.getAuthenticationExecutions(flowId);
-        List<AuthenticationExecutionModel> models = new ArrayList<>();
         return cached.getAuthenticationExecutions().get(flowId);
     }
 

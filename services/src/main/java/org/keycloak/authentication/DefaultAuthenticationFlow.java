@@ -49,7 +49,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                     alternativeSuccessful = true;
                 continue;
             }
-            if (model.isAutheticatorFlow()) {
+            if (model.isAuthenticatorFlow()) {
                 AuthenticationFlow authenticationFlow = processor.createFlowExecution(model.getFlowId(), model);
                 return authenticationFlow.processAction(actionExecution);
             } else if (model.getId().equals(actionExecution)) {
@@ -79,7 +79,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 processor.getClientSession().setExecutionStatus(model.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
                 continue;
             }
-            if (model.isAutheticatorFlow()) {
+            if (model.isAuthenticatorFlow()) {
                 AuthenticationFlow authenticationFlow = processor.createFlowExecution(model.getFlowId(), model);
                 Response flowChallenge = authenticationFlow.processFlow();
                 if (flowChallenge == null) {
@@ -124,7 +124,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 configuredFor = authenticator.configuredFor(processor.getSession(), processor.getRealm(), authUser);
                 if (!configuredFor) {
                     if (model.isRequired()) {
-                        if (model.isUserSetupAllowed()) {
+                        if (factory.isUserSetupAllowed()) {
                             AuthenticationProcessor.logger.debugv("authenticator SETUP_REQUIRED: {0}", factory.getId());
                             processor.getClientSession().setExecutionStatus(model.getId(), ClientSessionModel.ExecutionStatus.SETUP_REQUIRED);
                             authenticator.setRequiredActions(processor.getSession(), processor.getRealm(), processor.getClientSession().getAuthenticatedUser());

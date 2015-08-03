@@ -1,0 +1,29 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <div>
+        <h1 data-ng-show="parentFlow.providerId == 'basic-flow'">Create Authenticator Execution</h1>
+        <h1 data-ng-show="parentFlow.providerId == 'for-flow'">Create Form Action Execution</h1>
+    </div>
+    <kc-tabs-authentication></kc-tabs-authentication>
+    <form class="form-horizontal" name="clientForm" novalidate kc-read-only="!access.manageRealm">
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="provider">Provider</label>
+            <div class="col-sm-6">
+                <div>
+                    <select class="form-control" id="provider"
+                            ng-model="provider"
+                            ng-options="provider.id for provider in providers">
+                    </select>
+                </div>
+            </div>
+            <kc-tooltip>{{provider.description}}</kc-tooltip>
+        </div>
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save>Save</button>
+                <button type="button" class="btn btn-default" ng-click="cancel()">Cancel</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

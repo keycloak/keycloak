@@ -35,7 +35,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
     @Override
     public String getHelpText() {
-        return null;
+        return "This action must always be first! Validates the username of the user in validation phase.  In success phase, this will create the user in the database.";
     }
 
     @Override
@@ -148,6 +148,12 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
 
     }
+
+    @Override
+    public boolean isUserSetupAllowed() {
+        return false;
+    }
+
 
     @Override
     public void close() {

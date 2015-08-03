@@ -83,6 +83,12 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator {
     }
 
     @Override
+    public boolean isUserSetupAllowed() {
+        return false;
+    }
+
+
+    @Override
     public String getDisplayType() {
         return "OTP";
     }

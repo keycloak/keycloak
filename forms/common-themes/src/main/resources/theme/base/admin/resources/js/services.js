@@ -94,6 +94,34 @@ module.service('Dialog', function($modal) {
 	return dialog
 });
 
+module.service('CopyDialog', function($modal) {
+    var dialog = {};
+    dialog.open = function (title, suggested, success) {
+        var controller = function($scope, $modalInstance, title) {
+            $scope.title = title;
+            $scope.name = { value: 'Copy of ' + suggested };
+            $scope.ok = function () {
+                console.log('ok with name: ' + $scope.name);
+                $modalInstance.close();
+                success($scope.name.value);
+            };
+            $scope.cancel = function () {
+                $modalInstance.dismiss('cancel');
+            };
+        }
+        $modal.open({
+            templateUrl: resourceUrl + '/templates/kc-copy.html',
+            controller: controller,
+            resolve: {
+                title: function() {
+                    return title;
+                }
+            }
+        });
+    };
+    return dialog;
+});
+
 module.factory('Notifications', function($rootScope, $timeout) {
 	// time (in ms) the notifications are shown
 	var delay = 5000;
@@ -1133,7 +1161,7 @@ module.factory('IdentityProviderMapper', function($resource) {
     });
 });
 
-module.factory('AuthenticationExecutions', function($resource) {
+module.factory('AuthenticationFlowExecutions', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/authentication/flows/:alias/executions', {
         realm : '@realm',
         alias : '@alias'
@@ -1144,9 +1172,50 @@ module.factory('AuthenticationExecutions', function($resource) {
     });
 });
 
+module.factory('CreateExecutionFlow', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/flows/:alias/executions/flow', {
+        realm : '@realm',
+        alias : '@alias'
+    });
+});
+
+module.factory('CreateExecution', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/flows/:alias/executions/execution', {
+        realm : '@realm',
+        alias : '@alias'
+    });
+});
+
 module.factory('AuthenticationFlows', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/authentication/flows', {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/flows/:flow', {
+        realm : '@realm',
+        flow: '@flow'
+    });
+});
+
+module.factory('AuthenticationFormProviders', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/form-providers', {
         realm : '@realm'
+    });
+});
+
+module.factory('AuthenticationFormActionProviders', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/form-action-providers', {
+        realm : '@realm'
+    });
+});
+
+module.factory('AuthenticatorProviders', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/authenticator-providers', {
+        realm : '@realm'
+    });
+});
+
+
+module.factory('AuthenticationFlowsCopy', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/flows/:alias/copy', {
+        realm : '@realm',
+        alias : '@alias'
     });
 });
 module.factory('AuthenticationConfigDescription', function($resource) {
@@ -1172,6 +1241,33 @@ module.factory('AuthenticationExecutionConfig', function($resource) {
         execution: '@execution'
     });
 });
+
+module.factory('AuthenticationExecution', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/executions/:execution', {
+        realm : '@realm',
+        execution : '@execution'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+module.factory('AuthenticationExecutionRaisePriority', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/executions/:execution/raise-priority', {
+        realm : '@realm',
+        execution : '@execution'
+    });
+});
+
+module.factory('AuthenticationExecutionLowerPriority', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/executions/:execution/lower-priority', {
+        realm : '@realm',
+        execution : '@execution'
+    });
+});
+
+
 
 module.service('SelectRoleDialog', function($modal) {
     var dialog = {};

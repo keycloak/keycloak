@@ -1384,13 +1384,12 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public AuthenticationExecutionModel entityToModel(AuthenticationExecutionEntity entity) {
         AuthenticationExecutionModel model = new AuthenticationExecutionModel();
         model.setId(entity.getId());
-        model.setUserSetupAllowed(entity.isUserSetupAllowed());
         model.setRequirement(entity.getRequirement());
         model.setPriority(entity.getPriority());
         model.setAuthenticator(entity.getAuthenticator());
         model.setFlowId(entity.getFlowId());
         model.setParentFlow(entity.getParentFlow());
-        model.setAutheticatorFlow(entity.isAuthenticatorFlow());
+        model.setAuthenticatorFlow(entity.isAuthenticatorFlow());
         model.setAuthenticatorConfig(entity.getAuthenticatorConfig());
         return model;
     }
@@ -1421,8 +1420,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
-        entity.setUserSetupAllowed(model.isUserSetupAllowed());
-        entity.setAuthenticatorFlow(model.isAutheticatorFlow());
+        entity.setAuthenticatorFlow(model.isAuthenticatorFlow());
         entity.setFlowId(model.getFlowId());
         entity.setParentFlow(model.getParentFlow());
         entity.setAuthenticatorConfig(model.getAuthenticatorConfig());
@@ -1444,12 +1442,11 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             }
         }
         if (entity == null) return;
-        entity.setAuthenticatorFlow(model.isAutheticatorFlow());
+        entity.setAuthenticatorFlow(model.isAuthenticatorFlow());
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
         entity.setFlowId(model.getFlowId());
-        entity.setUserSetupAllowed(model.isUserSetupAllowed());
         entity.setAuthenticatorConfig(model.getAuthenticatorConfig());
         updateMongoEntity();
     }

@@ -74,6 +74,12 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
     }
 
     @Override
+    public boolean isUserSetupAllowed() {
+        return false;
+    }
+
+
+    @Override
     public String getDisplayType() {
         return "Password";
     }

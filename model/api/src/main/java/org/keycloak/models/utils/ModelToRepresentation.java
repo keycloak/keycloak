@@ -462,13 +462,12 @@ public class ModelToRepresentation {
             rep.setAuthenticatorConfig(config.getAlias());
         }
         rep.setAuthenticator(model.getAuthenticator());
-        rep.setAutheticatorFlow(model.isAutheticatorFlow());
+        rep.setAutheticatorFlow(model.isAuthenticatorFlow());
         if (model.getFlowId() != null) {
             AuthenticationFlowModel flow = realm.getAuthenticationFlowById(model.getFlowId());
             rep.setFlowAlias(flow.getAlias());
        }
         rep.setPriority(model.getPriority());
-        rep.setUserSetupAllowed(model.isUserSetupAllowed());
         rep.setRequirement(model.getRequirement().name());
         return rep;
     }

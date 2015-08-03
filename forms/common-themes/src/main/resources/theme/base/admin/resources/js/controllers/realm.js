@@ -1616,41 +1616,222 @@ module.controller('IdentityProviderMapperCreateCtrl', function($scope, realm, id
 
 });
 
-module.controller('AuthenticationFlowsCtrl', function($scope, realm, flows, AuthenticationExecutions, Notifications, Dialog, $location) {
+module.controller('CreateFlowCtrl', function($scope, realm,
+                                             AuthenticationFlows,
+                                             Notifications, $location) {
+    $scope.realm = realm;
+    $scope.flow = {
+        alias: "",
+        providerId: "basic-flow",
+        description: "",
+        topLevel: true,
+        builtIn: false
+    }
+
+    $scope.save = function() {
+        AuthenticationFlows.save({realm: realm.realm, flow: ""}, $scope.flow, function() {
+            $location.url("/realms/" + realm.realm + "/authentication/flows/" + $scope.flow.alias);
+            Notifications.success("Flow Created.");
+        })
+    }
+    $scope.cancel = function() {
+        $location.url("/realms/" + realm.realm + "/authentication/flows");
+    };
+});
+
+module.controller('CreateExecutionFlowCtrl', function($scope, realm, parentFlow, formProviders,
+                                                      CreateExecutionFlow,
+                                                      Notifications, $location) {
+    $scope.realm = realm;
+    $scope.formProviders = formProviders;
+    $scope.flow = {
+        alias: "",
+        type: "basic-flow",
+        description: ""
+    }
+    $scope.provider = {};
+    if (formProviders.length > 0) {
+        $scope.provider = formProviders[0];
+    }
+
+    $scope.save = function() {
+        $scope.flow.provider = $scope.provider.id;
+        CreateExecutionFlow.save({realm: realm.realm, alias: parentFlow.alias}, $scope.flow, function() {
+            $location.url("/realms/" + realm.realm + "/authentication/flows/" + parentFlow.alias);
+            Notifications.success("Flow Created.");
+        })
+    }
+    $scope.cancel = function() {
+        $location.url("/realms/" + realm.realm + "/authentication/flows/" + parentFlow.alias);
+    };
+});
+
+module.controller('CreateExecutionCtrl', function($scope, realm, parentFlow, formActionProviders, authenticatorProviders,
+                                                      CreateExecution,
+                                                      Notifications, $location) {
+    $scope.realm = realm;
+    $scope.parentFlow = parentFlow;
+    console.log('parentFlow.providerId: ' + parentFlow.providerId);
+    if (parentFlow.providerId == 'form-flow') {
+        $scope.providers = formActionProviders;
+    } else {
+        $scope.providers = authenticatorProviders;
+    }
+
+    $scope.provider = {};
+    if ($scope.providers.length > 0) {
+        $scope.provider = $scope.providers[0];
+    }
+
+    $scope.save = function() {
+        var execution = {
+            provider: $scope.provider.id
+        }
+        CreateExecution.save({realm: realm.realm, alias: parentFlow.alias}, execution, function() {
+            $location.url("/realms/" + realm.realm + "/authentication/flows/" + parentFlow.alias);
+            Notifications.success("Execution Created.");
+        })
+    }
+    $scope.cancel = function() {
+        $location.url("/realms/" + realm.realm + "/authentication/flows/" + parentFlow.alias);
+    };
+});
+
+
+
+module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flows, selectedFlow,
+                                                      AuthenticationFlows, AuthenticationFlowsCopy, AuthenticationFlowExecutions,
+                                                      AuthenticationExecution, AuthenticationExecutionRaisePriority, AuthenticationExecutionLowerPriority,
+                                                      $modal, Notifications, CopyDialog, $location) {
     $scope.realm = realm;
     $scope.flows = flows;
     if (flows.length > 0) {
         $scope.flow = flows[0];
-    }
-    var setupForm = function() {
-        AuthenticationExecutions.query({realm: realm.realm, alias: $scope.flow.alias}, function(data) {
-            $scope.executions = data;
-            $scope.flowmax = 0;
-            for (var i = 0; i < $scope.executions.length; i++ ) {
-                execution = $scope.executions[i];
-                if (execution.requirementChoices.length > $scope.flowmax) {
-                    $scope.flowmax = execution.requirementChoices.length;
+        if (selectedFlow) {
+            for (var i = 0; i < flows.length; i++) {
+                if (flows[i].alias == selectedFlow) {
+                    $scope.flow = flows[i];
+                    break;
                 }
             }
+        }
+    }
+
+    var setupForm = function() {
+        AuthenticationFlowExecutions.query({realm: realm.realm, alias: $scope.flow.alias}, function(data) {
+            $scope.executions = data;
+            $scope.choicesmax = 0;
+            $scope.levelmax = 0;
             for (var i = 0; i < $scope.executions.length; i++ ) {
-                execution = $scope.executions[i];
+                var execution = $scope.executions[i];
+                if (execution.requirementChoices.length > $scope.choicesmax) {
+                    $scope.choicesmax = execution.requirementChoices.length;
+                }
+                if (execution.level > $scope.levelmax) {
+                    $scope.levelmax = execution.level;
+                }
+            }
+            console.log("levelmax: " + $scope.levelmax);
+            $scope.levelmaxempties = [];
+            for (j = 0; j < $scope.levelmax; j++) {
+                $scope.levelmaxempties.push(j);
+
+            }
+            for (var i = 0; i < $scope.executions.length; i++ ) {
+                var execution = $scope.executions[i];
                 execution.empties = [];
-                for (j = 0; j < $scope.flowmax - execution.requirementChoices.length; j++) {
+                for (j = 0; j < $scope.choicesmax - execution.requirementChoices.length; j++) {
                     execution.empties.push(j);
+                }
+                execution.preLevels = [];
+                for (j = 0; j < execution.level; j++) {
+                    execution.preLevels.push(j);
+                }
+                execution.postLevels = [];
+                for (j = execution.level; j < $scope.levelmax; j++) {
+                    execution.postLevels.push(j);
                 }
             }
         })
     };
 
+    $scope.copyFlow = function() {
+        CopyDialog.open('Copy AuthenticationFlow', $scope.flow.alias, function(name) {
+            AuthenticationFlowsCopy.save({realm: realm.realm, alias: $scope.flow.alias}, {
+               newName: name
+            }, function() {
+                $location.url("/realms/" + realm.realm + '/authentication/flows/' + name);
+                Notifications.success("Flow copied.");
+            })
+        })
+    };
+
+    $scope.removeFlow = function() {
+        AuthenticationFlows.remove({realm: realm, flow: flow.id}, function() {
+            $route.reload();
+            Notifications.success("Flow removed");
+
+        })
+
+    };
+
+    $scope.addFlow = function() {
+        $location.url("/realms/" + realm.realm + '/authentication/flows/' + $scope.flow.id + '/create/flow/execution');
+
+    }
+
+    $scope.addSubFlow = function(execution) {
+        $location.url("/realms/" + realm.realm + '/authentication/flows/' + execution.flowId + '/create/flow/execution');
+
+    }
+
+    $scope.addSubFlowExecution = function(execution) {
+        $location.url("/realms/" + realm.realm + '/authentication/flows/' + execution.flowId + '/create/execution');
+
+    }
+
+    $scope.addExecution = function() {
+        $location.url("/realms/" + realm.realm + '/authentication/flows/' + $scope.flow.id + '/create/execution');
+
+    }
+
+    $scope.createFlow = function() {
+        $location.url("/realms/" + realm.realm + '/authentication/create/flow');
+    }
+
     $scope.updateExecution = function(execution) {
         var copy = angular.copy(execution);
         delete copy.empties;
-        AuthenticationExecutions.update({realm: realm.realm, alias: $scope.flow.alias}, copy, function() {
+        delete copy.levels;
+        AuthenticationFlowExecutions.update({realm: realm.realm, alias: $scope.flow.alias}, copy, function() {
             Notifications.success("Auth requirement updated");
             setupForm();
         });
 
     };
+
+    $scope.removeExecution = function(execution) {
+        console.log('removeExecution: ' + execution.id);
+        AuthenticationExecution.remove({realm: realm.realm, execution: execution.id}, function() {
+            Notifications.success("Execution removed");
+            setupForm();
+        })
+    }
+
+    $scope.raisePriority = function(execution) {
+        AuthenticationExecutionRaisePriority.save({realm: realm.realm, execution: execution.id}, function() {
+            Notifications.success("Priority raised");
+            setupForm();
+        })
+    }
+
+    $scope.lowerPriority = function(execution) {
+        AuthenticationExecutionLowerPriority.save({realm: realm.realm, execution: execution.id}, function() {
+            Notifications.success("Priority lowered");
+            setupForm();
+        })
+    }
+
     $scope.setupForm = setupForm;
 
     setupForm();
@@ -1658,7 +1839,7 @@ module.controller('AuthenticationFlowsCtrl', function($scope, realm, flows, Auth
 
 });
 
-module.controller('RequiredActionsCtrl', function($scope, realm, RequiredActions, Notifications, Dialog, $location) {
+module.controller('RequiredActionsCtrl', function($scope, realm, RequiredActions, Notifications) {
     console.log('RequiredActionsCtrl');
     $scope.realm = realm;
     $scope.requiredActions = [];

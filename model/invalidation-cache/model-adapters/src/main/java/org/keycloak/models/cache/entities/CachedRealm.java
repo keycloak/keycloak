@@ -197,6 +197,7 @@ public class CachedRealm implements Serializable {
         defaultLocale = model.getDefaultLocale();
         for (AuthenticationFlowModel flow : model.getAuthenticationFlows()) {
             authenticationFlows.put(flow.getId(), flow);
+            authenticationExecutions.put(flow.getId(), new LinkedList<AuthenticationExecutionModel>());
             for (AuthenticationExecutionModel execution : model.getAuthenticationExecutions(flow.getId())) {
                 authenticationExecutions.add(flow.getId(), execution);
                 executionsById.put(execution.getId(), execution);
