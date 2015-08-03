@@ -19,6 +19,7 @@ package org.keycloak.testsuite.console.realm;
 
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.console.page.realm.TokenSettings;
 
@@ -51,14 +52,14 @@ public class TokensTest extends AbstractRealmTest {
         driver.navigate().refresh();
         waitGuiForElement(testLogin.getLoginPageHeader(), "Home page should be visible after session timeout");
         loginAsTestAdmin();
-        tokenSettings.setSessionTimeout(30, TimeUnit.MINUTES);
+        navigation.tokens(TEST);
+        page.setSessionTimeout(30, TimeUnit.MINUTES);
     }
 
     @Test
     public void testLifespanOfRealmSession() {
         tokenSettings.setSessionTimeoutLifespan(TIMEOUT, TIME_UNIT);
         logoutFromTestRealm();
-        //loginAsAdmin();
         waitModel().withTimeout(TIMEOUT + 2, TIME_UNIT) //adds 2 seconds to the timeout
                 .pollingEvery(1, TIME_UNIT)
                 .until("Home page should be visible after session timeout")
@@ -66,8 +67,7 @@ public class TokensTest extends AbstractRealmTest {
                 .is()
                 .present();
         loginAsTestAdmin();
-        configure().realmSettings();
-        tabs().tokens();
-        tokenSettings.setSessionTimeoutLifespan(10, TimeUnit.HOURS);
+        navigation.tokens(TEST);
+        page.setSessionTimeoutLifespan(10, TimeUnit.HOURS);
     }
 }

@@ -34,7 +34,6 @@ public class UserRoleMappingsTest extends AbstractUserTest {
         users.deleteUser(testUsername);
     }
 
-    @Ignore
     @Test
     public void addAndRemoveUserAndAssignRole() {
         String testUsername = "tester2";

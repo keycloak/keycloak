@@ -31,6 +31,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
     protected RealmResource testRealmResource;
     protected UserRepresentation testAdmin;
+    protected RoleRepresentation testRole;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -45,6 +46,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
         testRealmResource = keycloak.realm(TEST);
 
         createTestUser();
+        createTestRealms();
 
         testAuthRealm.navigateTo();
         driver.manage().deleteAllCookies();
@@ -85,6 +87,13 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
             }
         }
         rsr.add(realmMgmtRoles);
+    }
+
+    public void createTestRealms(){
+        System.out.println("creating test realm");
+
+        testRole = new RoleRepresentation("test-role", "");
+        testRealmResource.roles().create(testRole);
     }
 
 }
