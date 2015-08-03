@@ -15,14 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.console.page.roles;
 
+import org.keycloak.testsuite.console.page.users.UserRoleMappingsForm;
 import java.util.ArrayList;
 import java.util.List;
+import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.console.page.fragment.PickList;
-import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
@@ -30,26 +30,38 @@ import org.openqa.selenium.support.ui.Select;
  *
  * @author Petr Mensik
  */
-public class DefaultRolesPage extends AdminConsoleRealm {
-    
+public class DefaultRoles extends Roles {
+
+    @Override
+    public String getUriFragment() {
+        return super.getUriFragment() + "/default-roles";
+    }
+
+    @Page
+    private UserRoleMappingsForm form;
+
     @FindBy(id = "")
     private PickList realmDefaultRoles;
-    
+
     @FindBy(id = "")
     private PickList applicationDefaultRoles;
-    
+
     @FindBy(id = "applications")
     private Select applicationsSelect;
-    
+
+    public UserRoleMappingsForm form() {
+        return form;
+    }
+
     public void addDefaultRealmRoles(String... roles) {
         realmDefaultRoles.addItems(roles);
     }
-    
+
     public void addDefaultRealmRoles(RoleRepresentation... roles) {
         List<String> roleList = new ArrayList<>();
-        for(RoleRepresentation role : roles) {
+        for (RoleRepresentation role : roles) {
             roleList.add(role.getName());
         }
-        addDefaultRealmRoles(((String []) roleList.toArray()));
+        addDefaultRealmRoles(((String[]) roleList.toArray()));
     }
 }

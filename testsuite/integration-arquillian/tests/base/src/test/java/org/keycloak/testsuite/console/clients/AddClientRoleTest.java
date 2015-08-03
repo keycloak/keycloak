@@ -1,126 +1,114 @@
 package org.keycloak.testsuite.console.clients;
 
-import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
-import org.keycloak.testsuite.console.page.fragment.FlashMessage;
-import org.keycloak.testsuite.console.page.fragment.RoleMappings;
-import org.keycloak.testsuite.console.page.clients.Clients;
-import org.keycloak.testsuite.console.page.roles.RolesPage;
-import org.keycloak.testsuite.console.page.users.Users;
+import org.keycloak.testsuite.console.page.users.UserRoleMappingsForm;
+import org.keycloak.testsuite.console.page.roles.RealmRoles;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.*;
+import org.junit.Ignore;
 import org.keycloak.representations.idm.ClientRepresentation;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.jira.Jira;
+import org.keycloak.testsuite.console.page.clients.Client;
+import org.keycloak.testsuite.console.page.users.User;
 import static org.openqa.selenium.By.linkText;
 
 /**
  * Created by fkiss.
  */
-public class AddClientRoleTest extends AbstractAdminConsoleTest {
+public class AddClientRoleTest extends AbstractClientTest {
 
     @Page
-    private Clients page;
+    private RealmRoles realmRoles;
 
     @Page
-    private Users userPage;
+    private Client client; // cannot call navigateTo() unless client id is set
+    @Page
+    private User user; // cannot call navigateTo() unless user id is set
 
     @Page
-    private RolesPage rolesPage;
+    private UserRoleMappingsForm roleMappings;
 
-    @Page
-    private RoleMappings roleMappings;
-
-    @FindByJQuery(".alert")
-    private FlashMessage flashMessage;
-
-    @Before
-    public void beforeTestAddClientRole() {
-        navigation.clients();
-    }
-
-    private ClientRepresentation createClient(String clientId, String redirectUri) {
-        ClientRepresentation client = new ClientRepresentation();
-        client.setClientId(clientId);
+    private ClientRepresentation createClientRepresentation(String clientId, String redirectUri) {
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId(clientId);
         List<String> redirectUris = new ArrayList<>();
         redirectUris.add(redirectUri);
-        client.setRedirectUris(redirectUris);
-        client.setEnabled(true);
-        client.setBearerOnly(false);
-        client.setDirectGrantsOnly(false);
-        client.setPublicClient(false);
-        return client;
+        clientRep.setRedirectUris(redirectUris);
+        clientRep.setEnabled(true);
+        clientRep.setBearerOnly(false);
+        clientRep.setDirectGrantsOnly(false);
+        clientRep.setPublicClient(false);
+        return clientRep;
     }
 
     @Test
     public void testAddClientRole() {
-        ClientRepresentation newClient = createClient("test-client1", "http://example.com/*");
+        ClientRepresentation newClient = createClientRepresentation("test-client1", "http://example.com/*");
         RoleRepresentation newRole = new RoleRepresentation("client-role", "");
 
-        page.addClient(newClient);
+        createClient(newClient);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
-        navigation.rolesTab(newClient.getClientId());
-        rolesPage.addRole(newRole);
+        client.tabs().roles();
+        realmRoles.addRole(newRole);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
-        navigation.clients();
-        page.findClient(newClient.getClientId());
-        page.goToClient(newClient);
-        navigation.rolesTab(newClient.getClientId());
+        configure().clients();
+        clients.findClient(newClient.getClientId());
+        clients.clickClient(newClient.getClientId());
+        client.tabs().roles();
         assertNotNull(driver.findElement(linkText(newRole.getName())));
 
-        navigation.clients();
-        page.deleteClient(newClient.getClientId());
+        clients.navigateTo();
+        clients.deleteClient(newClient.getClientId());
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(page.findClient(newClient.getClientId()));
+        assertNull(clients.findClient(newClient.getClientId()));
     }
 
     @Test
     @Jira("KEYCLOAK-1497")
     public void testAddClientRoleToUser() {
-        ClientRepresentation newClient = createClient("test-client2", "http://example.com/*");
+        ClientRepresentation newClient = createClientRepresentation("test-client2", "http://example.com/*");
         RoleRepresentation newRole = new RoleRepresentation("client-role2", "");
         String testUsername = "test-user2";
         UserRepresentation newUser = new UserRepresentation();
         newUser.setUsername(testUsername);
         newUser.credential(PASSWORD, "pass");
 
-        page.addClient(newClient);
+        createClient(newClient);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
-        navigation.rolesTab(newClient.getClientId());
-        rolesPage.addRole(newRole);
+        configure().roles();
+        realmRoles.addRole(newRole);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
-        navigation.clients();
-        page.findClient(newClient.getClientId());
-        page.goToClient(newClient);
-        navigation.rolesTab(newClient.getClientId());
+        clients.navigateTo();
+        clients.findClient(newClient.getClientId());
+        clients.clickClient(newClient.getClientId());
+        client.tabs().roles();
         assertNotNull(driver.findElement(linkText(newRole.getName())));
 
-        navigation.users();
-        userPage.addUser(newUser);
+        users.navigateTo();
+        createUser(newUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
-        navigation.users();
-        userPage.findUser(testUsername);
-        userPage.goToUser(testUsername);
+        users.navigateTo();
+        users.findUser(testUsername);
+        users.clickUser(testUsername);
 
-        navigation.roleMappings(testUsername);
+        user.tabs().roleMappings();
         roleMappings.selectClientRole(newClient.getClientId());
         roleMappings.addAvailableClientRole(newRole.getName());
         //flashMessage.waitUntilPresent();
@@ -128,19 +116,20 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         //KEYCLOAK-1497
         assertTrue(roleMappings.isAssignedClientRole(newRole.getName()));
 
-        navigation.users();
-        userPage.deleteUser(testUsername);
+        users.navigateTo();
+        users.deleteUser(testUsername);
 
-        navigation.clients();
-        page.deleteClient(newClient.getClientId());
+        clients.navigateTo();
+        clients.deleteClient(newClient.getClientId());
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(page.findClient(newClient.getClientId()));
+        assertNull(clients.findClient(newClient.getClientId()));
     }
 
     @Test
     @Jira("KEYCLOAK-1496, KEYCLOAK-1497")
+    @Ignore // TODO use REST to create test data (user/roles)
     public void testAddCompositeRealmClientRoleToUser() {
-        ClientRepresentation newClient = createClient("test-client3", "http://example.com/*");
+        ClientRepresentation newClient = createClientRepresentation("test-client3", "http://example.com/*");
         RoleRepresentation clientCompositeRole = new RoleRepresentation("client-composite-role", "");
         String testUsername = "test-user3";
         UserRepresentation newUser = new UserRepresentation();
@@ -149,52 +138,52 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
 
         RoleRepresentation subRole1 = new RoleRepresentation("sub-role1", "");
         RoleRepresentation subRole2 = new RoleRepresentation("sub-role2", "");
-        List<RoleRepresentation> roles = new ArrayList<>();
+        List<RoleRepresentation> testRoles = new ArrayList<>();
         clientCompositeRole.setComposite(true);
-        roles.add(subRole1);
-        roles.add(subRole2);
+        testRoles.add(subRole1);
+        testRoles.add(subRole2);
 
         //create sub-roles
-        navigation.roles();
-        for (RoleRepresentation role : roles) {
-            rolesPage.addRole(role);
+        configure().roles();
+        for (RoleRepresentation role : testRoles) {
+            realmRoles.addRole(role);
             flashMessage.waitUntilPresent();
             assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-            navigation.roles();
-            assertEquals(role.getName(), rolesPage.findRole(role.getName()).getName());
+            configure().roles();
+            assertEquals(role.getName(), realmRoles.findRole(role.getName()).getName());
         }
 
         //create client
-        navigation.clients();
-        page.addClient(newClient);
+        clients.navigateTo();
+        createClient(newClient);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         //add client role
-        navigation.rolesTab(newClient.getClientId());
-        rolesPage.addRole(clientCompositeRole);
+        configure().roles();
+        realmRoles.addRole(clientCompositeRole);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         //add realm composite roles
-        rolesPage.setCompositeRole(clientCompositeRole);
+        realmRoles.setCompositeRole(clientCompositeRole);
         roleMappings.addAvailableRole(subRole1.getName(), subRole2.getName());
         //flashMessage.waitUntilPresent();
         //assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         //KEYCLOAK-1497
 
         //create user
-        navigation.users();
-        userPage.addUser(newUser);
+        users.navigateTo();
+        createUser(newUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         //add client role to user and verify
-        navigation.users();
-        userPage.findUser(testUsername);
-        userPage.goToUser(testUsername);
+        users.navigateTo();
+        users.findUser(testUsername);
+        users.clickUser(testUsername);
 
-        navigation.roleMappings(testUsername);
+        user.tabs().roleMappings();
         roleMappings.selectClientRole(newClient.getClientId());
         roleMappings.addAvailableClientRole(clientCompositeRole.getName());
         //flashMessage.waitUntilPresent();
@@ -205,24 +194,24 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         assertTrue(roleMappings.checkIfEffectiveClientRolesAreComplete(clientCompositeRole));
 
         //delete everything
-        navigation.users();
-        userPage.deleteUser(testUsername);
+        users.navigateTo();
+        users.deleteUser(testUsername);
 
-        navigation.roles();
-        rolesPage.deleteRole(subRole1);
-        navigation.roles();
-        rolesPage.deleteRole(subRole2);
+        configure().roles();
+        realmRoles.deleteRole(subRole1);
+        configure().roles();
+        realmRoles.deleteRole(subRole2);
 
-        navigation.clients();
-        page.deleteClient(newClient.getClientId());
+        clients.navigateTo();
+        clients.deleteClient(newClient.getClientId());
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(page.findClient(newClient.getClientId()));
+        assertNull(clients.findClient(newClient.getClientId()));
     }
 
     @Test
     @Jira("KEYCLOAK-1504, KEYCLOAK-1497")
     public void testAddCompositeClientRoleToUser() {
-        ClientRepresentation newClient = createClient("test-client4", "http://example.com/*");
+        ClientRepresentation newClient = createClientRepresentation("test-client4", "http://example.com/*");
         RoleRepresentation clientCompositeRole = new RoleRepresentation("client-composite-role2", "");
         String testUsername = "test-user4";
         UserRepresentation newUser = new UserRepresentation();
@@ -231,34 +220,34 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
 
         RoleRepresentation subRole1 = new RoleRepresentation("client-sub-role1", "");
         RoleRepresentation subRole2 = new RoleRepresentation("client-sub-role2", "");
-        List<RoleRepresentation> roles = new ArrayList<>();
+        List<RoleRepresentation> testRoles = new ArrayList<>();
         clientCompositeRole.setComposite(true);
-        roles.add(clientCompositeRole);
-        roles.add(subRole1);
-        roles.add(subRole2);
+        testRoles.add(clientCompositeRole);
+        testRoles.add(subRole1);
+        testRoles.add(subRole2);
 
         //create client
-        page.addClient(newClient);
+        createClient(newClient);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         //create sub-roles
-        navigation.rolesTab(newClient.getClientId());
-        for (RoleRepresentation role : roles) {
-            navigation.clients();
-            page.goToClient(newClient);
-            navigation.rolesTab(newClient.getClientId());
-            rolesPage.addRole(role);
+        configure().roles();
+        for (RoleRepresentation role : testRoles) {
+            clients.navigateTo();
+            clients.clickClient(newClient.getClientId());
+            configure().roles();
+            realmRoles.addRole(role);
             flashMessage.waitUntilPresent();
             assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         }
 
         //add client composite roles
-        navigation.clients();
-        page.goToClient(newClient);
-        navigation.rolesTab(newClient.getClientId());
-        rolesPage.goToRole(clientCompositeRole);
-        rolesPage.setCompositeRole(clientCompositeRole);
+        clients.navigateTo();
+        clients.clickClient(newClient);
+        configure().roles();
+        realmRoles.goToRole(clientCompositeRole);
+        realmRoles.setCompositeRole(clientCompositeRole);
         roleMappings.selectClientRole(newClient.getClientId());
         roleMappings.addAvailableClientRole(subRole1.getName(), subRole2.getName());
         //flashMessage.waitUntilPresent();
@@ -266,34 +255,34 @@ public class AddClientRoleTest extends AbstractAdminConsoleTest {
         //KEYCLOAK-1504, KEYCLOAK-1497
 
         //create user
-        navigation.users();
-        userPage.addUser(newUser);
+        users.navigateTo();
+        createUser(newUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         //add client role to user and verify
-        navigation.users();
-        userPage.findUser(testUsername);
-        userPage.goToUser(testUsername);
+        users.navigateTo();
+        users.findUser(testUsername);
+        users.clickUser(testUsername);
 
-        navigation.roleMappings(testUsername);
+        user.tabs().roleMappings();
         roleMappings.selectClientRole(newClient.getClientId());
         roleMappings.addAvailableClientRole(clientCompositeRole.getName());
         assertTrue(roleMappings.isAssignedClientRole(clientCompositeRole.getName()));
         assertTrue(roleMappings.checkIfEffectiveClientRolesAreComplete(clientCompositeRole, subRole1, subRole2));
 
         //delete everything
-        navigation.users();
-        userPage.deleteUser(testUsername);
+        users.navigateTo();
+        users.deleteUser(testUsername);
 
-        navigation.roles();
-        rolesPage.deleteRole(subRole1);
-        navigation.roles();
-        rolesPage.deleteRole(subRole2);
+        configure().roles();
+        realmRoles.deleteRole(subRole1);
+        configure().roles();
+        realmRoles.deleteRole(subRole2);
 
-        navigation.clients();
-        page.deleteClient(newClient.getClientId());
+        clients.navigateTo();
+        clients.deleteClient(newClient.getClientId());
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(page.findClient(newClient.getClientId()));
+        assertNull(clients.findClient(newClient.getClientId()));
     }
 }

@@ -17,14 +17,13 @@
  */
 package org.keycloak.testsuite.console.page.roles;
 
+import org.keycloak.testsuite.console.page.users.UserRoleMappingsForm;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.testsuite.console.page.fragment.RoleMappings;
-import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import static org.openqa.selenium.By.cssSelector;
 import static org.openqa.selenium.By.linkText;
 import static org.openqa.selenium.By.tagName;
@@ -36,10 +35,15 @@ import static org.keycloak.testsuite.util.SeleniumUtils.*;
  *
  * @author Petr Mensik
  */
-public class RolesPage extends AdminConsoleRealm {
+public class RealmRoles extends Roles {
+
+    @Override
+    public String getUriFragment() {
+        return super.getUriFragment() + "/roles";
+    }
 
     @Page
-    private RoleMappings roleMappings;
+    private UserRoleMappingsForm roleMappings;
 
     @FindBy(css = "input[class*='search']")
     private WebElement searchInput;

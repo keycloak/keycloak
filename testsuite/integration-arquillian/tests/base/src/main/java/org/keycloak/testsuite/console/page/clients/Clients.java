@@ -17,7 +17,6 @@
  */
 package org.keycloak.testsuite.console.page.clients;
 
-import org.keycloak.testsuite.console.page.AdminConsole;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -25,10 +24,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
-import static org.keycloak.testsuite.util.SeleniumUtils.pause;
+import org.keycloak.testsuite.console.page.fragment.DataTable;
 
 import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
-import static org.openqa.selenium.By.cssSelector;
 import static org.openqa.selenium.By.linkText;
 import static org.openqa.selenium.By.tagName;
 
@@ -37,89 +35,55 @@ import static org.openqa.selenium.By.tagName;
  * @author Filip Kisss
  */
 public class Clients extends AdminConsoleRealm {
-
+    
+    public static final String CREATE = "Create";
+    public static final String IMPORT = "Import";
+    
+    public static final String EDIT = "Edit";
+    public static final String DELETE = "Delete";
+    
     @Override
     public String getUriFragment() {
         return super.getUriFragment() + "/clients";
     }
-
-    @FindBy(id = "clientId")
-    private WebElement clientId;
-
-    @FindBy(id = "name")
-    private WebElement nameInput;
-
-    @FindBy(id = "")
-    private WebElement enabledSwitchToggle;
-
-    @FindBy(id = "accessType")
-    private WebElement accessTypeDropDownMenu;
-
-    @FindBy(id = "newRedirectUri")
-    private WebElement redirectUriInput;
-
+    
     @FindBy(css = "table[class*='table']")
-    private WebElement dataTable;
-
-    @FindBy(css = "input[class*='search']")
-    private WebElement searchInput;
-
-    @FindBy(id = "createClient")
-    private WebElement createClientButton;
-
-    @FindBy(id = "removeClient")
-    private WebElement removeClientButton;
-
-    public void addClient(ClientRepresentation client) {
-        createClientButton.click();
-        waitAjaxForElement(clientId);
-        clientId.sendKeys(client.getClientId());
-        nameInput.sendKeys(client.getName());
-        if (!client.isEnabled()) {
-            enabledSwitchToggle.click();
-        }
-
-        if (client.isDirectGrantsOnly()) { // TODO verify this one
-            accessTypeDropDownMenu.sendKeys("confidential");
-        }
-        if (client.isBearerOnly()) {
-            accessTypeDropDownMenu.sendKeys("bearer-only");
-        }
-        if (client.isPublicClient()) {
-            accessTypeDropDownMenu.sendKeys("public");
-        }
-
-        if (client.getRedirectUris() != null){
-            for (String redirectUri : client.getRedirectUris()) {
-                addUri(redirectUri);
-                pause(100);
-            }
-        }
-        primaryButton.click();
+    private DataTable table;
+    
+    public List<ClientRepresentation> searchClients(String searchPattern) {
+        table.search(searchPattern);
+        return getClientsFromTable();
+    }
+    
+    public void createClient() {
+        table.clickHeaderButton(CREATE);
+    }
+    
+    public void importClient() {
+        table.clickHeaderButton(IMPORT);
+    }
+    
+    public void clickClient(ClientRepresentation client) {
+        clickClient(client.getClientId());
     }
 
-    public void addUri(String uri) {
-        redirectUriInput.clear();
-        redirectUriInput.sendKeys(uri);
+    public void clickClient(String clientId) {
+        waitAjaxForElement(table.body());
+        table.body().findElement(linkText(clientId)).click();
     }
-
-    public void confirmAddClient() {
-        primaryButton.click();
+    
+    public void editClient(String clientId) {
+        table.clickActionButton(table.getRowByLinkText(clientId), EDIT);
     }
-
-    public void deleteClient(String clientName) {
-        searchInput.sendKeys(clientName);
-        driver.findElement(linkText(clientName)).click();
-        waitAjaxForElement(removeClientButton);
-        removeClientButton.click();
+    
+    public void deleteClient(String clientId) {
+        table.clickActionButton(table.getRowByLinkText(clientId), DELETE);
         waitAjaxForElement(deleteConfirmationButton);
         deleteConfirmationButton.click();
     }
-
-    public ClientRepresentation findClient(String clientName) {
-        waitAjaxForElement(searchInput);
-        searchInput.sendKeys(clientName);
-        List<ClientRepresentation> clients = getAllRows();
+    
+    public ClientRepresentation findClient(String clientId) {
+        List<ClientRepresentation> clients = searchClients(clientId);
         if (clients.isEmpty()) {
             return null;
         } else {
@@ -127,15 +91,10 @@ public class Clients extends AdminConsoleRealm {
             return clients.get(0);
         }
     }
-
-    public void goToClient(ClientRepresentation client) {
-        waitAjaxForElement(dataTable);
-        dataTable.findElement(linkText(client.getClientId())).click();
-    }
-
-    private List<ClientRepresentation> getAllRows() {
+    
+    private List<ClientRepresentation> getClientsFromTable() {
         List<ClientRepresentation> rows = new ArrayList<>();
-        List<WebElement> allRows = dataTable.findElements(cssSelector("tbody tr"));
+        List<WebElement> allRows = table.rows();
         if (allRows.size() > 1) {
             for (WebElement rowElement : allRows) {
                 if (rowElement.isDisplayed()) {
@@ -151,8 +110,5 @@ public class Clients extends AdminConsoleRealm {
         }
         return rows;
     }
-
-    public void goToCreateClient() {
-        createClientButton.click();
-    }
+    
 }

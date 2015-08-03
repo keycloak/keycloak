@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.account.page.Account;
 import static org.keycloak.testsuite.util.RealmUtils.loadRealm;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.adapter.page.CustomerPortalExample;
@@ -22,7 +23,6 @@ import org.keycloak.testsuite.adapter.page.ProductPortalExample;
 import org.keycloak.testsuite.model.RequiredUserAction;
 import static org.keycloak.testsuite.page.auth.AuthRealm.DEMO;
 import org.keycloak.testsuite.page.auth.Login;
-import org.keycloak.testsuite.page.auth.UpdateAccountPage;
 import org.openqa.selenium.By;
 
 public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdapterTest {
@@ -38,7 +38,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     protected Login loginDemo;
 
     @Page
-    private UpdateAccountPage accountPage;
+    private Account account;
 
     protected RealmResource demoRealmResource;
 
@@ -115,12 +115,12 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
                 .element(By.className("kc-feedback-text"))
                 .text()
                 .equalTo("You need to update your user profile to activate your account.");
-        accountPage.updateAccountInfo("bburke@redhat.com", "Bill", "");
+        account.setEmail("bburke@redhat.com").setFirstName("Bill").setLastName("");
         waitGui().until()
                 .element(By.className("kc-feedback-text"))
                 .text()
                 .equalTo("Please specify last name.");
-        accountPage.updateAccountInfo("bburke@redhat.com", "Bill", "Burke");
+        account.setEmail("bburke@redhat.com").setFirstName("Bill").setLastName("Burke");
         waitGui().until()
                 .element(By.tagName("h2"))
                 .text()

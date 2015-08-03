@@ -5,18 +5,14 @@
  */
 package org.keycloak.testsuite.console.roles;
 
-import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
-import org.keycloak.testsuite.console.page.roles.RolesPage;
+import org.keycloak.testsuite.console.page.roles.RealmRoles;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
-import org.keycloak.testsuite.console.page.fragment.FlashMessage;
-import org.keycloak.testsuite.console.page.users.Users;
 import static org.openqa.selenium.By.id;
 import org.openqa.selenium.support.ui.Select;
 
@@ -24,72 +20,66 @@ import org.openqa.selenium.support.ui.Select;
  *
  * @author Petr Mensik
  */
-public class AddNewRoleTest extends AbstractAdminConsoleTest {
+public class AddNewRoleTest extends AbstractRolesTest {
 
     @Page
-    private RolesPage page;
-
-    @Page
-    private Users userPage;
-
-    @FindByJQuery(".alert")
-    private FlashMessage flashMessage;
+    private RealmRoles roles;
 
     @Before
     public void beforeTestAddNewRole() {
-        navigation.roles();
+        roles.navigateTo();
     }
 
     @Test
     public void testAddNewRole() {
         RoleRepresentation role = new RoleRepresentation("role1", "");
-        page.addRole(role);
+        roles.addRole(role);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        navigation.roles();
-        assertEquals("role1", page.findRole(role.getName()).getName());
-        page.deleteRole(role);
+        roles.navigateTo();
+        assertEquals("role1", roles.findRole(role.getName()).getName());
+        roles.deleteRole(role);
     }
 
     @Ignore
     @Test
     public void testAddNewRoleWithLongName() {
         String name = "hjewr89y1894yh98(*&*&$jhjkashd)*(&y8934h*&@#hjkahsdj";
-        page.addRole(new RoleRepresentation(name, ""));
-        assertNotNull(page.findRole(name));
-        navigation.roles();
-        page.deleteRole(name);
+        roles.addRole(new RoleRepresentation(name, ""));
+        assertNotNull(roles.findRole(name));
+        roles.navigateTo();
+        roles.deleteRole(name);
     }
 
     @Test
     public void testAddExistingRole() {
         RoleRepresentation role = new RoleRepresentation("role2", "");
-        page.addRole(role);
+        roles.addRole(role);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        navigation.roles();
-        page.addRole(role);
+        roles.navigateTo();
+        roles.addRole(role);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
-        navigation.roles();
-        page.deleteRole(role);
+        roles.navigateTo();
+        roles.deleteRole(role);
     }
 
     @Test
     public void testRoleIsAvailableForUsers() {
         RoleRepresentation role = new RoleRepresentation("User role", "");
-        page.addRole(role);
+        roles.addRole(role);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        navigation.users();
-        userPage.showAllUsers();
-        userPage.goToUser("admin");
-        navigation.roleMappings("Admin");
+        users.navigateTo();
+        users.viewAllUsers();
+        users.clickUser("admin");
+        user.tabs().roleMappings();
         Select rolesSelect = new Select(driver.findElement(id("available")));
         assertEquals("User role should be present in admin role mapping",
                 role.getName(), rolesSelect.getOptions().get(0).getText());
-        navigation.roles();
-        page.deleteRole(role);
+        roles.navigateTo();
+        roles.deleteRole(role);
     }
 
 }

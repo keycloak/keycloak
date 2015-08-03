@@ -22,7 +22,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.keycloak.testsuite.console.page.idp.IdentityProviderSettings;
-import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
+import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import org.keycloak.testsuite.model.Provider;
 import org.keycloak.testsuite.model.SocialProvider;
@@ -31,7 +31,7 @@ import org.keycloak.testsuite.model.SocialProvider;
  *
  * @author Petr Mensik
  */
-public class IdentityProviderTest extends AbstractAdminConsoleTest {
+public class IdentityProviderTest extends AbstractConsoleTest {
     
     @Page
     private IdentityProviderSettings page;

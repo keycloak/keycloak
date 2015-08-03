@@ -15,28 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.console.realm;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.console.page.realm.SecurityDefenses;
-import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 
 /**
  *
  * @author Filip Kiss
  */
-public class SecuritySettingsTest extends AbstractAdminConsoleTest{
+public class SecurityDefensesTest extends AbstractRealmTest {
 
     @Page
-    private SecurityDefenses page;
+    private SecurityDefenses securityDefenses;
+
+    @Before
+    public void beforeSecuritySettingsTest() {
+        configure().realmSettings();
+        tabs().securityDefenses();
+    }
 
     @Test
+    @Ignore // TODO
     public void securitySettingsTest() {
-        navigation.security(TEST);
-        page.goToAndEnableBruteForceProtectionTab();
+        securityDefenses.goToAndEnableBruteForceProtectionTab();
         //TODO:
 
     }

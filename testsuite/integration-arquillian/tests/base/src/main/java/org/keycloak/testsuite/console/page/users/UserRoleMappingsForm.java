@@ -1,6 +1,5 @@
-package org.keycloak.testsuite.console.page.fragment;
+package org.keycloak.testsuite.console.page.users;
 
-import org.keycloak.testsuite.console.page.AdminConsole;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -16,7 +15,7 @@ import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 /**
  * Created by fkiss.
  */
-public class RoleMappings extends AdminConsole {
+public class UserRoleMappingsForm  {
 
     @FindBy(id = "available")
     private Select availableRolesSelect;

@@ -20,7 +20,7 @@ package org.keycloak.testsuite.console.sessions;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
+import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.sessions.RealmSessions;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 
@@ -28,20 +28,21 @@ import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
  *
  * @author Petr Mensik
  */
-public class SessionsTest extends AbstractAdminConsoleTest {
+public class SessionsTest extends AbstractConsoleTest {
 
     @Page
-    private RealmSessions page;
+    private RealmSessions realmSessions;
 
     @Before
     public void beforeSessionTest() {
-        navigation.sessions();
+        manage().sessions();
+        realmSessions.realmSessions();
     }
 
     @Test
     public void testLogoutAllSessions() {
-        page.logoutAllSessions();
+        realmSessions.logoutAllSessions();
         waitGuiForElement(masterLogin.getLoginPageHeader(), "Home page should be visible after logout");
-        masterLogin.loginAsAdmin();
+        loginAsTestAdmin();
     }
 }

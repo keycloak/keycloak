@@ -25,7 +25,6 @@ import org.keycloak.testsuite.page.auth.AuthServer;
 import org.keycloak.testsuite.page.auth.AuthServerContextRoot;
 import static org.keycloak.testsuite.util.PageAssert.*;
 import org.keycloak.testsuite.console.page.fragment.Menu;
-import org.keycloak.testsuite.console.page.fragment.Navigation;
 import org.keycloak.testsuite.page.auth.Login;
 import org.keycloak.testsuite.account.page.Password;
 import org.keycloak.testsuite.page.auth.AuthRealm;
@@ -67,8 +66,6 @@ public abstract class AbstractKeycloakTest {
     protected Password password;
     @Page
     protected Menu menu;
-    @Page
-    protected Navigation navigation;
 
     @Before
     public void beforeAbstractKeycloakTest() {

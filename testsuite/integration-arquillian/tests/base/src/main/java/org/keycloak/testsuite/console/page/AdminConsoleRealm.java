@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.console.page;
 
+import org.keycloak.testsuite.console.page.fragment.Navigation;
 import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -30,61 +31,81 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
         return super.getUriFragment() + "/{" + CONSOLE_REALM + "}";
     }
 
-    // Configure
-    @FindBy(partialLinkText = "Realm Settings")
-    private WebElement realmSettingsLink;
-    @FindBy(partialLinkText = "Clients")
-    private WebElement clientsLink;
-    @FindBy(partialLinkText = "Roles")
-    private WebElement rolesLink;
-    @FindBy(partialLinkText = "Identity Providers")
-    private WebElement identityProvidersLink;
-    @FindBy(partialLinkText = "User Feferation")
-    private WebElement userFederationLink;
-    @FindBy(partialLinkText = "Authentication")
-    private WebElement authenticationLink;
-    // Manage
-    @FindBy(partialLinkText = "Users")
-    private WebElement usersLink;
-    @FindBy(partialLinkText = "Sessions")
-    private WebElement sessionsLink;
-    @FindBy(partialLinkText = "Events")
-    private WebElement eventsLink;
+    @FindBy(xpath = "//div[./h2[text()='Configure']]")
+    private ConfigureMenu configureMenu;
 
-    public void realmSettings() {
-        realmSettingsLink.click();
+    public ConfigureMenu configure() {
+        return configureMenu;
     }
 
-    public void clients() {
-        clientsLink.click();
+    public class ConfigureMenu extends Navigation {
+
+        @FindBy(partialLinkText = "Realm Settings")
+        private WebElement realmSettingsLink;
+        @FindBy(partialLinkText = "Clients")
+        private WebElement clientsLink;
+        @FindBy(partialLinkText = "Roles")
+        private WebElement rolesLink;
+        @FindBy(partialLinkText = "Identity Providers")
+        private WebElement identityProvidersLink;
+        @FindBy(partialLinkText = "User Feferation")
+        private WebElement userFederationLink;
+        @FindBy(partialLinkText = "Authentication")
+        private WebElement authenticationLink;
+
+        public void realmSettings() {
+            realmSettingsLink.click();
+        }
+
+        public void clients() {
+            clientsLink.click();
+        }
+
+        public void roles() {
+            rolesLink.click();
+        }
+
+        public void identityProviders() {
+            identityProvidersLink.click();
+        }
+
+        public void userFederation() {
+            userFederationLink.click();
+        }
+
+        public void authentication() {
+            authenticationLink.click();
+        }
+
     }
 
-    public void roles() {
-        rolesLink.click();
+    @FindBy(xpath = "//div[./h2[text()='Manage']]")
+    protected ManageMenu manageMenu;
+
+    public ManageMenu manage() {
+        return manageMenu;
     }
 
-    public void identityProviders() {
-        identityProvidersLink.click();
-    }
+    public class ManageMenu {
 
-    public void userFederation() {
-        userFederationLink.click();
-    }
+        @FindBy(partialLinkText = "Users")
+        private WebElement usersLink;
+        @FindBy(partialLinkText = "Sessions")
+        private WebElement sessionsLink;
+        @FindBy(partialLinkText = "Events")
+        private WebElement eventsLink;
 
-    public void authentication() {
-        authenticationLink.click();
-    }
+        public void users() {
+            usersLink.click();
+        }
 
-    public void users() {
-        usersLink.click();
-    }
+        public void sessions() {
+            sessionsLink.click();
+        }
 
-    public void sessions() {
-        sessionsLink.click();
-    }
-
-    public void events() {
-        eventsLink.click();
+        public void events() {
+            eventsLink.click();
+        }
     }
 
 }

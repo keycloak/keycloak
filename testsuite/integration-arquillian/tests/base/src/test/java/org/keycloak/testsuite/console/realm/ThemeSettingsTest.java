@@ -20,38 +20,37 @@ package org.keycloak.testsuite.console.realm;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
 import org.keycloak.testsuite.model.Theme;
 import org.keycloak.testsuite.console.page.realm.ThemeSettings;
-import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 
 /**
  *
  * @author Filip Kiss
  */
-public class ThemesSettingsTest extends AbstractAdminConsoleTest {
+public class ThemeSettingsTest extends AbstractRealmTest {
 
     @Page
-    private ThemeSettings page;
+    private ThemeSettings themeSettings;
 
     @Before
     public void beforeThemeTest() {
-        navigation.themes(TEST);
+        configure().realmSettings();
+        tabs().themes();
     }
 
     @Test
     public void changeLoginThemeTest() {
-        page.changeLoginTheme(Theme.BASE.getName());
-        page.saveTheme();
+        themeSettings.changeLoginTheme(Theme.BASE.getName());
+        themeSettings.saveTheme();
         logoutFromTestRealm();
-        page.verifyBaseTheme();
+        themeSettings.verifyBaseTheme();
 
         loginAsTestAdmin();
-        navigation.themes(TEST);
-        page.changeLoginTheme(Theme.KEYCLOAK.getName());
-        page.saveTheme();
+        tabs().themes();
+        themeSettings.changeLoginTheme(Theme.KEYCLOAK.getName());
+        themeSettings.saveTheme();
         logoutFromTestRealm();
-        page.verifyKeycloakTheme();
+        themeSettings.verifyKeycloakTheme();
 
         loginAsTestAdmin();
     }

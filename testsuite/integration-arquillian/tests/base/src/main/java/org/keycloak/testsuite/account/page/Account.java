@@ -54,19 +54,22 @@ public class Account extends AccountManagement {
         return lastName.getAttribute("value");
     }
 
-    public void setEmail(String value) {
+    public Account setEmail(String value) {
         email.clear();
         email.sendKeys(value);
+        return this;
     }
 
-    public void setFirstName(String value) {
+    public Account setFirstName(String value) {
         firstName.clear();
         firstName.sendKeys(value);
+        return this;
     }
 
-    public void setLastName(String value) {
+    public Account setLastName(String value) {
         lastName.clear();
         lastName.sendKeys(value);
+        return this;
     }
 
 }

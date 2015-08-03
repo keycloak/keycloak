@@ -24,50 +24,50 @@ import org.keycloak.testsuite.console.page.realm.TokenSettings;
 
 import static org.jboss.arquillian.graphene.Graphene.waitModel;
 import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
-import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 
 /**
  *
  * @author Petr Mensik
  */
-public class TokensTest extends AbstractAdminConsoleTest {
+public class TokensTest extends AbstractRealmTest {
 
     @Page
-    private TokenSettings page;
+    private TokenSettings tokenSettings;
 
     private static final int TIMEOUT = 10;
     private static final TimeUnit TIME_UNIT = TimeUnit.SECONDS;
 
     @Before
     public void beforeTokensTest() {
-        navigation.tokens(TEST);
+        configure().realmSettings();
+        tabs().tokens();
     }
 
     @Test
     public void testTimeoutForRealmSession() throws InterruptedException {
-        page.setSessionTimeout(TIMEOUT, TIME_UNIT);
+        tokenSettings.setSessionTimeout(TIMEOUT, TIME_UNIT);
         TIME_UNIT.sleep(TIMEOUT + 2); //add 2 secs to timeout
         driver.navigate().refresh();
-        waitGuiForElement(masterLogin.getLoginPageHeader(), "Home page should be visible after session timeout");
-        masterLogin.loginAsAdmin();
-        page.setSessionTimeout(30, TimeUnit.MINUTES);
+        waitGuiForElement(testLogin.getLoginPageHeader(), "Home page should be visible after session timeout");
+        loginAsTestAdmin();
+        tokenSettings.setSessionTimeout(30, TimeUnit.MINUTES);
     }
 
     @Test
     public void testLifespanOfRealmSession() {
-        page.setSessionTimeoutLifespan(TIMEOUT, TIME_UNIT);
+        tokenSettings.setSessionTimeoutLifespan(TIMEOUT, TIME_UNIT);
         logoutFromTestRealm();
         //loginAsAdmin();
         waitModel().withTimeout(TIMEOUT + 2, TIME_UNIT) //adds 2 seconds to the timeout
                 .pollingEvery(1, TIME_UNIT)
                 .until("Home page should be visible after session timeout")
-                .element(masterLogin.getLoginPageHeader())
+                .element(testLogin.getLoginPageHeader())
                 .is()
                 .present();
-        masterLogin.loginAsAdmin();
-        navigation.tokens(TEST);
-        page.setSessionTimeoutLifespan(10, TimeUnit.HOURS);
+        loginAsTestAdmin();
+        configure().realmSettings();
+        tabs().tokens();
+        tokenSettings.setSessionTimeoutLifespan(10, TimeUnit.HOURS);
     }
 }

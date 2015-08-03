@@ -21,7 +21,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.testsuite.console.AbstractAdminConsoleTest;
+import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.PasswordPolicy;
 import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.DIGITS;
 import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.HASH_ITERATIONS;
@@ -30,14 +30,15 @@ import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.
  *
  * @author Petr Mensik
  */
-public class PasswordPolicyTest extends AbstractAdminConsoleTest {
+public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Page
     private PasswordPolicy passwordPolicy;
 
     @Before
     public void beforeCredentialsTest() {
-        navigation.credentials();
+        configure().authentication();
+        passwordPolicy.passwordPolicy();
     }
 
     @Test
@@ -46,4 +47,5 @@ public class PasswordPolicyTest extends AbstractAdminConsoleTest {
         passwordPolicy.addPolicy(HASH_ITERATIONS, 5);
         passwordPolicy.removePolicy(DIGITS);
     }
+    
 }

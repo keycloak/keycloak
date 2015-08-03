@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.console.page.fragment;
+package org.keycloak.testsuite.console.page.realm;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import static org.openqa.selenium.By.id;

@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.console.page.fragment;
 
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
@@ -34,34 +33,34 @@ public class FlashMessage {
     private WebElement root;
 
     public boolean isSuccess() {
-		waitGui().until("Flash message should be success")
-			.element(root)
-			.attribute("class")
-			.contains("success");
-		return root.getAttribute("class").contains("success");
+        waitGui().until("Flash message should be success")
+                .element(root)
+                .attribute("class")
+                .contains("success");
+        return root.getAttribute("class").contains("success");
     }
 
     public boolean isError() {
-		waitGui().until("Flash message should be error")
-			.element(root)
-			.attribute("class")
-			.contains("error");
+        waitGui().until("Flash message should be error")
+                .element(root)
+                .attribute("class")
+                .contains("error");
         return root.getAttribute("class").contains("error");
     }
 
     public boolean isDanger() {
-		waitGui().until("Flash message should be danger")
-			.element(root)
-			.attribute("class")
-			.contains("danger");
-		return root.getAttribute("class").contains("danger"); 
-	}
+        waitGui().until("Flash message should be danger")
+                .element(root)
+                .attribute("class")
+                .contains("danger");
+        return root.getAttribute("class").contains("danger");
+    }
 
     public String getText() {
         return root.getText();
     }
 
     public void waitUntilPresent() {
-		waitGuiForElement(root, "Flash message should be visible.");
+        waitGuiForElement(root, "Flash message should be visible.");
     }
 }
