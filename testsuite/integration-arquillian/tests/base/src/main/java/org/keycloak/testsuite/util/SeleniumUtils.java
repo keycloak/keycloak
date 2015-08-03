@@ -17,6 +17,7 @@
  */
 package org.keycloak.testsuite.util;
 
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static org.jboss.arquillian.graphene.Graphene.waitAjax;
@@ -50,19 +51,37 @@ public final class SeleniumUtils {
     }
 
     public static void waitGuiForElement(WebElement element) {
-        waitGuiForElement(element, null);
+        waitGuiForElementPresent(element, null);
     }
 
-    public static void waitGuiForElement(WebElement element, String message) {
-        waitGui().until(message)
-                .element(element).is().present();
+    public static void waitGuiForElementPresent(WebElement element, String message) {
+        waitGui().until(message).element(element).is().present();
     }
 
     public static void waitGuiForElementNotPresent(WebElement element) {
-        waitGui().until()
-                .element(element).is().not().present();
+        waitGui().until().element(element).is().not().present();
     }
-    
+
+    public static void waitGuiForElementPresent(WebElement element, int seconds) {
+        waitGui().withTimeout(seconds, TimeUnit.SECONDS)
+                .until().element(element).is().present();
+    }
+
+    public static void waitGuiForElementNotPresent(WebElement element, int seconds) {
+        waitGui().withTimeout(seconds, TimeUnit.SECONDS)
+                .until().element(element).is().not().present();
+    }
+
+    public static void waitGuiForElementVisible(WebElement element, int seconds) {
+        waitGui().withTimeout(seconds, TimeUnit.SECONDS)
+                .until().element(element).is().visible();
+    }
+
+    public static void waitGuiForElementNotVisible(WebElement element, int seconds) {
+        waitGui().withTimeout(seconds, TimeUnit.SECONDS)
+                .until().element(element).is().not().visible();
+    }
+
     public static void pause(long millis) {
         try {
             Thread.sleep(millis);
@@ -70,4 +89,5 @@ public final class SeleniumUtils {
             Logger.getLogger(SeleniumUtils.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+
 }

@@ -16,7 +16,8 @@ public class Navigation {
     @Drone
     private WebDriver driver;
 
-    @FindBy(css = "div h1")
+//    @FindBy(css = "div h1")
+    @FindBy(xpath = "//div[./h1]")
     private WebElement currentHeader;
 
     @FindBy(css = "div > h1.ng-binding")
@@ -36,6 +37,15 @@ public class Navigation {
 
     public static String capitalize(String text) {
         return Character.toUpperCase(text.charAt(0)) + text.substring(1);
+    }
+
+    public void waitForHeader() {
+        waitModel().until().element(currentHeader).is().present();
+    }
+
+    public void clickAndWaitForHeader(WebElement element) {
+        element.click();
+//        waitForHeader();
     }
 
 }

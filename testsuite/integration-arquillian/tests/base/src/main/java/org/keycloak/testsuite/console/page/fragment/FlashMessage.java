@@ -20,7 +20,7 @@ package org.keycloak.testsuite.console.page.fragment;
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import org.jboss.arquillian.graphene.fragment.Root;
 
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
 import org.openqa.selenium.WebElement;
 
 /**
@@ -61,6 +61,6 @@ public class FlashMessage {
     }
 
     public void waitUntilPresent() {
-        waitGuiForElement(root, "Flash message should be visible.");
+        waitGuiForElementPresent(root, "Flash message should be visible.");
     }
 }

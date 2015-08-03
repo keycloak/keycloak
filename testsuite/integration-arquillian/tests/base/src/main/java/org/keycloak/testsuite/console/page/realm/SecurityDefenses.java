@@ -74,8 +74,8 @@ public class SecurityDefenses extends RealmSettings {
     public void goToAndEnableBruteForceProtectionTab() {
         SeleniumUtils.waitGuiForElement(bruteForceProtectionLink);
         bruteForceProtectionLink.click();
-        if (!protectionEnabled.isEnabled()) {
-            protectionEnabled.enable();
+        if (!protectionEnabled.isOn()) {
+            protectionEnabled.on();
         }
     }
 

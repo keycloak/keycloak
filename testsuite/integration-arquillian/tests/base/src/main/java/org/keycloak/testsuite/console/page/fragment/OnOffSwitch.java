@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.console.page.fragment;
 
 import org.jboss.arquillian.graphene.fragment.Root;
@@ -28,37 +27,44 @@ import org.openqa.selenium.interactions.Actions;
  *
  * @author Petr Mensik
  */
-
 public class OnOffSwitch {
 
-	@Root
-	private WebElement root;
-	
-	@ArquillianResource
-	private Actions actions;
-	
-	public boolean isEnabled() {
-		return root.findElement(By.tagName("input")).isSelected();
-	}
-	
-	private void click() {
-		actions.moveToElement(root.findElements(By.tagName("span")).get(0))
-				.click().build().perform();
-	}
-	
-	public void toggle() {
-		click();
-	}
-	
-	public void enable() {
-		if(!isEnabled()) {
-			click();
-		}
-	}
-	
-	public void disable() {
-		if(isEnabled()) {
-			click();
-		}
-	}
+    @Root
+    private WebElement root;
+
+    @ArquillianResource
+    private Actions actions;
+
+    public boolean isOn() {
+        return root.findElement(By.tagName("input")).isSelected();
+    }
+
+    private void click() {
+        actions.moveToElement(root.findElements(By.tagName("span")).get(0))
+                .click().build().perform();
+    }
+
+    public void toggle() {
+        click();
+    }
+
+    public void on() {
+        if (!isOn()) {
+            click();
+        }
+    }
+
+    public void off() {
+        if (isOn()) {
+            click();
+        }
+    }
+
+    public void setOn(boolean on) {
+        if ((on && !isOn())
+                || (!on && isOn())) {
+            click(); // click if requested value differs from the actual value
+        }
+    }
+
 }

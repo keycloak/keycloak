@@ -19,7 +19,8 @@ package org.keycloak.testsuite.page.auth;
 
 import javax.ws.rs.core.UriBuilder;
 import static org.keycloak.testsuite.util.Constants.ADMIN_PSSWD;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementNotPresent;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -51,7 +52,7 @@ public class Login extends AuthRealm {
     private WebElement cancelButton;
 
     public void login(String username, String password) {
-        waitGuiForElement(usernameInput, "Login form should be visible");
+        waitGuiForElementPresent(usernameInput, "Login form should be visible");
         usernameInput.sendKeys(username);
         passwordInput.sendKeys(password);
         passwordInput.submit();
@@ -62,7 +63,7 @@ public class Login extends AuthRealm {
     }
 
     public void registration() {
-        waitGuiForElement(usernameInput, "Login form should be visible");
+        waitGuiForElementPresent(usernameInput, "Login form should be visible");
         registerLink.click();
     }
 
@@ -81,4 +82,13 @@ public class Login extends AuthRealm {
     public WebElement getUsernameInput() {
         return usernameInput;
     }
+
+    public void waitForRegistrationPresent(boolean present) {
+        if (present) {
+            waitGuiForElementPresent(registerLink, 1);
+        } else {
+            waitGuiForElementNotPresent(registerLink, 1);
+        }
+    }
+
 }

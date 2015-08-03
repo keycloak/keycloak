@@ -19,13 +19,12 @@ package org.keycloak.testsuite.console.realm;
 
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.testsuite.console.page.realm.TokenSettings;
+import org.keycloak.testsuite.console.page.realm.TokensSettings;
 
 import static org.jboss.arquillian.graphene.Graphene.waitModel;
 import org.jboss.arquillian.graphene.page.Page;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
 
 /**
  *
@@ -34,7 +33,7 @@ import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 public class TokenTest extends AbstractRealmTest {
 
     @Page
-    private TokenSettings tokenSettings;
+    private TokensSettings tokenSettings;
 
     private static final int TIMEOUT = 10;
     private static final TimeUnit TIME_UNIT = TimeUnit.SECONDS;
@@ -50,7 +49,7 @@ public class TokenTest extends AbstractRealmTest {
         tokenSettings.setSessionTimeout(TIMEOUT, TIME_UNIT);
         TIME_UNIT.sleep(TIMEOUT + 2); //add 2 secs to timeout
         driver.navigate().refresh();
-        waitGuiForElement(testLogin.getLoginPageHeader(), "Home page should be visible after session timeout");
+        waitGuiForElementPresent(testLogin.getLoginPageHeader(), "Home page should be visible after session timeout");
         loginAsTestAdmin();
         tabs().tokens();
         tokenSettings.setSessionTimeout(30, TimeUnit.MINUTES);

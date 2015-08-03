@@ -1,11 +1,9 @@
 package org.keycloak.testsuite.console.roles;
 
-import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
-import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
@@ -26,9 +24,6 @@ public class DefaultRolesTest extends AbstractConsoleTest {
     private DefaultRoles defaultRoles;
     @Page
     private UserRoleMappings userRoleMappings;
-
-    @FindByJQuery(".alert")
-    private FlashMessage flashMessage;
 
     @Before
     public void beforeDefaultRolesTest() {

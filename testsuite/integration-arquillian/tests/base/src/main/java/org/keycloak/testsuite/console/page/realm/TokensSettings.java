@@ -30,7 +30,7 @@ import static org.apache.commons.lang3.text.WordUtils.capitalize;
  *
  * @author Petr Mensik
  */
-public class TokenSettings extends RealmSettings {
+public class TokensSettings extends RealmSettings {
 
     @Override
     public String getUriFragment() {

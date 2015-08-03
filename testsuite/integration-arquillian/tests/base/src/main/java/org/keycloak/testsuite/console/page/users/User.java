@@ -46,23 +46,23 @@ public class User extends Users {
         private WebElement sessionsLink;
 
         public void attributes() {
-            attributesLink.click();
+            clickAndWaitForHeader(attributesLink);
         }
 
         public void credentials() {
-            credentialsLink.click();
+            clickAndWaitForHeader(credentialsLink);
         }
 
         public void roleMappings() {
-            roleMappingsLink.click();
+            clickAndWaitForHeader(roleMappingsLink);
         }
 
         public void consents() {
-            consentsLink.click();
+            clickAndWaitForHeader(consentsLink);
         }
 
         public void sessions() {
-            sessionsLink.click();
+            clickAndWaitForHeader(sessionsLink);
         }
 
     }

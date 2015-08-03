@@ -18,7 +18,10 @@
 package org.keycloak.testsuite.console.page.realm;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
+import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
+import org.keycloak.testsuite.page.Form;
+import org.openqa.selenium.support.FindBy;
 
 /**
  *
@@ -31,36 +34,48 @@ public class LoginSettings extends RealmSettings {
         return super.getUriFragment() + "/login-settings";
     }
 
-    @FindByJQuery("div[class='onoffswitch']:eq(0)")
-    private OnOffSwitch registrationAllowed;
-
-    @FindByJQuery("div[class='onoffswitch']:eq(1)")
-    private OnOffSwitch resetPasswordAllowed;
-
-    @FindByJQuery("div[class='onoffswitch']:eq(2)")
-    private OnOffSwitch rememberMeEnabled;
-
-    @FindByJQuery("div[class='onoffswitch']:eq(3)")
-    private OnOffSwitch verifyEmailEnabled;
-
-    @FindByJQuery("div[class='onoffswitch']:eq(4)")
-    private OnOffSwitch directGrantApiEnabled;
-
-    @FindByJQuery("div[class='onoffswitch']:eq(5)")
-    private OnOffSwitch requireSsl;
-
-    public boolean isUserRegistrationAllowed() {
-        return registrationAllowed.isEnabled();
+    @Page
+    private LoginSettingsForm form;
+    
+    public LoginSettingsForm form() {
+        return form;
     }
 
-    public void enableUserRegistration() {
-        registrationAllowed.enable();
-        primaryButton.click();
-    }
+    public class LoginSettingsForm extends Form {
 
-    public void disableUserRegistration() {
-        registrationAllowed.disable();
-        primaryButton.click();
+        @FindByJQuery("div[class='onoffswitch']:eq(0)")
+        private OnOffSwitch registrationAllowed;
+
+        @FindBy(xpath = "//div[contains(@class,'onoffswitch') and ./input[@id='registrationEmailAsUsername']]")
+        private OnOffSwitch emailAsUsernameOnOffSwitch;
+
+        @FindByJQuery("div[class='onoffswitch']:eq(1)")
+        private OnOffSwitch resetPasswordAllowed;
+
+        @FindByJQuery("div[class='onoffswitch']:eq(2)")
+        private OnOffSwitch rememberMeEnabled;
+
+        @FindByJQuery("div[class='onoffswitch']:eq(3)")
+        private OnOffSwitch verifyEmailEnabled;
+
+        @FindByJQuery("div[class='onoffswitch']:eq(4)")
+        private OnOffSwitch directGrantApiEnabled;
+
+        @FindByJQuery("div[class='onoffswitch']:eq(5)")
+        private OnOffSwitch requireSsl;
+
+        public boolean isRegistrationAllowed() {
+            return registrationAllowed.isOn();
+        }
+        
+        public void setRegistrationAllowed(boolean allowed) {
+            registrationAllowed.setOn(allowed);
+        }
+        
+        public void setEmailAsUsername(boolean emailAsUsername) {
+            emailAsUsernameOnOffSwitch.setOn(emailAsUsername);
+        }
+        
     }
 
 }

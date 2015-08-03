@@ -23,8 +23,9 @@ import org.openqa.selenium.support.FindBy;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.core.UriBuilder;
 import org.keycloak.representations.idm.UserRepresentation;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementNotPresent;
 
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
 import static org.keycloak.testsuite.util.Users.getPasswordCredentialValueOf;
 
 /**
@@ -72,7 +73,7 @@ public class Registration extends LoginActions {
 
     public void registerNewUser(UserRepresentation user, String confirmPassword) {
         driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
-        waitGuiForElement(passwordConfirmInput, "Register form should be visible");
+        waitGuiForElementPresent(passwordConfirmInput, "Register form should be visible");
         clearAndType(usernameInput, user.getUsername());
         clearAndType(firstNameInput, user.getFirstName());
         clearAndType(lastNameInput, user.getLastName());
@@ -88,22 +89,31 @@ public class Registration extends LoginActions {
     }
 
     public boolean isInvalidEmail() {
-        waitGuiForElement(feedbackError, "Feedback message should be visible");
+        waitGuiForElementPresent(feedbackError, "Feedback message should be visible");
         return feedbackError.getText().equals("Invalid email address.");
     }
 
     public boolean isAttributeSpecified(String attribute) {
-        waitGuiForElement(feedbackError, "Feedback message should be visible");
+        waitGuiForElementPresent(feedbackError, "Feedback message should be visible");
         return !feedbackError.getText().contains("Please specify " + attribute + ".");
     }
 
     public boolean isPasswordSame() {
-        waitGuiForElement(feedbackError, "Feedback message should be visible");
+        waitGuiForElementPresent(feedbackError, "Feedback message should be visible");
         return !feedbackError.getText().equals("Password confirmation doesn't match.");
     }
 
     public void backToLoginPage() {
         backToLoginForm.click();
+    }
+
+    public void waitForUsernameInputPresent(boolean present) {
+        driver.manage().timeouts().implicitlyWait(1, TimeUnit.SECONDS);
+        if (present) {
+            waitGuiForElementPresent(usernameInput, 1);
+        } else {
+            waitGuiForElementNotPresent(usernameInput, 1);
+        }
     }
 
 }

@@ -22,7 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.sessions.RealmSessions;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
 
 /**
  *
@@ -42,7 +42,7 @@ public class SessionsTest extends AbstractConsoleTest {
     @Test
     public void testLogoutAllSessions() {
         realmSessions.logoutAllSessions();
-        waitGuiForElement(masterLogin.getLoginPageHeader(), "Home page should be visible after logout");
+        waitGuiForElementPresent(masterLogin.getLoginPageHeader(), "Home page should be visible after logout");
         loginAsTestAdmin();
     }
 }

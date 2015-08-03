@@ -54,27 +54,27 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
         private WebElement authenticationLink;
 
         public void realmSettings() {
-            realmSettingsLink.click();
+            clickAndWaitForHeader(realmSettingsLink);
         }
 
         public void clients() {
-            clientsLink.click();
+            clickAndWaitForHeader(clientsLink);
         }
 
         public void roles() {
-            rolesLink.click();
+            clickAndWaitForHeader(rolesLink);
         }
 
         public void identityProviders() {
-            identityProvidersLink.click();
+            clickAndWaitForHeader(identityProvidersLink);
         }
 
         public void userFederation() {
-            userFederationLink.click();
+            clickAndWaitForHeader(userFederationLink);
         }
 
         public void authentication() {
-            authenticationLink.click();
+            clickAndWaitForHeader(authenticationLink);
         }
 
     }
@@ -86,7 +86,7 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
         return manageMenu;
     }
 
-    public class ManageMenu {
+    public class ManageMenu extends Navigation {
 
         @FindBy(partialLinkText = "Users")
         private WebElement usersLink;
@@ -96,15 +96,15 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
         private WebElement eventsLink;
 
         public void users() {
-            usersLink.click();
+            clickAndWaitForHeader(usersLink);
         }
 
         public void sessions() {
-            sessionsLink.click();
+            clickAndWaitForHeader(sessionsLink);
         }
 
         public void events() {
-            eventsLink.click();
+            clickAndWaitForHeader(eventsLink);
         }
     }
 
