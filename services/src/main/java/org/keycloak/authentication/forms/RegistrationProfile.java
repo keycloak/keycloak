@@ -31,7 +31,7 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
 
     @Override
     public String getHelpText() {
-        return null;
+        return "Validates email, first name, and last name attributes and stores them in user data.";
     }
 
     @Override

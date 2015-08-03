@@ -191,7 +191,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
 
     @Override
     public String getHelpText() {
-        return null;
+        return "Adds Google Recaptcha button.  Recaptchas verify that the entity that is registering is a human.  This can only be used on the internet and must be configured after you add it.";
     }
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();

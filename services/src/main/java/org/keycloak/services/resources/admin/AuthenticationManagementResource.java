@@ -5,15 +5,22 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.authentication.AuthenticationFlow;
+import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
+import org.keycloak.authentication.DefaultAuthenticationFlow;
+import org.keycloak.authentication.FormAction;
+import org.keycloak.authentication.FormAuthenticationFlow;
+import org.keycloak.authentication.FormAuthenticator;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.utils.CredentialHelper;
 
@@ -68,6 +75,7 @@ public class AuthenticationManagementResource {
         protected Boolean authenticationFlow;
         protected String providerId;
         protected String authenticationConfig;
+        protected String flowId;
         protected int level;
         protected int index;
 
@@ -150,7 +158,58 @@ public class AuthenticationManagementResource {
         public void setIndex(int index) {
             this.index = index;
         }
+
+        public String getFlowId() {
+            return flowId;
+        }
+
+        public void setFlowId(String flowId) {
+            this.flowId = flowId;
+        }
     }
+
+    @Path("/form-providers")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Map<String, String>> getFormProviders() {
+        this.auth.requireView();
+        List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(FormAuthenticator.class);
+        return buildProviderMetadata(factories);
+    }
+
+    @Path("/authenticator-providers")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Map<String, String>> getAuthenticatorProviders() {
+        this.auth.requireView();
+        List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(Authenticator.class);
+        return buildProviderMetadata(factories);
+    }
+
+    public List<Map<String, String>> buildProviderMetadata(List<ProviderFactory> factories) {
+        List<Map<String, String>> providers = new LinkedList<>();
+        for (ProviderFactory factory : factories) {
+            Map<String, String> data = new HashMap<>();
+            data.put("id", factory.getId());
+            ConfiguredProvider configured = (ConfiguredProvider)factory;
+            data.put("description", configured.getHelpText());
+            providers.add(data);
+        }
+        return providers;
+    }
+
+    @Path("/form-action-providers")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Map<String, String>> getFormActionProviders() {
+        this.auth.requireView();
+        List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(FormAction.class);
+        return buildProviderMetadata(factories);
+    }
+
 
     @Path("/flows")
     @GET
@@ -181,6 +240,36 @@ public class AuthenticationManagementResource {
         realm.addAuthenticationFlow(model);
         return Response.status(201).build();
 
+    }
+
+    @Path("/flows/{id}")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public AuthenticationFlowModel getFlow(@PathParam("id") String id) {
+        this.auth.requireView();
+
+        AuthenticationFlowModel flow = realm.getAuthenticationFlowById(id);
+        if (flow == null) {
+            throw new NotFoundException("Could not find flow with id");
+        }
+        return flow;
+    }
+
+    @Path("/flows/{id}")
+    @DELETE
+    @NoCache
+    public void deleteFlow(@PathParam("id") String id) {
+        this.auth.requireView();
+
+        AuthenticationFlowModel flow = realm.getAuthenticationFlowById(id);
+        if (flow == null) {
+            throw new NotFoundException("Could not find flow with id");
+        }
+        if (flow.isBuiltIn()) {
+            throw new BadRequestException("Can't delete built in flow");
+        }
+        realm.removeAuthenticationFlow(flow);
     }
 
     @Path("/flows/{flowAlias}/copy")
@@ -233,6 +322,65 @@ public class AuthenticationManagementResource {
         }
     }
 
+    @Path("/flows/{flowAlias}/executions/flow")
+    @POST
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void addExecutionFlow(@PathParam("flowAlias") String flowAlias, Map<String, String> data) {
+        this.auth.requireManage();
+
+        AuthenticationFlowModel parentFlow = realm.getFlowByAlias(flowAlias);
+        if (parentFlow == null) {
+            throw new BadRequestException("Parent flow doesn't exists");
+        }
+        String alias = data.get("alias");
+        String type = data.get("type");
+        String provider = data.get("provider");
+        String description = data.get("description");
+
+
+        AuthenticationFlowModel newFlow = realm.getFlowByAlias(alias);
+        if (newFlow != null) {
+            throw new BadRequestException("New flow alias name already exists");
+        }
+        newFlow = new AuthenticationFlowModel();
+        newFlow.setAlias(alias);
+        newFlow.setDescription(description);
+        newFlow.setProviderId(type);
+        newFlow = realm.addAuthenticationFlow(newFlow);
+        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(parentFlow.getId());
+        execution.setFlowId(newFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        execution.setAuthenticatorFlow(true);
+        execution.setAuthenticator(provider);
+        realm.addAuthenticatorExecution(execution);
+    }
+
+    @Path("/flows/{flowAlias}/executions/execution")
+    @POST
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void addExecution(@PathParam("flowAlias") String flowAlias, Map<String, String> data) {
+        this.auth.requireManage();
+
+        AuthenticationFlowModel parentFlow = realm.getFlowByAlias(flowAlias);
+        if (parentFlow == null) {
+            throw new BadRequestException("Parent flow doesn't exists");
+        }
+        String provider = data.get("provider");
+
+
+        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(parentFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        execution.setAuthenticatorFlow(false);
+        execution.setAuthenticator(provider);
+        realm.addAuthenticatorExecution(execution);
+    }
+
+
+
     @Path("/flows/{flowAlias}/executions")
     @GET
     @NoCache
@@ -278,6 +426,7 @@ public class AuthenticationManagementResource {
                 rep.setId(execution.getId());
                 rep.setAuthenticationFlow(execution.isAuthenticatorFlow());
                 rep.setRequirement(execution.getRequirement().name());
+                rep.setFlowId(execution.getFlowId());
                 result.add(rep);
                 AuthenticationFlowModel subFlow = realm.getAuthenticationFlowById(execution.getFlowId());
                 recurseExecutions(subFlow, result, level + 1);

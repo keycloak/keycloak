@@ -6,15 +6,16 @@
     <table class="table table-striped table-bordered">
         <thead>
         <tr>
-            <th colspan="{{levelmax + 1 + flowmax + 4}}" class="kc-table-actions">
+            <th colspan="{{levelmax + 1 + choicesmax + 4}}" class="kc-table-actions">
                 <div class="dropdown pull-left">
                     <select class="form-control" ng-model="flow"
                             ng-options="(flow.alias|capitalize) for flow in flows"
                             data-ng-change="setupForm()">
                     </select>
                 </div>
+                &nbsp;&nbsp;<i class="fa fa-question-circle text-muted" tooltip="{{flow.description}}" tooltip-placement="right"> </i>
                 <div class="pull-right" data-ng-show="access.manageRealm">
-                    <button class="btn btn-default" data-ng-click="newFlow()">New</button>
+                    <button class="btn btn-default" data-ng-click="createFlow()">New</button>
                     <button class="btn btn-default" data-ng-click="copyFlow()">Copy</button>
                     <button class="btn btn-default" data-ng-hide="flow.builtIn" data-ng-click="removeFlow()">Delete</button>
                     <button class="btn btn-default" data-ng-hide="flow.builtIn" data-ng-click="addExecution()">Add Execution</button>
@@ -24,15 +25,15 @@
          </tr>
         <tr data-ng-hide="executions.length == 0">
             <th colspan="{{levelmax + 1}}">Auth Type</th>
-            <th colspan="{{flowmax}}">Requirement</th>
-            <th colspan="3">Actions</th>
+            <th colspan="{{choicesmax}}">Requirement</th>
+            <th></th>
         </tr>
         </thead>
         <tbody>
         <tr ng-repeat="execution in executions" data-ng-show="executions.length > 0">
-            <td ng-repeat="lev in execution.levels"></td>
+            <td ng-repeat="lev in execution.preLevels"></td>
             <td><button data-ng-hide="flow.builtIn || $first" class="btn btn-default" data-ng-click="raisePriority(execution)"><i class="fa fa-angle-up"></i></button><button data-ng-hide="flow.builtIn || $last" class="btn btn-default" data-ng-click="lowerPriority(execution)"><i class="fa fa-angle-down"></i></button> {{execution.displayName|capitalize}}</td>
-            <td data-ng-show="execution.level == 0" ng-repeat="levmax in levelmaxempties"></td>
+            <td ng-repeat="lev in execution.postLevels"></td>
             <td ng-repeat="choice in execution.requirementChoices">
             <label >
                 <input type="radio" ng-model="execution.requirement" ng-value="choice" ng-change="updateExecution(execution)">
@@ -41,20 +42,21 @@
 
             </td>
             <td ng-repeat="emptee in execution.empties"></td>
-            <td  data-ng-hide="flow.builtIn" class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" data-ng-click="removeExecution(execution)">Delete</button>
-            </td>
-            <td data-ng-hide="flow.builtIn || !execution.authenticationFlow" class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" data-ng-click="addSubFlowExecution(execution)">Add Execution</button>
-            </td>
-            <td data-ng-hide="flow.builtIn || !execution.authenticationFlow" class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" data-ng-click="addSubFlowExecution(execution)">Add Flow</button>
-            </td>
-            <td data-ng-show="execution.configurable && execution.authenticationConfig == null" class="kc-action-cell">
-                <button data-ng-show="execution.configurable && execution.authenticationConfig == null" class="btn btn-default btn-block btn-sm" kc-open="/create/authentication/{{realm.realm}}/execution/{{execution.id}}/provider/{{execution.providerId}}">Config</button>
-            </td>
-            <td data-ng-show="execution.configurable && execution.authenticationConfig != null" class="kc-action-cell">
-                <button data-ng-show="execution.configurable && execution.authenticationConfig != null" class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/authentication/config/{{execution.providerId}}/{{execution.authenticationConfig}}">Config</button>
+            <td>
+                <ul class="nav navbar-nav navbar-utility" data-ng-hide="flow.builtIn && !execution.configurable">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            Actions <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu"  >
+                            <li data-ng-hide="flow.builtIn"><a href="" ng-click="removeExecution(execution)">Delete</a></li>
+                            <li data-ng-hide="flow.builtIn || !execution.authenticationFlow"><a href="" ng-click="addSubFlowExecution(execution)">Add Execution</a></li>
+                            <li data-ng-hide="flow.builtIn || !execution.authenticationFlow"><a href="" ng-click="addSubFlow(execution)">Add Flow</a></li>
+                            <li data-ng-show="execution.configurable && execution.authenticationConfig == null"><a href="#/create/authentication/{{realm.realm}}/execution/{{execution.id}}/provider/{{execution.providerId}}">Config</a></li>
+                            <li data-ng-show="execution.configurable && execution.authenticationConfig != null"><a href="#/realms/{{realm.realm}}/authentication/config/{{execution.providerId}}/{{execution.authenticationConfig}}">Config</a></li>
+                        </ul>
+                    </li>
+                </ul>
             </td>
          </tr>
         <tr data-ng-show="executions.length == 0">

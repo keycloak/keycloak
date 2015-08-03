@@ -45,7 +45,7 @@ public class RegistrationPage implements FormAuthenticator, FormAuthenticatorFac
 
     @Override
     public String getHelpText() {
-        return null;
+        return "This is the controller for the registration page";
     }
 
     @Override

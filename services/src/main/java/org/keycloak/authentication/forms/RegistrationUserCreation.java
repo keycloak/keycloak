@@ -35,7 +35,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
     @Override
     public String getHelpText() {
-        return null;
+        return "This action must always be first! Validates the username of the user in validation phase.  In success phase, this will create the user in the database.";
     }
 
     @Override

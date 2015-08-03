@@ -1102,6 +1102,48 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'AuthenticationFlowsCtrl'
         })
+        .when('/realms/:realm/authentication/flows/:flow/create/execution', {
+            templateUrl : resourceUrl + '/partials/create-execution.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                parentFlow : function(AuthenticationFlowLoader) {
+                    return AuthenticationFlowLoader();
+                },
+                formActionProviders : function(AuthenticationFormActionProvidersLoader) {
+                    return AuthenticationFormActionProvidersLoader();
+                },
+                authenticatorProviders : function(AuthenticatorProvidersLoader) {
+                    return AuthenticatorProvidersLoader();
+                }
+            },
+            controller : 'CreateExecutionCtrl'
+        })
+        .when('/realms/:realm/authentication/flows/:flow/create/flow/execution', {
+            templateUrl : resourceUrl + '/partials/create-flow-execution.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                parentFlow : function(AuthenticationFlowLoader) {
+                    return AuthenticationFlowLoader();
+                },
+                formProviders : function(AuthenticationFormProvidersLoader) {
+                    return AuthenticationFormProvidersLoader();
+                }
+            },
+            controller : 'CreateExecutionFlowCtrl'
+        })
+        .when('/realms/:realm/authentication/create/flow', {
+            templateUrl : resourceUrl + '/partials/create-flow.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'CreateFlowCtrl'
+        })
         .when('/realms/:realm/authentication/required-actions', {
             templateUrl : resourceUrl + '/partials/required-actions.html',
             resolve : {

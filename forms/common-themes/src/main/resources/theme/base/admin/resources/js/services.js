@@ -1172,11 +1172,46 @@ module.factory('AuthenticationFlowExecutions', function($resource) {
     });
 });
 
+module.factory('CreateExecutionFlow', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/flows/:alias/executions/flow', {
+        realm : '@realm',
+        alias : '@alias'
+    });
+});
+
+module.factory('CreateExecution', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/flows/:alias/executions/execution', {
+        realm : '@realm',
+        alias : '@alias'
+    });
+});
+
 module.factory('AuthenticationFlows', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/authentication/flows', {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/flows/:flow', {
+        realm : '@realm',
+        flow: '@flow'
+    });
+});
+
+module.factory('AuthenticationFormProviders', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/form-providers', {
         realm : '@realm'
     });
 });
+
+module.factory('AuthenticationFormActionProviders', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/form-action-providers', {
+        realm : '@realm'
+    });
+});
+
+module.factory('AuthenticatorProviders', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/authenticator-providers', {
+        realm : '@realm'
+    });
+});
+
+
 module.factory('AuthenticationFlowsCopy', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/authentication/flows/:alias/copy', {
         realm : '@realm',

@@ -354,7 +354,41 @@ module.factory('IdentityProviderMapperLoader', function(Loader, IdentityProvider
 module.factory('AuthenticationFlowsLoader', function(Loader, AuthenticationFlows, $route, $q) {
     return Loader.query(AuthenticationFlows, function() {
         return {
+            realm : $route.current.params.realm,
+            flow: ''
+        }
+    });
+});
+
+module.factory('AuthenticationFormProvidersLoader', function(Loader, AuthenticationFormProviders, $route, $q) {
+    return Loader.query(AuthenticationFormProviders, function() {
+        return {
             realm : $route.current.params.realm
+        }
+    });
+});
+
+module.factory('AuthenticationFormActionProvidersLoader', function(Loader, AuthenticationFormActionProviders, $route, $q) {
+    return Loader.query(AuthenticationFormActionProviders, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
+module.factory('AuthenticatorProvidersLoader', function(Loader, AuthenticatorProviders, $route, $q) {
+    return Loader.query(AuthenticatorProviders, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
+module.factory('AuthenticationFlowLoader', function(Loader, AuthenticationFlows, $route, $q) {
+    return Loader.get(AuthenticationFlows, function() {
+        return {
+            realm : $route.current.params.realm,
+            flow: $route.current.params.flow
         }
     });
 });
