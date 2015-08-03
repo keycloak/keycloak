@@ -106,6 +106,11 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
     }
 
     @Override
+    public boolean isUserSetupAllowed() {
+        return false;
+    }
+
+    @Override
     public void close() {
 
     }

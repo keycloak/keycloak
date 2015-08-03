@@ -55,7 +55,6 @@ public class DefaultAuthenticationFlows {
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("registration-page-form");
         execution.setPriority(10);
-        execution.setUserSetupAllowed(false);
         execution.setAuthenticatorFlow(true);
         execution.setFlowId(registrationFormFlow.getId());
         realm.addAuthenticatorExecution(execution);
@@ -65,7 +64,6 @@ public class DefaultAuthenticationFlows {
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("registration-user-creation");
         execution.setPriority(20);
-        execution.setUserSetupAllowed(false);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
@@ -74,7 +72,6 @@ public class DefaultAuthenticationFlows {
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("registration-profile-action");
         execution.setPriority(40);
-        execution.setUserSetupAllowed(false);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
@@ -83,7 +80,6 @@ public class DefaultAuthenticationFlows {
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("registration-password-action");
         execution.setPriority(50);
-        execution.setUserSetupAllowed(false);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
@@ -99,7 +95,6 @@ public class DefaultAuthenticationFlows {
         execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
         execution.setAuthenticator("registration-recaptcha-action");
         execution.setPriority(60);
-        execution.setUserSetupAllowed(false);
         execution.setAuthenticatorFlow(false);
         //execution.setAuthenticatorConfig(captchaConfig.getId());
         realm.addAuthenticatorExecution(execution);
@@ -137,7 +132,6 @@ public class DefaultAuthenticationFlows {
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("direct-grant-validate-username");
         execution.setPriority(10);
-        execution.setUserSetupAllowed(false);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
@@ -150,7 +144,6 @@ public class DefaultAuthenticationFlows {
         }
         execution.setAuthenticator("direct-grant-validate-password");
         execution.setPriority(20);
-        execution.setUserSetupAllowed(false);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
@@ -163,7 +156,6 @@ public class DefaultAuthenticationFlows {
         }
         execution.setAuthenticator("direct-grant-validate-otp");
         execution.setPriority(30);
-        execution.setUserSetupAllowed(false);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
@@ -184,7 +176,6 @@ public class DefaultAuthenticationFlows {
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
         execution.setAuthenticator("auth-cookie");
         execution.setPriority(10);
-        execution.setUserSetupAllowed(false);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
         execution = new AuthenticationExecutionModel();
@@ -196,7 +187,6 @@ public class DefaultAuthenticationFlows {
         }
         execution.setAuthenticator("auth-spnego");
         execution.setPriority(20);
-        execution.setUserSetupAllowed(false);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
@@ -213,7 +203,6 @@ public class DefaultAuthenticationFlows {
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
         execution.setFlowId(forms.getId());
         execution.setPriority(30);
-        execution.setUserSetupAllowed(false);
         execution.setAuthenticatorFlow(true);
         realm.addAuthenticatorExecution(execution);
 
@@ -224,7 +213,6 @@ public class DefaultAuthenticationFlows {
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("auth-username-password-form");
         execution.setPriority(10);
-        execution.setUserSetupAllowed(false);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
@@ -239,7 +227,6 @@ public class DefaultAuthenticationFlows {
 
         execution.setAuthenticator("auth-otp-form");
         execution.setPriority(20);
-        execution.setUserSetupAllowed(true);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
     }

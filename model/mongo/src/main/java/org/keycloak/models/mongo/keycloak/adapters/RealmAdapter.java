@@ -1384,7 +1384,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public AuthenticationExecutionModel entityToModel(AuthenticationExecutionEntity entity) {
         AuthenticationExecutionModel model = new AuthenticationExecutionModel();
         model.setId(entity.getId());
-        model.setUserSetupAllowed(entity.isUserSetupAllowed());
         model.setRequirement(entity.getRequirement());
         model.setPriority(entity.getPriority());
         model.setAuthenticator(entity.getAuthenticator());
@@ -1421,7 +1420,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
-        entity.setUserSetupAllowed(model.isUserSetupAllowed());
         entity.setAuthenticatorFlow(model.isAuthenticatorFlow());
         entity.setFlowId(model.getFlowId());
         entity.setParentFlow(model.getParentFlow());
@@ -1449,7 +1447,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());
         entity.setFlowId(model.getFlowId());
-        entity.setUserSetupAllowed(model.isUserSetupAllowed());
         entity.setAuthenticatorConfig(model.getAuthenticatorConfig());
         updateMongoEntity();
     }

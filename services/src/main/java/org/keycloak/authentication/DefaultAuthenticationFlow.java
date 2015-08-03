@@ -124,7 +124,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 configuredFor = authenticator.configuredFor(processor.getSession(), processor.getRealm(), authUser);
                 if (!configuredFor) {
                     if (model.isRequired()) {
-                        if (model.isUserSetupAllowed()) {
+                        if (factory.isUserSetupAllowed()) {
                             AuthenticationProcessor.logger.debugv("authenticator SETUP_REQUIRED: {0}", factory.getId());
                             processor.getClientSession().setExecutionStatus(model.getId(), ClientSessionModel.ExecutionStatus.SETUP_REQUIRED);
                             authenticator.setRequiredActions(processor.getSession(), processor.getRealm(), processor.getClientSession().getAuthenticatedUser());

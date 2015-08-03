@@ -83,6 +83,11 @@ public class RegistrationPage implements FormAuthenticator, FormAuthenticatorFac
     }
 
     @Override
+    public boolean isUserSetupAllowed() {
+        return false;
+    }
+
+    @Override
     public void postInit(KeycloakSessionFactory factory) {
 
     }

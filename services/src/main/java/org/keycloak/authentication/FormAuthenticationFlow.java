@@ -152,7 +152,8 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
                 executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
                 continue;
             }
-            FormAction action = processor.getSession().getProvider(FormAction.class, formActionExecution.getAuthenticator());
+            FormActionFactory factory = (FormActionFactory)processor.getSession().getKeycloakSessionFactory().getProviderFactory(FormAction.class, formActionExecution.getAuthenticator());
+            FormAction action = factory.create(processor.getSession());
 
             UserModel authUser = processor.getClientSession().getAuthenticatedUser();
             if (action.requiresUser() && authUser == null) {
@@ -163,7 +164,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
                 configuredFor = action.configuredFor(processor.getSession(), processor.getRealm(), authUser);
                 if (!configuredFor) {
                     if (formActionExecution.isRequired()) {
-                        if (formActionExecution.isUserSetupAllowed()) {
+                        if (factory.isUserSetupAllowed()) {
                             AuthenticationProcessor.logger.debugv("authenticator SETUP_REQUIRED: {0}", formExecution.getAuthenticator());
                             executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SETUP_REQUIRED);
                             requiredActions.add(action);

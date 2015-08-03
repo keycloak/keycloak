@@ -1083,7 +1083,6 @@ public class RepresentationToModel {
             model.setFlowId(flow.getId());
         }
         model.setPriority(rep.getPriority());
-        model.setUserSetupAllowed(rep.isUserSetupAllowed());
         model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
         return model;
     }

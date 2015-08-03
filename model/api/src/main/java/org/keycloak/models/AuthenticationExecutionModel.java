@@ -25,7 +25,6 @@ public class AuthenticationExecutionModel implements Serializable {
     private String flowId;
     private boolean authenticatorFlow;
     private Requirement requirement;
-    private boolean userSetupAllowed;
     private int priority;
     private String parentFlow;
 
@@ -67,14 +66,6 @@ public class AuthenticationExecutionModel implements Serializable {
 
     public void setPriority(int priority) {
         this.priority = priority;
-    }
-
-    public boolean isUserSetupAllowed() {
-        return userSetupAllowed;
-    }
-
-    public void setUserSetupAllowed(boolean userSetupAllowed) {
-        this.userSetupAllowed = userSetupAllowed;
     }
 
     public String getParentFlow() {

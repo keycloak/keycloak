@@ -8,4 +8,5 @@
     <include file="META-INF/jpa-changelog-1.2.0.Final.xml"/>
     <include file="META-INF/jpa-changelog-1.3.0.xml"/>
     <include file="META-INF/jpa-changelog-1.4.0.xml"/>
+    <include file="META-INF/jpa-changelog-1.5.0.xml"/>
 </databaseChangeLog>

@@ -159,6 +159,12 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
     }
 
     @Override
+    public boolean isUserSetupAllowed() {
+        return false;
+    }
+
+
+    @Override
     public void close() {
 
     }

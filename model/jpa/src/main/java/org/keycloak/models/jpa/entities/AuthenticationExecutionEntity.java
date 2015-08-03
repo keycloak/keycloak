@@ -51,9 +51,6 @@ public class AuthenticationExecutionEntity {
     @Column(name="PRIORITY")
     protected int priority;
 
-    @Column(name="USER_SETUP_ALLOWED")
-    private boolean userSetupAllowed;
-
     @Column(name="AUTHENTICATOR_FLOW")
     private boolean autheticatorFlow;
 
@@ -95,14 +92,6 @@ public class AuthenticationExecutionEntity {
 
     public void setPriority(int priority) {
         this.priority = priority;
-    }
-
-    public boolean isUserSetupAllowed() {
-        return userSetupAllowed;
-    }
-
-    public void setUserSetupAllowed(boolean userSetupAllowed) {
-        this.userSetupAllowed = userSetupAllowed;
     }
 
     public boolean isAutheticatorFlow() {

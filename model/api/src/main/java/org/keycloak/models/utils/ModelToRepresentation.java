@@ -468,7 +468,6 @@ public class ModelToRepresentation {
             rep.setFlowAlias(flow.getAlias());
        }
         rep.setPriority(model.getPriority());
-        rep.setUserSetupAllowed(model.isUserSetupAllowed());
         rep.setRequirement(model.getRequirement().name());
         return rep;
     }
