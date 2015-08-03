@@ -31,7 +31,7 @@ import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
  *
  * @author Petr Mensik
  */
-public class TokensTest extends AbstractRealmTest {
+public class TokenTest extends AbstractRealmTest {
 
     @Page
     private TokenSettings tokenSettings;
@@ -52,8 +52,8 @@ public class TokensTest extends AbstractRealmTest {
         driver.navigate().refresh();
         waitGuiForElement(testLogin.getLoginPageHeader(), "Home page should be visible after session timeout");
         loginAsTestAdmin();
-        navigation.tokens(TEST);
-        page.setSessionTimeout(30, TimeUnit.MINUTES);
+        tabs().tokens();
+        tokenSettings.setSessionTimeout(30, TimeUnit.MINUTES);
     }
 
     @Test
@@ -67,7 +67,8 @@ public class TokensTest extends AbstractRealmTest {
                 .is()
                 .present();
         loginAsTestAdmin();
-        navigation.tokens(TEST);
-        page.setSessionTimeoutLifespan(10, TimeUnit.HOURS);
+        configure().realmSettings();
+        tabs().tokens();
+        tokenSettings.setSessionTimeoutLifespan(10, TimeUnit.HOURS);
     }
 }
