@@ -76,4 +76,12 @@ public class UserFederationMapperModel implements Serializable {
     public int hashCode() {
         return id.hashCode();
     }
+
+    @Override
+    public String toString() {
+        return new StringBuilder(" { name=" + name)
+                .append(", federationMapperType=" + federationMapperType)
+                .append(", config=" + config)
+                .append(" } ").toString();
+    }
 }

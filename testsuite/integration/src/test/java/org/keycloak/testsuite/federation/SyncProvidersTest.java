@@ -11,10 +11,12 @@ import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
+import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
@@ -282,6 +284,68 @@ public class SyncProvidersTest {
             UserFederationProviderModel providerModel = KeycloakModelUtils.findUserFederationProviderByDisplayName(ldapModel.getDisplayName(), testRealm);
             providerModel.getConfig().put(LDAPConstants.UUID_LDAP_ATTRIBUTE, origUuidAttrName);
             testRealm.updateUserFederationProvider(providerModel);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
+
+    // KEYCLOAK-1728
+    @Test
+    public void test04MissingLDAPUsernameSync() {
+        KeycloakSession session = keycloakRule.startSession();
+        String origUsernameAttrName;
+
+        try {
+            RealmModel testRealm = session.realms().getRealm("test");
+
+            // Remove all users from model
+            for (UserModel user : session.userStorage().getUsers(testRealm, true)) {
+                session.userStorage().removeUser(testRealm, user);
+            }
+
+            UserFederationProviderModel providerModel = KeycloakModelUtils.findUserFederationProviderByDisplayName(ldapModel.getDisplayName(), testRealm);
+
+            // Add street mapper and add some user including street
+            UserFederationMapperModel streetMapper = FederationTestUtils.addUserAttributeMapper(testRealm, ldapModel, "streetMapper", "street", LDAPConstants.STREET);
+            LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            LDAPObject streetUser = FederationTestUtils.addLDAPUser(ldapFedProvider, testRealm, "user8", "User8FN", "User8LN", "user8@email.org", "user8street", "126");
+
+            // Change name of username attribute name to street
+            origUsernameAttrName = providerModel.getConfig().get(LDAPConstants.USERNAME_LDAP_ATTRIBUTE);
+            providerModel.getConfig().put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, "street");
+
+            // Need to change this due to ApacheDS pagination bug (For other LDAP servers, pagination works fine) TODO: Remove once ApacheDS upgraded and pagination is fixed
+            providerModel.getConfig().put(LDAPConstants.BATCH_SIZE_FOR_SYNC, "10");
+            testRealm.updateUserFederationProvider(providerModel);
+
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        // Just user8 synced. All others failed to sync
+        session = keycloakRule.startSession();
+        try {
+            RealmModel testRealm = session.realms().getRealm("test");
+            UserFederationProviderModel providerModel = KeycloakModelUtils.findUserFederationProviderByDisplayName(ldapModel.getDisplayName(), testRealm);
+
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            UserFederationSyncResult syncResult = new UsersSyncManager().syncAllUsers(sessionFactory, "test", providerModel);
+            Assert.assertEquals(1, syncResult.getAdded());
+            Assert.assertTrue(syncResult.getFailed() > 0);
+        } finally {
+            keycloakRule.stopSession(session, false);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel testRealm = session.realms().getRealm("test");
+
+            // Revert config changes
+            UserFederationProviderModel providerModel = KeycloakModelUtils.findUserFederationProviderByDisplayName(ldapModel.getDisplayName(), testRealm);
+            providerModel.getConfig().put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, origUsernameAttrName);
+            testRealm.updateUserFederationProvider(providerModel);
+            UserFederationMapperModel streetMapper = testRealm.getUserFederationMapperByName(providerModel.getId(), "streetMapper");
+            testRealm.removeUserFederationMapper(streetMapper);
         } finally {
             keycloakRule.stopSession(session, true);
         }
