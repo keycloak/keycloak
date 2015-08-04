@@ -72,6 +72,13 @@ public class LDAPUtils {
 
     public static String getUsername(LDAPObject ldapUser, LDAPConfig config) {
         String usernameAttr = config.getUsernameLdapAttribute();
-        return ldapUser.getAttributeAsString(usernameAttr);
+        String ldapUsername = ldapUser.getAttributeAsString(usernameAttr);
+
+        if (ldapUsername == null) {
+            throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. Mapped username LDAP attribute: " +
+                    config.getUsernameLdapAttribute() + ", user DN: " + ldapUser.getDn() + ", attributes from LDAP: " + ldapUser.getAttributes());
+        }
+
+        return ldapUsername;
     }
 }

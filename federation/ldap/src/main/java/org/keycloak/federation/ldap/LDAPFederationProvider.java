@@ -258,16 +258,14 @@ public class LDAPFederationProvider implements UserFederationProvider {
     protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser) {
         String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
 
-        if (ldapUsername == null) {
-            throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. Mapped username LDAP attribute: " +
-                    ldapIdentityStore.getConfig().getUsernameLdapAttribute() + ", attributes from LDAP: " + ldapUser.getAttributes());
-        }
-
         UserModel imported = session.userStorage().addUser(realm, ldapUsername);
         imported.setEnabled(true);
 
         Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(getModel().getId());
         for (UserFederationMapperModel mapperModel : federationMappers) {
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
+            }
             LDAPFederationMapper ldapMapper = getMapper(mapperModel);
             ldapMapper.onImportUserFromLDAP(mapperModel, this, ldapUser, imported, realm, true);
         }

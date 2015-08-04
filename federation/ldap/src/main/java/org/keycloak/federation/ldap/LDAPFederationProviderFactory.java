@@ -332,10 +332,17 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
                         public void run(KeycloakSession session) {
                             LDAPFederationProvider ldapFedProvider = getInstance(session, fedModel);
                             RealmModel currentRealm = session.realms().getRealm(realmId);
-                            String username = LDAPUtils.getUsername(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
-                            UserModel existing = session.userStorage().getUserByUsername(username, currentRealm);
-                            if (existing != null) {
-                                session.userStorage().removeUser(currentRealm, existing);
+                            String username = null;
+                            try {
+                                username = LDAPUtils.getUsername(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
+                            } catch (ModelException ignore) {
+                            }
+
+                            if (username != null) {
+                                UserModel existing = session.userStorage().getUserByUsername(username, currentRealm);
+                                if (existing != null) {
+                                    session.userStorage().removeUser(currentRealm, existing);
+                                }
                             }
                         }
 
