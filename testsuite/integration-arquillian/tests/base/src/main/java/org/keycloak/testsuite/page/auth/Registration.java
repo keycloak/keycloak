@@ -61,9 +61,6 @@ public class Registration extends LoginActions {
     @FindBy(css = "span.kc-feedback-text")
     private WebElement feedbackError;
 
-    @FindBy(css = "div[id='kc-form-options'] span a")
-    private WebElement backToLoginForm;
-
     @FindBy(xpath = "//input[@type='submit']")
     private WebElement registerButton;
 
@@ -101,10 +98,6 @@ public class Registration extends LoginActions {
     public boolean isPasswordSame() {
         waitGuiForElementPresent(feedbackError, "Feedback message should be visible");
         return !feedbackError.getText().equals("Password confirmation doesn't match.");
-    }
-
-    public void backToLoginPage() {
-        backToLoginForm.click();
     }
 
     public void waitForUsernameInputPresent(boolean present) {

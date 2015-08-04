@@ -2,7 +2,7 @@ package org.keycloak.testsuite.console.page.federation;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
-import org.keycloak.testsuite.console.page.AdminConsole;
+import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -13,7 +13,7 @@ import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 /**
  * Created by fkiss.
  */
-public class LdapUserFederationPage extends AdminConsole {
+public class LdapUserProviderForm extends Form {
 
     @FindBy(id = "consoleDisplayName")
     private WebElement consoleDisplayNameInput;

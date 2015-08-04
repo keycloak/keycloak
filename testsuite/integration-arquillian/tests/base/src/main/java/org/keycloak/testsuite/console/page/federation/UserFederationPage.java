@@ -12,11 +12,15 @@ import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
  */
 public class UserFederationPage extends AdminConsole {
 
+    @Override
+    public String getUriFragment() {
+        return super.getUriFragment() + "/user-federation";
+    }
 
     @FindByJQuery("select[ng-model*='selectedProvider']")
     private Select addProviderSelect;
 
-    public void addProvider(String provider){
+    public void addProvider(String provider) {
         waitGuiForElement(By.cssSelector("select[ng-model*='selectedProvider']"));
         addProviderSelect.selectByVisibleText(provider);
     }

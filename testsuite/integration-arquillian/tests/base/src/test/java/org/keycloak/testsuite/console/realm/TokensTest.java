@@ -30,7 +30,7 @@ import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent
  *
  * @author Petr Mensik
  */
-public class TokenTest extends AbstractRealmTest {
+public class TokensTest extends AbstractRealmTest {
 
     @Page
     private TokensSettings tokenSettings;
