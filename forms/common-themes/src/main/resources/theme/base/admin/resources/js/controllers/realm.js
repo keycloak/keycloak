@@ -1731,7 +1731,6 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
                     $scope.levelmax = execution.level;
                 }
             }
-            console.log("levelmax: " + $scope.levelmax);
             $scope.levelmaxempties = [];
             for (j = 0; j < $scope.levelmax; j++) {
                 $scope.levelmaxempties.push(j);
@@ -1756,7 +1755,7 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
     };
 
     $scope.copyFlow = function() {
-        CopyDialog.open('Copy AuthenticationFlow', $scope.flow.alias, function(name) {
+        CopyDialog.open('Copy Authentication Flow', $scope.flow.alias, function(name) {
             AuthenticationFlowsCopy.save({realm: realm.realm, alias: $scope.flow.alias}, {
                newName: name
             }, function() {
@@ -1803,6 +1802,8 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
         var copy = angular.copy(execution);
         delete copy.empties;
         delete copy.levels;
+        delete copy.preLevels;
+        delete copy.postLevels;
         AuthenticationFlowExecutions.update({realm: realm.realm, alias: $scope.flow.alias}, copy, function() {
             Notifications.success("Auth requirement updated");
             setupForm();
