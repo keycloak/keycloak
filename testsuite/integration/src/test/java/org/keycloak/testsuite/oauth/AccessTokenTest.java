@@ -21,12 +21,19 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.VerificationException;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -46,6 +53,7 @@ import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
+import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
@@ -68,9 +76,11 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -717,6 +727,52 @@ public class AccessTokenTest {
 
         events.clear();
 
+    }
+
+    // KEYCLOAK-1595 Assert that public client is able to retrieve token even if header "Authorization: Negotiate something" was used (parameter client_id has preference in this case)
+    @Test
+    public void testAuthorizationNegotiateHeaderIgnored() throws Exception {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                ClientModel client = new ClientManager(manager).createClient(appRealm, "sample-public-client");
+                client.addRedirectUri("http://localhost:8081/app/auth");
+                client.setEnabled(true);
+                client.setPublicClient(true);
+            }
+        });
+
+        oauth.clientId("sample-public-client");
+        oauth.doLogin("test-user@localhost", "password");
+        Event loginEvent = events.expectLogin().client("sample-public-client").assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        CloseableHttpClient client = new DefaultHttpClient();
+        try {
+            HttpPost post = new HttpPost(oauth.getAccessTokenUrl());
+
+            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
+            post.setHeader("Authorization", "Negotiate something-which-will-be-ignored");
+
+            UrlEncodedFormEntity formEntity = null;
+            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            post.setEntity(formEntity);
+
+            AccessTokenResponse response = new AccessTokenResponse(client.execute(post));
+            Assert.assertEquals(200, response.getStatusCode());
+            AccessToken token = oauth.verifyToken(response.getAccessToken());
+            events.expectCodeToToken(codeId, sessionId).client("sample-public-client").assertEvent();
+        } finally {
+            oauth.closeClient(client);
+        }
     }
 
     private IDToken getIdToken(org.keycloak.representations.AccessTokenResponse tokenResponse) throws VerificationException {
