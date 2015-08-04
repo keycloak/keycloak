@@ -291,6 +291,8 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
                         RealmModel currentRealm = session.realms().getRealm(realmId);
 
                         String username = LDAPUtils.getUsername(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
+                        exists.value = true;
+                        LDAPUtils.checkUuid(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
                         UserModel currentUser = session.userStorage().getUserByUsername(username, currentRealm);
 
                         if (currentUser == null) {

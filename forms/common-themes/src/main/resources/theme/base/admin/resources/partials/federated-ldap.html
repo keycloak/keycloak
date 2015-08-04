@@ -70,21 +70,27 @@
                 <div class="col-md-6">
                     <input class="form-control" id="usernameLDAPAttribute" type="text" ng-model="instance.config.usernameLDAPAttribute" placeholder="LDAP attribute name for username" required>
                 </div>
-                <kc-tooltip>Name of LDAP attribute, which is mapped as Keycloak username. For many LDAP server vendors it's 'uid'. For Active directory it's usually 'sAMAccountName' or 'cn'</kc-tooltip>
+                <kc-tooltip>Name of LDAP attribute, which is mapped as Keycloak username. For many LDAP server vendors it can be 'uid'. For Active directory it can be 'sAMAccountName' or 'cn' .
+                    The attribute should be filled for all LDAP user records you want to import from LDAP to Keycloak.
+                </kc-tooltip>
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="rdnLDAPAttribute"><span class="required">*</span> RDN LDAP attribute</label>
                 <div class="col-md-6">
                     <input class="form-control" id="rdnLDAPAttribute" type="text" ng-model="instance.config.rdnLDAPAttribute" placeholder="LDAP attribute name for user RDN" required>
                 </div>
-                <kc-tooltip>Name of LDAP attribute, which is used as RDN (top attribute) of typical user DN. Usually it's the same as Username LDAP attribute, however for Active directory it could be 'cn' when username attribute might be 'sAMAccountName' </kc-tooltip>
+                <kc-tooltip>Name of LDAP attribute, which is used as RDN (top attribute) of typical user DN. Usually it's the same as Username LDAP attribute, however it's not required.
+                    For example for Active directory it's common to use 'cn' as RDN attribute when username attribute might be 'sAMAccountName' .
+                </kc-tooltip>
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="uuidLDAPAttribute"><span class="required">*</span> UUID LDAP attribute</label>
                 <div class="col-md-6">
                     <input class="form-control" id="uuidLDAPAttribute" type="text" ng-model="instance.config.uuidLDAPAttribute" placeholder="LDAP attribute name for UUID" required>
                 </div>
-                <kc-tooltip>Name of LDAP attribute, which is used as unique object identifier (UUID) for objects in LDAP. For many LDAP server vendors it's 'entryUUID' however some are different. For example for Active directory it should be 'objectGUID' </kc-tooltip>
+                <kc-tooltip>Name of LDAP attribute, which is used as unique object identifier (UUID) for objects in LDAP. For many LDAP server vendors it's 'entryUUID' however some are different. For example for Active directory it should be 'objectGUID' .
+                    If your LDAP server really doesn't support the notion of UUID, you can use any other attribute, which is supposed to be unique among LDAP users in tree. For example 'uid' or 'entryDN' .
+                </kc-tooltip>
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="userObjectClasses"><span class="required">*</span> User Object Classes</label>
