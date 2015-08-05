@@ -227,8 +227,49 @@
         </profile>
         <profile>
             <id>jpa</id>
+            <properties>
+                <jdbc.mvn.driver.deployment.dir>${keycloak.server.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
+            </properties>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <version>1.4</version>
+                        <executions>
+                            <execution>
+                                <id>enforce-properties</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>jdbc.mvn.groupId</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>jdbc.mvn.artifactId</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>jdbc.mvn.version</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>keycloak.connectionsJpa.url</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>keycloak.connectionsJpa.driver</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>keycloak.connectionsJpa.user</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>keycloak.connectionsJpa.password</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
@@ -245,7 +286,7 @@
                                             <groupId>${jdbc.mvn.groupId}</groupId>
                                             <artifactId>${jdbc.mvn.artifactId}</artifactId>        
                                             <version>${jdbc.mvn.version}</version>
-                                            <type>${jdbc.mvn.type}</type>
+                                            <type>jar</type>
                                         </artifactItem>
                                     </artifactItems>
                                     <outputDirectory>${jdbc.mvn.driver.deployment.dir}</outputDirectory>

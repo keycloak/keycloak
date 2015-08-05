@@ -13,24 +13,6 @@
     <packaging>pom</packaging>
     <name>Keycloak Integration TestSuite with Arquillian</name>
     
-    <properties>
-        <!-- database settings -->
-        <!-- properties for configuring datasource subsystem in standalone.xml -->
-        <keycloak.connectionsJpa.url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</keycloak.connectionsJpa.url>
-        <keycloak.connectionsJpa.driver>h2</keycloak.connectionsJpa.driver>
-        <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
-        <keycloak.connectionsJpa.password>sa</keycloak.connectionsJpa.password>
-        
-        <!-- properties for deploying jdbc driver, default values are valid (maven-dependency-plugin requires that) but useless -->
-        <jdbc.mvn.groupId>org.keycloak</jdbc.mvn.groupId>
-        <jdbc.mvn.artifactId>keycloak-parent</jdbc.mvn.artifactId>
-        <jdbc.mvn.version>${project.version}</jdbc.mvn.version>
-        <jdbc.mvn.type>pom</jdbc.mvn.type>
-        <!-- default: do not update modules, if "real" db is used set this properly: -->
-        <!--<jdbc.mvn.driver.deployment.dir>${auth.server.wildfly.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>-->
-        <jdbc.mvn.driver.deployment.dir>${project.build.directory}/junk</jdbc.mvn.driver.deployment.dir>
-    </properties>
-    
     <modules>
         <module>servers</module>
         <module>tests</module>
