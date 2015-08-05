@@ -8,6 +8,7 @@
                 exclude-result-prefixes="xalan j ds k sec">
 
     <xsl:param name="config"/>
+    <xsl:variable name="inf" select="'urn:jboss:domain:infinispan:'"/>
 
     <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes" xalan:indent-amount="4" standalone="no"/>
     <xsl:strip-space elements="*"/>
@@ -58,6 +59,18 @@
                     <login-module code="org.picketlink.identity.federation.bindings.wildfly.SAML2LoginModule" flag="required"/>
                 </authentication>
             </security-domain>
+        </xsl:copy>
+    </xsl:template>
+
+    <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $inf)]">
+        <xsl:copy>
+            <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
+                <local-cache name="realms"/>
+                <local-cache name="users"/>
+                <local-cache name="sessions"/>
+                <local-cache name="loginFailures"/>
+            </cache-container>
+            <xsl:apply-templates select="node()|@*"/>
         </xsl:copy>
     </xsl:template>
 
