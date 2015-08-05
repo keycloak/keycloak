@@ -22,6 +22,7 @@ import org.keycloak.testsuite.model.RequiredUserAction;
 import static org.keycloak.testsuite.page.auth.AuthRealm.DEMO;
 import org.keycloak.testsuite.page.auth.Login;
 import org.keycloak.testsuite.page.auth.LoginActions;
+import static org.keycloak.testsuite.util.ApiUtil.findUserByUsername;
 import org.openqa.selenium.By;
 
 public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdapterTest {
