@@ -1,22 +1,22 @@
 package org.keycloak.testsuite;
 
-import java.util.ArrayList;
 import java.util.List;
-import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.page.auth.AuthRealm;
 import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 import org.keycloak.testsuite.page.auth.Login;
+import static org.keycloak.testsuite.util.ApiUtil.assignClientRoles;
+import static org.keycloak.testsuite.util.ApiUtil.createUser;
+import static org.keycloak.testsuite.util.ApiUtil.findClientByClientId;
+import static org.keycloak.testsuite.util.ApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.util.ApiUtil.resetUserPassword;
 
 /**
  *
@@ -31,7 +31,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
     protected RealmResource testRealmResource;
     protected UserRepresentation testAdmin;
-    protected RoleRepresentation testRole;
+    protected UserRepresentation testUser;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -45,55 +45,35 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     public void beforeAuthTest() {
         testRealmResource = keycloak.realm(TEST);
 
-        createTestUser();
-        createTestRealms();
+        createTestUserWithAdminClient();
+//        createTestAdminWithAdminClient();
 
+        // delete all cookies for test realm
         testAuthRealm.navigateTo();
         driver.manage().deleteAllCookies();
     }
 
-    public void createTestUser() {
-        System.out.println("creating test user");
-
+    private void createTestUserWithAdminClient() {
+        
+    }
+    
+    private void createTestAdminWithAdminClient() {
         testAdmin = new UserRepresentation();
         testAdmin.setUsername("admin");
         testAdmin.setEmail("test@email.test");
         testAdmin.setFirstName("test");
         testAdmin.setLastName("user");
         testAdmin.setEnabled(true);
-        Response response = testRealmResource.users().create(testAdmin);
-        response.close();
-
+        
+        createUser(testRealmResource, testAdmin);
         testAdmin = findUserByUsername(testRealmResource, testAdmin.getUsername());
 
-        System.out.println(" resetting password");
-
-        UserResource testUserResource = testRealmResource.users().get(testAdmin.getId());
-        CredentialRepresentation testUserPassword = new CredentialRepresentation();
-        testUserPassword.setType(PASSWORD);
-        testUserPassword.setValue(PASSWORD);
-        testUserPassword.setTemporary(false);
-        testUserResource.resetPassword(testUserPassword);
-
+        UserResource testAdminResource = testRealmResource.users().get(testAdmin.getId());
+        resetUserPassword(testAdminResource, PASSWORD, false);
+        
         System.out.println(" adding realm-admin role");
-
         ClientRepresentation realmManagementClient = findClientByClientId(testRealmResource, "realm-management");
-        RoleScopeResource rsr = testUserResource.roles().clientLevel(realmManagementClient.getId());
-
-        List<RoleRepresentation> realmMgmtRoles = new ArrayList<>();
-        for (RoleRepresentation rr : rsr.listAvailable()) {
-            if ("realm-admin".equals(rr.getName())) {
-                realmMgmtRoles.add(rr);
-            }
-        }
-        rsr.add(realmMgmtRoles);
-    }
-
-    public void createTestRealms(){
-        System.out.println("creating test realm");
-
-        testRole = new RoleRepresentation("test-role", "");
-        testRealmResource.roles().create(testRole);
+        assignClientRoles(testAdminResource, realmManagementClient.getId(), "realm-admin");
     }
 
 }

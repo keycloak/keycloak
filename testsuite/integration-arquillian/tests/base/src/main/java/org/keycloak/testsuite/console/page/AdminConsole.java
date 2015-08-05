@@ -19,10 +19,9 @@ package org.keycloak.testsuite.console.page;
 
 import java.net.URI;
 import org.keycloak.testsuite.page.auth.AuthServer;
-import java.util.List;
 import javax.ws.rs.core.UriBuilder;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
+import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
 import org.keycloak.testsuite.page.auth.PageWithLoginUrl;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -36,7 +35,7 @@ public class AdminConsole extends AuthServer implements PageWithLoginUrl {
     public static final String ADMIN_REALM = "adminRealm";
 
     public AdminConsole() {
-        setUriParameter(ADMIN_REALM, TEST);
+        setUriParameter(ADMIN_REALM, MASTER);
     }
 
     public AdminConsole setAdminRealm(String consoleRealm) {
@@ -69,9 +68,6 @@ public class AdminConsole extends AuthServer implements PageWithLoginUrl {
     //@FindByJQuery(".btn-primary:visible")
     @FindBy(css = ".btn-primary")
     protected WebElement primaryButton;
-
-    @FindBy(css = ".btn-primary")
-    protected List<WebElement> primaryButtons;
 
     @FindBy(css = ".ng-binding.btn.btn-danger")
     protected WebElement deleteConfirmationButton;

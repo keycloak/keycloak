@@ -13,4 +13,6 @@ public abstract class AbstractRolesTest extends AbstractConsoleTest {
     @Page
     protected User user;
     
+    
+    
 }

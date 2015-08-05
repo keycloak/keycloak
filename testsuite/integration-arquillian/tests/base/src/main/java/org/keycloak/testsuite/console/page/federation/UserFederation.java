@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.console.page.federation;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
-import org.keycloak.testsuite.console.page.AdminConsole;
+import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.openqa.selenium.By;
 import org.openqa.selenium.support.ui.Select;
 
@@ -10,7 +10,7 @@ import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 /**
  * Created by fkiss.
  */
-public class UserFederationPage extends AdminConsole {
+public class UserFederation extends AdminConsoleRealm {
 
     @Override
     public String getUriFragment() {

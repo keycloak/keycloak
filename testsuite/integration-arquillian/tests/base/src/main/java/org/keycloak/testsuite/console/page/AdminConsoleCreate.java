@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.console.page;
 
 import static org.keycloak.testsuite.console.page.AdminConsoleRealm.CONSOLE_REALM;
+import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 
 /**
  *
@@ -10,6 +11,10 @@ public class AdminConsoleCreate extends AdminConsole {
 
     public static final String ENTITY = "entity";
 
+    public AdminConsoleCreate() {
+        setUriParameter(CONSOLE_REALM, TEST);
+    }
+    
     @Override
     public String getUriFragment() {
         return "/create/{" + ENTITY + "}/{" + CONSOLE_REALM + "}";

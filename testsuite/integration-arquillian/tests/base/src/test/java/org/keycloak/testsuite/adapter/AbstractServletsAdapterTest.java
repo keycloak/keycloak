@@ -49,7 +49,7 @@ import org.keycloak.testsuite.adapter.page.SessionPortal;
 import static org.keycloak.testsuite.page.auth.AuthRealm.DEMO;
 import org.keycloak.testsuite.page.auth.Login;
 import org.keycloak.testsuite.util.SeleniumUtils;
-import org.keycloak.testsuite.util.ApiUtil;
+import static org.keycloak.testsuite.util.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.util.BasicAuthHelper;
@@ -535,7 +535,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         // login as bburke
         loginAndCheckSession(driver, masterLogin);
         // logout mposolda with admin client
-        ApiUtil.findClientByClientId(keycloak.realm("demo"), "session-portal").logoutUser("mposolda");
+        findClientResourceByClientId(keycloak.realm("demo"), "session-portal")
+                .logoutUser("mposolda");
         // bburke should be still logged with original httpSession in our browser window
         sessionPortal.navigateTo();
         assertEquals(driver.getCurrentUrl(), sessionPortal + slash);

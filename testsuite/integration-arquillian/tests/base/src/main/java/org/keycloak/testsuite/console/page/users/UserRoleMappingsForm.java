@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.console.page.users;
 
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -9,19 +8,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.keycloak.representations.idm.RoleRepresentation;
-
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
+import org.keycloak.testsuite.console.page.roles.RoleCompositeRoles;
 
 /**
  * Created by fkiss.
  */
-public class UserRoleMappingsForm  {
-
-    @FindBy(id = "available")
-    private Select availableRolesSelect;
-
-    @FindBy(id = "assigned")
-    private Select assignedRolesSelect;
+public class UserRoleMappingsForm extends RoleCompositeRoles {
 
     @FindBy(id = "realm-composite")
     private Select effectiveRolesSelect;
@@ -29,86 +21,20 @@ public class UserRoleMappingsForm  {
     @FindBy(id = "client-composite")
     private Select effectiveClientRolesSelect;
 
-    @FindBy(id = "available-client")
-    private Select availableClientRolesSelect;
-
-    @FindBy(id = "assigned-client")
-    private Select assignedClientRolesSelect;
-
-    @FindBy(css = "button[ng-click*='addRealm']")
-    private WebElement addSelectedRealmRolesButton;
-
-    @FindBy(css = "button[ng-click*='addClient']")
-    private WebElement addSelectedClientRolesButton;
-
-    @FindBy(css = "button[ng-click*='deleteRealm']")
-    private WebElement removeSelectedRealmRolesButton;
-
-    @FindBy(css = "button[ng-click*='deleteClient']")
-    private WebElement removeSelectedClientRolesButton;
-
-    @FindBy(id = "clients")
-    private Select clientRolesSelect;
-
-    public void addAvailableRole(String... roles){
-        waitGuiForElement(By.id("available"));
-        for(String role : roles) {
-            availableRolesSelect.selectByVisibleText(role);
-            addSelectedRealmRolesButton.click();
-        }
+    public boolean isEffectiveRealmRolesComplete(RoleRepresentation... roles) {
+        return isEffectiveRolesComplete(effectiveRolesSelect, roles);
     }
 
-    public void removeAssignedRole(String role){
-        waitGuiForElement(By.id("assigned"));
-        assignedRolesSelect.selectByVisibleText(role);
-        removeSelectedRealmRolesButton.click();
+    public boolean isEffectiveClientRolesComplete(RoleRepresentation... roles) {
+        return isEffectiveRolesComplete(effectiveClientRolesSelect, roles);
     }
 
-    public boolean isAssignedRole(String role){
-        waitGuiForElement(By.id("assigned"));
-        try {
-            assignedRolesSelect.selectByVisibleText(role);
-        } catch (Exception ex){
-            return false;
-        }
-        return true;
-    }
-
-    public boolean isAssignedClientRole(String role){
-        waitGuiForElement(By.id("assigned"));
-        try {
-            assignedClientRolesSelect.selectByVisibleText(role);
-        } catch (Exception ex){
-            return false;
-        }
-        return true;
-    }
-
-    public void selectClientRole(String client){
-        waitGuiForElement(By.id("clients"));
-        clientRolesSelect.selectByVisibleText(client);
-    }
-
-    public void addAvailableClientRole(String... roles){
-        waitGuiForElement(By.id("available-client"));
-        for(String role : roles) {
-            availableClientRolesSelect.selectByVisibleText(role);
-            addSelectedClientRolesButton.click();
-        }
-    }
-
-    public void removeAssignedClientRole(String client){
-        waitGuiForElement(By.id("assigned-client"));
-        assignedClientRolesSelect.selectByVisibleText(client);
-        removeSelectedClientRolesButton.click();
-    }
-
-    public boolean checkIfEffectiveRealmRolesAreComplete(RoleRepresentation... roles){
+    private boolean isEffectiveRolesComplete(Select select, RoleRepresentation... roles) {
         List<String> roleNames = new ArrayList<>();
-        for (RoleRepresentation role : roles){
+        for (RoleRepresentation role : roles) {
             roleNames.add(role.getName());
         }
-        for (WebElement role : effectiveRolesSelect.getOptions()){
+        for (WebElement role : select.getOptions()) {
             roleNames.contains(role.getText());
             roleNames.remove(role.getText());
         }
@@ -117,19 +43,4 @@ public class UserRoleMappingsForm  {
         return roleNames.isEmpty();
     }
 
-
-
-    public boolean checkIfEffectiveClientRolesAreComplete(RoleRepresentation... roles){
-        List<String> roleNames = new ArrayList<>();
-        for (RoleRepresentation role : roles){
-            roleNames.add(role.getName());
-        }
-        for (WebElement role : effectiveRolesSelect.getOptions()){
-            roleNames.contains(role.getText());
-            roleNames.remove(role.getText());
-        }
-        System.out.println(Arrays.toString(roles));
-        System.out.println(roleNames);
-        return roleNames.isEmpty();
-    }
 }

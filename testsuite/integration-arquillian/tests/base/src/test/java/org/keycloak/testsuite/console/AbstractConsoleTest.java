@@ -19,19 +19,17 @@ package org.keycloak.testsuite.console;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ConfigureMenu;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ManageMenu;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
-import org.keycloak.testsuite.console.page.users.CreateUser;
-import org.keycloak.testsuite.console.page.users.Users;
+import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 
 /**
@@ -45,18 +43,20 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
     protected AdminConsole testAdminConsole;
     @Page
     protected AdminConsoleRealm testAdminConsoleRealm;
-    
-    @Page
-    protected Users users;
-    @Page
-    protected CreateUser createUser;
-    
+
     @FindByJQuery(".alert")
     protected FlashMessage flashMessage;
 
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testAdminConsole.setAdminRealm(TEST);
+        testAdminConsoleRealm.setConsoleRealm(TEST).setAdminRealm(TEST);
+    }
+
     @Before
     public void beforeConsoleTest() {
-        loginAsTestAdmin();
+        loginToMasterRealmConsoleAsAdmin();
     }
 
     public void loginAsTestAdmin() {
@@ -76,16 +76,24 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
     public ConfigureMenu configure() {
         return testAdminConsoleRealm.configure();
     }
+
     public ManageMenu manage() {
         return testAdminConsoleRealm.manage();
     }
-    
-    public void createUser(UserRepresentation user) {
-//        users.navigateTo();
-        users.addUser();
-        assertCurrentUrl(createUser);
-        createUser.form().setValues(user);
-        createUser.form().save();
+
+    public void assertFlashMessageSuccess() {
+        flashMessage.waitUntilPresent();
+        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
     }
-    
+
+    public void assertFlashMessageDanger() {
+        flashMessage.waitUntilPresent();
+        assertTrue(flashMessage.getText(), flashMessage.isDanger());
+    }
+
+    public void assertFlashMessageError() {
+        flashMessage.waitUntilPresent();
+        assertTrue(flashMessage.getText(), flashMessage.isError());
+    }
+
 }

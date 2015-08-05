@@ -17,8 +17,6 @@
  */
 package org.keycloak.testsuite.console.clients;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNull;
@@ -29,22 +27,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
  *
  * @author Filip Kiss
  */
-public class AddNewClientTest extends AbstractClientTest {
-
-    private ClientRepresentation createClientRepresentation(String clientId, String redirectUri) {
-        ClientRepresentation client = new ClientRepresentation();
-        client.setClientId(clientId);
-        if (redirectUri != null) {
-            List<String> redirectUris = new ArrayList<>();
-            redirectUris.add(redirectUri);
-            client.setRedirectUris(redirectUris);
-        }
-        client.setEnabled(true);
-        client.setBearerOnly(false);
-        client.setDirectGrantsOnly(false);
-        client.setPublicClient(false);
-        return client;
-    }
+public class ClientSettingsTest extends AbstractClientTest {
 
     @Test
     public void addNewClientTest() {

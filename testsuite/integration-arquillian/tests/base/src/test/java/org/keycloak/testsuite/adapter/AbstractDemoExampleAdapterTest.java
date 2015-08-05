@@ -23,6 +23,7 @@ import org.keycloak.testsuite.adapter.page.ProductPortalExample;
 import org.keycloak.testsuite.model.RequiredUserAction;
 import static org.keycloak.testsuite.page.auth.AuthRealm.DEMO;
 import org.keycloak.testsuite.page.auth.Login;
+import static org.keycloak.testsuite.util.ApiUtil.findUserByUsername;
 import org.openqa.selenium.By;
 
 public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdapterTest {
@@ -107,7 +108,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     @Test
     public void testUpdateProfileRequiredUserAction() {
         addRequiredAction("bburke@redhat.com", RequiredUserAction.UPDATE_PROFILE);
-
+        
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
         loginDemo.login("bburke@redhat.com", "password");
@@ -135,7 +136,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         if (ra == null) {
             ra = new ArrayList<>();
         }
-        ra.add(action.getActionName());
+        ra.add(action.toString());
         keycloak.realm(DEMO).users().get(user.getId()).update(user);
 //        
 //        

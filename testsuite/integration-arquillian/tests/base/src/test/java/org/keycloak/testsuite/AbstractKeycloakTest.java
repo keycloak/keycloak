@@ -104,15 +104,15 @@ public abstract class AbstractKeycloakTest {
     }
 
     private void updateMasterAdminPassword() {
-        loginAsAdmin();
+        loginToMasterRealmConsoleAsAdmin();
         password.confirmNewPassword(ADMIN_PSSWD);
         password.submit();
         assertCurrentUrlStartsWith(masterAdminConsole);
         setAdminPasswordUpdated(true);
-        logoutFromMasterRealm();
+        logoutFromMasterRealmConsole();
     }
 
-    public void loginAsAdmin() {
+    public void loginToMasterRealmConsoleAsAdmin() {
         masterAdminConsole.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(masterAdminConsole);
         masterLogin.loginAsAdmin();
@@ -121,7 +121,7 @@ public abstract class AbstractKeycloakTest {
         }
     }
 
-    public void logoutFromMasterRealm() {
+    public void logoutFromMasterRealmConsole() {
         masterAdminConsole.navigateTo();
         assertCurrentUrlStartsWith(masterAdminConsole);
         menu.logOut();
@@ -167,25 +167,6 @@ public abstract class AbstractKeycloakTest {
         for (RealmRepresentation testRealm : testRealms) {
             removeRealm(keycloak, testRealm);
         }
-    }
-
-    public UserRepresentation findUserByUsername(RealmResource realm, String username) {
-        UserRepresentation user = null;
-        List<UserRepresentation> ur = realm.users().search(username, null, null);
-        if (ur.size() == 1) {
-            user = ur.get(0);
-        }
-        return user;
-    }
-
-    public ClientRepresentation findClientByClientId(RealmResource realm, String clientId) {
-        ClientRepresentation client = null;
-        for (ClientRepresentation c : realm.clients().findAll()) {
-            if (clientId.equals(c.getClientId())) {
-                client = c;
-            }
-        }
-        return client;
     }
 
 }

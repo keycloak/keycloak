@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.console.page.clients;
 
+import org.keycloak.testsuite.console.page.fragment.Breadcrumb;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -24,6 +25,17 @@ public class Client extends Clients {
         return (String) getUriParameter(CLIENT_ID);
     }
 
+    @FindBy(css = "breadcrumb")
+    protected Breadcrumb breadcrumb;
+
+    public Breadcrumb breadcrumb() {
+        return breadcrumb;
+    }
+    
+    public void clickBreadcrumbLevelUp() {
+        breadcrumb.getItemFromEnd(1).click();
+    }
+    
     @FindBy(xpath = "//div[@data-ng-controller='ClientTabCtrl']/ul")
     protected ClientTabs clientTabs;
 

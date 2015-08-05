@@ -15,26 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.console.page.roles;
+package org.keycloak.testsuite.account.page;
 
-import org.jboss.arquillian.graphene.page.Page;
+import javax.ws.rs.core.UriBuilder;
 
 /**
  *
- * @author Petr Mensik
+ * @author tkyjovsk
  */
-public class DefaultRoles extends Roles {
+public class Autheticator extends AccountManagement {
 
     @Override
-    public String getUriFragment() {
-        return super.getUriFragment() + "/default-roles";
+    public UriBuilder createUriBuilder() {
+        return super.createUriBuilder()
+                .path("totp");
     }
 
-    @Page
-    private RoleCompositeRoles form;
-
-    public RoleCompositeRoles form() {
-        return form;
-    }
+   
 
 }

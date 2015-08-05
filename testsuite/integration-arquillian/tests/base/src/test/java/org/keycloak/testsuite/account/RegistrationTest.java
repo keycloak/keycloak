@@ -26,6 +26,7 @@ import org.junit.Before;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import static org.keycloak.testsuite.util.ApiUtil.findUserByUsername;
 
 /**
  *
@@ -36,8 +37,6 @@ public class RegistrationTest extends AbstractAccountTest {
 
     @Page
     private Registration registration;
-
-    private UserRepresentation testUser;
 
     @Before
     public void beforeUserRegistration() {

@@ -81,7 +81,8 @@ public class Users extends AdminConsoleRealm {
 
     public void deleteUser(String username) {
         table.clickActionButton(table.getRowByLinkText(username), DELETE);
-        // FIXME verify notification
+        waitAjaxForElement(deleteConfirmationButton);
+        deleteConfirmationButton.click();
     }
 
     public void addUser() {
