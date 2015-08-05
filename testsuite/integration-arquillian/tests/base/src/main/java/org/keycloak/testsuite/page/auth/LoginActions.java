@@ -16,11 +16,18 @@ public class LoginActions extends AuthRealm {
                 .path("login-actions");
     }
 
+    @FindBy(css = "input[type='submit']")
+    private WebElement loginButton;
+
     @FindBy(css = "div[id='kc-form-options'] span a")
     private WebElement backToLoginForm;
 
     public void backToLoginPage() {
         backToLoginForm.click();
+    }
+
+    public void submit(){
+        loginButton.click();
     }
 
 }

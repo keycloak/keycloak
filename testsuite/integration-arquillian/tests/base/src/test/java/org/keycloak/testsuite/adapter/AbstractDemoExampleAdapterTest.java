@@ -8,9 +8,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -23,6 +21,7 @@ import org.keycloak.testsuite.adapter.page.ProductPortalExample;
 import org.keycloak.testsuite.model.RequiredUserAction;
 import static org.keycloak.testsuite.page.auth.AuthRealm.DEMO;
 import org.keycloak.testsuite.page.auth.Login;
+import org.keycloak.testsuite.page.auth.LoginActions;
 import org.openqa.selenium.By;
 
 public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdapterTest {
@@ -36,6 +35,9 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
     @Page
     protected Login loginDemo;
+
+    @Page
+    private LoginActions demoLoginActions;
 
     @Page
     private Account account;
@@ -72,6 +74,8 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     @Before
     public void beforeDemoExampleTest() {
         demoRealmResource = keycloak.realm(DEMO);
+        customerPortalExample.navigateTo();
+        driver.manage().deleteAllCookies();
     }
 
     @Test
@@ -116,11 +120,13 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
                 .text()
                 .equalTo("You need to update your user profile to activate your account.");
         account.setEmail("bburke@redhat.com").setFirstName("Bill").setLastName("");
+        demoLoginActions.submit();
         waitGui().until()
                 .element(By.className("kc-feedback-text"))
                 .text()
                 .equalTo("Please specify last name.");
         account.setEmail("bburke@redhat.com").setFirstName("Bill").setLastName("Burke");
+        demoLoginActions.submit();
         waitGui().until()
                 .element(By.tagName("h2"))
                 .text()
@@ -135,10 +141,10 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         if (ra == null) {
             ra = new ArrayList<>();
         }
-        ra.add(action.getActionName());
+        ra.add(action.toString());
         keycloak.realm(DEMO).users().get(user.getId()).update(user);
-//        
-//        
+//
+//
 //        loginAsAdmin();
 //        pause(2000);
 //        adminConsole.navigateTo();
@@ -160,7 +166,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         if (ra == null) {
             ra = new ArrayList<>();
         }
-        ra.remove(action.getActionName());
+        ra.remove(action.toString());
         keycloak.realm(DEMO).users().get(user.getId()).update(user);
 
 //        loginAsAdmin();
