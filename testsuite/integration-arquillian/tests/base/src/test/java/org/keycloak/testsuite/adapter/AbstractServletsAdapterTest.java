@@ -28,7 +28,7 @@ import org.keycloak.testsuite.adapter.servlet.ErrorServlet;
 import org.keycloak.testsuite.adapter.servlet.InputServlet;
 import org.keycloak.testsuite.adapter.servlet.ProductServlet;
 import org.keycloak.testsuite.adapter.servlet.SessionServlet;
-import org.keycloak.testsuite.account.page.Sessions;
+import org.keycloak.testsuite.auth.page.account.Sessions;
 import static org.junit.Assert.*;
 import org.keycloak.Version;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -46,8 +46,8 @@ import org.keycloak.testsuite.adapter.page.InputPortal;
 import org.keycloak.testsuite.adapter.page.ProductPortal;
 import org.keycloak.testsuite.adapter.page.SecurePortal;
 import org.keycloak.testsuite.adapter.page.SessionPortal;
-import static org.keycloak.testsuite.page.auth.AuthRealm.DEMO;
-import org.keycloak.testsuite.page.auth.Login;
+import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
+import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.util.SeleniumUtils;
 import static org.keycloak.testsuite.util.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
@@ -142,7 +142,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         authRealm.setAuthRealm(DEMO);
-        accountSessionsPage.setAccountRealm(DEMO);
+        accountSessionsPage.setAuthRealm(DEMO);
     }
 
     private final String slash = "";

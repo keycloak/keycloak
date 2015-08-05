@@ -2,7 +2,7 @@ package org.keycloak.testsuite.account;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.account.page.Account;
+import org.keycloak.testsuite.auth.page.account.Account;
 
 /**
  *

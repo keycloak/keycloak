@@ -1,5 +1,6 @@
-package org.keycloak.testsuite.page.auth;
+package org.keycloak.testsuite.auth.page;
 
+import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import java.net.URI;
 import javax.ws.rs.core.UriBuilder;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;

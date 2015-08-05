@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.util;
 
-import org.keycloak.testsuite.page.auth.PageWithLoginUrl;
+import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import org.openqa.selenium.WebDriver;
 

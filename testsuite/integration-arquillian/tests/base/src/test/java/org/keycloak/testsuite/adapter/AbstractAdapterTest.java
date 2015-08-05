@@ -14,7 +14,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.ContainersTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
-import org.keycloak.testsuite.page.auth.AuthRealm;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 
 /**
  *

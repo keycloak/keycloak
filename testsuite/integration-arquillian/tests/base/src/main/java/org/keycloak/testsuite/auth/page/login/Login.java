@@ -15,9 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.page.auth;
+package org.keycloak.testsuite.auth.page.login;
 
 import javax.ws.rs.core.UriBuilder;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import static org.keycloak.testsuite.util.Constants.ADMIN_PSSWD;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementNotPresent;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;

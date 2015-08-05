@@ -7,8 +7,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.console.page.realm.LoginSettings;
-import org.keycloak.testsuite.page.auth.Login;
-import org.keycloak.testsuite.page.auth.Registration;
+import org.keycloak.testsuite.auth.page.login.Login;
+import org.keycloak.testsuite.auth.page.login.Registration;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 
 /**

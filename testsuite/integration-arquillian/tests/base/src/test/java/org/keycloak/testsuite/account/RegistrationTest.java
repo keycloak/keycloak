@@ -19,7 +19,7 @@ package org.keycloak.testsuite.account;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
-import org.keycloak.testsuite.page.auth.Registration;
+import org.keycloak.testsuite.auth.page.login.Registration;
 
 import static org.junit.Assert.*;
 import org.junit.Before;

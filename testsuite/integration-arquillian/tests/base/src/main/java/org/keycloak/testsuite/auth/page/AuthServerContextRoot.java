@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.page.auth;
+package org.keycloak.testsuite.auth.page;
 
 import java.net.URL;
 import org.jboss.arquillian.test.api.ArquillianResource;

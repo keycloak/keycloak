@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.account.page;
+package org.keycloak.testsuite.auth.page.account;
 
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;

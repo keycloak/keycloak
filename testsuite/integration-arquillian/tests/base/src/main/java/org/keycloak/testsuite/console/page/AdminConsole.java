@@ -18,11 +18,11 @@
 package org.keycloak.testsuite.console.page;
 
 import java.net.URI;
-import org.keycloak.testsuite.page.auth.AuthServer;
+import org.keycloak.testsuite.auth.page.AuthServer;
 import javax.ws.rs.core.UriBuilder;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import static org.keycloak.testsuite.page.auth.AuthRealm.MASTER;
-import org.keycloak.testsuite.page.auth.PageWithLoginUrl;
+import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 

@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.page.auth;
+package org.keycloak.testsuite.auth.page.login;
 
 import java.net.URI;
 import org.openqa.selenium.WebDriver;

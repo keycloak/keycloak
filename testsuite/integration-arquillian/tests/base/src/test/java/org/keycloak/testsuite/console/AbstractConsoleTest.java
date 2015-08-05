@@ -28,7 +28,7 @@ import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ConfigureMenu;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ManageMenu;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
-import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 

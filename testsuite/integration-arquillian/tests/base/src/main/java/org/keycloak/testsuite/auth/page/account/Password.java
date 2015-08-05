@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.account.page;
+package org.keycloak.testsuite.auth.page.account;
 
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;

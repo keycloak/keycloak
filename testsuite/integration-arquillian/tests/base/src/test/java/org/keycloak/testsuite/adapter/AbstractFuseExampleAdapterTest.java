@@ -7,14 +7,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.account.page.Account;
+import org.keycloak.testsuite.auth.page.account.Account;
 import static org.keycloak.testsuite.util.RealmUtils.loadRealm;
 import static org.keycloak.testsuite.adapter.AbstractExampleAdapterTest.EXAMPLES_HOME_DIR;
 import org.keycloak.testsuite.adapter.page.fuse.AdminInterface;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerListing;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
 import org.keycloak.testsuite.adapter.page.fuse.ProductPortalFuseExample;
-import static org.keycloak.testsuite.page.auth.AuthRealm.DEMO;
+import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.SeleniumUtils.pause;
@@ -48,8 +48,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         authRealm.setAuthRealm(DEMO);
-
-        account.setAccountRealm(DEMO);
+        account.setAuthRealm(DEMO);
     }
 
     // no Arquillian deployments - examples already installed by maven

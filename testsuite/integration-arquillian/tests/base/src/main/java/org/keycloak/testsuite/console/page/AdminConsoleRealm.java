@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.console.page;
 
 import org.keycloak.testsuite.console.page.fragment.Navigation;
-import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 

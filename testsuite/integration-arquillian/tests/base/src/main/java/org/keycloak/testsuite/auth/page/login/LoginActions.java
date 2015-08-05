@@ -1,6 +1,7 @@
-package org.keycloak.testsuite.page.auth;
+package org.keycloak.testsuite.auth.page.login;
 
 import javax.ws.rs.core.UriBuilder;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 

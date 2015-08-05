@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.console.page;
 
 import static org.keycloak.testsuite.console.page.AdminConsoleRealm.CONSOLE_REALM;
-import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  *

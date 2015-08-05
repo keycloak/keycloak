@@ -15,94 +15,79 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.account.page;
+package org.keycloak.testsuite.auth.page.account;
 
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
-import static org.keycloak.testsuite.page.auth.AuthRealm.TEST;
-import org.keycloak.testsuite.page.auth.AuthServer;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**
  *
  * @author <a href="mailto:pmensik@redhat.com">Petr Mensik</a>
+ * @author tkyjovsk
  */
-public class AccountManagement extends AuthServer {
-    
-    public static final String ACCOUNT_REALM = "accountRealm";
-    
-    public AccountManagement() {
-        setUriParameter(ACCOUNT_REALM, TEST);
-    }
-    
+public class AccountManagement extends AuthRealm {
+
     @Override
     public UriBuilder createUriBuilder() {
         return super.createUriBuilder()
-                .path("realms/{" + ACCOUNT_REALM + "}/account");
+                .path("account");
     }
-    
-    public void setAccountRealm(String accountRealm) {
-        setUriParameter(ACCOUNT_REALM, accountRealm);
-    }
-    
-    public String getAccountRealm() {
-        return getUriParameter(ACCOUNT_REALM).toString();
-    }
-    
-    
-    @FindBy(xpath="//a[@id='referer']")
+
+    @FindBy(xpath = "//a[@id='referer']")
     private WebElement backToRefererLink;
-    
+
     @FindBy(linkText = "Sign Out")
     private WebElement signOutLink;
-    
+
     @FindBy(linkText = "Account")
     private WebElement accountLink;
-    
+
     @FindBy(linkText = "Password")
     private WebElement passwordLink;
-    
+
     @FindBy(linkText = "Authenticator")
     private WebElement authenticatorLink;
-    
+
     @FindBy(linkText = "Sessions")
     private WebElement sessionsLink;
-    
+
     @FindBy(linkText = "Applications")
     private WebElement applicationsLink;
-    
+
     @FindByJQuery("button[value='Save']")
     private WebElement save;
-    
+
     public void backToReferer() {
         backToRefererLink.click();
     }
-    
+
     public void signOut() {
         signOutLink.click();
     }
-    
+
     public void account() {
         accountLink.click();
     }
-    
+
     public void password() {
         passwordLink.click();
     }
-    
+
     public void authenticator() {
         authenticatorLink.click();
     }
-    
+
     public void sessions() {
         sessionsLink.click();
     }
-    
+
     public void applications() {
         applicationsLink.click();
     }
-    
+
     public void save() {
         save.click();
     }
