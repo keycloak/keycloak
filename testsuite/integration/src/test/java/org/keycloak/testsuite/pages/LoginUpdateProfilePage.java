@@ -38,20 +38,25 @@ public class LoginUpdateProfilePage extends AbstractPage {
     @FindBy(id = "email")
     private WebElement emailInput;
 
+    @FindBy(id = "user.attributes.street")
+    private WebElement attributeStreetInput;
+
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
     @FindBy(className = "feedback-error")
     private WebElement loginErrorMessage;
 
-    public void update(String firstName, String lastName, String email) {
+    public void update(String firstName, String lastName, String email, String attributeStreet) {
         firstNameInput.clear();
         firstNameInput.sendKeys(firstName);
         lastNameInput.clear();
         lastNameInput.sendKeys(lastName);
         emailInput.clear();
         emailInput.sendKeys(email);
-
+        attributeStreetInput.clear();
+        if (attributeStreet != null)
+            attributeStreetInput.sendKeys(attributeStreet);
         submitButton.click();
     }
 
@@ -69,6 +74,10 @@ public class LoginUpdateProfilePage extends AbstractPage {
 
     public String getEmail() {
         return emailInput.getAttribute("value");
+    }
+
+    public String getAttributeStreet() {
+        return attributeStreetInput.getAttribute("value");
     }
 
     public boolean isCurrent() {

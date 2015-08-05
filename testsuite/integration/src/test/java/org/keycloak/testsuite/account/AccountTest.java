@@ -562,7 +562,7 @@ public class AccountTest {
             loginPage.open();
             loginPage.clickRegister();
 
-            registerPage.register("view", "log", "view-log@localhost", "view-log", "password", "password");
+            registerPage.register("view", "log", "view-log@localhost", "view-log", "password", "password", null);
 
             expectedEvents.add(events.poll());
             expectedEvents.add(events.poll());
@@ -609,7 +609,7 @@ public class AccountTest {
         loginPage.open();
         loginPage.clickRegister();
 
-        registerPage.register("view", "sessions", "view-sessions@localhost", "view-sessions", "password", "password");
+        registerPage.register("view", "sessions", "view-sessions@localhost", "view-sessions", "password", "password", null);
 
         Event registerEvent = events.expectRegister("view-sessions", "view-sessions@localhost").assertEvent();
         String userId = registerEvent.getUserId();
