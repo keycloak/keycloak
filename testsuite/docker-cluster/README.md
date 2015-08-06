@@ -19,7 +19,7 @@ $ cd distribution
 $ mvn clean install
 ````
 
-3) Build Docker with maven to ensure that needed data will be accessible to Docker+Fig volumes: 
+3) Build docker-cluster module with maven to ensure that needed data will be accessible to Docker+Fig volumes: 
 ```shell 
 $ cd $KEYCLOAK_HOME/testsuite/docker-cluster
 $ mvn clean install

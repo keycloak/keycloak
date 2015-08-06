@@ -73,6 +73,6 @@ export JBOSS_HOME=/keycloak-docker-shared/keycloak-$JBOSS_TYPE-$MYHOST;
 
 cd $JBOSS_HOME/bin/
 
-./standalone.sh -c standalone-ha.xml -Djboss.node.name=$MYHOST -b `hostname -i` -Djboss.mod_cluster.jvmRoute=$MYHOST \
--Dmysql.host=$MYSQL_PORT_3306_TCP_ADDR -Dhttpd.proxyList=$HTTPD_1_PORT_10001_TCP_ADDR:$HTTPD_PORT_10001_TCP_PORT \
+./standalone.sh -c standalone-keycloak-ha.xml -Djboss.node.name=$MYHOST -b `hostname -i` -Djboss.mod_cluster.jvmRoute=$MYHOST \
+-Dmysql.host=$MYSQL_PORT_3306_TCP_ADDR -Dhttpd.proxyHost=$HTTPD_1_PORT_10001_TCP_ADDR -Dhttpd.proxyPort=$HTTPD_PORT_10001_TCP_PORT \
 -Dkeycloak.import=/keycloak-docker-cluster/examples/testrealm.json "$@"
