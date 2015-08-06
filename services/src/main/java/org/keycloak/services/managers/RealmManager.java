@@ -11,6 +11,7 @@ import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
@@ -150,6 +151,7 @@ public class RealmManager {
         realm.setMaxDeltaTimeSeconds(60 * 60 * 12); // 12 hours
         realm.setFailureFactor(30);
         realm.setSslRequired(SslRequired.EXTERNAL);
+        realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
 
         realm.setEventsListeners(Collections.singleton("jboss-logging"));
     }

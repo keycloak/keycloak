@@ -19,6 +19,15 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private boolean verifyEmail;
     private boolean resetPasswordAllowed;
     private String passwordPolicy;
+
+    protected String otpPolicyType;
+    protected String otpPolicyAlgorithm;
+    protected int otpPolicyInitialCounter;
+    protected int otpPolicyDigits;
+    protected int otpPolicyLookAheadWindow;
+    protected int otpPolicyPeriod;
+
+
     private boolean editUsernameAllowed;
     //--- brute force settings
     private boolean bruteForceProtected;
@@ -508,6 +517,54 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setRequiredActionProviders(List<RequiredActionProviderEntity> requiredActionProviders) {
         this.requiredActionProviders = requiredActionProviders;
+    }
+
+    public String getOtpPolicyType() {
+        return otpPolicyType;
+    }
+
+    public void setOtpPolicyType(String otpPolicyType) {
+        this.otpPolicyType = otpPolicyType;
+    }
+
+    public String getOtpPolicyAlgorithm() {
+        return otpPolicyAlgorithm;
+    }
+
+    public void setOtpPolicyAlgorithm(String otpPolicyAlgorithm) {
+        this.otpPolicyAlgorithm = otpPolicyAlgorithm;
+    }
+
+    public int getOtpPolicyInitialCounter() {
+        return otpPolicyInitialCounter;
+    }
+
+    public void setOtpPolicyInitialCounter(int otpPolicyInitialCounter) {
+        this.otpPolicyInitialCounter = otpPolicyInitialCounter;
+    }
+
+    public int getOtpPolicyDigits() {
+        return otpPolicyDigits;
+    }
+
+    public void setOtpPolicyDigits(int otpPolicyDigits) {
+        this.otpPolicyDigits = otpPolicyDigits;
+    }
+
+    public int getOtpPolicyLookAheadWindow() {
+        return otpPolicyLookAheadWindow;
+    }
+
+    public void setOtpPolicyLookAheadWindow(int otpPolicyLookAheadWindow) {
+        this.otpPolicyLookAheadWindow = otpPolicyLookAheadWindow;
+    }
+
+    public int getOtpPolicyPeriod() {
+        return otpPolicyPeriod;
+    }
+
+    public void setOtpPolicyPeriod(int otpPolicyPeriod) {
+        this.otpPolicyPeriod = otpPolicyPeriod;
     }
 }
 

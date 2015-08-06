@@ -27,9 +27,11 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -51,18 +53,23 @@ import java.util.Collections;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginTotpTest {
+public class LoginHotpTest {
 
+    public static OTPPolicy policy;
     @ClassRule
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
 
         @Override
         public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
             UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
+            policy = appRealm.getOTPPolicy();
+            policy.setType(UserCredentialModel.HOTP);
+            policy.setLookAheadWindow(2);
+            appRealm.setOTPPolicy(policy);
 
             UserCredentialModel credentials = new UserCredentialModel();
-            credentials.setType(CredentialRepresentation.TOTP);
-            credentials.setValue("totpSecret");
+            credentials.setType(CredentialRepresentation.HOTP);
+            credentials.setValue("hotpSecret");
             user.updateCredential(credentials);
 
             user.setOtpEnabled(true);
@@ -92,17 +99,19 @@ public class LoginTotpTest {
     @WebResource
     protected LoginTotpPage loginTotpPage;
 
-    private TimeBasedOTP totp = new TimeBasedOTP();
+    private HmacOTP otp = new HmacOTP(policy.getDigits(), policy.getAlgorithm(), policy.getLookAheadWindow());
 
     private int lifespan;
 
+    private static int counter = 0;
+
     @Before
     public void before() throws MalformedURLException {
-        totp = new TimeBasedOTP();
+        otp = new HmacOTP(policy.getDigits(), policy.getAlgorithm(), policy.getLookAheadWindow());
     }
 
     @Test
-    public void loginWithTotpFailure() throws Exception {
+    public void loginWithHotpFailure() throws Exception {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -121,7 +130,7 @@ public class LoginTotpTest {
     }
 
     @Test
-    public void loginWithMissingTotp() throws Exception {
+    public void loginWithMissingHotp() throws Exception {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -140,13 +149,13 @@ public class LoginTotpTest {
     }
 
     @Test
-    public void loginWithTotpSuccess() throws Exception {
+    public void loginWithHotpSuccess() throws Exception {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
         loginTotpPage.assertCurrent();
 
-        loginTotpPage.login(totp.generateTOTP("totpSecret"));
+        loginTotpPage.login(otp.generateHOTP("hotpSecret", counter++));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -154,7 +163,7 @@ public class LoginTotpTest {
     }
 
     @Test
-    public void loginWithTotpInvalidPassword() throws Exception {
+    public void loginWithHotpInvalidPassword() throws Exception {
         loginPage.open();
         loginPage.login("test-user@localhost", "invalid");
 

@@ -45,7 +45,7 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
             context.challenge(challengeResponse);
             return;
         }
-        credentials.add(UserCredentialModel.totp(password));
+        credentials.add(UserCredentialModel.otp(context.getRealm().getOTPPolicy().getType(), password));
         boolean valid = context.getSession().users().validCredentials(context.getRealm(), context.getUser(), credentials);
         if (!valid) {
             context.getEvent().user(context.getUser())
@@ -75,7 +75,7 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
 
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        return session.users().configuredForCredentialType(UserCredentialModel.TOTP, realm, user) && user.isTotp();
+        return session.users().configuredForCredentialType(realm.getOTPPolicy().getType(), realm, user);
     }
 
     @Override

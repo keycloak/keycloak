@@ -3,6 +3,7 @@ package org.keycloak.migration;
 import org.jboss.logging.Logger;
 import org.keycloak.migration.migrators.MigrateTo1_3_0;
 import org.keycloak.migration.migrators.MigrateTo1_4_0;
+import org.keycloak.migration.migrators.MigrateTo1_5_0;
 import org.keycloak.migration.migrators.MigrationTo1_2_0_CR1;
 import org.keycloak.models.KeycloakSession;
 
@@ -37,6 +38,12 @@ public class MigrationModelManager {
         if (stored == null || stored.lessThan(MigrateTo1_4_0.VERSION)) {
             if (stored != null) {
                 logger.debug("Migrating older model to 1.4.0 updates");
+            }
+            new MigrateTo1_4_0().migrate(session);
+        }
+        if (stored == null || stored.lessThan(MigrateTo1_5_0.VERSION)) {
+            if (stored != null) {
+                logger.debug("Migrating older model to 1.5.0 updates");
             }
             new MigrateTo1_4_0().migrate(session);
         }

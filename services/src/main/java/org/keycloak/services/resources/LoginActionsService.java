@@ -47,6 +47,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -563,18 +564,25 @@ public class LoginActionsService {
             return loginForms.setError(Messages.MISSING_TOTP)
                     .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.CONFIGURE_TOTP);
-        } else if (!new TimeBasedOTP().validate(totp, totpSecret.getBytes())) {
+        } else if (!CredentialValidation.validOTP(realm, totp, totpSecret)) {
             return loginForms.setError(Messages.INVALID_TOTP)
                     .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.CONFIGURE_TOTP);
         }
 
         UserCredentialModel credentials = new UserCredentialModel();
-        credentials.setType(CredentialRepresentation.TOTP);
+        credentials.setType(realm.getOTPPolicy().getType());
         credentials.setValue(totpSecret);
         session.users().updateCredential(realm, user, credentials);
 
-        user.setTotp(true);
+
+        // if type is HOTP, to update counter we execute validation based on supplied token
+        UserCredentialModel cred = new UserCredentialModel();
+        cred.setType(realm.getOTPPolicy().getType());
+        cred.setValue(totp);
+        session.users().validCredentials(realm, user, cred);
+
+        user.setOtpEnabled(true);
 
         user.removeRequiredAction(RequiredAction.CONFIGURE_TOTP);
 

@@ -13,6 +13,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -66,6 +67,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     protected volatile transient X509Certificate certificate;
     protected volatile transient Key codeSecretKey;
 
+    private volatile transient OTPPolicy otpPolicy;
     private volatile transient PasswordPolicy passwordPolicy;
     private volatile transient KeycloakSession session;
 
@@ -271,6 +273,32 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         realm.setPasswordPolicy(policy.toString());
         updateRealm();
     }
+
+    @Override
+    public OTPPolicy getOTPPolicy() {
+        if (otpPolicy == null) {
+            otpPolicy = new OTPPolicy();
+            otpPolicy.setDigits(realm.getOtpPolicyDigits());
+            otpPolicy.setAlgorithm(realm.getOtpPolicyAlgorithm());
+            otpPolicy.setInitialCounter(realm.getOtpPolicyInitialCounter());
+            otpPolicy.setLookAheadWindow(realm.getOtpPolicyLookAheadWindow());
+            otpPolicy.setType(realm.getOtpPolicyType());
+            otpPolicy.setPeriod(realm.getOtpPolicyPeriod());
+        }
+        return otpPolicy;
+    }
+
+    @Override
+    public void setOTPPolicy(OTPPolicy policy) {
+        realm.setOtpPolicyAlgorithm(policy.getAlgorithm());
+        realm.setOtpPolicyDigits(policy.getDigits());
+        realm.setOtpPolicyInitialCounter(policy.getInitialCounter());
+        realm.setOtpPolicyLookAheadWindow(policy.getLookAheadWindow());
+        realm.setOtpPolicyType(policy.getType());
+        realm.setOtpPolicyPeriod(policy.getPeriod());
+        updateRealm();
+    }
+
 
     @Override
     public int getNotBefore() {

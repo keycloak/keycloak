@@ -16,6 +16,13 @@ public class UserCredentialValueModel implements Serializable {
     private int hashIterations;
     private Long createdDate;
 
+    // otp stuff
+    private int counter;
+    private String algorithm;
+    private int digits;
+    private int period;
+
+
     public String getType() {
         return type;
     }
@@ -63,5 +70,36 @@ public class UserCredentialValueModel implements Serializable {
     public void setCreatedDate(Long createdDate) {
         this.createdDate = createdDate;
     }
-    
+
+    public int getCounter() {
+        return counter;
+    }
+
+    public void setCounter(int counter) {
+        this.counter = counter;
+    }
+
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    public int getDigits() {
+        return digits;
+    }
+
+    public void setDigits(int digits) {
+        this.digits = digits;
+    }
+
+    public int getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(int period) {
+        this.period = period;
+    }
 }

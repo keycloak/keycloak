@@ -517,11 +517,11 @@ public class AccountTest {
         Assert.assertFalse(driver.getPageSource().contains("Remove Google"));
 
         // Error with false code
-        totpPage.configure(totp.generate(totpPage.getTotpSecret() + "123"));
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret() + "123"));
 
         Assert.assertEquals("Invalid authenticator code.", profilePage.getError());
 
-        totpPage.configure(totp.generate(totpPage.getTotpSecret()));
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
         Assert.assertEquals("Mobile authenticator configured.", profilePage.getSuccess());
 

@@ -21,6 +21,7 @@
  */
 package org.keycloak.account.freemarker.model;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.Base32;
@@ -41,14 +42,16 @@ public class TotpBean {
     private final boolean enabled;
     private final String contextUrl;
     private final String realmName;
+    private final String keyUri;
 
-    public TotpBean(RealmModel realm, UserModel user, URI baseUri) {
+    public TotpBean(KeycloakSession session, RealmModel realm, UserModel user, URI baseUri) {
         this.realmName = realm.getName();
-        this.enabled = user.isTotp();
+        this.enabled = session.users().configuredForCredentialType(realm.getOTPPolicy().getType(), realm, user);
         this.contextUrl = baseUri.getPath();
 
         this.totpSecret = randomString(20);
         this.totpSecretEncoded = Base32.encode(totpSecret.getBytes());
+        this.keyUri = realm.getOTPPolicy().getKeyURI(realm, this.totpSecret);
     }
 
     private static String randomString(int length) {
@@ -89,7 +92,7 @@ public class TotpBean {
     }
 
     public String getTotpSecretQrCodeUrl() throws UnsupportedEncodingException {
-        String contents = URLEncoder.encode("otpauth://totp/" + realmName + "?secret=" + totpSecretEncoded, "utf-8");
+        String contents = URLEncoder.encode(keyUri, "utf-8");
         return contextUrl + "qrcode" + "?size=246x246&contents=" + contents;
     }
 

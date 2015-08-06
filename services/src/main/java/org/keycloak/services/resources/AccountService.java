@@ -22,11 +22,6 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.BadRequestException;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.AbstractOAuthClient;
-import org.keycloak.ClientConnection;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.AccountProvider;
 import org.keycloak.events.Details;
@@ -38,10 +33,8 @@ import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelReadOnlyException;
@@ -50,11 +43,11 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -65,7 +58,6 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.util.UriUtils;
@@ -76,12 +68,8 @@ import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -441,7 +429,7 @@ public class AccountService extends AbstractSecuredLocalService {
         csrfCheck(stateChecker);
 
         UserModel user = auth.getUser();
-        user.setTotp(false);
+        user.setOtpEnabled(false);
 
         event.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
@@ -552,17 +540,23 @@ public class AccountService extends AbstractSecuredLocalService {
         if (Validation.isBlank(totp)) {
             setReferrerOnPage();
             return account.setError(Messages.MISSING_TOTP).createResponse(AccountPages.TOTP);
-        } else if (!new TimeBasedOTP().validate(totp, totpSecret.getBytes())) {
+        } else if (!CredentialValidation.validOTP(realm, totp, totpSecret)) {
             setReferrerOnPage();
             return account.setError(Messages.INVALID_TOTP).createResponse(AccountPages.TOTP);
         }
 
         UserCredentialModel credentials = new UserCredentialModel();
-        credentials.setType(CredentialRepresentation.TOTP);
+        credentials.setType(realm.getOTPPolicy().getType());
         credentials.setValue(totpSecret);
         session.users().updateCredential(realm, user, credentials);
 
-        user.setTotp(true);
+        user.setOtpEnabled(true);
+
+        // to update counter
+        UserCredentialModel cred = new UserCredentialModel();
+        cred.setType(realm.getOTPPolicy().getType());
+        cred.setValue(totp);
+        session.users().validCredentials(realm, user, cred);
 
         event.event(EventType.UPDATE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 

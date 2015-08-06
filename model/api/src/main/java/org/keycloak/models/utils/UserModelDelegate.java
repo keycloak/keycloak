@@ -43,8 +43,8 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public boolean isTotp() {
-        return delegate.isTotp();
+    public boolean isOtpEnabled() {
+        return delegate.isOtpEnabled();
     }
 
     @Override
@@ -148,8 +148,8 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public void setTotp(boolean totp) {
-        delegate.setTotp(totp);
+    public void setOtpEnabled(boolean totp) {
+        delegate.setOtpEnabled(totp);
     }
 
     @Override

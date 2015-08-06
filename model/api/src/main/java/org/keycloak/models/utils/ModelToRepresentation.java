@@ -9,6 +9,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -64,7 +65,7 @@ public class ModelToRepresentation {
         rep.setEmail(user.getEmail());
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
-        rep.setTotp(user.isTotp());
+        rep.setTotp(user.isOtpEnabled());
         rep.setFederationLink(user.getFederationLink());
 
         List<String> reqActions = new ArrayList<String>();
@@ -152,6 +153,13 @@ public class ModelToRepresentation {
         if (realm.getPasswordPolicy() != null) {
             rep.setPasswordPolicy(realm.getPasswordPolicy().toString());
         }
+        OTPPolicy otpPolicy = realm.getOTPPolicy();
+        rep.setOtpPolicyAlgorithm(otpPolicy.getAlgorithm());
+        rep.setOtpPolicyPeriod(otpPolicy.getPeriod());
+        rep.setOtpPolicyDigits(otpPolicy.getDigits());
+        rep.setOtpPolicyInitialCounter(otpPolicy.getInitialCounter());
+        rep.setOtpPolicyType(otpPolicy.getType());
+        rep.setOtpPolicyLookAheadWindow(otpPolicy.getLookAheadWindow());
 
         List<String> defaultRoles = realm.getDefaultRoles();
         if (!defaultRoles.isEmpty()) {
