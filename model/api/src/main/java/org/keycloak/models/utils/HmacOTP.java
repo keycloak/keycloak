@@ -59,8 +59,8 @@ public class HmacOTP {
     public int validateHOTP(String token, String key, int counter) {
 
         int newCounter = counter;
-        for (newCounter = counter; newCounter < counter + lookAheadWindow; newCounter++) {
-            String candidate = generateHOTP(key, counter);
+        for (newCounter = counter; newCounter <= counter + lookAheadWindow; newCounter++) {
+            String candidate = generateHOTP(key, newCounter);
             if (candidate.equals(token)) {
                 return newCounter + 1;
             }

@@ -71,6 +71,7 @@ public class RepresentationToModel {
         policy.setInitialCounter(rep.getOtpPolicyInitialCounter());
         policy.setAlgorithm(rep.getOtpPolicyAlgorithm());
         policy.setDigits(rep.getOtpPolicyDigits());
+        policy.setPeriod(rep.getOtpPolicyPeriod());
         return policy;
 
     }
@@ -945,11 +946,15 @@ public class RepresentationToModel {
             if (cred.getCounter() != null) hashedCred.setCounter(cred.getCounter());
             if (cred.getDigits() != null) hashedCred.setDigits(cred.getDigits());
             if (cred.getAlgorithm() != null) hashedCred.setAlgorithm(cred.getAlgorithm());
+            if (cred.getPeriod() != null) hashedCred.setPeriod(cred.getPeriod());
             if (cred.getDigits() == null && UserCredentialModel.isOtp(cred.getType())) {
                 hashedCred.setDigits(6);
             }
             if (cred.getAlgorithm() == null && UserCredentialModel.isOtp(cred.getType())) {
                 hashedCred.setAlgorithm(HmacOTP.HMAC_SHA1);
+            }
+            if (cred.getPeriod() == null && UserCredentialModel.TOTP.equals(cred.getType())) {
+                hashedCred.setPeriod(30);
             }
             user.updateCredentialDirectly(hashedCred);
         }

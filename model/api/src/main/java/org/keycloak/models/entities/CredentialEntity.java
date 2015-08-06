@@ -16,6 +16,7 @@ public class CredentialEntity {
     private int counter;
     private String algorithm;
     private int digits;
+    private int period;
 
 
     public String getId() {
@@ -104,5 +105,13 @@ public class CredentialEntity {
 
     public void setDigits(int digits) {
         this.digits = digits;
+    }
+
+    public int getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(int period) {
+        this.period = period;
     }
 }

@@ -25,6 +25,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     protected int otpPolicyInitialCounter;
     protected int otpPolicyDigits;
     protected int otpPolicyLookAheadWindow;
+    protected int otpPolicyPeriod;
 
 
     private boolean editUsernameAllowed;
@@ -556,6 +557,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setOtpPolicyLookAheadWindow(int otpPolicyLookAheadWindow) {
         this.otpPolicyLookAheadWindow = otpPolicyLookAheadWindow;
+    }
+
+    public int getOtpPolicyPeriod() {
+        return otpPolicyPeriod;
+    }
+
+    public void setOtpPolicyPeriod(int otpPolicyPeriod) {
+        this.otpPolicyPeriod = otpPolicyPeriod;
     }
 }
 

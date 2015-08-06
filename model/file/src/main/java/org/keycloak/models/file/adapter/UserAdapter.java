@@ -297,6 +297,7 @@ public class UserAdapter implements UserModel, Comparable {
             credentialEntity.setAlgorithm(otpPolicy.getAlgorithm());
             credentialEntity.setDigits(otpPolicy.getDigits());
             credentialEntity.setCounter(otpPolicy.getInitialCounter());
+            credentialEntity.setPeriod(otpPolicy.getPeriod());
             user.getCredentials().add(credentialEntity);
         } else {
             credentialEntity.setValue(cred.getValue());
@@ -304,6 +305,7 @@ public class UserAdapter implements UserModel, Comparable {
             credentialEntity.setDigits(policy.getDigits());
             credentialEntity.setCounter(policy.getInitialCounter());
             credentialEntity.setAlgorithm(policy.getAlgorithm());
+            credentialEntity.setPeriod(policy.getPeriod());
         }
     }
 
@@ -415,9 +417,28 @@ public class UserAdapter implements UserModel, Comparable {
             credModel.setValue(credEntity.getValue());
             credModel.setSalt(credEntity.getSalt());
             credModel.setHashIterations(credEntity.getHashIterations());
-            credModel.setCounter(credEntity.getCounter());
-            credModel.setAlgorithm(credEntity.getAlgorithm());
-            credModel.setDigits(credEntity.getDigits());
+            if (UserCredentialModel.isOtp(credEntity.getType())) {
+                credModel.setCounter(credEntity.getCounter());
+                if (credEntity.getAlgorithm() == null) {
+                    // for migration where these values would be null
+                    credModel.setAlgorithm(realm.getOTPPolicy().getAlgorithm());
+                } else {
+                    credModel.setAlgorithm(credEntity.getAlgorithm());
+                }
+                if (credEntity.getDigits() == 0) {
+                    // for migration where these values would be 0
+                    credModel.setDigits(realm.getOTPPolicy().getDigits());
+                } else {
+                    credModel.setDigits(credEntity.getDigits());
+                }
+
+                if (credEntity.getPeriod() == 0) {
+                    // for migration where these values would be 0
+                    credModel.setPeriod(realm.getOTPPolicy().getPeriod());
+                } else {
+                    credModel.setPeriod(credEntity.getPeriod());
+                }
+            }
 
             result.add(credModel);
         }
@@ -445,6 +466,7 @@ public class UserAdapter implements UserModel, Comparable {
         credentialEntity.setCounter(credModel.getCounter());
         credentialEntity.setAlgorithm(credModel.getAlgorithm());
         credentialEntity.setDigits(credModel.getDigits());
+        credentialEntity.setPeriod(credModel.getPeriod());
     }
 
     @Override

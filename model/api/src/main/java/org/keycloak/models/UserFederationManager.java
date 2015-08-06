@@ -424,7 +424,9 @@ public class UserFederationManager implements UserProvider {
                         || cred.getDigits() != otpPolicy.getDigits()) {
                         return false;
                     }
-
+                    if (type.equals(UserCredentialModel.TOTP) && cred.getPeriod() != otpPolicy.getPeriod()) {
+                        return false;
+                    }
                 }
                 return true;
             }

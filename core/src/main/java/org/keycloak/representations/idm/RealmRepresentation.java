@@ -54,6 +54,7 @@ public class RealmRepresentation {
     protected Integer otpPolicyInitialCounter;
     protected Integer otpPolicyDigits;
     protected Integer otpPolicyLookAheadWindow;
+    protected Integer otpPolicyPeriod;
 
     protected List<UserRepresentation> users;
     protected List<ScopeMappingRepresentation> scopeMappings;
@@ -698,5 +699,13 @@ public class RealmRepresentation {
 
     public void setOtpPolicyLookAheadWindow(Integer otpPolicyLookAheadWindow) {
         this.otpPolicyLookAheadWindow = otpPolicyLookAheadWindow;
+    }
+
+    public Integer getOtpPolicyPeriod() {
+        return otpPolicyPeriod;
+    }
+
+    public void setOtpPolicyPeriod(Integer otpPolicyPeriod) {
+        this.otpPolicyPeriod = otpPolicyPeriod;
     }
 }

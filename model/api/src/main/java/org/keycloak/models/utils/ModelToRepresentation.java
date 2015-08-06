@@ -155,6 +155,7 @@ public class ModelToRepresentation {
         }
         OTPPolicy otpPolicy = realm.getOTPPolicy();
         rep.setOtpPolicyAlgorithm(otpPolicy.getAlgorithm());
+        rep.setOtpPolicyPeriod(otpPolicy.getPeriod());
         rep.setOtpPolicyDigits(otpPolicy.getDigits());
         rep.setOtpPolicyInitialCounter(otpPolicy.getInitialCounter());
         rep.setOtpPolicyType(otpPolicy.getType());

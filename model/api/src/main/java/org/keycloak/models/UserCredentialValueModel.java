@@ -20,6 +20,7 @@ public class UserCredentialValueModel implements Serializable {
     private int counter;
     private String algorithm;
     private int digits;
+    private int period;
 
 
     public String getType() {
@@ -92,5 +93,13 @@ public class UserCredentialValueModel implements Serializable {
 
     public void setDigits(int digits) {
         this.digits = digits;
+    }
+
+    public int getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(int period) {
+        this.period = period;
     }
 }

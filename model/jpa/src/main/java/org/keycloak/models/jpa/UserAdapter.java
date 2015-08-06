@@ -321,6 +321,7 @@ public class UserAdapter implements UserModel {
             credentialEntity.setAlgorithm(otpPolicy.getAlgorithm());
             credentialEntity.setDigits(otpPolicy.getDigits());
             credentialEntity.setCounter(otpPolicy.getInitialCounter());
+            credentialEntity.setPeriod(otpPolicy.getPeriod());
             em.persist(credentialEntity);
             user.getCredentials().add(credentialEntity);
         } else {
@@ -329,6 +330,7 @@ public class UserAdapter implements UserModel {
             credentialEntity.setCounter(policy.getInitialCounter());
             credentialEntity.setAlgorithm(policy.getAlgorithm());
             credentialEntity.setValue(cred.getValue());
+            credentialEntity.setPeriod(policy.getPeriod());
         }
     }
 
@@ -450,6 +452,7 @@ public class UserAdapter implements UserModel {
                 credModel.setCounter(credEntity.getCounter());
                 credModel.setAlgorithm(credEntity.getAlgorithm());
                 credModel.setDigits(credEntity.getDigits());
+                credModel.setPeriod(credEntity.getPeriod());
 
                 result.add(credModel);
             }
@@ -479,6 +482,7 @@ public class UserAdapter implements UserModel {
         credentialEntity.setCounter(credModel.getCounter());
         credentialEntity.setAlgorithm(credModel.getAlgorithm());
         credentialEntity.setDigits(credModel.getDigits());
+        credentialEntity.setPeriod(credModel.getPeriod());
 
         em.flush();
     }

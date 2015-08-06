@@ -51,6 +51,8 @@ public class CredentialEntity {
     protected String algorithm;
     @Column(name="DIGITS")
     protected int digits;
+    @Column(name="PERIOD")
+    protected int period;
 
 
     public String getId() {
@@ -139,5 +141,13 @@ public class CredentialEntity {
 
     public void setDigits(int digits) {
         this.digits = digits;
+    }
+
+    public int getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(int period) {
+        this.period = period;
     }
 }

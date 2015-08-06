@@ -24,6 +24,7 @@ import org.keycloak.models.entities.UserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
+import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.util.Time;
@@ -269,6 +270,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
             credentialEntity.setAlgorithm(otpPolicy.getAlgorithm());
             credentialEntity.setDigits(otpPolicy.getDigits());
             credentialEntity.setCounter(otpPolicy.getInitialCounter());
+            credentialEntity.setPeriod(otpPolicy.getPeriod());
             user.getCredentials().add(credentialEntity);
         } else {
             credentialEntity.setValue(cred.getValue());
@@ -276,6 +278,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
             credentialEntity.setDigits(policy.getDigits());
             credentialEntity.setCounter(policy.getInitialCounter());
             credentialEntity.setAlgorithm(policy.getAlgorithm());
+            credentialEntity.setPeriod(policy.getPeriod());
         }
     }
 
@@ -386,9 +389,28 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
             credModel.setValue(credEntity.getValue());
             credModel.setSalt(credEntity.getSalt());
             credModel.setHashIterations(credEntity.getHashIterations());
-            credModel.setCounter(credEntity.getCounter());
-            credModel.setAlgorithm(credEntity.getAlgorithm());
-            credModel.setDigits(credEntity.getDigits());
+            if (UserCredentialModel.isOtp(credEntity.getType())) {
+                credModel.setCounter(credEntity.getCounter());
+                if (credEntity.getAlgorithm() == null) {
+                    // for migration where these values would be null
+                    credModel.setAlgorithm(realm.getOTPPolicy().getAlgorithm());
+                } else {
+                    credModel.setAlgorithm(credEntity.getAlgorithm());
+                }
+                if (credEntity.getDigits() == 0) {
+                    // for migration where these values would be 0
+                    credModel.setDigits(realm.getOTPPolicy().getDigits());
+                } else {
+                    credModel.setDigits(credEntity.getDigits());
+                }
+
+                if (credEntity.getPeriod() == 0) {
+                    // for migration where these values would be 0
+                    credModel.setPeriod(realm.getOTPPolicy().getPeriod());
+                } else {
+                    credModel.setPeriod(credEntity.getPeriod());
+                }
+            }
 
             result.add(credModel);
         }
@@ -414,6 +436,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
         credentialEntity.setCounter(credModel.getCounter());
         credentialEntity.setAlgorithm(credModel.getAlgorithm());
         credentialEntity.setDigits(credModel.getDigits());
+        credentialEntity.setPeriod(credModel.getPeriod());
 
 
         getMongoStore().updateEntity(user, invocationContext);

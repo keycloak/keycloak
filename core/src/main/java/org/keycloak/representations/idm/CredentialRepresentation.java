@@ -26,6 +26,7 @@ public class CredentialRepresentation {
     protected Integer counter;
     private String algorithm;
     private Integer digits;
+    private Integer period;
 
     // only used when updating a credential.  Might set required action
     protected boolean temporary;
@@ -108,5 +109,13 @@ public class CredentialRepresentation {
 
     public void setDigits(Integer digits) {
         this.digits = digits;
+    }
+
+    public Integer getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(Integer period) {
+        this.period = period;
     }
 }

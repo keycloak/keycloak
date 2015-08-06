@@ -283,6 +283,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             otpPolicy.setInitialCounter(realm.getOtpPolicyInitialCounter());
             otpPolicy.setLookAheadWindow(realm.getOtpPolicyLookAheadWindow());
             otpPolicy.setType(realm.getOtpPolicyType());
+            otpPolicy.setPeriod(realm.getOtpPolicyPeriod());
         }
         return otpPolicy;
     }
@@ -294,6 +295,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         realm.setOtpPolicyInitialCounter(policy.getInitialCounter());
         realm.setOtpPolicyLookAheadWindow(policy.getLookAheadWindow());
         realm.setOtpPolicyType(policy.getType());
+        realm.setOtpPolicyPeriod(policy.getPeriod());
         updateRealm();
     }
 

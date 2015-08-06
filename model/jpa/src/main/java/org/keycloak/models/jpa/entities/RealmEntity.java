@@ -69,6 +69,8 @@ public class RealmEntity {
     protected int otpPolicyDigits;
     @Column(name="OTP_POLICY_WINDOW")
     protected int otpPolicyLookAheadWindow;
+    @Column(name="OTP_POLICY_PERIOD")
+    protected int otpPolicyPeriod;
 
 
     @Column(name="EDIT_USERNAME_ALLOWED")
@@ -632,6 +634,14 @@ public class RealmEntity {
 
     public void setOtpPolicyLookAheadWindow(int otpPolicyLookAheadWindow) {
         this.otpPolicyLookAheadWindow = otpPolicyLookAheadWindow;
+    }
+
+    public int getOtpPolicyPeriod() {
+        return otpPolicyPeriod;
+    }
+
+    public void setOtpPolicyPeriod(int otpPolicyPeriod) {
+        this.otpPolicyPeriod = otpPolicyPeriod;
     }
 }
 

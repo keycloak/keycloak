@@ -105,7 +105,7 @@ public class CredentialValidation {
     public static boolean validOTP(RealmModel realm, String token, String secret) {
         OTPPolicy policy = realm.getOTPPolicy();
         if (policy.getType().equals(UserCredentialModel.TOTP)) {
-            TimeBasedOTP validator = new TimeBasedOTP(policy.getAlgorithm(), policy.getDigits(), 30, policy.getLookAheadWindow());
+            TimeBasedOTP validator = new TimeBasedOTP(policy.getAlgorithm(), policy.getDigits(), policy.getPeriod(), policy.getLookAheadWindow());
             return validator.validateTOTP(token, secret.getBytes());
         } else {
             HmacOTP validator = new HmacOTP(policy.getDigits(), policy.getAlgorithm(), policy.getLookAheadWindow());
@@ -118,7 +118,7 @@ public class CredentialValidation {
     public static boolean validTOTP(RealmModel realm, UserModel user, String otp) {
         UserCredentialValueModel passwordCred = null;
         OTPPolicy policy = realm.getOTPPolicy();
-        TimeBasedOTP validator = new TimeBasedOTP(policy.getAlgorithm(), policy.getDigits(), 30, policy.getLookAheadWindow());
+        TimeBasedOTP validator = new TimeBasedOTP(policy.getAlgorithm(), policy.getDigits(), policy.getPeriod(), policy.getLookAheadWindow());
         for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
             if (cred.getType().equals(UserCredentialModel.TOTP)) {
                 if (validator.validateTOTP(otp, cred.getValue().getBytes())) {

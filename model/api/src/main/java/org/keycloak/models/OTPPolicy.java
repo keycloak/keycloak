@@ -18,6 +18,7 @@ public class OTPPolicy {
     protected int initialCounter;
     protected int digits;
     protected int lookAheadWindow;
+    protected int period;
 
     private static final Map<String, String> algToKeyUriAlg = new HashMap<>();
 
@@ -30,15 +31,16 @@ public class OTPPolicy {
     public OTPPolicy() {
     }
 
-    public OTPPolicy(String type, String algorithm, int initialCounter, int digits, int lookAheadWindow) {
+    public OTPPolicy(String type, String algorithm, int initialCounter, int digits, int lookAheadWindow, int period) {
         this.type = type;
         this.algorithm = algorithm;
         this.initialCounter = initialCounter;
         this.digits = digits;
         this.lookAheadWindow = lookAheadWindow;
+        this.period = period;
     }
 
-    public static OTPPolicy DEFAULT_POLICY = new OTPPolicy(UserCredentialModel.TOTP, HmacOTP.HMAC_SHA1, 0, 6, 1);
+    public static OTPPolicy DEFAULT_POLICY = new OTPPolicy(UserCredentialModel.TOTP, HmacOTP.HMAC_SHA1, 0, 6, 1, 30);
 
     public String getType() {
         return type;
@@ -80,11 +82,22 @@ public class OTPPolicy {
         this.lookAheadWindow = lookAheadWindow;
     }
 
+    public int getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(int period) {
+        this.period = period;
+    }
+
     public String getKeyURI(RealmModel realm, String secret) {
 
         String uri = "otpauth://" + type + "/" + realm.getName() + "?secret=" + Base32.encode(secret.getBytes()) + "&digits=" + digits + "&algorithm=" + algToKeyUriAlg.get(algorithm);
         if (type.equals(UserCredentialModel.HOTP)) {
             uri += "&counter=" + initialCounter;
+        }
+        if (type.equals(UserCredentialModel.TOTP)) {
+            uri += "&period=" + period;
         }
         return uri;
 

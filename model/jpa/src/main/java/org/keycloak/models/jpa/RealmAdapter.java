@@ -1028,6 +1028,7 @@ public class RealmAdapter implements RealmModel {
             otpPolicy.setInitialCounter(realm.getOtpPolicyInitialCounter());
             otpPolicy.setLookAheadWindow(realm.getOtpPolicyLookAheadWindow());
             otpPolicy.setType(realm.getOtpPolicyType());
+            otpPolicy.setPeriod(realm.getOtpPolicyPeriod());
         }
         return otpPolicy;
     }
@@ -1039,6 +1040,7 @@ public class RealmAdapter implements RealmModel {
         realm.setOtpPolicyInitialCounter(policy.getInitialCounter());
         realm.setOtpPolicyLookAheadWindow(policy.getLookAheadWindow());
         realm.setOtpPolicyType(policy.getType());
+        realm.setOtpPolicyPeriod(policy.getPeriod());
         em.flush();
     }
 
