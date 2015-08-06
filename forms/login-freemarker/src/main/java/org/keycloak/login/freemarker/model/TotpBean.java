@@ -24,11 +24,11 @@ package org.keycloak.login.freemarker.model;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.Base32;
+import org.keycloak.models.utils.HmacOTP;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
-import java.util.Random;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -40,25 +40,16 @@ public class TotpBean {
     private final boolean enabled;
     private final String contextUrl;
     private final String realmName;
+    private final String keyUri;
 
     public TotpBean(RealmModel realm, UserModel user, URI baseUri) {
         this.realmName = realm.getName();
-        this.enabled = user.isTotp();
+        this.enabled = user.isOtpEnabled();
         this.contextUrl = baseUri.getPath();
         
-        this.totpSecret = randomString(20);
+        this.totpSecret = HmacOTP.generateSecret(20);
         this.totpSecretEncoded = Base32.encode(totpSecret.getBytes());
-    }
-
-    private static String randomString(int length) {
-        String chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVW1234567890";
-        Random r = new Random();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            char c = chars.charAt(r.nextInt(chars.length()));
-            sb.append(c);
-        }
-        return sb.toString();
+        this.keyUri = realm.getOTPPolicy().getKeyURI(realm, this.totpSecret);
     }
 
     public boolean isEnabled() {
@@ -81,7 +72,7 @@ public class TotpBean {
     }
 
     public String getTotpSecretQrCodeUrl() throws UnsupportedEncodingException {
-        String contents = URLEncoder.encode("otpauth://totp/" + realmName + "?secret=" + totpSecretEncoded, "utf-8");
+        String contents = URLEncoder.encode(keyUri, "utf-8");
         return contextUrl + "qrcode" + "?size=246x246&contents=" + contents;
     }
 

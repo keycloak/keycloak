@@ -148,6 +148,9 @@ public interface RealmModel extends RoleContainerModel {
 
     void setPasswordPolicy(PasswordPolicy policy);
 
+    OTPPolicy getOTPPolicy();
+    void setOTPPolicy(OTPPolicy policy);
+
     RoleModel getRoleById(String id);
 
     List<String> getDefaultRoles();

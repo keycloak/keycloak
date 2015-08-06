@@ -150,15 +150,6 @@ public class UserRepresentation {
         this.credentials = credentials;
     }
 
-    public UserRepresentation credential(String type, String value) {
-        if (this.credentials == null) credentials = new ArrayList<CredentialRepresentation>();
-        CredentialRepresentation cred = new CredentialRepresentation();
-        cred.setType(type);
-        cred.setValue(value);
-        credentials.add(cred);
-        return this;
-    }
-
     public List<String> getRequiredActions() {
         return requiredActions;
     }

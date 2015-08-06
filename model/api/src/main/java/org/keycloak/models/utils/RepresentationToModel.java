@@ -15,6 +15,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -63,7 +64,16 @@ import java.util.TreeSet;
 public class RepresentationToModel {
 
     private static Logger logger = Logger.getLogger(RepresentationToModel.class);
+    public static OTPPolicy toPolicy(RealmRepresentation rep) {
+        OTPPolicy policy = new OTPPolicy();
+        policy.setType(rep.getOtpPolicyType());
+        policy.setLookAheadWindow(rep.getOtpPolicyLookAheadWindow());
+        policy.setInitialCounter(rep.getOtpPolicyInitialCounter());
+        policy.setAlgorithm(rep.getOtpPolicyAlgorithm());
+        policy.setDigits(rep.getOtpPolicyDigits());
+        return policy;
 
+    }
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm) {
         convertDeprecatedSocialProviders(rep);
         convertDeprecatedApplications(session, rep);
@@ -144,6 +154,8 @@ public class RepresentationToModel {
         }
 
         if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
+        if (rep.getOtpPolicyType() != null) newRealm.setOTPPolicy(toPolicy(rep));
+        else newRealm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
 
         importIdentityProviders(rep, newRealm);
         importIdentityProviderMappers(rep, newRealm);
@@ -497,6 +509,7 @@ public class RepresentationToModel {
         
 
         if (rep.getPasswordPolicy() != null) realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
+        if (rep.getOtpPolicyType() != null) realm.setOTPPolicy(toPolicy(rep));
 
         if (rep.getDefaultRoles() != null) {
             realm.updateDefaultRoles(rep.getDefaultRoles().toArray(new String[rep.getDefaultRoles().size()]));
@@ -847,7 +860,7 @@ public class RepresentationToModel {
         user.setFirstName(userRep.getFirstName());
         user.setLastName(userRep.getLastName());
         user.setFederationLink(userRep.getFederationLink());
-        user.setTotp(userRep.isTotp());
+        user.setOtpEnabled(userRep.isTotp());
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, Object> entry : userRep.getAttributes().entrySet()) {
                 Object value = entry.getValue();
@@ -922,13 +935,22 @@ public class RepresentationToModel {
             UserCredentialValueModel hashedCred = new UserCredentialValueModel();
             hashedCred.setType(cred.getType());
             hashedCred.setDevice(cred.getDevice());
-            hashedCred.setHashIterations(cred.getHashIterations());
+            if (cred.getHashIterations() != null) hashedCred.setHashIterations(cred.getHashIterations());
             try {
                 if (cred.getSalt() != null) hashedCred.setSalt(Base64.decode(cred.getSalt()));
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }
             hashedCred.setValue(cred.getHashedSaltedValue());
+            if (cred.getCounter() != null) hashedCred.setCounter(cred.getCounter());
+            if (cred.getDigits() != null) hashedCred.setDigits(cred.getDigits());
+            if (cred.getAlgorithm() != null) hashedCred.setAlgorithm(cred.getAlgorithm());
+            if (cred.getDigits() == null && UserCredentialModel.isOtp(cred.getType())) {
+                hashedCred.setDigits(6);
+            }
+            if (cred.getAlgorithm() == null && UserCredentialModel.isOtp(cred.getType())) {
+                hashedCred.setAlgorithm(HmacOTP.HMAC_SHA1);
+            }
             user.updateCredentialDirectly(hashedCred);
         }
     }

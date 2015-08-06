@@ -49,6 +49,12 @@ public class RealmRepresentation {
     @Deprecated
     protected Set<String> requiredCredentials;
     protected String passwordPolicy;
+    protected String otpPolicyType;
+    protected String otpPolicyAlgorithm;
+    protected Integer otpPolicyInitialCounter;
+    protected Integer otpPolicyDigits;
+    protected Integer otpPolicyLookAheadWindow;
+
     protected List<UserRepresentation> users;
     protected List<ScopeMappingRepresentation> scopeMappings;
     protected Map<String, List<ScopeMappingRepresentation>> clientScopeMappings;
@@ -652,5 +658,45 @@ public class RealmRepresentation {
 
     public void setRequiredActions(List<RequiredActionProviderRepresentation> requiredActions) {
         this.requiredActions = requiredActions;
+    }
+
+    public String getOtpPolicyType() {
+        return otpPolicyType;
+    }
+
+    public void setOtpPolicyType(String otpPolicyType) {
+        this.otpPolicyType = otpPolicyType;
+    }
+
+    public String getOtpPolicyAlgorithm() {
+        return otpPolicyAlgorithm;
+    }
+
+    public void setOtpPolicyAlgorithm(String otpPolicyAlgorithm) {
+        this.otpPolicyAlgorithm = otpPolicyAlgorithm;
+    }
+
+    public Integer getOtpPolicyInitialCounter() {
+        return otpPolicyInitialCounter;
+    }
+
+    public void setOtpPolicyInitialCounter(Integer otpPolicyInitialCounter) {
+        this.otpPolicyInitialCounter = otpPolicyInitialCounter;
+    }
+
+    public Integer getOtpPolicyDigits() {
+        return otpPolicyDigits;
+    }
+
+    public void setOtpPolicyDigits(Integer otpPolicyDigits) {
+        this.otpPolicyDigits = otpPolicyDigits;
+    }
+
+    public Integer getOtpPolicyLookAheadWindow() {
+        return otpPolicyLookAheadWindow;
+    }
+
+    public void setOtpPolicyLookAheadWindow(Integer otpPolicyLookAheadWindow) {
+        this.otpPolicyLookAheadWindow = otpPolicyLookAheadWindow;
     }
 }

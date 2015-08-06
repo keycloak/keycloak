@@ -69,7 +69,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -213,7 +212,7 @@ public class UsersResource {
         user.setLastName(rep.getLastName());
 
         user.setEnabled(rep.isEnabled());
-        user.setTotp(rep.isTotp());
+        user.setOtpEnabled(rep.isTotp());
         user.setEmailVerified(rep.isEmailVerified());
 
         List<String> reqActions = rep.getRequiredActions();
@@ -821,7 +820,7 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
 
-        user.setTotp(false);
+        user.setOtpEnabled(false);
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }
 

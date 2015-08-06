@@ -411,9 +411,23 @@ public class UserFederationManager implements UserProvider {
             Set<String> supportedCredentialTypes = link.getSupportedCredentialTypes(user);
             if (supportedCredentialTypes.contains(type)) return true;
         }
+        if (UserCredentialModel.isOtp(type)) {
+            if (!user.isOtpEnabled()) return false;
+        }
+
         List<UserCredentialValueModel> creds = user.getCredentialsDirectly();
         for (UserCredentialValueModel cred : creds) {
-            if (cred.getType().equals(type)) return true;
+            if (cred.getType().equals(type)) {
+                if (UserCredentialModel.isOtp(type)) {
+                    OTPPolicy otpPolicy = realm.getOTPPolicy();
+                    if (!cred.getAlgorithm().equals(otpPolicy.getAlgorithm())
+                        || cred.getDigits() != otpPolicy.getDigits()) {
+                        return false;
+                    }
+
+                }
+                return true;
+            }
         }
         return false;
     }

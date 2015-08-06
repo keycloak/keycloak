@@ -7,6 +7,7 @@ import com.mongodb.QueryBuilder;
 
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.KeycloakSession;
@@ -227,12 +228,12 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
-    public boolean isTotp() {
+    public boolean isOtpEnabled() {
         return user.isTotp();
     }
 
     @Override
-    public void setTotp(boolean totp) {
+    public void setOtpEnabled(boolean totp) {
         user.setTotp(totp);
         updateUser();
     }
@@ -242,6 +243,8 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
         if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
             updatePasswordCredential(cred);
+        } else if (UserCredentialModel.isOtp(cred.getType())){
+            updateOtpCredential(cred);
         } else {
             CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
 
@@ -255,6 +258,27 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
         }
         getMongoStore().updateEntity(user, invocationContext);
     }
+
+    private void updateOtpCredential(UserCredentialModel cred) {
+        CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
+
+        if (credentialEntity == null) {
+            credentialEntity = setCredentials(user, cred);
+            credentialEntity.setValue(cred.getValue());
+            OTPPolicy otpPolicy = realm.getOTPPolicy();
+            credentialEntity.setAlgorithm(otpPolicy.getAlgorithm());
+            credentialEntity.setDigits(otpPolicy.getDigits());
+            credentialEntity.setCounter(otpPolicy.getInitialCounter());
+            user.getCredentials().add(credentialEntity);
+        } else {
+            credentialEntity.setValue(cred.getValue());
+            OTPPolicy policy = realm.getOTPPolicy();
+            credentialEntity.setDigits(policy.getDigits());
+            credentialEntity.setCounter(policy.getInitialCounter());
+            credentialEntity.setAlgorithm(policy.getAlgorithm());
+        }
+    }
+
 
     private void updatePasswordCredential(UserCredentialModel cred) {
         CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
@@ -362,6 +386,9 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
             credModel.setValue(credEntity.getValue());
             credModel.setSalt(credEntity.getSalt());
             credModel.setHashIterations(credEntity.getHashIterations());
+            credModel.setCounter(credEntity.getCounter());
+            credModel.setAlgorithm(credEntity.getAlgorithm());
+            credModel.setDigits(credEntity.getDigits());
 
             result.add(credModel);
         }
@@ -384,6 +411,9 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
         credentialEntity.setSalt(credModel.getSalt());
         credentialEntity.setDevice(credModel.getDevice());
         credentialEntity.setHashIterations(credModel.getHashIterations());
+        credentialEntity.setCounter(credModel.getCounter());
+        credentialEntity.setAlgorithm(credModel.getAlgorithm());
+        credentialEntity.setDigits(credModel.getDigits());
 
 
         getMongoStore().updateEntity(user, invocationContext);

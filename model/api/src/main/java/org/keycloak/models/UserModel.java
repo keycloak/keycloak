@@ -30,7 +30,7 @@ public interface UserModel {
 
     boolean isEnabled();
 
-    boolean isTotp();
+    boolean isOtpEnabled();
 
     void setEnabled(boolean enabled);
 
@@ -86,7 +86,7 @@ public interface UserModel {
 
     void setEmailVerified(boolean verified);
 
-    void setTotp(boolean totp);
+    void setOtpEnabled(boolean totp);
 
     void updateCredential(UserCredentialModel cred);
 

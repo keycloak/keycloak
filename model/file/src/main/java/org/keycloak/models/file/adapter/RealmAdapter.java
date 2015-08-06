@@ -26,6 +26,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -81,6 +82,7 @@ public class RealmAdapter implements RealmModel {
     protected volatile transient Key codeSecretKey;
 
     private volatile transient PasswordPolicy passwordPolicy;
+    private volatile transient OTPPolicy otpPolicy;
     private volatile transient KeycloakSession session;
 
     private final Map<String, ClientModel> allApps = new HashMap<String, ClientModel>();
@@ -285,6 +287,29 @@ public class RealmAdapter implements RealmModel {
     public void setPasswordPolicy(PasswordPolicy policy) {
         this.passwordPolicy = policy;
         realm.setPasswordPolicy(policy.toString());
+    }
+
+    @Override
+    public OTPPolicy getOTPPolicy() {
+        if (otpPolicy == null) {
+            otpPolicy = new OTPPolicy();
+            otpPolicy.setDigits(realm.getOtpPolicyDigits());
+            otpPolicy.setAlgorithm(realm.getOtpPolicyAlgorithm());
+            otpPolicy.setInitialCounter(realm.getOtpPolicyInitialCounter());
+            otpPolicy.setLookAheadWindow(realm.getOtpPolicyLookAheadWindow());
+            otpPolicy.setType(realm.getOtpPolicyType());
+        }
+        return otpPolicy;
+    }
+
+    @Override
+    public void setOTPPolicy(OTPPolicy policy) {
+        realm.setOtpPolicyAlgorithm(policy.getAlgorithm());
+        realm.setOtpPolicyDigits(policy.getDigits());
+        realm.setOtpPolicyInitialCounter(policy.getInitialCounter());
+        realm.setOtpPolicyLookAheadWindow(policy.getLookAheadWindow());
+        realm.setOtpPolicyType(policy.getType());
+
     }
 
     @Override

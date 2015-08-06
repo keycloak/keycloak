@@ -44,6 +44,15 @@ public class CredentialEntity {
     @JoinColumn(name="USER_ID")
     protected UserEntity user;
 
+    @Column(name="COUNTER")
+    protected int counter;
+
+    @Column(name="ALGORITHM")
+    protected String algorithm;
+    @Column(name="DIGITS")
+    protected int digits;
+
+
     public String getId() {
         return id;
     }
@@ -107,5 +116,28 @@ public class CredentialEntity {
     public void setCreatedDate(Long createdDate) {
         this.createdDate = createdDate;
     }
-    
+
+    public int getCounter() {
+        return counter;
+    }
+
+    public void setCounter(int counter) {
+        this.counter = counter;
+    }
+
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    public int getDigits() {
+        return digits;
+    }
+
+    public void setDigits(int digits) {
+        this.digits = digits;
+    }
 }

@@ -8,6 +8,7 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -450,6 +451,19 @@ public class RealmAdapter implements RealmModel {
     public void setPasswordPolicy(PasswordPolicy policy) {
         getDelegateForUpdate();
         updated.setPasswordPolicy(policy);
+    }
+
+    @Override
+    public OTPPolicy getOTPPolicy() {
+        if (updated != null) return updated.getOTPPolicy();
+        return cached.getOtpPolicy();
+    }
+
+    @Override
+    public void setOTPPolicy(OTPPolicy policy) {
+        getDelegateForUpdate();
+        updated.setOTPPolicy(policy);
+
     }
 
     @Override

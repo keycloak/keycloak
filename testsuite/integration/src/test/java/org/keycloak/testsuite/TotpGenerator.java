@@ -43,7 +43,7 @@ public class TotpGenerator {
         public void run() {
             String google = new String(Base32.decode(secret));
             TimeBasedOTP otp = new TimeBasedOTP();
-            System.out.println(otp.generate(google));
+            System.out.println(otp.generateTOTP(google));
         }
     }
 

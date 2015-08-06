@@ -25,7 +25,6 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.authentication.requiredactions.UpdateTotp;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
@@ -113,7 +112,7 @@ public class RequiredActionTotpSetupTest {
 
         totpPage.assertCurrent();
 
-        totpPage.configure(totp.generate(totpPage.getTotpSecret()));
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
         String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp").assertEvent().getSessionId();
 
@@ -131,7 +130,7 @@ public class RequiredActionTotpSetupTest {
 
         String totpSecret = totpPage.getTotpSecret();
 
-        totpPage.configure(totp.generate(totpSecret));
+        totpPage.configure(totp.generateTOTP(totpSecret));
 
         String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent().getSessionId();
 
@@ -146,7 +145,7 @@ public class RequiredActionTotpSetupTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
         String src = driver.getPageSource();
-        loginTotpPage.login(totp.generate(totpSecret));
+        loginTotpPage.login(totp.generateTOTP(totpSecret));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -166,7 +165,7 @@ public class RequiredActionTotpSetupTest {
         totpPage.assertCurrent();
 
         String totpCode = totpPage.getTotpSecret();
-        totpPage.configure(totp.generate(totpCode));
+        totpPage.configure(totp.generateTOTP(totpCode));
 
         // After totp config, user should be on the app page
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -184,11 +183,13 @@ public class RequiredActionTotpSetupTest {
         loginPage.login("setupTotp2", "password2");
 
         // Totp is already configured, thus one-time password is needed, login page should be loaded
+        String uri = driver.getCurrentUrl();
+        String src = driver.getPageSource();
         Assert.assertTrue(loginPage.isCurrent());
         Assert.assertFalse(totpPage.isCurrent());
 
         // Login with one-time password
-        loginTotpPage.login(totp.generate(totpCode));
+        loginTotpPage.login(totp.generateTOTP(totpCode));
 
         loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
 
@@ -211,7 +212,7 @@ public class RequiredActionTotpSetupTest {
 
         // Since the authentificator was removed, it has to be set up again
         totpPage.assertCurrent();
-        totpPage.configure(totp.generate(totpPage.getTotpSecret()));
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
         String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent().getSessionId();
 

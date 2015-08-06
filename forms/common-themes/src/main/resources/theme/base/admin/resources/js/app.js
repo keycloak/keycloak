@@ -1162,6 +1162,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmPasswordPolicyCtrl'
         })
+        .when('/realms/:realm/authentication/otp-policy', {
+            templateUrl : resourceUrl + '/partials/otp-policy.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfo) {
+                    return ServerInfo.delay;
+                }
+            },
+            controller : 'RealmOtpPolicyCtrl'
+        })
         .when('/realms/:realm/authentication/config/:provider/:config', {
             templateUrl : resourceUrl + '/partials/authenticator-config.html',
             resolve : {

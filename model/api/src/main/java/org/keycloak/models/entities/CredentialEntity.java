@@ -13,7 +13,10 @@ public class CredentialEntity {
     private int hashIterations;
     private Long createdDate;
     private UserEntity user;
-    
+    private int counter;
+    private String algorithm;
+    private int digits;
+
 
     public String getId() {
         return id;
@@ -78,5 +81,28 @@ public class CredentialEntity {
     public void setUser(UserEntity user) {
         this.user = user;
     }
-    
+
+    public int getCounter() {
+        return counter;
+    }
+
+    public void setCounter(int counter) {
+        this.counter = counter;
+    }
+
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    public int getDigits() {
+        return digits;
+    }
+
+    public void setDigits(int digits) {
+        this.digits = digits;
+    }
 }

@@ -80,8 +80,8 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public boolean isTotp() {
-        if (updated != null) return updated.isTotp();
+    public boolean isOtpEnabled() {
+        if (updated != null) return updated.isOtpEnabled();
         return cached.isTotp();
     }
 
@@ -208,9 +208,9 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public void setTotp(boolean totp) {
+    public void setOtpEnabled(boolean totp) {
         getDelegateForUpdate();
-        updated.setTotp(totp);
+        updated.setOtpEnabled(totp);
     }
 
     @Override
