@@ -3,7 +3,7 @@ package org.keycloak.testsuite.adapter.page;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import java.net.URL;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContext;
 
 /**
  *
@@ -12,7 +12,7 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 public class AppServerContextRoot extends AbstractPageWithInjectedUrl {
 
     @ArquillianResource
-    @AppServerContainer // our custom URLProvider injects correct app server context root depending on test class
+    @AppServerContext
     private URL appServerContextRoot;
 
     @Override

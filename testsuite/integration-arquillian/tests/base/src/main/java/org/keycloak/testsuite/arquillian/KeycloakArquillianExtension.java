@@ -21,8 +21,8 @@ public class KeycloakArquillianExtension implements LoadableExtension {
     public void register(ExtensionBuilder builder) {
 
         builder
-                .override(ResourceProvider.class, URLResourceProvider.class, URLProvider.class)
-                .override(ResourceProvider.class, CustomizableURLResourceProvider.class, URLProvider.class);
+                .service(ResourceProvider.class, SuiteContextProvider.class)
+                .service(ResourceProvider.class, TestContextProvider.class);
 
         builder
                 .service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)
@@ -36,8 +36,8 @@ public class KeycloakArquillianExtension implements LoadableExtension {
                 .service(TestExecutionDecider.class, JiraTestExecutionDecider.class);
 
         builder
-                .service(ResourceProvider.class, SuiteContextProvider.class)
-                .service(ResourceProvider.class, TestContextProvider.class);
+                .override(ResourceProvider.class, URLResourceProvider.class, URLProvider.class)
+                .override(ResourceProvider.class, CustomizableURLResourceProvider.class, URLProvider.class);
 
     }
 

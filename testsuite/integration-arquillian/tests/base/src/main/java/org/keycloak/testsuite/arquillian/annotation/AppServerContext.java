@@ -12,9 +12,7 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Retention(RUNTIME)
-@Target({ElementType.TYPE})
-public @interface AppServerContainer 
+@Target({ElementType.FIELD})
+public @interface AppServerContext 
 {
-   String value() default "";
-   String adapterLibsLocationProperty() default "";
 }
