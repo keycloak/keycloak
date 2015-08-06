@@ -454,7 +454,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Test
     public void testSingleSessionInvalidated() {
 
-        loginAndCheckSession(driver, login);
+        loginAndCheckSession(driver, testRealmLogin);
 
         // cannot pass to loginAndCheckSession becayse loginPage is not working together with driver2, therefore copypasta
         driver2.navigate().to(sessionPortal.toString());
@@ -508,7 +508,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         testRealmResource.update(testRealmRep);
 
         // Login
-        loginAndCheckSession(driver, login);
+        loginAndCheckSession(driver, testRealmLogin);
 
         // Logout
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
@@ -532,7 +532,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Jira("KEYCLOAK-942")
     public void testAdminApplicationLogout() {
         // login as bburke
-        loginAndCheckSession(driver, login);
+        loginAndCheckSession(driver, testRealmLogin);
         // logout mposolda with admin client
         findClientResourceByClientId(keycloak.realm("demo"), "session-portal")
                 .logoutUser("mposolda");
@@ -550,11 +550,11 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Jira("KEYCLOAK-1216, KEYCLOAK-1485")
     public void testAccountManagementSessionsLogout() {
         // login as bburke
-        loginAndCheckSession(driver, login);
+        loginAndCheckSession(driver, testRealmLogin);
         testRealmSessions.navigateTo();
         testRealmSessions.logoutAll();
         // Assert I need to login again (logout was propagated to the app)
-        loginAndCheckSession(driver, login);
+        loginAndCheckSession(driver, testRealmLogin);
     }
 
     private void loginAndCheckSession(WebDriver driver, Login login) {

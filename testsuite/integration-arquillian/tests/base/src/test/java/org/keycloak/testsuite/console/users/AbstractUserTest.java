@@ -7,6 +7,7 @@ import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.users.CreateUser;
 import org.keycloak.testsuite.console.page.users.Users;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
+import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 
 /**
  *
@@ -19,17 +20,18 @@ public abstract class AbstractUserTest extends AbstractConsoleTest {
     @Page
     protected CreateUser createUser;
 
-    UserRepresentation newTestRealmUser;
+    protected UserRepresentation newTestRealmUser;
     
     @Before
-    public void beforeRoleMappingsTest() {
+    public void beforeUserTest() {
         newTestRealmUser = new UserRepresentation();
-        users.navigateTo();
+        manage().users();
     }
 
     public void createUser(UserRepresentation user) {
         assertCurrentUrl(users);
         users.addUser();
+        pause(300);
         assertCurrentUrl(createUser);
         createUser.form().setValues(user);
         createUser.form().save();

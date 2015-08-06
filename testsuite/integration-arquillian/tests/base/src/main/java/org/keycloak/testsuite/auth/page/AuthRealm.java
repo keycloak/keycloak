@@ -30,8 +30,12 @@ public class AuthRealm extends AuthServer implements PageWithLoginUrl {
                 .path("realms/{" + AUTH_REALM + "}");
     }
 
-    public void setAuthRealm(String loginRealm) {
-        setUriParameter(AUTH_REALM, loginRealm);
+    public void setAuthRealm(String authRealm) {
+        setUriParameter(AUTH_REALM, authRealm);
+    }
+
+    public void setAuthRealm(AuthRealm authRealm) {
+        setUriParameter(AUTH_REALM, authRealm.getAuthRealm());
     }
 
     public String getAuthRealm() {

@@ -109,14 +109,18 @@ public class UserAttributesForm extends Form {
         emailVerifiedSwitch.setOn(emailVerified);
     }
 
+    public void addRequiredAction(String requiredAction) {
+        requiredUserActionsInput.sendKeys(requiredAction);
+        requiredUserActionsConfirm.click();
+    }
+
     public void setRequiredActions(List<String> requiredActions) {
         for (WebElement e : removeRequiredActionsList) {
             e.click();
         }
         if (requiredActions != null && !requiredActions.isEmpty()) {
             for (String action : requiredActions) {
-                requiredUserActionsInput.sendKeys(action);
-                requiredUserActionsConfirm.click();
+                addRequiredAction(action);
             }
         }
     }

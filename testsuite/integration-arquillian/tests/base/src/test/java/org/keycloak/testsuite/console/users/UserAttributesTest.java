@@ -98,5 +98,5 @@ public class UserAttributesTest extends AbstractUserTest {
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         assertNull(users.findUser(disabledUser.getUsername()));
     }
-
+    
 }
