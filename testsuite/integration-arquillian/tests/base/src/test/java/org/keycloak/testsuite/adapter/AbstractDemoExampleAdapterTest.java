@@ -17,6 +17,7 @@ import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.adapter.page.CustomerPortalExample;
 import org.keycloak.testsuite.adapter.page.DatabaseServiceExample;
 import org.keycloak.testsuite.adapter.page.ProductPortalExample;
+import org.keycloak.testsuite.auth.page.login.LoginActions;
 import org.keycloak.testsuite.model.RequiredUserAction;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.ApiUtil.findUserByUsername;
@@ -30,6 +31,8 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     private ProductPortalExample productPortalExample;
     @Page
     private DatabaseServiceExample databaseServiceExample;
+    @Page
+    private LoginActions loginActions;
 
     @Page
     private Account testRealmAccount;
@@ -112,13 +115,13 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
                 .text()
                 .equalTo("You need to update your user profile to activate your account.");
         testRealmAccount.setEmail("bburke@redhat.com").setFirstName("Bill").setLastName("");
-        testRealmAccount.save();
+        loginActions.submit();
         waitGui().until()
                 .element(By.className("kc-feedback-text"))
                 .text()
                 .equalTo("Please specify last name.");
         testRealmAccount.setEmail("bburke@redhat.com").setFirstName("Bill").setLastName("Burke");
-        testRealmAccount.save();
+        loginActions.submit();
         waitGui().until()
                 .element(By.tagName("h2"))
                 .text()
