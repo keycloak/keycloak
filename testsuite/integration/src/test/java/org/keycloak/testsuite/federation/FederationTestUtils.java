@@ -102,14 +102,14 @@ class FederationTestUtils {
         addUserAttributeMapper(realm, providerModel, "zipCodeMapper", "postal_code", LDAPConstants.POSTAL_CODE);
     }
 
-    public static void addUserAttributeMapper(RealmModel realm, UserFederationProviderModel providerModel, String mapperName, String userModelAttributeName, String ldapAttributeName) {
+    public static UserFederationMapperModel addUserAttributeMapper(RealmModel realm, UserFederationProviderModel providerModel, String mapperName, String userModelAttributeName, String ldapAttributeName) {
         UserFederationMapperModel mapperModel = KeycloakModelUtils.createUserFederationMapperModel(mapperName, providerModel.getId(), UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
                 UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, userModelAttributeName,
                 UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, ldapAttributeName,
                 UserAttributeLDAPFederationMapper.READ_ONLY, "false",
                 UserAttributeLDAPFederationMapper.ALWAYS_READ_VALUE_FROM_LDAP, "false",
                 UserAttributeLDAPFederationMapper.IS_MANDATORY_IN_LDAP, "false");
-        realm.addUserFederationMapper(mapperModel);
+        return realm.addUserFederationMapper(mapperModel);
     }
 
     public static void addOrUpdateRoleLDAPMappers(RealmModel realm, UserFederationProviderModel providerModel, RoleLDAPFederationMapper.Mode mode) {

@@ -81,8 +81,8 @@ public class LDAPIdentityStore implements IdentityStore {
         this.operationManager.createSubContext(entryDN, ldapAttributes);
         ldapObject.setUuid(getEntryIdentifier(ldapObject));
 
-        if (logger.isTraceEnabled()) {
-            logger.tracef("Type with identifier [%s] and dn [%s] successfully added to LDAP store.", ldapObject.getUuid(), entryDN);
+        if (logger.isDebugEnabled()) {
+            logger.debugf("Type with identifier [%s] and dn [%s] successfully added to LDAP store.", ldapObject.getUuid(), entryDN);
         }
     }
 
@@ -94,8 +94,8 @@ public class LDAPIdentityStore implements IdentityStore {
         String entryDn = ldapObject.getDn().toString();
         this.operationManager.modifyAttributes(entryDn, attributes);
 
-        if (logger.isTraceEnabled()) {
-            logger.tracef("Type with identifier [%s] and DN [%s] successfully updated to LDAP store.", ldapObject.getUuid(), entryDn);
+        if (logger.isDebugEnabled()) {
+            logger.debugf("Type with identifier [%s] and DN [%s] successfully updated to LDAP store.", ldapObject.getUuid(), entryDn);
         }
     }
 
@@ -103,8 +103,8 @@ public class LDAPIdentityStore implements IdentityStore {
     public void remove(LDAPObject ldapObject) {
         this.operationManager.removeEntry(ldapObject.getDn().toString());
 
-        if (logger.isTraceEnabled()) {
-            logger.tracef("Type with identifier [%s] and DN [%s] successfully removed from LDAP store.", ldapObject.getUuid(), ldapObject.getDn().toString());
+        if (logger.isDebugEnabled()) {
+            logger.debugf("Type with identifier [%s] and DN [%s] successfully removed from LDAP store.", ldapObject.getUuid(), ldapObject.getDn().toString());
         }
     }
 
@@ -429,7 +429,7 @@ public class LDAPIdentityStore implements IdentityStore {
             }
 
             if (logger.isTraceEnabled()) {
-                logger.tracef("Found ldap object [%s] and populated with the attributes [%s]. Read-only attributes are [%s]", ldapObject.getDn().toString(), ldapObject.getAttributes(), ldapObject.getReadOnlyAttributeNames());
+                logger.tracef("Found ldap object and populated with the attributes. LDAP Object: %s", ldapObject.toString());
             }
             return ldapObject;
 

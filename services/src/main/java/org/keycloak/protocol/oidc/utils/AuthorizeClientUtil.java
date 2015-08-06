@@ -22,16 +22,23 @@ import java.util.Map;
 public class AuthorizeClientUtil {
 
     public static ClientModel authorizeClient(String authorizationHeader, MultivaluedMap<String, String> formData, EventBuilder event, RealmModel realm) {
-        String client_id;
-        String clientSecret;
+        String client_id = null;
+        String clientSecret = null;
         if (authorizationHeader != null) {
             String[] usernameSecret = BasicAuthHelper.parseHeader(authorizationHeader);
-            if (usernameSecret == null) {
-                throw new UnauthorizedException("Bad Authorization header", Response.status(401).header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"" + realm.getName() + "\"").build());
+            if (usernameSecret != null) {
+                client_id = usernameSecret[0];
+                clientSecret = usernameSecret[1];
+            } else {
+
+                // Don't send 401 if client_id parameter was sent in request. For example IE may automatically send "Authorization: Negotiate" in XHR requests even for public clients
+                if (!formData.containsKey(OAuth2Constants.CLIENT_ID)) {
+                    throw new UnauthorizedException("Bad Authorization header", Response.status(401).header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"" + realm.getName() + "\"").build());
+                }
             }
-            client_id = usernameSecret[0];
-            clientSecret = usernameSecret[1];
-        } else {
+        }
+
+        if (client_id == null) {
             client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
             clientSecret = formData.getFirst("client_secret");
         }
