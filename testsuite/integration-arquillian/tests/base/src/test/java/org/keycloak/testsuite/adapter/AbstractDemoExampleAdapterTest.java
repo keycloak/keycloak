@@ -24,6 +24,8 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     private ProductPortalExample productPortalExample;
     @Page
     private DatabaseServiceExample databaseServiceExample;
+    @Page
+    private LoginActions loginActions;
 
     @Page
     private Account testRealmAccount;
