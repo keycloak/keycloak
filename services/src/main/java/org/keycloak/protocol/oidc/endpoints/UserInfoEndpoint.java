@@ -23,6 +23,7 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.VerificationException;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -119,8 +120,8 @@ public class UserInfoEndpoint {
         AccessToken token = null;
         try {
             token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()), true);
-        } catch (Exception e) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Token invalid", Status.FORBIDDEN);
+        } catch (VerificationException e) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Token invalid: " + e.getMessage(), Status.FORBIDDEN);
         }
 
         UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
