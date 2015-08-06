@@ -34,11 +34,11 @@ public class LoginForm extends Form {
     }
 
     public void setUsername(String username) {
-        setInputText(usernameInput, username);
+        setInputValue(usernameInput, username);
     }
 
     public void setPassword(String password) {
-        setInputText(passwordInput, password);
+        setInputValue(passwordInput, password);
     }
 
     public void login(UserRepresentation user) {

@@ -4,6 +4,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -43,23 +44,26 @@ public class RoleForm extends Form {
         }
         return role;
     }
-    
+
     public void setRole(RoleRepresentation role) {
         setBasicAttributes(role);
-        if (role.isComposite()) {
-            setCompositeRoles(role);
-        }
     }
 
     public RoleRepresentation getBasicAttributes() {
-        RoleRepresentation role = new RoleRepresentation(getName(), getDescription());
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(getName());
+        role.setDescription(getDescription());
         role.setComposite(isComposite());
+        System.out.println(role.getName() + ": " + role.getDescription() + ", comp: " + role.isComposite());
         return role;
     }
 
     public void setBasicAttributes(RoleRepresentation role) {
         setName(role.getName());
         setDescription(role.getDescription());
+        if (role.isComposite()) {
+            setCompositeRoles(role);
+        }
     }
 
     // TODO KEYCLOAK-1364 enabling/disabling composite role seems unintuitive
@@ -72,19 +76,19 @@ public class RoleForm extends Form {
     }
 
     public void setName(String name) {
-        setInputText(nameInput, name);
+        setInputValue(nameInput, name);
     }
 
     public String getName() {
-        return nameInput.getText();
+        return getInputValue(nameInput);
     }
 
     public void setDescription(String description) {
-        setInputText(descriptionInput, description);
+        setInputValue(descriptionInput, description);
     }
 
     public String getDescription() {
-        return descriptionInput.getText();
+        return getInputValue(descriptionInput);
     }
 
     public void setComposite(boolean composite) {
@@ -98,7 +102,7 @@ public class RoleForm extends Form {
     public RoleCompositeRoles compositeRoles() {
         return compositeRoles;
     }
-    
+
     public void delete() {
         delete(true);
     }

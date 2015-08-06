@@ -52,11 +52,13 @@ public class ContainersTestEnricher {
         authServerQualifier = getAuthServerQualifier();
         appServerQualifier = getAppServerQualifier(testClass);
 
-        System.out.println("STARTING AUTH SERVER: " + authServerQualifier);
+        System.out.println("STARTING AUTH SERVER: " + authServerQualifier + "\n");
         controller.start(authServerQualifier);
+        System.out.println("");
         if (!controller.isStarted(appServerQualifier)) {
-            System.out.println("STARTING APP SERVER: " + appServerQualifier + " (non-relative scenario)");
+            System.out.println("STARTING APP SERVER: " + appServerQualifier + " (non-relative scenario)\n");
             controller.start(appServerQualifier);
+            System.out.println("");
         }
 
         initializeTestContext(testClass);

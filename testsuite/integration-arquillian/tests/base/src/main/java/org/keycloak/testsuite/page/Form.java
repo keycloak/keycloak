@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.page;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -15,28 +15,32 @@ public class Form {
     @Drone
     protected WebDriver driver;
 
-    @FindBy(xpath = ".//button[text()='Save']")
+    @FindBy(xpath = "//button[text()='Save']")
     private WebElement save;
-//    @FindByJQuery("button[kc-cancel] ")
-    @FindBy(xpath = ".//button[text()='Cancel']")
+    @FindBy(xpath = "//button[text()='Cancel']")
     private WebElement cancel;
 
     public void save() {
         save.click();
-//        save.sendKeys(Keys.RETURN);
     }
 
     public void cancel() {
         cancel.click();
-//        cancel.sendKeys(Keys.RETURN);
     }
 
-    public static void setInputText(WebElement input, String text) {
-        waitGuiForElementPresent(input, "Required input element not present.");
+    public static String getInputValue(WebElement input) {
+        waitAjaxForElement(input);
+        return input.getAttribute(VALUE);
+    }
+
+    public static final String VALUE = "value";
+
+    public static void setInputValue(WebElement input, String value) {
+        waitAjaxForElement(input);
         if (input.isEnabled()) {
             input.clear();
-            if (text != null) {
-                input.sendKeys(text);
+            if (value != null) {
+                input.sendKeys(value);
             }
         } else {
             // TODO log warning

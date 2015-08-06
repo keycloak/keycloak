@@ -1,5 +1,7 @@
 package org.keycloak.testsuite.console.page.roles;
 
+import org.jboss.arquillian.graphene.page.Page;
+
 /**
  *
  * @author tkyjovsk
@@ -21,9 +23,10 @@ public class Role extends RealmRoles {
         return getUriParameter(ROLE_ID).toString();
     }
 
+    @Page
     private RoleForm form;
 
-    public RoleForm form() {
+    public RoleForm role() {
         return form;
     }
 
