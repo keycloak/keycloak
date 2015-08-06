@@ -31,7 +31,7 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
 
     public void createClient(ClientRepresentation client) {
         assertCurrentUrl(clients);
-        clients.createClient();
+        clients.clients().createClient();
         createClient.form().setValues(client);
         createClient.form().save();
     }

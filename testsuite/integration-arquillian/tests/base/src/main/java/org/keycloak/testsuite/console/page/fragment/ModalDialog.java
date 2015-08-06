@@ -10,9 +10,9 @@ import org.openqa.selenium.support.FindBy;
  */
 public class ModalDialog {
 
-    @FindBy(xpath = "//button[text()='Cancel']")
+    @FindBy(xpath = ".//button[text()='Cancel']")
     private WebElement cancelButton;
-    @FindBy(xpath = "//button[text()='Delete']")
+    @FindBy(xpath = ".//button[text()='Delete']")
     private WebElement deleteButton;
 
     public void confirmDeletion() {

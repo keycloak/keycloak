@@ -40,8 +40,8 @@ public class AdminConsole extends AuthServer implements PageWithLoginUrl {
         setUriParameter(ADMIN_REALM, MASTER);
     }
 
-    public AdminConsole setAdminRealm(String consoleRealm) {
-        setUriParameter(ADMIN_REALM, consoleRealm);
+    public AdminConsole setAdminRealm(String adminRealm) {
+        setUriParameter(ADMIN_REALM, adminRealm);
         return this;
     }
 
@@ -73,9 +73,6 @@ public class AdminConsole extends AuthServer implements PageWithLoginUrl {
     //@FindByJQuery(".btn-primary:visible")
     @FindBy(css = ".btn-primary")
     protected WebElement primaryButton;
-
-    @FindBy(css = ".ng-binding.btn.btn-danger")
-    protected WebElement deleteConfirmationButton;
 
     @FindBy(css = "navbar-brand")
     protected WebElement brandLink;

@@ -12,7 +12,6 @@ import org.keycloak.testsuite.console.page.clients.ClientRole;
 import org.keycloak.testsuite.console.page.clients.ClientRoles;
 import org.keycloak.testsuite.console.page.clients.CreateClientRole;
 import org.keycloak.testsuite.console.page.users.User;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
 
 /**
  * Created by fkiss.
@@ -33,8 +32,8 @@ public class ClientRolesTest extends AbstractClientTest {
     private UserRoleMappingsForm roleMappings;
 
     public void addClientRole(RoleRepresentation roleRep) {
-        assertCurrentUrl(clientRoles);
-        clientRoles.table().addRole();
+//        assertCurrentUrl(clientRoles);
+        clientRoles.roles().addRole();
 //        assertCurrentUrl(createClientRole); // can't do this, need client id to build uri
         createClientRole.form().setBasicAttributes(roleRep);
         createClientRole.form().save();
@@ -54,14 +53,14 @@ public class ClientRolesTest extends AbstractClientTest {
         client.tabs().roles();
         addClientRole(newRole);
         assertFlashMessageSuccess();
-
+        
         clientRole.backToClientRolesViaBreadcrumb();
-        assertFalse(clientRoles.table().searchRoles(newRole.getName()).isEmpty());
+        assertFalse(clientRoles.roles().getRolesFromTableRows().isEmpty());
 
-        clients.navigateTo();
-        clients.deleteClient(newClient.getClientId());
+        configure().clients();
+        clients.clients().deleteClient(newClient.getClientId());
         assertFlashMessageSuccess();
-        assertNull(clients.findClient(newClient.getClientId()));
+        assertNull(clients.clients().findClient(newClient.getClientId()));
     }
 
 //    @Test

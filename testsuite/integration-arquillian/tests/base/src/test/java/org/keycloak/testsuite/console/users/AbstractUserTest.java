@@ -7,7 +7,7 @@ import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.users.CreateUser;
 import org.keycloak.testsuite.console.page.users.Users;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
-import static org.keycloak.testsuite.util.SeleniumUtils.pause;
+import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 
 /**
  *
@@ -21,7 +21,7 @@ public abstract class AbstractUserTest extends AbstractConsoleTest {
     protected CreateUser createUser;
 
     protected UserRepresentation newTestRealmUser;
-    
+
     @Before
     public void beforeUserTest() {
         newTestRealmUser = new UserRepresentation();
@@ -30,9 +30,8 @@ public abstract class AbstractUserTest extends AbstractConsoleTest {
 
     public void createUser(UserRepresentation user) {
         assertCurrentUrl(users);
-        users.addUser();
-        pause(300);
-        assertCurrentUrl(createUser);
+        users.table().addUser();
+        assertCurrentUrlStartsWith(createUser);
         createUser.form().setValues(user);
         createUser.form().save();
     }

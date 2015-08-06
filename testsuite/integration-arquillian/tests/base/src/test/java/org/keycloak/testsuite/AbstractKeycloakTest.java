@@ -1,5 +1,6 @@
 package org.keycloak.testsuite;
 
+import org.keycloak.testsuite.arquillian.TestContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -7,6 +8,7 @@ import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -15,10 +17,10 @@ import org.keycloak.models.Constants;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.arquillian.SuiteContext;
 import static org.keycloak.testsuite.util.RealmUtils.importRealm;
 import static org.keycloak.testsuite.util.RealmUtils.removeRealm;
 import org.openqa.selenium.WebDriver;
-import org.keycloak.testsuite.arquillian.ContainersTestEnricher.AdminPasswordUpdateTracker;
 import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
 import static org.keycloak.testsuite.util.PageAssert.*;
@@ -38,10 +40,15 @@ import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 @RunAsClient
 public abstract class AbstractKeycloakTest {
 
-    protected Keycloak keycloak;
-    protected boolean keycloakOpen = false;
+    @ArquillianResource
+    protected SuiteContext suiteContext;
+    
+    @ArquillianResource
+    protected TestContext testContext;
 
-    protected List<RealmRepresentation> testRealms;
+    protected Keycloak adminClient;
+
+    protected List<RealmRepresentation> testRealmReps;
 
     @Drone
     protected WebDriver driver;
@@ -71,17 +78,19 @@ public abstract class AbstractKeycloakTest {
 
         driverSettings();
 
-        if (!isAdminPasswordUpdated()) {
+        if (!suiteContext.isAdminPasswordUpdated()) {
             updateMasterAdminPassword();
+            suiteContext.setAdminPasswordUpdated(true);
         }
 
-        if (!keycloakOpen) {
-            keycloak = Keycloak.getInstance(authServer.toString(),
+        adminClient = testContext.getAdminClient();
+        if (adminClient == null) {
+            adminClient = Keycloak.getInstance(authServer.toString(),
                     MASTER, ADMIN, ADMIN, Constants.ADMIN_CONSOLE_CLIENT_ID);
-            keycloakOpen = true;
+            testContext.setAdminClient(adminClient);
         }
 
-        pause(1000);
+        pause(2000);
 
         importTestRealms();
     }
@@ -92,21 +101,11 @@ public abstract class AbstractKeycloakTest {
 //        keycloak.close(); // keeping admin connection open
     }
 
-    public boolean isAdminPasswordUpdated() {
-        return AdminPasswordUpdateTracker.isAdminPasswordUpdated(this.getClass());
-    }
-
-    public void setAdminPasswordUpdated(boolean updated) {
-        AdminPasswordUpdateTracker
-                .setAdminPasswordUpdatedFor(this.getClass(), updated);
-    }
-
     private void updateMasterAdminPassword() {
         account.navigateTo();
         login.form().login(ADMIN, ADMIN);
         updatePassword.updatePassword(ADMIN);
         assertCurrentUrlStartsWith(account);
-        setAdminPasswordUpdated(true);
         deleteAllCookiesForMasterRealm();
     }
 
@@ -131,26 +130,26 @@ public abstract class AbstractKeycloakTest {
 
     private void addTestRealms() {
         System.out.println("loading test realms");
-        if (testRealms == null) {
-            testRealms = new ArrayList<>();
+        if (testRealmReps == null) {
+            testRealmReps = new ArrayList<>();
         }
-        if (testRealms.isEmpty()) {
-            addTestRealms(testRealms);
+        if (testRealmReps.isEmpty()) {
+            addTestRealms(testRealmReps);
         }
     }
 
     public void importTestRealms() {
         addTestRealms();
         System.out.println("importing test realms");
-        for (RealmRepresentation testRealm : testRealms) {
-            importRealm(keycloak, testRealm);
+        for (RealmRepresentation testRealm : testRealmReps) {
+            importRealm(adminClient, testRealm);
         }
     }
 
     public void removeTestRealms() {
         System.out.println("removing test realms");
-        for (RealmRepresentation testRealm : testRealms) {
-            removeRealm(keycloak, testRealm);
+        for (RealmRepresentation testRealm : testRealmReps) {
+            removeRealm(adminClient, testRealm);
         }
     }
 

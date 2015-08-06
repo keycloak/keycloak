@@ -57,10 +57,12 @@ public class RoleCompositeRoles {
     }
 
     public void setComposites(Composites composites) {
-        setRealmRoles(composites.getRealm());
-        for (String client : composites.getClient().keySet()) {
-            clientSelect.selectByVisibleText(client);
-            setClientRoles(composites.getClient().get(client));
+        if (composites != null) {
+            setRealmRoles(composites.getRealm());
+            for (String client : composites.getClient().keySet()) {
+                clientSelect.selectByVisibleText(client);
+                setClientRoles(composites.getClient().get(client));
+            }
         }
     }
 

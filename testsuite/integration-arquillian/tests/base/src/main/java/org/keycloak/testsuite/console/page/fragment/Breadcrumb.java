@@ -10,7 +10,7 @@ import org.openqa.selenium.support.FindBy;
  */
 public class Breadcrumb {
 
-    @FindBy(xpath = "/li[not contains(@class,'ng-hide')]")
+    @FindBy(xpath = "./li[not(contains(@class,'ng-hide'))]/a")
     private List<WebElement> items;
 
     public int size() {
@@ -22,7 +22,11 @@ public class Breadcrumb {
     }
 
     public WebElement getItemFromEnd(int index) {
-        return items.get(size() - index);
+        return items.get(size() - index - 1);
+    }
+
+    public void clickItemOneLevelUp() {
+        getItemFromEnd(0).click();
     }
 
 }

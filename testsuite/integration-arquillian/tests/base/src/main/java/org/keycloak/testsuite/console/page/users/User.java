@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.console.page.users;
 
+import org.keycloak.testsuite.console.page.fragment.Breadcrumb;
 import org.keycloak.testsuite.console.page.fragment.Navigation;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -25,6 +26,13 @@ public class User extends Users {
         return (String) getUriParameter(USER_ID);
     }
 
+    @FindBy(css = "breadcrumb")
+    private Breadcrumb breadcrumb;
+
+    public Breadcrumb breadcrumb() {
+        return breadcrumb;
+    }
+    
     @FindBy(xpath = "//div[@data-ng-controller='UserTabCtrl']/ul")
     protected UserTabs userTabs;
 

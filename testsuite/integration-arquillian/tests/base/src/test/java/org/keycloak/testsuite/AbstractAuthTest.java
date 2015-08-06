@@ -41,8 +41,9 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
     @Before
     public void beforeAuthTest() {
-        testRealmResource = keycloak.realm(testRealm.getAuthRealm());
-
+        testRealmResource = adminClient.realm(testRealm.getAuthRealm());
+        testRealmLogin.setAuthRealm(testRealm);
+        
         testRealmUser = createUserRepresentation("test", "test@email.test", "test", "user", true);
 
         deleteAllCookiesForTestRealm();

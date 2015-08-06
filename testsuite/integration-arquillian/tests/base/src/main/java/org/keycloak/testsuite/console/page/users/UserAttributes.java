@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.console.page.users;
 
-import org.jboss.arquillian.graphene.page.Page;
+import org.openqa.selenium.support.FindBy;
 
 /**
  *
@@ -8,15 +8,15 @@ import org.jboss.arquillian.graphene.page.Page;
  */
 public class UserAttributes extends User {
 
-    @Page
+    @FindBy(name = "userForm")
     private UserAttributesForm form;
 
     public UserAttributesForm form() {
         return form;
     }
 
-    public UserAttributes() {
-        setUserId(form.getId());
+    public void backToUsersViaBreadcrumb() {
+        breadcrumb().clickItemOneLevelUp();
     }
 
 }

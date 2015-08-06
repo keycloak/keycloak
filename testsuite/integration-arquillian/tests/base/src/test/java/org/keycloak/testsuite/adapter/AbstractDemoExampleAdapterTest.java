@@ -24,8 +24,6 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     private ProductPortalExample productPortalExample;
     @Page
     private DatabaseServiceExample databaseServiceExample;
-    @Page
-    private LoginActions loginActions;
 
     @Page
     private Account testRealmAccount;
@@ -61,7 +59,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
     @Before
     public void beforeDemoExampleTest() {
-        testRealmResource = keycloak.realm(DEMO);
+        testRealmResource = adminClient.realm(DEMO);
         customerPortalExample.navigateTo();
         driver.manage().deleteAllCookies();
     }

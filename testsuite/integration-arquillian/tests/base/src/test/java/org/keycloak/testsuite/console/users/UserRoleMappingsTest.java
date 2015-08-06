@@ -14,7 +14,7 @@ public class UserRoleMappingsTest extends AbstractUserTest {
 
     @Page
     private UserRoleMappings roleMappings;
-    
+
     @Test
     public void addUserAndAssignRole() {
         String testUsername = "tester1";
@@ -24,13 +24,13 @@ public class UserRoleMappingsTest extends AbstractUserTest {
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         users.navigateTo();
-        users.clickUser(testUsername);
+        users.table().clickUser(testUsername);
         roleMappings.tabs().roleMappings();
 
         roleMappings.form().addAvailableRole("create-realm");
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         users.navigateTo();
-        users.deleteUser(testUsername);
+        users.table().deleteUser(testUsername);
     }
 
     @Test
@@ -42,14 +42,14 @@ public class UserRoleMappingsTest extends AbstractUserTest {
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         users.navigateTo();
-        users.clickUser(testUsername);
-        
+        users.table().clickUser(testUsername);
+
         roleMappings.tabs().roleMappings();
         roleMappings.form().addAvailableRole("create-realm");
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         roleMappings.form().removeAssignedRole("create-realm");
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         users.navigateTo();
-        users.deleteUser(testUsername);
+        users.table().deleteUser(testUsername);
     }
 }

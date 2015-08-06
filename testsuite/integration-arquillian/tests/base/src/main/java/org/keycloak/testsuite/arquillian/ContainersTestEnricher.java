@@ -2,17 +2,16 @@ package org.keycloak.testsuite.arquillian;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashSet;
-import java.util.Set;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
+import org.jboss.arquillian.test.spi.annotation.SuiteScoped;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
+import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.keycloak.testsuite.arquillian.annotation.AdapterLibsLocationProperty;
 
 /**
@@ -31,35 +30,54 @@ public class ContainersTestEnricher {
     private static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
 
     @Inject
+    @SuiteScoped
+    private InstanceProducer<SuiteContext> suiteContext;
+
+    @Inject
     @ClassScoped
-    private InstanceProducer<ContextRootStore> contextRootStore;
+    private InstanceProducer<TestContext> testContext;
+
+    private ContainerController controller;
+
+    public void beforeSuite(@Observes BeforeSuite event) {
+        suiteContext.set(new SuiteContext());
+    }
 
     public void startContainers(@Observes(precedence = -1) BeforeClass event) {
-        resolveQualifiersFromTestClass(event.getTestClass().getJavaClass());
-        initializeContextRootStore(event.getTestClass().getJavaClass());
-        startContainers();
-    }
+        controller = containerController.get();
 
-    private void resolveQualifiersFromTestClass(Class testClass) {
-        this.authServerQualifier = getAuthServerQualifier(testClass);
-        this.appServerQualifier = getAppServerQualifier(testClass);
-        System.out.println(testClass.getSimpleName());
-        System.out.println("Auth server: " + authServerQualifier);
-        if (!appServerQualifier.equals(authServerQualifier)) {
-            System.out.println("App server:  " + appServerQualifier);
-        }
-    }
+        Class testClass = event.getTestClass().getJavaClass();
+        System.out.println("\nCONTAINERS LIFECYCLE FOR: " + testClass.getSimpleName() + "\n");
 
-    private void startContainers() {
-        ContainerController controller = containerController.get();
-        if (!controller.isStarted(authServerQualifier)) {
-            System.out.println("Starting Auth server: " + authServerQualifier);
-            controller.start(authServerQualifier);
-        }
-        if (!appServerQualifier.equals(authServerQualifier)
-                && !controller.isStarted(appServerQualifier)) {
-            System.out.println("Starting App server: " + appServerQualifier);
+        authServerQualifier = getAuthServerQualifier();
+        appServerQualifier = getAppServerQualifier(testClass);
+
+        System.out.println("STARTING AUTH SERVER: " + authServerQualifier);
+        controller.start(authServerQualifier);
+        if (!controller.isStarted(appServerQualifier)) {
+            System.out.println("STARTING APP SERVER: " + appServerQualifier + " (non-relative scenario)");
             controller.start(appServerQualifier);
+        }
+
+        initializeTestContext(testClass);
+    }
+
+    private void initializeTestContext(Class testClass) {
+        String authServerContextRootStr = getAuthServerContextRootFromSystemProperty();
+        String appServerContextRootStr = isRelative(testClass)
+                ? authServerContextRootStr
+                : getAppServerContextRootFromSystemProperty();
+        try {
+            URL authServerContextRoot = new URL(authServerContextRootStr);
+            URL appServerContextRoot = new URL(appServerContextRootStr);
+
+            TestContext context = new TestContext(authServerContextRoot, appServerContextRoot);
+            context.setTestClass(testClass);
+
+            testContext.set(context);
+
+        } catch (MalformedURLException ex) {
+            throw new IllegalStateException("Malformed url.", ex);
         }
     }
 
@@ -76,17 +94,10 @@ public class ContainersTestEnricher {
                         : getNearestSuperclassWithAnnotation(testClass.getSuperclass(), annotationClass)); // continue recursion
     }
 
-    public static String getAuthServerQualifier(Class testClass) {
-        Class<Object> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AuthServerContainer.class);
-        String authServerQ = "";
-        if (annotatedClass != null) {
-            authServerQ = annotatedClass.getAnnotation(AuthServerContainer.class).value();
-        }
-        if (authServerQ == null || authServerQ.isEmpty()) {
-            // default to system property
-            authServerQ = System.getProperty(AUTH_SERVER_CONTAINER_PROPERTY, AUTH_SERVER_CONTAINER_DEFAULT);
-        }
-        return authServerQ;
+    public static String getAuthServerQualifier() {
+        return System.getProperty(
+                AUTH_SERVER_CONTAINER_PROPERTY,
+                AUTH_SERVER_CONTAINER_DEFAULT);
     }
 
     public static String getAppServerQualifier(Class testClass) {
@@ -96,7 +107,7 @@ public class ContainersTestEnricher {
                 : annotatedClass.getAnnotation(AppServerContainer.class).value());
 
         return appServerQ == null || appServerQ.isEmpty()
-                ? getAuthServerQualifier(testClass) // app server == auth server
+                ? getAuthServerQualifier() // app server == auth server
                 : appServerQ;
     }
 
@@ -105,54 +116,13 @@ public class ContainersTestEnricher {
     }
 
     public static boolean isRelative(Class testClass) {
-        return getAppServerQualifier(testClass).equals(getAuthServerQualifier(testClass));
+        return getAppServerQualifier(testClass).equals(getAuthServerQualifier());
     }
 
     public static String getAdapterLibsLocationProperty(Class testClass) {
         Class<? extends ContainersTestEnricher> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AdapterLibsLocationProperty.class);
         return (annotatedClass == null ? null
                 : annotatedClass.getAnnotation(AdapterLibsLocationProperty.class).value());
-    }
-
-    private void initializeContextRootStore(Class testClass) {
-        String authServerContextRootStr = getAuthServerContextRootFromSystemProperty();
-        String appServerContextRootStr = isRelative(testClass)
-                ? authServerContextRootStr
-                : getAppServerContextRootFromSystemProperty();
-        try {
-            URL authServerContextRoot = new URL(authServerContextRootStr);
-            URL appServerContextRoot = new URL(appServerContextRootStr);
-
-            contextRootStore.set(new ContextRootStore(authServerContextRoot, appServerContextRoot));
-
-        } catch (MalformedURLException ex) {
-            throw new IllegalStateException("Malformed url.", ex);
-        }
-    }
-
-    public static class AdminPasswordUpdateTracker {
-
-        private static final Set<String> authServersWithUpdatedAdminPassword = new HashSet<>();
-
-        public static boolean isAdminPasswordUpdated(Class testClass) {
-            return isAdminPasswordUpdated(getAuthServerQualifier(testClass));
-        }
-
-        public static boolean isAdminPasswordUpdated(String containerQualifier) {
-            return authServersWithUpdatedAdminPassword.contains(containerQualifier);
-        }
-
-        public static void setAdminPasswordUpdatedFor(Class testClass, boolean updated) {
-            setAdminPasswordUpdatedFor(getAuthServerQualifier(testClass), updated);
-        }
-
-        public static void setAdminPasswordUpdatedFor(String containerQualifier, boolean updated) {
-            if (updated) {
-                authServersWithUpdatedAdminPassword.add(containerQualifier);
-            } else {
-                authServersWithUpdatedAdminPassword.remove(containerQualifier);
-            }
-        }
     }
 
     public static boolean isWildflyAppServer(Class testClass) {

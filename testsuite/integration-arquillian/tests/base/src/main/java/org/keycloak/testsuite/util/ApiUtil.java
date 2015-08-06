@@ -55,6 +55,7 @@ public class ApiUtil {
         }
         return null;
     }
+
     public static ClientRepresentation findClientByClientId(RealmResource realm, String clientId) {
         ClientRepresentation client = null;
         for (ClientRepresentation c : realm.clients().findAll()) {
@@ -75,9 +76,11 @@ public class ApiUtil {
     }
 
     public static String createUserWithAdminClient(RealmResource realm, UserRepresentation user) {
+        System.out.println("Creating user '" + user.getUsername() + "'");
         Response response = realm.users().create(user);
         String createdId = getCreatedId(response);
         response.close();
+        System.out.println(" created user id: " + createdId);
         return createdId;
     }
 

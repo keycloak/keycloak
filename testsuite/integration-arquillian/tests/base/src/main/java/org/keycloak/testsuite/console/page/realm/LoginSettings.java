@@ -46,7 +46,7 @@ public class LoginSettings extends RealmSettings {
         @FindByJQuery("div[class='onoffswitch']:eq(0)")
         private OnOffSwitch registrationAllowed;
 
-        @FindBy(xpath = "//div[contains(@class,'onoffswitch') and ./input[@id='registrationEmailAsUsername']]")
+        @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='registrationEmailAsUsername']]")
         private OnOffSwitch emailAsUsernameOnOffSwitch;
 
         @FindByJQuery("div[class='onoffswitch']:eq(1)")

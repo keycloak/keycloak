@@ -21,7 +21,7 @@ public class ClientForm extends Form {
     @FindBy(id = "name")
     private WebElement nameInput;
 
-    @FindBy(xpath = "//div[@class='onoffswitch' and ./input[@id='enabled']]")
+    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='enabled']]")
     private OnOffSwitch enabledSwitch;
 
     @FindBy(id = "accessType")

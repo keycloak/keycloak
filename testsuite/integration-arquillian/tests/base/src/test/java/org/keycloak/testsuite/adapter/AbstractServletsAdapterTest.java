@@ -197,7 +197,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
         // View stats
-        List<Map<String, String>> stats = keycloak.realm("demo").getClientSessionStats();
+        List<Map<String, String>> stats = adminClient.realm("demo").getClientSessionStats();
         Map<String, String> customerPortalStats = null;
         Map<String, String> productPortalStats = null;
         for (Map<String, String> s : stats) {
@@ -269,17 +269,17 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
-        RealmRepresentation demoRealmRep = keycloak.realm("demo").toRepresentation();
+        RealmRepresentation demoRealmRep = adminClient.realm("demo").toRepresentation();
         int originalIdle = demoRealmRep.getSsoSessionIdleTimeout();
         demoRealmRep.setSsoSessionIdleTimeout(1);
-        keycloak.realm("demo").update(demoRealmRep);
+        adminClient.realm("demo").update(demoRealmRep);
 
 //		Thread.sleep(2000);
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
         demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
-        keycloak.realm("demo").update(demoRealmRep);
+        adminClient.realm("demo").update(demoRealmRep);
     }
 
     @Test
@@ -297,7 +297,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
-        RealmRepresentation demoRealmRep = keycloak.realm("demo").toRepresentation();
+        RealmRepresentation demoRealmRep = adminClient.realm("demo").toRepresentation();
         int originalIdle = demoRealmRep.getSsoSessionIdleTimeout();
         demoRealmRep.setSsoSessionIdleTimeout(1);
 //        keycloak.realm("demo").update(demoRealm);
@@ -328,17 +328,17 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         String pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
-        RealmRepresentation demoRealmRep = keycloak.realm("demo").toRepresentation();
+        RealmRepresentation demoRealmRep = adminClient.realm("demo").toRepresentation();
         int originalIdle = demoRealmRep.getSsoSessionMaxLifespan();
         demoRealmRep.setSsoSessionMaxLifespan(1);
-        keycloak.realm("demo").update(demoRealmRep);
+        adminClient.realm("demo").update(demoRealmRep);
 
         TimeUnit.SECONDS.sleep(2);
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
         demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
-        keycloak.realm("demo").update(demoRealmRep);
+        adminClient.realm("demo").update(demoRealmRep);
     }
 
     @Jira("KEYCLOAK-518")
@@ -534,7 +534,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         // login as bburke
         loginAndCheckSession(driver, testRealmLogin);
         // logout mposolda with admin client
-        findClientResourceByClientId(keycloak.realm("demo"), "session-portal")
+        findClientResourceByClientId(adminClient.realm("demo"), "session-portal")
                 .logoutUser("mposolda");
         // bburke should be still logged with original httpSession in our browser window
         sessionPortal.navigateTo();

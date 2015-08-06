@@ -25,18 +25,35 @@ public class DataTable {
     @FindBy(css = "tbody tr")
     private List<WebElement> rows;
 
+    @FindBy(xpath = "//div[@class='modal-dialog']")
+    protected ModalDialog modalDialog;
+
+    public ModalDialog dialog() {
+        return modalDialog;
+    }
+
     public void search(String pattern) {
-        waitAjaxForElement(searchInput);
+        waitAjaxForBody();
         searchInput.sendKeys(pattern);
         searchButton.click();
     }
 
     public void clickHeaderButton(String buttonText) {
-        header.findElement(By.linkText(buttonText));
+        waitAjaxForBody();
+        header.findElement(By.xpath(".//button[text()='" + buttonText + "']")).click();
+    }
+
+    public void clickHeaderLink(String linkText) {
+        waitAjaxForBody();
+        header.findElement(By.linkText(linkText)).click();
     }
 
     public WebElement body() {
         return body;
+    }
+
+    public void waitAjaxForBody() {
+        waitAjaxForElement(body);
     }
 
     public List<WebElement> rows() {
@@ -44,13 +61,13 @@ public class DataTable {
     }
 
     public WebElement getRowByLinkText(String text) {
-        WebElement row = body.findElement(By.xpath("//tr[//a[@text()='" + text + "']]"));
+        WebElement row = body.findElement(By.xpath(".//tr[./td/a[text()='" + text + "']]"));
         waitAjaxForElement(row);
         return row;
     }
 
     public void clickActionButton(WebElement row, String buttonText) {
-        row.findElement(xpath("//button[@text()='" + buttonText + "']"));
+        row.findElement(xpath(".//button[text()='" + buttonText + "']")).click();
     }
 
 }

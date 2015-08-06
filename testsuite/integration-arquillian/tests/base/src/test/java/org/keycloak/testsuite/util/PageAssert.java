@@ -72,7 +72,12 @@ public class PageAssert {
     }
 
     public static boolean startsWithNormalized(String str1, String str2) {
-        return normalizeUri(str1).startsWith(normalizeUri(str2));
+        String uri1 = normalizeUri(str1);
+        String uri2 = normalizeUri(str2);
+//        System.out.println("Assert starts with (normalized):");
+//        System.out.println(" " + uri1);
+//        System.out.println(" " + uri2);
+        return uri1.startsWith(uri2);
     }
 
     public static void assertEqualsNormalized(String str1, String str2) {

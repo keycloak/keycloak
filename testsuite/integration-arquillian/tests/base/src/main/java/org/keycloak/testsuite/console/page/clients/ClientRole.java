@@ -30,7 +30,7 @@ public class ClientRole extends ClientRoles {
     }
 
     public void backToClientRolesViaBreadcrumb() {
-        clickBreadcrumbLevelUp();
+        breadcrumb().clickItemOneLevelUp();
     }
 
 }

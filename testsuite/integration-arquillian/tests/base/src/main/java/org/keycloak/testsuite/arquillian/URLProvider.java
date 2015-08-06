@@ -10,7 +10,6 @@ import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainer;
 
 public class URLProvider extends URLResourceProvider {
 
@@ -18,7 +17,7 @@ public class URLProvider extends URLResourceProvider {
     public static final String LOCALHOST_HOSTNAME = "localhost";
 
     @Inject
-    Instance<ContextRootStore> contextRootStore;
+    Instance<TestContext> testContext;
 
     @Override
     public Object doLookup(ArquillianResource resource, Annotation... qualifiers) {
@@ -26,11 +25,10 @@ public class URLProvider extends URLResourceProvider {
 
         // inject context roots if annotation present
         for (Annotation a : qualifiers) {
-            if (AuthServerContainer.class.isAssignableFrom(a.annotationType())) {
-                return contextRootStore.get().getAuthServerContextRoot();
-            }
             if (AppServerContainer.class.isAssignableFrom(a.annotationType())) {
-                return contextRootStore.get().getAppServerContextRoot();
+                return testContext.get().getAppServerContextRoot();
+            } else {
+                return testContext.get().getAuthServerContextRoot();
             }
         }
 

@@ -15,7 +15,7 @@ import org.keycloak.testsuite.arquillian.undertow.CustomUndertowContainer;
  *
  * @author tkyjovsk
  */
-public class CustomExtension implements LoadableExtension {
+public class KeycloakArquillianExtension implements LoadableExtension {
 
     @Override
     public void register(ExtensionBuilder builder) {
@@ -23,7 +23,7 @@ public class CustomExtension implements LoadableExtension {
         builder
                 .override(ResourceProvider.class, URLResourceProvider.class, URLProvider.class)
                 .override(ResourceProvider.class, CustomizableURLResourceProvider.class, URLProvider.class);
-        
+
         builder
                 .service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)
                 .service(ApplicationArchiveProcessor.class, DeploymentArchiveProcessor.class)
@@ -33,7 +33,11 @@ public class CustomExtension implements LoadableExtension {
                 .service(DeployableContainer.class, CustomUndertowContainer.class);
 
         builder
-                .service(TestExecutionDecider.class, JiraTestExecutionDecider.class);        
+                .service(TestExecutionDecider.class, JiraTestExecutionDecider.class);
+
+        builder
+                .service(ResourceProvider.class, SuiteContextProvider.class)
+                .service(ResourceProvider.class, TestContextProvider.class);
 
     }
 

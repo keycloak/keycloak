@@ -17,7 +17,7 @@ public class ClientRoles extends Client {
     @FindBy(css = "table[class*='table']")
     private RolesTable table;
 
-    public RolesTable table() {
+    public RolesTable roles() {
         return table;
     }
 

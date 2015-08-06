@@ -7,6 +7,7 @@ import org.keycloak.testsuite.page.Form;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.Select;
 
 /**
  *
@@ -30,14 +31,17 @@ public class UserAttributesForm extends Form {
     @FindBy(id = "lastName")
     private WebElement lastNameInput;
 
-    @FindBy(xpath = "//div[@class='onoffswitch' and ./input[@id='userEnabled']]")
+    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='userEnabled']]")
     private OnOffSwitch userEnabledSwitch;
 
-    @FindBy(xpath = "//div[@class='onoffswitch' and ./input[@id='emailVerified']]")
+    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='emailVerified']]")
     private OnOffSwitch emailVerifiedSwitch;
 
-    @FindBy(css = "input[id='s2id_autogen3']")
+    @FindBy(xpath = ".//div[./label[contains(text(), 'Required User Actions')]]//input")
     private WebElement requiredUserActionsInput;
+
+    @FindBy(id = "reqActions")
+    private Select requiredUserActionsSelect;
 
     @FindBy(className = "select2-result-label")
     private WebElement requiredUserActionsConfirm;
@@ -110,8 +114,8 @@ public class UserAttributesForm extends Form {
     }
 
     public void addRequiredAction(String requiredAction) {
-        requiredUserActionsInput.sendKeys(requiredAction);
-        requiredUserActionsConfirm.click();
+        requiredUserActionsInput.click();
+        requiredUserActionsSelect.selectByVisibleText(requiredAction);
     }
 
     public void setRequiredActions(List<String> requiredActions) {

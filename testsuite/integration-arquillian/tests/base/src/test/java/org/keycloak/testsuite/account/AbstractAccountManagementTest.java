@@ -17,7 +17,8 @@ public abstract class AbstractAccountManagementTest extends AbstractAuthTest {
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmAccountManagement.setAuthRealm(TEST);
+        testRealm.setAuthRealm(TEST);
+        testRealmAccountManagement.setAuthRealm(testRealm);
     }
     
 }

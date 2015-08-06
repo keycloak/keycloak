@@ -26,7 +26,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.fragment.DataTable;
 
-import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
 import static org.openqa.selenium.By.linkText;
 import static org.openqa.selenium.By.tagName;
 
@@ -47,75 +46,86 @@ public class Clients extends AdminConsoleRealm {
         return super.getUriFragment() + "/clients";
     }
 
-    @FindBy(css = "table[class*='table']")
-    private DataTable table;
+    @FindBy(tagName = "table")
+    private ClientsTable clientsTable;
 
-    public List<ClientRepresentation> searchClients(String searchPattern) {
-        table.search(searchPattern);
-        return getClientsFromTable();
+    public ClientsTable clients() {
+        return clientsTable;
     }
 
-    public void createClient() {
-        table.clickHeaderButton(CREATE);
-    }
+    public class ClientsTable extends DataTable {
 
-    public void importClient() {
-        table.clickHeaderButton(IMPORT);
-    }
-
-    public void clickClient(ClientRepresentation client) {
-        clickClient(client.getClientId());
-    }
-
-    public void clickClient(String clientId) {
-        waitAjaxForElement(table.body());
-        table.body().findElement(linkText(clientId)).click();
-    }
-
-    public void editClient(String clientId) {
-        table.clickActionButton(table.getRowByLinkText(clientId), EDIT);
-    }
-
-    public void deleteClient(String clientId) {
-        table.clickActionButton(table.getRowByLinkText(clientId), DELETE);
-        waitAjaxForElement(deleteConfirmationButton);
-        deleteConfirmationButton.click();
-    }
-
-    public ClientRepresentation findClient(String clientId) {
-        List<ClientRepresentation> clients = searchClients(clientId);
-        if (clients.isEmpty()) {
-            return null;
-        } else {
-            assert 1 == clients.size();
-            return clients.get(0);
+        public List<ClientRepresentation> searchClients(String searchPattern) {
+            search(searchPattern);
+            return getClientsFromTable();
         }
-    }
 
-    public List<ClientRepresentation> getClientsFromTable() {
-        List<ClientRepresentation> rows = new ArrayList<>();
-        if (table.rows().size() > 1) {
-            for (WebElement row : table.rows()) {
-                ClientRepresentation client = getClientFromRow(row);
-                if (client != null) {
-                    rows.add(client);
-                }
+        public void createClient() {
+            waitAjaxForBody();
+            clickHeaderLink(CREATE);
+        }
+
+        public void importClient() {
+            waitAjaxForBody();
+            clickHeaderLink(IMPORT);
+        }
+
+        public void clickClient(ClientRepresentation client) {
+            waitAjaxForBody();
+            clickClient(client.getClientId());
+        }
+
+        public void clickClient(String clientId) {
+            waitAjaxForBody();
+            body().findElement(linkText(clientId)).click();
+        }
+
+        public void editClient(String clientId) {
+            waitAjaxForBody();
+            clickActionButton(getRowByLinkText(clientId), EDIT);
+        }
+
+        public void deleteClient(String clientId) {
+            waitAjaxForBody();
+            clickActionButton(getRowByLinkText(clientId), DELETE);
+            modalDialog.confirmDeletion();
+        }
+
+        public ClientRepresentation findClient(String clientId) {
+            List<ClientRepresentation> clients = searchClients(clientId);
+            if (clients.isEmpty()) {
+                return null;
+            } else {
+                assert 1 == clients.size();
+                return clients.get(0);
             }
         }
-        return rows;
-    }
 
-    public ClientRepresentation getClientFromRow(WebElement row) {
-        ClientRepresentation client = null;
-        if (row.isDisplayed()) {
-            client = new ClientRepresentation();
-            List<WebElement> tds = row.findElements(tagName("td"));
-            client.setClientId(tds.get(0).getText());
-            List<String> redirectUris = new ArrayList<>();
-            redirectUris.add(tds.get(2).getText()); // FIXME there can be more than 1 redirect uri
-            client.setRedirectUris(redirectUris);
+        public List<ClientRepresentation> getClientsFromTable() {
+            List<ClientRepresentation> rows = new ArrayList<>();
+            if (rows().size() > 1) {
+                for (WebElement row : rows()) {
+                    ClientRepresentation client = getClientFromRow(row);
+                    if (client != null) {
+                        rows.add(client);
+                    }
+                }
+            }
+            return rows;
         }
-        return client;
+
+        public ClientRepresentation getClientFromRow(WebElement row) {
+            ClientRepresentation client = null;
+            if (row.isDisplayed()) {
+                client = new ClientRepresentation();
+                List<WebElement> tds = row.findElements(tagName("td"));
+                client.setClientId(tds.get(0).getText());
+                List<String> redirectUris = new ArrayList<>();
+                redirectUris.add(tds.get(2).getText()); // FIXME there can be more than 1 redirect uri
+                client.setRedirectUris(redirectUris);
+            }
+            return client;
+        }
     }
 
 }

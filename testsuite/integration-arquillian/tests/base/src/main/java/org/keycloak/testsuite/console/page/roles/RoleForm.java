@@ -19,10 +19,10 @@ public class RoleForm extends Form {
     @FindBy(id = "description")
     private WebElement descriptionInput;
 
-    @FindBy(xpath = "//div[contains(@class,'onoffswitch') and ./input[@id='compositeSwitch']]")
+    @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='compositeSwitch']]")
     private OnOffSwitch compositeSwitch;
 
-    @FindBy(xpath = "//fieldset[./legend[contains(text(),'Composite Roles')]]")
+    @FindBy(xpath = ".//fieldset[./legend[contains(text(),'Composite Roles')]]")
     private RoleCompositeRoles compositeRoles;
 
     @FindBy(id = "removeRole")

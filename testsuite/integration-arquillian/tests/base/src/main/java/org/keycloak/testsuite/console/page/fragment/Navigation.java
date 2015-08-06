@@ -17,7 +17,7 @@ public class Navigation {
     private WebDriver driver;
 
 //    @FindBy(css = "div h1")
-    @FindBy(xpath = "//div[./h1]")
+    @FindBy(xpath = ".//div[./h1]")
     private WebElement currentHeader;
 
     @FindBy(css = "div > h1.ng-binding")

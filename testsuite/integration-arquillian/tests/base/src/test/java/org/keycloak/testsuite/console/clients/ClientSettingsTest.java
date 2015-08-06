@@ -21,14 +21,13 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import org.junit.Ignore;
 import org.keycloak.representations.idm.ClientRepresentation;
 
 /**
  *
  * @author Filip Kiss
  */
-@Ignore
+//@Ignore
 public class ClientSettingsTest extends AbstractClientTest {
 
     @Test
@@ -39,10 +38,10 @@ public class ClientSettingsTest extends AbstractClientTest {
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         clients.navigateTo();
-        clients.deleteClient(newClient.getClientId());
-        
+        clients.clients().deleteClient(newClient.getClientId());
+
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(clients.findClient(newClient.getClientId()));
+        assertNull(clients.clients().findClient(newClient.getClientId()));
     }
 
     @Test
@@ -66,9 +65,9 @@ public class ClientSettingsTest extends AbstractClientTest {
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         clients.navigateTo();
-        clients.deleteClient(newClient.getClientId());
+        clients.clients().deleteClient(newClient.getClientId());
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(clients.findClient(newClient.getClientId()));
+        assertNull(clients.clients().findClient(newClient.getClientId()));
     }
 
     @Test
@@ -85,9 +84,9 @@ public class ClientSettingsTest extends AbstractClientTest {
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 
         clients.navigateTo();
-        clients.deleteClient(newClient.getClientId());
+        clients.clients().deleteClient(newClient.getClientId());
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(clients.findClient(newClient.getClientId()));
+        assertNull(clients.clients().findClient(newClient.getClientId()));
     }
 
 }

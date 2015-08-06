@@ -33,7 +33,8 @@ public class RequiredUserActionsTest extends AbstractUserTest {
 
     @Before
     public void beforeRequiredActionsTest() {
-        users.clickUser(testRealmUser.getUsername());
+        users.table().viewAllUsers();
+        users.table().clickUser(testRealmUser.getUsername());
     }
 
     @Test

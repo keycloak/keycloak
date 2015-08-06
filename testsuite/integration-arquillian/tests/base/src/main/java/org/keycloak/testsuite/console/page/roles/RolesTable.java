@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.console.page.fragment.DataTable;
-import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
 import static org.openqa.selenium.By.linkText;
 import static org.openqa.selenium.By.tagName;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
 
 /**
  *
@@ -22,20 +20,13 @@ public class RolesTable extends DataTable {
     public static final String EDIT = "Edit";
     public static final String DELETE = "Delete";
 
-    @FindBy(xpath = "//div[@class='modal-dialog']")
-    private ModalDialog modalDialog;
-
-    public ModalDialog dialog() {
-        return modalDialog;
-    }
-
     public List<RoleRepresentation> searchRoles(String searchPattern) {
         search(searchPattern);
-        return getRolesFromTable();
+        return getRolesFromTableRows();
     }
 
     public void addRole() {
-        clickHeaderButton(ADD_ROLE);
+        clickHeaderLink(ADD_ROLE);
     }
 
     public void clickRole(String name) {
@@ -78,7 +69,7 @@ public class RolesTable extends DataTable {
         return roles.get(0);
     }
 
-    public List<RoleRepresentation> getRolesFromTable() {
+    public List<RoleRepresentation> getRolesFromTableRows() {
         List<RoleRepresentation> rows = new ArrayList<>();
         for (WebElement row : rows()) {
             RoleRepresentation role = getRoleFromRow(row);

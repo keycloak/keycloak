@@ -37,66 +37,73 @@ import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
  * @author tkyjovsk
  */
 public abstract class AbstractConsoleTest extends AbstractAuthTest {
-    
+
     @Page
     protected AdminConsole adminConsole;
     @Page
     protected AdminConsoleRealm adminConsoleRealm;
-    
+
     @Page
     protected AdminConsole testRealmAdminConsole;
-//    @Page
-//    protected AdminConsoleRealm testRealmAdminConsoleTestRealm;
+
+    protected boolean adminLoggedIn = false;
 
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
+        testRealm.setAuthRealm(TEST);
         testRealmAdminConsole.setAdminRealm(TEST);
-//        testRealmAdminConsoleTestRealm.setConsoleRealm(TEST).setAdminRealm(TEST);
     }
-    
+
     @Before
     public void beforeConsoleTest() {
         createUserWithAdminClient(testRealmResource, testRealmUser);
-        loginToMasterRealmAdminConsoleAs(adminUser);
+//        if (!adminLoggedIn) {
+        if (!testContext.isAdminLoggedIn()) {
+            loginToMasterRealmAdminConsoleAs(adminUser);
+//            adminLoggedIn = true;
+            testContext.setAdminLoggedIn(true);
+        } else {
+            adminConsoleRealm.navigateTo();
+        }
     }
-    
+
     public void loginToMasterRealmAdminConsoleAs(UserRepresentation user) {
         loginToAdminConsoleAs(adminConsole, login, user);
     }
-    
+
     public void logoutFromMasterRealmConsole() {
         logoutFromAdminConsole(adminConsole);
     }
-    
+
     public void loginToTestRealmConsoleAs(UserRepresentation user) {
         loginToAdminConsoleAs(testRealmAdminConsole, testRealmLogin, user);
     }
-    
+
     public void logoutFromTestRealmConsole() {
         logoutFromAdminConsole(testRealmAdminConsole);
     }
-    
+
     public void loginToAdminConsoleAs(AdminConsole adminConsole, Login login, UserRepresentation user) {
         adminConsole.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(adminConsole);
         login.form().login(user);
         assertCurrentUrlStartsWith(adminConsole);
     }
-    
+
     public void logoutFromAdminConsole(AdminConsole adminConsole) {
         adminConsole.navigateTo();
         assertCurrentUrlStartsWith(adminConsole);
         adminConsole.logOut();
         assertCurrentUrlStartsWithLoginUrlOf(adminConsole);
     }
-    
+
     public ConfigureMenu configure() {
         return adminConsoleRealm.configure();
     }
-    
+
     public ManageMenu manage() {
         return adminConsoleRealm.manage();
     }
-    
+
 }

@@ -50,74 +50,88 @@ public class Users extends AdminConsoleRealm {
     public static final String DELETE = "Delete";
 
     @FindBy(xpath = "//div[./h1[text()='Users']]/table")
-    private DataTable table;
+    private UsersTable table;
 
-    public List<UserRepresentation> searchUsers(String searchPattern) {
-        table.search(searchPattern);
-        return getUsersFromTable();
+    public UsersTable table() {
+        return table;
     }
 
-    public void viewAllUsers() {
-        table.clickHeaderButton(VIEW_ALL_USERS);
-    }
+    public class UsersTable extends DataTable {
 
-    public void unlockUsers() {
-        table.clickHeaderButton(UNLOCK_USERS);
-        // FIXME verify notification
-    }
-
-    public void clickUser(String username) {
-        waitAjaxForElement(table.body());
-        table.body().findElement(linkText(username)).click();
-    }
-
-    public void editUser(String username) {
-        table.clickActionButton(table.getRowByLinkText(username), EDIT);
-    }
-
-    public void impersonateUser(String username) {
-        table.clickActionButton(table.getRowByLinkText(username), IMPERSONATE);
-    }
-
-    public void deleteUser(String username) {
-        table.clickActionButton(table.getRowByLinkText(username), DELETE);
-        waitAjaxForElement(deleteConfirmationButton);
-        deleteConfirmationButton.click();
-    }
-
-    public void addUser() {
-        table.clickHeaderButton(ADD_USER);
-    }
-
-    public UserRepresentation findUser(String searchPattern) {
-        List<UserRepresentation> users = searchUsers(searchPattern);
-        if (users.isEmpty()) {
-            return null;
-        } else {
-            assert 1 == users.size();
-            return users.get(0);
+        public List<UserRepresentation> searchUsers(String searchPattern) {
+            search(searchPattern);
+            return getUsersFromTableRows();
         }
-    }
 
-    private List<UserRepresentation> getUsersFromTable() {
-        List<UserRepresentation> users = new ArrayList<>();
-        List<WebElement> rows = table.rows();
-        if (rows.size() > 1) {
-            for (WebElement rowElement : rows) {
-                if (rowElement.isDisplayed()) {
-                    UserRepresentation user = new UserRepresentation();
-                    List<WebElement> tds = rowElement.findElements(tagName("td"));
-                    if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
-                        user.setUsername(tds.get(0).getText());
-                        user.setLastName(tds.get(1).getText());
-                        user.setFirstName(tds.get(2).getText());
-                        user.setEmail(tds.get(3).getText());
-                        users.add(user);
+        public void viewAllUsers() {
+            clickHeaderButton(VIEW_ALL_USERS);
+        }
+
+        public void unlockUsers() {
+            clickHeaderButton(UNLOCK_USERS);
+        }
+
+        public void clickUser(String username) {
+            waitAjaxForElement(body());
+            body().findElement(linkText(username)).click();
+        }
+
+        public void editUser(String username) {
+            clickActionButton(getRowByLinkText(username), EDIT);
+        }
+
+        public void impersonateUser(String username) {
+            clickActionButton(getRowByLinkText(username), IMPERSONATE);
+        }
+
+        public void deleteUser(String username) {
+            clickActionButton(getRowByLinkText(username), DELETE);
+            modalDialog.confirmDeletion();
+        }
+
+        public void addUser() {
+            clickHeaderLink(ADD_USER);
+        }
+
+        public UserRepresentation findUser(String searchPattern) {
+            List<UserRepresentation> users = searchUsers(searchPattern);
+            if (users.isEmpty()) {
+                return null;
+            } else {
+                assert 1 == users.size();
+                return users.get(0);
+            }
+        }
+
+        public UserRepresentation getUserFromTableRow(WebElement row) {
+            UserRepresentation user = null;
+            List<WebElement> tds = row.findElements(tagName("td"));
+            if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
+                user = new UserRepresentation();
+                user.setUsername(tds.get(0).getText());
+                user.setLastName(tds.get(1).getText());
+                user.setFirstName(tds.get(2).getText());
+                user.setEmail(tds.get(3).getText());
+            }
+            return user;
+        }
+
+        public List<UserRepresentation> getUsersFromTableRows() {
+            List<UserRepresentation> users = new ArrayList<>();
+            List<WebElement> rows = rows();
+            if (rows.size() > 1) {
+                for (WebElement rowElement : rows) {
+                    if (rowElement.isDisplayed()) {
+                        UserRepresentation user = getUserFromTableRow(rowElement);
+                        if (user != null) {
+                            users.add(user);
+                        }
                     }
                 }
             }
+            return users;
         }
-        return users;
+
     }
 
 }

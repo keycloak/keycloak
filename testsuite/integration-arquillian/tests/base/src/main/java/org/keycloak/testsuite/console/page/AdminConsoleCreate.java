@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.console.page;
 
+import javax.ws.rs.core.UriBuilder;
 import static org.keycloak.testsuite.console.page.AdminConsoleRealm.CONSOLE_REALM;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -13,6 +14,11 @@ public class AdminConsoleCreate extends AdminConsole {
 
     public AdminConsoleCreate() {
         setUriParameter(CONSOLE_REALM, TEST);
+    }
+    
+    @Override
+    public UriBuilder createUriBuilder() {
+        return super.createUriBuilder().path("/");
     }
     
     @Override
