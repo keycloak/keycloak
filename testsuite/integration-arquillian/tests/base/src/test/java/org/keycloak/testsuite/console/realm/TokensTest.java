@@ -20,11 +20,11 @@ package org.keycloak.testsuite.console.realm;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.testsuite.console.page.realm.TokensSettings;
+import org.keycloak.testsuite.console.page.realm.TokenSettings;
 
-import static org.jboss.arquillian.graphene.Graphene.waitModel;
 import org.jboss.arquillian.graphene.page.Page;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
+import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 
 /**
  *
@@ -33,9 +33,9 @@ import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent
 public class TokensTest extends AbstractRealmTest {
 
     @Page
-    private TokensSettings tokenSettings;
+    private TokenSettings tokenSettings;
 
-    private static final int TIMEOUT = 10;
+    private static final int TIMEOUT = 4;
     private static final TimeUnit TIME_UNIT = TimeUnit.SECONDS;
 
     @Before
@@ -46,28 +46,31 @@ public class TokensTest extends AbstractRealmTest {
 
     @Test
     public void testTimeoutForRealmSession() throws InterruptedException {
-        tokenSettings.setSessionTimeout(TIMEOUT, TIME_UNIT);
-        TIME_UNIT.sleep(TIMEOUT + 2); //add 2 secs to timeout
+        tokenSettings.form().setSessionTimeout(TIMEOUT, TIME_UNIT);
+        tokenSettings.form().save();
+
+        loginToTestRealmConsoleAs(testRealmUser);
+        TIME_UNIT.sleep(TIMEOUT + 2);
+        
         driver.navigate().refresh();
-        waitGuiForElementPresent(testLogin.getLoginPageHeader(), "Home page should be visible after session timeout");
-        loginAsTestAdmin();
-        tabs().tokens();
-        tokenSettings.setSessionTimeout(30, TimeUnit.MINUTES);
+
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
     }
 
     @Test
-    public void testLifespanOfRealmSession() {
-        tokenSettings.setSessionTimeoutLifespan(TIMEOUT, TIME_UNIT);
-        logoutFromTestRealm();
-        waitModel().withTimeout(TIMEOUT + 2, TIME_UNIT) //adds 2 seconds to the timeout
-                .pollingEvery(1, TIME_UNIT)
-                .until("Home page should be visible after session timeout")
-                .element(testLogin.getLoginPageHeader())
-                .is()
-                .present();
-        loginAsTestAdmin();
-        configure().realmSettings();
-        tabs().tokens();
-        tokenSettings.setSessionTimeoutLifespan(10, TimeUnit.HOURS);
+    public void testLifespanOfRealmSession() throws InterruptedException {
+        tokenSettings.form().setSessionTimeoutLifespan(TIMEOUT, TIME_UNIT);
+        tokenSettings.form().save();
+        
+        loginToTestRealmConsoleAs(testRealmUser);
+        TIME_UNIT.sleep(TIMEOUT/2);
+
+        driver.navigate().refresh();
+        assertCurrentUrlStartsWith(testRealmAdminConsole); // assert still logged in (within lifespan)
+        
+        TIME_UNIT.sleep(TIMEOUT/2 + 2);
+        driver.navigate().refresh();
+
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm); // assert logged out (lifespan exceeded)
     }
 }

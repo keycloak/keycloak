@@ -10,18 +10,17 @@ import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.arquillian.ContainersTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
-import org.keycloak.testsuite.auth.page.AuthRealm;
 
 /**
  *
  * @author tkyjovsk
  */
 @AppServerContainer
-public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
+public abstract class AbstractAdapterTest extends AbstractAuthTest {
 
     @Page
     protected AppServerContextRoot appServerContextRoot;
@@ -32,9 +31,6 @@ public abstract class AbstractAdapterTest extends AbstractKeycloakTest {
     public static final String TOMCAT_CONTEXT_XML = "context.xml";
     public static final URL tomcatContext = AbstractServletsAdapterTest.class
             .getResource("/adapter-test/" + TOMCAT_CONTEXT_XML);
-
-    @Page
-    protected AuthRealm authRealm;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

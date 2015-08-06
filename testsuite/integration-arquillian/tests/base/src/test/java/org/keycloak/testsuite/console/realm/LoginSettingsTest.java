@@ -6,8 +6,8 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.keycloak.testsuite.console.page.realm.LoginSettings;
-import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.auth.page.login.Registration;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 
@@ -21,10 +21,14 @@ public class LoginSettingsTest extends AbstractRealmTest {
     private LoginSettings loginSettings;
 
     @Page
-    private Login login;
-    @Page
-    private Registration registration;
+    private Registration testRealmRegistration;
 
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealmRegistration.setAuthRealm(TEST);
+    }
+    
     @Before
     public void beforeLoginSettingsTest() {
         tabs().login();
@@ -37,33 +41,31 @@ public class LoginSettingsTest extends AbstractRealmTest {
         loginSettings.form().save();
         assertTrue(loginSettings.form().isRegistrationAllowed());
 
-        logoutFromTestRealm();
-        login.waitForRegistrationPresent(true);
-        login.registration();
-        assertCurrentUrlStartsWith(registration);
-        registration.waitForUsernameInputPresent(true);
+        testRealmAdminConsole.navigateTo();
+        testRealmLogin.form().waitForRegistrationLinkPresent();
+        testRealmLogin.form().register();
+        assertCurrentUrlStartsWith(testRealmRegistration);
+        testRealmRegistration.waitForUsernameInputPresent();
 
         // test email as username
-        loginAsTestAdmin();
-        configure().realmSettings();
-        tabs().login();
+        loginSettings.navigateTo();
         loginSettings.form().setEmailAsUsername(true);
         loginSettings.form().save();
 
-        logoutFromTestRealm();
-        login.registration();
-        registration.waitForUsernameInputPresent(false); // username input shouldn't be visible
+        logoutFromTestRealmConsole();
+        testRealmLogin.form().waitForRegistrationLinkPresent();
+        testRealmLogin.form().register();
+        assertCurrentUrlStartsWith(testRealmRegistration);
+        testRealmRegistration.waitForUsernameInputNotPresent();
 
         // test user reg. disabled
-        loginAsTestAdmin();
-        configure().realmSettings();
-        tabs().login();
+        loginSettings.navigateTo();
         loginSettings.form().setRegistrationAllowed(false);
         loginSettings.form().save();
         assertFalse(loginSettings.form().isRegistrationAllowed());
-        logoutFromTestRealm();
+        logoutFromTestRealmConsole();
 
-        login.waitForRegistrationPresent(false);
+        testRealmLogin.form().waitForRegistrationLinkNotPresent();
     }
 
     @Test

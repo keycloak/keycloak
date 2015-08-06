@@ -26,7 +26,7 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
 
     @Before
     public void beforeClientTest() {
-        testAdminConsoleRealm.configure().clients();
+        configure().clients();
     }
 
     public void createClient(ClientRepresentation client) {
@@ -50,5 +50,5 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         client.setPublicClient(false);
         return client;
     }
-    
+
 }

@@ -17,18 +17,17 @@
  */
 package org.keycloak.testsuite.console;
 
-import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
-import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ConfigureMenu;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ManageMenu;
-import org.keycloak.testsuite.console.page.fragment.FlashMessage;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import org.keycloak.testsuite.auth.page.login.Login;
+import static org.keycloak.testsuite.util.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 
@@ -38,62 +37,66 @@ import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
  * @author tkyjovsk
  */
 public abstract class AbstractConsoleTest extends AbstractAuthTest {
-
+    
     @Page
-    protected AdminConsole testAdminConsole;
+    protected AdminConsole adminConsole;
     @Page
-    protected AdminConsoleRealm testAdminConsoleRealm;
-
-    @FindByJQuery(".alert")
-    protected FlashMessage flashMessage;
+    protected AdminConsoleRealm adminConsoleRealm;
+    
+    @Page
+    protected AdminConsole testRealmAdminConsole;
+//    @Page
+//    protected AdminConsoleRealm testRealmAdminConsoleTestRealm;
 
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testAdminConsole.setAdminRealm(TEST);
-        testAdminConsoleRealm.setConsoleRealm(TEST).setAdminRealm(TEST);
+        testRealmAdminConsole.setAdminRealm(TEST);
+//        testRealmAdminConsoleTestRealm.setConsoleRealm(TEST).setAdminRealm(TEST);
     }
-
+    
     @Before
     public void beforeConsoleTest() {
-        loginToMasterRealmConsoleAsAdmin();
+        createUserWithAdminClient(testRealmResource, testRealmUser);
+        loginToMasterRealmAdminConsoleAs(adminUser);
     }
-
-    public void loginAsTestAdmin() {
-        testAdminConsole.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testAdminConsole);
-        testLogin.login(testAdmin.getUsername(), PASSWORD);
-        assertCurrentUrlStartsWith(testAdminConsole);
+    
+    public void loginToMasterRealmAdminConsoleAs(UserRepresentation user) {
+        loginToAdminConsoleAs(adminConsole, login, user);
     }
-
-    public void logoutFromTestRealm() {
-        testAdminConsole.navigateTo();
-        assertCurrentUrlStartsWith(testAdminConsole);
-        menu.logOut();
-        assertCurrentUrlStartsWithLoginUrlOf(testAdminConsole);
+    
+    public void logoutFromMasterRealmConsole() {
+        logoutFromAdminConsole(adminConsole);
     }
-
+    
+    public void loginToTestRealmConsoleAs(UserRepresentation user) {
+        loginToAdminConsoleAs(testRealmAdminConsole, testRealmLogin, user);
+    }
+    
+    public void logoutFromTestRealmConsole() {
+        logoutFromAdminConsole(testRealmAdminConsole);
+    }
+    
+    public void loginToAdminConsoleAs(AdminConsole adminConsole, Login login, UserRepresentation user) {
+        adminConsole.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(adminConsole);
+        login.form().login(user);
+        assertCurrentUrlStartsWith(adminConsole);
+    }
+    
+    public void logoutFromAdminConsole(AdminConsole adminConsole) {
+        adminConsole.navigateTo();
+        assertCurrentUrlStartsWith(adminConsole);
+        adminConsole.logOut();
+        assertCurrentUrlStartsWithLoginUrlOf(adminConsole);
+    }
+    
     public ConfigureMenu configure() {
-        return testAdminConsoleRealm.configure();
+        return adminConsoleRealm.configure();
     }
-
+    
     public ManageMenu manage() {
-        return testAdminConsoleRealm.manage();
+        return adminConsoleRealm.manage();
     }
-
-    public void assertFlashMessageSuccess() {
-        flashMessage.waitUntilPresent();
-        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-    }
-
-    public void assertFlashMessageDanger() {
-        flashMessage.waitUntilPresent();
-        assertTrue(flashMessage.getText(), flashMessage.isDanger());
-    }
-
-    public void assertFlashMessageError() {
-        flashMessage.waitUntilPresent();
-        assertTrue(flashMessage.getText(), flashMessage.isError());
-    }
-
+    
 }

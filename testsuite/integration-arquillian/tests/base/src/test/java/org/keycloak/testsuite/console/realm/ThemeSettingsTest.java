@@ -26,6 +26,7 @@ import org.keycloak.testsuite.console.page.realm.ThemeSettings;
 /**
  *
  * @author Filip Kiss
+ * @author tkyjovsk
  */
 public class ThemeSettingsTest extends AbstractRealmTest {
 
@@ -42,17 +43,20 @@ public class ThemeSettingsTest extends AbstractRealmTest {
     public void changeLoginThemeTest() {
         themeSettings.changeLoginTheme(Theme.BASE.getName());
         themeSettings.saveTheme();
-        logoutFromTestRealm();
-        themeSettings.verifyBaseTheme();
 
-        loginAsTestAdmin();
-        tabs().themes();
+        testRealmAdminConsole.navigateTo();
+        testRealmLogin.waitForKeycloakThemeNotPresent();
+        testRealmLogin.form().login(testRealmUser);
+        testRealmAdminConsole.logOut();
+
+        themeSettings.navigateTo();
         themeSettings.changeLoginTheme(Theme.KEYCLOAK.getName());
         themeSettings.saveTheme();
-        logoutFromTestRealm();
-        themeSettings.verifyKeycloakTheme();
 
-        loginAsTestAdmin();
+        testRealmAdminConsole.navigateTo();
+        testRealmLogin.waitForKeycloakThemePresent();
+        testRealmLogin.form().login(testRealmUser);
+        testRealmAdminConsole.logOut();
     }
 
 }

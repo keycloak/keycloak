@@ -18,9 +18,9 @@ public class UserRoleMappingsTest extends AbstractUserTest {
     @Test
     public void addUserAndAssignRole() {
         String testUsername = "tester1";
-        testUser.setUsername(testUsername);
-        testUser.credential(PASSWORD, "pass");
-        createUser(testUser);
+        testRealmUser.setUsername(testUsername);
+        testRealmUser.credential(PASSWORD, "pass");
+        createUser(testRealmUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         users.navigateTo();
@@ -36,9 +36,9 @@ public class UserRoleMappingsTest extends AbstractUserTest {
     @Test
     public void addAndRemoveUserAndAssignRole() {
         String testUsername = "tester2";
-        testUser.setUsername(testUsername);
-        testUser.credential(PASSWORD, "pass");
-        createUser(testUser);
+        testRealmUser.setUsername(testUsername);
+        testRealmUser.credential(PASSWORD, "pass");
+        createUser(testRealmUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
         users.navigateTo();

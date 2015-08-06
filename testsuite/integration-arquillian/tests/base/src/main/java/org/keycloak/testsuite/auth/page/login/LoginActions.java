@@ -18,7 +18,7 @@ public class LoginActions extends AuthRealm {
     }
 
     @FindBy(css = "input[type='submit']")
-    private WebElement loginButton;
+    private WebElement submitButton;
 
     @FindBy(css = "div[id='kc-form-options'] span a")
     private WebElement backToLoginForm;
@@ -27,8 +27,8 @@ public class LoginActions extends AuthRealm {
         backToLoginForm.click();
     }
 
-    public void submit(){
-        loginButton.click();
+    public void submit() {
+        submitButton.click();
     }
 
 }

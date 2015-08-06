@@ -18,11 +18,10 @@
 package org.keycloak.testsuite.console.sessions;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.sessions.RealmSessions;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
+import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 /**
  *
@@ -32,17 +31,20 @@ public class SessionsTest extends AbstractConsoleTest {
 
     @Page
     private RealmSessions realmSessions;
-
-    @Before
-    public void beforeSessionTest() {
-        manage().sessions();
-        realmSessions.realmSessions();
-    }
-
+    
     @Test
     public void testLogoutAllSessions() {
+        loginToTestRealmConsoleAs(testRealmUser);
+        
+        // back to master admin console
+        adminConsoleRealm.navigateTo();
+        manage().sessions();
+        realmSessions.realmSessions();
+
         realmSessions.logoutAllSessions();
-        waitGuiForElementPresent(masterLogin.getLoginPageHeader(), "Home page should be visible after logout");
-        loginAsTestAdmin();
+
+        // verify test user was logged out from the admin console
+        testRealmAdminConsole.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
     }
 }

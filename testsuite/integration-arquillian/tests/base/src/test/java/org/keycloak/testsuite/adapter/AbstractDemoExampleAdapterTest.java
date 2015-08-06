@@ -9,7 +9,6 @@ import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.*;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.auth.page.account.Account;
@@ -20,8 +19,6 @@ import org.keycloak.testsuite.adapter.page.DatabaseServiceExample;
 import org.keycloak.testsuite.adapter.page.ProductPortalExample;
 import org.keycloak.testsuite.model.RequiredUserAction;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
-import org.keycloak.testsuite.auth.page.login.Login;
-import org.keycloak.testsuite.auth.page.login.LoginActions;
 import static org.keycloak.testsuite.util.ApiUtil.findUserByUsername;
 import org.openqa.selenium.By;
 
@@ -35,15 +32,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     private DatabaseServiceExample databaseServiceExample;
 
     @Page
-    protected Login loginDemo;
-
-    @Page
-    private LoginActions demoLoginActions;
-
-    @Page
-    private Account account;
-
-    protected RealmResource demoRealmResource;
+    private Account testRealmAccount;
 
     @Deployment(name = CustomerPortalExample.DEPLOYMENT_NAME)
     private static WebArchive customerPortalExample() throws IOException {
@@ -69,12 +58,14 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        authRealm.setAuthRealm(DEMO);
+        testRealm.setAuthRealm(DEMO);
+        testRealmLogin.setAuthRealm(DEMO);
+        testRealmAccount.setAuthRealm(DEMO);
     }
 
     @Before
     public void beforeDemoExampleTest() {
-        demoRealmResource = keycloak.realm(DEMO);
+        testRealmResource = keycloak.realm(DEMO);
         customerPortalExample.navigateTo();
         driver.manage().deleteAllCookies();
     }
@@ -85,7 +76,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
 
-        loginDemo.login("bburke@redhat.com", "password");
+        testRealmLogin.form().login("bburke@redhat.com", "password");
 
         assertCurrentUrlStartsWith(customerPortalExample);
         customerPortalExample.waitForCustomerListingHeader();
@@ -101,7 +92,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
-        loginDemo.login("bburke@redhat.com", "password");
+        testRealmLogin.form().login("bburke@redhat.com", "password");
         waitGui().until()
                 .element(By.className("kc-feedback-text"))
                 .text()
@@ -112,22 +103,22 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     @Test
     public void testUpdateProfileRequiredUserAction() {
         addRequiredAction("bburke@redhat.com", RequiredUserAction.UPDATE_PROFILE);
-        
+
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
-        loginDemo.login("bburke@redhat.com", "password");
+        testRealmLogin.form().login("bburke@redhat.com", "password");
         waitGui().until()
                 .element(By.className("kc-feedback-text"))
                 .text()
                 .equalTo("You need to update your user profile to activate your account.");
-        account.setEmail("bburke@redhat.com").setFirstName("Bill").setLastName("");
-        demoLoginActions.submit();
+        testRealmAccount.setEmail("bburke@redhat.com").setFirstName("Bill").setLastName("");
+        testRealmAccount.save();
         waitGui().until()
                 .element(By.className("kc-feedback-text"))
                 .text()
                 .equalTo("Please specify last name.");
-        account.setEmail("bburke@redhat.com").setFirstName("Bill").setLastName("Burke");
-        demoLoginActions.submit();
+        testRealmAccount.setEmail("bburke@redhat.com").setFirstName("Bill").setLastName("Burke");
+        testRealmAccount.save();
         waitGui().until()
                 .element(By.tagName("h2"))
                 .text()
@@ -137,7 +128,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     }
 
     private void addRequiredAction(String username, RequiredUserAction action) {
-        UserRepresentation user = findUserByUsername(demoRealmResource, username);
+        UserRepresentation user = findUserByUsername(testRealmResource, username);
         List<String> ra = user.getRequiredActions();
         if (ra == null) {
             ra = new ArrayList<>();
@@ -162,7 +153,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     }
 
     private void removeRequiredAction(String username, RequiredUserAction action) {
-        UserRepresentation user = findUserByUsername(demoRealmResource, username);
+        UserRepresentation user = findUserByUsername(testRealmResource, username);
         List<String> ra = user.getRequiredActions();
         if (ra == null) {
             ra = new ArrayList<>();

@@ -12,6 +12,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.util.RealmUtils.loadRealm;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.adapter.page.JSConsoleExample;
+import static org.keycloak.testsuite.auth.page.AuthRealm.EXAMPLE;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 
@@ -42,7 +43,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        authRealm.setAuthRealm("example");
+        testRealm.setAuthRealm(EXAMPLE);
     }
 
     @Test
@@ -53,13 +54,13 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         pause(1000);
 
         jsConsoleExample.logIn();
-        masterLogin.login("user", "invalid-password");
+        testRealmLogin.form().login("user", "invalid-password");
         assertCurrentUrlDoesntStartWith(jsConsoleExample);
 
-        masterLogin.login("invalid-user", "password");
+        testRealmLogin.form().login("invalid-user", "password");
         assertCurrentUrlDoesntStartWith(jsConsoleExample);
 
-        masterLogin.login("user", "password");
+        testRealmLogin.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Init Success (Authenticated)"));
         assertTrue(driver.getPageSource().contains("Auth Success"));
@@ -80,7 +81,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(driver.getPageSource().contains("Failed to refresh token"));
 
         jsConsoleExample.logIn();
-        masterLogin.login("user", "password");
+        testRealmLogin.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Auth Success"));
 
@@ -97,7 +98,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(driver.getPageSource().contains("Failed to refresh token"));
 
         jsConsoleExample.logIn();
-        masterLogin.login("user", "password");
+        testRealmLogin.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Auth Success"));
 
@@ -119,7 +120,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(driver.getPageSource().contains("Failed to load profile"));
         
         jsConsoleExample.logIn();
-        masterLogin.login("user", "password");
+        testRealmLogin.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Auth Success"));
 

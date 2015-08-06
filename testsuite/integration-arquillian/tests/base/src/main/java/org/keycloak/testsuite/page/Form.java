@@ -1,6 +1,9 @@
 package org.keycloak.testsuite.page;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 /**
@@ -9,6 +12,9 @@ import org.openqa.selenium.WebElement;
  */
 public class Form {
 
+    @Drone
+    protected WebDriver driver;
+    
     @FindByJQuery("button[kc-save] ")
     private WebElement save;
     @FindByJQuery("button[kc-cancel] ")
@@ -22,7 +28,8 @@ public class Form {
         cancel.click();
     }
 
-    public void setInputText(WebElement input, String text) {
+    public static void setInputText(WebElement input, String text) {
+        waitGuiForElementPresent(input, "Required input element not present.");
         if (input.isEnabled()) {
             input.clear();
             if (text != null) {

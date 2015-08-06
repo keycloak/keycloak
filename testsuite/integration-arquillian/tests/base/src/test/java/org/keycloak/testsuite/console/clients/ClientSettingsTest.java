@@ -21,12 +21,14 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import org.junit.Ignore;
 import org.keycloak.representations.idm.ClientRepresentation;
 
 /**
  *
  * @author Filip Kiss
  */
+@Ignore
 public class ClientSettingsTest extends AbstractClientTest {
 
     @Test

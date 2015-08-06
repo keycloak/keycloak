@@ -17,12 +17,10 @@
  */
 package org.keycloak.testsuite.console.page.realm;
 
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementNotPresent;
 import org.openqa.selenium.By;
 
 /**
@@ -48,9 +46,6 @@ public class ThemeSettings extends RealmSettings {
     @FindBy(css = "#emailTheme")
     private Select emailThemeSelect;
 
-    @FindBy(css = "link[href*='login/keycloak/css/login.css']")
-    private WebElement keycloakTheme;
-
     public void changeLoginTheme(String themeName) {
         waitGuiForElement(By.id("loginTheme"));
         loginThemeSelect.selectByVisibleText(themeName);
@@ -66,14 +61,6 @@ public class ThemeSettings extends RealmSettings {
 
     public void changeEmailTheme(String themeName) {
         emailThemeSelect.selectByVisibleText(themeName);
-    }
-
-    public void verifyBaseTheme() {
-        waitGuiForElementNotPresent(keycloakTheme);
-    }
-
-    public void verifyKeycloakTheme() {
-        waitGuiForElement(keycloakTheme);
     }
 
     public void saveTheme() {

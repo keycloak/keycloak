@@ -15,19 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.testsuite.auth.page.account;
 
-package org.keycloak.testsuite.util;
+import javax.ws.rs.core.UriBuilder;
+import org.jboss.arquillian.graphene.page.Page;
 
 /**
  *
  * @author Petr Mensik
  */
-public final class Constants {
+public class ChangePassword extends AccountManagement {
 
-    private Constants() {
+    @Override
+    public UriBuilder createUriBuilder() {
+        return super.createUriBuilder()
+                .path("password");
     }
-    
-    public static String CURRENT_REALM = "master";
-    
-    public static final String ADMIN_PSSWD = "admin";
+
+    @Page
+    private ChangePasswordFields form;
+
+    public ChangePasswordFields form() {
+        return form;
+    }
+
 }

@@ -37,7 +37,7 @@ public class PageAssert {
     }
 
     public static void assertCurrentUrlStartsWith(WebDriver driver, final String url) {
-        WebDriverWait wait = new WebDriverWait(driver, 10);
+        WebDriverWait wait = new WebDriverWait(driver, 3);
         ExpectedCondition<Boolean> urlStartsWith = new ExpectedCondition<Boolean>() {
 
             @Override

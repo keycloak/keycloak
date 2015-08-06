@@ -14,13 +14,14 @@ public class AuthRealm extends AuthServer implements PageWithLoginUrl {
     public static final String AUTH_REALM = "authRealm";
 
     public static final String MASTER = "master";
-    public static final String DEMO = "demo";
     public static final String TEST = "test";
+    public static final String DEMO = "demo";
+    public static final String EXAMPLE = "example";
 
     public static final String ADMIN = "admin";
     
     public AuthRealm() {
-        setUriParameter(AUTH_REALM, TEST);
+        setUriParameter(AUTH_REALM, MASTER);
     }
 
     @Override

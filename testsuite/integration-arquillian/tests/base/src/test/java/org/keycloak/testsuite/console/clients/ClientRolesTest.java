@@ -4,16 +4,10 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.testsuite.console.page.users.UserRoleMappingsForm;
 
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.Assert.*;
-import org.junit.Ignore;
 import org.keycloak.representations.idm.ClientRepresentation;
-import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.arquillian.jira.Jira;
 import org.keycloak.testsuite.console.page.clients.ClientRole;
 import org.keycloak.testsuite.console.page.clients.ClientRoles;
 import org.keycloak.testsuite.console.page.clients.CreateClientRole;

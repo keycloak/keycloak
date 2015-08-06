@@ -69,7 +69,7 @@ public class Registration extends LoginActions {
     }
 
     public void registerNewUser(UserRepresentation user, String confirmPassword) {
-        driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
+        driver.manage().timeouts().setScriptTimeout(3, TimeUnit.SECONDS);
         waitGuiForElementPresent(passwordConfirmInput, "Register form should be visible");
         clearAndType(usernameInput, user.getUsername());
         clearAndType(firstNameInput, user.getFirstName());
@@ -100,13 +100,16 @@ public class Registration extends LoginActions {
         return !feedbackError.getText().equals("Password confirmation doesn't match.");
     }
 
-    public void waitForUsernameInputPresent(boolean present) {
+    public void waitForUsernameInputPresent() {
         driver.manage().timeouts().implicitlyWait(1, TimeUnit.SECONDS);
-        if (present) {
-            waitGuiForElementPresent(usernameInput, 1);
-        } else {
-            waitGuiForElementNotPresent(usernameInput, 1);
-        }
+        waitGuiForElementPresent(usernameInput, 1);
+        driver.manage().timeouts().implicitlyWait(3, TimeUnit.SECONDS);
+    }
+
+    public void waitForUsernameInputNotPresent() {
+        driver.manage().timeouts().implicitlyWait(1, TimeUnit.SECONDS);
+        waitGuiForElementNotPresent(usernameInput, 1);
+        driver.manage().timeouts().implicitlyWait(3, TimeUnit.SECONDS);
     }
 
 }

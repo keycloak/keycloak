@@ -2,12 +2,14 @@ package org.keycloak.testsuite.console.roles;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.keycloak.testsuite.console.page.roles.DefaultRoles;
 import org.keycloak.testsuite.console.page.roles.RealmRoles;
 
 /**
  * Created by fkiss.
  */
+@Ignore
 public class DefaultRolesTest extends AbstractRolesTest {
 
     @Page
@@ -17,7 +19,7 @@ public class DefaultRolesTest extends AbstractRolesTest {
 
     @Before
     public void beforeDefaultRolesTest() {
-        defaultRoles.navigateTo();
+        roles.tabs().defaultRoles();
     }
 
 //    @Test

@@ -10,9 +10,9 @@ import org.junit.Ignore;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.console.page.roles.CreateRole;
 import org.keycloak.testsuite.console.page.roles.Role;
-import org.keycloak.testsuite.console.page.roles.RoleForm;
 import org.keycloak.testsuite.console.page.roles.RolesTable;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
+import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 
 /**
  *
@@ -33,12 +33,12 @@ public class RealmRolesTest extends AbstractRolesTest {
     @Before
     public void beforeTestAddNewRole() {
         testRole = new RoleRepresentation("test_role", "role description");
-        configure().roles();
     }
 
     public void addRole(RoleRepresentation roleRep) {
         assertCurrentUrl(realmRoles);
         realmRoles.table().addRole();
+        pause(250);
         assertCurrentUrl(createRole);
         createRole.form().setBasicAttributes(roleRep);
         createRole.form().save();

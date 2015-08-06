@@ -74,7 +74,7 @@ public class ApiUtil {
         return user;
     }
 
-    public static String createUser(RealmResource realm, UserRepresentation user) {
+    public static String createUserWithAdminClient(RealmResource realm, UserRepresentation user) {
         Response response = realm.users().create(user);
         String createdId = getCreatedId(response);
         response.close();

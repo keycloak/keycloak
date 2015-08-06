@@ -18,78 +18,52 @@
 package org.keycloak.testsuite.auth.page.login;
 
 import javax.ws.rs.core.UriBuilder;
+import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import static org.keycloak.testsuite.util.Constants.ADMIN_PSSWD;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementNotPresent;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**
  *
  * @author Petr Mensik
+ * @author tkyjovsk
  */
-public class Login extends AuthRealm {
+public abstract class Login extends AuthRealm {
+
+    public static final String PROTOCOL = "protocol";
 
     @Override
     public UriBuilder createUriBuilder() {
         return super.createUriBuilder()
-                .path("protocol");
+                .path("protocol/{" + PROTOCOL + "}/auth");
+    }
+    
+    public void setProtocol(String protocol) {
+        setUriParameter(PROTOCOL, protocol);
+    }
+    
+    public String getProtocol() {
+        return getUriParameter(PROTOCOL).toString();
+    }
+    
+    @Page
+    private LoginForm form;
+
+    public LoginForm form() {
+        return form;
     }
 
-    @FindBy(id = "username")
-    private WebElement usernameInput;
+    @FindBy(css = "link[href*='login/keycloak/css/login.css']")
+    private WebElement keycloakTheme;
 
-    @FindBy(id = "password")
-    private WebElement passwordInput;
-
-    @FindBy(linkText = "Register")
-    private WebElement registerLink;
-
-    @FindBy(id = "kc-header")
-    private WebElement loginPageHeader;
-
-    @FindBy(name = "cancel")
-    private WebElement cancelButton;
-
-    public void login(String username, String password) {
-        waitGuiForElementPresent(usernameInput, "Login form should be visible");
-        usernameInput.sendKeys(username);
-        passwordInput.sendKeys(password);
-        passwordInput.submit();
+    public void waitForKeycloakThemeNotPresent() {
+        waitGuiForElementNotPresent(keycloakTheme);
     }
 
-    public void loginAsAdmin() {
-        login("admin", ADMIN_PSSWD);
-    }
-
-    public void registration() {
-        waitGuiForElementPresent(usernameInput, "Login form should be visible");
-        registerLink.click();
-    }
-
-    public String getLoginPageHeaderText() {
-        return loginPageHeader.getText();
-    }
-
-    public WebElement getLoginPageHeader() {
-        return loginPageHeader;
-    }
-
-    public void cancel() {
-        cancelButton.click();
-    }
-
-    public WebElement getUsernameInput() {
-        return usernameInput;
-    }
-
-    public void waitForRegistrationPresent(boolean present) {
-        if (present) {
-            waitGuiForElementPresent(registerLink, 1);
-        } else {
-            waitGuiForElementNotPresent(registerLink, 1);
-        }
+    public void waitForKeycloakThemePresent() {
+        waitGuiForElement(keycloakTheme);
     }
 
 }

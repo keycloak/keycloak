@@ -26,6 +26,7 @@ import org.junit.Before;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ApiUtil.findUserByUsername;
 
 /**
@@ -33,10 +34,16 @@ import static org.keycloak.testsuite.util.ApiUtil.findUserByUsername;
  * @author Petr Mensik
  * @author tkyjovsk
  */
-public class RegistrationTest extends AbstractAccountTest {
+public class RegistrationTest extends AbstractAccountManagementTest {
 
     @Page
-    private Registration registration;
+    private Registration testRealmRegistration;
+
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealmRegistration.setAuthRealm(TEST);
+    }
 
     @Before
     public void beforeUserRegistration() {
@@ -45,59 +52,56 @@ public class RegistrationTest extends AbstractAccountTest {
         testRealmResource.update(realm);
 
         account.navigateTo();
-        testLogin.registration();
+        testRealmLogin.form().register();
 
-        testUser = new UserRepresentation();
-        testUser.setUsername("user");
-        testUser.credential(PASSWORD, "password");
-        testUser.setEmail("user@redhat.com");
-        testUser.setFirstName("user");
-        testUser.setLastName("test");
+        testRealmUser.credential(PASSWORD, PASSWORD);
     }
 
     @Test
     public void registerNewUserTest() {
-        registration.registerNewUser(testUser);
-        assertNotNull(findUserByUsername(testRealmResource, testUser.getUsername()));
+        testRealmRegistration.registerNewUser(testRealmUser);
+        // verify via admin api
+        assertNotNull(findUserByUsername(testRealmResource, testRealmUser.getUsername()));
     }
 
     @Test
     public void registerNewUserWithWrongEmail() {
-        testUser.setEmail("newUser.redhat.com");
-        registration.registerNewUser(testUser);
-        assertTrue(registration.isInvalidEmail());
-        assertNull(findUserByUsername(testRealmResource, testUser.getUsername()));
+        testRealmUser.setEmail("newUser.redhat.com");
+        testRealmRegistration.registerNewUser(testRealmUser);
+        assertTrue(testRealmRegistration.isInvalidEmail());
+        // verify via admin api
+        assertNull(findUserByUsername(testRealmResource, testRealmUser.getUsername()));
     }
 
     @Test
     public void registerNewUserWithWrongAttributes() {
-        testUser = new UserRepresentation();
+        testRealmUser = new UserRepresentation();
 
-        registration.registerNewUser(testUser);
-        assertFalse(registration.isAttributeSpecified("first name"));
-        testUser.setFirstName("name");
-        registration.registerNewUser(testUser);
-        assertFalse(registration.isAttributeSpecified("last name"));
-        testUser.setLastName("surname");
-        registration.registerNewUser(testUser);
-        assertFalse(registration.isAttributeSpecified("email"));
-        testUser.setEmail("mail@redhat.com");
-        registration.registerNewUser(testUser);
-        assertFalse(registration.isAttributeSpecified("username"));
-        testUser.setUsername("user");
-        registration.registerNewUser(testUser);
-        assertFalse(registration.isAttributeSpecified("password"));
-        testUser.credential(PASSWORD, "password");
-        registration.registerNewUser(testUser);
-        assertNotNull(findUserByUsername(testRealmResource, testUser.getUsername()));
+        testRealmRegistration.registerNewUser(testRealmUser);
+        assertFalse(testRealmRegistration.isAttributeSpecified("first name"));
+        testRealmUser.setFirstName("name");
+        testRealmRegistration.registerNewUser(testRealmUser);
+        assertFalse(testRealmRegistration.isAttributeSpecified("last name"));
+        testRealmUser.setLastName("surname");
+        testRealmRegistration.registerNewUser(testRealmUser);
+        assertFalse(testRealmRegistration.isAttributeSpecified("email"));
+        testRealmUser.setEmail("mail@redhat.com");
+        testRealmRegistration.registerNewUser(testRealmUser);
+        assertFalse(testRealmRegistration.isAttributeSpecified("username"));
+        testRealmUser.setUsername("user");
+        testRealmRegistration.registerNewUser(testRealmUser);
+        assertFalse(testRealmRegistration.isAttributeSpecified("password"));
+        testRealmUser.credential(PASSWORD, PASSWORD);
+        testRealmRegistration.registerNewUser(testRealmUser);
+        assertNotNull(findUserByUsername(testRealmResource, testRealmUser.getUsername()));
     }
 
     @Test
     public void registerNewUserWithNotMatchingPasswords() {
-        registration.registerNewUser(testUser, "psswd");
-        assertFalse(registration.isPasswordSame());
-        registration.registerNewUser(testUser);
-        assertNotNull(findUserByUsername(testRealmResource, testUser.getUsername()));
+        testRealmRegistration.registerNewUser(testRealmUser, "psswd");
+        assertFalse(testRealmRegistration.isPasswordSame());
+        testRealmRegistration.registerNewUser(testRealmUser);
+        assertNotNull(findUserByUsername(testRealmResource, testRealmUser.getUsername()));
     }
 
 }

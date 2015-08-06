@@ -32,7 +32,6 @@ import org.keycloak.testsuite.auth.page.account.Sessions;
 import static org.junit.Assert.*;
 import org.keycloak.Version;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -52,6 +51,7 @@ import org.keycloak.testsuite.util.SeleniumUtils;
 import static org.keycloak.testsuite.util.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import org.keycloak.testsuite.util.SecondBrowser;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.Time;
 import org.openqa.selenium.By;
@@ -75,7 +75,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     private InputPortal inputPortal;
 
     @Page
-    private Sessions accountSessionsPage;
+    private Sessions testRealmSessions;
 
     protected static WebArchive servletDeployment(String name, Class... servletClasses) {
         return servletDeployment(name, "keycloak.json", servletClasses);
@@ -141,8 +141,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        authRealm.setAuthRealm(DEMO);
-        accountSessionsPage.setAuthRealm(DEMO);
+        testRealm.setAuthRealm(DEMO);
+        testRealmSessions.setAuthRealm(DEMO);
     }
 
     private final String slash = "";
@@ -154,8 +154,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         assertEquals(driver.getCurrentUrl(), inputPortal + slash);
         inputPortal.execute("hello");
 
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
-        masterLogin.login("bburke@redhat.com", "password");
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        testRealmLogin.form().login("bburke@redhat.com", "password");
         assertEquals(driver.getCurrentUrl(), inputPortal + "/secured/post");
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("parameter=hello"));
@@ -164,11 +164,11 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
                 .queryParam(OAuth2Constants.REDIRECT_URI, customerPortal.toString())
                 .build("demo").toString();
         driver.navigate().to(logoutUri);
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         customerPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
         // test unsecured POST KEYCLOAK-901
         Client client = ClientBuilder.newClient();
@@ -183,9 +183,9 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void testLoginSSOAndLogout() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        SeleniumUtils.waitGuiForElement(masterLogin.getUsernameInput());
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
-        masterLogin.login("bburke@redhat.com", "password");
+        waitGuiForElement(testRealmLogin.form().getUsernameInput());
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        testRealmLogin.form().login("bburke@redhat.com", "password");
         assertEquals(driver.getCurrentUrl(), customerPortal + slash);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
@@ -217,12 +217,12 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
                 .queryParam(OAuth2Constants.REDIRECT_URI, customerPortal).build("demo").toString();
         driver.navigate().to(logoutUri);
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         customerPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
-        masterLogin.cancel();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        testRealmLogin.form().cancel();
         assertTrue(driver.getPageSource().contains("Error Page"));
     }
 
@@ -230,8 +230,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void testServletRequestLogout() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
-        masterLogin.login("bburke@redhat.com", "password");
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        testRealmLogin.form().login("bburke@redhat.com", "password");
         assertEquals(driver.getCurrentUrl(), customerPortal + slash);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
@@ -253,33 +253,33 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         assertTrue(driver.getPageSource().contains("servlet logout ok"));
 
         customerPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
     }
 
     @Test
     public void testLoginSSOIdle() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        SeleniumUtils.waitGuiForElement(masterLogin.getUsernameInput());
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
-        masterLogin.login("bburke@redhat.com", "password");
+        SeleniumUtils.waitGuiForElement(testRealmLogin.form().getUsernameInput());
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        testRealmLogin.form().login("bburke@redhat.com", "password");
         assertEquals(driver.getCurrentUrl(), customerPortal + slash);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
-        RealmRepresentation demoRealm = keycloak.realm("demo").toRepresentation();
-        int originalIdle = demoRealm.getSsoSessionIdleTimeout();
-        demoRealm.setSsoSessionIdleTimeout(1);
-        keycloak.realm("demo").update(demoRealm);
+        RealmRepresentation demoRealmRep = keycloak.realm("demo").toRepresentation();
+        int originalIdle = demoRealmRep.getSsoSessionIdleTimeout();
+        demoRealmRep.setSsoSessionIdleTimeout(1);
+        keycloak.realm("demo").update(demoRealmRep);
 
 //		Thread.sleep(2000);
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
-        demoRealm.setSsoSessionIdleTimeout(originalIdle);
-        keycloak.realm("demo").update(demoRealm);
+        demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
+        keycloak.realm("demo").update(demoRealmRep);
     }
 
     @Test
@@ -288,18 +288,18 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
         System.out.println("Current url: " + driver.getCurrentUrl());
-        SeleniumUtils.waitGuiForElement(masterLogin.getUsernameInput());
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
-        masterLogin.login("bburke@redhat.com", "password");
+        SeleniumUtils.waitGuiForElement(testRealmLogin.form().getUsernameInput());
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        testRealmLogin.form().login("bburke@redhat.com", "password");
         System.out.println("Current url: " + driver.getCurrentUrl());
         assertCurrentUrl(customerPortal);
         String pageSource = driver.getPageSource();
         System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
-        RealmRepresentation demoRealm = keycloak.realm("demo").toRepresentation();
-        int originalIdle = demoRealm.getSsoSessionIdleTimeout();
-        demoRealm.setSsoSessionIdleTimeout(1);
+        RealmRepresentation demoRealmRep = keycloak.realm("demo").toRepresentation();
+        int originalIdle = demoRealmRep.getSsoSessionIdleTimeout();
+        demoRealmRep.setSsoSessionIdleTimeout(1);
 //        keycloak.realm("demo").update(demoRealm);
 
         Time.setOffset(2);
@@ -308,10 +308,10 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         // KEYCLOAK-1478 - no REST API alternative for removeExpiredUserSessions()
         // test SSO
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
         // need to cleanup so other tests don't fail, so invalidate http sessions on remote clients.
-        demoRealm.setSsoSessionIdleTimeout(originalIdle);
+        demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
         // note: sessions invalidated after each test, see: AbstractKeycloakTest.afterAbstractKeycloakTest()
 
         Time.setOffset(0);
@@ -321,24 +321,24 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void testLoginSSOMax() throws InterruptedException {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        SeleniumUtils.waitGuiForElement(masterLogin.getUsernameInput());
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
-        masterLogin.login("bburke@redhat.com", "password");
+        SeleniumUtils.waitGuiForElement(testRealmLogin.form().getUsernameInput());
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        testRealmLogin.form().login("bburke@redhat.com", "password");
         assertEquals(driver.getCurrentUrl(), customerPortal + slash);
         String pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
-        RealmRepresentation demoRealm = keycloak.realm("demo").toRepresentation();
-        int originalIdle = demoRealm.getSsoSessionMaxLifespan();
-        demoRealm.setSsoSessionMaxLifespan(1);
-        keycloak.realm("demo").update(demoRealm);
+        RealmRepresentation demoRealmRep = keycloak.realm("demo").toRepresentation();
+        int originalIdle = demoRealmRep.getSsoSessionMaxLifespan();
+        demoRealmRep.setSsoSessionMaxLifespan(1);
+        keycloak.realm("demo").update(demoRealmRep);
 
         TimeUnit.SECONDS.sleep(2);
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
-        demoRealm.setSsoSessionIdleTimeout(originalIdle);
-        keycloak.realm("demo").update(demoRealm);
+        demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
+        keycloak.realm("demo").update(demoRealmRep);
     }
 
     @Jira("KEYCLOAK-518")
@@ -432,8 +432,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void testAuthenticated() {
         // test login to customer-portal which does a bearer request to customer-db
         securePortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
-        masterLogin.login("bburke@redhat.com", "password");
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        testRealmLogin.form().login("bburke@redhat.com", "password");
         assertCurrentUrl(securePortal);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
@@ -441,9 +441,9 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
                 .queryParam(OAuth2Constants.REDIRECT_URI, securePortal).build("demo").toString();
         driver.navigate().to(logoutUri);
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         securePortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
     }
 
     @Drone
@@ -454,11 +454,11 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Test
     public void testSingleSessionInvalidated() {
 
-        loginAndCheckSession(driver, masterLogin);
+        loginAndCheckSession(driver, login);
 
         // cannot pass to loginAndCheckSession becayse loginPage is not working together with driver2, therefore copypasta
         driver2.navigate().to(sessionPortal.toString());
-        assertCurrentUrlStartsWithLoginUrlOf(driver2, authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(driver2, testRealm);
         driver2.findElement(By.id("username")).sendKeys("bburke@redhat.com");
         driver2.findElement(By.id("password")).sendKeys("password");
         driver2.findElement(By.id("password")).submit();
@@ -474,11 +474,11 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
                 .queryParam(OAuth2Constants.REDIRECT_URI, sessionPortal).build("demo").toString();
         driver.navigate().to(logoutUri);
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
         // Assert that I am logged out in browser1
         sessionPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
         // Assert that I am still logged in browser2 and same session is still preserved
         driver2.navigate().to(sessionPortal.toString());
@@ -487,29 +487,28 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         assertTrue(pageSource.contains("Counter=3"));
 
         driver2.navigate().to(logoutUri);
-        assertCurrentUrlStartsWithLoginUrlOf(driver2, authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(driver2, testRealm);
 
     }
 
     @Test
     @Jira("KEYCLOAK-741, KEYCLOAK-1485")
     public void testSessionInvalidatedAfterFailedRefresh() {
-        RealmResource demoRealm = keycloak.realm("demo");
-        RealmRepresentation demoRealmRep = demoRealm.toRepresentation();
+        RealmRepresentation testRealmRep = testRealmResource.toRepresentation();
         ClientResource sessionPortalRes = null;
-        for (ClientRepresentation clientRep : demoRealm.clients().findAll()) {
+        for (ClientRepresentation clientRep : testRealmResource.clients().findAll()) {
             if ("session-portal".equals(clientRep.getClientId())) {
-                sessionPortalRes = demoRealm.clients().get(clientRep.getId());
+                sessionPortalRes = testRealmResource.clients().get(clientRep.getId());
             }
         }
         assertNotNull(sessionPortalRes);
         sessionPortalRes.toRepresentation().setAdminUrl("");
-        int origTokenLifespan = demoRealmRep.getAccessCodeLifespan();
-        demoRealmRep.setAccessCodeLifespan(1);
-        demoRealm.update(demoRealmRep);
+        int origTokenLifespan = testRealmRep.getAccessCodeLifespan();
+        testRealmRep.setAccessCodeLifespan(1);
+        testRealmResource.update(testRealmRep);
 
         // Login
-        loginAndCheckSession(driver, masterLogin);
+        loginAndCheckSession(driver, login);
 
         // Logout
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
@@ -518,22 +517,22 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
         // Assert that http session was invalidated
         sessionPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
-        masterLogin.login("bburke@redhat.com", "password");
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        testRealmLogin.form().login("bburke@redhat.com", "password");
         assertEquals(driver.getCurrentUrl(), this.sessionPortal + slash);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));
 
         sessionPortalRes.toRepresentation().setAdminUrl(this.sessionPortal.toString());
-        demoRealmRep.setAccessCodeLifespan(origTokenLifespan);
-        demoRealm.update(demoRealmRep);
+        testRealmRep.setAccessCodeLifespan(origTokenLifespan);
+        testRealmResource.update(testRealmRep);
     }
 
     @Test
     @Jira("KEYCLOAK-942")
     public void testAdminApplicationLogout() {
         // login as bburke
-        loginAndCheckSession(driver, masterLogin);
+        loginAndCheckSession(driver, login);
         // logout mposolda with admin client
         findClientResourceByClientId(keycloak.realm("demo"), "session-portal")
                 .logoutUser("mposolda");
@@ -551,17 +550,17 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Jira("KEYCLOAK-1216, KEYCLOAK-1485")
     public void testAccountManagementSessionsLogout() {
         // login as bburke
-        loginAndCheckSession(driver, masterLogin);
-        accountSessionsPage.navigateTo();
-        accountSessionsPage.logoutAll();
+        loginAndCheckSession(driver, login);
+        testRealmSessions.navigateTo();
+        testRealmSessions.logoutAll();
         // Assert I need to login again (logout was propagated to the app)
-        loginAndCheckSession(driver, masterLogin);
+        loginAndCheckSession(driver, login);
     }
 
-    private void loginAndCheckSession(WebDriver driver, Login loginPage) {
+    private void loginAndCheckSession(WebDriver driver, Login login) {
         sessionPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
-        loginPage.login("bburke@redhat.com", "password");
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        login.form().login("bburke@redhat.com", "password");
         assertEquals(driver.getCurrentUrl(), sessionPortal + slash);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));

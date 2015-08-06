@@ -19,9 +19,11 @@ public abstract class AbstractUserTest extends AbstractConsoleTest {
     @Page
     protected CreateUser createUser;
 
+    UserRepresentation newTestRealmUser;
+    
     @Before
     public void beforeRoleMappingsTest() {
-        testUser = new UserRepresentation();
+        newTestRealmUser = new UserRepresentation();
         users.navigateTo();
     }
 

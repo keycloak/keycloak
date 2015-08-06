@@ -20,7 +20,6 @@ package org.keycloak.testsuite.console.users;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
-import org.junit.Before;
 import org.junit.Ignore;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -31,20 +30,14 @@ import org.keycloak.representations.idm.UserRepresentation;
  */
 public class UserAttributesTest extends AbstractUserTest {
     
-    @Before
-    public void beforeAddNewUserTest() {
-        users.navigateTo();
-        testUser = new UserRepresentation();
-    }
-
     @Test
     public void addUserWithInvalidEmailTest() {
         String testUsername = "testUserInvEmail";
         String invalidEmail = "user.redhat.com";
-        testUser.setUsername(testUsername);
-        testUser.credential(PASSWORD, "pass");
-        testUser.setEmail(invalidEmail);
-        createUser(testUser);
+        newTestRealmUser.setUsername(testUsername);
+        newTestRealmUser.credential(PASSWORD, "pass");
+        newTestRealmUser.setEmail(invalidEmail);
+        createUser(newTestRealmUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
         users.navigateTo();
@@ -53,7 +46,7 @@ public class UserAttributesTest extends AbstractUserTest {
 
     @Test
     public void addUserWithNoUsernameTest() {
-        createUser(testUser);
+        createUser(newTestRealmUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
     }
@@ -62,18 +55,18 @@ public class UserAttributesTest extends AbstractUserTest {
     @Test
     public void addUserWithLongNameTest() {
         String longUserName = "thisisthelongestnameeveranditcannotbeusedwhencreatingnewuserinkeycloak";
-        testUser.setUsername(longUserName);
-        createUser(testUser);
+        newTestRealmUser.setUsername(longUserName);
+        createUser(newTestRealmUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
-        assertNull(users.findUser(testUser.getUsername()));
+        assertNull(users.findUser(newTestRealmUser.getUsername()));
     }
 
     @Test
     public void addDuplicatedUser() {
         String testUsername = "test_duplicated_user";
-        testUser.setUsername(testUsername);
-        createUser(testUser);
+        newTestRealmUser.setUsername(testUsername);
+        createUser(newTestRealmUser);
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
 

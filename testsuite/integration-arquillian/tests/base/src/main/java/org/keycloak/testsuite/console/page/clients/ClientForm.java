@@ -2,8 +2,8 @@ package org.keycloak.testsuite.console.page.clients;
 
 import java.util.List;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.util.Forms.setCheckboxValue;
 import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
 import org.openqa.selenium.WebElement;
@@ -21,10 +21,8 @@ public class ClientForm extends Form {
     @FindBy(id = "name")
     private WebElement nameInput;
 
-    @FindBy(id = "")
-    private WebElement enabledSwitchToggle;
-    @FindBy(id = "enabled")
-    private WebElement enabledInput;
+    @FindBy(xpath = "//div[@class='onoffswitch' and ./input[@id='enabled']]")
+    private OnOffSwitch enabledSwitch;
 
     @FindBy(id = "accessType")
     private WebElement accessTypeDropDownMenu;
@@ -51,7 +49,7 @@ public class ClientForm extends Form {
     }
 
     public void setEnabled(boolean enabled) {
-        setCheckboxValue(enabledInput, enabled);
+        enabledSwitch.setOn(enabled);
     }
 
     public void setAccessType(ClientRepresentation client) {

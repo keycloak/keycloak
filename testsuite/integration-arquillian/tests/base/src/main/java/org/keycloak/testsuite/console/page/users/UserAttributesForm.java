@@ -2,8 +2,8 @@ package org.keycloak.testsuite.console.page.users;
 
 import java.util.List;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.util.Forms.setCheckboxValue;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -30,16 +30,11 @@ public class UserAttributesForm extends Form {
     @FindBy(id = "lastName")
     private WebElement lastNameInput;
 
-    @FindBy(id = "emailVerified")
-    private WebElement emailVerifiedSwitchToggle;
+    @FindBy(xpath = "//div[@class='onoffswitch' and ./input[@id='userEnabled']]")
+    private OnOffSwitch userEnabledSwitch;
 
-    @FindBy(css = "label[for='userEnabled']")
-    private WebElement userEnabledSwitchToggle;
-
-    @FindBy(id = "userEnabled")
-    private WebElement userEnabledCheckbox;
-    @FindBy(id = "emailVerified")
-    private WebElement emailVerifiedCheckbox;
+    @FindBy(xpath = "//div[@class='onoffswitch' and ./input[@id='emailVerified']]")
+    private OnOffSwitch emailVerifiedSwitch;
 
     @FindBy(css = "input[id='s2id_autogen3']")
     private WebElement requiredUserActionsInput;
@@ -99,19 +94,19 @@ public class UserAttributesForm extends Form {
     }
 
     public boolean isEnabled() {
-        return userEnabledCheckbox.isSelected();
+        return userEnabledSwitch.isOn();
     }
 
     public void setEnabled(boolean enabled) {
-        setCheckboxValue(userEnabledCheckbox, enabled);
+        userEnabledSwitch.setOn(enabled);
     }
 
     public boolean isEmailVerified() {
-        return emailVerifiedCheckbox.isSelected();
+        return emailVerifiedSwitch.isOn();
     }
 
     public void setEmailVerified(boolean emailVerified) {
-        setCheckboxValue(emailVerifiedCheckbox, emailVerified);
+        emailVerifiedSwitch.setOn(emailVerified);
     }
 
     public void setRequiredActions(List<String> requiredActions) {

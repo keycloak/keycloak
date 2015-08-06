@@ -16,6 +16,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.util.RealmUtils.loadRealm;
 import static org.keycloak.testsuite.adapter.AbstractExampleAdapterTest.exampleDeployment;
 import org.keycloak.testsuite.adapter.page.BasicAuthExample;
+import static org.keycloak.testsuite.auth.page.AuthRealm.EXAMPLE;
 
 public abstract class AbstractBasicAuthExampleAdapterTest extends AbstractExampleAdapterTest {
 
@@ -35,7 +36,7 @@ public abstract class AbstractBasicAuthExampleAdapterTest extends AbstractExampl
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        authRealm.setAuthRealm("example");
+        testRealm.setAuthRealm(EXAMPLE);
     }
 
     @Test

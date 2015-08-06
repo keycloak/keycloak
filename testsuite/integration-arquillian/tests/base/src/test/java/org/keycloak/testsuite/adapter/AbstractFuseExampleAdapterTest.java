@@ -36,7 +36,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
     protected ProductPortalFuseExample productPortal;
 
     @Page
-    protected Account account;
+    protected Account testRealmAccount;
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
@@ -47,8 +47,9 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        authRealm.setAuthRealm(DEMO);
-        account.setAuthRealm(DEMO);
+        testRealm.setAuthRealm(DEMO);
+        testRealmLogin.setAuthRealm(DEMO);
+        testRealmAccount.setAuthRealm(DEMO);
     }
 
     // no Arquillian deployments - examples already installed by maven
@@ -59,9 +60,9 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         assertCurrentUrlStartsWith(customerPortal);
 
         customerPortal.clickCustomerListingLink();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
-        masterLogin.login("bburke@redhat.com", "password");
+        testRealmLogin.form().login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(customerListing);
 
         String src = driver.getPageSource();
@@ -73,15 +74,15 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         // account mgmt
         customerListing.clickAccountManagement();
 
-        assertCurrentUrlStartsWith(account);
-        assertEquals(account.getUsername(), "bburke@redhat.com");
+        assertCurrentUrlStartsWith(testRealmAccount);
+        assertEquals(testRealmAccount.getUsername(), "bburke@redhat.com");
 
         driver.navigate().back();
         customerListing.clickLogOut();
 
         // assert user not logged in
         customerPortal.clickCustomerListingLink();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
     }
 
@@ -91,9 +92,9 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         assertCurrentUrlStartsWith(customerPortal);
 
         customerPortal.clickAdminInterfaceLink();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
-        masterLogin.login("admin", "password");
+        testRealmLogin.form().login("admin", "password");
         assertCurrentUrlStartsWith(adminInterface);
         assertTrue(driver.getPageSource().contains("Hello admin!"));
 
@@ -103,9 +104,9 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         assertCurrentUrlStartsWith(customerPortal);
 
         customerPortal.clickAdminInterfaceLink();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
-        masterLogin.login("bburke@redhat.com", "password");
+        testRealmLogin.form().login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(adminInterface);
         assertTrue(driver.getPageSource().contains("Status code is 403"));
     }
@@ -113,9 +114,9 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
     @Test
     public void testProductPortal() {
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
-        masterLogin.login("bburke@redhat.com", "password");
+        testRealmLogin.form().login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(productPortal);
 
         assertTrue(productPortal.getProduct1UnsecuredText().contains("401: Unauthorized"));
@@ -123,7 +124,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         assertTrue(productPortal.getProduct2SecuredText().contains("Product received: id=2"));
 
         productPortal.clickLogOutLink();
-        assertCurrentUrlStartsWithLoginUrlOf(authRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
     }
 
 }
