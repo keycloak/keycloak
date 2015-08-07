@@ -33,11 +33,21 @@ public class CustomerPortalExample extends AbstractPageWithInjectedUrl {
     @FindByJQuery("h1:contains('Customer Listing')")
     private WebElement customerListingHeader;
 
+    @FindByJQuery("h1:contains('Customer Session')")
+    private WebElement customerSessionHeader;
+
     @FindByJQuery("a:contains('Customer Admin Interface')")
     private WebElement customerAdminInterfaceLink;
 
-    @FindByJQuery("a:contains('Customer Sessions')")
-    private WebElement customerSessionsLink;
+    @FindByJQuery("a:contains('Customer Session')")
+    private WebElement customerSessionLink;
+
+    @FindByJQuery("a:contains('products')")
+    private WebElement productsLink;
+
+    public void goToProducts() {
+        productsLink.click();
+    }
 
     public void customerListing() {
         customerListingLink.click();
@@ -47,12 +57,17 @@ public class CustomerPortalExample extends AbstractPageWithInjectedUrl {
         customerAdminInterfaceLink.click();
     }
 
-    public void customerSessions() {
-        customerSessionsLink.click();
+    public void customerSession() {
+        SeleniumUtils.waitGuiForElement(customerSessionLink);
+        customerSessionLink.click();
     }
 
     public void waitForCustomerListingHeader() {
         SeleniumUtils.waitGuiForElementNotPresent(customerListingHeader);
+    }
+
+    public void waitForCustomerSessionHeader() {
+        SeleniumUtils.waitGuiForElementNotPresent(customerSessionHeader);
     }
 
 }
