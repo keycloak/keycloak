@@ -15,6 +15,7 @@ import org.keycloak.testsuite.adapter.page.CustomerPortalExample;
 import org.keycloak.testsuite.adapter.page.DatabaseServiceExample;
 import org.keycloak.testsuite.adapter.page.ProductPortalExample;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
+import org.openqa.selenium.By;
 
 public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdapterTest {
 
@@ -64,8 +65,9 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         driver.manage().deleteAllCookies();
     }
 
+    @Ignore
     @Test
-    public void simpleCustomerPortalTest() throws InterruptedException {
+    public void customerPortalListingTest() throws InterruptedException {
 
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
@@ -80,4 +82,76 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         Assert.assertTrue(driver.getPageSource().contains("Stian Thorgersen"));
     }
 
+    @Ignore
+    @Test
+    public void customerPortalSessionTest() {
+
+        customerPortalExample.navigateTo();
+        customerPortalExample.customerSession();
+
+        testRealmLogin.form().login("bburke@redhat.com", "password");
+
+        assertCurrentUrlStartsWith(customerPortalExample);
+
+        customerPortalExample.waitForCustomerSessionHeader();
+        Assert.assertTrue(driver.getPageSource().contains("You visited this page"));
+    }
+
+    @Ignore
+    @Test
+    public void productPortalListingTest() {
+
+        productPortalExample.navigateTo();
+        productPortalExample.productListing();
+
+        testRealmLogin.form().login("bburke@redhat.com", "password");
+
+        assertCurrentUrlStartsWith(productPortalExample);
+        productPortalExample.waitForProductListingHeader();
+
+        Assert.assertTrue(driver.getPageSource().contains("iphone"));
+        Assert.assertTrue(driver.getPageSource().contains("ipad"));
+        Assert.assertTrue(driver.getPageSource().contains("ipod"));
+
+        productPortalExample.goToCustomers();
+    }
+
+    @Test
+    public void goToProductPortalWithOneLoginTest() {
+
+        productPortalExample.navigateTo();
+        productPortalExample.productListing();
+
+        testRealmLogin.form().login("bburke@redhat.com", "password");
+
+        assertCurrentUrlStartsWith(productPortalExample);
+        productPortalExample.waitForProductListingHeader();
+        productPortalExample.goToCustomers();
+
+        assertCurrentUrlStartsWith(customerPortalExample);
+        customerPortalExample.customerListing();
+        customerPortalExample.goToProducts();
+        assertCurrentUrlStartsWith(productPortalExample);
+    }
+
+    @Test
+    public void logoutFromAllAppsTest() {
+
+        productPortalExample.navigateTo();
+        productPortalExample.productListing();
+
+        testRealmLogin.form().login("bburke@redhat.com", "password");
+
+        assertCurrentUrlStartsWith(productPortalExample);
+        productPortalExample.waitForProductListingHeader();
+
+        driver.findElement(By.cssSelector("a:contains('logout')")).click();
+        assertCurrentUrlStartsWith(customerPortalExample);
+
+        customerPortalExample.navigateTo();
+        customerPortalExample.customerListing();
+        testRealmLogin.form().login("bburke@redhat.com", "password");
+
+        driver.findElement(By.cssSelector("a:contains('logout')")).click();
+    }
 }
