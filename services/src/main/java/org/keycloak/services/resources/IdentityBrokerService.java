@@ -469,7 +469,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     protected Response browserAuthentication(ClientSessionModel clientSession, String errorMessage) {
         this.event.event(EventType.LOGIN);
-        AuthenticationFlowModel flow = realmModel.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+        AuthenticationFlowModel flow = realmModel.getBrowserFlow();
         String flowId = flow.getId();
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setClientSession(clientSession)

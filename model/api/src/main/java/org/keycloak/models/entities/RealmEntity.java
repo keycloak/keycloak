@@ -86,6 +86,9 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private List<AuthenticationFlowEntity> authenticationFlows = new ArrayList<>();
     private List<AuthenticatorConfigEntity> authenticatorConfigs = new ArrayList<>();
     private List<RequiredActionProviderEntity> requiredActionProviders = new ArrayList<>();
+    private String browserFlow;
+    private String registrationFlow;
+    private String directGrantFlow;
 
 
     public String getName() {
@@ -565,6 +568,30 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setOtpPolicyPeriod(int otpPolicyPeriod) {
         this.otpPolicyPeriod = otpPolicyPeriod;
+    }
+
+    public String getBrowserFlow() {
+        return browserFlow;
+    }
+
+    public void setBrowserFlow(String browserFlow) {
+        this.browserFlow = browserFlow;
+    }
+
+    public String getRegistrationFlow() {
+        return registrationFlow;
+    }
+
+    public void setRegistrationFlow(String registrationFlow) {
+        this.registrationFlow = registrationFlow;
+    }
+
+    public String getDirectGrantFlow() {
+        return directGrantFlow;
+    }
+
+    public void setDirectGrantFlow(String directGrantFlow) {
+        this.directGrantFlow = directGrantFlow;
     }
 }
 

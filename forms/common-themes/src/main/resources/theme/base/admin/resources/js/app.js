@@ -1087,6 +1087,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'AuthenticationFlowsCtrl'
         })
+        .when('/realms/:realm/authentication/flow-bindings', {
+            templateUrl : resourceUrl + '/partials/authentication-flow-bindings.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                flows : function(AuthenticationFlowsLoader) {
+                    return AuthenticationFlowsLoader();
+                },
+                serverInfo : function(ServerInfo) {
+                    return ServerInfo.delay;
+                }
+            },
+            controller : 'RealmFlowBindingCtrl'
+        })
         .when('/realms/:realm/authentication/flows/:flow', {
             templateUrl : resourceUrl + '/partials/authentication-flows.html',
             resolve : {

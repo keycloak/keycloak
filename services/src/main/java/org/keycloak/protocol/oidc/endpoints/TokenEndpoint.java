@@ -331,7 +331,7 @@ public class TokenEndpoint {
         clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
         clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
         clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
-        AuthenticationFlowModel flow = realm.getFlowByAlias(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW);
+        AuthenticationFlowModel flow = realm.getDirectGrantFlow();
         String flowId = flow.getId();
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setClientSession(clientSession)

@@ -91,6 +91,10 @@ public class CachedRealm implements Serializable {
     private MultivaluedHashMap<String, AuthenticationExecutionModel> authenticationExecutions = new MultivaluedHashMap<>();
     private Map<String, AuthenticationExecutionModel> executionsById = new HashMap<>();
 
+    private AuthenticationFlowModel browserFlow;
+    private AuthenticationFlowModel registrationFlow;
+    private AuthenticationFlowModel directGrantFlow;
+
     private boolean eventsEnabled;
     private long eventsExpiration;
     private Set<String> eventsListeners = new HashSet<String>();
@@ -213,6 +217,10 @@ public class CachedRealm implements Serializable {
             requiredActionProviders.put(action.getId(), action);
             requiredActionProvidersByAlias.put(action.getAlias(), action);
         }
+
+        browserFlow = model.getBrowserFlow();
+        registrationFlow = model.getRegistrationFlow();
+        directGrantFlow = model.getDirectGrantFlow();
 
     }
 
@@ -462,5 +470,17 @@ public class CachedRealm implements Serializable {
 
     public OTPPolicy getOtpPolicy() {
         return otpPolicy;
+    }
+
+    public AuthenticationFlowModel getBrowserFlow() {
+        return browserFlow;
+    }
+
+    public AuthenticationFlowModel getRegistrationFlow() {
+        return registrationFlow;
+    }
+
+    public AuthenticationFlowModel getDirectGrantFlow() {
+        return directGrantFlow;
     }
 }

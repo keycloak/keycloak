@@ -343,7 +343,22 @@ public class RepresentationToModel {
                     newRealm.addAuthenticatorExecution(execution);
                 }
             }
-         }
+        }
+        if (rep.getBrowserFlow() == null) {
+            newRealm.setBrowserFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW));
+        } else {
+            newRealm.setBrowserFlow(newRealm.getFlowByAlias(rep.getBrowserFlow()));
+        }
+        if (rep.getRegistrationFlow() == null) {
+            newRealm.setRegistrationFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.REGISTRATION_FLOW));
+        } else {
+            newRealm.setRegistrationFlow(newRealm.getFlowByAlias(rep.getRegistrationFlow()));
+        }
+        if (rep.getDirectGrantFlow() == null) {
+            newRealm.setDirectGrantFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW));
+        } else {
+            newRealm.setDirectGrantFlow(newRealm.getFlowByAlias(rep.getDirectGrantFlow()));
+        }
 
     }
 
@@ -541,6 +556,15 @@ public class RepresentationToModel {
         }
         if(rep.getDefaultLocale() != null){
             realm.setDefaultLocale(rep.getDefaultLocale());
+        }
+        if (rep.getBrowserFlow() != null) {
+            realm.setBrowserFlow(realm.getFlowByAlias(rep.getBrowserFlow()));
+        }
+        if (rep.getRegistrationFlow() != null) {
+            realm.setRegistrationFlow(realm.getFlowByAlias(rep.getRegistrationFlow()));
+        }
+        if (rep.getDirectGrantFlow() != null) {
+            realm.setDirectGrantFlow(realm.getFlowByAlias(rep.getDirectGrantFlow()));
         }
     }
 

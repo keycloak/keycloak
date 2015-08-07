@@ -376,6 +376,7 @@ module.controller('RealmOtpPolicyCtrl', function($scope, Current, Realm, realm, 
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/otp-policy");
 });
 
+
 module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications) {
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/theme-settings");
 
@@ -1620,6 +1621,13 @@ module.controller('IdentityProviderMapperCreateCtrl', function($scope, realm, id
 
 });
 
+module.controller('RealmFlowBindingCtrl', function($scope, flows, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications) {
+    $scope.flows = flows;
+
+    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/flow-bindings");
+});
+
+
 module.controller('CreateFlowCtrl', function($scope, realm,
                                              AuthenticationFlows,
                                              Notifications, $location) {
@@ -1770,8 +1778,9 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
     };
 
     $scope.removeFlow = function() {
-        AuthenticationFlows.remove({realm: realm, flow: flow.id}, function() {
-            $route.reload();
+        console.log('Remove flow:' + $scope.flow.alias);
+        AuthenticationFlows.remove({realm: realm.realm, flow: $scope.flow.id}, function() {
+            $location.url("/realms/" + realm.realm + '/authentication/flows');
             Notifications.success("Flow removed");
 
         })

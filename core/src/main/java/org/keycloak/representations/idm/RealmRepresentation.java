@@ -87,6 +87,9 @@ public class RealmRepresentation {
     protected List<AuthenticationFlowRepresentation> authenticationFlows;
     protected List<AuthenticatorConfigRepresentation> authenticatorConfig;
     protected List<RequiredActionProviderRepresentation> requiredActions;
+    protected String browserFlow;
+    protected String registrationFlow;
+    protected String directGrantFlow;
 
     @Deprecated
     protected Boolean social;
@@ -707,5 +710,29 @@ public class RealmRepresentation {
 
     public void setOtpPolicyPeriod(Integer otpPolicyPeriod) {
         this.otpPolicyPeriod = otpPolicyPeriod;
+    }
+
+    public String getBrowserFlow() {
+        return browserFlow;
+    }
+
+    public void setBrowserFlow(String browserFlow) {
+        this.browserFlow = browserFlow;
+    }
+
+    public String getRegistrationFlow() {
+        return registrationFlow;
+    }
+
+    public void setRegistrationFlow(String registrationFlow) {
+        this.registrationFlow = registrationFlow;
+    }
+
+    public String getDirectGrantFlow() {
+        return directGrantFlow;
+    }
+
+    public void setDirectGrantFlow(String directGrantFlow) {
+        this.directGrantFlow = directGrantFlow;
     }
 }
