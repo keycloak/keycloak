@@ -37,8 +37,8 @@ public class ProtocolMapperEntity {
     protected String consentText;
 
     @ElementCollection
-    @MapKeyColumn(name="name")
-    @Column(name="value")
+    @MapKeyColumn(name="NAME")
+    @Column(name="VALUE")
     @CollectionTable(name="PROTOCOL_MAPPER_CONFIG", joinColumns={ @JoinColumn(name="PROTOCOL_MAPPER_ID") })
     private Map<String, String> config;
 
