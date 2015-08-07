@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.adapter.example;
 
+import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;

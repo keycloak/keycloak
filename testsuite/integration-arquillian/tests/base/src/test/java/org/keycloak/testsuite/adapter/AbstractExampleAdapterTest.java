@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.adapter.example;
+package org.keycloak.testsuite.adapter;
 
 import java.io.File;
 import java.io.IOException;

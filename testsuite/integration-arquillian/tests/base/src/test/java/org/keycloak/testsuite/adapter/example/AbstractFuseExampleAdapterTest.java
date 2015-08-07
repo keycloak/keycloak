@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.adapter.example;
 
+import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import java.io.File;
 import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
@@ -9,7 +10,7 @@ import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.auth.page.account.Account;
 import static org.keycloak.testsuite.util.RealmUtils.loadRealm;
-import static org.keycloak.testsuite.adapter.example.AbstractExampleAdapterTest.EXAMPLES_HOME_DIR;
+import static org.keycloak.testsuite.adapter.AbstractExampleAdapterTest.EXAMPLES_HOME_DIR;
 import org.keycloak.testsuite.adapter.page.fuse.AdminInterface;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerListing;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;

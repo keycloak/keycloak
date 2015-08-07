@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +32,6 @@ import org.keycloak.testsuite.adapter.page.CustomerPortal;
 import org.keycloak.testsuite.adapter.page.InputPortal;
 import org.keycloak.testsuite.adapter.page.ProductPortal;
 import org.keycloak.testsuite.adapter.page.SecurePortal;
-import static org.keycloak.testsuite.adapter.servlet.AbstractServletsAdapterTest.servletDeployment;
 import org.keycloak.testsuite.arquillian.jira.Jira;
 import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
@@ -61,27 +61,27 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
     @Deployment(name = CustomerPortal.DEPLOYMENT_NAME)
     protected static WebArchive customerPortal() {
-        return AbstractServletsAdapterTest.servletDeployment(CustomerPortal.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class);
+        return servletDeployment(CustomerPortal.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class);
     }
 
     @Deployment(name = SecurePortal.DEPLOYMENT_NAME)
     protected static WebArchive securePortal() {
-        return AbstractServletsAdapterTest.servletDeployment(SecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+        return servletDeployment(SecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
     }
 
     @Deployment(name = CustomerDb.DEPLOYMENT_NAME)
     protected static WebArchive customerDb() {
-        return AbstractServletsAdapterTest.servletDeployment(CustomerDb.DEPLOYMENT_NAME, CustomerDatabaseServlet.class);
+        return servletDeployment(CustomerDb.DEPLOYMENT_NAME, CustomerDatabaseServlet.class);
     }
 
     @Deployment(name = CustomerDbErrorPage.DEPLOYMENT_NAME)
     protected static WebArchive customerDbErrorPage() {
-        return AbstractServletsAdapterTest.servletDeployment(CustomerDbErrorPage.DEPLOYMENT_NAME, CustomerDatabaseServlet.class, ErrorServlet.class);
+        return servletDeployment(CustomerDbErrorPage.DEPLOYMENT_NAME, CustomerDatabaseServlet.class, ErrorServlet.class);
     }
 
     @Deployment(name = ProductPortal.DEPLOYMENT_NAME)
     protected static WebArchive productPortal() {
-        return AbstractServletsAdapterTest.servletDeployment(ProductPortal.DEPLOYMENT_NAME, ProductServlet.class);
+        return servletDeployment(ProductPortal.DEPLOYMENT_NAME, ProductServlet.class);
     }
 
     @Deployment(name = InputPortal.DEPLOYMENT_NAME)

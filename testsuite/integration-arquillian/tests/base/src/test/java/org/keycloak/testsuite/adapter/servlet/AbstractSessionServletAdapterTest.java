@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -15,7 +16,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.page.SessionPortal;
-import static org.keycloak.testsuite.adapter.servlet.AbstractServletsAdapterTest.servletDeployment;
 import org.keycloak.testsuite.arquillian.jira.Jira;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import org.keycloak.testsuite.auth.page.account.Sessions;

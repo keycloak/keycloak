@@ -1,11 +1,10 @@
-package org.keycloak.testsuite.adapter.servlet;
+package org.keycloak.testsuite.adapter;
 
 import java.net.URL;
 import java.util.List;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.adapter.AbstractAdapterTest;
 import static org.keycloak.testsuite.util.RealmUtils.*;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 

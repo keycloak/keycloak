@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.adapter.example;
 
+import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -14,7 +15,6 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.util.RealmUtils.loadRealm;
-import static org.keycloak.testsuite.adapter.example.AbstractExampleAdapterTest.exampleDeployment;
 import org.keycloak.testsuite.adapter.page.BasicAuthExample;
 import static org.keycloak.testsuite.auth.page.AuthRealm.EXAMPLE;
 
