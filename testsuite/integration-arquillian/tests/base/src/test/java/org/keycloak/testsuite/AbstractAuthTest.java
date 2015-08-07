@@ -1,5 +1,6 @@
 package org.keycloak.testsuite;
 
+import java.text.MessageFormat;
 import java.util.List;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
@@ -12,6 +13,7 @@ import org.keycloak.testsuite.auth.page.AuthRealm;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.console.page.fragment.FlashMessage;
+import org.openqa.selenium.Cookie;
 
 /**
  *
@@ -43,7 +45,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     public void beforeAuthTest() {
         testRealmResource = adminClient.realm(testRealm.getAuthRealm());
         testRealmLogin.setAuthRealm(testRealm);
-        
+
         testRealmUser = createUserRepresentation("test", "test@email.test", "test", "user", true);
 
         deleteAllCookiesForTestRealm();
@@ -62,7 +64,6 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 //        ClientRepresentation realmManagementClient = findClientByClientId(testRealmResource, "realm-management");
 //        assignClientRoles(testAdminResource, realmManagementClient.getId(), "realm-admin");
 //    }
-
     public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, boolean enabled) {
         UserRepresentation user = new UserRepresentation();
         user.setUsername(username);
@@ -74,23 +75,41 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     }
 
     public void deleteAllCookiesForTestRealm() {
+        logCurrentUrl();
+        listCookies();
+
         testRealm.navigateTo();
+        listCookies();
+        
+        System.out.println("DELETING COOKIES FOR REALM " + testRealm.getAuthRealm());
         driver.manage().deleteAllCookies();
+    }
+
+    public void listCookies() {
+        System.out.println("LIST OF COOKIES: ");
+        for (Cookie c : driver.manage().getCookies()) {
+            System.out.println(MessageFormat.format(" {1} {2} {0}",
+                    c.getName(), c.getDomain(), c.getPath(), c.getValue()));
+        }
     }
 
     public void assertFlashMessageSuccess() {
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isSuccess());
     }
-    
+
     public void assertFlashMessageDanger() {
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
     }
-    
+
     public void assertFlashMessageError() {
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isError());
     }
-    
+
+    private void logCurrentUrl() {
+        System.out.println("Current URL: " + driver.getCurrentUrl());
+    }
+
 }

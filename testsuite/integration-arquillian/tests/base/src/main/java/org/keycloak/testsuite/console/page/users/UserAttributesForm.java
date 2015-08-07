@@ -50,51 +50,39 @@ public class UserAttributesForm extends Form {
     private List<WebElement> removeRequiredActionsList;
 
     public String getId() {
-        return idInput.getText();
+        return getInputValue(idInput);
     }
 
     public String getUsername() {
-        return usernameInput.getText();
+        return getInputValue(usernameInput);
     }
 
     public void setUsername(String username) {
-        usernameInput.clear();
-        if (username != null) {
-            usernameInput.sendKeys(username);
-        }
+        setInputValue(usernameInput, username);
     }
 
     public String getEmail() {
-        return emailInput.getText();
+        return getInputValue(emailInput);
     }
 
     public void setEmail(String email) {
-        emailInput.clear();
-        if (email != null) {
-            emailInput.sendKeys(email);
-        }
+        setInputValue(emailInput, email);
     }
 
     public String getFirstName() {
-        return firstNameInput.getText();
+        return getInputValue(firstNameInput);
     }
 
     public void setFirstName(String firstName) {
-        firstNameInput.clear();
-        if (firstName != null) {
-            firstNameInput.sendKeys(firstName);
-        }
+        setInputValue(firstNameInput, firstName);
     }
 
     public String getLastName() {
-        return lastNameInput.getText();
+        return getInputValue(lastNameInput);
     }
 
     public void setLastName(String lastname) {
-        lastNameInput.clear();
-        if (lastname != null) {
-            lastNameInput.sendKeys(lastname);
-        }
+        setInputValue(lastNameInput, lastname);
     }
 
     public boolean isEnabled() {

@@ -31,14 +31,11 @@ public class ClientForm extends Form {
     private WebElement redirectUriInput;
 
     public String getClientId() {
-        return clientIdInput.getText();
+        return getInputValue(clientIdInput);
     }
 
     public void setClientId(String clientId) {
-        clientIdInput.clear();
-        if (clientId != null) {
-            clientIdInput.sendKeys(clientId);
-        }
+        setInputValue(clientIdInput, VALUE);
     }
 
     public void setName(String name) {

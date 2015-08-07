@@ -17,6 +17,14 @@
  */
 package org.keycloak.testsuite.console.page.roles;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testsuite.console.page.fragment.DataTable;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
+import static org.openqa.selenium.By.linkText;
+import static org.openqa.selenium.By.tagName;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**

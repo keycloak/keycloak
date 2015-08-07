@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.adapter;
 
+import org.keycloak.testsuite.adapter.servlet.AbstractServletsAdapterTest;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -8,6 +9,7 @@ import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.junit.After;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
@@ -117,5 +119,5 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
             throw new RuntimeException(ex);
         }
     }
-
+    
 }

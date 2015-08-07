@@ -58,10 +58,8 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
     @Before
     public void beforeConsoleTest() {
         createUserWithAdminClient(testRealmResource, testRealmUser);
-//        if (!adminLoggedIn) {
         if (!testContext.isAdminLoggedIn()) {
             loginToMasterRealmAdminConsoleAs(adminUser);
-//            adminLoggedIn = true;
             testContext.setAdminLoggedIn(true);
         } else {
             adminConsoleRealm.navigateTo();
