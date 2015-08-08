@@ -8,6 +8,11 @@ import org.keycloak.provider.ConfiguredProvider;
  * @version $Revision: 1 $
  */
 public interface ConfigurableAuthenticatorFactory extends ConfiguredProvider {
+    /**
+     * Friendly name for the authenticator
+     *
+     * @return
+     */
     String getDisplayType();
 
     /**
@@ -17,6 +22,11 @@ public interface ConfigurableAuthenticatorFactory extends ConfiguredProvider {
      */
     String getReferenceCategory();
 
+    /**
+     * Is this authenticator configurable?
+     *
+     * @return
+     */
     boolean isConfigurable();
 
     /**

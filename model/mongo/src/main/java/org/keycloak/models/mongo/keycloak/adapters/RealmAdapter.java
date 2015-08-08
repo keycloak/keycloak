@@ -1310,6 +1310,49 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public AuthenticationFlowModel getBrowserFlow() {
+        String flowId = realm.getBrowserFlow();
+        if (flowId == null) return null;
+        return getAuthenticationFlowById(flowId);
+    }
+
+    @Override
+    public void setBrowserFlow(AuthenticationFlowModel flow) {
+        realm.setBrowserFlow(flow.getId());
+        updateRealm();
+
+    }
+
+    @Override
+    public AuthenticationFlowModel getRegistrationFlow() {
+        String flowId = realm.getRegistrationFlow();
+        if (flowId == null) return null;
+        return getAuthenticationFlowById(flowId);
+    }
+
+    @Override
+    public void setRegistrationFlow(AuthenticationFlowModel flow) {
+        realm.setRegistrationFlow(flow.getId());
+        updateRealm();
+
+    }
+
+    @Override
+    public AuthenticationFlowModel getDirectGrantFlow() {
+        String flowId = realm.getDirectGrantFlow();
+        if (flowId == null) return null;
+        return getAuthenticationFlowById(flowId);
+    }
+
+    @Override
+    public void setDirectGrantFlow(AuthenticationFlowModel flow) {
+        realm.setDirectGrantFlow(flow.getId());
+        updateRealm();
+
+    }
+
+
+    @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {
         List<AuthenticationFlowEntity> flows = getMongoEntity().getAuthenticationFlows();
         List<AuthenticationFlowModel> models = new LinkedList<>();

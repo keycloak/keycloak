@@ -39,6 +39,7 @@ public class DefaultAuthenticationFlows {
         registrationFlow.setTopLevel(true);
         registrationFlow.setBuiltIn(true);
         registrationFlow = realm.addAuthenticationFlow(registrationFlow);
+        realm.setRegistrationFlow(registrationFlow);
 
         AuthenticationFlowModel registrationFormFlow = new AuthenticationFlowModel();
         registrationFormFlow.setAlias(REGISTRATION_FORM_FLOW);
@@ -125,6 +126,7 @@ public class DefaultAuthenticationFlows {
         grant.setTopLevel(true);
         grant.setBuiltIn(true);
         grant = realm.addAuthenticationFlow(grant);
+        realm.setDirectGrantFlow(grant);
 
         // username
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
@@ -171,6 +173,8 @@ public class DefaultAuthenticationFlows {
         browser.setTopLevel(true);
         browser.setBuiltIn(true);
         browser = realm.addAuthenticationFlow(browser);
+        realm.setBrowserFlow(browser);
+
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
         execution.setParentFlow(browser.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);

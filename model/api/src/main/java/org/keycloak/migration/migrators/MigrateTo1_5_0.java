@@ -24,7 +24,10 @@ public class MigrateTo1_5_0 {
     public void migrate(KeycloakSession session) {
         List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
-           realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
+            realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
+            realm.setBrowserFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW));
+            realm.setRegistrationFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.REGISTRATION_FLOW));
+            realm.setDirectGrantFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW));
         }
 
     }

@@ -1032,6 +1032,45 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public AuthenticationFlowModel getBrowserFlow() {
+        if (updated != null) return updated.getBrowserFlow();
+        return cached.getBrowserFlow();
+    }
+
+    @Override
+    public void setBrowserFlow(AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setBrowserFlow(flow);
+
+    }
+
+    @Override
+    public AuthenticationFlowModel getRegistrationFlow() {
+        if (updated != null) return updated.getRegistrationFlow();
+        return cached.getRegistrationFlow();
+    }
+
+    @Override
+    public void setRegistrationFlow(AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setRegistrationFlow(flow);
+
+    }
+
+    @Override
+    public AuthenticationFlowModel getDirectGrantFlow() {
+        if (updated != null) return updated.getDirectGrantFlow();
+        return cached.getDirectGrantFlow();
+    }
+
+    @Override
+    public void setDirectGrantFlow(AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setDirectGrantFlow(flow);
+
+    }
+
+    @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {
         if (updated != null) return updated.getAuthenticationFlows();
         List<AuthenticationFlowModel> models = new ArrayList<>();

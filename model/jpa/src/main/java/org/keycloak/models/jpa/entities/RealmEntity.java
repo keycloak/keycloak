@@ -179,6 +179,17 @@ public class RealmEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<AuthenticationFlowEntity> authenticationFlows = new ArrayList<>();
 
+    @Column(name="BROWSER_FLOW")
+    protected String browserFlow;
+
+    @Column(name="REGISTRATION_FLOW")
+    protected String registrationFlow;
+
+
+    @Column(name="DIRECT_GRANT_FLOW")
+    protected String directGrantFlow;
+
+
 
 
     @Column(name="INTERNATIONALIZATION_ENABLED")
@@ -642,6 +653,30 @@ public class RealmEntity {
 
     public void setOtpPolicyPeriod(int otpPolicyPeriod) {
         this.otpPolicyPeriod = otpPolicyPeriod;
+    }
+
+    public String getBrowserFlow() {
+        return browserFlow;
+    }
+
+    public void setBrowserFlow(String browserFlow) {
+        this.browserFlow = browserFlow;
+    }
+
+    public String getRegistrationFlow() {
+        return registrationFlow;
+    }
+
+    public void setRegistrationFlow(String registrationFlow) {
+        this.registrationFlow = registrationFlow;
+    }
+
+    public String getDirectGrantFlow() {
+        return directGrantFlow;
+    }
+
+    public void setDirectGrantFlow(String directGrantFlow) {
+        this.directGrantFlow = directGrantFlow;
     }
 }
 

@@ -1542,6 +1542,45 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public AuthenticationFlowModel getBrowserFlow() {
+        String flowId = realm.getBrowserFlow();
+        if (flowId == null) return null;
+        return getAuthenticationFlowById(flowId);
+    }
+
+    @Override
+    public void setBrowserFlow(AuthenticationFlowModel flow) {
+        realm.setBrowserFlow(flow.getId());
+
+    }
+
+    @Override
+    public AuthenticationFlowModel getRegistrationFlow() {
+        String flowId = realm.getRegistrationFlow();
+        if (flowId == null) return null;
+        return getAuthenticationFlowById(flowId);
+    }
+
+    @Override
+    public void setRegistrationFlow(AuthenticationFlowModel flow) {
+        realm.setRegistrationFlow(flow.getId());
+
+    }
+
+    @Override
+    public AuthenticationFlowModel getDirectGrantFlow() {
+        String flowId = realm.getDirectGrantFlow();
+        if (flowId == null) return null;
+        return getAuthenticationFlowById(flowId);
+    }
+
+    @Override
+    public void setDirectGrantFlow(AuthenticationFlowModel flow) {
+        realm.setDirectGrantFlow(flow.getId());
+
+    }
+
+    @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {
         TypedQuery<AuthenticationFlowEntity> query = em.createNamedQuery("getAuthenticationFlowsByRealm", AuthenticationFlowEntity.class);
         query.setParameter("realm", realm);

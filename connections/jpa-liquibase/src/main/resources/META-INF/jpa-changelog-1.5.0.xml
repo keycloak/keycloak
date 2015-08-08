@@ -43,6 +43,15 @@
             <column name="OTP_POLICY_TYPE" type="VARCHAR(36)" defaultValue="totp">
                 <constraints nullable="true"/>
             </column>
+            <column name="BROWSER_FLOW" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="REGISTRATION_FLOW" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="DIRECT_GRANT_FLOW" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
         </addColumn>
 
     </changeSet>

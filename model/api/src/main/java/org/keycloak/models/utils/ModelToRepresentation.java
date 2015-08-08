@@ -160,6 +160,9 @@ public class ModelToRepresentation {
         rep.setOtpPolicyInitialCounter(otpPolicy.getInitialCounter());
         rep.setOtpPolicyType(otpPolicy.getType());
         rep.setOtpPolicyLookAheadWindow(otpPolicy.getLookAheadWindow());
+        if (realm.getBrowserFlow() != null) rep.setBrowserFlow(realm.getBrowserFlow().getAlias());
+        if (realm.getRegistrationFlow() != null) rep.setRegistrationFlow(realm.getRegistrationFlow().getAlias());
+        if (realm.getDirectGrantFlow() != null) rep.setDirectGrantFlow(realm.getDirectGrantFlow().getAlias());
 
         List<String> defaultRoles = realm.getDefaultRoles();
         if (!defaultRoles.isEmpty()) {
