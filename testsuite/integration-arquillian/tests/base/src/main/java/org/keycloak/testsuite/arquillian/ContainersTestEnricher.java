@@ -2,6 +2,8 @@ package org.keycloak.testsuite.arquillian;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.MessageFormat;
+import java.util.Date;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Instance;
@@ -12,7 +14,11 @@ import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.annotation.SuiteScoped;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.models.Constants;
 import org.keycloak.testsuite.arquillian.annotation.AdapterLibsLocationProperty;
+import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
+import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
  *
@@ -36,6 +42,10 @@ public class ContainersTestEnricher {
     @Inject
     @ClassScoped
     private InstanceProducer<TestContext> testContext;
+
+    @Inject
+    @ClassScoped
+    private InstanceProducer<Keycloak> adminClient;
 
     private ContainerController controller;
 
@@ -62,6 +72,7 @@ public class ContainersTestEnricher {
         }
 
         initializeTestContext(testClass);
+        initializeAdminClient();
     }
 
     private void initializeTestContext(Class testClass) {
@@ -73,14 +84,17 @@ public class ContainersTestEnricher {
             URL authServerContextRoot = new URL(authServerContextRootStr);
             URL appServerContextRoot = new URL(appServerContextRootStr);
 
-            TestContext context = new TestContext(authServerContextRoot, appServerContextRoot);
-            context.setTestClass(testClass);
-
-            testContext.set(context);
+            testContext.set(new TestContext(authServerContextRoot, appServerContextRoot));
 
         } catch (MalformedURLException ex) {
             throw new IllegalStateException("Malformed url.", ex);
         }
+    }
+
+    private void initializeAdminClient() {
+        adminClient.set(Keycloak.getInstance(
+                getAuthServerContextRootFromSystemProperty() + "/auth",
+                MASTER, ADMIN, ADMIN, Constants.ADMIN_CONSOLE_CLIENT_ID));
     }
 
     /**

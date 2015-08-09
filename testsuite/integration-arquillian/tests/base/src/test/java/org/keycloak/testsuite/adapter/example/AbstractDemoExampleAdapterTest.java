@@ -10,7 +10,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.*;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.auth.page.account.Account;
-import static org.keycloak.testsuite.util.RealmUtils.loadRealm;
+import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.adapter.page.CustomerPortalExample;
 import org.keycloak.testsuite.adapter.page.DatabaseServiceExample;
@@ -61,7 +61,6 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
     @Before
     public void beforeDemoExampleTest() {
-        testRealmResource = adminClient.realm(DEMO);
         customerPortalExample.navigateTo();
         driver.manage().deleteAllCookies();
     }

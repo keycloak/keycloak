@@ -6,7 +6,6 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
-import org.keycloak.testsuite.adapter.AbstractAdapterTest;
 import static org.keycloak.testsuite.adapter.AbstractAdapterTest.JBOSS_DEPLOYMENT_STRUCTURE_XML;
 import static org.keycloak.testsuite.adapter.AbstractAdapterTest.jbossDeploymentStructure;
 

@@ -1,7 +1,6 @@
 package org.keycloak.testsuite.arquillian;
 
 import java.net.URL;
-import org.keycloak.admin.client.Keycloak;
 
 /**
  *
@@ -9,10 +8,6 @@ import org.keycloak.admin.client.Keycloak;
  */
 public final class TestContext {
 
-    private Class testClass;
-    
-    private Keycloak adminClient;
-    
     private URL authServerContextRoot;
     private URL appServerContextRoot;
 
@@ -50,22 +45,6 @@ public final class TestContext {
 
     public void setAppServerContextRoot(URL appServerContextRoot) {
         this.appServerContextRoot = appServerContextRoot;
-    }
-
-    public Keycloak getAdminClient() {
-        return adminClient;
-    }
-
-    public void setAdminClient(Keycloak adminClient) {
-        this.adminClient = adminClient;
-    }
-
-    public Class getTestClass() {
-        return testClass;
-    }
-
-    public void setTestClass(Class testClass) {
-        this.testClass = testClass;
     }
 
 }

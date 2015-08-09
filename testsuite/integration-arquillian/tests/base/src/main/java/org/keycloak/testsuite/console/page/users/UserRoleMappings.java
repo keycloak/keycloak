@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.console.page.users;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.admin.client.resource.RoleMappingResource;
 
 /**
  *
@@ -18,6 +19,10 @@ public class UserRoleMappings extends User {
 
     public UserRoleMappingsForm form() {
         return form;
+    }
+    
+    public RoleMappingResource roleMappingResource() {
+        return userResource().roles();
     }
 
 }

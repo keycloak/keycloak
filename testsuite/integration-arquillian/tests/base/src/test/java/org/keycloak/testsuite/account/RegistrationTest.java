@@ -27,7 +27,7 @@ import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
-import static org.keycloak.testsuite.util.ApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 
 /**
  *
@@ -47,9 +47,9 @@ public class RegistrationTest extends AbstractAccountManagementTest {
 
     @Before
     public void beforeUserRegistration() {
-        RealmRepresentation realm = testRealmResource.toRepresentation();
+        RealmRepresentation realm = testRealmAccountManagement.realmResource().toRepresentation();
         realm.setRegistrationAllowed(true);
-        testRealmResource.update(realm);
+        testRealmAccountManagement.realmResource().update(realm);
 
         account.navigateTo();
         testRealmLogin.form().register();
@@ -61,7 +61,7 @@ public class RegistrationTest extends AbstractAccountManagementTest {
     public void registerNewUserTest() {
         testRealmRegistration.registerNewUser(testRealmUser);
         // verify via admin api
-        assertNotNull(findUserByUsername(testRealmResource, testRealmUser.getUsername()));
+        assertNotNull(findUserByUsername(testRealmAccountManagement.realmResource(), testRealmUser.getUsername()));
     }
 
     @Test
@@ -70,7 +70,7 @@ public class RegistrationTest extends AbstractAccountManagementTest {
         testRealmRegistration.registerNewUser(testRealmUser);
         assertTrue(testRealmRegistration.isInvalidEmail());
         // verify via admin api
-        assertNull(findUserByUsername(testRealmResource, testRealmUser.getUsername()));
+        assertNull(findUserByUsername(testRealmAccountManagement.realmResource(), testRealmUser.getUsername()));
     }
 
     @Test
@@ -93,7 +93,7 @@ public class RegistrationTest extends AbstractAccountManagementTest {
         assertFalse(testRealmRegistration.isAttributeSpecified("password"));
         testRealmUser.credential(PASSWORD, PASSWORD);
         testRealmRegistration.registerNewUser(testRealmUser);
-        assertNotNull(findUserByUsername(testRealmResource, testRealmUser.getUsername()));
+        assertNotNull(findUserByUsername(testRealmAccountManagement.realmResource(), testRealmUser.getUsername()));
     }
 
     @Test
@@ -101,7 +101,7 @@ public class RegistrationTest extends AbstractAccountManagementTest {
         testRealmRegistration.registerNewUser(testRealmUser, "psswd");
         assertFalse(testRealmRegistration.isPasswordSame());
         testRealmRegistration.registerNewUser(testRealmUser);
-        assertNotNull(findUserByUsername(testRealmResource, testRealmUser.getUsername()));
+        assertNotNull(findUserByUsername(testRealmAccountManagement.realmResource(), testRealmUser.getUsername()));
     }
 
 }

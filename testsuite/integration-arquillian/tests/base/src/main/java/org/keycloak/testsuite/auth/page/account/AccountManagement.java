@@ -19,6 +19,7 @@ package org.keycloak.testsuite.auth.page.account;
 
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -91,4 +92,9 @@ public class AccountManagement extends AuthRealm {
     public void save() {
         save.click();
     }
+    
+    public RealmResource realmResource() {
+        return keycloak().realm(getAuthRealm());
+    }
+    
 }

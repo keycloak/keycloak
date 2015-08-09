@@ -20,6 +20,7 @@ package org.keycloak.testsuite.console.page.idp;
 import java.util.ArrayList;
 import java.util.List;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
+import org.keycloak.admin.client.resource.IdentityProvidersResource;
 import org.keycloak.testsuite.model.Provider;
 import org.keycloak.testsuite.model.SocialProvider;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
@@ -77,7 +78,7 @@ public class IdentityProviderSettings extends AdminConsoleRealm {
     }
 
     private List<Provider> getAllRows() {
-        List<Provider> rows = new ArrayList<Provider>();
+        List<Provider> rows = new ArrayList<>();
         for (WebElement rowElement : providersTable.findElements(tagName("tr"))) {
             Provider provider = new Provider();
             List<WebElement> tds = rowElement.findElements(tagName("td"));
@@ -90,4 +91,9 @@ public class IdentityProviderSettings extends AdminConsoleRealm {
         }
         return rows;
     }
+    
+    public IdentityProvidersResource identityProviders() {
+        return realmResource().identityProviders();
+    }
+    
 }

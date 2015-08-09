@@ -33,6 +33,7 @@ import org.keycloak.testsuite.adapter.page.InputPortal;
 import org.keycloak.testsuite.adapter.page.ProductPortal;
 import org.keycloak.testsuite.adapter.page.SecurePortal;
 import org.keycloak.testsuite.arquillian.jira.Jira;
+import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
 import org.keycloak.testsuite.util.SeleniumUtils;
@@ -139,7 +140,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
         // View stats
-        List<Map<String, String>> stats = adminClient.realm("demo").getClientSessionStats();
+        List<Map<String, String>> stats = testRealmResource().getClientSessionStats();
         Map<String, String> customerPortalStats = null;
         Map<String, String> productPortalStats = null;
         for (Map<String, String> s : stats) {
@@ -211,17 +212,17 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
-        RealmRepresentation demoRealmRep = adminClient.realm("demo").toRepresentation();
+        RealmRepresentation demoRealmRep = testRealmResource().toRepresentation();
         int originalIdle = demoRealmRep.getSsoSessionIdleTimeout();
         demoRealmRep.setSsoSessionIdleTimeout(1);
-        adminClient.realm("demo").update(demoRealmRep);
+        testRealmResource().update(demoRealmRep);
 
 //		Thread.sleep(2000);
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
         demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
-        adminClient.realm("demo").update(demoRealmRep);
+        testRealmResource().update(demoRealmRep);
     }
 
     @Test
@@ -239,7 +240,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
-        RealmRepresentation demoRealmRep = adminClient.realm("demo").toRepresentation();
+        RealmRepresentation demoRealmRep = testRealmResource().toRepresentation();
         int originalIdle = demoRealmRep.getSsoSessionIdleTimeout();
         demoRealmRep.setSsoSessionIdleTimeout(1);
 //        keycloak.realm("demo").update(demoRealm);
@@ -270,17 +271,17 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         String pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
-        RealmRepresentation demoRealmRep = adminClient.realm("demo").toRepresentation();
+        RealmRepresentation demoRealmRep = testRealmResource().toRepresentation();
         int originalIdle = demoRealmRep.getSsoSessionMaxLifespan();
         demoRealmRep.setSsoSessionMaxLifespan(1);
-        adminClient.realm("demo").update(demoRealmRep);
+        testRealmResource().update(demoRealmRep);
 
         TimeUnit.SECONDS.sleep(2);
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
         demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
-        adminClient.realm("demo").update(demoRealmRep);
+        testRealmResource().update(demoRealmRep);
     }
 
     @Jira("KEYCLOAK-518")

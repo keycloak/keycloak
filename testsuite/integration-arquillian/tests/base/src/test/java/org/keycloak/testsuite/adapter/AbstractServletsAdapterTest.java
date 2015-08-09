@@ -5,7 +5,7 @@ import java.util.List;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.idm.RealmRepresentation;
-import static org.keycloak.testsuite.util.RealmUtils.*;
+import static org.keycloak.testsuite.util.IOUtil.*;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 
 public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {

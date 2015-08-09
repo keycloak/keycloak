@@ -16,7 +16,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.adapters.config.BaseAdapterConfig;
 import static org.keycloak.testsuite.arquillian.ContainersTestEnricher.*;
 import org.keycloak.testsuite.adapter.AdapterLibsMode;
-import static org.keycloak.testsuite.util.Json.loadJson;
+import static org.keycloak.testsuite.util.IOUtil.loadJson;;
 import org.keycloak.util.JsonSerialization;
 
 /**

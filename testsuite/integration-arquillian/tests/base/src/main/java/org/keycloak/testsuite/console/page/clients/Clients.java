@@ -22,6 +22,7 @@ import org.openqa.selenium.support.FindBy;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.fragment.DataTable;
@@ -49,7 +50,7 @@ public class Clients extends AdminConsoleRealm {
     @FindBy(tagName = "table")
     private ClientsTable clientsTable;
 
-    public ClientsTable clients() {
+    public ClientsTable table() {
         return clientsTable;
     }
 
@@ -126,6 +127,10 @@ public class Clients extends AdminConsoleRealm {
             }
             return client;
         }
+    }
+    
+    public ClientsResource clientsResource() {
+        return realmResource().clients();
     }
 
 }

@@ -1,6 +1,8 @@
 package org.keycloak.testsuite.console.page.users;
 
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.testsuite.console.page.fragment.Breadcrumb;
+import static org.keycloak.testsuite.console.page.fragment.Breadcrumb.BREADCRUMB_XPATH;
 import org.keycloak.testsuite.console.page.fragment.Navigation;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -11,22 +13,22 @@ import org.openqa.selenium.support.FindBy;
  */
 public class User extends Users {
 
-    public static final String USER_ID = "userId";
+    public static final String ID = "id";
 
     @Override
     public String getUriFragment() {
-        return super.getUriFragment() + "/{" + USER_ID + "}";
+        return super.getUriFragment() + "/{" + ID + "}";
     }
 
-    public void setUserId(String userId) {
-        setUriParameter(USER_ID, userId);
+    public void setId(String id) {
+        setUriParameter(ID, id);
     }
 
-    public String getUserId() {
-        return (String) getUriParameter(USER_ID);
+    public String getId() {
+        return (String) getUriParameter(ID);
     }
 
-    @FindBy(css = "breadcrumb")
+    @FindBy(xpath = BREADCRUMB_XPATH)
     private Breadcrumb breadcrumb;
 
     public Breadcrumb breadcrumb() {
@@ -73,6 +75,10 @@ public class User extends Users {
             clickAndWaitForHeader(sessionsLink);
         }
 
+    }
+    
+    public UserResource userResource() {
+        return usersResource().get(getId());
     }
 
 }

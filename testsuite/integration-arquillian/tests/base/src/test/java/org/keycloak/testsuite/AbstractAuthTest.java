@@ -7,6 +7,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.RealmResource;
+import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -26,8 +27,6 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     @Page
     protected OIDCLogin testRealmLogin;
 
-    protected RealmResource testRealmResource;
-//    protected UserRepresentation testRealmAdminUser;
     protected UserRepresentation testRealmUser;
 
     @FindByJQuery(".alert")
@@ -43,27 +42,14 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
     @Before
     public void beforeAuthTest() {
-        testRealmResource = adminClient.realm(testRealm.getAuthRealm());
         testRealmLogin.setAuthRealm(testRealm);
 
         testRealmUser = createUserRepresentation("test", "test@email.test", "test", "user", true);
+        testRealmUser.credential(PASSWORD, PASSWORD);
 
         deleteAllCookiesForTestRealm();
     }
 
-//    private void createTestAdminWithAdminClient() {
-//        testRealmAdminUser = createUserRepresentation("admin", "admin@email.test", "admin", "user", true);
-//
-//        createUser(testRealmResource, testRealmAdminUser);
-//        testRealmAdminUser = findUserByUsername(testRealmResource, testRealmAdminUser.getUsername());
-//
-//        UserResource testAdminResource = testRealmResource.users().get(testRealmAdminUser.getId());
-//        resetUserPassword(testAdminResource, PASSWORD, false);
-//
-//        System.out.println(" adding realm-admin role");
-//        ClientRepresentation realmManagementClient = findClientByClientId(testRealmResource, "realm-management");
-//        assignClientRoles(testAdminResource, realmManagementClient.getId(), "realm-admin");
-//    }
     public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, boolean enabled) {
         UserRepresentation user = new UserRepresentation();
         user.setUsername(username);
@@ -75,13 +61,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     }
 
     public void deleteAllCookiesForTestRealm() {
-        logCurrentUrl();
-        listCookies();
-
         testRealm.navigateTo();
-        listCookies();
-        
-        System.out.println("DELETING COOKIES FOR REALM " + testRealm.getAuthRealm());
         driver.manage().deleteAllCookies();
     }
 
@@ -110,6 +90,10 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
     private void logCurrentUrl() {
         System.out.println("Current URL: " + driver.getCurrentUrl());
+    }
+
+    public RealmResource testRealmResource() {
+        return adminClient.realm(testRealm.getAuthRealm());
     }
 
 }

@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.console.page.roles;
 
+import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.fragment.Navigation;
 import org.openqa.selenium.WebElement;
@@ -33,6 +34,10 @@ public class Roles extends AdminConsoleRealm {
             clickAndWaitForHeader(defaultRolesTab);
         }
 
+    }
+    
+    public RolesResource rolesResource() {
+        return realmResource().roles();
     }
 
 }

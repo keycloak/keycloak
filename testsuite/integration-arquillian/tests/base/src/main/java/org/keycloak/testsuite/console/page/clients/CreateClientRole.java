@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.console.page.clients;
 
-import static org.keycloak.testsuite.console.page.clients.Client.CLIENT_ID;
+import static org.keycloak.testsuite.console.page.clients.Client.ID;
 import org.keycloak.testsuite.console.page.roles.CreateRole;
 
 /**
@@ -11,15 +11,15 @@ public class CreateClientRole extends CreateRole {
 
     @Override
     public String getUriFragment() {
-        return super.getUriFragment() + "/clients/{" + CLIENT_ID + "}";
+        return super.getUriFragment() + "/clients/{" + ID + "}";
     }
 
     public void setClientId(String id) {
-        setUriParameter(CLIENT_ID, id);
+        setUriParameter(ID, id);
     }
 
     public String getClientId() {
-        return getUriParameter(CLIENT_ID).toString();
+        return getUriParameter(ID).toString();
     }
 
 }

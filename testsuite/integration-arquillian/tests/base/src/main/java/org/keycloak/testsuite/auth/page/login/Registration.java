@@ -26,7 +26,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementNotPresent;
 
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
-import static org.keycloak.testsuite.util.Users.getPasswordCredentialValueOf;
+import static org.keycloak.testsuite.admin.Users.getPasswordCredentialValueOf;
 
 /**
  *

@@ -10,6 +10,8 @@ import org.openqa.selenium.support.FindBy;
  */
 public class Breadcrumb {
 
+    public static final String BREADCRUMB_XPATH = "//ol[@class='breadcrumb']";
+
     @FindBy(xpath = "./li[not(contains(@class,'ng-hide'))]/a")
     private List<WebElement> items;
 

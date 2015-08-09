@@ -10,7 +10,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
-import static org.keycloak.testsuite.util.RealmUtils.loadRealm;
+import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.adapter.page.JSConsoleExample;
 import static org.keycloak.testsuite.auth.page.AuthRealm.EXAMPLE;

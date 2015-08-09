@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.console.page;
 
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.testsuite.console.page.fragment.Navigation;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.openqa.selenium.WebElement;
@@ -36,6 +37,10 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
 
     public ConfigureMenu configure() {
         return configureMenu;
+    }
+
+    public RealmResource realmResource() {
+        return realmsResource().realm(getConsoleRealm());
     }
 
     public class ConfigureMenu extends Navigation {

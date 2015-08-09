@@ -5,9 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.keycloak.testsuite.auth.page.account.ChangePassword;
-import static org.keycloak.testsuite.util.ApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
-import static org.keycloak.testsuite.util.Users.getPasswordCredentialValueOf;
+import static org.keycloak.testsuite.admin.Users.getPasswordCredentialValueOf;
 
 /**
  *
@@ -32,7 +32,7 @@ public class ChangePasswordTest extends AbstractAccountManagementTest {
     @Before
     public void beforeChangePasswordTest() {
         // create user via admin api
-        createUserWithAdminClient(testRealmResource, testRealmUser);
+        createUserWithAdminClient(testRealmAccountManagement.realmResource(), testRealmUser);
 
         correctPassword = getPasswordCredentialValueOf(testRealmUser);
 

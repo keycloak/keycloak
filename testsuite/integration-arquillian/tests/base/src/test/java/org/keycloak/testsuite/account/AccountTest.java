@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import org.keycloak.testsuite.auth.page.account.Account;
-import static org.keycloak.testsuite.util.ApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 
 /**
  *
@@ -43,11 +43,17 @@ public class AccountTest extends AbstractAccountManagementTest {
 
     @Page
     private Account testRealmAccount;
+
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealmAccount.setAuthRealm(testRealm);
+    }
     
     @Before
     public void beforeAccountTest() {
         // create user via admin api
-        createUserWithAdminClient(testRealmResource, testRealmUser);
+        createUserWithAdminClient(testRealmAccountManagement.realmResource(), testRealmUser);
 
         testRealmAccountManagement.navigateTo();
         testRealmLogin.form().login(testRealmUser);

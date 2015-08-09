@@ -15,9 +15,11 @@ public class Form {
     @Drone
     protected WebDriver driver;
 
-    @FindBy(xpath = "//button[text()='Save']")
+    public static final String ACTIVE_DIV_XPATH = ".//div[not(contains(@class,'ng-hide'))]";
+
+    @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[text()='Save']")
     private WebElement save;
-    @FindBy(xpath = "//button[text()='Cancel']")
+    @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[text()='Cancel']")
     private WebElement cancel;
 
     public void save() {

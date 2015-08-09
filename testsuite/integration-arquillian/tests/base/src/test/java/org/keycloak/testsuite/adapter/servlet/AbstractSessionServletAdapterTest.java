@@ -20,7 +20,7 @@ import org.keycloak.testsuite.arquillian.jira.Jira;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import org.keycloak.testsuite.auth.page.account.Sessions;
 import org.keycloak.testsuite.auth.page.login.Login;
-import static org.keycloak.testsuite.util.ApiUtil.findClientResourceByClientId;
+import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
 import org.keycloak.testsuite.util.SecondBrowser;
@@ -104,18 +104,18 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
     @Test
     @Jira("KEYCLOAK-741, KEYCLOAK-1485")
     public void testSessionInvalidatedAfterFailedRefresh() {
-        RealmRepresentation testRealmRep = testRealmResource.toRepresentation();
+        RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
         ClientResource sessionPortalRes = null;
-        for (ClientRepresentation clientRep : testRealmResource.clients().findAll()) {
+        for (ClientRepresentation clientRep : testRealmResource().clients().findAll()) {
             if ("session-portal".equals(clientRep.getClientId())) {
-                sessionPortalRes = testRealmResource.clients().get(clientRep.getId());
+                sessionPortalRes = testRealmResource().clients().get(clientRep.getId());
             }
         }
         assertNotNull(sessionPortalRes);
         sessionPortalRes.toRepresentation().setAdminUrl("");
         int origTokenLifespan = testRealmRep.getAccessCodeLifespan();
         testRealmRep.setAccessCodeLifespan(1);
-        testRealmResource.update(testRealmRep);
+        testRealmResource().update(testRealmRep);
 
         // Login
         loginAndCheckSession(driver, testRealmLogin);
@@ -135,7 +135,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
 
         sessionPortalRes.toRepresentation().setAdminUrl(sessionPortal.toString());
         testRealmRep.setAccessCodeLifespan(origTokenLifespan);
-        testRealmResource.update(testRealmRep);
+        testRealmResource().update(testRealmRep);
     }
 
     @Test
@@ -144,7 +144,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         // login as bburke
         loginAndCheckSession(driver, testRealmLogin);
         // logout mposolda with admin client
-        findClientResourceByClientId(adminClient.realm("demo"), "session-portal")
+        findClientResourceByClientId(testRealmResource(), "session-portal")
                 .logoutUser("mposolda");
         // bburke should be still logged with original httpSession in our browser window
         sessionPortal.navigateTo();

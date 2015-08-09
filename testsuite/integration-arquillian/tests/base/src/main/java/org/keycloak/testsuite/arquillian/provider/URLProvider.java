@@ -1,5 +1,6 @@
-package org.keycloak.testsuite.arquillian;
+package org.keycloak.testsuite.arquillian.provider;
 
+import org.keycloak.testsuite.arquillian.TestContext;
 import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.URL;

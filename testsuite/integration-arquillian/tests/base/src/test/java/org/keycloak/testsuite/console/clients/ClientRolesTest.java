@@ -4,7 +4,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.testsuite.console.page.users.UserRoleMappingsForm;
 
-
 import static org.junit.Assert.*;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -53,14 +52,15 @@ public class ClientRolesTest extends AbstractClientTest {
         client.tabs().roles();
         addClientRole(newRole);
         assertFlashMessageSuccess();
-        
+
         clientRole.backToClientRolesViaBreadcrumb();
         assertFalse(clientRoles.roles().getRolesFromTableRows().isEmpty());
 
         configure().clients();
-        clients.clients().deleteClient(newClient.getClientId());
+        clients.table().search(newClient.getClientId());
+        clients.table().deleteClient(newClient.getClientId());
         assertFlashMessageSuccess();
-        assertNull(clients.clients().findClient(newClient.getClientId()));
+        assertNull(clients.table().findClient(newClient.getClientId()));
     }
 
 //    @Test

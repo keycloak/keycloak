@@ -2,6 +2,8 @@ package org.keycloak.testsuite.auth.page;
 
 import java.net.URI;
 import javax.ws.rs.core.UriBuilder;
+import org.jboss.arquillian.test.api.ArquillianResource;
+import org.keycloak.admin.client.Keycloak;
 
 /**
  *
@@ -17,6 +19,13 @@ public class AuthServer extends AuthServerContextRoot {
     public String getAuthRoot() {
         URI uri = buildUri();
         return uri.getScheme() + "://" + uri.getAuthority() + "/auth";
+    }
+
+    @ArquillianResource
+    protected Keycloak keycloak;
+
+    public Keycloak keycloak() {
+        return keycloak;
     }
 
 }

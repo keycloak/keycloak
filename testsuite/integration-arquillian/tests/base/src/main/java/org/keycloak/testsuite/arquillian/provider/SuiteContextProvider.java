@@ -1,5 +1,6 @@
-package org.keycloak.testsuite.arquillian;
+package org.keycloak.testsuite.arquillian.provider;
 
+import org.keycloak.testsuite.arquillian.SuiteContext;
 import java.lang.annotation.Annotation;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;

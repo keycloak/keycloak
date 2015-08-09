@@ -20,7 +20,6 @@ package org.keycloak.testsuite.console.clients;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import org.keycloak.representations.idm.ClientRepresentation;
 
 /**
@@ -34,59 +33,56 @@ public class ClientSettingsTest extends AbstractClientTest {
     public void addNewClientTest() {
         ClientRepresentation newClient = createClientRepresentation("testClient1", "http://example.com/*");
         createClient(newClient);
-        flashMessage.waitUntilPresent();
-        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
+        assertFlashMessageSuccess();
 
         clients.navigateTo();
-        clients.clients().deleteClient(newClient.getClientId());
+        clients.table().search(newClient.getClientId());
+        clients.table().deleteClient(newClient.getClientId());
 
-        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(clients.clients().findClient(newClient.getClientId()));
+        assertFlashMessageSuccess();
+        assertNull(clients.table().findClient(newClient.getClientId()));
     }
 
     @Test
     public void addNewClientWithBlankNameTest() {
         ClientRepresentation newClient = createClientRepresentation("", "http://example.com/*");
         createClient(newClient);
-        flashMessage.waitUntilPresent();
-        assertTrue(flashMessage.getText(), flashMessage.isDanger());
+        assertFlashMessageDanger();
     }
 
     @Test
     public void addNewClientWithBlankUriTest() {
         ClientRepresentation newClient = createClientRepresentation("testClient2", null);
         createClient(newClient);
-        flashMessage.waitUntilPresent();
-        assertTrue(flashMessage.getText(), flashMessage.isDanger());
+        assertFlashMessageDanger();
 
         createClient.form().addRedirectUri("http://testUri.com/*");
         createClient.form().save();
-        flashMessage.waitUntilPresent();
-        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
+        assertFlashMessageSuccess();
 
         clients.navigateTo();
-        clients.clients().deleteClient(newClient.getClientId());
-        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(clients.clients().findClient(newClient.getClientId()));
+        clients.table().search(newClient.getClientId());
+        clients.table().deleteClient(newClient.getClientId());
+        assertFlashMessageSuccess();
+        assertNull(clients.table().findClient(newClient.getClientId()));
     }
 
     @Test
     public void addNewClientWithTwoUriTest() {
         ClientRepresentation newClient = createClientRepresentation("testClient3", null);
         createClient(newClient);
-        flashMessage.waitUntilPresent();
-        assertTrue(flashMessage.getText(), flashMessage.isDanger());
+        assertFlashMessageDanger();
 
         createClient.form().addRedirectUri("http://testUri.com/*");
         createClient.form().addRedirectUri("http://example.com/*");
         createClient.form().save();
-        flashMessage.waitUntilPresent();
-        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
+        assertFlashMessageSuccess();
 
         clients.navigateTo();
-        clients.clients().deleteClient(newClient.getClientId());
-        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-        assertNull(clients.clients().findClient(newClient.getClientId()));
+        clients.table().search(newClient.getClientId());
+        clients.table().deleteClient(newClient.getClientId());
+        assertFlashMessageSuccess();
+        assertNull(clients.table().findClient(newClient.getClientId()));
     }
 
 }

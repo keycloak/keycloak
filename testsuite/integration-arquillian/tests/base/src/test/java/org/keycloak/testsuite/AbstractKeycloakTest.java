@@ -4,6 +4,7 @@ import org.keycloak.testsuite.arquillian.TestContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import javax.ws.rs.NotFoundException;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -13,13 +14,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.models.Constants;
+import org.keycloak.admin.client.resource.RealmResource;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.SuiteContext;
-import static org.keycloak.testsuite.util.RealmUtils.importRealm;
-import static org.keycloak.testsuite.util.RealmUtils.removeRealm;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
@@ -30,7 +29,6 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
-import static org.keycloak.testsuite.util.SeleniumUtils.pause;
 
 /**
  *
@@ -42,10 +40,11 @@ public abstract class AbstractKeycloakTest {
 
     @ArquillianResource
     protected SuiteContext suiteContext;
-    
+
     @ArquillianResource
     protected TestContext testContext;
 
+    @ArquillianResource
     protected Keycloak adminClient;
 
     protected List<RealmRepresentation> testRealmReps;
@@ -82,15 +81,6 @@ public abstract class AbstractKeycloakTest {
             updateMasterAdminPassword();
             suiteContext.setAdminPasswordUpdated(true);
         }
-
-        adminClient = testContext.getAdminClient();
-        if (adminClient == null) {
-            adminClient = Keycloak.getInstance(authServer.toString(),
-                    MASTER, ADMIN, ADMIN, Constants.ADMIN_CONSOLE_CLIENT_ID);
-            testContext.setAdminClient(adminClient);
-        }
-
-        pause(2000);
 
         importTestRealms();
     }
@@ -142,14 +132,14 @@ public abstract class AbstractKeycloakTest {
         addTestRealms();
         System.out.println("importing test realms");
         for (RealmRepresentation testRealm : testRealmReps) {
-            importRealm(adminClient, testRealm);
+            importRealm(testRealm);
         }
     }
 
     public void removeTestRealms() {
         System.out.println("removing test realms");
         for (RealmRepresentation testRealm : testRealmReps) {
-            removeRealm(adminClient, testRealm);
+            removeRealm(testRealm);
         }
     }
 
@@ -158,6 +148,23 @@ public abstract class AbstractKeycloakTest {
         adminUserRep.setUsername(ADMIN);
         adminUserRep.credential(PASSWORD, ADMIN);
         return adminUserRep;
+    }
+
+    public void importRealm(RealmRepresentation realm) {
+        System.out.println("importing realm: " + realm.getRealm());
+        try { // TODO - figure out a way how to do this without try-catch
+            RealmResource realmResource = adminClient.realms().realm(realm.getRealm());
+            RealmRepresentation rRep = realmResource.toRepresentation();
+            System.out.println(" realm already exists on server, re-importing");
+            realmResource.remove();
+        } catch (NotFoundException nfe) {
+            // expected when realm does not exist
+        }
+        adminClient.realms().create(realm);
+    }
+
+    public void removeRealm(RealmRepresentation realm) {
+        adminClient.realms().realm(realm.getRealm()).remove();
     }
 
 }

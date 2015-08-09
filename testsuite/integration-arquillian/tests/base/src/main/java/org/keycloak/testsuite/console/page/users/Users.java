@@ -22,6 +22,7 @@ import org.openqa.selenium.support.FindBy;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
@@ -132,6 +133,10 @@ public class Users extends AdminConsoleRealm {
             return users;
         }
 
+    }
+    
+    public UsersResource usersResource() {
+        return realmResource().users();
     }
 
 }

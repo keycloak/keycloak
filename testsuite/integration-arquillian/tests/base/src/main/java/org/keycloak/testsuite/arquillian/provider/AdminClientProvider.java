@@ -1,29 +1,29 @@
-package org.keycloak.testsuite.arquillian;
+package org.keycloak.testsuite.arquillian.provider;
 
 import java.lang.annotation.Annotation;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
+import org.keycloak.admin.client.Keycloak;
 
 /**
  *
  * @author tkyjovsk
  */
-public class TestContextProvider implements ResourceProvider {
+public class AdminClientProvider implements ResourceProvider {
 
     @Inject
-    Instance<TestContext> testContext;
-
+    Instance<Keycloak> adminClient;
+    
     @Override
     public boolean canProvide(Class<?> type) {
-        return TestContext.class.isAssignableFrom(type);
+        return Keycloak.class.isAssignableFrom(type);
     }
 
     @Override
-    @ClassInjection
     public Object lookup(ArquillianResource resource, Annotation... qualifiers) {
-        return testContext.get();
+        return adminClient.get();
     }
-
+    
 }

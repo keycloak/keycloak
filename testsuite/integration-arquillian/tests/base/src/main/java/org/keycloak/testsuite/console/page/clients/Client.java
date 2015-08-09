@@ -1,6 +1,8 @@
 package org.keycloak.testsuite.console.page.clients;
 
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.testsuite.console.page.fragment.Breadcrumb;
+import static org.keycloak.testsuite.console.page.fragment.Breadcrumb.BREADCRUMB_XPATH;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -10,22 +12,22 @@ import org.openqa.selenium.support.FindBy;
  */
 public class Client extends Clients {
 
-    public static final String CLIENT_ID = "clientId"; // TODO client.id vs client.clientId
+    public static final String ID = "id"; // TODO client.id vs client.clientId
 
     @Override
     public String getUriFragment() {
-        return super.getUriFragment() + "/{" + CLIENT_ID + "}";
+        return super.getUriFragment() + "/{" + ID + "}";
     }
 
-    public final void setClientId(String clientId) {
-        setUriParameter(CLIENT_ID, clientId);
+    public final void setId(String id) {
+        setUriParameter(ID, id);
     }
 
-    public String getClientId() {
-        return (String) getUriParameter(CLIENT_ID);
+    public String getId() {
+        return getUriParameter(ID).toString();
     }
 
-    @FindBy(xpath = "//ol[@class='breadcrumb']")
+    @FindBy(xpath = BREADCRUMB_XPATH)
     private Breadcrumb breadcrumb;
 
     public Breadcrumb breadcrumb() {
@@ -84,6 +86,10 @@ public class Client extends Clients {
             installationLink.click();
         }
 
+    }
+    
+    public ClientResource clientResource() {
+        return clientsResource().get(getId());
     }
 
 }

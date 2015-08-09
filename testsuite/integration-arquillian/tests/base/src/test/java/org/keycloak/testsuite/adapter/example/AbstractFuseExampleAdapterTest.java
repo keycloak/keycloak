@@ -9,7 +9,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.auth.page.account.Account;
-import static org.keycloak.testsuite.util.RealmUtils.loadRealm;
+import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.adapter.AbstractExampleAdapterTest.EXAMPLES_HOME_DIR;
 import org.keycloak.testsuite.adapter.page.fuse.AdminInterface;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerListing;

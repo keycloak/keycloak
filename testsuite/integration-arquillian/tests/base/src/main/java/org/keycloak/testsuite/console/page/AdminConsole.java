@@ -33,7 +33,7 @@ import org.openqa.selenium.support.FindBy;
  * @author Petr Mensik
  */
 public class AdminConsole extends AuthServer implements PageWithLoginUrl {
-
+    
     public static final String ADMIN_REALM = "adminRealm";
 
     public AdminConsole() {

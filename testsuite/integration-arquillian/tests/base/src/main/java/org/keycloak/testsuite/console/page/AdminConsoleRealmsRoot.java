@@ -2,6 +2,7 @@ package org.keycloak.testsuite.console.page;
 
 import java.util.List;
 import javax.ws.rs.core.UriBuilder;
+import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.testsuite.console.page.fragment.RealmSelector;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -40,5 +41,9 @@ public class AdminConsoleRealmsRoot extends AdminConsole {
 
     @FindBy(css = "realm-selector")
     protected RealmSelector realmSelector;
+
+    public RealmsResource realmsResource() {
+        return keycloak.realms();
+    }
 
 }

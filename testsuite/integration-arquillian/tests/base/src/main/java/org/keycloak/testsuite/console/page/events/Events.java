@@ -31,5 +31,5 @@ public class Events extends AdminConsoleRealm {
     public void config() {
         configTab.click();
     }
-
+    
 }

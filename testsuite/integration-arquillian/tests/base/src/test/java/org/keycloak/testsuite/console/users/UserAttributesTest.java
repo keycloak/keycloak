@@ -37,14 +37,7 @@ public class UserAttributesTest extends AbstractUserTest {
     private UserAttributes userAttributes;
 
     @Test
-    public void viewAllUsers() {
-        users.table().viewAllUsers();
-        users.table().waitAjaxForBody();
-        assertFalse(users.table().getUsersFromTableRows().isEmpty());
-    }
-
-    @Test
-    public void addUserWithInvalidEmailTest() {
+    public void invalidEmail() {
         String testUsername = "testUserInvEmail";
         String invalidEmail = "user.redhat.com";
         newTestRealmUser.setUsername(testUsername);
@@ -58,14 +51,14 @@ public class UserAttributesTest extends AbstractUserTest {
     }
 
     @Test
-    public void addUserWithNoUsernameTest() {
+    public void noUsername() {
         createUser(newTestRealmUser);
         assertFlashMessageDanger();
     }
 
     @Ignore
     @Test
-    public void addUserWithLongNameTest() {
+    public void longUsername() {
         String longUserName = "thisisthelongestnameeveranditcannotbeusedwhencreatingnewuserinkeycloak";
         newTestRealmUser.setUsername(longUserName);
         createUser(newTestRealmUser);
@@ -74,7 +67,7 @@ public class UserAttributesTest extends AbstractUserTest {
     }
 
     @Test
-    public void addDuplicatedUser() {
+    public void existingUser() {
         String testUsername = "test_duplicated_user";
         newTestRealmUser.setUsername(testUsername);
         createUser(newTestRealmUser);
@@ -87,25 +80,15 @@ public class UserAttributesTest extends AbstractUserTest {
         testUser2.setUsername(testUsername);
         createUser(testUser2);
         assertFlashMessageDanger();
-
-        userAttributes.backToUsersViaBreadcrumb();
-        users.table().deleteUser(testUsername);
-        assertFlashMessageSuccess();
-        assertNull(users.table().findUser(testUser2.getUsername()));
     }
 
     @Test
-    public void addDisabledUser() {
+    public void disabledUser() {
         UserRepresentation disabledUser = new UserRepresentation();
         disabledUser.setEnabled(false);
         disabledUser.setUsername("disabled_user");
         createUser(disabledUser);
         assertFlashMessageSuccess();
-
-        userAttributes.backToUsersViaBreadcrumb();
-        users.table().deleteUser(disabledUser.getUsername());
-        assertFlashMessageSuccess();
-        assertNull(users.table().findUser(disabledUser.getUsername()));
     }
 
 }
