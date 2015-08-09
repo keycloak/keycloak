@@ -7,12 +7,10 @@ import org.keycloak.ClientConnection;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
@@ -22,26 +20,18 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.resources.IdentityBrokerService;
-import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.Urls;
 import org.keycloak.services.util.CookieHelper;
-import org.keycloak.services.validation.Validation;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Cookie;
@@ -52,12 +42,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import java.net.URI;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Stateless object that manages authentication
@@ -442,7 +429,7 @@ public class AuthenticationManager {
         for (String action : requiredActions) {
             RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
             RequiredActionProvider actionProvider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
-            Response challenge = actionProvider.invokeRequiredAction(context);
+            Response challenge = actionProvider.requiredActionChallenge(context);
             if (challenge != null) {
                 return challenge;
             }

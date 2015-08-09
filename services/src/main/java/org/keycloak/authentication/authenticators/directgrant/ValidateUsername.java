@@ -1,33 +1,24 @@
 package org.keycloak.authentication.authenticators.directgrant;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.AuthenticatorContext;
-import org.keycloak.authentication.AuthenticatorFactory;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.browser.AbstractFormAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.messages.Messages;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -39,13 +30,13 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
     public static final String PROVIDER_ID = "direct-grant-validate-username";
 
     @Override
-    public void authenticate(AuthenticatorContext context) {
+    public void authenticate(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         String username = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Missing parameter: username");
-            context.failure(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
+            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
         context.getEvent().detail(Details.USERNAME, username);
@@ -57,7 +48,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
         } catch (ModelDuplicateException mde) {
             logger.error(mde.getMessage(), mde);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Invalid user credentials");
-            context.failure(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
+            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
 
@@ -65,14 +56,14 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
         if (user == null) {
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
-            context.failure(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
+            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
         if (!user.isEnabled()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
             Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Account disabled");
-            context.failure(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
+            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
         if (context.getRealm().isBruteForceProtected()) {
@@ -80,7 +71,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
                 context.getEvent().user(user);
                 context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
                 Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Account temporarily disabled");
-                context.failure(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
+                context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
                 return;
             }
         }

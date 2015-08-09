@@ -1,8 +1,8 @@
 package org.keycloak.authentication.authenticators.directgrant;
 
 import org.jboss.logging.Logger;
-import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.AuthenticatorContext;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
@@ -27,14 +27,14 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator {
     public static final String PROVIDER_ID = "direct-grant-validate-otp";
 
     @Override
-    public void authenticate(AuthenticatorContext context) {
+    public void authenticate(AuthenticationFlowContext context) {
         if (!isConfigured(context.getSession(), context.getRealm(), context.getUser())) {
             if (context.getExecution().isOptional()) {
                 context.attempted();
             } else if (context.getExecution().isRequired()) {
                 context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
                 Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
-                context.failure(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
+                context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             }
             return;
         }
@@ -47,7 +47,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator {
             }
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
-            context.failure(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
+            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
         credentials.add(UserCredentialModel.otp(context.getRealm().getOTPPolicy().getType(), otp));
@@ -56,7 +56,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator {
             context.getEvent().user(context.getUser());
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
-            context.failure(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
+            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
 

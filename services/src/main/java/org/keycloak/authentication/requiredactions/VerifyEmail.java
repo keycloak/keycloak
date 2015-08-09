@@ -34,7 +34,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         }
     }
     @Override
-    public Response invokeRequiredAction(RequiredActionContext context) {
+    public Response requiredActionChallenge(RequiredActionContext context) {
         if (Validation.isBlank(context.getUser().getEmail())) {
             return null;
         }

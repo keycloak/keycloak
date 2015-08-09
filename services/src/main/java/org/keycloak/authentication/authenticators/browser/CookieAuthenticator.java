@@ -1,7 +1,7 @@
 package org.keycloak.authentication.authenticators.browser;
 
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -19,7 +19,7 @@ public class CookieAuthenticator implements Authenticator {
     }
 
     @Override
-    public void authenticate(AuthenticatorContext context) {
+    public void authenticate(AuthenticationFlowContext context) {
         AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(context.getSession(),
                 context.getRealm(), true);
         if (authResult == null) {
@@ -33,7 +33,7 @@ public class CookieAuthenticator implements Authenticator {
     }
 
     @Override
-    public void action(AuthenticatorContext context) {
+    public void action(AuthenticationFlowContext context) {
 
     }
 
