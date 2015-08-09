@@ -1,9 +1,8 @@
 package org.keycloak.testsuite.forms;
 
 import org.keycloak.Config;
-import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -12,10 +11,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.services.resources.AttributeFormDataProcessor;
 
 import java.util.List;
 
@@ -29,7 +26,7 @@ public class PassThroughRegistration implements Authenticator, AuthenticatorFact
     public static String email = "new-user@localhost";
 
     @Override
-    public void authenticate(AuthenticatorContext context) {
+    public void authenticate(AuthenticationFlowContext context) {
         context.getEvent().detail(Details.USERNAME, username)
                 .detail(Details.REGISTER_METHOD, "form")
                 .detail(Details.EMAIL, email)
@@ -69,7 +66,7 @@ public class PassThroughRegistration implements Authenticator, AuthenticatorFact
     }
 
     @Override
-    public void action(AuthenticatorContext context) {
+    public void action(AuthenticationFlowContext context) {
 
     }
 

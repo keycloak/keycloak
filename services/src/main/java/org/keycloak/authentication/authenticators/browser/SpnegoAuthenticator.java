@@ -2,9 +2,9 @@ package org.keycloak.authentication.authenticators.browser;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.constants.KerberosConstants;
 import org.keycloak.events.Errors;
 import org.keycloak.login.LoginFormsProvider;
@@ -35,13 +35,13 @@ public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Au
     }
 
     @Override
-    public void action(AuthenticatorContext context) {
+    public void action(AuthenticationFlowContext context) {
         context.attempted();
         return;
     }
 
     @Override
-    public void authenticate(AuthenticatorContext context) {
+    public void authenticate(AuthenticationFlowContext context) {
         HttpRequest request = context.getHttpRequest();
         String authHeader = request.getHttpHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null) {
@@ -62,7 +62,7 @@ public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Au
             return;
         }
         if (tokens.length != 2) {
-            context.failure(AuthenticationProcessor.Error.INVALID_CREDENTIALS);
+            context.failure(AuthenticationFlowError.INVALID_CREDENTIALS);
             return;
         }
 
@@ -85,11 +85,11 @@ public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Au
             context.challenge(challenge);
         } else {
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            context.failure(AuthenticationProcessor.Error.INVALID_CREDENTIALS);
+            context.failure(AuthenticationFlowError.INVALID_CREDENTIALS);
         }
     }
 
-    private Response challengeNegotiation(AuthenticatorContext context, final String negotiateToken) {
+    private Response challengeNegotiation(AuthenticationFlowContext context, final String negotiateToken) {
         String negotiateHeader = negotiateToken == null ? KerberosConstants.NEGOTIATE : KerberosConstants.NEGOTIATE + " " + negotiateToken;
 
         if (logger.isTraceEnabled()) {
@@ -115,7 +115,7 @@ public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Au
      * @param negotiateHeader
      * @return
      */
-    protected Response optionalChallengeRedirect(AuthenticatorContext context, String negotiateHeader) {
+    protected Response optionalChallengeRedirect(AuthenticationFlowContext context, String negotiateHeader) {
         String accessCode = context.generateAccessCode();
         URI action = getActionUrl(context, accessCode);
 

@@ -1,21 +1,16 @@
 package org.keycloak.authentication.authenticators.directgrant;
 
 import org.jboss.logging.Logger;
-import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.AuthenticatorContext;
-import org.keycloak.authentication.authenticators.browser.AbstractFormAuthenticator;
-import org.keycloak.events.Details;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -32,7 +27,7 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
     public static final String PROVIDER_ID = "direct-grant-validate-password";
 
     @Override
-    public void authenticate(AuthenticatorContext context) {
+    public void authenticate(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
@@ -42,7 +37,7 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
             }
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
-            context.failure(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
+            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
         credentials.add(UserCredentialModel.password(password));
@@ -51,7 +46,7 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
             context.getEvent().user(context.getUser());
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
-            context.failure(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
+            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
 

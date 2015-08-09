@@ -11,9 +11,7 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.resources.LoginActionsService;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -142,7 +140,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
     @Override
     public Response processAction(String actionExecution) {
         if (!actionExecution.equals(formExecution.getId())) {
-            throw new AuthenticationProcessor.AuthException("action is not current execution", AuthenticationProcessor.Error.INTERNAL_ERROR);
+            throw new AuthenticationFlowException("action is not current execution", AuthenticationFlowError.INTERNAL_ERROR);
         }
         Map<String, ClientSessionModel.ExecutionStatus> executionStatus = new HashMap<>();
         List<FormAction> requiredActions = new LinkedList<>();
@@ -157,7 +155,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
             UserModel authUser = processor.getClientSession().getAuthenticatedUser();
             if (action.requiresUser() && authUser == null) {
-                throw new AuthenticationProcessor.AuthException("form action: " + formExecution.getAuthenticator() + " requires user", AuthenticationProcessor.Error.UNKNOWN_USER);
+                throw new AuthenticationFlowException("form action: " + formExecution.getAuthenticator() + " requires user", AuthenticationFlowError.UNKNOWN_USER);
             }
             boolean configuredFor = false;
             if (action.requiresUser() && authUser != null) {
@@ -170,7 +168,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
                             requiredActions.add(action);
                             continue;
                         } else {
-                            throw new AuthenticationProcessor.AuthException(AuthenticationProcessor.Error.CREDENTIAL_SETUP_REQUIRED);
+                            throw new AuthenticationFlowException(AuthenticationFlowError.CREDENTIAL_SETUP_REQUIRED);
                         }
                     } else if (formActionExecution.isOptional()) {
                         executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);

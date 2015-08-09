@@ -2,8 +2,8 @@ package org.keycloak.authentication.authenticators.directgrant;
 
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -28,7 +28,7 @@ public abstract class AbstractDirectGrantAuthenticator implements Authenticator,
     }
 
     @Override
-    public void action(AuthenticatorContext context) {
+    public void action(AuthenticationFlowContext context) {
 
     }
 

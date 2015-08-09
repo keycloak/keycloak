@@ -55,14 +55,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             } else if (model.getId().equals(actionExecution)) {
                 AuthenticatorFactory factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
                 Authenticator authenticator = factory.create();
-                AuthenticatorContext result = processor.createAuthenticatorContext(model, authenticator, executions);
+                AuthenticationProcessor.Result result = processor.createAuthenticatorContext(model, authenticator, executions);
                 authenticator.action(result);
                 Response response = processResult(result);
                 if (response == null) return processFlow();
                 else return response;
             }
         }
-        throw new AuthenticationProcessor.AuthException("action is not in current execution", AuthenticationProcessor.Error.INTERNAL_ERROR);
+        throw new AuthenticationFlowException("action is not in current execution", AuthenticationFlowError.INTERNAL_ERROR);
     }
 
     @Override
@@ -106,7 +106,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
             AuthenticatorFactory factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
             if (factory == null) {
-                throw new AuthenticationProcessor.AuthException("Could not find AuthenticatorFactory for: " + model.getAuthenticator(), AuthenticationProcessor.Error.INTERNAL_ERROR);
+                throw new AuthenticationFlowException("Could not find AuthenticatorFactory for: " + model.getAuthenticator(), AuthenticationFlowError.INTERNAL_ERROR);
             }
             Authenticator authenticator = factory.create();
             AuthenticationProcessor.logger.debugv("authenticator: {0}", factory.getId());
@@ -117,7 +117,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                     processor.getClientSession().setExecutionStatus(challengedAlternativeExecution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
                     return alternativeChallenge;
                 }
-                throw new AuthenticationProcessor.AuthException("authenticator: " + factory.getId(), AuthenticationProcessor.Error.UNKNOWN_USER);
+                throw new AuthenticationFlowException("authenticator: " + factory.getId(), AuthenticationFlowError.UNKNOWN_USER);
             }
             boolean configuredFor = false;
             if (authenticator.requiresUser() && authUser != null) {
@@ -130,7 +130,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                             authenticator.setRequiredActions(processor.getSession(), processor.getRealm(), processor.getClientSession().getAuthenticatedUser());
                             continue;
                         } else {
-                            throw new AuthenticationProcessor.AuthException(AuthenticationProcessor.Error.CREDENTIAL_SETUP_REQUIRED);
+                            throw new AuthenticationFlowException(AuthenticationFlowError.CREDENTIAL_SETUP_REQUIRED);
                         }
                     } else if (model.isOptional()) {
                         processor.getClientSession().setExecutionStatus(model.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
@@ -138,7 +138,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                     }
                 }
             }
-            AuthenticatorContext context = processor.createAuthenticatorContext(model, authenticator, executions);
+            AuthenticationProcessor.Result context = processor.createAuthenticatorContext(model, authenticator, executions);
             authenticator.authenticate(context);
             Response response = processResult(context);
             if (response != null) return response;
@@ -147,7 +147,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     }
 
 
-    public Response processResult(AuthenticatorContext result) {
+    public Response processResult(AuthenticationProcessor.Result result) {
         AuthenticationExecutionModel execution = result.getExecution();
         AuthenticationProcessor.Status status = result.getStatus();
         if (status == AuthenticationProcessor.Status.SUCCESS) {
@@ -162,7 +162,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             if (result.getChallenge() != null) {
                 return sendChallenge(result, execution);
             }
-            throw new AuthenticationProcessor.AuthException(result.getError());
+            throw new AuthenticationFlowException(result.getError());
         } else if (status == AuthenticationProcessor.Status.FORCE_CHALLENGE) {
             processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
             return sendChallenge(result, execution);
@@ -192,19 +192,19 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         } else if (status == AuthenticationProcessor.Status.ATTEMPTED) {
             AuthenticationProcessor.logger.debugv("authenticator ATTEMPTED: {0}", execution.getAuthenticator());
             if (execution.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) {
-                throw new AuthenticationProcessor.AuthException(AuthenticationProcessor.Error.INVALID_CREDENTIALS);
+                throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CREDENTIALS);
             }
             processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.ATTEMPTED);
             return null;
         } else {
             AuthenticationProcessor.logger.debugv("authenticator INTERNAL_ERROR: {0}", execution.getAuthenticator());
             AuthenticationProcessor.logger.error("Unknown result status");
-            throw new AuthenticationProcessor.AuthException(AuthenticationProcessor.Error.INTERNAL_ERROR);
+            throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);
         }
 
     }
 
-    public Response sendChallenge(AuthenticatorContext result, AuthenticationExecutionModel execution) {
+    public Response sendChallenge(AuthenticationProcessor.Result result, AuthenticationExecutionModel execution) {
         processor.getClientSession().setNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, execution.getId());
         return result.getChallenge();
     }

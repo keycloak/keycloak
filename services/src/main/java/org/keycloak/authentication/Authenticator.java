@@ -15,11 +15,33 @@ import org.keycloak.provider.Provider;
 public interface Authenticator extends Provider {
 
     /**
-     * Initial call for the authenticator.  If this is a form, a challenge with a Response rendering the form is usually sent
+     * Initial call for the authenticator.  This method should check the current HTTP request to determine if the request
+     * satifies the Authenticator's requirements.  If it doesn't, it should send back a challenge response by calling
+     * the AuthenticationFlowContext.challenge(Response).  If this challenge is a authentication, the action URL
+     * of the form must point to
+     *
+     * /realms/{realm}/login-actions/authenticate?code={session-code}&execution={executionId}
+     *
+     * or
+     *
+     * /realms/{realm}/login-actions/registration?code={session-code}&execution={executionId}
+     *
+     * {session-code} pertains to the code generated from AuthenticationFlowContext.generateAccessCode().  The {executionId}
+     * pertains to the AuthenticationExecutionModel.getId() value obtained from AuthenticationFlowContext.getExecution().
+     *
+     * The action URL will invoke the action() method described below.
      *
      * @param context
      */
-    void authenticate(AuthenticatorContext context);
+    void authenticate(AuthenticationFlowContext context);
+
+    /**
+     * Called from a form action invocation.
+     *
+     * @param context
+     */
+    void action(AuthenticationFlowContext context);
+
 
     /**
      * Does this authenticator require that the user has already been identified?  That AuthenticatorContext.getUser() is not null?
@@ -44,12 +66,6 @@ public interface Authenticator extends Provider {
      */
     void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user);
 
-    /**
-     * Usually implements a form action.
-     *
-     * @param context
-     */
-    void action(AuthenticatorContext context);
 
 
 }

@@ -1,9 +1,9 @@
 package org.keycloak.testsuite.forms;
 
 import org.keycloak.Config;
-import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
@@ -24,10 +24,10 @@ public class PassThroughAuthenticator implements Authenticator, AuthenticatorFac
     public static String username = "test-user@localhost";
 
     @Override
-    public void authenticate(AuthenticatorContext context) {
+    public void authenticate(AuthenticationFlowContext context) {
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
         if (user == null) {
-            context.failure(AuthenticationProcessor.Error.UNKNOWN_USER);
+            context.failure(AuthenticationFlowError.UNKNOWN_USER);
             return;
         }
         context.setUser(user);
@@ -50,7 +50,7 @@ public class PassThroughAuthenticator implements Authenticator, AuthenticatorFac
     }
 
     @Override
-    public void action(AuthenticatorContext context) {
+    public void action(AuthenticationFlowContext context) {
 
     }
 

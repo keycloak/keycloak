@@ -1,8 +1,8 @@
 package org.keycloak.authentication.authenticators.browser;
 
-import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.events.Errors;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
@@ -26,17 +26,17 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
     public static final String TOTP_FORM_ACTION = "totp";
 
     @Override
-    public void action(AuthenticatorContext context) {
+    public void action(AuthenticationFlowContext context) {
         validateOTP(context);
     }
 
     @Override
-    public void authenticate(AuthenticatorContext context) {
+    public void authenticate(AuthenticationFlowContext context) {
         Response challengeResponse = challenge(context, null);
         context.challenge(challengeResponse);
     }
 
-    public void validateOTP(AuthenticatorContext context) {
+    public void validateOTP(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.TOTP);
@@ -51,7 +51,7 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
             context.getEvent().user(context.getUser())
                     .error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = challenge(context, Messages.INVALID_TOTP);
-            context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
+            context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
         context.success();
@@ -62,7 +62,7 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
         return true;
     }
 
-    protected Response challenge(AuthenticatorContext context, String error) {
+    protected Response challenge(AuthenticationFlowContext context, String error) {
         String accessCode = context.generateAccessCode();
         URI action = getActionUrl(context, accessCode);
         LoginFormsProvider forms = context.getSession().getProvider(LoginFormsProvider.class)
