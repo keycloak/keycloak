@@ -5,12 +5,19 @@ var module = angular.module('keycloak.services', [ 'ngResource', 'ngRoute' ]);
 module.service('Dialog', function($modal) {
 	var dialog = {};
 
-    var openDialog = function(title, message, btns) {
+    var openDialog = function(name, type, title, message, btns) {
         var controller = function($scope, $modalInstance, title, message, btns) {
             $scope.title = title;
             $scope.message = message;
             $scope.btns = btns;
-
+            
+            $scope.verifyRealm = {
+                currentTypeName : name,
+                type : type,
+                realmName : null,
+                realmDeleteMessage : "Please enter the name of the realm you wish to delete ?"
+            }
+            
             $scope.ok = function () {
                 $modalInstance.close();
             };
@@ -56,7 +63,7 @@ module.service('Dialog', function($modal) {
             }
         }
 
-        openDialog(title, msg, btns).then(success);
+        openDialog(name, type, title, msg, btns).then(success);
 	}
 
     dialog.confirmGenerateKeys = function(name, type, success) {

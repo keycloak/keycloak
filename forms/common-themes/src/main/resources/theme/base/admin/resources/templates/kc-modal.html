@@ -5,7 +5,13 @@
     <h4 class="modal-title">{{title}}</h4>
 </div>
 <div class="modal-body">{{message}}</div>
+
+<div ng-show="(verifyRealm.type == 'realm')" class="modal-body">{{verifyRealm.realmDeleteMessage}}
+<input class="form-control" type="realmName" name="realmName" id="realmName" data-ng-model="verifyRealm.realmName">
+</div>
+  
 <div class="modal-footer">
     <button type="button" data-ng-class="btns.cancel.cssClass" ng-click="cancel()">{{btns.cancel.label}}</button>
-    <button type="button" data-ng-class="btns.ok.cssClass" ng-click="ok()">{{btns.ok.label}}</button>
+    <button type="button" data-ng-class="btns.ok.cssClass" ng-show="(verifyRealm.type == 'realm')" ng-click="ok()" ng-disabled ="!(verifyRealm.realmName == verifyRealm.currentTypeName)">{{btns.ok.label}}</button>
+    <button type="button" data-ng-class="btns.ok.cssClass" ng-show="!(verifyRealm.type == 'realm')" ng-click="ok()">{{btns.ok.label}}</button>
 </div>
