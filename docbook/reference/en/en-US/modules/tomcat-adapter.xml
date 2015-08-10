@@ -73,18 +73,9 @@ $ unzip keycloak-tomcat8-adapter-dist.zip
         </auth-constraint>
     </security-constraint>
 
-    <security-constraint>
-        <web-resource-collection>
-            <url-pattern>/*</url-pattern>
-        </web-resource-collection>
-        <user-data-constraint>
-            <transport-guarantee>CONFIDENTIAL</transport-guarantee>
-        </user-data-constraint>
-    </security-constraint>
-
     <login-config>
         <auth-method>BASIC</auth-method>
-        <realm-name>this is ignored currently/realm-name>
+        <realm-name>this is ignored currently</realm-name>
     </login-config>
 
     <security-role>
