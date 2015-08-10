@@ -33,6 +33,9 @@ import org.openqa.selenium.support.FindBy;
 public abstract class Login extends AuthRealm {
 
     public static final String PROTOCOL = "protocol";
+    public static final String OIDC = "openid-connect";
+    public static final String SAML = "saml";
+
 
     @Override
     public UriBuilder createUriBuilder() {

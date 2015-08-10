@@ -19,7 +19,6 @@ package org.keycloak.testsuite.console;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
-import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.console.page.AdminConsole;
@@ -28,8 +27,6 @@ import org.keycloak.testsuite.console.page.AdminConsoleRealm.ConfigureMenu;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ManageMenu;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.keycloak.testsuite.auth.page.login.Login;
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 
@@ -59,19 +56,13 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
 
     @Before
     public void beforeConsoleTest() {
-        createTestUser();
+        createTestUserWithAdminClient();
         if (!testContext.isAdminLoggedIn()) {
             loginToMasterRealmAdminConsoleAs(adminUser);
             testContext.setAdminLoggedIn(true);
         } else {
             adminConsoleRealm.navigateTo();
         }
-    }
-
-    public void createTestUser() {
-        String id = createUserWithAdminClient(adminConsoleRealm.realmResource(), testRealmUser);
-        resetUserPassword(adminConsoleRealm.realmResource().users().get(id),
-                PASSWORD, false);
     }
 
     public void loginToMasterRealmAdminConsoleAs(UserRepresentation user) {

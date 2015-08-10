@@ -1,10 +1,12 @@
 package org.keycloak.testsuite.console.clients;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.keycloak.representations.idm.ClientRepresentation;
+import static org.keycloak.testsuite.auth.page.login.OIDCLogin.OIDC;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.clients.Client;
 import org.keycloak.testsuite.console.page.clients.Clients;
@@ -36,18 +38,35 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         createClient.form().save();
     }
 
-    public static ClientRepresentation createClientRepresentation(String clientId, String redirectUri) {
+    public void deleteClientViaTable(String clientId) {
+        assertCurrentUrl(clients);
+        clients.deleteClient(clientId);
+    }
+
+    public void deleteClientViaPage(String clientId) {
+        assertCurrentUrl(clients);
+        clients.table().search(clientId);
+        clients.table().clickClient(clientId);
+        client.delete();
+    }
+
+    public static ClientRepresentation createClientRepresentation(String clientId, String... redirectUris) {
         ClientRepresentation client = new ClientRepresentation();
         client.setClientId(clientId);
-        if (redirectUri != null) {
-            List<String> redirectUris = new ArrayList<>();
-            redirectUris.add(redirectUri);
-            client.setRedirectUris(redirectUris);
-        }
         client.setEnabled(true);
-        client.setBearerOnly(false);
+        client.setConsentRequired(false);
         client.setDirectGrantsOnly(false);
+        
+        client.setProtocol(OIDC);
+        
+        client.setBearerOnly(false);
         client.setPublicClient(false);
+        client.setServiceAccountsEnabled(false);
+        
+        List<String> redirectUrisList = new ArrayList();
+        redirectUrisList.addAll(Arrays.asList(redirectUris));
+        client.setRedirectUris(redirectUrisList);
+        
         return client;
     }
 

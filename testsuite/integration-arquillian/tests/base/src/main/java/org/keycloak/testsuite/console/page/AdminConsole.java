@@ -25,6 +25,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import org.keycloak.testsuite.console.page.fragment.Menu;
+import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -57,6 +58,9 @@ public class AdminConsole extends AuthServer implements PageWithLoginUrl {
     @Page
     private Menu menu;
     
+    @FindBy(xpath = "//div[@class='modal-dialog']")
+    protected ModalDialog modalDialog;
+
     /**
      *
      * @return OIDC Login URL for adminRealm parameter

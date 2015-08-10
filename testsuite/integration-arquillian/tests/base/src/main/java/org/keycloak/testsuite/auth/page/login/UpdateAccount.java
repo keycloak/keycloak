@@ -1,6 +1,8 @@
 package org.keycloak.testsuite.auth.page.login;
 
+import org.keycloak.testsuite.auth.page.account.AccountFields;
 import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.UserRepresentation;
 
 /**
  *
@@ -9,10 +11,17 @@ import org.jboss.arquillian.graphene.page.Page;
 public class UpdateAccount extends Authenticate {
 
     @Page
-    private UpdateAccountFields updateForm;
+    private AccountFields accountFields;
 
-    public UpdateAccountFields updateForm() {
-        return updateForm;
+    public void updateAccount(UserRepresentation user) {
+        updateAccount(user.getEmail(), user.getFirstName(), user.getLastName());
+    }
+    
+    public void updateAccount(String email, String firstName, String lastName) {
+        accountFields.setEmail(email);
+        accountFields.setFirstName(firstName);
+        accountFields.setLastName(lastName);
+        submit();
     }
 
 }

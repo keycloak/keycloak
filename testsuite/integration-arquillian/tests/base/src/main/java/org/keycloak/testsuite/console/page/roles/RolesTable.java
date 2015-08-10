@@ -71,10 +71,12 @@ public class RolesTable extends DataTable {
 
     public List<RoleRepresentation> getRolesFromTableRows() {
         List<RoleRepresentation> rows = new ArrayList<>();
-        for (WebElement row : rows()) {
-            RoleRepresentation role = getRoleFromRow(row);
-            if (role != null) {
-                rows.add(role);
+        if (rows.size() > 1) {
+            for (WebElement row : rows()) {
+                RoleRepresentation role = getRoleFromRow(row);
+                if (role != null) {
+                    rows.add(role);
+                }
             }
         }
         return rows;

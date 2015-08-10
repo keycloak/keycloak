@@ -4,7 +4,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.keycloak.testsuite.console.page.realm.LoginSettings;
@@ -35,14 +34,14 @@ public class LoginSettingsTest extends AbstractRealmTest {
     }
 
     @Test
-    public void testUserRegistration() {
+    public void userRegistration() {
 
         loginSettings.form().setRegistrationAllowed(true);
         loginSettings.form().save();
         assertTrue(loginSettings.form().isRegistrationAllowed());
 
         testRealmAdminConsole.navigateTo();
-        testRealmLogin.form().waitForRegistrationLinkPresent();
+        testRealmLogin.form().waitForRegisterLinkPresent();
         testRealmLogin.form().register();
         assertCurrentUrlStartsWith(testRealmRegistration);
         testRealmRegistration.waitForUsernameInputPresent();
@@ -52,8 +51,8 @@ public class LoginSettingsTest extends AbstractRealmTest {
         loginSettings.form().setEmailAsUsername(true);
         loginSettings.form().save();
 
-        logoutFromTestRealmConsole();
-        testRealmLogin.form().waitForRegistrationLinkPresent();
+        testRealmAdminConsole.navigateTo();
+        testRealmLogin.form().waitForRegisterLinkPresent();
         testRealmLogin.form().register();
         assertCurrentUrlStartsWith(testRealmRegistration);
         testRealmRegistration.waitForUsernameInputNotPresent();
@@ -63,34 +62,9 @@ public class LoginSettingsTest extends AbstractRealmTest {
         loginSettings.form().setRegistrationAllowed(false);
         loginSettings.form().save();
         assertFalse(loginSettings.form().isRegistrationAllowed());
-        logoutFromTestRealmConsole();
-
+        
+        testRealmAdminConsole.navigateTo();
         testRealmLogin.form().waitForRegistrationLinkNotPresent();
-    }
-
-    @Test
-    @Ignore
-    public void testEditUsername() {
-    }
-
-    @Test
-    @Ignore
-    public void testForgottenPassword() {
-    }
-
-    @Test
-    @Ignore
-    public void testRememberMe() {
-    }
-
-    @Test
-    @Ignore
-    public void testVerifyEmail() {
-    }
-
-    @Test
-    @Ignore
-    public void testRequireSSL() {
     }
 
 }

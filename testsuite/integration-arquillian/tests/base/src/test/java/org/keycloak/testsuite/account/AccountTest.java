@@ -22,11 +22,8 @@ import org.junit.After;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
-import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import org.keycloak.testsuite.auth.page.account.Account;
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 
 /**
  *
@@ -35,11 +32,9 @@ import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
  */
 public class AccountTest extends AbstractAccountManagementTest {
 
-    private static final String USERNAME = "admin";
-
-    private static final String EMAIL = "admin@email.test";
-    private static final String FIRST_NAME = "John";
-    private static final String LAST_NAME = "Smith";
+    private static final String UPDATED_EMAIL = "new-name@email.test";
+    private static final String NEW_FIRST_NAME = "John";
+    private static final String NEW_LAST_NAME = "Smith";
 
     @Page
     private Account testRealmAccount;
@@ -52,9 +47,6 @@ public class AccountTest extends AbstractAccountManagementTest {
     
     @Before
     public void beforeAccountTest() {
-        // create user via admin api
-        createUserWithAdminClient(testRealmAccountManagement.realmResource(), testRealmUser);
-
         testRealmAccountManagement.navigateTo();
         testRealmLogin.form().login(testRealmUser);
     }
@@ -66,23 +58,23 @@ public class AccountTest extends AbstractAccountManagementTest {
     }
 
     @Test
-    public void testEditAccount() {
+    public void editAccount() {
         testRealmAccountManagement.account();
-        assertEquals(testRealmAccount.getUsername(), USERNAME);
-        testRealmAccount.setEmail(EMAIL);
-        testRealmAccount.setFirstName(FIRST_NAME);
-        testRealmAccount.setLastName(LAST_NAME);
+        assertEquals(testRealmAccount.getUsername(), testRealmUser.getUsername());
+        
+        testRealmAccount.setEmail(UPDATED_EMAIL);
+        testRealmAccount.setFirstName(NEW_FIRST_NAME);
+        testRealmAccount.setLastName(NEW_LAST_NAME);
         testRealmAccount.save();
-        flashMessage.waitUntilPresent();
-        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
+        assertFlashMessageSuccess();
 
         testRealmAccountManagement.signOut();
-        testRealmLogin.form().login(USERNAME, ADMIN);
-
+        testRealmLogin.form().login(testRealmUser);
+        
         testRealmAccountManagement.account();
-        assertEquals(testRealmAccount.getEmail(), EMAIL);
-        assertEquals(testRealmAccount.getFirstName(), FIRST_NAME);
-        assertEquals(testRealmAccount.getLastName(), LAST_NAME);
+        assertEquals(testRealmAccount.getEmail(), UPDATED_EMAIL);
+        assertEquals(testRealmAccount.getFirstName(), NEW_FIRST_NAME);
+        assertEquals(testRealmAccount.getLastName(), NEW_LAST_NAME);
     }
 
 }

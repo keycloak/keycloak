@@ -17,42 +17,96 @@
  */
 package org.keycloak.testsuite.console.clients;
 
+import org.jboss.arquillian.graphene.page.Page;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
-import static org.junit.Assert.assertNull;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.console.page.clients.ClientSettings;
+import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsBooleanAttributes;
+import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsListAttributes;
+import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsStringAttributes;
+import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
 
 /**
  *
  * @author Filip Kiss
+ * @author tkyjovsk
  */
-//@Ignore
 public class ClientSettingsTest extends AbstractClientTest {
 
-    @Test
-    public void addNewClientTest() {
-        ClientRepresentation newClient = createClientRepresentation("testClient1", "http://example.com/*");
+    @Page
+    private ClientSettings clientSettings;
+
+    private ClientRepresentation newClient;
+
+    public void crudOIDCConfidential() {
+        newClient = createClientRepresentation("oidc-confidential", "http://example.test/app/*");
         createClient(newClient);
         assertFlashMessageSuccess();
 
-        clients.navigateTo();
-        clients.table().search(newClient.getClientId());
-        clients.table().deleteClient(newClient.getClientId());
+        client.backToClientsViaBreadcrumb();
+        assertCurrentUrl(clients);
+        assertEquals(1, clients.table().searchClients(newClient.getClientId()).size());
 
+        // read & verify
+        clients.table().clickClient(newClient);
+        ClientRepresentation found = clientSettings.form().getValues();
+        assertClientSettingsEqual(newClient, found);
+
+        // update & verify
+        // TODO change attributes, add redirect uris and weborigins
+        // delete
+        // TODO
+        
+        
+        client.backToClientsViaBreadcrumb();
+    }
+
+    public void createOIDCPublic() {
+        newClient = createClientRepresentation("oidc-public", "http://example.test/app/*");
+        newClient.setPublicClient(true);
+        createClient(newClient);
         assertFlashMessageSuccess();
-        assertNull(clients.table().findClient(newClient.getClientId()));
+
+        client.backToClientsViaBreadcrumb();
+        assertCurrentUrl(clients);
+        assertEquals(1, clients.table().searchClients(newClient.getClientId()).size());
+    }
+
+    public void createOIDCBearerOnly() {
+        newClient = createClientRepresentation("oidc-bearer-only", "http://example.test/app/*");
+        newClient.setBearerOnly(true);
+        createClient(newClient);
+        assertFlashMessageSuccess();
+
+        client.backToClientsViaBreadcrumb();
+        assertCurrentUrl(clients);
+        assertEquals(1, clients.table().searchClients(newClient.getClientId()).size());
     }
 
     @Test
-    public void addNewClientWithBlankNameTest() {
-        ClientRepresentation newClient = createClientRepresentation("", "http://example.com/*");
+    public void successfulCRUD() {
+        crudOIDCConfidential();
+        createOIDCPublic();
+        createOIDCBearerOnly();
+    }
+
+    @Test
+    public void invalidSettings() {
+        emptyName();
+        noRedirectUris();
+    }
+
+    public void emptyName() {
+        newClient = createClientRepresentation(null, "http://example.test/*");
         createClient(newClient);
         assertFlashMessageDanger();
+        clientSettings.backToClientsViaBreadcrumb();
     }
 
-    @Test
-    public void addNewClientWithBlankUriTest() {
-        ClientRepresentation newClient = createClientRepresentation("testClient2", null);
+    public void noRedirectUris() {
+        newClient = createClientRepresentation("testClient2");
         createClient(newClient);
         assertFlashMessageDanger();
 
@@ -60,29 +114,30 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClient.form().save();
         assertFlashMessageSuccess();
 
-        clients.navigateTo();
-        clients.table().search(newClient.getClientId());
-        clients.table().deleteClient(newClient.getClientId());
-        assertFlashMessageSuccess();
-        assertNull(clients.table().findClient(newClient.getClientId()));
+        clientSettings.form().setRedirectUris(null);
+        clientSettings.form().save();
+        assertFlashMessageDanger();
     }
 
-    @Test
-    public void addNewClientWithTwoUriTest() {
-        ClientRepresentation newClient = createClientRepresentation("testClient3", null);
-        createClient(newClient);
-        assertFlashMessageDanger();
+    public void assertClientSettingsEqual(ClientRepresentation c1, ClientRepresentation c2) {
+        assertEqualsStringAttributes(c1.getClientId(), c2.getClientId());
+        assertEqualsStringAttributes(c1.getName(), c2.getName());
+        assertEqualsBooleanAttributes(c1.isEnabled(), c2.isEnabled());
+        assertEqualsBooleanAttributes(c1.isConsentRequired(), c2.isConsentRequired());
+        assertEqualsBooleanAttributes(c1.isDirectGrantsOnly(), c2.isDirectGrantsOnly());
+        assertEqualsStringAttributes(c1.getProtocol(), c2.getProtocol());
 
-        createClient.form().addRedirectUri("http://testUri.com/*");
-        createClient.form().addRedirectUri("http://example.com/*");
-        createClient.form().save();
-        assertFlashMessageSuccess();
+        assertEqualsBooleanAttributes(c1.isBearerOnly(), c2.isBearerOnly());
+        assertEqualsBooleanAttributes(c1.isPublicClient(), c2.isPublicClient());
+        assertEqualsBooleanAttributes(c1.isSurrogateAuthRequired(), c2.isSurrogateAuthRequired());
 
-        clients.navigateTo();
-        clients.table().search(newClient.getClientId());
-        clients.table().deleteClient(newClient.getClientId());
-        assertFlashMessageSuccess();
-        assertNull(clients.table().findClient(newClient.getClientId()));
+        assertEqualsBooleanAttributes(c1.isFrontchannelLogout(), c2.isFrontchannelLogout());
+
+        assertEqualsBooleanAttributes(c1.isServiceAccountsEnabled(), c2.isServiceAccountsEnabled());
+        assertEqualsListAttributes(c1.getRedirectUris(), c2.getRedirectUris());
+        assertEqualsStringAttributes(c1.getBaseUrl(), c2.getBaseUrl());
+        assertEqualsStringAttributes(c1.getAdminUrl(), c2.getAdminUrl());
+        assertEqualsListAttributes(c1.getWebOrigins(), c2.getWebOrigins());
     }
 
 }

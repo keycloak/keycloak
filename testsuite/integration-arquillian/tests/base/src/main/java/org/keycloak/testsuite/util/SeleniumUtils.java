@@ -41,6 +41,11 @@ public final class SeleniumUtils {
                 .element(element).is().present();
     }
 
+    public static void waitAjaxForElementNotPresent(WebElement element) {
+        waitAjax().until()
+                .element(element).is().not().present();
+    }
+
     public static void waitGuiForElement(By element, String message) {
         waitGui().until(message)
                 .element(element).is().present();
@@ -89,5 +94,5 @@ public final class SeleniumUtils {
             Logger.getLogger(SeleniumUtils.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
+    
 }

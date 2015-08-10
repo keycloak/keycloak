@@ -33,11 +33,8 @@ import org.keycloak.testsuite.adapter.page.InputPortal;
 import org.keycloak.testsuite.adapter.page.ProductPortal;
 import org.keycloak.testsuite.adapter.page.SecurePortal;
 import org.keycloak.testsuite.arquillian.jira.Jira;
-import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
-import org.keycloak.testsuite.util.SeleniumUtils;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.Time;
 
@@ -126,7 +123,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     public void testLoginSSOAndLogout() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        waitGuiForElement(testRealmLogin.form().getUsernameInput());
+        testRealmLogin.form().waitForUsernameInputPresent();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         testRealmLogin.form().login("bburke@redhat.com", "password");
         assertCurrentUrl(customerPortal);
@@ -205,7 +202,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     public void testLoginSSOIdle() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        SeleniumUtils.waitGuiForElement(testRealmLogin.form().getUsernameInput());
+        testRealmLogin.form().waitForUsernameInputPresent();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         testRealmLogin.form().login("bburke@redhat.com", "password");
         assertCurrentUrl(customerPortal);
@@ -231,7 +228,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
         System.out.println("Current url: " + driver.getCurrentUrl());
-        SeleniumUtils.waitGuiForElement(testRealmLogin.form().getUsernameInput());
+        testRealmLogin.form().waitForUsernameInputPresent();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         testRealmLogin.form().login("bburke@redhat.com", "password");
         System.out.println("Current url: " + driver.getCurrentUrl());
@@ -264,7 +261,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     public void testLoginSSOMax() throws InterruptedException {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        SeleniumUtils.waitGuiForElement(testRealmLogin.form().getUsernameInput());
+        testRealmLogin.form().waitForUsernameInputPresent();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
         testRealmLogin.form().login("bburke@redhat.com", "password");
         assertCurrentUrl(customerPortal);

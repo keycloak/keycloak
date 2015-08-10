@@ -34,6 +34,18 @@ public class Client extends Clients {
         return breadcrumb;
     }
 
+    public void backToClientsViaBreadcrumb() {
+        breadcrumb.clickItemOneLevelUp();
+    }
+
+    @FindBy(id = "removeClient")
+    private WebElement deleteIcon;
+    
+    public void delete() {
+        deleteIcon.click();
+        modalDialog.confirmDeletion();
+    }
+
     @FindBy(xpath = "//div[@data-ng-controller='ClientTabCtrl']/ul")
     protected ClientTabs clientTabs;
 
@@ -87,7 +99,7 @@ public class Client extends Clients {
         }
 
     }
-    
+
     public ClientResource clientResource() {
         return clientsResource().get(getId());
     }

@@ -33,10 +33,11 @@ public class ChangePassword extends AccountManagement {
     }
 
     @Page
-    private ChangePasswordFields form;
+    private PasswordFields passwordFields;
 
-    public ChangePasswordFields form() {
-        return form;
+    public void changePasswords(String password, String newPassword, String confirmPassword) {
+        passwordFields.setPasswords(password, newPassword, confirmPassword);
+        save();
     }
 
 }

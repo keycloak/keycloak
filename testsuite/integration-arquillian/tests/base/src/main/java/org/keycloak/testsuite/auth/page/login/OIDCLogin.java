@@ -6,8 +6,6 @@ package org.keycloak.testsuite.auth.page.login;
  */
 public class OIDCLogin extends Login {
 
-    public static final String OIDC = "openid-connect";
-
     public OIDCLogin() {
         setProtocol(OIDC);
     }

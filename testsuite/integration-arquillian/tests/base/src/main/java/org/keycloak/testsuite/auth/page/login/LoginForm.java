@@ -1,12 +1,13 @@
 package org.keycloak.testsuite.auth.page.login;
 
-import java.util.concurrent.TimeUnit;
+import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementNotPresent;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
 import static org.keycloak.testsuite.admin.Users.getPasswordCredentialValueOf;
+import org.keycloak.testsuite.auth.page.account.AccountFields;
+import org.keycloak.testsuite.auth.page.account.PasswordFields;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElementNotPresent;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -16,30 +17,25 @@ import org.openqa.selenium.support.FindBy;
  */
 public class LoginForm extends Form {
 
-    @FindBy(id = "username")
-    private WebElement usernameInput;
-
-    @FindBy(id = "password")
-    private WebElement passwordInput;
-
-    @FindBy(linkText = "Register")
-    private WebElement registerLink;
+    @Page
+    private AccountFields accountFields;
+    @Page
+    private PasswordFields passwordFields;
 
     @FindBy(name = "login")
     private WebElement loginButton;
     @FindBy(name = "cancel")
     private WebElement cancelButton;
 
-    public WebElement getUsernameInput() {
-        return usernameInput;
-    }
+    @FindBy(linkText = "Register")
+    private WebElement registerLink;
 
     public void setUsername(String username) {
-        setInputValue(usernameInput, username);
+        accountFields.setUsername(username);
     }
 
     public void setPassword(String password) {
-        setInputValue(passwordInput, password);
+        passwordFields.setPassword(password);
     }
 
     public void login(UserRepresentation user) {
@@ -53,7 +49,8 @@ public class LoginForm extends Form {
     }
 
     public void register() {
-        waitGuiForElementPresent(usernameInput, "Login form should be visible");
+        waitForUsernameInputPresent();
+        waitForRegisterLinkPresent();
         registerLink.click();
     }
 
@@ -67,17 +64,17 @@ public class LoginForm extends Form {
         waitAjaxForElement(cancelButton);
         cancelButton.click();
     }
+    
+    public void waitForUsernameInputPresent() {
+        accountFields.waitForUsernameInputPresent();
+    }
 
-    public void waitForRegistrationLinkPresent() {
-        driver.manage().timeouts().implicitlyWait(1, TimeUnit.SECONDS);
-        waitGuiForElementPresent(registerLink, 1);
-        driver.manage().timeouts().implicitlyWait(3, TimeUnit.SECONDS);
+    public void waitForRegisterLinkPresent() {
+        waitAjaxForElement(registerLink);
     }
 
     public void waitForRegistrationLinkNotPresent() {
-        driver.manage().timeouts().implicitlyWait(1, TimeUnit.SECONDS);
-        waitGuiForElementNotPresent(registerLink, 1);
-        driver.manage().timeouts().implicitlyWait(3, TimeUnit.SECONDS);
+        waitAjaxForElementNotPresent(registerLink);
     }
 
 }

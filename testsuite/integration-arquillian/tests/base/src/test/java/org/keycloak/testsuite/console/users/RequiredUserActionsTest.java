@@ -56,7 +56,7 @@ public class RequiredUserActionsTest extends AbstractUserTest {
     }
 
     @Test
-    public void changePassword() {
+    public void updatePassword() {
         userAttrinbutes.form().addRequiredAction(UPDATE_PASSWORD.getActionName());
         userAttrinbutes.form().save();
         assertFlashMessageSuccess();
@@ -66,20 +66,16 @@ public class RequiredUserActionsTest extends AbstractUserTest {
         testRealmLogin.form().login(testRealmUser);
         waitForFeedbackText("You need to change your password to activate your account.");
 
-        testRealmUpdatePassword.updateForm().setPasswords(null, null);
-        testRealmUpdatePassword.submit();
+        testRealmUpdatePassword.updatePasswords(null, null);
         waitForFeedbackText("Please specify password.");
 
-        testRealmUpdatePassword.updateForm().setPasswords(PASSWORD, null);
-        testRealmUpdatePassword.submit();
+        testRealmUpdatePassword.updatePasswords(PASSWORD, null);
         waitForFeedbackText("Passwords don't match.");
 
-        testRealmUpdatePassword.updateForm().setPasswords(PASSWORD, PASSWORD + "-mismatch");
-        testRealmUpdatePassword.submit();
+        testRealmUpdatePassword.updatePasswords(PASSWORD, PASSWORD + "-mismatch");
         waitForFeedbackText("Passwords don't match.");
 
-        testRealmUpdatePassword.updateForm().setPasswords(PASSWORD, PASSWORD);
-        testRealmUpdatePassword.submit();
+        testRealmUpdatePassword.updatePasswords(PASSWORD, PASSWORD);
         assertCurrentUrlStartsWith(testRealmAccount);
     }
 
@@ -97,23 +93,19 @@ public class RequiredUserActionsTest extends AbstractUserTest {
         testRealmUser.setEmail(null);
         testRealmUser.setFirstName(null);
         testRealmUser.setLastName(null);
-        testRealmUpdateAccount.updateForm().setValues(testRealmUser);
-        testRealmUpdateAccount.submit();
+        testRealmUpdateAccount.updateAccount(testRealmUser);
         waitForFeedbackText("Please specify email.");
 
         testRealmUser.setEmail("test@email.test");
-        testRealmUpdateAccount.updateForm().setValues(testRealmUser);
-        testRealmUpdateAccount.submit();
+        testRealmUpdateAccount.updateAccount(testRealmUser);
         waitForFeedbackText("Please specify first name.");
 
         testRealmUser.setFirstName("test");
-        testRealmUpdateAccount.updateForm().setValues(testRealmUser);
-        testRealmUpdateAccount.submit();
+        testRealmUpdateAccount.updateAccount(testRealmUser);
         waitForFeedbackText("Please specify last name.");
 
         testRealmUser.setLastName("user");
-        testRealmUpdateAccount.updateForm().setValues(testRealmUser);
-        testRealmUpdateAccount.submit();
+        testRealmUpdateAccount.updateAccount(testRealmUser);
         assertCurrentUrlStartsWith(testRealmAccount);
     }
 

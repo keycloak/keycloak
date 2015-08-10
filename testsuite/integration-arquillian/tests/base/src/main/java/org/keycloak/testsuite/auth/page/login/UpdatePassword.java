@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.auth.page.login;
 
+import org.keycloak.testsuite.auth.page.account.PasswordFields;
 import org.jboss.arquillian.graphene.page.Page;
 
 /**
@@ -9,20 +10,11 @@ import org.jboss.arquillian.graphene.page.Page;
 public class UpdatePassword extends Authenticate {
 
     @Page
-    private UpdatePasswordFields updateForm;
+    private PasswordFields passwordFields;
 
-    public UpdatePasswordFields updateForm() {
-        return updateForm;
-    }
-
-    @Override
-    public LoginForm loginForm() {
-        throw new UnsupportedOperationException("UpdatePassword page doesn't contain LoginForm. Use UpdatePassword.updateForm() instead.");
-    }
-    
-    public void updatePassword(String password) {
-        updateForm.setNewPassword(password);
-        updateForm.setConfirmPassword(password);
+    public void updatePasswords(String newPassword, String confirmPassword) {
+        passwordFields.setNewPassword(newPassword);
+        passwordFields.setConfirmPassword(confirmPassword);
         submit();
     }
 

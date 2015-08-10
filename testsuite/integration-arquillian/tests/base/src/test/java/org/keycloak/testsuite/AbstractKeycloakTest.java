@@ -29,6 +29,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
+import org.keycloak.testsuite.util.Timer;
 
 /**
  *
@@ -89,12 +90,13 @@ public abstract class AbstractKeycloakTest {
     public void afterAbstractKeycloakTest() {
 //        removeTestRealms(); // keeping test realms after test to be able to inspect failures, instead deleting existing realms before import
 //        keycloak.close(); // keeping admin connection open
+        Timer.printStats();
     }
 
     private void updateMasterAdminPassword() {
         account.navigateTo();
         login.form().login(ADMIN, ADMIN);
-        updatePassword.updatePassword(ADMIN);
+        updatePassword.updatePasswords(ADMIN, ADMIN);
         assertCurrentUrlStartsWith(account);
         deleteAllCookiesForMasterRealm();
     }

@@ -14,9 +14,9 @@ public class CreateClient extends AdminConsoleCreate {
     }
     
     @Page
-    private ClientForm form;
+    private CreateClientForm form;
     
-    public ClientForm form() {
+    public CreateClientForm form() {
         return form;
     }
     

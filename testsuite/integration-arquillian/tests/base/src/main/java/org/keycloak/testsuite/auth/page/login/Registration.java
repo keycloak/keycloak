@@ -17,16 +17,18 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
+import org.keycloak.testsuite.auth.page.account.AccountFields;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import java.util.concurrent.TimeUnit;
 import javax.ws.rs.core.UriBuilder;
+import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.UserRepresentation;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementNotPresent;
 
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
 import static org.keycloak.testsuite.admin.Users.getPasswordCredentialValueOf;
+import org.keycloak.testsuite.auth.page.account.ContactInfoFields;
+import org.keycloak.testsuite.auth.page.account.PasswordFields;
 
 /**
  *
@@ -40,76 +42,44 @@ public class Registration extends LoginActions {
                 .path("registration");
     }
 
-    @FindBy(id = "username")
-    private WebElement usernameInput;
+    @Page
+    private AccountFields accountFields;
 
-    @FindBy(id = "email")
-    private WebElement emailInput;
+    @Page
+    private PasswordFields passwordFields;
 
-    @FindBy(id = "firstName")
-    private WebElement firstNameInput;
-
-    @FindBy(id = "lastName")
-    private WebElement lastNameInput;
-
-    @FindBy(id = "password")
-    private WebElement passwordInput;
-
-    @FindBy(id = "password-confirm")
-    private WebElement passwordConfirmInput;
+    @Page
+    private ContactInfoFields contactInfoFields;
 
     @FindBy(css = "span.kc-feedback-text")
-    private WebElement feedbackError;
+    private WebElement feedbackText;
 
-    @FindBy(xpath = "//input[@type='submit']")
-    private WebElement registerButton;
-
-    public void registerNewUser(UserRepresentation user) {
-        registerNewUser(user, getPasswordCredentialValueOf(user));
+    public String getFeedbackText() {
+        waitGuiForElementPresent(feedbackText, "Feedback message should be visible");
+        return feedbackText.getText();
     }
 
-    public void registerNewUser(UserRepresentation user, String confirmPassword) {
-        driver.manage().timeouts().setScriptTimeout(3, TimeUnit.SECONDS);
-        waitGuiForElementPresent(passwordConfirmInput, "Register form should be visible");
-        clearAndType(usernameInput, user.getUsername());
-        clearAndType(firstNameInput, user.getFirstName());
-        clearAndType(lastNameInput, user.getLastName());
-        clearAndType(emailInput, user.getEmail());
-        clearAndType(passwordInput, getPasswordCredentialValueOf(user));
-        clearAndType(passwordConfirmInput, confirmPassword);
-        registerButton.submit();
+    public void register(UserRepresentation user) {
+        setValues(user);
+        submit();
+    }
+    
+    public void setValues(UserRepresentation user) {
+        setValues(user, getPasswordCredentialValueOf(user));
     }
 
-    public void clearAndType(WebElement webElement, String text) {
-        webElement.clear();
-        webElement.sendKeys(text);
-    }
-
-    public boolean isInvalidEmail() {
-        waitGuiForElementPresent(feedbackError, "Feedback message should be visible");
-        return feedbackError.getText().equals("Invalid email address.");
-    }
-
-    public boolean isAttributeSpecified(String attribute) {
-        waitGuiForElementPresent(feedbackError, "Feedback message should be visible");
-        return !feedbackError.getText().contains("Please specify " + attribute + ".");
-    }
-
-    public boolean isPasswordSame() {
-        waitGuiForElementPresent(feedbackError, "Feedback message should be visible");
-        return !feedbackError.getText().equals("Password confirmation doesn't match.");
+    public void setValues(UserRepresentation user, String confirmPassword) {
+        accountFields.setValues(user);
+        passwordFields.setPassword(getPasswordCredentialValueOf(user));
+        passwordFields.setConfirmPassword(confirmPassword);
     }
 
     public void waitForUsernameInputPresent() {
-        driver.manage().timeouts().implicitlyWait(1, TimeUnit.SECONDS);
-        waitGuiForElementPresent(usernameInput, 1);
-        driver.manage().timeouts().implicitlyWait(3, TimeUnit.SECONDS);
+        accountFields.waitForUsernameInputPresent();
     }
 
     public void waitForUsernameInputNotPresent() {
-        driver.manage().timeouts().implicitlyWait(1, TimeUnit.SECONDS);
-        waitGuiForElementNotPresent(usernameInput, 1);
-        driver.manage().timeouts().implicitlyWait(3, TimeUnit.SECONDS);
+        accountFields.waitForUsernameInputNotPresent();
     }
 
 }

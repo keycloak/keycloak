@@ -9,9 +9,9 @@ import org.jboss.arquillian.graphene.page.Page;
 public class ClientSettings extends Client {
 
     @Page
-    private ClientForm form;
+    private ClientSettingsForm form;
 
-    public ClientForm form() {
+    public ClientSettingsForm form() {
         return form;
     }
 

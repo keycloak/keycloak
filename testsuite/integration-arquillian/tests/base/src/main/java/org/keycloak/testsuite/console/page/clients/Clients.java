@@ -128,6 +128,11 @@ public class Clients extends AdminConsoleRealm {
             return client;
         }
     }
+
+    public void deleteClient(String clientId) {
+        clientsTable.searchClients(clientId);
+        clientsTable.deleteClient(clientId);
+    }
     
     public ClientsResource clientsResource() {
         return realmResource().clients();

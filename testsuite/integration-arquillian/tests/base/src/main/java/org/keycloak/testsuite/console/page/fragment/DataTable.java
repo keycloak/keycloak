@@ -23,6 +23,7 @@ public class DataTable {
     @FindBy(css = "tbody")
     private WebElement body;
     @FindBy(css = "tbody tr")
+//    @FindBy(xpath = ".//tbody/tr[not(contains(@class,'ng-hide'))]")
     private List<WebElement> rows;
 
     @FindBy(xpath = "//div[@class='modal-dialog']")
