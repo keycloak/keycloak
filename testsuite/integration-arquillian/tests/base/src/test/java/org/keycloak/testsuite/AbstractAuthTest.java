@@ -54,6 +54,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
     public void createTestUserWithAdminClient() {
         String id = createUserWithAdminClient(testRealmResource(), testRealmUser);
+        testRealmUser.setId(id);
         resetUserPassword(testRealmResource().users().get(id), PASSWORD, false);
     }
 

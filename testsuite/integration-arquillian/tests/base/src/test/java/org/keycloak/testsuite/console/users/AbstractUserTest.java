@@ -21,7 +21,7 @@ public abstract class AbstractUserTest extends AbstractConsoleTest {
     protected CreateUser createUser;
 
     protected UserRepresentation newTestRealmUser;
-
+    
     @Before
     public void beforeUserTest() {
         newTestRealmUser = new UserRepresentation();
