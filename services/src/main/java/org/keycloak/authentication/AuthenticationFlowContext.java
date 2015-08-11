@@ -16,6 +16,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 /**
+ * This interface encapsulates information about an execution in an AuthenticationFlow.  It is also used to set
+ * the status of the execution being performed.
+ *
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -121,6 +125,7 @@ public interface AuthenticationFlowContext {
 
     AuthenticationExecutionModel.Requirement getCategoryRequirementFromCurrentFlow(String authenticatorCategory);
 
+
     /**
      * Mark the current execution as successful.  The flow will then continue
      *
@@ -174,4 +179,18 @@ public interface AuthenticationFlowContext {
      *
      */
     void attempted();
+
+    /**
+     * Get the current status of the current execution.
+     *
+     * @return may return null if not set yet.
+     */
+    FlowStatus getStatus();
+
+    /**
+     * Get the error condition of a failed execution.
+     *
+     * @return may return null if there was no error
+     */
+    AuthenticationFlowError getError();
 }

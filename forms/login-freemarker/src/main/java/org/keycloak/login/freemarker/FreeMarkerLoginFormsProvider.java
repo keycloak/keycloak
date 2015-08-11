@@ -278,7 +278,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public Response createForm(String form, Map<String, Object> extraAttributes) {
+    public Response createForm(String form) {
 
         RealmModel realm = session.getContext().getRealm();
         ClientModel client = session.getContext().getClient();

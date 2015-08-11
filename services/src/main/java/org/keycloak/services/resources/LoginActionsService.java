@@ -26,6 +26,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.RequiredActionContext;
+import org.keycloak.authentication.RequiredActionContextResult;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
@@ -123,6 +124,10 @@ public class LoginActionsService {
 
     public static UriBuilder authenticationFormProcessor(UriInfo uriInfo) {
         return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "authenticateForm");
+    }
+
+    public static UriBuilder requiredActionProcessor(UriInfo uriInfo) {
+        return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "requiredActionPOST");
     }
 
     public static UriBuilder registrationFormProcessor(UriInfo uriInfo) {
@@ -829,10 +834,26 @@ public class LoginActionsService {
         }
     }
 
-    @Path("required-actions/{action}")
-    public Object requiredAction(@QueryParam("code") final String code,
-                                 @PathParam("action") String action) {
-        event.event(EventType.LOGIN);
+    @Path("required-action")
+    @POST
+    public Response requiredActionPOST(@QueryParam("code") final String code,
+                                       @QueryParam("action") String action) {
+        return processRequireAction(code, action);
+
+
+
+    }
+
+    @Path("required-action")
+    @GET
+    public Response requiredActionGET(@QueryParam("code") final String code,
+                                       @QueryParam("action") String action) {
+        return processRequireAction(code, action);
+    }
+
+    public Response processRequireAction(final String code, String action) {
+        event.event(EventType.CUSTOM_REQUIRED_ACTION);
+        event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
         if (action == null) {
             logger.error("required action query param was null");
             event.error(Errors.INVALID_CODE);
@@ -859,54 +880,11 @@ public class LoginActionsService {
             throw new WebApplicationException(ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE));
         }
 
+        initEvent(clientSession);
 
-        RequiredActionContext context = new RequiredActionContext() {
-            @Override
-            public EventBuilder getEvent() {
-                return event;
-            }
 
-            @Override
-            public UserModel getUser() {
-                return getUserSession().getUser();
-            }
-
-            @Override
-            public RealmModel getRealm() {
-                return realm;
-            }
-
-            @Override
-            public ClientSessionModel getClientSession() {
-                return clientSession;
-            }
-
-            @Override
-            public UserSessionModel getUserSession() {
-                return clientSession.getUserSession();
-            }
-
-            @Override
-            public ClientConnection getConnection() {
-                return clientConnection;
-            }
-
-            @Override
-            public UriInfo getUriInfo() {
-                return uriInfo;
-            }
-
-            @Override
-            public KeycloakSession getSession() {
-                return session;
-            }
-
-            @Override
-            public HttpRequest getHttpRequest() {
-                return request;
-            }
-
-            @Override
+        RequiredActionContextResult context = new RequiredActionContextResult(clientSession.getUserSession(), clientSession, realm, event, session, request, clientSession.getUserSession().getUser()) {
+             @Override
             public String generateAccessCode(String action) {
                 String clientSessionAction = clientSession.getAction();
                 if (action.equals(clientSessionAction)) {
@@ -917,10 +895,32 @@ public class LoginActionsService {
                 code.setAction(action);
                 return code.getCode();
             }
+
+            @Override
+            public void ignore() {
+                throw new RuntimeException("Cannot call ignore within processAction()");
+            }
         };
-        return provider.jaxrsService(context);
+        provider.processAction(context);
+        if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
+            event.clone().event(EventType.CUSTOM_REQUIRED_ACTION)
+                         .detail(Details.CUSTOM_REQUIRED_ACTION, action).success();
+            clientSession.getUserSession().getUser().removeRequiredAction(provider.getProviderId());
+            return AuthenticationManager.nextActionAfterAuthentication(session, clientSession.getUserSession(), clientSession, clientConnection, request, uriInfo, event);
+        }
+        if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
+            return context.getChallenge();
+        }
+        if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
+            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, context.getClientSession().getAuthMethod());
+            protocol.setRealm(context.getRealm())
+                    .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
+                    .setUriInfo(context.getUriInfo());
+            event.detail(Details.CUSTOM_REQUIRED_ACTION, action).error(Errors.REJECTED_BY_USER);
+            return protocol.consentDenied(context.getClientSession());
+        }
 
-
+        throw new RuntimeException("Unreachable");
     }
 
 }

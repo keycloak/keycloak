@@ -1,0 +1,80 @@
+<chapter id="auth_spi">
+    <title>Custom Authentication, Registration, and Required Actions</title>
+    <para>
+        Keycloak comes out of the box with a bunch of different authentication mechanisms: kerberos, password, and otp.
+        These mechanisms may not meet all of your requirements and you may want to plug in your own custom ones.  Keycloak
+        provides an authentication SPI that you can use to write new plugins.  The admin console supports applying, ordering,
+        and configuring these new mechanisms.
+    </para>
+    <para>
+        Keycloak also supports a simple registration form.  Different aspects of this form can be enabled and disabled i.e.
+        Recaptcha support can be turned off and on.  The same authentication SPI can be used to add another page to the
+        registration flow or reimplement it entirely.  There's also an additional fine-grain SPI you can use to add
+        specific validations and user extensions to the built in registration form.
+    </para>
+    <para>
+        A required action in Keycloak is an action that a user has to perform after he authenticates.  After the action
+        is performed successfully, the user doesn't have to perform the action again.  Keycloak comes with some built in
+        required actions like "reset password".  This action forces the user to change their password after they have logged in.
+        You can write and plug in your own required actions.
+    </para>
+    <section>
+        <title>Terms</title>
+        <para>
+            To first learn about the Authentication SPI, let's go over some of the terms used to describe it.
+            <variablelist>
+                <varlistentry>
+                    <term>Authentication Flow</term>
+                    <listitem>
+                        <para>
+                            A flow is a container for all authentications that must happen during login or registration.  If you
+                            go to the admin console authentication page, you can view all the defined flows in the system and
+                            what authenticators they are made up of.  Flows can contain other flows.  You can also bind a new
+                            different flow for browser login, direct granta access, and registration.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Authenticator</term>
+                    <listitem>
+                        <para>
+                            An authenticator is a pluggable component that hold the logic for performing the authentication
+                            or action within a flow.  It is usually a singleton.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Execution</term>
+                    <listitem>
+                        <para>
+                            An execution is an object that binds the authenticator to the flow and the authenticator
+                            to the configuration of the authenticator.  Flows contain execution entries.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Execution Requirement</term>
+                    <listitem>
+                        <para>
+                            Each execution defines how an authenticator behaves in a flow.  The requirement defines
+                            whether the authenticator is enabled, disabled, optional, required, or an alternative.  An
+                            alternative requirement means that the authentiactor is optional unless no other alternative
+                            authenticator is successful in the flow.  For example, cookie authentication, kerberos,
+                            and the set of all login forms are all alternative.  If one of those is successful, none of
+                            the others are executed.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Authenticator Config</term>
+                    <listitem>
+                        <para>
+                            This object defines the configuration for the Authenticator for a specific execution within
+                            an authentication flow.  Each execution can have a different config.
+                        </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </para>
+    </section>
+</chapter>

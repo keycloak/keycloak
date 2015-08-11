@@ -48,20 +48,19 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     }
 
     @Override
-    public Response requiredActionChallenge(RequiredActionContext context) {
+    public void requiredActionChallenge(RequiredActionContext context) {
         LoginFormsProvider loginFormsProvider = context.getSession()
                 .getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(context.generateAccessCode(getProviderId()))
                 .setUser(context.getUser());
-        return loginFormsProvider.createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
+        Response challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
+        context.challenge(challenge);
     }
 
     @Override
-    public Object jaxrsService(RequiredActionContext context) {
-        // this is handled by LoginActionsService at the moment
-        return null;
+    public void processAction(RequiredActionContext context) {
+        context.failure();
     }
-
 
     @Override
     public void close() {

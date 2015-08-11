@@ -9,6 +9,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 /**
@@ -18,6 +19,15 @@ import javax.ws.rs.core.UriInfo;
  * @version $Revision: 1 $
  */
 public interface RequiredActionContext {
+    void ignore();
+
+    public static enum Status {
+        CHALLENGE,
+        SUCCESS,
+        IGNORE,
+        FAILURE
+    }
+
     /**
      * Current event builder being used
      *
@@ -46,4 +56,10 @@ public interface RequiredActionContext {
      * @return
      */
     String generateAccessCode(String action);
+
+    Status getStatus();
+
+    void challenge(Response response);
+    void failure();
+    void success();
 }

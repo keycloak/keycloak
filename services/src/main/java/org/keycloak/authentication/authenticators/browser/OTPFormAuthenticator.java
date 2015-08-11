@@ -22,7 +22,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OTPFormAuthenticator extends AbstractFormAuthenticator implements Authenticator {
+public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator implements Authenticator {
     public static final String TOTP_FORM_ACTION = "totp";
 
     @Override

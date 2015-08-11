@@ -149,13 +149,13 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
     public Response processResult(AuthenticationProcessor.Result result) {
         AuthenticationExecutionModel execution = result.getExecution();
-        AuthenticationProcessor.Status status = result.getStatus();
-        if (status == AuthenticationProcessor.Status.SUCCESS) {
+        FlowStatus status = result.getStatus();
+        if (status == FlowStatus.SUCCESS) {
             AuthenticationProcessor.logger.debugv("authenticator SUCCESS: {0}", execution.getAuthenticator());
             processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.SUCCESS);
             if (execution.isAlternative()) alternativeSuccessful = true;
             return null;
-        } else if (status == AuthenticationProcessor.Status.FAILED) {
+        } else if (status == FlowStatus.FAILED) {
             AuthenticationProcessor.logger.debugv("authenticator FAILED: {0}", execution.getAuthenticator());
             processor.logFailure();
             processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.FAILED);
@@ -163,10 +163,10 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return sendChallenge(result, execution);
             }
             throw new AuthenticationFlowException(result.getError());
-        } else if (status == AuthenticationProcessor.Status.FORCE_CHALLENGE) {
+        } else if (status == FlowStatus.FORCE_CHALLENGE) {
             processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
             return sendChallenge(result, execution);
-        } else if (status == AuthenticationProcessor.Status.CHALLENGE) {
+        } else if (status == FlowStatus.CHALLENGE) {
             AuthenticationProcessor.logger.debugv("authenticator CHALLENGE: {0}", execution.getAuthenticator());
             if (execution.isRequired()) {
                 processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
@@ -184,12 +184,12 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
             }
             return null;
-        } else if (status == AuthenticationProcessor.Status.FAILURE_CHALLENGE) {
+        } else if (status == FlowStatus.FAILURE_CHALLENGE) {
             AuthenticationProcessor.logger.debugv("authenticator FAILURE_CHALLENGE: {0}", execution.getAuthenticator());
             processor.logFailure();
             processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
             return sendChallenge(result, execution);
-        } else if (status == AuthenticationProcessor.Status.ATTEMPTED) {
+        } else if (status == FlowStatus.ATTEMPTED) {
             AuthenticationProcessor.logger.debugv("authenticator ATTEMPTED: {0}", execution.getAuthenticator());
             if (execution.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) {
                 throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CREDENTIALS);
