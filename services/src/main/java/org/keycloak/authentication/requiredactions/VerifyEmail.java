@@ -34,9 +34,10 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         }
     }
     @Override
-    public Response requiredActionChallenge(RequiredActionContext context) {
+    public void requiredActionChallenge(RequiredActionContext context) {
         if (Validation.isBlank(context.getUser().getEmail())) {
-            return null;
+            context.ignore();
+            return;
         }
 
         context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, context.getUser().getEmail()).success();
@@ -45,13 +46,13 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(context.generateAccessCode(getProviderId()))
                 .setUser(context.getUser());
-        return loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
+        Response challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
+        context.challenge(challenge);
     }
 
     @Override
-    public Object jaxrsService(RequiredActionContext context) {
-        // this is handled by LoginActionsService at the moment
-        return null;
+    public void processAction(RequiredActionContext context) {
+        context.failure();
     }
 
 

@@ -3,7 +3,7 @@ package org.keycloak.authentication;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
-import org.keycloak.authentication.authenticators.browser.AbstractFormAuthenticator;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -52,16 +52,6 @@ public class AuthenticationProcessor {
     protected String forwardedErrorMessage;
     protected boolean userSessionCreated;
 
-
-    public static enum Status {
-        SUCCESS,
-        CHALLENGE,
-        FORCE_CHALLENGE,
-        FAILURE_CHALLENGE,
-        FAILED,
-        ATTEMPTED
-
-    }
 
     public RealmModel getRealm() {
         return realm;
@@ -173,7 +163,7 @@ public class AuthenticationProcessor {
         AuthenticatorConfigModel authenticatorConfig;
         AuthenticationExecutionModel execution;
         Authenticator authenticator;
-        Status status;
+        FlowStatus status;
         Response challenge;
         AuthenticationFlowError error;
         List<AuthenticationExecutionModel> currentExecutions;
@@ -219,32 +209,33 @@ public class AuthenticationProcessor {
             return authenticator;
         }
 
-        public Status getStatus() {
+        @Override
+        public FlowStatus getStatus() {
             return status;
         }
 
         @Override
         public void success() {
-            this.status = Status.SUCCESS;
+            this.status = FlowStatus.SUCCESS;
         }
 
         @Override
         public void failure(AuthenticationFlowError error) {
-            status = Status.FAILED;
+            status = FlowStatus.FAILED;
             this.error = error;
 
         }
 
         @Override
         public void challenge(Response challenge) {
-            this.status = Status.CHALLENGE;
+            this.status = FlowStatus.CHALLENGE;
             this.challenge = challenge;
 
         }
 
         @Override
         public void forceChallenge(Response challenge) {
-            this.status = Status.FORCE_CHALLENGE;
+            this.status = FlowStatus.FORCE_CHALLENGE;
             this.challenge = challenge;
 
         }
@@ -252,7 +243,7 @@ public class AuthenticationProcessor {
         @Override
         public void failureChallenge(AuthenticationFlowError error, Response challenge) {
             this.error = error;
-            this.status = Status.FAILURE_CHALLENGE;
+            this.status = FlowStatus.FAILURE_CHALLENGE;
             this.challenge = challenge;
 
         }
@@ -260,14 +251,14 @@ public class AuthenticationProcessor {
         @Override
         public void failure(AuthenticationFlowError error, Response challenge) {
             this.error = error;
-            this.status = Status.FAILED;
+            this.status = FlowStatus.FAILED;
             this.challenge = challenge;
 
         }
 
         @Override
         public void attempted() {
-            this.status = Status.ATTEMPTED;
+            this.status = FlowStatus.ATTEMPTED;
 
         }
 
@@ -341,6 +332,7 @@ public class AuthenticationProcessor {
             return challenge;
         }
 
+        @Override
         public AuthenticationFlowError getError() {
             return error;
         }
@@ -348,7 +340,7 @@ public class AuthenticationProcessor {
 
     public void logFailure() {
         if (realm.isBruteForceProtected()) {
-            String username = clientSession.getNote(AbstractFormAuthenticator.ATTEMPTED_USERNAME);
+            String username = clientSession.getNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
             // todo need to handle non form failures
             if (username == null) {
 
@@ -513,7 +505,7 @@ public class AuthenticationProcessor {
 
     public void attachSession() {
         String username = clientSession.getAuthenticatedUser().getUsername();
-        String attemptedUsername = clientSession.getNote(AbstractFormAuthenticator.ATTEMPTED_USERNAME);
+        String attemptedUsername = clientSession.getNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
         if (attemptedUsername != null) username = attemptedUsername;
         if (userSession == null) { // if no authenticator attached a usersession
             boolean remember = "true".equals(clientSession.getNote(Details.REMEMBER_ME));

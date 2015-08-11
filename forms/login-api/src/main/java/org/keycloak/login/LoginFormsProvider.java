@@ -25,7 +25,7 @@ public interface LoginFormsProvider extends Provider {
 
     public Response createResponse(UserModel.RequiredAction action);
 
-    Response createForm(String form, Map<String, Object> attributes);
+    Response createForm(String form);
 
     public Response createLogin();
 

@@ -20,7 +20,7 @@ import javax.ws.rs.core.Response;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UsernamePasswordForm extends AbstractFormAuthenticator implements Authenticator {
+public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator implements Authenticator {
 
    @Override
     public void action(AuthenticationFlowContext context) {

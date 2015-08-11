@@ -3,7 +3,7 @@ package org.keycloak.authentication.authenticators.directgrant;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.authentication.authenticators.browser.AbstractFormAuthenticator;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -40,7 +40,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
             return;
         }
         context.getEvent().detail(Details.USERNAME, username);
-        context.getClientSession().setNote(AbstractFormAuthenticator.ATTEMPTED_USERNAME, username);
+        context.getClientSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
         UserModel user = null;
         try {

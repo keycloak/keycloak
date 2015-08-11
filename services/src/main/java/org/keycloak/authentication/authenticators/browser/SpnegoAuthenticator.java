@@ -25,7 +25,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SpnegoAuthenticator extends AbstractFormAuthenticator implements Authenticator{
+public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator implements Authenticator{
     public static final String KERBEROS_DISABLED = "kerberos_disabled";
     protected static Logger logger = Logger.getLogger(SpnegoAuthenticator.class);
 

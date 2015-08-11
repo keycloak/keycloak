@@ -23,18 +23,17 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
     }
 
     @Override
-    public Response requiredActionChallenge(RequiredActionContext context) {
+    public void requiredActionChallenge(RequiredActionContext context) {
         LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(context.generateAccessCode(getProviderId()))
                 .setUser(context.getUser());
-        return loginFormsProvider.createResponse(UserModel.RequiredAction.UPDATE_PROFILE);
+        Response challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.UPDATE_PROFILE);
+        context.challenge(challenge);
     }
 
     @Override
-    public Object jaxrsService(RequiredActionContext context) {
-        // this is handled by LoginActionsService at the moment
-        // todo should be refactored to contain it here
-        return null;
+    public void processAction(RequiredActionContext context) {
+        context.failure();
     }
 
 

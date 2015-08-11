@@ -1,13 +1,11 @@
 package org.keycloak.authentication.authenticators.browser;
 
 import org.jboss.logging.Logger;
-import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AbstractFormAuthenticator;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.authentication.Authenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -15,11 +13,9 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.LoginActionsService;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,42 +23,16 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public abstract class AbstractFormAuthenticator implements Authenticator {
+public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuthenticator {
 
-    private static final Logger logger = Logger.getLogger(AbstractFormAuthenticator.class);
+    private static final Logger logger = Logger.getLogger(AbstractUsernameFormAuthenticator.class);
 
     public static final String REGISTRATION_FORM_ACTION = "registration_form";
-    public static final String EXECUTION = "execution";
     public static final String ATTEMPTED_USERNAME = "ATTEMPTED_USERNAME";
 
     @Override
     public void action(AuthenticationFlowContext context) {
 
-    }
-
-    @Override
-    public void close() {
-
-    }
-
-    protected LoginFormsProvider loginForm(AuthenticationFlowContext context) {
-        String accessCode = context.generateAccessCode();
-        URI action = getActionUrl(context, accessCode);
-        LoginFormsProvider provider = context.getSession().getProvider(LoginFormsProvider.class)
-                    .setUser(context.getUser())
-                    .setActionUri(action)
-                    .setClientSessionCode(accessCode);
-        if (context.getForwardedErrorMessage() != null) {
-            provider.setError(context.getForwardedErrorMessage());
-        }
-        return provider;
-    }
-
-    public URI getActionUrl(AuthenticationFlowContext context, String code) {
-        return LoginActionsService.authenticationFormProcessor(context.getUriInfo())
-                .queryParam(OAuth2Constants.CODE, code)
-                .queryParam(EXECUTION, context.getExecution().getId())
-                    .build(context.getRealm().getName());
     }
 
     protected Response invalidUser(AuthenticationFlowContext context) {
@@ -129,7 +99,7 @@ public abstract class AbstractFormAuthenticator implements Authenticator {
             return false;
         }
         context.getEvent().detail(Details.USERNAME, username);
-        context.getClientSession().setNote(AbstractFormAuthenticator.ATTEMPTED_USERNAME, username);
+        context.getClientSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
         UserModel user = null;
         try {
