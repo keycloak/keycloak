@@ -18,6 +18,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.testsuite.auth.page.AuthServer;
@@ -148,7 +149,7 @@ public abstract class AbstractKeycloakTest {
     private UserRepresentation createAdminUserRepresentation() {
         UserRepresentation adminUserRep = new UserRepresentation();
         adminUserRep.setUsername(ADMIN);
-        adminUserRep.credential(PASSWORD, ADMIN);
+        setPasswordFor(adminUserRep, ADMIN);
         return adminUserRep;
     }
 

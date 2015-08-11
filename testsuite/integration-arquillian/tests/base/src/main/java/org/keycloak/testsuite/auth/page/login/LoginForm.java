@@ -3,7 +3,7 @@ package org.keycloak.testsuite.auth.page.login;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.admin.Users.getPasswordCredentialValueOf;
+import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import org.keycloak.testsuite.auth.page.account.AccountFields;
 import org.keycloak.testsuite.auth.page.account.PasswordFields;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
@@ -39,7 +39,7 @@ public class LoginForm extends Form {
     }
 
     public void login(UserRepresentation user) {
-        login(user.getUsername(), getPasswordCredentialValueOf(user));
+        login(user.getUsername(), getPasswordOf(user));
     }
 
     public void login(String username, String password) {

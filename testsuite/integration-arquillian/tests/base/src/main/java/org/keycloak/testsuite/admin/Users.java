@@ -17,7 +17,10 @@
  */
 package org.keycloak.testsuite.admin;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.UserRepresentation;
 
 /**
@@ -27,7 +30,7 @@ import org.keycloak.representations.idm.UserRepresentation;
  */
 public class Users {
 
-    public static String getPasswordCredentialValueOf(UserRepresentation user) {
+    public static String getPasswordOf(UserRepresentation user) {
         String value = null;
         CredentialRepresentation password = getPasswordCredentialOf(user);
         if (password != null) {
@@ -46,6 +49,19 @@ public class Users {
             }
         }
         return password;
+    }
+
+    public static void setPasswordFor(UserRepresentation user, String password) {
+        setPasswordFor(user, password, false);
+    }
+    public static void setPasswordFor(UserRepresentation user, String password, boolean temporary) {
+        List<CredentialRepresentation> credentials = new ArrayList<>();
+        CredentialRepresentation pass = new CredentialRepresentation();
+        pass.setType(PASSWORD);
+        pass.setValue(password);
+        pass.setTemporary(temporary);
+        credentials.add(pass);
+        user.setCredentials(credentials);
     }
 
 }

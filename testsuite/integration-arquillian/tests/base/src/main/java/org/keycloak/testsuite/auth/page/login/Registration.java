@@ -26,7 +26,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
-import static org.keycloak.testsuite.admin.Users.getPasswordCredentialValueOf;
+import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import org.keycloak.testsuite.auth.page.account.ContactInfoFields;
 import org.keycloak.testsuite.auth.page.account.PasswordFields;
 
@@ -65,12 +65,12 @@ public class Registration extends LoginActions {
     }
     
     public void setValues(UserRepresentation user) {
-        setValues(user, getPasswordCredentialValueOf(user));
+        setValues(user, getPasswordOf(user));
     }
 
     public void setValues(UserRepresentation user, String confirmPassword) {
         accountFields.setValues(user);
-        passwordFields.setPassword(getPasswordCredentialValueOf(user));
+        passwordFields.setPassword(getPasswordOf(user));
         passwordFields.setConfirmPassword(confirmPassword);
     }
 

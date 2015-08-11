@@ -27,7 +27,8 @@ import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-import static org.keycloak.testsuite.admin.Users.getPasswordCredentialValueOf;
+import static org.keycloak.testsuite.admin.Users.getPasswordOf;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 
 /**
  *
@@ -55,7 +56,7 @@ public class RegistrationTest extends AbstractAccountManagementTest {
         testRealmResource().update(testRealmRep);
 
         newUser = createUserRepresentation("new_user", "new_user@email.test", "new", "user", true);
-        newUser.credential(PASSWORD, PASSWORD);
+        setPasswordFor(newUser, PASSWORD);
 
         testRealmAccountManagement.navigateTo();
         testRealmLogin.form().register();
@@ -112,7 +113,7 @@ public class RegistrationTest extends AbstractAccountManagementTest {
         testRealmRegistration.register(newUserEmpty);
         assertMessageAttributeMissing("password");
 
-        newUserEmpty.credential(PASSWORD, getPasswordCredentialValueOf(newUser));
+        setPasswordFor(newUserEmpty, getPasswordOf(newUser));
         testRealmRegistration.register(newUser);
         assertUserExistsWithAdminClient(newUserEmpty);
     }

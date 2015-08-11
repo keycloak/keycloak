@@ -12,6 +12,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
@@ -47,7 +48,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
         testRealmLogin.setAuthRealm(testRealm);
 
         testRealmUser = createUserRepresentation("test", "test@email.test", "test", "user", true);
-        testRealmUser.credential(PASSWORD, PASSWORD);
+        setPasswordFor(testRealmUser, PASSWORD);
 
         deleteAllCookiesForTestRealm();
     }

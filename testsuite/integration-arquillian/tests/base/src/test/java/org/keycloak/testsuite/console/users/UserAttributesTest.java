@@ -22,8 +22,8 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 import org.junit.Ignore;
-import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.UserRepresentation;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import org.keycloak.testsuite.console.page.users.UserAttributes;
 
 /**
@@ -41,7 +41,7 @@ public class UserAttributesTest extends AbstractUserTest {
         String testUsername = "testUserInvEmail";
         String invalidEmail = "user.redhat.com";
         newTestRealmUser.setUsername(testUsername);
-        newTestRealmUser.credential(PASSWORD, "pass");
+        setPasswordFor(newTestRealmUser, "pass");
         newTestRealmUser.setEmail(invalidEmail);
         createUser(newTestRealmUser);
         assertFlashMessageDanger();

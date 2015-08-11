@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>1.4.0.Final-SNAPSHOT</version>
+        <version>1.5.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -172,6 +172,12 @@
 
                 <dependency>
                     <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-dependencies-server-all</artifactId>
+                    <type>pom</type>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-core</artifactId>
                 </dependency>
                 <dependency>
@@ -196,12 +202,6 @@
                     <version>1.0.0.Alpha1-SNAPSHOT</version>
                 </dependency>
         
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-dependencies-server-all</artifactId>
-                    <type>pom</type>
-                </dependency>
-
                 <dependency>
                     <groupId>org.jboss.resteasy</groupId>
                     <artifactId>jaxrs-api</artifactId>
@@ -244,7 +244,19 @@
                 <dependency>
                     <groupId>org.jboss.resteasy</groupId>
                     <artifactId>resteasy-jackson-provider</artifactId>
-                </dependency>        
+                </dependency>
+                <dependency>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-core-asl</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-mapper-asl</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-xc</artifactId>
+                </dependency>
         
                 <dependency>
                     <groupId>org.hibernate.javax.persistence</groupId>
@@ -268,9 +280,14 @@
                     <artifactId>bcpkix-jdk15on</artifactId>
                 </dependency>
                 <dependency>
+                    <groupId>org.hamcrest</groupId>
+                    <artifactId>hamcrest-all</artifactId>
+                </dependency>
+                <dependency>
                     <groupId>org.infinispan</groupId>
                     <artifactId>infinispan-core</artifactId>
                 </dependency>
+                
             </dependencies>
             <build>
                 <plugins>

@@ -4,7 +4,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.auth.page.account.ChangePassword;
-import static org.keycloak.testsuite.admin.Users.getPasswordCredentialValueOf;
+import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 
 /**
@@ -29,7 +29,7 @@ public class ChangePasswordTest extends AbstractAccountManagementTest {
 
     @Before
     public void beforeChangePasswordTest() {
-        correctPassword = getPasswordCredentialValueOf(testRealmUser);
+        correctPassword = getPasswordOf(testRealmUser);
         testRealmAccountManagement.navigateTo();
         testRealmLogin.form().login(testRealmUser);
         testRealmAccountManagement.password();
