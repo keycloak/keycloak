@@ -992,10 +992,6 @@ module.controller('UserFederationMapperCtrl', function($scope, realm,  provider,
         $scope.changed = false;
     };
 
-    $scope.cancel = function() {
-        window.history.back();
-    };
-
     $scope.remove = function() {
         Dialog.confirmDelete($scope.mapper.name, 'mapper', function() {
             UserFederationMapper.remove({ realm: realm.realm, provider: provider.id, mapperId : $scope.mapper.id }, function() {
@@ -1016,6 +1012,7 @@ module.controller('UserFederationMapperCreateCtrl', function($scope, realm, prov
     $scope.mapper = { federationProviderDisplayName: provider.displayName, config: {}};
     $scope.mapperTypes = mapperTypes;
     $scope.mapperType = null;
+    $scope.changed = true;
 
     $scope.$watch('mapperType', function() {
         if ($scope.mapperType != null) {
@@ -1052,8 +1049,8 @@ module.controller('UserFederationMapperCreateCtrl', function($scope, realm, prov
         });
     };
 
-    $scope.cancel = function() {
-        window.history.back();
+    $scope.reset = function() {
+        $location.url("/realms/" + realm.realm + '/user-federation/providers/' + provider.providerName + '/' + provider.id + '/mappers');
     };
 
 

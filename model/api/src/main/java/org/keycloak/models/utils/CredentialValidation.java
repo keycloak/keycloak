@@ -2,6 +2,7 @@ package org.keycloak.models.utils;
 
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -84,11 +85,43 @@ public class CredentialValidation {
         }
     }
 
+    public static boolean validHOTP(RealmModel realm, UserModel user, String otp) {
+        UserCredentialValueModel passwordCred = null;
+        OTPPolicy policy = realm.getOTPPolicy();
+        HmacOTP validator = new HmacOTP(policy.getDigits(), policy.getAlgorithm(), policy.getLookAheadWindow());
+        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
+            if (cred.getType().equals(UserCredentialModel.HOTP)) {
+                int counter = validator.validateHOTP(otp, cred.getValue(), cred.getCounter());
+                if (counter < 0) return false;
+                cred.setCounter(counter);
+                user.updateCredentialDirectly(cred);
+                return true;
+            }
+        }
+        return false;
+
+    }
+
+    public static boolean validOTP(RealmModel realm, String token, String secret) {
+        OTPPolicy policy = realm.getOTPPolicy();
+        if (policy.getType().equals(UserCredentialModel.TOTP)) {
+            TimeBasedOTP validator = new TimeBasedOTP(policy.getAlgorithm(), policy.getDigits(), policy.getPeriod(), policy.getLookAheadWindow());
+            return validator.validateTOTP(token, secret.getBytes());
+        } else {
+            HmacOTP validator = new HmacOTP(policy.getDigits(), policy.getAlgorithm(), policy.getLookAheadWindow());
+            int c = validator.validateHOTP(token, secret, policy.getInitialCounter());
+            return c > -1;
+        }
+
+    }
+
     public static boolean validTOTP(RealmModel realm, UserModel user, String otp) {
         UserCredentialValueModel passwordCred = null;
+        OTPPolicy policy = realm.getOTPPolicy();
+        TimeBasedOTP validator = new TimeBasedOTP(policy.getAlgorithm(), policy.getDigits(), policy.getPeriod(), policy.getLookAheadWindow());
         for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
             if (cred.getType().equals(UserCredentialModel.TOTP)) {
-                if (new TimeBasedOTP().validate(otp, cred.getValue().getBytes())) {
+                if (validator.validateTOTP(otp, cred.getValue().getBytes())) {
                     return true;
                 }
             }
@@ -147,6 +180,10 @@ public class CredentialValidation {
             }
         } else if (credential.getType().equals(UserCredentialModel.TOTP)) {
             if (!validTOTP(realm, user, credential.getValue())) {
+                return false;
+            }
+        } else if (credential.getType().equals(UserCredentialModel.HOTP)) {
+            if (!validHOTP(realm, user, credential.getValue())) {
                 return false;
             }
         } else if (credential.getType().equals(UserCredentialModel.SECRET)) {

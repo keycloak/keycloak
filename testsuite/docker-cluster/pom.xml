@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.4.0.Final-SNAPSHOT</version>
+        <version>1.5.0.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -21,7 +21,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wf8-adapter-dist</artifactId>
+            <artifactId>keycloak-wf9-adapter-dist</artifactId>
             <type>zip</type>
         </dependency>
         <dependency>
@@ -69,7 +69,7 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-wf8-adapter-dist</artifactId>
+                                    <artifactId>keycloak-wf9-adapter-dist</artifactId>
                                     <type>zip</type>
                                     <version>${project.version}</version>
                                     <outputDirectory>${project.build.directory}/wildfly-adapter</outputDirectory>

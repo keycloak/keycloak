@@ -189,10 +189,6 @@
             <maven-resource group="org.keycloak" artifact="keycloak-model-jpa"/>
         </module-def>
 
-        <module-def name="org.keycloak.keycloak-model-sessions-mem">
-            <maven-resource group="org.keycloak" artifact="keycloak-model-sessions-mem"/>
-        </module-def>
-
         <module-def name="org.keycloak.keycloak-model-sessions-jpa">
             <maven-resource group="org.keycloak" artifact="keycloak-model-sessions-jpa"/>
         </module-def>

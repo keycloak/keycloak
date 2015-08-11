@@ -12,11 +12,24 @@ import org.keycloak.models.UserSessionModel;
 import javax.ws.rs.core.UriInfo;
 
 /**
+ * Interface that encapsulates current information about the current requred action
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface RequiredActionContext {
+    /**
+     * Current event builder being used
+     *
+     * @return
+     */
     EventBuilder getEvent();
+
+    /**
+     * Current user
+     *
+     * @return
+     */
     UserModel getUser();
     RealmModel getRealm();
     ClientSessionModel getClientSession();
@@ -25,5 +38,12 @@ public interface RequiredActionContext {
     UriInfo getUriInfo();
     KeycloakSession getSession();
     HttpRequest getHttpRequest();
+
+    /**
+     * Generates access code and updates clientsession timestamp
+     * Access codes must be included in form action callbacks as a query parameter.
+     *
+     * @return
+     */
     String generateAccessCode(String action);
 }

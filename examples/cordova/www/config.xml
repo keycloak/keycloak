@@ -9,6 +9,7 @@
     <preference name="permissions" value="none"/>
 
     <gap:plugin name="org.apache.cordova.inappbrowser" />
+    <gap:plugin name="cordova-plugin-whitelist" version="1.0.0" source="npm" />
 
     <access origin="*"/>
 </widget>

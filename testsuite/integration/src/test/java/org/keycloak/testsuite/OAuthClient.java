@@ -306,7 +306,7 @@ public class OAuthClient {
         }
     }
 
-    private void closeClient(CloseableHttpClient client) {
+    public void closeClient(CloseableHttpClient client) {
         try {
             client.close();
         } catch (IOException ioe) {

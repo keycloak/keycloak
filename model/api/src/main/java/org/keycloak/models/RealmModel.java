@@ -148,6 +148,9 @@ public interface RealmModel extends RoleContainerModel {
 
     void setPasswordPolicy(PasswordPolicy policy);
 
+    OTPPolicy getOTPPolicy();
+    void setOTPPolicy(OTPPolicy policy);
+
     RoleModel getRoleById(String id);
 
     List<String> getDefaultRoles();
@@ -178,6 +181,15 @@ public interface RealmModel extends RoleContainerModel {
     Map<String, String> getSmtpConfig();
 
     void setSmtpConfig(Map<String, String> smtpConfig);
+
+    AuthenticationFlowModel getBrowserFlow();
+    void setBrowserFlow(AuthenticationFlowModel flow);
+
+    AuthenticationFlowModel getRegistrationFlow();
+    void setRegistrationFlow(AuthenticationFlowModel flow);
+
+    AuthenticationFlowModel getDirectGrantFlow();
+    void setDirectGrantFlow(AuthenticationFlowModel flow);
 
     List<AuthenticationFlowModel> getAuthenticationFlows();
     AuthenticationFlowModel getFlowByAlias(String alias);

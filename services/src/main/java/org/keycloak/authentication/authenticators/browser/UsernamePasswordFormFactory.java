@@ -81,4 +81,10 @@ public class UsernamePasswordFormFactory implements AuthenticatorFactory {
     public List<ProviderConfigProperty> getConfigProperties() {
         return null;
     }
+
+    @Override
+    public boolean isUserSetupAllowed() {
+        return false;
+    }
+
 }

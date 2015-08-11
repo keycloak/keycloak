@@ -293,7 +293,7 @@ public class JpaUpdate1_2_0_Beta1 extends CustomKeycloakTask {
                     }
 
                     Object acmObj = resultSet.getObject("ALLOWED_CLAIMS_MASK");
-                    long mask = (acmObj != null) ? (Long) acmObj : ClaimMask.ALL;
+                    long mask = (acmObj != null) ? ((Number) acmObj).longValue() : ClaimMask.ALL;
 
                     MigrationProvider migrationProvider = this.kcSession.getProvider(MigrationProvider.class);
                     List<ProtocolMapperRepresentation> protocolMappers = migrationProvider.getMappersForClaimMask(mask);

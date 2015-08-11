@@ -23,9 +23,8 @@ public class AuthenticationExecutionModel implements Serializable {
     private String authenticatorConfig;
     private String authenticator;
     private String flowId;
-    private boolean autheticatorFlow;
+    private boolean authenticatorFlow;
     private Requirement requirement;
-    private boolean userSetupAllowed;
     private int priority;
     private String parentFlow;
 
@@ -69,14 +68,6 @@ public class AuthenticationExecutionModel implements Serializable {
         this.priority = priority;
     }
 
-    public boolean isUserSetupAllowed() {
-        return userSetupAllowed;
-    }
-
-    public void setUserSetupAllowed(boolean userSetupAllowed) {
-        this.userSetupAllowed = userSetupAllowed;
-    }
-
     public String getParentFlow() {
         return parentFlow;
     }
@@ -103,12 +94,12 @@ public class AuthenticationExecutionModel implements Serializable {
      *
      * @return
      */
-    public boolean isAutheticatorFlow() {
-        return autheticatorFlow;
+    public boolean isAuthenticatorFlow() {
+        return authenticatorFlow;
     }
 
-    public void setAutheticatorFlow(boolean autheticatorFlow) {
-        this.autheticatorFlow = autheticatorFlow;
+    public void setAuthenticatorFlow(boolean authenticatorFlow) {
+        this.authenticatorFlow = authenticatorFlow;
     }
 
     public enum Requirement {

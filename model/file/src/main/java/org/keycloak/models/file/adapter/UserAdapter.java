@@ -22,6 +22,7 @@ import org.keycloak.models.ClientModel;
 import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -256,12 +257,12 @@ public class UserAdapter implements UserModel, Comparable {
     }
 
     @Override
-    public boolean isTotp() {
+    public boolean isOtpEnabled() {
         return user.isTotp();
     }
 
     @Override
-    public void setTotp(boolean totp) {
+    public void setOtpEnabled(boolean totp) {
         user.setTotp(totp);
     }
 
@@ -270,7 +271,10 @@ public class UserAdapter implements UserModel, Comparable {
 
         if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
             updatePasswordCredential(cred);
-        } else {
+        } else if (UserCredentialModel.isOtp(cred.getType())){
+            updateOtpCredential(cred);
+
+        }else {
             CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
 
             if (credentialEntity == null) {
@@ -282,6 +286,29 @@ public class UserAdapter implements UserModel, Comparable {
             }
         }
     }
+
+    private void updateOtpCredential(UserCredentialModel cred) {
+        CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
+
+        if (credentialEntity == null) {
+            credentialEntity = setCredentials(user, cred);
+            credentialEntity.setValue(cred.getValue());
+            OTPPolicy otpPolicy = realm.getOTPPolicy();
+            credentialEntity.setAlgorithm(otpPolicy.getAlgorithm());
+            credentialEntity.setDigits(otpPolicy.getDigits());
+            credentialEntity.setCounter(otpPolicy.getInitialCounter());
+            credentialEntity.setPeriod(otpPolicy.getPeriod());
+            user.getCredentials().add(credentialEntity);
+        } else {
+            credentialEntity.setValue(cred.getValue());
+            OTPPolicy policy = realm.getOTPPolicy();
+            credentialEntity.setDigits(policy.getDigits());
+            credentialEntity.setCounter(policy.getInitialCounter());
+            credentialEntity.setAlgorithm(policy.getAlgorithm());
+            credentialEntity.setPeriod(policy.getPeriod());
+        }
+    }
+
 
     private void updatePasswordCredential(UserCredentialModel cred) {
         CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
@@ -390,6 +417,28 @@ public class UserAdapter implements UserModel, Comparable {
             credModel.setValue(credEntity.getValue());
             credModel.setSalt(credEntity.getSalt());
             credModel.setHashIterations(credEntity.getHashIterations());
+            if (UserCredentialModel.isOtp(credEntity.getType())) {
+                credModel.setCounter(credEntity.getCounter());
+                if (credEntity.getAlgorithm() == null) {
+                    // for migration where these values would be null
+                    credModel.setAlgorithm(realm.getOTPPolicy().getAlgorithm());
+                } else {
+                    credModel.setAlgorithm(credEntity.getAlgorithm());
+                }
+                if (credEntity.getDigits() == 0) {
+                    // for migration where these values would be 0
+                    credModel.setDigits(realm.getOTPPolicy().getDigits());
+                } else {
+                    credModel.setDigits(credEntity.getDigits());
+                }
+
+                if (credEntity.getPeriod() == 0) {
+                    // for migration where these values would be 0
+                    credModel.setPeriod(realm.getOTPPolicy().getPeriod());
+                } else {
+                    credModel.setPeriod(credEntity.getPeriod());
+                }
+            }
 
             result.add(credModel);
         }
@@ -414,6 +463,10 @@ public class UserAdapter implements UserModel, Comparable {
         credentialEntity.setSalt(credModel.getSalt());
         credentialEntity.setDevice(credModel.getDevice());
         credentialEntity.setHashIterations(credModel.getHashIterations());
+        credentialEntity.setCounter(credModel.getCounter());
+        credentialEntity.setAlgorithm(credModel.getAlgorithm());
+        credentialEntity.setDigits(credModel.getDigits());
+        credentialEntity.setPeriod(credModel.getPeriod());
     }
 
     @Override

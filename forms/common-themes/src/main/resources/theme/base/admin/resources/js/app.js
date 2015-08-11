@@ -1080,9 +1080,84 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 flows : function(AuthenticationFlowsLoader) {
                     return AuthenticationFlowsLoader();
+                },
+                selectedFlow : function() {
+                    return null;
                 }
             },
             controller : 'AuthenticationFlowsCtrl'
+        })
+        .when('/realms/:realm/authentication/flow-bindings', {
+            templateUrl : resourceUrl + '/partials/authentication-flow-bindings.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                flows : function(AuthenticationFlowsLoader) {
+                    return AuthenticationFlowsLoader();
+                },
+                serverInfo : function(ServerInfo) {
+                    return ServerInfo.delay;
+                }
+            },
+            controller : 'RealmFlowBindingCtrl'
+        })
+        .when('/realms/:realm/authentication/flows/:flow', {
+            templateUrl : resourceUrl + '/partials/authentication-flows.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                flows : function(AuthenticationFlowsLoader) {
+                    return AuthenticationFlowsLoader();
+                },
+                selectedFlow : function($route) {
+                    return $route.current.params.flow;
+                }
+            },
+            controller : 'AuthenticationFlowsCtrl'
+        })
+        .when('/realms/:realm/authentication/flows/:flow/create/execution', {
+            templateUrl : resourceUrl + '/partials/create-execution.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                parentFlow : function(AuthenticationFlowLoader) {
+                    return AuthenticationFlowLoader();
+                },
+                formActionProviders : function(AuthenticationFormActionProvidersLoader) {
+                    return AuthenticationFormActionProvidersLoader();
+                },
+                authenticatorProviders : function(AuthenticatorProvidersLoader) {
+                    return AuthenticatorProvidersLoader();
+                }
+            },
+            controller : 'CreateExecutionCtrl'
+        })
+        .when('/realms/:realm/authentication/flows/:flow/create/flow/execution', {
+            templateUrl : resourceUrl + '/partials/create-flow-execution.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                parentFlow : function(AuthenticationFlowLoader) {
+                    return AuthenticationFlowLoader();
+                },
+                formProviders : function(AuthenticationFormProvidersLoader) {
+                    return AuthenticationFormProvidersLoader();
+                }
+            },
+            controller : 'CreateExecutionFlowCtrl'
+        })
+        .when('/realms/:realm/authentication/create/flow', {
+            templateUrl : resourceUrl + '/partials/create-flow.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'CreateFlowCtrl'
         })
         .when('/realms/:realm/authentication/required-actions', {
             templateUrl : resourceUrl + '/partials/required-actions.html',
@@ -1101,6 +1176,18 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'RealmPasswordPolicyCtrl'
+        })
+        .when('/realms/:realm/authentication/otp-policy', {
+            templateUrl : resourceUrl + '/partials/otp-policy.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfo) {
+                    return ServerInfo.delay;
+                }
+            },
+            controller : 'RealmOtpPolicyCtrl'
         })
         .when('/realms/:realm/authentication/config/:provider/:config', {
             templateUrl : resourceUrl + '/partials/authenticator-config.html',

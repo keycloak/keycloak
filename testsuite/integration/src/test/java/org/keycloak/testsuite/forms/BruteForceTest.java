@@ -72,7 +72,7 @@ public class BruteForceTest {
             credentials.setValue("totpSecret");
             user.updateCredential(credentials);
 
-            user.setTotp(true);
+            user.setOtpEnabled(true);
             appRealm.setEventsListeners(Collections.singleton("dummy"));
 
             appRealm.setBruteForceProtected(true);
@@ -158,14 +158,14 @@ public class BruteForceTest {
     @Test
     public void testGrantInvalidPassword() throws Exception {
         {
-            String totpSecret = totp.generate("totpSecret");
+            String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
             Assert.assertNotNull(response.getAccessToken());
             Assert.assertNull(response.getError());
             events.clear();
         }
         {
-            String totpSecret = totp.generate("totpSecret");
+            String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("invalid", totpSecret);
             Assert.assertNull(response.getAccessToken());
             Assert.assertEquals(response.getError(), "invalid_grant");
@@ -173,7 +173,7 @@ public class BruteForceTest {
             events.clear();
         }
         {
-            String totpSecret = totp.generate("totpSecret");
+            String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("invalid", totpSecret);
             Assert.assertNull(response.getAccessToken());
             Assert.assertEquals(response.getError(), "invalid_grant");
@@ -181,7 +181,7 @@ public class BruteForceTest {
             events.clear();
         }
         {
-            String totpSecret = totp.generate("totpSecret");
+            String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
@@ -191,7 +191,7 @@ public class BruteForceTest {
         }
         clearUserFailures();
         {
-            String totpSecret = totp.generate("totpSecret");
+            String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
             Assert.assertNotNull(response.getAccessToken());
             Assert.assertNull(response.getError());
@@ -203,7 +203,7 @@ public class BruteForceTest {
     @Test
     public void testGrantInvalidOtp() throws Exception {
         {
-            String totpSecret = totp.generate("totpSecret");
+            String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
             Assert.assertNotNull(response.getAccessToken());
             Assert.assertNull(response.getError());
@@ -224,7 +224,7 @@ public class BruteForceTest {
             events.clear();
         }
         {
-            String totpSecret = totp.generate("totpSecret");
+            String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
@@ -234,7 +234,7 @@ public class BruteForceTest {
         }
         clearUserFailures();
         {
-            String totpSecret = totp.generate("totpSecret");
+            String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
             Assert.assertNotNull(response.getAccessToken());
             Assert.assertNull(response.getError());
@@ -244,7 +244,7 @@ public class BruteForceTest {
     }   @Test
         public void testGrantMissingOtp() throws Exception {
         {
-            String totpSecret = totp.generate("totpSecret");
+            String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
             Assert.assertNotNull(response.getAccessToken());
             Assert.assertNull(response.getError());
@@ -265,7 +265,7 @@ public class BruteForceTest {
             events.clear();
         }
         {
-            String totpSecret = totp.generate("totpSecret");
+            String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
@@ -275,7 +275,7 @@ public class BruteForceTest {
         }
         clearUserFailures();
         {
-            String totpSecret = totp.generate("totpSecret");
+            String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
             Assert.assertNotNull(response.getAccessToken());
             Assert.assertNull(response.getError());
@@ -353,7 +353,7 @@ public class BruteForceTest {
 
         loginTotpPage.assertCurrent();
 
-        String totpSecret = totp.generate("totpSecret");
+        String totpSecret = totp.generateTOTP("totpSecret");
         loginTotpPage.login(totpSecret);
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());

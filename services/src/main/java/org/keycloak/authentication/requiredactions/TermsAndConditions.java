@@ -88,7 +88,7 @@ public class TermsAndConditions implements RequiredActionProvider, RequiredActio
     }
 
     @Override
-    public Response invokeRequiredAction(RequiredActionContext context) {
+    public Response requiredActionChallenge(RequiredActionContext context) {
         return context.getSession().getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(context.generateAccessCode(getProviderId()))
                 .setUser(context.getUser())

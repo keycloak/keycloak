@@ -9,6 +9,7 @@ public class CredentialRepresentation {
     public static final String PASSWORD = "password";
     public static final String PASSWORD_TOKEN = "password-token";
     public static final String TOTP = "totp";
+    public static final String HOTP = "hotp";
     public static final String CLIENT_CERT = "cert";
     public static final String KERBEROS = "kerberos";
 
@@ -22,6 +23,11 @@ public class CredentialRepresentation {
     protected String hashedSaltedValue;
     protected String salt;
     protected Integer hashIterations;
+    protected Integer counter;
+    private String algorithm;
+    private Integer digits;
+    private Integer period;
+
     // only used when updating a credential.  Might set required action
     protected boolean temporary;
 
@@ -79,5 +85,37 @@ public class CredentialRepresentation {
 
     public void setTemporary(boolean temporary) {
         this.temporary = temporary;
+    }
+
+    public Integer getCounter() {
+        return counter;
+    }
+
+    public void setCounter(Integer counter) {
+        this.counter = counter;
+    }
+
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    public Integer getDigits() {
+        return digits;
+    }
+
+    public void setDigits(Integer digits) {
+        this.digits = digits;
+    }
+
+    public Integer getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(Integer period) {
+        this.period = period;
     }
 }

@@ -8,6 +8,7 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -450,6 +451,19 @@ public class RealmAdapter implements RealmModel {
     public void setPasswordPolicy(PasswordPolicy policy) {
         getDelegateForUpdate();
         updated.setPasswordPolicy(policy);
+    }
+
+    @Override
+    public OTPPolicy getOTPPolicy() {
+        if (updated != null) return updated.getOTPPolicy();
+        return cached.getOtpPolicy();
+    }
+
+    @Override
+    public void setOTPPolicy(OTPPolicy policy) {
+        getDelegateForUpdate();
+        updated.setOTPPolicy(policy);
+
     }
 
     @Override
@@ -1018,6 +1032,45 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public AuthenticationFlowModel getBrowserFlow() {
+        if (updated != null) return updated.getBrowserFlow();
+        return cached.getBrowserFlow();
+    }
+
+    @Override
+    public void setBrowserFlow(AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setBrowserFlow(flow);
+
+    }
+
+    @Override
+    public AuthenticationFlowModel getRegistrationFlow() {
+        if (updated != null) return updated.getRegistrationFlow();
+        return cached.getRegistrationFlow();
+    }
+
+    @Override
+    public void setRegistrationFlow(AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setRegistrationFlow(flow);
+
+    }
+
+    @Override
+    public AuthenticationFlowModel getDirectGrantFlow() {
+        if (updated != null) return updated.getDirectGrantFlow();
+        return cached.getDirectGrantFlow();
+    }
+
+    @Override
+    public void setDirectGrantFlow(AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setDirectGrantFlow(flow);
+
+    }
+
+    @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {
         if (updated != null) return updated.getAuthenticationFlows();
         List<AuthenticationFlowModel> models = new ArrayList<>();
@@ -1075,7 +1128,6 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<AuthenticationExecutionModel> getAuthenticationExecutions(String flowId) {
         if (updated != null) return updated.getAuthenticationExecutions(flowId);
-        List<AuthenticationExecutionModel> models = new ArrayList<>();
         return cached.getAuthenticationExecutions().get(flowId);
     }
 

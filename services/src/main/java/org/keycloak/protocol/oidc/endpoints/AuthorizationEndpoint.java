@@ -263,7 +263,7 @@ public class AuthorizationEndpoint {
         clientSession.setNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
 
 
-        AuthenticationFlowModel flow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+        AuthenticationFlowModel flow = realm.getBrowserFlow();
         String flowId = flow.getId();
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setClientSession(clientSession)

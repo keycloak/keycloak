@@ -23,18 +23,15 @@
     },
 
     "userSessions": {
-        "provider" : "mem"
+        "provider" : "infinispan"
     },
 
     "realmCache": {
-        "provider": "mem"
+        "provider": "infinispan"
     },
 
     "userCache": {
-        "provider": "mem",
-        "mem": {
-            "maxSize": 20000
-        }
+        "provider": "infinispan"
     },
 
     "timer": {
@@ -77,6 +74,12 @@
         "default": {
             "dataSource": "java:jboss/datasources/KeycloakDS",
             "databaseSchema": "update"
+        }
+    },
+
+    "connectionsInfinispan": {
+        "default" : {
+            "cacheContainer" : "java:jboss/infinispan/Keycloak"
         }
     }
 }

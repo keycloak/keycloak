@@ -2,9 +2,9 @@ package org.keycloak.authentication.authenticators.browser;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.AuthenticatorContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.login.LoginFormsProvider;
@@ -36,7 +36,7 @@ public abstract class AbstractFormAuthenticator implements Authenticator {
     public static final String ATTEMPTED_USERNAME = "ATTEMPTED_USERNAME";
 
     @Override
-    public void action(AuthenticatorContext context) {
+    public void action(AuthenticationFlowContext context) {
 
     }
 
@@ -45,7 +45,7 @@ public abstract class AbstractFormAuthenticator implements Authenticator {
 
     }
 
-    protected LoginFormsProvider loginForm(AuthenticatorContext context) {
+    protected LoginFormsProvider loginForm(AuthenticationFlowContext context) {
         String accessCode = context.generateAccessCode();
         URI action = getActionUrl(context, accessCode);
         LoginFormsProvider provider = context.getSession().getProvider(LoginFormsProvider.class)
@@ -58,35 +58,35 @@ public abstract class AbstractFormAuthenticator implements Authenticator {
         return provider;
     }
 
-    public URI getActionUrl(AuthenticatorContext context, String code) {
+    public URI getActionUrl(AuthenticationFlowContext context, String code) {
         return LoginActionsService.authenticationFormProcessor(context.getUriInfo())
                 .queryParam(OAuth2Constants.CODE, code)
                 .queryParam(EXECUTION, context.getExecution().getId())
                     .build(context.getRealm().getName());
     }
 
-    protected Response invalidUser(AuthenticatorContext context) {
+    protected Response invalidUser(AuthenticationFlowContext context) {
         return loginForm(context)
                 .setError(Messages.INVALID_USER)
                 .createLogin();
     }
 
-    protected Response disabledUser(AuthenticatorContext context) {
+    protected Response disabledUser(AuthenticationFlowContext context) {
         return loginForm(context)
                 .setError(Messages.ACCOUNT_DISABLED).createLogin();
     }
 
-    protected Response temporarilyDisabledUser(AuthenticatorContext context) {
+    protected Response temporarilyDisabledUser(AuthenticationFlowContext context) {
         return loginForm(context)
                 .setError(Messages.ACCOUNT_TEMPORARILY_DISABLED).createLogin();
     }
 
-    protected Response invalidCredentials(AuthenticatorContext context) {
+    protected Response invalidCredentials(AuthenticationFlowContext context) {
         return loginForm(context)
                 .setError(Messages.INVALID_USER).createLogin();
     }
 
-    protected Response setDuplicateUserChallenge(AuthenticatorContext context, String eventError, String loginFormError, AuthenticationProcessor.Error authenticatorError) {
+    protected Response setDuplicateUserChallenge(AuthenticationFlowContext context, String eventError, String loginFormError, AuthenticationFlowError authenticatorError) {
         context.getEvent().error(eventError);
         Response challengeResponse = loginForm(context)
                 .setError(loginFormError).createLogin();
@@ -94,18 +94,18 @@ public abstract class AbstractFormAuthenticator implements Authenticator {
         return challengeResponse;
     }
 
-    public boolean invalidUser(AuthenticatorContext context, UserModel user) {
+    public boolean invalidUser(AuthenticationFlowContext context, UserModel user) {
         if (user == null) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = invalidUser(context);
-            context.failureChallenge(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
+            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return true;
         }
         if (!user.isEnabled()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
             Response challengeResponse = disabledUser(context);
-            context.failureChallenge(AuthenticationProcessor.Error.USER_DISABLED, challengeResponse);
+            context.failureChallenge(AuthenticationFlowError.USER_DISABLED, challengeResponse);
             return true;
         }
         if (context.getRealm().isBruteForceProtected()) {
@@ -113,19 +113,19 @@ public abstract class AbstractFormAuthenticator implements Authenticator {
                 context.getEvent().user(user);
                 context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
                 Response challengeResponse = temporarilyDisabledUser(context);
-                context.failureChallenge(AuthenticationProcessor.Error.USER_TEMPORARILY_DISABLED, challengeResponse);
+                context.failureChallenge(AuthenticationFlowError.USER_TEMPORARILY_DISABLED, challengeResponse);
                 return true;
             }
         }
         return false;
     }
 
-    public boolean validateUser(AuthenticatorContext context, MultivaluedMap<String, String> inputData) {
+    public boolean validateUser(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
         String username = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = invalidUser(context);
-            context.failureChallenge(AuthenticationProcessor.Error.INVALID_USER, challengeResponse);
+            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return false;
         }
         context.getEvent().detail(Details.USERNAME, username);
@@ -139,9 +139,9 @@ public abstract class AbstractFormAuthenticator implements Authenticator {
 
             // Could happen during federation import
             if (mde.getDuplicateFieldName() != null && mde.getDuplicateFieldName().equals(UserModel.EMAIL)) {
-                setDuplicateUserChallenge(context, Errors.EMAIL_IN_USE, Messages.EMAIL_EXISTS, AuthenticationProcessor.Error.INVALID_USER);
+                setDuplicateUserChallenge(context, Errors.EMAIL_IN_USE, Messages.EMAIL_EXISTS, AuthenticationFlowError.INVALID_USER);
             } else {
-                setDuplicateUserChallenge(context, Errors.USERNAME_IN_USE, Messages.USERNAME_EXISTS, AuthenticationProcessor.Error.INVALID_USER);
+                setDuplicateUserChallenge(context, Errors.USERNAME_IN_USE, Messages.USERNAME_EXISTS, AuthenticationFlowError.INVALID_USER);
             }
 
             return false;
@@ -160,7 +160,7 @@ public abstract class AbstractFormAuthenticator implements Authenticator {
         return true;
     }
 
-    public boolean validatePassword(AuthenticatorContext context, MultivaluedMap<String, String> inputData) {
+    public boolean validatePassword(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
         if (password == null || password.isEmpty()) {
@@ -169,7 +169,7 @@ public abstract class AbstractFormAuthenticator implements Authenticator {
             }
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = invalidCredentials(context);
-            context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
+            context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             return false;
         }
         credentials.add(UserCredentialModel.password(password));
@@ -178,7 +178,7 @@ public abstract class AbstractFormAuthenticator implements Authenticator {
             context.getEvent().user(context.getUser());
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = invalidCredentials(context);
-            context.failureChallenge(AuthenticationProcessor.Error.INVALID_CREDENTIALS, challengeResponse);
+            context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             return false;
         }
         return true;

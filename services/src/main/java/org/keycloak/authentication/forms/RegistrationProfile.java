@@ -31,7 +31,7 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
 
     @Override
     public String getHelpText() {
-        return null;
+        return "Validates email, first name, and last name attributes and stores them in user data.";
     }
 
     @Override
@@ -109,6 +109,12 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
 
     }
+
+    @Override
+    public boolean isUserSetupAllowed() {
+        return false;
+    }
+
 
     @Override
     public void close() {

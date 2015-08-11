@@ -45,7 +45,7 @@ public class RegistrationPage implements FormAuthenticator, FormAuthenticatorFac
 
     @Override
     public String getHelpText() {
-        return null;
+        return "This is the controller for the registration page";
     }
 
     @Override
@@ -80,6 +80,11 @@ public class RegistrationPage implements FormAuthenticator, FormAuthenticatorFac
     @Override
     public void init(Config.Scope config) {
 
+    }
+
+    @Override
+    public boolean isUserSetupAllowed() {
+        return false;
     }
 
     @Override

@@ -25,6 +25,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessTokenResponse;
@@ -54,8 +55,6 @@ import static org.junit.Assert.assertNotNull;
  */
 public class UserInfoTest {
 
-    private static RealmModel realm;
-
     @ClassRule
     public static KeycloakRule keycloakRule = new KeycloakRule();
 
@@ -84,6 +83,27 @@ public class UserInfoTest {
         assertNotNull(userInfo.getSubject());
         assertEquals("test-user@localhost", userInfo.getEmail());
         assertEquals("test-user@localhost", userInfo.getPreferredUsername());
+
+        client.close();
+    }
+
+    @Test
+    public void testSessionExpired() throws Exception {
+        Client client = ClientBuilder.newClient();
+        UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
+        WebTarget grantTarget = client.target(grantUri);
+        AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(grantTarget);
+
+        KeycloakSession session = keycloakRule.startSession();
+        keycloakRule.startSession().sessions().removeUserSessions(session.realms().getRealm("test"));
+        keycloakRule.stopSession(session, true);
+
+        Response response = executeUserInfoRequest(accessTokenResponse.getToken());
+
+        assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+
+        response.close();
 
         client.close();
     }

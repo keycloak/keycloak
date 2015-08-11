@@ -147,11 +147,12 @@ public class LDAPFederationProvider implements UserFederationProvider {
         if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) throw new IllegalStateException("Registration is not supported by this ldap server");
         if (!synchronizeRegistrations()) throw new IllegalStateException("Registration is not supported by this ldap server");
 
-        LDAPObject ldapObject = LDAPUtils.addUserToLDAP(this, realm, user);
-        user.setSingleAttribute(LDAPConstants.LDAP_ID, ldapObject.getUuid());
-        user.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapObject.getDn().toString());
+        LDAPObject ldapUser = LDAPUtils.addUserToLDAP(this, realm, user);
+        LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
+        user.setSingleAttribute(LDAPConstants.LDAP_ID, ldapUser.getUuid());
+        user.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapUser.getDn().toString());
 
-        return proxy(realm, user, ldapObject);
+        return proxy(realm, user, ldapUser);
     }
 
     @Override
@@ -232,6 +233,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
         if (ldapUser == null) {
             return null;
         }
+        LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
+
         if (ldapUser.getUuid().equals(local.getFirstAttribute(LDAPConstants.LDAP_ID))) {
             return ldapUser;
         } else {
@@ -257,17 +260,16 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
     protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser) {
         String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
-
-        if (ldapUsername == null) {
-            throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. Mapped username LDAP attribute: " +
-                    ldapIdentityStore.getConfig().getUsernameLdapAttribute() + ", attributes from LDAP: " + ldapUser.getAttributes());
-        }
+        LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
 
         UserModel imported = session.userStorage().addUser(realm, ldapUsername);
         imported.setEnabled(true);
 
         Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(getModel().getId());
         for (UserFederationMapperModel mapperModel : federationMappers) {
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
+            }
             LDAPFederationMapper ldapMapper = getMapper(mapperModel);
             ldapMapper.onImportUserFromLDAP(mapperModel, this, ldapUser, imported, realm, true);
         }

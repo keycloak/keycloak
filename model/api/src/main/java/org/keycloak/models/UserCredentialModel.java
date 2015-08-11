@@ -14,6 +14,7 @@ public class UserCredentialModel {
     // Secret is same as password but it is not hashed
     public static final String SECRET = "secret";
     public static final String TOTP = "totp";
+    public static final String HOTP = "hotp";
     public static final String CLIENT_CERT = "cert";
     public static final String KERBEROS = "kerberos";
 
@@ -44,9 +45,22 @@ public class UserCredentialModel {
         return model;
     }
 
+    public static UserCredentialModel otp(String type, String key) {
+        if (type.equals(HOTP)) return hotp(key);
+        if (type.equals(TOTP)) return totp(key);
+        throw new RuntimeException("Unknown OTP type");
+    }
+
     public static UserCredentialModel totp(String key) {
         UserCredentialModel model = new UserCredentialModel();
         model.setType(TOTP);
+        model.setValue(key);
+        return model;
+    }
+
+    public static UserCredentialModel hotp(String key) {
+        UserCredentialModel model = new UserCredentialModel();
+        model.setType(HOTP);
         model.setValue(key);
         return model;
     }
@@ -63,6 +77,10 @@ public class UserCredentialModel {
         model.setType(SECRET);
         model.setValue(UUID.randomUUID().toString());
         return model;
+    }
+
+    public static boolean isOtp(String type) {
+        return TOTP.equals(type) || HOTP.equals(type);
     }
 
 

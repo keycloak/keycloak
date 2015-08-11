@@ -23,7 +23,7 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
     }
 
     @Override
-    public Response invokeRequiredAction(RequiredActionContext context) {
+    public Response requiredActionChallenge(RequiredActionContext context) {
         LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(context.generateAccessCode(getProviderId()))
                 .setUser(context.getUser());

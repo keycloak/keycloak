@@ -59,6 +59,11 @@ public class OTPFormAuthenticatorFactory implements AuthenticatorFactory {
         return false;
     }
 
+    @Override
+    public boolean isUserSetupAllowed() {
+        return true;
+    }
+
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED,
             AuthenticationExecutionModel.Requirement.OPTIONAL,

@@ -63,19 +63,6 @@ public class AuthenticationProcessor {
 
     }
 
-    public static enum Error {
-        EXPIRED_CODE,
-        INVALID_CLIENT_SESSION,
-        INVALID_USER,
-        INVALID_CREDENTIALS,
-        CREDENTIAL_SETUP_REQUIRED,
-        USER_DISABLED,
-        USER_CONFLICT,
-        USER_TEMPORARILY_DISABLED,
-        INTERNAL_ERROR,
-        UNKNOWN_USER
-    }
-
     public RealmModel getRealm() {
         return realm;
     }
@@ -176,19 +163,19 @@ public class AuthenticationProcessor {
     public void setAutheticatedUser(UserModel user) {
         UserModel previousUser = clientSession.getAuthenticatedUser();
         if (previousUser != null && !user.getId().equals(previousUser.getId()))
-            throw new AuthException(Error.USER_CONFLICT);
+            throw new AuthenticationFlowException(AuthenticationFlowError.USER_CONFLICT);
         validateUser(user);
         getClientSession().setAuthenticatedUser(user);
     }
 
 
-    private class Result implements AuthenticatorContext {
+    public class Result implements AuthenticationFlowContext {
         AuthenticatorConfigModel authenticatorConfig;
         AuthenticationExecutionModel execution;
         Authenticator authenticator;
         Status status;
         Response challenge;
-        Error error;
+        AuthenticationFlowError error;
         List<AuthenticationExecutionModel> currentExecutions;
 
         private Result(AuthenticationExecutionModel execution, Authenticator authenticator, List<AuthenticationExecutionModel> currentExecutions) {
@@ -221,11 +208,6 @@ public class AuthenticationProcessor {
         }
 
         @Override
-        public void setExecution(AuthenticationExecutionModel execution) {
-            this.execution = execution;
-        }
-
-        @Override
         public AuthenticatorConfigModel getAuthenticatorConfig() {
             if (execution.getAuthenticatorConfig() == null) return null;
             if (authenticatorConfig != null) return authenticatorConfig;
@@ -233,17 +215,10 @@ public class AuthenticationProcessor {
             return authenticatorConfig;
         }
 
-        @Override
         public Authenticator getAuthenticator() {
             return authenticator;
         }
 
-        @Override
-        public void setAuthenticator(Authenticator authenticator) {
-            this.authenticator = authenticator;
-        }
-
-        @Override
         public Status getStatus() {
             return status;
         }
@@ -254,7 +229,7 @@ public class AuthenticationProcessor {
         }
 
         @Override
-        public void failure(Error error) {
+        public void failure(AuthenticationFlowError error) {
             status = Status.FAILED;
             this.error = error;
 
@@ -275,7 +250,7 @@ public class AuthenticationProcessor {
         }
 
         @Override
-        public void failureChallenge(Error error, Response challenge) {
+        public void failureChallenge(AuthenticationFlowError error, Response challenge) {
             this.error = error;
             this.status = Status.FAILURE_CHALLENGE;
             this.challenge = challenge;
@@ -283,7 +258,7 @@ public class AuthenticationProcessor {
         }
 
         @Override
-        public void failure(Error error, Response challenge) {
+        public void failure(AuthenticationFlowError error, Response challenge) {
             this.error = error;
             this.status = Status.FAILED;
             this.challenge = challenge;
@@ -362,45 +337,11 @@ public class AuthenticationProcessor {
         }
 
 
-        @Override
         public Response getChallenge() {
             return challenge;
         }
 
-        @Override
-        public Error getError() {
-            return error;
-        }
-    }
-
-    public static class AuthException extends RuntimeException {
-        private Error error;
-
-        public AuthException(Error error) {
-            this.error = error;
-        }
-
-        public AuthException(String message, Error error) {
-            super(message);
-            this.error = error;
-        }
-
-        public AuthException(String message, Throwable cause, Error error) {
-            super(message, cause);
-            this.error = error;
-        }
-
-        public AuthException(Throwable cause, Error error) {
-            super(cause);
-            this.error = error;
-        }
-
-        public AuthException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace, Error error) {
-            super(message, cause, enableSuppression, writableStackTrace);
-            this.error = error;
-        }
-
-        public Error getError() {
+        public AuthenticationFlowError getError() {
             return error;
         }
     }
@@ -425,24 +366,24 @@ public class AuthenticationProcessor {
     }
 
     public Response handleBrowserException(Exception failure) {
-        if (failure instanceof AuthException) {
-            AuthException e = (AuthException) failure;
+        if (failure instanceof AuthenticationFlowException) {
+            AuthenticationFlowException e = (AuthenticationFlowException) failure;
             logger.error("failed authentication: " + e.getError().toString(), e);
-            if (e.getError() == AuthenticationProcessor.Error.INVALID_USER) {
+            if (e.getError() == AuthenticationFlowError.INVALID_USER) {
                 event.error(Errors.USER_NOT_FOUND);
                 return ErrorPage.error(session, Messages.INVALID_USER);
-            } else if (e.getError() == AuthenticationProcessor.Error.USER_DISABLED) {
+            } else if (e.getError() == AuthenticationFlowError.USER_DISABLED) {
                 event.error(Errors.USER_DISABLED);
                 return ErrorPage.error(session, Messages.ACCOUNT_DISABLED);
-            } else if (e.getError() == AuthenticationProcessor.Error.USER_TEMPORARILY_DISABLED) {
+            } else if (e.getError() == AuthenticationFlowError.USER_TEMPORARILY_DISABLED) {
                 event.error(Errors.USER_TEMPORARILY_DISABLED);
                 return ErrorPage.error(session, Messages.ACCOUNT_TEMPORARILY_DISABLED);
 
-            } else if (e.getError() == Error.INVALID_CLIENT_SESSION) {
+            } else if (e.getError() == AuthenticationFlowError.INVALID_CLIENT_SESSION) {
                 event.error(Errors.INVALID_CODE);
                 return ErrorPage.error(session, Messages.INVALID_CODE);
 
-            } else if (e.getError() == Error.EXPIRED_CODE) {
+            } else if (e.getError() == AuthenticationFlowError.EXPIRED_CODE) {
                 event.error(Errors.EXPIRED_CODE);
                 return ErrorPage.error(session, Messages.EXPIRED_CODE);
 
@@ -463,7 +404,7 @@ public class AuthenticationProcessor {
         AuthenticationFlowModel flow = realm.getAuthenticationFlowById(flowId);
         if (flow == null) {
             logger.error("Unknown flow to execute with");
-            throw new AuthException(Error.INTERNAL_ERROR);
+            throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);
         }
         if (flow.getProviderId() == null || flow.getProviderId().equals(AuthenticationFlow.BASIC_FLOW)) {
             DefaultAuthenticationFlow flowExecution = new DefaultAuthenticationFlow(this, flow);
@@ -473,10 +414,10 @@ public class AuthenticationProcessor {
             FormAuthenticationFlow flowExecution = new FormAuthenticationFlow(this, execution);
             return flowExecution;
         }
-        throw new AuthException("Unknown flow provider type", Error.INTERNAL_ERROR);
+        throw new AuthenticationFlowException("Unknown flow provider type", AuthenticationFlowError.INTERNAL_ERROR);
     }
 
-    public Response authenticate() throws AuthException {
+    public Response authenticate() throws AuthenticationFlowException {
         checkClientSession();
         logger.debug("AUTHENTICATE");
         event.client(clientSession.getClient().getClientId())
@@ -492,7 +433,7 @@ public class AuthenticationProcessor {
         Response challenge = authenticationFlow.processFlow();
         if (challenge != null) return challenge;
         if (clientSession.getAuthenticatedUser() == null) {
-            throw new AuthException(Error.UNKNOWN_USER);
+            throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
         }
         return authenticationComplete();
     }
@@ -533,7 +474,7 @@ public class AuthenticationProcessor {
         Response challenge = authenticationFlow.processAction(execution);
         if (challenge != null) return challenge;
         if (clientSession.getAuthenticatedUser() == null) {
-            throw new AuthException(Error.UNKNOWN_USER);
+            throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
         }
         return authenticationComplete();
     }
@@ -541,15 +482,15 @@ public class AuthenticationProcessor {
     public void checkClientSession() {
         ClientSessionCode code = new ClientSessionCode(realm, clientSession);
         if (!code.isValidAction(ClientSessionModel.Action.AUTHENTICATE.name())) {
-            throw new AuthException(Error.INVALID_CLIENT_SESSION);
+            throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CLIENT_SESSION);
         }
         if (!code.isActionActive(ClientSessionModel.Action.AUTHENTICATE.name())) {
-            throw new AuthException(Error.EXPIRED_CODE);
+            throw new AuthenticationFlowException(AuthenticationFlowError.EXPIRED_CODE);
         }
         clientSession.setTimestamp(Time.currentTime());
     }
 
-    public Response authenticateOnly() throws AuthException {
+    public Response authenticateOnly() throws AuthenticationFlowException {
         checkClientSession();
         event.client(clientSession.getClient().getClientId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
@@ -599,10 +540,10 @@ public class AuthenticationProcessor {
 
     public void validateUser(UserModel authenticatedUser) {
         if (authenticatedUser == null) return;
-        if (!authenticatedUser.isEnabled()) throw new AuthException(Error.USER_DISABLED);
+        if (!authenticatedUser.isEnabled()) throw new AuthenticationFlowException(AuthenticationFlowError.USER_DISABLED);
         if (realm.isBruteForceProtected()) {
             if (protector.isTemporarilyDisabled(session, realm, authenticatedUser.getUsername())) {
-                throw new AuthException(Error.USER_TEMPORARILY_DISABLED);
+                throw new AuthenticationFlowException(AuthenticationFlowError.USER_TEMPORARILY_DISABLED);
             }
         }
     }
@@ -627,7 +568,7 @@ public class AuthenticationProcessor {
 
     }
 
-    public AuthenticatorContext createAuthenticatorContext(AuthenticationExecutionModel model, Authenticator authenticator, List<AuthenticationExecutionModel> executions) {
+    public AuthenticationProcessor.Result createAuthenticatorContext(AuthenticationExecutionModel model, Authenticator authenticator, List<AuthenticationExecutionModel> executions) {
         return new Result(model, authenticator, executions);
     }
 

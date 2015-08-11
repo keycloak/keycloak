@@ -15,6 +15,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -63,7 +64,17 @@ import java.util.TreeSet;
 public class RepresentationToModel {
 
     private static Logger logger = Logger.getLogger(RepresentationToModel.class);
+    public static OTPPolicy toPolicy(RealmRepresentation rep) {
+        OTPPolicy policy = new OTPPolicy();
+        policy.setType(rep.getOtpPolicyType());
+        policy.setLookAheadWindow(rep.getOtpPolicyLookAheadWindow());
+        policy.setInitialCounter(rep.getOtpPolicyInitialCounter());
+        policy.setAlgorithm(rep.getOtpPolicyAlgorithm());
+        policy.setDigits(rep.getOtpPolicyDigits());
+        policy.setPeriod(rep.getOtpPolicyPeriod());
+        return policy;
 
+    }
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm) {
         convertDeprecatedSocialProviders(rep);
         convertDeprecatedApplications(session, rep);
@@ -144,6 +155,8 @@ public class RepresentationToModel {
         }
 
         if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
+        if (rep.getOtpPolicyType() != null) newRealm.setOTPPolicy(toPolicy(rep));
+        else newRealm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
 
         importIdentityProviders(rep, newRealm);
         importIdentityProviderMappers(rep, newRealm);
@@ -330,7 +343,22 @@ public class RepresentationToModel {
                     newRealm.addAuthenticatorExecution(execution);
                 }
             }
-         }
+        }
+        if (rep.getBrowserFlow() == null) {
+            newRealm.setBrowserFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW));
+        } else {
+            newRealm.setBrowserFlow(newRealm.getFlowByAlias(rep.getBrowserFlow()));
+        }
+        if (rep.getRegistrationFlow() == null) {
+            newRealm.setRegistrationFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.REGISTRATION_FLOW));
+        } else {
+            newRealm.setRegistrationFlow(newRealm.getFlowByAlias(rep.getRegistrationFlow()));
+        }
+        if (rep.getDirectGrantFlow() == null) {
+            newRealm.setDirectGrantFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW));
+        } else {
+            newRealm.setDirectGrantFlow(newRealm.getFlowByAlias(rep.getDirectGrantFlow()));
+        }
 
     }
 
@@ -497,6 +525,7 @@ public class RepresentationToModel {
         
 
         if (rep.getPasswordPolicy() != null) realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
+        if (rep.getOtpPolicyType() != null) realm.setOTPPolicy(toPolicy(rep));
 
         if (rep.getDefaultRoles() != null) {
             realm.updateDefaultRoles(rep.getDefaultRoles().toArray(new String[rep.getDefaultRoles().size()]));
@@ -527,6 +556,15 @@ public class RepresentationToModel {
         }
         if(rep.getDefaultLocale() != null){
             realm.setDefaultLocale(rep.getDefaultLocale());
+        }
+        if (rep.getBrowserFlow() != null) {
+            realm.setBrowserFlow(realm.getFlowByAlias(rep.getBrowserFlow()));
+        }
+        if (rep.getRegistrationFlow() != null) {
+            realm.setRegistrationFlow(realm.getFlowByAlias(rep.getRegistrationFlow()));
+        }
+        if (rep.getDirectGrantFlow() != null) {
+            realm.setDirectGrantFlow(realm.getFlowByAlias(rep.getDirectGrantFlow()));
         }
     }
 
@@ -847,7 +885,7 @@ public class RepresentationToModel {
         user.setFirstName(userRep.getFirstName());
         user.setLastName(userRep.getLastName());
         user.setFederationLink(userRep.getFederationLink());
-        user.setTotp(userRep.isTotp());
+        user.setOtpEnabled(userRep.isTotp());
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, Object> entry : userRep.getAttributes().entrySet()) {
                 Object value = entry.getValue();
@@ -922,13 +960,26 @@ public class RepresentationToModel {
             UserCredentialValueModel hashedCred = new UserCredentialValueModel();
             hashedCred.setType(cred.getType());
             hashedCred.setDevice(cred.getDevice());
-            hashedCred.setHashIterations(cred.getHashIterations());
+            if (cred.getHashIterations() != null) hashedCred.setHashIterations(cred.getHashIterations());
             try {
                 if (cred.getSalt() != null) hashedCred.setSalt(Base64.decode(cred.getSalt()));
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }
             hashedCred.setValue(cred.getHashedSaltedValue());
+            if (cred.getCounter() != null) hashedCred.setCounter(cred.getCounter());
+            if (cred.getDigits() != null) hashedCred.setDigits(cred.getDigits());
+            if (cred.getAlgorithm() != null) hashedCred.setAlgorithm(cred.getAlgorithm());
+            if (cred.getPeriod() != null) hashedCred.setPeriod(cred.getPeriod());
+            if (cred.getDigits() == null && UserCredentialModel.isOtp(cred.getType())) {
+                hashedCred.setDigits(6);
+            }
+            if (cred.getAlgorithm() == null && UserCredentialModel.isOtp(cred.getType())) {
+                hashedCred.setAlgorithm(HmacOTP.HMAC_SHA1);
+            }
+            if (cred.getPeriod() == null && UserCredentialModel.TOTP.equals(cred.getType())) {
+                hashedCred.setPeriod(30);
+            }
             user.updateCredentialDirectly(hashedCred);
         }
     }
@@ -1077,13 +1128,12 @@ public class RepresentationToModel {
             model.setAuthenticatorConfig(config.getId());
         }
         model.setAuthenticator(rep.getAuthenticator());
-        model.setAutheticatorFlow(rep.isAutheticatorFlow());
+        model.setAuthenticatorFlow(rep.isAutheticatorFlow());
         if (rep.getFlowAlias() != null) {
             AuthenticationFlowModel flow = realm.getFlowByAlias(rep.getFlowAlias());
             model.setFlowId(flow.getId());
         }
         model.setPriority(rep.getPriority());
-        model.setUserSetupAllowed(rep.isUserSetupAllowed());
         model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
         return model;
     }

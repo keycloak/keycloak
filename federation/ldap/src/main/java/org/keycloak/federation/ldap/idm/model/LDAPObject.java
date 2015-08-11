@@ -129,4 +129,9 @@ public class LDAPObject {
         result = 31 * result + (getUuid() != null ? getUuid().hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "LDAP Object [ dn: " + dn + " , uuid: " + uuid + ", attributes: " + attributes + ", readOnly attribute names: " + readOnlyAttributeNames + " ]";
+    }
 }

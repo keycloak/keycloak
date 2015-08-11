@@ -1,5 +1,7 @@
 <ul class="nav nav-tabs">
     <li ng-class="{active: path[3] == 'flows'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/authentication/flows">Flows</a></li>
+    <li ng-class="{active: path[3] == 'flow-bindings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/authentication/flow-bindings">Bindings</a></li>
     <li ng-class="{active: path[3] == 'required-actions'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/authentication/required-actions">Required Actions</a></li>
     <li ng-class="{active: path[3] == 'password-policy'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/authentication/password-policy">Password Policy</a></li>
+    <li ng-class="{active: path[3] == 'otp-policy'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/authentication/otp-policy">OTP Policy</a></li>
 </ul>

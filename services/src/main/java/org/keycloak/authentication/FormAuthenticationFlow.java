@@ -11,9 +11,7 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.resources.LoginActionsService;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -142,7 +140,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
     @Override
     public Response processAction(String actionExecution) {
         if (!actionExecution.equals(formExecution.getId())) {
-            throw new AuthenticationProcessor.AuthException("action is not current execution", AuthenticationProcessor.Error.INTERNAL_ERROR);
+            throw new AuthenticationFlowException("action is not current execution", AuthenticationFlowError.INTERNAL_ERROR);
         }
         Map<String, ClientSessionModel.ExecutionStatus> executionStatus = new HashMap<>();
         List<FormAction> requiredActions = new LinkedList<>();
@@ -152,24 +150,25 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
                 executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
                 continue;
             }
-            FormAction action = processor.getSession().getProvider(FormAction.class, formActionExecution.getAuthenticator());
+            FormActionFactory factory = (FormActionFactory)processor.getSession().getKeycloakSessionFactory().getProviderFactory(FormAction.class, formActionExecution.getAuthenticator());
+            FormAction action = factory.create(processor.getSession());
 
             UserModel authUser = processor.getClientSession().getAuthenticatedUser();
             if (action.requiresUser() && authUser == null) {
-                throw new AuthenticationProcessor.AuthException("form action: " + formExecution.getAuthenticator() + " requires user", AuthenticationProcessor.Error.UNKNOWN_USER);
+                throw new AuthenticationFlowException("form action: " + formExecution.getAuthenticator() + " requires user", AuthenticationFlowError.UNKNOWN_USER);
             }
             boolean configuredFor = false;
             if (action.requiresUser() && authUser != null) {
                 configuredFor = action.configuredFor(processor.getSession(), processor.getRealm(), authUser);
                 if (!configuredFor) {
                     if (formActionExecution.isRequired()) {
-                        if (formActionExecution.isUserSetupAllowed()) {
+                        if (factory.isUserSetupAllowed()) {
                             AuthenticationProcessor.logger.debugv("authenticator SETUP_REQUIRED: {0}", formExecution.getAuthenticator());
                             executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SETUP_REQUIRED);
                             requiredActions.add(action);
                             continue;
                         } else {
-                            throw new AuthenticationProcessor.AuthException(AuthenticationProcessor.Error.CREDENTIAL_SETUP_REQUIRED);
+                            throw new AuthenticationFlowException(AuthenticationFlowError.CREDENTIAL_SETUP_REQUIRED);
                         }
                     } else if (formActionExecution.isOptional()) {
                         executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
