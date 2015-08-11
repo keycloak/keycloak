@@ -89,6 +89,7 @@ public class UserAttributesTest extends AbstractUserTest {
         disabledUser.setUsername("disabled_user");
         createUser(disabledUser);
         assertFlashMessageSuccess();
+        // TODO try to log in        
     }
 
 }

@@ -94,28 +94,12 @@ public class ClientSettingsTest extends AbstractClientTest {
 
     @Test
     public void invalidSettings() {
-        emptyName();
-        noRedirectUris();
-    }
-
-    public void emptyName() {
-        newClient = createClientRepresentation(null, "http://example.test/*");
-        createClient(newClient);
-        assertFlashMessageDanger();
-        clientSettings.backToClientsViaBreadcrumb();
-    }
-
-    public void noRedirectUris() {
-        newClient = createClientRepresentation("testClient2");
-        createClient(newClient);
-        assertFlashMessageDanger();
-
-        createClient.form().addRedirectUri("http://testUri.com/*");
+        clients.table().createClient();
         createClient.form().save();
-        assertFlashMessageSuccess();
+        assertFlashMessageDanger();
 
-        clientSettings.form().setRedirectUris(null);
-        clientSettings.form().save();
+        createClient.form().setClientId("test-client");
+        createClient.form().save();
         assertFlashMessageDanger();
     }
 

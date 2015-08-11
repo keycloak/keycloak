@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.util;
 
-import java.util.Collections;
 import java.util.List;
 import static org.junit.Assert.assertEquals;
 
@@ -32,10 +31,10 @@ public class AttributesAssert {
 
     public static void assertEqualsListAttributes(List a1, List a2) {
         if (a1 == null || a1.isEmpty()) {
-            a1 = Collections.emptyList();
+            a1 = null;
         }
         if (a2 == null || a2.isEmpty()) {
-            a2 = Collections.emptyList();
+            a2 = null;
         }
         assertEquals(a1, a2);
     }
