@@ -37,6 +37,10 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
         addAdapterTestRealms(testRealms);
         for (RealmRepresentation tr : testRealms) {
             System.out.println("Setting redirect-uris in test realm '" + tr.getRealm() + "' as " + (isRelative() ? "" : "non-") + "relative");
+
+            modifyClientRedirectUris(tr, "http://localhost:8080", "");
+            modifyClientUrls(tr, "http://localhost:8080", "");
+
             if (isRelative()) {
                 modifyClientRedirectUris(tr, appServerContextRoot.toString(), "");
                 modifyClientUrls(tr, appServerContextRoot.toString(), "");
@@ -117,5 +121,5 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
             throw new RuntimeException(ex);
         }
     }
-    
+
 }
