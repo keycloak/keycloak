@@ -1,24 +1,11 @@
-package org.keycloak.models.cache;
+package org.keycloak.models.cache.infinispan;
 
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.CredentialValidationOutput;
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
+import org.keycloak.models.*;
+import org.keycloak.models.cache.CacheUserProvider;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.cache.entities.CachedUser;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

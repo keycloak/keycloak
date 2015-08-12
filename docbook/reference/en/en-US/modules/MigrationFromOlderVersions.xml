@@ -82,13 +82,16 @@
         <section>
             <title>Migrating to 1.5.0.Final</title>
             <simplesect>
-                <title>Infinispan set to default cache and user session providers</title>
+                <title>Realm and User cache providers</title>
                 <para>
-                    Infinispan is now the default cache and user session provider.
+                    Infinispan is now the default realm and user cache provider. In non-clustered mode a local Infinispan cache is used. We've also removed our
+                    custom in-memory cache and the no cache providers. If you have realmCache or userCache set in keycloak-server.json to mem or none please
+                    remove these. As Infinispan is the only provider there's no longer any need for the realmCache and userCache objects so these can
+                    be removed.
                 </para>
             </simplesect>
             <simplesect>
-                <title>Mem user session provider</title>
+                <title>User Session provider</title>
                 <para>
                     The mem user session provider has been removed. Instead the Infinispan user session provider with a local cache should be used.
                 </para>

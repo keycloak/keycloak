@@ -26,17 +26,6 @@
         "provider" : "${keycloak.userSessions.provider:infinispan}"
     },
 
-    "realmCache": {
-        "provider": "${keycloak.realm.cache.provider:infinispan}"
-    },
-
-    "userCache": {
-        "provider": "${keycloak.user.cache.provider:infinispan}",
-        "mem": {
-            "maxSize": 20000
-        }
-    },
-
     "timer": {
         "provider": "basic"
     },
@@ -49,18 +38,6 @@
         "folder": {
             "dir": "${keycloak.theme.dir}"
         }
-    },
-
-    "login": {
-        "provider": "freemarker"
-    },
-
-    "account": {
-        "provider": "freemarker"
-    },
-
-    "email": {
-        "provider": "freemarker"
     },
 
     "scheduled": {
