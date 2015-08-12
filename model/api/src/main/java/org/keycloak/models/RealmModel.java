@@ -194,6 +194,9 @@ public interface RealmModel extends RoleContainerModel {
     AuthenticationFlowModel getResetCredentialsFlow();
     void setResetCredentialsFlow(AuthenticationFlowModel flow);
 
+    AuthenticationFlowModel getClientAuthenticationFlow();
+    void setClientAuthenticationFlow(AuthenticationFlowModel flow);
+
     List<AuthenticationFlowModel> getAuthenticationFlows();
     AuthenticationFlowModel getFlowByAlias(String alias);
     AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model);

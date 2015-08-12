@@ -8,6 +8,8 @@ import org.junit.Assert;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 import org.keycloak.Config;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.constants.ServiceAccountConstants;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.Details;
@@ -134,7 +136,7 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
     public ExpectedEvent expectClientLogin() {
         return expect(EventType.CLIENT_LOGIN)
                 .detail(Details.CODE_ID, isCodeId())
-                .detail(Details.CLIENT_AUTH_METHOD, Details.CLIENT_AUTH_METHOD_VALUE_CLIENT_CREDENTIALS)
+                .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
                 .detail(Details.RESPONSE_TYPE, ServiceAccountConstants.CLIENT_AUTH)
                 .removeDetail(Details.CODE_ID)
                 .session(isUUID());
@@ -154,6 +156,7 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
                 .detail(Details.CODE_ID, codeId)
                 .detail(Details.TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_ID, isUUID())
+                .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
                 .session(sessionId);
     }
 
@@ -162,6 +165,7 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
                 .detail(Details.TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_ID, refreshTokenId)
                 .detail(Details.UPDATED_REFRESH_TOKEN_ID, isUUID())
+                .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
                 .session(sessionId);
     }
 

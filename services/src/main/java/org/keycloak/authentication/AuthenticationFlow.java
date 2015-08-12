@@ -9,6 +9,7 @@ import javax.ws.rs.core.Response;
 public interface AuthenticationFlow {
     String BASIC_FLOW = "basic-flow";
     String FORM_FLOW = "form-flow";
+    String CLIENT_FLOW = "client-flow";
 
     Response processAction(String actionExecution);
     Response processFlow();

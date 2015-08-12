@@ -95,6 +95,7 @@ public class CachedRealm implements Serializable {
     private AuthenticationFlowModel registrationFlow;
     private AuthenticationFlowModel directGrantFlow;
     private AuthenticationFlowModel resetCredentialsFlow;
+    private AuthenticationFlowModel clientAuthenticationFlow;
 
     private boolean eventsEnabled;
     private long eventsExpiration;
@@ -223,6 +224,7 @@ public class CachedRealm implements Serializable {
         registrationFlow = model.getRegistrationFlow();
         directGrantFlow = model.getDirectGrantFlow();
         resetCredentialsFlow = model.getResetCredentialsFlow();
+        clientAuthenticationFlow = model.getClientAuthenticationFlow();
 
     }
 
@@ -488,5 +490,9 @@ public class CachedRealm implements Serializable {
 
     public AuthenticationFlowModel getResetCredentialsFlow() {
         return resetCredentialsFlow;
+    }
+
+    public AuthenticationFlowModel getClientAuthenticationFlow() {
+        return clientAuthenticationFlow;
     }
 }

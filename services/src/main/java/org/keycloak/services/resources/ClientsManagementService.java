@@ -103,7 +103,7 @@ public class ClientsManagementService {
             throw new UnauthorizedException("Realm not enabled");
         }
 
-        ClientModel client = authorizeClient(authorizationHeader, formData);
+        ClientModel client = authorizeClient();
         String nodeHost = getClientClusterHost(formData);
 
         event.client(client).detail(Details.NODE_HOST, nodeHost);
@@ -139,7 +139,7 @@ public class ClientsManagementService {
             throw new UnauthorizedException("Realm not enabled");
         }
 
-        ClientModel client = authorizeClient(authorizationHeader, formData);
+        ClientModel client = authorizeClient();
         String nodeHost = getClientClusterHost(formData);
 
         event.client(client).detail(Details.NODE_HOST, nodeHost);
@@ -152,8 +152,8 @@ public class ClientsManagementService {
         return Response.noContent().build();
     }
 
-    protected ClientModel authorizeClient(String authorizationHeader, MultivaluedMap<String, String> formData) {
-        ClientModel client = AuthorizeClientUtil.authorizeClient(authorizationHeader, formData, event, realm);
+    protected ClientModel authorizeClient() {
+        ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, realm);
 
         if (client.isPublicClient()) {
             Map<String, String> error = new HashMap<String, String>();

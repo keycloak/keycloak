@@ -16,6 +16,8 @@ public interface KeycloakContext {
 
     HttpHeaders getRequestHeaders();
 
+    <T> T getContextObject(Class<T> clazz);
+
     RealmModel getRealm();
 
     void setRealm(RealmModel realm);

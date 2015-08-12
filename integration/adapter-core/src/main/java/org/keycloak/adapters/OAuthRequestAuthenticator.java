@@ -158,7 +158,7 @@ public class OAuthRequestAuthenticator {
     protected static final AtomicLong counter = new AtomicLong();
 
     protected String getStateCode() {
-        return counter.getAndIncrement() + "/" + UUID.randomUUID().toString();
+        return counter.getAndIncrement() + "/" + AdapterUtils.generateId();
     }
 
     protected AuthChallenge loginRedirect() {

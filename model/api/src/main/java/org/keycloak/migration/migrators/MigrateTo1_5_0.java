@@ -1,6 +1,7 @@
 package org.keycloak.migration.migrators;
 
 import org.keycloak.migration.ModelVersion;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
@@ -30,6 +31,13 @@ public class MigrateTo1_5_0 {
             realm.setRegistrationFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.REGISTRATION_FLOW));
             realm.setDirectGrantFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW));
             realm.setResetCredentialsFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW));
+
+            AuthenticationFlowModel clientAuthFlow = realm.getFlowByAlias(DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW);
+            if (clientAuthFlow == null) {
+                DefaultAuthenticationFlows.clientAuthFlow(realm);
+            } else {
+                realm.setClientAuthenticationFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW));
+            }
         }
 
     }

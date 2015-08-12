@@ -16,6 +16,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.util.CertificateUtils;
 import org.keycloak.util.PemUtils;
 
@@ -149,8 +150,7 @@ public final class KeycloakModelUtils {
         realm.setCertificate(certificate);
     }
 
-    public static void generateClientKeyPairCertificate(ClientModel client) {
-        String subject = client.getClientId();
+    public static CertificateRepresentation generateKeyPairCertificate(String subject) {
         KeyPair keyPair = null;
         try {
             KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
@@ -166,13 +166,12 @@ public final class KeycloakModelUtils {
             throw new RuntimeException(e);
         }
         String privateKeyPem = KeycloakModelUtils.getPemFromKey(keyPair.getPrivate());
-        String publicKeyPem = KeycloakModelUtils.getPemFromKey(keyPair.getPublic());
         String certPem = KeycloakModelUtils.getPemFromCertificate(certificate);
 
-        client.setAttribute(ClientModel.PRIVATE_KEY, privateKeyPem);
-        client.setAttribute(ClientModel.PUBLIC_KEY, publicKeyPem);
-        client.setAttribute(ClientModel.X509CERTIFICATE, certPem);
-
+        CertificateRepresentation rep = new CertificateRepresentation();
+        rep.setPrivateKey(privateKeyPem);
+        rep.setCertificate(certPem);
+        return rep;
     }
 
     public static UserCredentialModel generateSecret(ClientModel app) {

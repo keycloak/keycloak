@@ -1364,7 +1364,16 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateRealm();
     }
 
+    public AuthenticationFlowModel getClientAuthenticationFlow() {
+        String flowId = realm.getClientAuthenticationFlow();
+        if (flowId == null) return null;
+        return getAuthenticationFlowById(flowId);
+    }
 
+    public void setClientAuthenticationFlow(AuthenticationFlowModel flow) {
+        realm.setClientAuthenticationFlow(flow.getId());
+        updateRealm();
+    }
 
     @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {

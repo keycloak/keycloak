@@ -8,6 +8,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.ClientModel;
@@ -128,6 +129,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .removeDetail(Details.CONSENT)
+                .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
                 .assertEvent();
 
         HttpResponse logoutResponse = oauth.doLogout(response.getRefreshToken(), "secret");

@@ -1656,9 +1656,11 @@ module.controller('CreateExecutionFlowCtrl', function($scope, realm, topFlow, pa
                                                       Notifications, $location) {
     $scope.realm = realm;
     $scope.formProviders = formProviders;
+
+    var defaultFlowType = parentFlow.providerId == 'client-flow' ? 'client-flow' : 'basic-flow';
     $scope.flow = {
         alias: "",
-        type: "basic-flow",
+        type: defaultFlowType,
         description: ""
     }
     $scope.provider = {};
@@ -1678,7 +1680,7 @@ module.controller('CreateExecutionFlowCtrl', function($scope, realm, topFlow, pa
     };
 });
 
-module.controller('CreateExecutionCtrl', function($scope, realm, topFlow, parentFlow, formActionProviders, authenticatorProviders,
+module.controller('CreateExecutionCtrl', function($scope, realm, topFlow, parentFlow, formActionProviders, authenticatorProviders, clientAuthenticatorProviders,
                                                       CreateExecution,
                                                       Notifications, $location) {
     $scope.realm = realm;
@@ -1686,6 +1688,8 @@ module.controller('CreateExecutionCtrl', function($scope, realm, topFlow, parent
     console.log('parentFlow.providerId: ' + parentFlow.providerId);
     if (parentFlow.providerId == 'form-flow') {
         $scope.providers = formActionProviders;
+    } else if (parentFlow.providerId == 'client-flow') {
+        $scope.providers = clientAuthenticatorProviders;
     } else {
         $scope.providers = authenticatorProviders;
     }

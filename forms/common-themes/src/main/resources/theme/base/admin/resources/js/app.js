@@ -623,9 +623,66 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 client : function(ClientLoader) {
                     return ClientLoader();
+                },
+                clientAuthenticatorProviders : function(ClientAuthenticatorProvidersLoader) {
+                    return ClientAuthenticatorProvidersLoader();
                 }
             },
             controller : 'ClientCredentialsCtrl'
+        })
+        .when('/realms/:realm/clients/:client/credentials/client-secret', {
+            templateUrl : resourceUrl + '/partials/client-credentials-secret.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                }
+            },
+            controller : 'ClientSecretCtrl'
+        })
+        .when('/realms/:realm/clients/:client/credentials/client-signed-jwt', {
+            templateUrl : resourceUrl + '/partials/client-credentials-jwt.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                }
+            },
+            controller : 'ClientSignedJWTCtrl'
+        })
+        .when('/realms/:realm/clients/:client/credentials/client-signed-jwt/:keyType/import/:attribute', {
+            templateUrl : resourceUrl + '/partials/client-credentials-jwt-key-import.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                },
+                callingContext : function() {
+                    return "jwt-credentials";
+                }
+            },
+            controller : 'ClientCertificateImportCtrl'
+        })
+        .when('/realms/:realm/clients/:client/credentials/client-signed-jwt/:keyType/export/:attribute', {
+            templateUrl : resourceUrl + '/partials/client-credentials-jwt-key-export.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                },
+                callingContext : function() {
+                    return "jwt-credentials";
+                }
+            },
+            controller : 'ClientCertificateExportCtrl'
         })
         .when('/realms/:realm/clients/:client/identity-provider', {
             templateUrl : resourceUrl + '/partials/client-identity-provider.html',
@@ -695,6 +752,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 client : function(ClientLoader) {
                     return ClientLoader();
+                },
+                callingContext : function() {
+                    return "saml";
                 }
             },
             controller : 'ClientCertificateImportCtrl'
@@ -707,6 +767,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 client : function(ClientLoader) {
                     return ClientLoader();
+                },
+                callingContext : function() {
+                    return "saml";
                 }
             },
             controller : 'ClientCertificateExportCtrl'
@@ -1134,6 +1197,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 authenticatorProviders : function(AuthenticatorProvidersLoader) {
                     return AuthenticatorProvidersLoader();
+                },
+                clientAuthenticatorProviders : function(ClientAuthenticatorProvidersLoader) {
+                    return ClientAuthenticatorProvidersLoader();
                 }
             },
             controller : 'CreateExecutionCtrl'

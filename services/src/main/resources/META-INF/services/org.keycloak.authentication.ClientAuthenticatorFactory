@@ -1,0 +1,2 @@
+org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator
+org.keycloak.authentication.authenticators.client.JWTClientAuthenticator

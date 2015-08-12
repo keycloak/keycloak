@@ -392,6 +392,14 @@ module.factory('AuthenticatorProvidersLoader', function(Loader, AuthenticatorPro
     });
 });
 
+module.factory('ClientAuthenticatorProvidersLoader', function(Loader, ClientAuthenticatorProviders, $route, $q) {
+    return Loader.query(ClientAuthenticatorProviders, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
 module.factory('AuthenticationFlowLoader', function(Loader, AuthenticationFlows, $route, $q) {
     return Loader.get(AuthenticationFlows, function() {
         return {
