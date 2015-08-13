@@ -6,7 +6,10 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.admin.client.Keycloak;
 
 /**
- *
+ * Context path of Keycloak auth server.
+ * 
+ * URL: http://localhost:${auth.server.http.port}/auth
+ * 
  * @author tkyjovsk
  */
 public class AuthServer extends AuthServerContextRoot {

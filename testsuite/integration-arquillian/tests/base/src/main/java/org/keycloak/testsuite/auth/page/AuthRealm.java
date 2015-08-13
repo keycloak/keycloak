@@ -6,7 +6,10 @@ import javax.ws.rs.core.UriBuilder;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 
 /**
- *
+ * Keycloak realm.
+ * 
+ * URL: http://localhost:${auth.server.http.port}/auth/realms/{authRealm}
+ * 
  * @author tkyjovsk
  */
 public class AuthRealm extends AuthServer implements PageWithLoginUrl {
