@@ -117,7 +117,7 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
      */
     protected Response optionalChallengeRedirect(AuthenticationFlowContext context, String negotiateHeader) {
         String accessCode = context.generateAccessCode();
-        URI action = getActionUrl(context, accessCode);
+        URI action = context.getActionUrl(accessCode);
 
         StringBuilder builder = new StringBuilder();
 

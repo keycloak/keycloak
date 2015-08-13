@@ -226,6 +226,9 @@ Forms Subflow - ALTERNATIVE
             <para>
                 This services/ file is used by Keycloak to scan the providers it has to load into the system.
             </para>
+            <para>
+                To deploy this jar, just copy it to the standalone/configuration/providers directory.
+            </para>
         </section>
         <section>
             <title>Implementing an Authenticator</title>
@@ -293,8 +296,7 @@ Forms Subflow - ALTERNATIVE
             </para>
             <para>
                 If the hasCookie() method returns false, we must return a response that renders the secret question HTML
-                form.  If your Authenticator classes inherit from the helper class <literal>org.keycloak.authentication.AbstractFormAuthenticator</literal>
-                it has a loginForm() method that initializes a Freemarker page builder with appropriate base information needed
+                form.  AuthenticationFlowContext has a form() method that initializes a Freemarker page builder with appropriate base information needed
                 to build the form.  This page builder is called <literal>org.keycloak.login.LoginFormsProvider</literal>.
                 the LoginFormsProvider.createForm() method loads a Freemarker template file from your login theme.  Additionally
                 you can call the LoginFormsProvider.setAttribute() method if you want to pass additional information to the
@@ -314,9 +316,9 @@ Forms Subflow - ALTERNATIVE
     public void action(AuthenticationFlowContext context) {
         boolean validated = validateAnswer(context);
         if (!validated) {
-           Response challenge = loginForm(context)
+           Response challenge = context.form()
                                  .setError("badSecret")
-                                 .createForm("secret_question.ftl");
+                                 .createForm("secret-question.ftl");
            context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challenge);
            return;
         }
@@ -358,6 +360,166 @@ Forms Subflow - ALTERNATIVE
                 If configuration exists we pull the max age config out of it.  We will see how we can define what should
                 be configured when we talk about the AuthenticatorFactory implementation.  The config values can be
                 defined within the admin console if you set up config definitions in your AuthenticatorFactory implementation.
+            </para>
+        </section>
+        <section>
+            <title>Implementing an AuthenticatorFactory</title>
+            <para>
+                The next step in this process is to implement an AuthenticatorFactory.  This factory is responsible
+                for instantiating an Authenticator.  It also provides deployment and configuration metadata about
+                the Authenticator.
+            </para>
+            <para>
+                The getId() method is just the unique name of the component.  The create() methods should also
+                be self explanatory.  The create(KeycloakSession) method will actually never be called.  It is just
+                an artifact of the more generic ProviderFactory interface.
+<programlisting>
+public class SecretQuestionAuthenticatorFactory implements AuthenticatorFactory, ConfigurableAuthenticatorFactory {
+
+    public static final String PROVIDER_ID = "secret-question-authenticator";
+    private static final SecretQuestionAuthenticator SINGLETON = new SecretQuestionAuthenticator();
+
+    @Override
+    public String getId() {
+        return PROVIDER_ID;
+    }
+
+    @Override
+    public Authenticator create() {
+        return SINGLETON;
+    }
+
+    @Override
+    public Authenticator create(KeycloakSession session) {
+        return SINGLETON;
+    }
+
+</programlisting>
+            </para>
+            <para>
+                The next thing the factory is responsible for is specify the allowed requirement switches.  While there
+                are four different requirement types:  ALTERNATIVE, REQUIRED, OPTIONAL, DISABLED, AuthenticatorFactory
+                implementations can limit which  requirement options are shown in the admin console when defining
+                a flow.  In our example, we're going to limit our requirement options to REQUIRED and DISABLED.
+<programlisting>
+    private static AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
+            AuthenticationExecutionModel.Requirement.REQUIRED,
+            AuthenticationExecutionModel.Requirement.DISABLED
+    };
+    @Override
+    public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
+        return REQUIREMENT_CHOICES;
+    }
+</programlisting>
+            </para>
+            <para>
+                The AuthenticatorFactory.isUserSetupAllowed() is a flag that tells the flow manager whether or not
+                Authenticator.setRequiredActions() method will be called.  If an Authenticator is not configured for a user,
+                the flow manager checks isUserSetupAllowed().  If it is false, then the flow aborts with an error.  If it
+                returns true, then the flow manager will invoke Authenticator.setRequiredActions().
+<programlisting>
+    @Override
+    public boolean isUserSetupAllowed() {
+        return true;
+    }
+</programlisting>
+            </para>
+            <para>
+                The next few methods define how the Authenticator can be configured.  The isConfigurable() method
+                is a flag which specifies to the admin console on whether the Authenticator can be configured within
+                a flow.  The getConfigProperties() method returns a list of ProviderConfigProperty objects.  These
+                objects define a specific configuration attribute.
+<programlisting><![CDATA[
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configProperties;
+    }
+
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+
+    static {
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
+        property.setName("cookie.max.age");
+        property.setLabel("Cookie Max Age");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Max age in seconds of the SECRET_QUESTION_COOKIE.");
+        configProperties.add(property);
+    }
+]]></programlisting>
+            </para>
+            <para>
+                Each ProviderConfigProperty defines the name of the config property.  This is the key used in the config
+                map stored in AuthenticatorConfigModel.  The label defines how the config option will be displayed in the
+                admin console.  The type defines if it is a String, Boolean, or other type.  The admin console
+                will display different UI inputs depending on the type. The help text is what will be shown in the
+                tooltip for the config attribute in the admin console.  Read the javadoc of ProviderConfigProperty
+                for more detail.
+            </para>
+            <para>
+                The rest of the methods are for the admin console.  getHelpText() is the tooltip text that will be
+                shown when you are picking the Authenticator you want to bind to an execution.  getDisplayType()
+                is what text that will be shown in the admin console when listing the Authenticator.  getReferenceCategory()
+                is just a category the Authenticator belongs to.
+            </para>
+        </section>
+        <section>
+            <title>Adding Authenticator Form</title>
+            <para>
+                Keycloak comes with a Freemarker <link linkend="themes">theme and template engine</link>.  The createForm()
+                method you called within authenticate() of your Authenticator class, builds an HTML page from a file within
+                your login them: secret-question.ftl.  This file should be placed in the login theme with all the other
+                .ftl files you see for login.
+            </para>
+            <para>
+                Let's take a bigger look at secret-question.ftl  Here's a small code snippet:
+<programlisting><![CDATA[
+        <form id="kc-totp-login-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
+            <div class="${properties.kcFormGroupClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="totp" class="${properties.kcLabelClass!}">${msg("loginSecretQuestion")}</label>
+                </div>
+
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input id="totp" name="secret_answer" type="text" class="${properties.kcInputClass!}" />
+                </div>
+            </div>
+
+]]></programlisting>
+            </para>
+            <para>
+                Any piece of text enclosed in <literal>${}</literal> corresponds to an attribute or template funtion.
+                If you see the form's action, you see it points to <literal>${url.loginAction}</literal>.  This value
+                is automatically generated when you invoke the AuthenticationFlowContext.form() method.  You can also obtain
+                this value by calling the AuthenticationFlowContext.getActionURL() method in Java code.
+            </para>
+            <para>
+                You'll also see <literal>${properties.someValue}</literal>.  These correspond to properties defined
+                in your theme.properties file of our theme.  <literal>${msg("someValue")}</literal> corresponds to the
+                internationalized message bundles (.properties files) included with the login theme messages/ directory.
+                If you're just using english, you can just add the value of the <literal>loginSecretQuestion</literal>
+                value.  This should be the question you want to ask the user.
+            </para>
+            <para>
+                When you call AuthenticationFlowContext.form() this gives you a LoginFormsProvider  instance.  If you called,
+                <literal>LoginFormsProvider.setAttribute("foo", "bar")</literal>, the value of "foo" would be available
+                for reference in your form as <literal>${foo}</literal>.  The value of an attribute can be any Java
+                bean as well.
+            </para>
+        </section>
+        <section>
+            <title>Adding Authenticator to a Flow</title>
+            <para>
+                Adding an Authenticator to a flow must be done in the admin console.
+                If you go to the Authentication menu item and go to the Flow tab, you will be able to view the currently
+                defined flows.  You cannot modify an built in flows, so, to add the Authenticator we've created you
+                have to copy an existing flow or create your own.  I'm hoping the UI is intuitive enough so that you
+                can figure out for yourself how to create a flow and add the Authenticator.
+            </para>
+            <para>
+                After you've created your flow, you have to bind it to the login action you want to bind it to.  If you go
+                to the Authentication menu and go  to the Bindings tab you will see options to bind a flow to
+                the browser, registration, or direct grant flow.
             </para>
         </section>
     </section>

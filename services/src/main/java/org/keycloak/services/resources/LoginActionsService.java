@@ -883,7 +883,7 @@ public class LoginActionsService {
         initEvent(clientSession);
 
 
-        RequiredActionContextResult context = new RequiredActionContextResult(clientSession.getUserSession(), clientSession, realm, event, session, request, clientSession.getUserSession().getUser()) {
+        RequiredActionContextResult context = new RequiredActionContextResult(clientSession.getUserSession(), clientSession, realm, event, session, request, clientSession.getUserSession().getUser(), provider) {
              @Override
             public String generateAccessCode(String action) {
                 String clientSessionAction = clientSession.getAction();

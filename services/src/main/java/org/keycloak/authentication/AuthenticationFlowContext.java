@@ -3,6 +3,7 @@ package org.keycloak.authentication;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientSessionModel;
@@ -14,6 +15,7 @@ import org.keycloak.services.managers.BruteForceProtector;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 
 /**
  * This interface encapsulates information about an execution in an AuthenticationFlow.  It is also used to set
@@ -193,4 +195,26 @@ public interface AuthenticationFlowContext {
      * @return may return null if there was no error
      */
     AuthenticationFlowError getError();
+
+    /**
+     * Create a Freemarker form builder that presets the user, action URI, and a generated access code
+     *
+     * @return
+     */
+    LoginFormsProvider form();
+
+    /**
+     * Get the action URL for the required action.
+     *
+     * @param code client session access code
+     * @return
+     */
+    URI getActionUrl(String code);
+
+    /**
+     * Get the action URL for the required action.  This auto-generates the access code.
+     *
+     * @return
+     */
+    URI getActionUrl();
 }

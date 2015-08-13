@@ -2,16 +2,20 @@ package org.keycloak.authentication;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.resources.LoginActionsService;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -27,11 +31,12 @@ public class RequiredActionContextResult implements RequiredActionContext {
     protected Response challenge;
     protected HttpRequest httpRequest;
     protected UserModel user;
+    protected RequiredActionProvider provider;
 
     public RequiredActionContextResult(UserSessionModel userSession, ClientSessionModel clientSession,
                                        RealmModel realm, EventBuilder eventBuilder, KeycloakSession session,
                                        HttpRequest httpRequest,
-                                       UserModel user) {
+                                       UserModel user, RequiredActionProvider provider) {
         this.userSession = userSession;
         this.clientSession = clientSession;
         this.realm = realm;
@@ -39,6 +44,7 @@ public class RequiredActionContextResult implements RequiredActionContext {
         this.session = session;
         this.httpRequest = httpRequest;
         this.user = user;
+        this.provider = provider;
     }
 
     @Override
@@ -121,6 +127,34 @@ public class RequiredActionContextResult implements RequiredActionContext {
         status = Status.IGNORE;
     }
 
+    @Override
+    public URI getActionUrl(String code) {
+        return LoginActionsService.requiredActionProcessor(getUriInfo())
+                .queryParam(OAuth2Constants.CODE, code)
+                .queryParam("action", provider.getProviderId())
+                .build(getRealm().getName());
+    }
+
+    @Override
+    public URI getActionUrl() {
+        String accessCode = generateAccessCode(provider.getProviderId());
+        return getActionUrl(accessCode);
+
+    }
+
+    @Override
+    public LoginFormsProvider form() {
+        String accessCode = generateAccessCode(provider.getProviderId());
+        URI action = getActionUrl(accessCode);
+        LoginFormsProvider provider = getSession().getProvider(LoginFormsProvider.class)
+                .setUser(getUser())
+                .setActionUri(action)
+                .setClientSessionCode(accessCode);
+        return provider;
+    }
+
+
+    @Override
     public Response getChallenge() {
         return challenge;
     }

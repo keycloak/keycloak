@@ -36,29 +36,29 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     protected Response invalidUser(AuthenticationFlowContext context) {
-        return loginForm(context)
+        return context.form()
                 .setError(Messages.INVALID_USER)
                 .createLogin();
     }
 
     protected Response disabledUser(AuthenticationFlowContext context) {
-        return loginForm(context)
+        return context.form()
                 .setError(Messages.ACCOUNT_DISABLED).createLogin();
     }
 
     protected Response temporarilyDisabledUser(AuthenticationFlowContext context) {
-        return loginForm(context)
+        return context.form()
                 .setError(Messages.ACCOUNT_TEMPORARILY_DISABLED).createLogin();
     }
 
     protected Response invalidCredentials(AuthenticationFlowContext context) {
-        return loginForm(context)
+        return context.form()
                 .setError(Messages.INVALID_USER).createLogin();
     }
 
     protected Response setDuplicateUserChallenge(AuthenticationFlowContext context, String eventError, String loginFormError, AuthenticationFlowError authenticatorError) {
         context.getEvent().error(eventError);
-        Response challengeResponse = loginForm(context)
+        Response challengeResponse = context.form()
                 .setError(loginFormError).createLogin();
         context.failureChallenge(authenticatorError, challengeResponse);
         return challengeResponse;
