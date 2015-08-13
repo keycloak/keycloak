@@ -74,7 +74,453 @@
                         </para>
                     </listitem>
                 </varlistentry>
+                <varlistentry>
+                    <term>Required Action</term>
+                    <listitem>
+                        <para>
+                            After authentication completes, the user might have one or more one-time actions he must
+                            complete before he is allowed to login.  The user might be required to set up an OTP token
+                            generator or reset an expired password or even accept a Terms and Conditions document.
+                        </para>
+                    </listitem>
+                </varlistentry>
             </variablelist>
         </para>
+    </section>
+    <section>
+        <title>Algorithm Overview</title>
+        <para>
+            Let's talk about how this all works for browser login. Let's assume the following flows, executions and sub flows.
+<programlisting><![CDATA[
+Cookie - ALTERNATIVE
+Kerberos - ALTERNATIVE
+Forms Subflow - ALTERNATIVE
+           Username/Password Form - REQUIRED
+           OTP Password Form - OPTIONAL
+]]>
+</programlisting>
+        </para>
+        <para>
+            In the top level of the form we have 3 executions of which all are alternatively required.  This means that
+            if any of these are successful, then the others do not have to execute.  The Username/Password form is not executed
+            if there is an SSO Cookie set or a successful Kerberos login.  Let's walk through the steps from when a client
+            first redirects to keycloak to authenticate the user.
+            <orderedlist>
+                <listitem>
+                    <para>
+                    The OpenID Connect or SAML protocol provider unpacks relevent data, verifies the client and any signatures.
+                    It creates a ClientSessionModel.  It looks up what the browser flow should be, then starts executing the flow.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        The flow looks at the cookie execution and sees that it is an alternative.  It loads the cookie provider.
+                        It checks to see if the cookie provider requires that a user already be associated with the client session.
+                        Cookie provider does not require a user.   If it did, the flow would abort and the user would see an error screen.
+                        Cookie provider then executes.  Its purpose is to see if there is an SSO cookie set.  If there is one set, it is validated
+                        and the UserSessionModel is verified and associated with the ClientSessionModel.  The Cookie provider returns a
+                        success() status if the SSO cookie exists and is validated.  Since the cookie provider returned success and each execution
+                        at this level of the flow is ALTERNATIVE, no other execution is executed and this results in a successful login.
+                        If there is no SSO cookie, the cookie provider returns with a status of attempted().  This means there was no error condition,
+                        but no success either.  The provider tried, but the request just wasn't set up to handle this authenticator.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                    Next the flow looks at the Kerberos execution.  This is also an alternative.  The kerberos provider also does not
+                    require a user to be already set up and associated with the ClientSessionModel so this provider is executed.
+                    Kerberos uses the SPNEGO browser protocol.  This requires a series of challenge/responses between the server and client
+                    exchanging negotiation headers.  The kerberos provider does not see any negotiate header, so it assumes that this is the
+                    first interaction between the server and client.  It therefore creates an HTTP challenge response to the client and sets a
+                    forceChallenge() status.  A forceChallenge() means that this HTTP response cannot be ignored by the flow and must be returned to the
+                    client.  If instead the provider returned a challenge() status, the flow would hold the challenge response until all other alternatives
+                    are attempted.  So, in this initial phase, the flow would stop and the challenge response would be sent back to the browser.  If the browser
+                        then responds with a successful negotiate header, the provider associates the user with the ClientSession and the flow ends because
+                        the rest of the executions on this level of the flow are all alternatives.  Otherwise, again, the kerberos provider
+                        sets an attempted() status and the flow continues.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        The next execution is a subflow called Forms. The executions for this subflow are loaded and
+                        the same processing logic occurs
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        The first execution in the Forms subflow is the UsernamePassword provider.  This provider also does not require for a user
+                        to already be associated with the flow.  This provider creates challenge HTTP response and sets its status to challenge().
+                        This execution is required, so the flow honors this challenge and sends the HTTP response back to the browser.  This
+                        response is a rendering of the Username/Password HTML page.  The user enters in their username and password and clicks submit.
+                        This HTTP request is directed to the UsernamePassword provider.  If the user entered an invalid username or password, a new
+                        challenge response is created and a status of failureChallenge() is set for this execution.  A failureChallenge() means that
+                        there is a challenge, but that the flow should log this as an error in the error log.  This error log can be used to lock accounts
+                        or IP Addresses that have had too many login failures.  If the username and password is valid, the provider associated the
+                        UserModel with the ClientSessionModel and returns a status of success()
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        The next execution is the OTP Form.  This provider requires that a user has been associated with the flow.  This requirement is satisfied
+                        because the UsernamePassword provider already associated the user with the flow.  Since a user is required for this provider, the provider
+                        is also asked if the user is configured to use this provider.  If user is not configured, and this execution is required, then the flow will
+                        then set up a required action that the user must perform after authentication is complete.  For OTP, this means the OTP setup page.
+                        If the execution was optional, then this execution is skipped.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        After the flow is complete, the authentication processor creates a UserSEssionModel and associates it with the ClientSEssionModel.
+                        It then checks to see if the user is required to complete any required actions before logging in.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        First, each required action's evaluateTriggers() method is called.  This allows the required action provider to figure out if
+                        there is some state that might trigger the action to be fired.  For example, if your realm has a password expiration policy,
+                        it might be triggered by this method.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Each required action associated with the user that has its requiredActionChallenge() method called.  Here the provider
+                        sets up an HTTP response which renders the page for the required action.   This is done by setting a challenge status.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        If the required action is ultimately successful, then the required action is removed from the user's require actions list.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        After all required actions have been resolved, the user is finally logged in.
+                    </para>
+                </listitem>
+            </orderedlist>
+        </para>
+    </section>
+    <section>
+        <title>Authenticator SPI Walk Through</title>
+        <para>
+            In this section, we'll take a look at the Authenticator interface.  For this, we are going to implement an authenticator
+            that requires that a user enter in the answer to a secret question like "What is your mother's maiden name?".  This example
+            is fully implemented and contained in the examples/providers/authenticator directory of the demo distribution of Keycloak.
+        </para>
+        <para>
+            The classes you must implement are the org.keycloak.authentication.AuthenticatorFactory and Authenticator interfaces.  The Authenticator
+            interface defines the logic.  The AuthenticatorFactory is responsible for creating instances of an Authenticator.  They both extend
+            a more generic Provider and ProviderFactory set of interfaces that other Keycloak components like User Federation do.
+        </para>
+        <section>
+            <title>Packaging Classes and Deployment</title>
+            <para>
+                You will package your classes within a single jar.  This jar must contain a file named  <literal>org.keycloak.authentication.AuthenticatorFactory</literal>
+                and must be contained in the <literal>META-INF/services/</literal> directory of your jar.  This file must list the fully qualified classname
+                of each AuthenticatorFactory implementation you have in the jar.  For example:
+        <programlisting>
+            org.keycloak.examples.authenticator.SecretQuestionAuthenticatorFactory
+            org.keycloak.examples.authenticator.AnotherProviderFactory
+        </programlisting>
+            </para>
+            <para>
+                This services/ file is used by Keycloak to scan the providers it has to load into the system.
+            </para>
+            <para>
+                To deploy this jar, just copy it to the standalone/configuration/providers directory.
+            </para>
+        </section>
+        <section>
+            <title>Implementing an Authenticator</title>
+            <para>
+                When implementing the Authenticator interface, the first method that needs to be implemented is the
+                requiresUser() method.  For our example, this method must return true as we need to validate the secret question
+                associated with the user.  A provider like kerberos would return false from this method as it can
+                resolve a user from the negotiate header.  This example however is validating a specific credential of a specific
+                user.
+            </para>
+            <para>
+                The next method to implement is the configuredFor() method.  This method is responsible for determining if the
+                user is configured for this particular authenticator.  For this example, we need to check of the answer to the
+                secret question is been set up by the user or not.  In our case we are storing this information, hashed, within
+                a UserCredentialValueModel within the UserModel (just like passwords are stored).  Here's how we do this
+                very simple check:
+<programlisting>
+    @Override
+    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
+        return session.users().configuredForCredentialType("secret_question", realm, user);
+    }
+</programlisting>
+            </para>
+            <para>
+                The configuredForCredentialType() call queries the user to see if it supports that credential type.
+            </para>
+            <para>
+                The next method to implement on the Authenticator is setRequiredActions().  If configuredFor() returns fales
+                and our example authenticator is required within the flow, this method will be called.  It is response for
+                registering any required actions that must be performed by the user.  In our example, we need to register
+                a required action that will force the user to set up the answer to the secret question.  We will implement
+                this required action provider later in this chapter.  Here is the implementation of the setRequiredActions()
+                method.
+<programlisting>
+    @Override
+    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+        user.addRequiredAction("SECRET_QUESTION_CONFIG");
+    }
+</programlisting>
+            </para>
+            <para>
+                Now we are getting into the meat of the Authenticator implementation.  The next method to implement is
+                authenticate().  This is the initial method the flow invokes when the execution is first visited.  What we
+                want is that if a user has answered the secret question already on their browser's machine, that the
+                user doesn't have to answer the question again.  Basically making that machine "trusted".  The authenticate()
+                method isn't responsible for processing the secret question form.  Its sole purpose is to render the page
+                or to continue the flow.
+<programlisting>
+    @Override
+    public void authenticate(AuthenticationFlowContext context) {
+        if (hasCookie(context)) {
+           context.success();
+           return;
+        }
+        Response challenge = loginForm(context).createForm("secret_question.ftl");
+        context.challenge(challenge);
+    }
+</programlisting>
+            </para>
+            <para>
+                If the hasCookie() method checks to see if there is already a cookie set on the browser which indicates
+                that the secret question has already been answered.  If that returns true, we just mark this execution's
+                status as SUCCESS using the AuthenticationFlowContext.success() method and returning from the authentication()
+                method.
+            </para>
+            <para>
+                If the hasCookie() method returns false, we must return a response that renders the secret question HTML
+                form.  AuthenticationFlowContext has a form() method that initializes a Freemarker page builder with appropriate base information needed
+                to build the form.  This page builder is called <literal>org.keycloak.login.LoginFormsProvider</literal>.
+                the LoginFormsProvider.createForm() method loads a Freemarker template file from your login theme.  Additionally
+                you can call the LoginFormsProvider.setAttribute() method if you want to pass additional information to the
+                Freemarker template.  We'll go over this later.
+            </para>
+            <para>
+                Calling LoginFormsProvider.createForm() returns a JAX-RS Response object.  We then call AuthenticationFlowContext.challenge()
+                passing in this response.  This sets the status of the execution as CHALLENGE and if the execution is Required, this
+                JAX-RS Response object will be sent to the browser.
+            </para>
+            <para>
+                So, the HTML page asking for the answer to a secret question is displayed to the user and the user
+                enteres in the answer and clicks submit.  The action URL of the HTML form will send an HTTP request to the
+                flow.  The flow will end up invoking the action() method of our Authenticator implementation.
+<programlisting>
+    @Override
+    public void action(AuthenticationFlowContext context) {
+        boolean validated = validateAnswer(context);
+        if (!validated) {
+           Response challenge = context.form()
+                                 .setError("badSecret")
+                                 .createForm("secret-question.ftl");
+           context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challenge);
+           return;
+        }
+        setCookie(context);
+        context.success();
+    }
+
+
+</programlisting>
+            </para>
+            <para>
+                If the answer is not valid, we rebuild the HTML Form with an additional error message.  We then call
+                AuthenticationFlowContext.failureChallenge() passing in the reason for the value and the JAX-RS response.
+                failureChallenge() works the same as challenge(), but it also records the failure so it can be analyzed
+                by any attack detection service.
+            </para>
+            <para>
+                If validation is successful, then we set a cookie to remember that the secret question has been answered
+                and we call AuthenticationFlowContext.success().
+            </para>
+            <para>
+                The last thing I want to go over is the setCookie() method.  This is an example of providing configuration
+                for the Authenticator.  In this case we want the max age of the cookie to be configurable.
+<programlisting>
+    protected void setCookie(AuthenticationFlowContext context) {
+        AuthenticatorConfigModel config = context.getAuthenticatorConfig();
+        int maxCookieAge = 60 * 60 * 24 * 30; // 30 days
+        if (config != null) {
+            maxCookieAge = Integer.valueOf(config.getConfig().get("cookie.max.age"));
+
+        }
+        ... set the cookie ...
+    }
+
+</programlisting>
+            </para>
+            <para>
+                We obtain an AuthenticatorConfigModel from the AuthenticationFlowContext.getAuthenticatorConfig() method.
+                If configuration exists we pull the max age config out of it.  We will see how we can define what should
+                be configured when we talk about the AuthenticatorFactory implementation.  The config values can be
+                defined within the admin console if you set up config definitions in your AuthenticatorFactory implementation.
+            </para>
+        </section>
+        <section>
+            <title>Implementing an AuthenticatorFactory</title>
+            <para>
+                The next step in this process is to implement an AuthenticatorFactory.  This factory is responsible
+                for instantiating an Authenticator.  It also provides deployment and configuration metadata about
+                the Authenticator.
+            </para>
+            <para>
+                The getId() method is just the unique name of the component.  The create() methods should also
+                be self explanatory.  The create(KeycloakSession) method will actually never be called.  It is just
+                an artifact of the more generic ProviderFactory interface.
+<programlisting>
+public class SecretQuestionAuthenticatorFactory implements AuthenticatorFactory, ConfigurableAuthenticatorFactory {
+
+    public static final String PROVIDER_ID = "secret-question-authenticator";
+    private static final SecretQuestionAuthenticator SINGLETON = new SecretQuestionAuthenticator();
+
+    @Override
+    public String getId() {
+        return PROVIDER_ID;
+    }
+
+    @Override
+    public Authenticator create() {
+        return SINGLETON;
+    }
+
+    @Override
+    public Authenticator create(KeycloakSession session) {
+        return SINGLETON;
+    }
+
+</programlisting>
+            </para>
+            <para>
+                The next thing the factory is responsible for is specify the allowed requirement switches.  While there
+                are four different requirement types:  ALTERNATIVE, REQUIRED, OPTIONAL, DISABLED, AuthenticatorFactory
+                implementations can limit which  requirement options are shown in the admin console when defining
+                a flow.  In our example, we're going to limit our requirement options to REQUIRED and DISABLED.
+<programlisting>
+    private static AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
+            AuthenticationExecutionModel.Requirement.REQUIRED,
+            AuthenticationExecutionModel.Requirement.DISABLED
+    };
+    @Override
+    public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
+        return REQUIREMENT_CHOICES;
+    }
+</programlisting>
+            </para>
+            <para>
+                The AuthenticatorFactory.isUserSetupAllowed() is a flag that tells the flow manager whether or not
+                Authenticator.setRequiredActions() method will be called.  If an Authenticator is not configured for a user,
+                the flow manager checks isUserSetupAllowed().  If it is false, then the flow aborts with an error.  If it
+                returns true, then the flow manager will invoke Authenticator.setRequiredActions().
+<programlisting>
+    @Override
+    public boolean isUserSetupAllowed() {
+        return true;
+    }
+</programlisting>
+            </para>
+            <para>
+                The next few methods define how the Authenticator can be configured.  The isConfigurable() method
+                is a flag which specifies to the admin console on whether the Authenticator can be configured within
+                a flow.  The getConfigProperties() method returns a list of ProviderConfigProperty objects.  These
+                objects define a specific configuration attribute.
+<programlisting><![CDATA[
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configProperties;
+    }
+
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+
+    static {
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
+        property.setName("cookie.max.age");
+        property.setLabel("Cookie Max Age");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Max age in seconds of the SECRET_QUESTION_COOKIE.");
+        configProperties.add(property);
+    }
+]]></programlisting>
+            </para>
+            <para>
+                Each ProviderConfigProperty defines the name of the config property.  This is the key used in the config
+                map stored in AuthenticatorConfigModel.  The label defines how the config option will be displayed in the
+                admin console.  The type defines if it is a String, Boolean, or other type.  The admin console
+                will display different UI inputs depending on the type. The help text is what will be shown in the
+                tooltip for the config attribute in the admin console.  Read the javadoc of ProviderConfigProperty
+                for more detail.
+            </para>
+            <para>
+                The rest of the methods are for the admin console.  getHelpText() is the tooltip text that will be
+                shown when you are picking the Authenticator you want to bind to an execution.  getDisplayType()
+                is what text that will be shown in the admin console when listing the Authenticator.  getReferenceCategory()
+                is just a category the Authenticator belongs to.
+            </para>
+        </section>
+        <section>
+            <title>Adding Authenticator Form</title>
+            <para>
+                Keycloak comes with a Freemarker <link linkend="themes">theme and template engine</link>.  The createForm()
+                method you called within authenticate() of your Authenticator class, builds an HTML page from a file within
+                your login them: secret-question.ftl.  This file should be placed in the login theme with all the other
+                .ftl files you see for login.
+            </para>
+            <para>
+                Let's take a bigger look at secret-question.ftl  Here's a small code snippet:
+<programlisting><![CDATA[
+        <form id="kc-totp-login-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
+            <div class="${properties.kcFormGroupClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="totp" class="${properties.kcLabelClass!}">${msg("loginSecretQuestion")}</label>
+                </div>
+
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input id="totp" name="secret_answer" type="text" class="${properties.kcInputClass!}" />
+                </div>
+            </div>
+
+]]></programlisting>
+            </para>
+            <para>
+                Any piece of text enclosed in <literal>${}</literal> corresponds to an attribute or template funtion.
+                If you see the form's action, you see it points to <literal>${url.loginAction}</literal>.  This value
+                is automatically generated when you invoke the AuthenticationFlowContext.form() method.  You can also obtain
+                this value by calling the AuthenticationFlowContext.getActionURL() method in Java code.
+            </para>
+            <para>
+                You'll also see <literal>${properties.someValue}</literal>.  These correspond to properties defined
+                in your theme.properties file of our theme.  <literal>${msg("someValue")}</literal> corresponds to the
+                internationalized message bundles (.properties files) included with the login theme messages/ directory.
+                If you're just using english, you can just add the value of the <literal>loginSecretQuestion</literal>
+                value.  This should be the question you want to ask the user.
+            </para>
+            <para>
+                When you call AuthenticationFlowContext.form() this gives you a LoginFormsProvider  instance.  If you called,
+                <literal>LoginFormsProvider.setAttribute("foo", "bar")</literal>, the value of "foo" would be available
+                for reference in your form as <literal>${foo}</literal>.  The value of an attribute can be any Java
+                bean as well.
+            </para>
+        </section>
+        <section>
+            <title>Adding Authenticator to a Flow</title>
+            <para>
+                Adding an Authenticator to a flow must be done in the admin console.
+                If you go to the Authentication menu item and go to the Flow tab, you will be able to view the currently
+                defined flows.  You cannot modify an built in flows, so, to add the Authenticator we've created you
+                have to copy an existing flow or create your own.  I'm hoping the UI is intuitive enough so that you
+                can figure out for yourself how to create a flow and add the Authenticator.
+            </para>
+            <para>
+                After you've created your flow, you have to bind it to the login action you want to bind it to.  If you go
+                to the Authentication menu and go  to the Bindings tab you will see options to bind a flow to
+                the browser, registration, or direct grant flow.
+            </para>
+        </section>
     </section>
 </chapter>

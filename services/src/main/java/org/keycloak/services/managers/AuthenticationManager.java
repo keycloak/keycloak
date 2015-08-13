@@ -423,7 +423,6 @@ public class AuthenticationManager {
 
         evaluateRequiredActionTriggers(session, userSession, clientSession, clientConnection, request, uriInfo, event, realm, user);
 
-        RequiredActionContextResult context = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user);
 
         logger.debugv("processAccessCode: go to oauth page?: {0}", client.isConsentRequired());
 
@@ -433,6 +432,7 @@ public class AuthenticationManager {
         for (String action : requiredActions) {
             RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
             RequiredActionProvider actionProvider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
+            RequiredActionContextResult context = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user, actionProvider);
             actionProvider.requiredActionChallenge(context);
 
             if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
@@ -501,32 +501,33 @@ public class AuthenticationManager {
     }
 
     public static void evaluateRequiredActionTriggers(final KeycloakSession session, final UserSessionModel userSession, final ClientSessionModel clientSession, final ClientConnection clientConnection, final HttpRequest request, final UriInfo uriInfo, final EventBuilder event, final RealmModel realm, final UserModel user) {
-        RequiredActionContextResult result = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user) {
-            @Override
-            public void challenge(Response response) {
-                throw new RuntimeException("Not allowed to call challenge() within evaluateTriggers()");
-            }
-
-            @Override
-            public void failure() {
-                throw new RuntimeException("Not allowed to call failure() within evaluateTriggers()");
-            }
-
-            @Override
-            public void success() {
-                throw new RuntimeException("Not allowed to call success() within evaluateTriggers()");
-            }
-
-            @Override
-            public void ignore() {
-                throw new RuntimeException("Not allowed to call ignore() within evaluateTriggers()");
-            }
-        };
 
         // see if any required actions need triggering, i.e. an expired password
         for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
             if (!model.isEnabled()) continue;
             RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
+            RequiredActionContextResult result = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user, provider) {
+                @Override
+                public void challenge(Response response) {
+                    throw new RuntimeException("Not allowed to call challenge() within evaluateTriggers()");
+                }
+
+                @Override
+                public void failure() {
+                    throw new RuntimeException("Not allowed to call failure() within evaluateTriggers()");
+                }
+
+                @Override
+                public void success() {
+                    throw new RuntimeException("Not allowed to call success() within evaluateTriggers()");
+                }
+
+                @Override
+                public void ignore() {
+                    throw new RuntimeException("Not allowed to call ignore() within evaluateTriggers()");
+                }
+            };
+
             provider.evaluateTriggers(result);
         }
     }

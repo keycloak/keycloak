@@ -4,7 +4,6 @@ import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
-import org.keycloak.authentication.AbstractFormRequiredAction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -14,7 +13,7 @@ import javax.ws.rs.core.Response;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class TermsAndConditions extends AbstractFormRequiredAction implements RequiredActionFactory {
+public class TermsAndConditions implements RequiredActionProvider, RequiredActionFactory {
 
     public static final String PROVIDER_ID = "terms_and_conditions";
 
@@ -54,7 +53,7 @@ public class TermsAndConditions extends AbstractFormRequiredAction implements Re
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        Response challenge =  form(context).createForm("terms.ftl");
+        Response challenge =  context.form().createForm("terms.ftl");
         context.challenge(challenge);
     }
 
@@ -73,4 +72,8 @@ public class TermsAndConditions extends AbstractFormRequiredAction implements Re
         return "Terms and Conditions";
     }
 
+    @Override
+    public void close() {
+
+    }
 }
