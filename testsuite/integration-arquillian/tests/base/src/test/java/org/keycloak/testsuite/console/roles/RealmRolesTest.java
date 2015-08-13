@@ -12,6 +12,8 @@ import org.keycloak.testsuite.console.page.roles.CreateRole;
 import org.keycloak.testsuite.console.page.roles.Role;
 import org.keycloak.testsuite.console.page.roles.RolesTable;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
+import static org.keycloak.testsuite.util.SeleniumUtils.pause;
+import org.keycloak.testsuite.util.Timer;
 
 /**
  *
@@ -66,7 +68,7 @@ public class RealmRolesTest extends AbstractRolesTest {
     }
 
     @Test
-    @Ignore // FIXME findRole
+//    @Ignore // FIXME findRole
     public void crudRole() {
         addRole(testRole);
 
@@ -122,7 +124,24 @@ public class RealmRolesTest extends AbstractRolesTest {
         assertFlashMessageDanger();
     }
 
-    
+    public void createTestRoles(String namePrefix, int count) {
+        Timer.time();
+        for (int i = 0; i < count; i++) {
+            String roleName = String.format("%s%02d", namePrefix, i);
+            RoleRepresentation rr = new RoleRepresentation(roleName, "");
+            testRealmResource().roles().create(rr);
+        }
+        Timer.time("create " + count + " roles");
+    }
+
+    @Test
+    @Ignore
+    public void rolesPagination() {
+        createTestRoles("test_role_", 100);
+        realmRoles.navigateTo();
+        pause(100000);
+    }
+
 //    @Test
 //    public void addAndRemoveUserAndAssignRole() {
 //        roleMappings.form().addAvailableRole("create-realm");
@@ -134,9 +153,6 @@ public class RealmRolesTest extends AbstractRolesTest {
 //        users.navigateTo();
 //        users.table().deleteUser(testUsername);
 //    }
-
-
-
 //    @Test // this should be moved to users tests
 //    public void testRoleIsAvailableForUsers() {
 //        RoleRepresentation role = new RoleRepresentation("User role", "");
@@ -215,6 +231,4 @@ public class RealmRolesTest extends AbstractRolesTest {
 //        users.deleteUser(testUserRep.getUsername());
 //    }
 //
-    
-
 }

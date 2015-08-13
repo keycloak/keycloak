@@ -17,16 +17,22 @@
  */
 package org.keycloak.testsuite.console.clients;
 
+import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.keycloak.representations.idm.ClientRepresentation;
+import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
 import org.keycloak.testsuite.console.page.clients.ClientSettings;
 import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsBooleanAttributes;
 import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsListAttributes;
 import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsStringAttributes;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
+import static org.keycloak.testsuite.util.SeleniumUtils.pause;
+import org.keycloak.testsuite.util.Timer;
 
 /**
  *
@@ -58,8 +64,6 @@ public class ClientSettingsTest extends AbstractClientTest {
         // TODO change attributes, add redirect uris and weborigins
         // delete
         // TODO
-        
-        
         client.backToClientsViaBreadcrumb();
     }
 
@@ -122,6 +126,41 @@ public class ClientSettingsTest extends AbstractClientTest {
         assertEqualsStringAttributes(c1.getBaseUrl(), c2.getBaseUrl());
         assertEqualsStringAttributes(c1.getAdminUrl(), c2.getAdminUrl());
         assertEqualsListAttributes(c1.getWebOrigins(), c2.getWebOrigins());
+    }
+
+    @Test
+    @Ignore
+    public void createInconsistentClient() {
+        ClientRepresentation c = createClientRepresentation("inconsistent_client");
+        c.setPublicClient(true);
+        c.setBearerOnly(true);
+
+        Response r = clients.clientsResource().create(c);
+        r.close();
+        clientSettings.setId(getCreatedId(r));
+
+        c = clientSettings.clientResource().toRepresentation();
+        assertTrue(c.isBearerOnly());
+        assertTrue(c.isPublicClient());
+    }
+
+    public void createClients(String clientIdPrefix, int count) {
+        for (int i = 0; i < count; i++) {
+            String clientId = String.format("%s%02d", clientIdPrefix, i);
+            ClientRepresentation cr = createClientRepresentation(clientId, "http://example.test/*");
+            Timer.time();
+            Response r = testRealmResource().clients().create(cr);
+            r.close();
+            Timer.time("create client");
+        }
+    }
+
+    @Test
+    @Ignore
+    public void clientsPagination() {
+        createClients("test_client_", 100);
+        clients.navigateTo();
+        pause(120000);
     }
 
 }
