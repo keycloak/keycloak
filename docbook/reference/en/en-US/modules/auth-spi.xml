@@ -268,7 +268,96 @@ Forms Subflow - ALTERNATIVE
             </para>
             <para>
                 Now we are getting into the meat of the Authenticator implementation.  The next method to implement is
-                authenticate().  This is the initial method the flow invokes when the execution is first visited.
+                authenticate().  This is the initial method the flow invokes when the execution is first visited.  What we
+                want is that if a user has answered the secret question already on their browser's machine, that the
+                user doesn't have to answer the question again.  Basically making that machine "trusted".  The authenticate()
+                method isn't responsible for processing the secret question form.  Its sole purpose is to render the page
+                or to continue the flow.
+<programlisting>
+    @Override
+    public void authenticate(AuthenticationFlowContext context) {
+        if (hasCookie(context)) {
+           context.success();
+           return;
+        }
+        Response challenge = loginForm(context).createForm("secret_question.ftl");
+        context.challenge(challenge);
+    }
+</programlisting>
+            </para>
+            <para>
+                If the hasCookie() method checks to see if there is already a cookie set on the browser which indicates
+                that the secret question has already been answered.  If that returns true, we just mark this execution's
+                status as SUCCESS using the AuthenticationFlowContext.success() method and returning from the authentication()
+                method.
+            </para>
+            <para>
+                If the hasCookie() method returns false, we must return a response that renders the secret question HTML
+                form.  If your Authenticator classes inherit from the helper class <literal>org.keycloak.authentication.AbstractFormAuthenticator</literal>
+                it has a loginForm() method that initializes a Freemarker page builder with appropriate base information needed
+                to build the form.  This page builder is called <literal>org.keycloak.login.LoginFormsProvider</literal>.
+                the LoginFormsProvider.createForm() method loads a Freemarker template file from your login theme.  Additionally
+                you can call the LoginFormsProvider.setAttribute() method if you want to pass additional information to the
+                Freemarker template.  We'll go over this later.
+            </para>
+            <para>
+                Calling LoginFormsProvider.createForm() returns a JAX-RS Response object.  We then call AuthenticationFlowContext.challenge()
+                passing in this response.  This sets the status of the execution as CHALLENGE and if the execution is Required, this
+                JAX-RS Response object will be sent to the browser.
+            </para>
+            <para>
+                So, the HTML page asking for the answer to a secret question is displayed to the user and the user
+                enteres in the answer and clicks submit.  The action URL of the HTML form will send an HTTP request to the
+                flow.  The flow will end up invoking the action() method of our Authenticator implementation.
+<programlisting>
+    @Override
+    public void action(AuthenticationFlowContext context) {
+        boolean validated = validateAnswer(context);
+        if (!validated) {
+           Response challenge = loginForm(context)
+                                 .setError("badSecret")
+                                 .createForm("secret_question.ftl");
+           context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challenge);
+           return;
+        }
+        setCookie(context);
+        context.success();
+    }
+
+
+</programlisting>
+            </para>
+            <para>
+                If the answer is not valid, we rebuild the HTML Form with an additional error message.  We then call
+                AuthenticationFlowContext.failureChallenge() passing in the reason for the value and the JAX-RS response.
+                failureChallenge() works the same as challenge(), but it also records the failure so it can be analyzed
+                by any attack detection service.
+            </para>
+            <para>
+                If validation is successful, then we set a cookie to remember that the secret question has been answered
+                and we call AuthenticationFlowContext.success().
+            </para>
+            <para>
+                The last thing I want to go over is the setCookie() method.  This is an example of providing configuration
+                for the Authenticator.  In this case we want the max age of the cookie to be configurable.
+<programlisting>
+    protected void setCookie(AuthenticationFlowContext context) {
+        AuthenticatorConfigModel config = context.getAuthenticatorConfig();
+        int maxCookieAge = 60 * 60 * 24 * 30; // 30 days
+        if (config != null) {
+            maxCookieAge = Integer.valueOf(config.getConfig().get("cookie.max.age"));
+
+        }
+        ... set the cookie ...
+    }
+
+</programlisting>
+            </para>
+            <para>
+                We obtain an AuthenticatorConfigModel from the AuthenticationFlowContext.getAuthenticatorConfig() method.
+                If configuration exists we pull the max age config out of it.  We will see how we can define what should
+                be configured when we talk about the AuthenticatorFactory implementation.  The config values can be
+                defined within the admin console if you set up config definitions in your AuthenticatorFactory implementation.
             </para>
         </section>
     </section>

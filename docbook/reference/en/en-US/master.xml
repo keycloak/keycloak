@@ -46,6 +46,7 @@
                 <!ENTITY CustomAttributes SYSTEM "modules/custom-attributes.xml">
                 <!ENTITY ProtocolMappers SYSTEM "modules/protocol-mappers.xml">
                 <!ENTITY Recaptcha SYSTEM "modules/recaptcha.xml">
+                <!ENTITY AuthSPI SYSTEM "modules/auth-spi.xml">
                 ]>
 
 <book>
@@ -140,6 +141,7 @@ This one is short
     &Proxy;
     &CustomAttributes;
     &ProtocolMappers;
+    &AuthSPI;
     &Migration;
 
 </book>
