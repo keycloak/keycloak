@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.AngularCorsProductExample;
+import org.keycloak.testsuite.adapter.page.CorsDatabaseServiceExample;
 import org.keycloak.testsuite.auth.page.account.Account;
 
 import java.io.File;
@@ -35,10 +36,10 @@ public class AbstractCorsExampleAdapterTest extends AbstractExampleAdapterTest {
         return exampleDeployment(AngularCorsProductExample.DEPLOYMENT_NAME, "angular-cors-product");
     }
 
-    /*@Deployment(name = CorsDatabaseServiceExample.DEPLOYMENT_NAME)
+    @Deployment(name = CorsDatabaseServiceExample.DEPLOYMENT_NAME)
     private static WebArchive corsDatabaseServiceExample() throws IOException {
         return exampleDeployment(CorsDatabaseServiceExample.DEPLOYMENT_NAME);
-    }*/
+    }
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
@@ -57,18 +58,11 @@ public class AbstractCorsExampleAdapterTest extends AbstractExampleAdapterTest {
     @Before
     public void beforeDemoExampleTest() {
         angularCorsProductExample.navigateTo();
-        //driver.navigate().to("http://localhost:8180/angular-cors-product/index.html");
         driver.manage().deleteAllCookies();
     }
 
     @Test
     public void angularCorsProductTest() {
-
-        try {
-            Thread.sleep(500000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         angularCorsProductExample.navigateTo();
         testRealmLogin.form().login("bburke@redhat.com", "password");
 
