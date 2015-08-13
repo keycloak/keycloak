@@ -84,16 +84,24 @@
             <simplesect>
                 <title>Realm and User cache providers</title>
                 <para>
-                    Infinispan is now the default realm and user cache provider. In non-clustered mode a local Infinispan cache is used. We've also removed our
+                    Infinispan is now the default and only realm and user cache providers. In non-clustered mode a local Infinispan cache is used. We've also removed our
                     custom in-memory cache and the no cache providers. If you have realmCache or userCache set in keycloak-server.json to mem or none please
                     remove these. As Infinispan is the only provider there's no longer any need for the realmCache and userCache objects so these can
                     be removed.
                 </para>
             </simplesect>
             <simplesect>
-                <title>User Session provider</title>
+                <title>Uses Session providers</title>
                 <para>
-                    The mem user session provider has been removed. Instead the Infinispan user session provider with a local cache should be used.
+                    Infinispan is now the default and only user session provider. In non-clustered mode a local Infinispan cache is used. We've also removed the JPA
+                    and Mongo user session providers. If you have userSession set in keycloak-server.json to mem, jpa or mongo please
+                    remove it. As Infinispan is the only provider there's no longer any need for the userSession object so it can
+                    be removed.
+                </para>
+                <para>
+                    For anyone that wants to achieve increased durability of user sessions this can be achieved by configuring the user session cache with
+                    more than one owner or use a replicated cache. It's also possible to configure Infinispan to persist caches, although that would have
+                    impacts on performance.
                 </para>
             </simplesect>
         </section>

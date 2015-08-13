@@ -22,10 +22,6 @@
         "provider": "jpa"
     },
 
-    "userSessions": {
-        "provider" : "infinispan"
-    },
-
     "timer": {
         "provider": "basic"
     },
