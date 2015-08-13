@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.models.*;
+import org.keycloak.models.cache.infinispan.RealmAdapter;
 import org.keycloak.testsuite.rule.KeycloakRule;
 
 import static org.junit.Assert.assertNotNull;
@@ -45,7 +46,7 @@ public class CacheTest {
                 }
             }
 
-            Assert.assertTrue(realm instanceof org.keycloak.models.cache.RealmAdapter);
+            Assert.assertTrue(realm instanceof RealmAdapter);
             realm.setAccessCodeLifespanLogin(200);
             ClientModel testApp = realm.getClientByClientId("test-app");
             assertNotNull(testApp);

@@ -30,17 +30,6 @@
         <class>org.keycloak.models.jpa.entities.AuthenticatorConfigEntity</class>
         <class>org.keycloak.models.jpa.entities.RequiredActionProviderEntity</class>
 
-        <!-- JpaUserSessionProvider -->
-        <class>org.keycloak.models.sessions.jpa.entities.ClientSessionEntity</class>
-        <class>org.keycloak.models.sessions.jpa.entities.ClientSessionRoleEntity</class>
-        <class>org.keycloak.models.sessions.jpa.entities.ClientSessionAuthStatusEntity</class>
-        <class>org.keycloak.models.sessions.jpa.entities.ClientSessionProtocolMapperEntity</class>
-        <class>org.keycloak.models.sessions.jpa.entities.ClientSessionNoteEntity</class>
-        <class>org.keycloak.models.sessions.jpa.entities.ClientUserSessionNoteEntity</class>
-        <class>org.keycloak.models.sessions.jpa.entities.UserSessionNoteEntity</class>
-        <class>org.keycloak.models.sessions.jpa.entities.UserSessionEntity</class>
-        <class>org.keycloak.models.sessions.jpa.entities.UsernameLoginFailureEntity</class>
-
         <!-- JpaAuditProviders -->
         <class>org.keycloak.events.jpa.EventEntity</class>
         <class>org.keycloak.events.jpa.AdminEventEntity</class>

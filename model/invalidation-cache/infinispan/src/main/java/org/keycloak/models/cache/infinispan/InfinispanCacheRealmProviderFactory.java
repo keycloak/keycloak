@@ -7,7 +7,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CacheRealmProviderFactory;
-import org.keycloak.models.cache.DefaultCacheRealmProvider;
 import org.keycloak.models.cache.RealmCache;
 
 import java.util.concurrent.ConcurrentHashMap;

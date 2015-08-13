@@ -1,24 +1,11 @@
-package org.keycloak.models.cache;
+package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.migration.MigrationModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.entities.CachedClient;
-import org.keycloak.models.cache.entities.CachedClientRole;
-import org.keycloak.models.cache.entities.CachedRealm;
-import org.keycloak.models.cache.entities.CachedRealmRole;
-import org.keycloak.models.cache.entities.CachedRole;
+import org.keycloak.models.*;
+import org.keycloak.models.cache.*;
+import org.keycloak.models.cache.entities.*;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
