@@ -8,6 +8,7 @@ import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionContextResult;
+import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.events.Details;
@@ -431,8 +432,9 @@ public class AuthenticationManager {
         Set<String> requiredActions = user.getRequiredActions();
         for (String action : requiredActions) {
             RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
-            RequiredActionProvider actionProvider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
-            RequiredActionContextResult context = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user, actionProvider);
+            RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
+            RequiredActionProvider actionProvider = factory.create(session);
+            RequiredActionContextResult context = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user, factory);
             actionProvider.requiredActionChallenge(context);
 
             if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
@@ -447,8 +449,8 @@ public class AuthenticationManager {
                 return context.getChallenge();
             }
             else if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
-                event.clone().event(EventType.CUSTOM_REQUIRED_ACTION).detail(Details.CUSTOM_REQUIRED_ACTION, actionProvider.getProviderId()).success();
-                clientSession.getUserSession().getUser().removeRequiredAction(actionProvider.getProviderId());
+                event.clone().event(EventType.CUSTOM_REQUIRED_ACTION).detail(Details.CUSTOM_REQUIRED_ACTION, factory.getId()).success();
+                clientSession.getUserSession().getUser().removeRequiredAction(factory.getId());
             }
         }
         if (client.isConsentRequired()) {
@@ -505,8 +507,9 @@ public class AuthenticationManager {
         // see if any required actions need triggering, i.e. an expired password
         for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
             if (!model.isEnabled()) continue;
-            RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
-            RequiredActionContextResult result = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user, provider) {
+            RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
+            RequiredActionProvider provider = factory.create(session);
+            RequiredActionContextResult result = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user, factory) {
                 @Override
                 public void challenge(Response response) {
                     throw new RuntimeException("Not allowed to call challenge() within evaluateTriggers()");

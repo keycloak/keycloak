@@ -54,12 +54,7 @@ public class PassThroughAuthenticator implements Authenticator, AuthenticatorFac
 
     }
 
-    @Override
-    public Authenticator create() {
-        return this;
-    }
-
-    @Override
+   @Override
     public String getDisplayType() {
         return "Dummy Pass Thru";
     }

@@ -18,15 +18,11 @@ import java.util.List;
 public class SpnegoAuthenticatorFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "auth-spnego";
-
-    @Override
-    public Authenticator create() {
-        return new SpnegoAuthenticator();
-    }
+    public static final SpnegoAuthenticator SINGLETON = new SpnegoAuthenticator();
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        throw new IllegalStateException("illegal call");
+        return SINGLETON;
     }
 
     @Override

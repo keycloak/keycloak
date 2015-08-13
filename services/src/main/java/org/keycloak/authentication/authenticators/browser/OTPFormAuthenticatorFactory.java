@@ -18,15 +18,11 @@ import java.util.List;
 public class OTPFormAuthenticatorFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "auth-otp-form";
-
-    @Override
-    public Authenticator create() {
-        return new OTPFormAuthenticator();
-    }
+    public static final OTPFormAuthenticator SINGLETON = new OTPFormAuthenticator();
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        throw new IllegalStateException("illegal call");
+        return SINGLETON;
     }
 
     @Override

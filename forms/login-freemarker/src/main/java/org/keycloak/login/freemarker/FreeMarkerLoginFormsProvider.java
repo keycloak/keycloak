@@ -91,6 +91,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     public FreeMarkerLoginFormsProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
         this.freeMarker = freeMarker;
+        this.attributes.put("scripts", new LinkedList<String>());
+    }
+
+    @Override
+    public void addScript(String scriptUrl) {
+        List<String> scripts = (List<String>)this.attributes.get("scripts");
+        scripts.add(scriptUrl);
     }
 
     public Response createResponse(UserModel.RequiredAction action) {

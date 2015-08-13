@@ -39,13 +39,6 @@ public class TermsAndConditions implements RequiredActionProvider, RequiredActio
 
 
     @Override
-    public String getProviderId() {
-        return getId();
-    }
-
-
-
-    @Override
     public void evaluateTriggers(RequiredActionContext context) {
 
     }

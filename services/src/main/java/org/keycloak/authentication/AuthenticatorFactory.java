@@ -16,6 +16,4 @@ import org.keycloak.provider.ProviderFactory;
 * @version $Revision: 1 $
 */
 public interface AuthenticatorFactory extends ProviderFactory<Authenticator>, ConfigurableAuthenticatorFactory {
-    Authenticator create();
-
 }
