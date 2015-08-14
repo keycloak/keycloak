@@ -45,5 +45,33 @@ public class AngularCorsProductExample extends AbstractPageWithInjectedUrl {
     @FindByJQuery("button:contains('Load version')")
     private WebElement loadVersionButton;
 
+    public void reloadData() {
+        reloadDataButton.click();
+    }
+
+    public void loadRoles() {
+        loadRolesButton.click();
+    }
+
+    public void addRole() {
+        addRoleButton.click();
+    }
+
+    public void deleteRole() {
+        deleteRoleButton.click();
+    }
+
+    public void loadAvailableSocialProviders() {
+        loadAvailableSocialProvidersButton.click();
+    }
+
+    public void loadPublicRealmInfo() {
+        loadPublicRealmInfoButton.click();
+    }
+
+    public void loadVersion() {
+        loadVersionButton.click();
+    }
+
 
 }

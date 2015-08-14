@@ -44,6 +44,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
             if (isRelative()) {
                 modifyClientRedirectUris(tr, appServerContextRoot.toString(), "");
                 modifyClientUrls(tr, appServerContextRoot.toString(), "");
+                modifyClientWebOrigins(tr, "8080", System.getProperty("auth.server.http.port", null));
             } else {
                 modifyClientRedirectUris(tr, "^(/.*/\\*)", appServerContextRoot.toString() + "$1");
                 modifyClientUrls(tr, "^(/.*)", appServerContextRoot.toString() + "$1");
@@ -79,6 +80,19 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
             String adminUrl = client.getAdminUrl();
             if (adminUrl != null) {
                 client.setAdminUrl(adminUrl.replaceAll(regex, replacement));
+            }
+        }
+    }
+
+    protected void modifyClientWebOrigins(RealmRepresentation realm, String regex, String replacement) {
+        for (ClientRepresentation client : realm.getClients()) {
+            List<String> webOrigins = client.getWebOrigins();
+            if (webOrigins != null) {
+                List<String> newWebOrigins = new ArrayList<>();
+                for (String uri : webOrigins) {
+                    newWebOrigins.add(uri.replaceAll(regex, replacement));
+                }
+                client.setWebOrigins(newWebOrigins);
             }
         }
     }
