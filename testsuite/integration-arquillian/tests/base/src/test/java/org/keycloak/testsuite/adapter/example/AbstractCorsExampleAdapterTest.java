@@ -64,11 +64,6 @@ public class AbstractCorsExampleAdapterTest extends AbstractExampleAdapterTest {
 
     @Test
     public void angularCorsProductTest() {
-        try {
-            Thread.sleep(400000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         angularCorsProductExample.navigateTo();
         testRealmLogin.form().login("bburke@redhat.com", "password");
 
