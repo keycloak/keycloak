@@ -73,6 +73,14 @@ module.factory('RequiredActionsListLoader', function(Loader, RequiredActions, $r
     });
 });
 
+module.factory('UnregisteredRequiredActionsListLoader', function(Loader, UnregisteredRequiredActions, $route, $q) {
+    return Loader.query(UnregisteredRequiredActions, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
 module.factory('RealmSessionStatsLoader', function(Loader, RealmSessionStats, $route, $q) {
     return Loader.get(RealmSessionStats, function() {
         return {

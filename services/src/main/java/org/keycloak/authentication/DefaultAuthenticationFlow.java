@@ -54,6 +54,9 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return authenticationFlow.processAction(actionExecution);
             } else if (model.getId().equals(actionExecution)) {
                 AuthenticatorFactory factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
+                if (factory == null) {
+                    throw new RuntimeException("Unable to find factory for AuthenticatorFactory: " + model.getAuthenticator() + " did you forget to declare it in a META-INF/services file?");
+                }
                 Authenticator authenticator = factory.create(processor.getSession());
                 AuthenticationProcessor.Result result = processor.createAuthenticatorContext(model, authenticator, executions);
                 authenticator.action(result);
@@ -106,7 +109,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
             AuthenticatorFactory factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
             if (factory == null) {
-                throw new AuthenticationFlowException("Could not find AuthenticatorFactory for: " + model.getAuthenticator(), AuthenticationFlowError.INTERNAL_ERROR);
+                throw new RuntimeException("Unable to find factory for AuthenticatorFactory: " + model.getAuthenticator() + " did you forget to declare it in a META-INF/services file?");
             }
             Authenticator authenticator = factory.create(processor.getSession());
             AuthenticationProcessor.logger.debugv("authenticator: {0}", factory.getId());

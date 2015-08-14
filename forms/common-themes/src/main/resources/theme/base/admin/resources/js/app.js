@@ -1117,11 +1117,14 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'AuthenticationFlowsCtrl'
         })
-        .when('/realms/:realm/authentication/flows/:flow/create/execution', {
+        .when('/realms/:realm/authentication/flows/:flow/create/execution/:topFlow', {
             templateUrl : resourceUrl + '/partials/create-execution.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                topFlow: function($route) {
+                    return $route.current.params.topFlow;
                 },
                 parentFlow : function(AuthenticationFlowLoader) {
                     return AuthenticationFlowLoader();
@@ -1135,11 +1138,14 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'CreateExecutionCtrl'
         })
-        .when('/realms/:realm/authentication/flows/:flow/create/flow/execution', {
+        .when('/realms/:realm/authentication/flows/:flow/create/flow/execution/:topFlow', {
             templateUrl : resourceUrl + '/partials/create-flow-execution.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                topFlow: function($route) {
+                    return $route.current.params.topFlow;
                 },
                 parentFlow : function(AuthenticationFlowLoader) {
                     return AuthenticationFlowLoader();
@@ -1164,6 +1170,9 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                unregisteredRequiredActions : function(UnregisteredRequiredActionsListLoader) {
+                    return UnregisteredRequiredActionsListLoader();
                 }
             },
             controller : 'RequiredActionsCtrl'

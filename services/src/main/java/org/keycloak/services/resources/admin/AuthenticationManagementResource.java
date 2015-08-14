@@ -12,6 +12,8 @@ import org.keycloak.authentication.DefaultAuthenticationFlow;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormAuthenticationFlow;
 import org.keycloak.authentication.FormAuthenticator;
+import org.keycloak.authentication.RequiredActionFactory;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -681,6 +683,50 @@ public class AuthenticationManagementResource {
             this.config = config;
         }
     }
+
+    @Path("unregistered-required-actions")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public List<Map<String, String>> getUnregisteredRequiredActions() {
+        List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(RequiredActionProvider.class);
+        List<Map<String, String>> unregisteredList = new LinkedList<>();
+        for (ProviderFactory factory : factories) {
+            RequiredActionFactory requiredActionFactory = (RequiredActionFactory) factory;
+            boolean found = false;
+            for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
+                if (model.getProviderId().equals(factory.getId())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                Map<String, String> data = new HashMap<>();
+                data.put("name", requiredActionFactory.getDisplayText());
+                data.put("providerId", requiredActionFactory.getId());
+                unregisteredList.add(data);
+            }
+
+        }
+        return unregisteredList;
+    }
+
+    @Path("register-required-action")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    public void registereRequiredAction(Map<String, String> data) {
+        String providerId = data.get("providerId");
+        String name = data.get("name");
+        RequiredActionProviderModel requiredAction = new RequiredActionProviderModel();
+        requiredAction.setAlias(providerId);
+        requiredAction.setName(name);
+        requiredAction.setProviderId(providerId);
+        requiredAction.setDefaultAction(false);
+        requiredAction.setEnabled(true);
+        realm.addRequiredActionProvider(requiredAction);
+    }
+
 
 
     @Path("required-actions")
