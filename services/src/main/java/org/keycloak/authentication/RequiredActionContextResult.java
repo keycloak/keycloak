@@ -31,12 +31,12 @@ public class RequiredActionContextResult implements RequiredActionContext {
     protected Response challenge;
     protected HttpRequest httpRequest;
     protected UserModel user;
-    protected RequiredActionProvider provider;
+    protected RequiredActionFactory factory;
 
     public RequiredActionContextResult(UserSessionModel userSession, ClientSessionModel clientSession,
                                        RealmModel realm, EventBuilder eventBuilder, KeycloakSession session,
                                        HttpRequest httpRequest,
-                                       UserModel user, RequiredActionProvider provider) {
+                                       UserModel user, RequiredActionFactory factory) {
         this.userSession = userSession;
         this.clientSession = clientSession;
         this.realm = realm;
@@ -44,7 +44,7 @@ public class RequiredActionContextResult implements RequiredActionContext {
         this.session = session;
         this.httpRequest = httpRequest;
         this.user = user;
-        this.provider = provider;
+        this.factory = factory;
     }
 
     @Override
@@ -131,20 +131,20 @@ public class RequiredActionContextResult implements RequiredActionContext {
     public URI getActionUrl(String code) {
         return LoginActionsService.requiredActionProcessor(getUriInfo())
                 .queryParam(OAuth2Constants.CODE, code)
-                .queryParam("action", provider.getProviderId())
+                .queryParam("action", factory.getId())
                 .build(getRealm().getName());
     }
 
     @Override
     public URI getActionUrl() {
-        String accessCode = generateAccessCode(provider.getProviderId());
+        String accessCode = generateAccessCode(factory.getId());
         return getActionUrl(accessCode);
 
     }
 
     @Override
     public LoginFormsProvider form() {
-        String accessCode = generateAccessCode(provider.getProviderId());
+        String accessCode = generateAccessCode(factory.getId());
         URI action = getActionUrl(accessCode);
         LoginFormsProvider provider = getSession().getProvider(LoginFormsProvider.class)
                 .setUser(getUser())

@@ -71,11 +71,6 @@ public class PassThroughRegistration implements Authenticator, AuthenticatorFact
     }
 
     @Override
-    public Authenticator create() {
-        return this;
-    }
-
-    @Override
     public String getDisplayType() {
         return "Dummy Pass Thru";
     }

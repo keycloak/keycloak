@@ -36,11 +36,6 @@ public class SecretQuestionRequiredAction implements RequiredActionProvider {
     }
 
     @Override
-    public String getProviderId() {
-        return PROVIDER_ID;
-    }
-
-    @Override
     public void close() {
 
     }

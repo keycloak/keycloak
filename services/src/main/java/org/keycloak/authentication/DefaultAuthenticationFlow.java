@@ -54,7 +54,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return authenticationFlow.processAction(actionExecution);
             } else if (model.getId().equals(actionExecution)) {
                 AuthenticatorFactory factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
-                Authenticator authenticator = factory.create();
+                Authenticator authenticator = factory.create(processor.getSession());
                 AuthenticationProcessor.Result result = processor.createAuthenticatorContext(model, authenticator, executions);
                 authenticator.action(result);
                 Response response = processResult(result);
@@ -108,7 +108,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             if (factory == null) {
                 throw new AuthenticationFlowException("Could not find AuthenticatorFactory for: " + model.getAuthenticator(), AuthenticationFlowError.INTERNAL_ERROR);
             }
-            Authenticator authenticator = factory.create();
+            Authenticator authenticator = factory.create(processor.getSession());
             AuthenticationProcessor.logger.debugv("authenticator: {0}", factory.getId());
             UserModel authUser = processor.getClientSession().getAuthenticatedUser();
 

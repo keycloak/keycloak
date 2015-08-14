@@ -27,11 +27,6 @@ public class SecretQuestionAuthenticatorFactory implements AuthenticatorFactory,
     }
 
     @Override
-    public Authenticator create() {
-        return SINGLETON;
-    }
-
-    @Override
     public Authenticator create(KeycloakSession session) {
         return SINGLETON;
     }

@@ -27,6 +27,7 @@ import org.keycloak.ClientConnection;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionContextResult;
+import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
@@ -861,12 +862,13 @@ public class LoginActionsService {
 
         }
 
-        RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, action);
-        if (provider == null) {
+        RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, action);
+        if (factory == null) {
             logger.error("required action provider was null");
             event.error(Errors.INVALID_CODE);
             throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
         }
+        RequiredActionProvider provider = factory.create(session);
         Checks checks = new Checks();
         if (!checks.verifyCode(realm.getBrowserFlow(), code, action)) {
             return checks.response;
@@ -883,7 +885,7 @@ public class LoginActionsService {
         initEvent(clientSession);
 
 
-        RequiredActionContextResult context = new RequiredActionContextResult(clientSession.getUserSession(), clientSession, realm, event, session, request, clientSession.getUserSession().getUser(), provider) {
+        RequiredActionContextResult context = new RequiredActionContextResult(clientSession.getUserSession(), clientSession, realm, event, session, request, clientSession.getUserSession().getUser(), factory) {
              @Override
             public String generateAccessCode(String action) {
                 String clientSessionAction = clientSession.getAction();
@@ -905,7 +907,7 @@ public class LoginActionsService {
         if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
             event.clone().event(EventType.CUSTOM_REQUIRED_ACTION)
                          .detail(Details.CUSTOM_REQUIRED_ACTION, action).success();
-            clientSession.getUserSession().getUser().removeRequiredAction(provider.getProviderId());
+            clientSession.getUserSession().getUser().removeRequiredAction(factory.getId());
             return AuthenticationManager.nextActionAfterAuthentication(session, clientSession.getUserSession(), clientSession, clientConnection, request, uriInfo, event);
         }
         if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {

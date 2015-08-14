@@ -17,14 +17,10 @@ import java.util.List;
 public class CookieAuthenticatorFactory implements AuthenticatorFactory {
     public static final String PROVIDER_ID = "auth-cookie";
     static CookieAuthenticator SINGLETON = new CookieAuthenticator();
-    @Override
-    public Authenticator create() {
-        return SINGLETON;
-    }
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        throw new IllegalStateException("illegal call");
+        return SINGLETON;
     }
 
     @Override

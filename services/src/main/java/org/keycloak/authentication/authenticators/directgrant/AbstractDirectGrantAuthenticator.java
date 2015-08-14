@@ -33,11 +33,6 @@ public abstract class AbstractDirectGrantAuthenticator implements Authenticator,
     }
 
     @Override
-    public Authenticator create() {
-        return this;
-    }
-
-    @Override
     public void close() {
 
     }

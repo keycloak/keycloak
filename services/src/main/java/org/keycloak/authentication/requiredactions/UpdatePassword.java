@@ -51,7 +51,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     public void requiredActionChallenge(RequiredActionContext context) {
         LoginFormsProvider loginFormsProvider = context.getSession()
                 .getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(context.generateAccessCode(getProviderId()))
+                .setClientSessionCode(context.generateAccessCode(UserModel.RequiredAction.UPDATE_PASSWORD.name()))
                 .setUser(context.getUser());
         Response challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
         context.challenge(challenge);
@@ -92,10 +92,4 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     public String getId() {
         return UserModel.RequiredAction.UPDATE_PASSWORD.name();
     }
-
-    @Override
-    public String getProviderId() {
-        return getId();
-    }
-
 }

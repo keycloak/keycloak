@@ -86,9 +86,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
         String siteKey = captchaConfig.getConfig().get(SITE_KEY);
         form.setAttribute("recaptchaRequired", true);
         form.setAttribute("recaptchaSiteKey", siteKey);
-        List<String> scripts = new LinkedList<>();
-        scripts.add("https://www.google.com/recaptcha/api.js");
-        form.setAttribute("scripts", scripts);
+        form.addScript("https://www.google.com/recaptcha/api.js");
     }
 
     @Override
@@ -103,27 +101,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
             AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
             String secret = captchaConfig.getConfig().get(SITE_SECRET);
 
-            HttpClient httpClient = context.getSession().getProvider(HttpClientProvider.class).getHttpClient();
-            HttpPost post = new HttpPost("https://www.google.com/recaptcha/api/siteverify");
-            List<NameValuePair> formparams = new LinkedList<>();
-            formparams.add(new BasicNameValuePair("secret", secret));
-            formparams.add(new BasicNameValuePair("response", captcha));
-            formparams.add(new BasicNameValuePair("remoteip", context.getConnection().getRemoteAddr()));
-            try {
-                UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
-                post.setEntity(form);
-                HttpResponse response = httpClient.execute(post);
-                InputStream content = response.getEntity().getContent();
-                try {
-                    Map json = JsonSerialization.readValue(content, Map.class);
-                    Object val = json.get("success");
-                    success = Boolean.TRUE.equals(val);
-                } finally {
-                    content.close();
-                }
-            } catch (Exception e) {
-                logger.error("Recaptcha failed", e);
-            }
+            success = validateRecaptcha(context, success, captcha, secret);
         }
         if (success) {
             context.success();
@@ -136,6 +114,31 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
 
 
         }
+    }
+
+    protected boolean validateRecaptcha(ValidationContext context, boolean success, String captcha, String secret) {
+        HttpClient httpClient = context.getSession().getProvider(HttpClientProvider.class).getHttpClient();
+        HttpPost post = new HttpPost("https://www.google.com/recaptcha/api/siteverify");
+        List<NameValuePair> formparams = new LinkedList<>();
+        formparams.add(new BasicNameValuePair("secret", secret));
+        formparams.add(new BasicNameValuePair("response", captcha));
+        formparams.add(new BasicNameValuePair("remoteip", context.getConnection().getRemoteAddr()));
+        try {
+            UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
+            post.setEntity(form);
+            HttpResponse response = httpClient.execute(post);
+            InputStream content = response.getEntity().getContent();
+            try {
+                Map json = JsonSerialization.readValue(content, Map.class);
+                Object val = json.get("success");
+                success = Boolean.TRUE.equals(val);
+            } finally {
+                content.close();
+            }
+        } catch (Exception e) {
+            logger.error("Recaptcha failed", e);
+        }
+        return success;
     }
 
     @Override

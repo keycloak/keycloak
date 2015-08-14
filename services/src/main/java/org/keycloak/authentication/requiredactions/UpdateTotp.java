@@ -27,7 +27,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
          LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class)
-                 .setClientSessionCode(context.generateAccessCode(getProviderId()))
+                 .setClientSessionCode(context.generateAccessCode(UserModel.RequiredAction.CONFIGURE_TOTP.name()))
                 .setUser(context.getUser());
         Response challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
         context.challenge(challenge);
@@ -69,11 +69,4 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     public String getId() {
         return UserModel.RequiredAction.CONFIGURE_TOTP.name();
     }
-
-    @Override
-    public String getProviderId() {
-        return getId();
-    }
-
-
 }

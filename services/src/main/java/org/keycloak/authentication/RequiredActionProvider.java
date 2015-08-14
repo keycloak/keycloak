@@ -36,11 +36,4 @@ public interface RequiredActionProvider extends Provider {
      * @param context
      */
     void processAction(RequiredActionContext context);
-
-    /**
-     * Provider id of this required action.  Must match ProviderFactory.getId().
-     *
-     * @return
-     */
-    String getProviderId();
 }
