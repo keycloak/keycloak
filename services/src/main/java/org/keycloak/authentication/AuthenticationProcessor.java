@@ -17,6 +17,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -366,6 +367,17 @@ public class AuthenticationProcessor {
         @Override
         public URI getActionUrl() {
             return getActionUrl(generateAccessCode());
+        }
+
+        @Override
+        public void cancelLogin() {
+            getEvent().error(Errors.REJECTED_BY_USER);
+            LoginProtocol protocol = getSession().getProvider(LoginProtocol.class, getClientSession().getAuthMethod());
+            protocol.setRealm(getRealm())
+                    .setHttpHeaders(getHttpRequest().getHttpHeaders())
+                    .setUriInfo(getUriInfo());
+            Response response = protocol.cancelLogin(getClientSession());
+            forceChallenge(response);
         }
     }
 

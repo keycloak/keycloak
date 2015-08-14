@@ -14,13 +14,19 @@ Then registering the provider by editing keycloak-server.json and adding the mod
     ],
 
 
-You then have to copy the secret-question.ftl file to the standalone/configuration/themes/base/login directory.
+You then have to copy the secret-question.ftl and secret-question-config.ftl files to the standalone/configuration/themes/base/login directory.
 
 After you do all this, you then have to reboot keycloak.  When reboot is complete, you will need to log into
 the admin console to create a new flow with your new authenticator.
 
 If you go to the Authentication menu item and go to the Flow tab, you will be able to view the currently
 defined flows.  You cannot modify an built in flows, so, to add the Authenticator you
-have to copy an existing flow or create your own.  I'm hoping the UI is intuitive enough so that you
-can figure out for yourself how to create a flow and add the Authenticator.  We're looking to add a screencast
+have to copy an existing flow or create your own.  
+
+Next you have to register your required action.
+Click on the Required Actions tab.  Click on the Register button and choose your new Required Action.
+Your new required action should now be displayed and enabled in the required actions list.
+
+I'm hoping the UI is intuitive enough so that you
+can figure out for yourself how to create a flow and add the Authenticator and Required Action.  We're looking to add a screencast
 to show this in action.

@@ -624,8 +624,8 @@ public class SecretQuestionRequiredActionFactory implements RequiredActionFactor
             <title>Enable Required Action</title>
             <para>
                 The final thing you have to do is go into the admin console.  Click on the Authentication left menu.
-                Click on the Required Actions tab.  Find your required action, and enable.  Alternatively, if you
-                click on the default action checkbox, this required action will be applied anytime a new user is created.
+                Click on the Required Actions tab.  Click on the Register button and choose your new Required Action.
+                Your new required action should now be displayed and enabled in the required actions list.
             </para>
         </section>
     </section>
