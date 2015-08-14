@@ -10,7 +10,7 @@
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>authenticator-example</artifactId>
+    <artifactId>authenticator-required-action-example</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -42,6 +42,6 @@
     </dependencies>
 
     <build>
-        <finalName>federation-properties-example</finalName>
+        <finalName>authenticator-required-action-example</finalName>
     </build>
 </project>

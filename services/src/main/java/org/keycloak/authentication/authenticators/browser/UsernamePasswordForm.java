@@ -26,13 +26,7 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
     public void action(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         if (formData.containsKey("cancel")) {
-            context.getEvent().error(Errors.REJECTED_BY_USER);
-            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, context.getClientSession().getAuthMethod());
-            protocol.setRealm(context.getRealm())
-                    .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
-                    .setUriInfo(context.getUriInfo());
-            Response response = protocol.cancelLogin(context.getClientSession());
-            context.forceChallenge(response);
+            context.cancelLogin();
             return;
         }
         if (!validateForm(context, formData)) {

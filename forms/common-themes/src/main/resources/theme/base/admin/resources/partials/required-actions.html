@@ -4,6 +4,13 @@
     <kc-tabs-authentication></kc-tabs-authentication>
     <table class="table table-striped table-bordered">
         <thead>
+        <tr data-ng-hide="unregisteredRequiredActions.length == 0">
+            <th colspan = "3" class="kc-table-actions">
+                <div class="pull-right" data-ng-show="access.manageRealm">
+                    <button class="btn btn-default" data-ng-click="register()">Register</button>
+                </div>
+            </th>
+        </tr>
         <tr data-ng-hide="requiredActions.length == 0">
             <th>Required Action</th>
             <th>Enabled</th>

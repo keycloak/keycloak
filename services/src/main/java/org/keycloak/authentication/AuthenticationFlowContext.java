@@ -217,4 +217,11 @@ public interface AuthenticationFlowContext {
      * @return
      */
     URI getActionUrl();
+
+    /**
+     * End the flow and redirect browser based on protocol specific respones.  This should only be executed
+     * in browser-based flows.
+     *
+     */
+    void cancelLogin();
 }

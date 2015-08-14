@@ -20,14 +20,14 @@ public class SecretQuestionRequiredAction implements RequiredActionProvider {
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        Response challenge = context.form().createForm("secret_question_config.ftl");
+        Response challenge = context.form().createForm("secret-question-config.ftl");
         context.challenge(challenge);
 
     }
 
     @Override
     public void processAction(RequiredActionContext context) {
-        String answer = (context.getHttpRequest().getDecodedFormParameters().getFirst("answer"));
+        String answer = (context.getHttpRequest().getDecodedFormParameters().getFirst("secret_answer"));
         UserCredentialValueModel model = new UserCredentialValueModel();
         model.setValue(answer);
         model.setType(SecretQuestionAuthenticator.CREDENTIAL_TYPE);

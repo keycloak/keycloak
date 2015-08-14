@@ -229,13 +229,25 @@ module.factory('BruteForceUser', function($resource) {
 
 
 module.factory('RequiredActions', function($resource) {
-    return $resource(authUrl + '/admin/realms/:id/authentication/required-actions/:alias', {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/required-actions/:alias', {
         realm : '@realm',
         alias : '@alias'
     }, {
         update : {
             method : 'PUT'
         }
+    });
+});
+
+module.factory('UnregisteredRequiredActions', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/unregistered-required-actions', {
+        realm : '@realm'
+    });
+});
+
+module.factory('RegisterRequiredAction', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/register-required-action', {
+        realm : '@realm'
     });
 });
 

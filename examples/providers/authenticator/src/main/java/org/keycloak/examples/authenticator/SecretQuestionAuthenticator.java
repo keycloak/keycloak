@@ -13,6 +13,8 @@ import org.keycloak.services.util.CookieHelper;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -24,7 +26,11 @@ public class SecretQuestionAuthenticator implements Authenticator {
 
     protected boolean hasCookie(AuthenticationFlowContext context) {
         Cookie cookie = context.getHttpRequest().getHttpHeaders().getCookies().get("SECRET_QUESTION_ANSWERED");
-        return cookie != null;
+        boolean result = cookie != null;
+        if (result) {
+            System.out.println("Bypassing secret question because cookie as set");
+        }
+        return result;
     }
 
     @Override
@@ -33,12 +39,17 @@ public class SecretQuestionAuthenticator implements Authenticator {
             context.success();
             return;
         }
-        Response challenge = context.form().createForm("secret_question.ftl");
+        Response challenge = context.form().createForm("secret-question.ftl");
         context.challenge(challenge);
     }
 
     @Override
     public void action(AuthenticationFlowContext context) {
+        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        if (formData.containsKey("cancel")) {
+            context.cancelLogin();
+            return;
+        }
         boolean validated = validateAnswer(context);
         if (!validated) {
             Response challenge =  context.form()
@@ -58,11 +69,12 @@ public class SecretQuestionAuthenticator implements Authenticator {
             maxCookieAge = Integer.valueOf(config.getConfig().get("cookie.max.age"));
 
         }
+        URI uri = context.getUriInfo().getBaseUriBuilder().path("realms").path(context.getRealm().getName()).build();
         CookieHelper.addCookie("SECRET_QUESTION_ANSWERED", "true",
-                context.getUriInfo().getBaseUri().getPath() + "/realms/" + context.getRealm().getName(),
+                uri.getRawPath(),
                 null, null,
                 maxCookieAge,
-                true, true);
+                false, true);
     }
 
     protected boolean validateAnswer(AuthenticationFlowContext context) {

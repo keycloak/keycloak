@@ -433,6 +433,9 @@ public class AuthenticationManager {
         for (String action : requiredActions) {
             RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
             RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
+            if (factory == null) {
+                throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
+            }
             RequiredActionProvider actionProvider = factory.create(session);
             RequiredActionContextResult context = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user, factory);
             actionProvider.requiredActionChallenge(context);
@@ -508,6 +511,9 @@ public class AuthenticationManager {
         for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
             if (!model.isEnabled()) continue;
             RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
+            if (factory == null) {
+                throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
+            }
             RequiredActionProvider provider = factory.create(session);
             RequiredActionContextResult result = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user, factory) {
                 @Override
