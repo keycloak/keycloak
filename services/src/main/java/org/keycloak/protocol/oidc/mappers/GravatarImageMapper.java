@@ -81,7 +81,7 @@ public class GravatarImageMapper extends UserAttributeMapper
 
     private String generateGravatarLink(String email)
     {
-        String emailHash = generateMD5hash(email);
+        String emailHash = generateMD5hash(email.toLowerCase());
         return String.format(GRAVATAR_LINK_FORMAT, emailHash);
     }
 
