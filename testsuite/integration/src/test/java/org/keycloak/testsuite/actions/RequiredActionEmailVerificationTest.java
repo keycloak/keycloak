@@ -145,7 +145,7 @@ public class RequiredActionEmailVerificationTest {
     public void verifyEmailRegister() throws IOException, MessagingException {
         loginPage.open();
         loginPage.clickRegister();
-        registerPage.register("firstName", "lastName", "email@mail.com", "verifyEmail", "password", "password");
+        registerPage.register("firstName", "lastName", "email@mail.com", "verifyEmail", "password", "password", null);
 
         String userId = events.expectRegister("verifyEmail", "email@mail.com").assertEvent().getUserId();
 

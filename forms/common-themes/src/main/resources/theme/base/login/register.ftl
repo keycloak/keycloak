@@ -68,7 +68,7 @@
                 </div>
 
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.street" name="user.attributes.street"/>
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.street" name="user.attributes.street" value="${(register.formData['user.attributes.street']!'')?html}"/>
                 </div>
             </div>
             <div class="form-group">
@@ -77,7 +77,7 @@
                 </div>
 
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.locality" name="user.attributes.locality"/>
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.locality" name="user.attributes.locality" value="${(register.formData['user.attributes.locality']!'')?html}"/>
                 </div>
             </div>
             <div class="form-group">
@@ -86,7 +86,7 @@
                 </div>
 
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.region" name="user.attributes.region"/>
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.region" name="user.attributes.region" value="${(register.formData['user.attributes.region']!'')?html}"/>
                 </div>
             </div>
             <div class="form-group">
@@ -95,7 +95,7 @@
                 </div>
 
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.postal_code" name="user.attributes.postal_code"/>
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.postal_code" name="user.attributes.postal_code" value="${(register.formData['user.attributes.postal_code']!'')?html}"/>
                 </div>
             </div>
             <div class="form-group">
@@ -104,7 +104,7 @@
                 </div>
 
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.country" name="user.attributes.country"/>
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.country" name="user.attributes.country" value="${(register.formData['user.attributes.country']!'')?html}"/>
                 </div>
             </div>
             <#if recaptchaRequired??>

@@ -117,7 +117,7 @@ public class RequiredActionTotpSetupTest {
     public void setupTotpRegister() {
         loginPage.open();
         loginPage.clickRegister();
-        registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
+        registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password", null);
 
         String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
 
@@ -170,7 +170,7 @@ public class RequiredActionTotpSetupTest {
         // Register new user
         loginPage.open();
         loginPage.clickRegister();
-        registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2");
+        registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2", null);
 
         String userId = events.expectRegister("setupTotp2", "email2@mail.com").assertEvent().getUserId();
 

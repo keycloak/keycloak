@@ -30,11 +30,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.IDToken;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.broker.util.UserSessionStatusServlet.UserSessionStatus;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -79,10 +77,19 @@ public class RegisterTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "registerExistingUser@email", "test-user@localhost", "password", "password");
+        registerPage.register("firstName", "lastName", "registerExistingUser@email", "test-user@localhost", "password", "password", "mystreet");
 
         registerPage.assertCurrent();
         Assert.assertEquals("Username already exists.", registerPage.getError());
+
+        // assert form keeps form fields on error
+        Assert.assertEquals("firstName", registerPage.getFirstName());
+        Assert.assertEquals("lastName", registerPage.getLastName());
+        Assert.assertEquals("", registerPage.getEmail());
+        Assert.assertEquals("", registerPage.getUsername());
+        Assert.assertEquals("", registerPage.getPassword());
+        Assert.assertEquals("", registerPage.getPasswordConfirm());
+        Assert.assertEquals("mystreet", registerPage.getAttributeStreet());
 
         events.expectRegister("test-user@localhost", "registerExistingUser@email")
                 .removeDetail(Details.EMAIL)
@@ -95,10 +102,19 @@ public class RegisterTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "registerUserInvalidPasswordConfirm@email", "registerUserInvalidPasswordConfirm", "password", "invalid");
+        registerPage.register("firstName", "lastName", "registerUserInvalidPasswordConfirm@email", "registerUserInvalidPasswordConfirm", "password", "invalid", null);
 
         registerPage.assertCurrent();
         Assert.assertEquals("Password confirmation doesn't match.", registerPage.getError());
+
+        // assert form keeps form fields on error
+        Assert.assertEquals("firstName", registerPage.getFirstName());
+        Assert.assertEquals("lastName", registerPage.getLastName());
+        Assert.assertEquals("registerUserInvalidPasswordConfirm@email", registerPage.getEmail());
+        Assert.assertEquals("registerUserInvalidPasswordConfirm", registerPage.getUsername());
+        Assert.assertEquals("", registerPage.getPassword());
+        Assert.assertEquals("", registerPage.getPasswordConfirm());
+        Assert.assertEquals("", registerPage.getAttributeStreet());
 
         events.expectRegister("registerUserInvalidPasswordConfirm", "registerUserInvalidPasswordConfirm@email")
                 .removeDetail(Details.USERNAME)
@@ -112,7 +128,7 @@ public class RegisterTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "registerUserMissingPassword@email", "registerUserMissingPassword", null, null);
+        registerPage.register("firstName", "lastName", "registerUserMissingPassword@email", "registerUserMissingPassword", null, null, null);
 
         registerPage.assertCurrent();
         Assert.assertEquals("Please specify password.", registerPage.getError());
@@ -137,7 +153,7 @@ public class RegisterTest {
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
-            registerPage.register("firstName", "lastName", "registerPasswordPolicy@email", "registerPasswordPolicy", "pass", "pass");
+            registerPage.register("firstName", "lastName", "registerPasswordPolicy@email", "registerPasswordPolicy", "pass", "pass", null);
 
             registerPage.assertCurrent();
             Assert.assertEquals("Invalid password: minimum length 8.", registerPage.getError());
@@ -147,7 +163,7 @@ public class RegisterTest {
                     .removeDetail(Details.EMAIL)
                     .user((String) null).error("invalid_registration").assertEvent();
 
-            registerPage.register("firstName", "lastName", "registerPasswordPolicy@email", "registerPasswordPolicy", "password", "password");
+            registerPage.register("firstName", "lastName", "registerPasswordPolicy@email", "registerPasswordPolicy", "password", "password", null);
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             String userId = events.expectRegister("registerPasswordPolicy", "registerPasswordPolicy@email").assertEvent().getUserId();
@@ -169,7 +185,7 @@ public class RegisterTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "registerUserMissingUsername@email", null, "password", "password");
+        registerPage.register("firstName", "lastName", "registerUserMissingUsername@email", null, "password", "password", null);
 
         registerPage.assertCurrent();
         Assert.assertEquals("Please specify username.", registerPage.getError());
@@ -186,14 +202,14 @@ public class RegisterTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", null, "registerUserMissingEmail", "password", "password");
+        registerPage.register("firstName", "lastName", null, "registerUserMissingEmail", "password", "password", null);
         registerPage.assertCurrent();
         Assert.assertEquals("Please specify email.", registerPage.getError());
         events.expectRegister("registerUserMissingEmail", null)
                 .removeDetail("email")
                 .error("invalid_registration").assertEvent();
 
-        registerPage.register("firstName", "lastName", "registerUserInvalidEmailemail", "registerUserInvalidEmail", "password", "password");
+        registerPage.register("firstName", "lastName", "registerUserInvalidEmailemail", "registerUserInvalidEmail", "password", "password", null);
         registerPage.assertCurrent();
         Assert.assertEquals("Invalid email address.", registerPage.getError());
         events.expectRegister("registerUserInvalidEmail", "registerUserInvalidEmailemail")
@@ -206,7 +222,7 @@ public class RegisterTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "registerUserSuccess@email", "registerUserSuccess", "password", "password");
+        registerPage.register("firstName", "lastName", "registerUserSuccess@email", "registerUserSuccess", "password", "password", "myStreet");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -218,6 +234,12 @@ public class RegisterTest {
         Assert.assertNotNull(user.getCreatedTimestamp());
         // test that timestamp is current with 10s tollerance
         Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
+        // test user info is set from form
+        Assert.assertEquals("registerusersuccess", user.getUsername());
+        Assert.assertEquals("registerusersuccess@email", user.getEmail());
+        Assert.assertEquals("firstName", user.getFirstName());
+        Assert.assertEquals("lastName", user.getLastName());
+        Assert.assertEquals("myStreet", user.getAttribute("street").get(0));
     }
 
     protected UserModel getUser(String userId) {
