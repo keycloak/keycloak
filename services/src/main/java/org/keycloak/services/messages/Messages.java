@@ -111,6 +111,7 @@ public class Messages {
     public static final String UNSUPPORTED_NAME_ID_FORMAT = "unsupportedNameIdFormatMessage";
 
     public static final String REGISTRATION_NOT_ALLOWED = "registrationNotAllowedMessage";
+    public static final String RESET_CREDENTIAL_NOT_ALLOWED = "resetCredentialNotAllowedMessage";
 
     public static final String PERMISSION_NOT_APPROVED = "permissionNotApprovedMessage";
 
