@@ -95,6 +95,9 @@ public class EmailTest {
             }
         });
 
+        loginPage.open();
+        loginPage.resetPassword();
+
         resetPasswordPage.changePassword("login-test");
 
         assertEquals(2, greenMail.getReceivedMessages().length);

@@ -854,13 +854,13 @@ public class UsersResource {
         accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD.name());
 
         try {
-            UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
+            UriBuilder builder = Urls.recoverPasswordBuilder(uriInfo.getBaseUri());
             builder.queryParam("key", accessCode.getCode());
 
             String link = builder.build(realm.getName()).toString();
             long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
 
-            this.session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendPasswordReset(link, expiration);
+            this.session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendChangePassword(link, expiration);
 
             //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
 

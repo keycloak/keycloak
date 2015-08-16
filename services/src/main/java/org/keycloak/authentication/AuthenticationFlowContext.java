@@ -224,4 +224,11 @@ public interface AuthenticationFlowContext {
      *
      */
     void cancelLogin();
+
+    /**
+     * Abort the current flow and restart it using the realm's browser login
+     *
+     * @return
+     */
+    void resetBrowserLogin();
 }

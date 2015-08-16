@@ -49,6 +49,7 @@ public class AuthenticationProcessor {
     protected EventBuilder event;
     protected HttpRequest request;
     protected String flowId;
+    protected String flowPath;
     /**
      * This could be an error message forwarded from brokering when the broker failed authentication
      * and we want to continue authentication locally.  forwardedErrorMessage can then be displayed by
@@ -128,6 +129,16 @@ public class AuthenticationProcessor {
 
     public AuthenticationProcessor setFlowId(String flowId) {
         this.flowId = flowId;
+        return this;
+    }
+
+    /**
+     * This is the path segment to append when generating an action URL.
+     *
+     * @param flowPath
+     */
+    public AuthenticationProcessor setFlowPath(String flowPath) {
+        this.flowPath = flowPath;
         return this;
     }
 
@@ -358,7 +369,8 @@ public class AuthenticationProcessor {
 
         @Override
         public URI getActionUrl(String code) {
-            return LoginActionsService.authenticationFormProcessor(getUriInfo())
+            return LoginActionsService.loginActionsBaseUrl(getUriInfo())
+                    .path(AuthenticationProcessor.this.flowPath)
                     .queryParam(OAuth2Constants.CODE, code)
                     .queryParam("execution", getExecution().getId())
                     .build(getRealm().getName());
@@ -378,6 +390,11 @@ public class AuthenticationProcessor {
                     .setUriInfo(getUriInfo());
             Response response = protocol.cancelLogin(getClientSession());
             forceChallenge(response);
+        }
+
+        @Override
+        public void resetBrowserLogin() {
+            this.status = FlowStatus.RESET_BROWSER_LOGIN;
         }
     }
 
@@ -421,6 +438,21 @@ public class AuthenticationProcessor {
             } else if (e.getError() == AuthenticationFlowError.EXPIRED_CODE) {
                 event.error(Errors.EXPIRED_CODE);
                 return ErrorPage.error(session, Messages.EXPIRED_CODE);
+
+            } else if (e.getError() == AuthenticationFlowError.RESET_TO_BROWSER_LOGIN) {
+                resetFlow(getClientSession());
+                AuthenticationProcessor processor = new AuthenticationProcessor();
+                processor.setClientSession(clientSession)
+                        .setFlowPath(LoginActionsService.AUTHENTICATE_PATH)
+                        .setFlowId(realm.getBrowserFlow().getId())
+                        .setConnection(connection)
+                        .setEventBuilder(event)
+                        .setProtector(protector)
+                        .setRealm(realm)
+                        .setSession(session)
+                        .setUriInfo(uriInfo)
+                        .setRequest(request);
+                return processor.authenticate();
 
             } else {
                 event.error(Errors.INVALID_USER_CREDENTIALS);
@@ -490,6 +522,8 @@ public class AuthenticationProcessor {
             resetFlow(clientSession);
             return authenticate();
         }
+        UserModel authUser = clientSession.getAuthenticatedUser();
+        validateUser(authUser);
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
             logger.debug("Cannot find execution, reseting flow");
@@ -516,10 +550,11 @@ public class AuthenticationProcessor {
 
     public void checkClientSession() {
         ClientSessionCode code = new ClientSessionCode(realm, clientSession);
-        if (!code.isValidAction(ClientSessionModel.Action.AUTHENTICATE.name())) {
+        String action = ClientSessionModel.Action.AUTHENTICATE.name();
+        if (!code.isValidAction(action)) {
             throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CLIENT_SESSION);
         }
-        if (!code.isActionActive(ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!code.isActionActive(action)) {
             throw new AuthenticationFlowException(AuthenticationFlowError.EXPIRED_CODE);
         }
         clientSession.setTimestamp(Time.currentTime());
@@ -550,11 +585,15 @@ public class AuthenticationProcessor {
         String username = clientSession.getAuthenticatedUser().getUsername();
         String attemptedUsername = clientSession.getNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
         if (attemptedUsername != null) username = attemptedUsername;
+        String rememberMe = clientSession.getNote(Details.REMEMBER_ME);
+        boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("true");
         if (userSession == null) { // if no authenticator attached a usersession
-            boolean remember = "true".equals(clientSession.getNote(Details.REMEMBER_ME));
-            userSession = session.sessions().createUserSession(realm, clientSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), "form", remember, null, null);
+            userSession = session.sessions().createUserSession(realm, clientSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), clientSession.getAuthMethod(), remember, null, null);
             userSession.setState(UserSessionModel.State.LOGGING_IN);
             userSessionCreated = true;
+        }
+        if (remember) {
+            event.detail(Details.REMEMBER_ME, "true");
         }
         TokenManager.attachClientSession(userSession, clientSession);
         event.user(userSession.getUser())
@@ -584,21 +623,7 @@ public class AuthenticationProcessor {
     }
 
     protected Response authenticationComplete() {
-        String username = clientSession.getAuthenticatedUser().getUsername();
-        String rememberMe = clientSession.getNote(Details.REMEMBER_ME);
-        boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("true");
-        if (userSession == null) { // if no authenticator attached a usersession
-            userSession = session.sessions().createUserSession(realm, clientSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), clientSession.getAuthMethod(), remember, null, null);
-            userSession.setState(UserSessionModel.State.LOGGING_IN);
-        }
-        if (remember) {
-            event.detail(Details.REMEMBER_ME, "true");
-        }
-        TokenManager.attachClientSession(userSession, clientSession);
-        event.user(userSession.getUser())
-                .detail(Details.USERNAME, username)
-                .session(userSession);
-
+        attachSession();
         return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, connection, request, uriInfo, event);
 
     }

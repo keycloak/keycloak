@@ -204,7 +204,7 @@ public class RequiredActionTotpSetupTest {
         // Login with one-time password
         loginTotpPage.login(totp.generateTOTP(totpCode));
 
-        loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
+        loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
 
         // Open account page
         accountTotpPage.open();
@@ -227,11 +227,11 @@ public class RequiredActionTotpSetupTest {
         totpPage.assertCurrent();
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent().getSessionId();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setuptotp2").assertEvent();
+        events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setupTotp2").assertEvent();
     }
 
     @Test

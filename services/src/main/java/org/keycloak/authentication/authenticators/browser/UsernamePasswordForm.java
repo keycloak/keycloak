@@ -1,5 +1,6 @@
 package org.keycloak.authentication.authenticators.browser;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -21,8 +22,9 @@ import javax.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator implements Authenticator {
+    protected static Logger logger = Logger.getLogger(UsernamePasswordForm.class);
 
-   @Override
+    @Override
     public void action(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         if (formData.containsKey("cancel")) {

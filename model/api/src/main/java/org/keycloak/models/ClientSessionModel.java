@@ -80,7 +80,8 @@ public interface ClientSessionModel {
         RECOVER_PASSWORD,
         AUTHENTICATE,
         SOCIAL_CALLBACK,
-        LOGGED_OUT
+        LOGGED_OUT,
+        RESET_CREDENTIALS
     }
 
     public enum ExecutionStatus {

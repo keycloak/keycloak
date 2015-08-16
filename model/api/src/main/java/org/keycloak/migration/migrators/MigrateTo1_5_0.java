@@ -24,10 +24,12 @@ public class MigrateTo1_5_0 {
     public void migrate(KeycloakSession session) {
         List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
+            DefaultAuthenticationFlows.migrateFlows(realm); // add reset credentials flo
             realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
             realm.setBrowserFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW));
             realm.setRegistrationFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.REGISTRATION_FLOW));
             realm.setDirectGrantFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW));
+            realm.setResetCredentialsFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW));
         }
 
     }

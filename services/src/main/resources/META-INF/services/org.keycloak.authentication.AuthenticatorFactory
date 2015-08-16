@@ -5,3 +5,7 @@ org.keycloak.authentication.authenticators.browser.SpnegoAuthenticatorFactory
 org.keycloak.authentication.authenticators.directgrant.ValidateOTP
 org.keycloak.authentication.authenticators.directgrant.ValidatePassword
 org.keycloak.authentication.authenticators.directgrant.ValidateUsername
+org.keycloak.authentication.authenticators.resetcred.ResetCredentialChooseUser
+org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail
+org.keycloak.authentication.authenticators.resetcred.ResetOTP
+org.keycloak.authentication.authenticators.resetcred.ResetPassword

@@ -166,6 +166,9 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return sendChallenge(result, execution);
             }
             throw new AuthenticationFlowException(result.getError());
+        } else if (status == FlowStatus.RESET_BROWSER_LOGIN) {
+            AuthenticationProcessor.logger.debugv("reset browser login from authenticator: {0}", execution.getAuthenticator());
+            throw new AuthenticationFlowException(AuthenticationFlowError.RESET_TO_BROWSER_LOGIN);
         } else if (status == FlowStatus.FORCE_CHALLENGE) {
             processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
             return sendChallenge(result, execution);

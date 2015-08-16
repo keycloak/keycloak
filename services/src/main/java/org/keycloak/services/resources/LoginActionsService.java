@@ -29,6 +29,7 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionContextResult;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.events.Details;
@@ -50,13 +51,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.CredentialValidation;
-import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -70,7 +68,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
@@ -93,6 +90,9 @@ public class LoginActionsService {
     protected static final Logger logger = Logger.getLogger(LoginActionsService.class);
 
     public static final String ACTION_COOKIE = "KEYCLOAK_ACTION";
+    public static final String AUTHENTICATE_PATH = "authenticate";
+    public static final String REGISTRATION_PATH = "registration";
+    public static final String RESET_CREDENTIALS_PATH = "reset-credentials";
 
     private RealmModel realm;
 
@@ -226,7 +226,7 @@ public class LoginActionsService {
                         ClientSessionModel clientSession = RestartLoginCookie.restartSession(session, realm, code);
                         if (clientSession != null) {
                             event.clone().detail(Details.RESTART_AFTER_TIMEOUT, "true").error(Errors.EXPIRED_CODE);
-                            response = processFlow(null, clientSession, realm.getBrowserFlow(), Messages.LOGIN_TIMEOUT);
+                            response = processFlow(null, clientSession, AUTHENTICATE_PATH, realm.getBrowserFlow(), Messages.LOGIN_TIMEOUT);
                             return false;
                         }
                     } catch (Exception e) {
@@ -268,7 +268,7 @@ public class LoginActionsService {
      * @param code
      * @return
      */
-    @Path("authenticate")
+    @Path(AUTHENTICATE_PATH)
     @GET
     public Response authenticate(@QueryParam("code") String code,
                                  @QueryParam("execution") String execution) {
@@ -290,12 +290,13 @@ public class LoginActionsService {
     }
 
     protected Response processAuthentication(String execution, ClientSessionModel clientSession, String errorMessage) {
-        return processFlow(execution, clientSession, realm.getBrowserFlow(), errorMessage);
+        return processFlow(execution, clientSession, AUTHENTICATE_PATH, realm.getBrowserFlow(), errorMessage);
     }
 
-    protected Response processFlow(String execution, ClientSessionModel clientSession, AuthenticationFlowModel flow, String errorMessage) {
+    protected Response processFlow(String execution, ClientSessionModel clientSession, String flowPath, AuthenticationFlowModel flow, String errorMessage) {
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setClientSession(clientSession)
+                .setFlowPath(flowPath)
                 .setFlowId(flow.getId())
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
@@ -323,7 +324,7 @@ public class LoginActionsService {
      * @param code
      * @return
      */
-    @Path("authenticate")
+    @Path(AUTHENTICATE_PATH)
     @POST
     public Response authenticateForm(@QueryParam("code") String code,
                                      @QueryParam("execution") String execution) {
@@ -338,8 +339,39 @@ public class LoginActionsService {
         return processAuthentication(execution, clientSession, null);
     }
 
+    @Path(RESET_CREDENTIALS_PATH)
+    @POST
+    public Response resetCredentialsPOST(@QueryParam("code") String code,
+                                         @QueryParam("execution") String execution) {
+        return resetCredentials(code, execution);
+    }
+
+    @Path(RESET_CREDENTIALS_PATH)
+    @GET
+    public Response resetCredentialsGET(@QueryParam("code") String code,
+                                         @QueryParam("execution") String execution) {
+        return resetCredentials(code, execution);
+    }
+
+    protected Response resetCredentials(String code, String execution) {
+        event.event(EventType.RESET_PASSWORD);
+        Checks checks = new Checks();
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+            return checks.response;
+        }
+        final ClientSessionCode clientCode = checks.clientCode;
+        final ClientSessionModel clientSession = clientCode.getClientSession();
+
+        return processResetCredentials(execution, clientSession, null);
+    }
+
+    protected Response processResetCredentials(String execution, ClientSessionModel clientSession, String errorMessage) {
+        return processFlow(execution, clientSession, RESET_CREDENTIALS_PATH, realm.getResetCredentialsFlow(), errorMessage);
+    }
+
+
     protected Response processRegistration(String execution, ClientSessionModel clientSession, String errorMessage) {
-        return processFlow(execution, clientSession, realm.getRegistrationFlow(), errorMessage);
+        return processFlow(execution, clientSession, REGISTRATION_PATH, realm.getRegistrationFlow(), errorMessage);
     }
 
 
@@ -349,7 +381,7 @@ public class LoginActionsService {
      * @param code
      * @return
      */
-    @Path("registration")
+    @Path(REGISTRATION_PATH)
     @GET
     public Response registerPage(@QueryParam("code") String code,
                                  @QueryParam("execution") String execution) {
@@ -380,7 +412,7 @@ public class LoginActionsService {
      * @param code
      * @return
      */
-    @Path("registration")
+    @Path(REGISTRATION_PATH)
     @POST
     public Response processRegister(@QueryParam("code") String code,
                                     @QueryParam("execution") String execution) {
@@ -392,10 +424,6 @@ public class LoginActionsService {
         Checks checks = new Checks();
         if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
             return checks.response;
-        }
-        if (!realm.isRegistrationAllowed()) {
-            event.error(Errors.REGISTRATION_DISABLED);
-            return ErrorPage.error(session, Messages.REGISTRATION_NOT_ALLOWED);
         }
 
         ClientSessionCode clientCode = checks.clientCode;
@@ -649,13 +677,10 @@ public class LoginActionsService {
         event.event(EventType.UPDATE_PASSWORD).success();
 
         if (clientSession.getAction().equals(ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
-            String actionCookieValue = getActionCookie();
-            if (actionCookieValue == null || !actionCookieValue.equals(userSession.getId())) {
-                session.sessions().removeClientSession(realm, clientSession);
-                return session.getProvider(LoginFormsProvider.class)
-                        .setSuccess(Messages.ACCOUNT_PASSWORD_UPDATED)
-                        .createInfoPage();
-            }
+            session.sessions().removeClientSession(realm, clientSession);
+            return session.getProvider(LoginFormsProvider.class)
+                    .setSuccess(Messages.ACCOUNT_PASSWORD_UPDATED)
+                    .createInfoPage();
         }
 
         event = event.clone().event(EventType.LOGIN);
@@ -714,110 +739,30 @@ public class LoginActionsService {
         }
     }
 
-    @Path("password-reset")
+    /**
+     * Initiated by admin, not the user on login
+     *
+     * @param key
+     * @return
+     */
+    @Path("recover-password")
     @GET
-    public Response passwordReset(@QueryParam("code") String code, @QueryParam("key") String key) {
+    public Response recoverPassword(@QueryParam("key") String key) {
         event.event(EventType.RESET_PASSWORD);
-        if (!realm.isResetPasswordAllowed()) {
-            event.error(Errors.RESET_CREDENTIAL_DISABLED);
-            return ErrorPage.error(session, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
-        }
         if (key != null) {
             Checks checks = new Checks();
             if (!checks.verifyCode(key, ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
-                return checks.response;
+                event.error(Errors.RESET_CREDENTIAL_DISABLED);
+                return ErrorPage.error(session, Messages.INVALID_CODE);
             }
             ClientSessionCode accessCode = checks.clientCode;
             return session.getProvider(LoginFormsProvider.class)
                     .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.UPDATE_PASSWORD);
         } else {
-            return session.getProvider(LoginFormsProvider.class)
-                    .setClientSessionCode(code)
-                    .createPasswordReset();
-        }
-    }
-
-    @Path("password-reset")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response sendPasswordReset(@QueryParam("code") String code,
-                                      final MultivaluedMap<String, String> formData) {
-        event.event(EventType.SEND_RESET_PASSWORD);
-        if (!realm.isResetPasswordAllowed()) {
             event.error(Errors.RESET_CREDENTIAL_DISABLED);
-            return ErrorPage.error(session, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
+            return ErrorPage.error(session, Messages.INVALID_CODE);
         }
-        Checks checks = new Checks();
-        if (!checks.verifyCode(code)) {
-            return checks.response;
-        }
-        final ClientSessionCode accessCode = checks.clientCode;
-        final ClientSessionModel clientSession = accessCode.getClientSession();
-        ClientModel client = clientSession.getClient();
-
-
-        String username = formData.getFirst("username");
-        if (username == null || username.isEmpty()) {
-            event.error(Errors.USERNAME_MISSING);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.MISSING_USERNAME)
-                    .setClientSessionCode(accessCode.getCode())
-                    .createPasswordReset();
-        }
-
-        event.client(client.getClientId())
-                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
-                .detail(Details.RESPONSE_TYPE, "code")
-                .detail(Details.AUTH_METHOD, "form")
-                .detail(Details.USERNAME, username);
-
-        UserModel user = session.users().getUserByUsername(username, realm);
-        if (user == null && username.contains("@")) {
-            user = session.users().getUserByEmail(username, realm);
-        }
-
-        if (user == null) {
-            event.error(Errors.USER_NOT_FOUND);
-        } else if (!user.isEnabled()) {
-            event.user(user).error(Errors.USER_DISABLED);
-        } else if (user.getEmail() == null || user.getEmail().trim().length() == 0) {
-            event.user(user).error(Errors.INVALID_EMAIL);
-        } else {
-            event.user(user);
-
-            UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false, null, null);
-            event.session(userSession);
-            TokenManager.attachClientSession(userSession, clientSession);
-
-            accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD.name());
-
-            try {
-                UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
-                builder.queryParam("key", accessCode.getCode());
-
-                String link = builder.build(realm.getName()).toString();
-                long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
-
-                this.session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendPasswordReset(link, expiration);
-
-                event.detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, clientSession.getId()).success();
-            } catch (EmailException e) {
-                event.error(Errors.EMAIL_SEND_FAILED);
-                logger.error("Failed to send password reset email", e);
-                return session.getProvider(LoginFormsProvider.class)
-                        .setError(Messages.EMAIL_SENT_ERROR)
-                        .setClientSessionCode(accessCode.getCode())
-                        .createErrorPage();
-            }
-
-            createActionCookie(realm, uriInfo, clientConnection, userSession.getId());
-        }
-
-        return session.getProvider(LoginFormsProvider.class)
-                .setSuccess(Messages.EMAIL_SENT)
-                .setClientSessionCode(accessCode.getCode())
-                .createPasswordReset();
     }
 
     private String getActionCookie() {
@@ -836,6 +781,7 @@ public class LoginActionsService {
                 .session(clientSession.getUserSession().getId())
                 .detail(Details.CODE_ID, clientSession.getId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
+                .detail(Details.USERNAME, clientSession.getNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME))
                 .detail(Details.RESPONSE_TYPE, "code");
 
         UserSessionModel userSession = clientSession.getUserSession();

@@ -36,6 +36,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.util.StreamUtil;
 
@@ -505,6 +506,7 @@ public class SamlService {
         String flowId = flow.getId();
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setClientSession(clientSession)
+                .setFlowPath(LoginActionsService.AUTHENTICATE_PATH)
                 .setFlowId(flowId)
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
