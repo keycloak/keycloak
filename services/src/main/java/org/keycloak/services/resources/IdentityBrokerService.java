@@ -473,6 +473,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         String flowId = flow.getId();
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setClientSession(clientSession)
+                .setFlowPath(LoginActionsService.AUTHENTICATE_PATH)
                 .setFlowId(flowId)
                 .setConnection(clientConnection)
                 .setEventBuilder(event)

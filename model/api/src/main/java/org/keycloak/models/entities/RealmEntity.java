@@ -89,6 +89,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private String browserFlow;
     private String registrationFlow;
     private String directGrantFlow;
+    private String resetCredentialsFlow;
 
 
     public String getName() {
@@ -592,6 +593,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setDirectGrantFlow(String directGrantFlow) {
         this.directGrantFlow = directGrantFlow;
+    }
+
+    public String getResetCredentialsFlow() {
+        return resetCredentialsFlow;
+    }
+
+    public void setResetCredentialsFlow(String resetCredentialsFlow) {
+        this.resetCredentialsFlow = resetCredentialsFlow;
     }
 }
 

@@ -45,7 +45,7 @@ public class MigrationModelManager {
             if (stored != null) {
                 logger.debug("Migrating older model to 1.5.0 updates");
             }
-            new MigrateTo1_4_0().migrate(session);
+            new MigrateTo1_5_0().migrate(session);
         }
 
         model.setStoredVersion(MigrationModel.LATEST_VERSION);

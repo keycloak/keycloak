@@ -1052,6 +1052,18 @@ public class RealmAdapter implements RealmModel {
         updated.setDirectGrantFlow(flow);
 
     }
+    @Override
+    public AuthenticationFlowModel getResetCredentialsFlow() {
+        if (updated != null) return updated.getResetCredentialsFlow();
+        return cached.getResetCredentialsFlow();
+    }
+
+    @Override
+    public void setResetCredentialsFlow(AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setResetCredentialsFlow(flow);
+
+    }
 
     @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {

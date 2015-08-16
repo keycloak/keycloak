@@ -19,9 +19,12 @@ public class HmacTest {
     @Test
     public void testHmacSignatures() throws Exception {
         SecretKey secret = new SecretKeySpec(UUID.randomUUID().toString().getBytes(), "HmacSHA256");
-        String encoded = new JWSBuilder().content("hello world".getBytes())
+        String encoded = new JWSBuilder().content("12345678901234567890".getBytes())
                 .hmac256(secret);
+        System.out.println("length: " + encoded.length());
         JWSInput input = new JWSInput(encoded);
         Assert.assertTrue(HMACProvider.verify(input, secret));
     }
+
+
 }

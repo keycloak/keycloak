@@ -49,6 +49,7 @@ public class AuthenticationProcessor {
     protected EventBuilder event;
     protected HttpRequest request;
     protected String flowId;
+    protected String flowPath;
     /**
      * This could be an error message forwarded from brokering when the broker failed authentication
      * and we want to continue authentication locally.  forwardedErrorMessage can then be displayed by
@@ -128,6 +129,16 @@ public class AuthenticationProcessor {
 
     public AuthenticationProcessor setFlowId(String flowId) {
         this.flowId = flowId;
+        return this;
+    }
+
+    /**
+     * This is the path segment to append when generating an action URL.
+     *
+     * @param flowPath
+     */
+    public AuthenticationProcessor setFlowPath(String flowPath) {
+        this.flowPath = flowPath;
         return this;
     }
 
@@ -358,7 +369,8 @@ public class AuthenticationProcessor {
 
         @Override
         public URI getActionUrl(String code) {
-            return LoginActionsService.authenticationFormProcessor(getUriInfo())
+            return LoginActionsService.loginActionsBaseUrl(getUriInfo())
+                    .path(AuthenticationProcessor.this.flowPath)
                     .queryParam(OAuth2Constants.CODE, code)
                     .queryParam("execution", getExecution().getId())
                     .build(getRealm().getName());
@@ -490,6 +502,8 @@ public class AuthenticationProcessor {
             resetFlow(clientSession);
             return authenticate();
         }
+        UserModel authUser = clientSession.getAuthenticatedUser();
+        validateUser(authUser);
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
             logger.debug("Cannot find execution, reseting flow");

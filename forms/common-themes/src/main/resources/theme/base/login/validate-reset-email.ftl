@@ -8,10 +8,10 @@
         <form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="username" class="${properties.kcLabelClass!}">${msg("usernameOrEmail")}</label>
+                    <label for="otp" class="${properties.kcLabelClass!}">${msg("temporaryEmailCode")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="username" name="username" class="${properties.kcInputClass!}" />
+                    <input type="text" id="key" name="key" class="${properties.kcInputClass!}" />
                 </div>
             </div>
 
@@ -28,6 +28,6 @@
             </div>
         </form>
     <#elseif section = "info" >
-        ${msg("emailInstruction")}
+        ${msg("validateResetEmailInstruction")}
     </#if>
 </@layout.registrationLayout>
