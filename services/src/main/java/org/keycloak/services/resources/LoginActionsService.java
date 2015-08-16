@@ -535,6 +535,7 @@ public class LoginActionsService {
                     .setClientSessionCode(accessCode.getCode())
                     .setUser(user)
                     .setErrors(errors)
+                    .setFormData(formData)
                     .createResponse(RequiredAction.UPDATE_PROFILE);
         }
 
@@ -555,6 +556,7 @@ public class LoginActionsService {
                         .setUser(user)
                         .setError(Messages.EMAIL_EXISTS)
                         .setClientSessionCode(accessCode.getCode())
+                        .setFormData(formData)
                         .createResponse(RequiredAction.UPDATE_PROFILE);
             }
 

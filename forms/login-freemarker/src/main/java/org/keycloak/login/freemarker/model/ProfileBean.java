@@ -21,29 +21,68 @@
  */
 package org.keycloak.login.freemarker.model;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.jboss.logging.Logger;
 import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author Vlastimil Elias (velias at redhat dot com)
  */
 public class ProfileBean {
 
-    private UserModel user;
+    private static final Logger logger = Logger.getLogger(ProfileBean.class);
 
-    public ProfileBean(UserModel user){
+    private UserModel user;
+    private MultivaluedMap<String, String> formData;
+
+    private final Map<String, String> attributes = new HashMap<>();
+
+    public ProfileBean(UserModel user, MultivaluedMap<String, String> formData) {
         this.user = user;
+        this.formData = formData;
+
+        if (user.getAttributes() != null) {
+            for (Map.Entry<String, List<String>> attr : user.getAttributes().entrySet()) {
+                List<String> attrValue = attr.getValue();
+                if (attrValue != null && attrValue.size() > 0) {
+                    attributes.put(attr.getKey(), attrValue.get(0));
+                }
+
+                if (attrValue != null && attrValue.size() > 1) {
+                    logger.warnf("There are more values for attribute '%s' of user '%s' . Will display just first value", attr.getKey(), user.getUsername());
+                }
+            }
+        }
+        if (formData != null) {
+            for (String key : formData.keySet()) {
+                if (key.startsWith("user.attributes.")) {
+                    String attribute = key.substring("user.attributes.".length());
+                    attributes.put(attribute, formData.getFirst(key));
+                }
+            }
+        }
+
     }
 
     public String getFirstName() {
-        return user.getFirstName();
+        return formData != null ? formData.getFirst("firstName") : user.getFirstName();
     }
 
     public String getLastName() {
-        return user.getLastName();
+        return formData != null ? formData.getFirst("lastName") : user.getLastName();
     }
 
     public String getEmail() {
-        return user.getEmail();
+        return formData != null ? formData.getFirst("email") : user.getEmail();
     }
 
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
 }

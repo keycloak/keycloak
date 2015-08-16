@@ -296,12 +296,12 @@ public class FederationProvidersIntegrationTest {
         registerPage.assertCurrent();
 
         // check existing username
-        registerPage.register("firstName", "lastName", "email@mail.cz", "existing", "Password1", "Password1");
+        registerPage.register("firstName", "lastName", "email@mail.cz", "existing", "Password1", "Password1", null);
         registerPage.assertCurrent();
         Assert.assertEquals("Username already exists.", registerPage.getError());
 
         // Check existing email
-        registerPage.register("firstName", "lastName", "existing@email.org", "nonExisting", "Password1", "Password1");
+        registerPage.register("firstName", "lastName", "existing@email.org", "nonExisting", "Password1", "Password1", null);
         registerPage.assertCurrent();
         Assert.assertEquals("Email already exists.", registerPage.getError());
     }
@@ -312,7 +312,7 @@ public class FederationProvidersIntegrationTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "email2@check.cz", "registerUserSuccess2", "Password1", "Password1");
+        registerPage.register("firstName", "lastName", "email2@check.cz", "registerUserSuccess2", "Password1", "Password1", null);
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         KeycloakSession session = keycloakRule.startSession();

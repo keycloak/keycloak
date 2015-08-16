@@ -251,7 +251,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("totp", new TotpBean(realm, user, baseUri));
                 break;
             case LOGIN_UPDATE_PROFILE:
-                attributes.put("user", new ProfileBean(user));
+                attributes.put("user", new ProfileBean(user, formData));
                 break;
             case REGISTER:
                 attributes.put("register", new RegisterBean(formData));
