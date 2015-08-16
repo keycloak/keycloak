@@ -5,6 +5,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.events.Details;
@@ -62,34 +63,22 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
             user =  context.getSession().users().getUserByEmail(username, context.getRealm());
         }
 
+        context.getClientSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+
+        // we don't want people guessing usernames, so if there is a problem, just continue, but don't set the user
+        // a null user will notify further executions, that this was a failure.
         if (user == null) {
-            event.error(Errors.INVALID_USER_CREDENTIALS);
-            Response challenge = context.form()
-                    .setError(Messages.INVALID_USER)
-                    .createPasswordReset();
-            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challenge);
-            return;
+            event.clone()
+                    .detail(Details.USERNAME, username)
+                    .error(Errors.USER_NOT_FOUND);
+        } else if (!user.isEnabled()) {
+            event.clone()
+                    .detail(Details.USERNAME, username)
+                    .user(user).error(Errors.USER_DISABLED);
+        } else {
+            context.setUser(user);
         }
 
-        if (!user.isEnabled()) {
-            event.user(user).error(Errors.USER_DISABLED);
-            Response challenge = context.form()
-                    .setError(Messages.ACCOUNT_DISABLED)
-                    .createPasswordReset();
-            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challenge);
-            return;
-        }
-
-        if (user.getEmail() == null || user.getEmail().trim().length() == 0) {
-            event.user(user).error(Errors.INVALID_EMAIL);
-            Response challenge = context.form()
-                    .setError(Messages.INVALID_EMAIL)
-                    .createPasswordReset();
-            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challenge);
-            return;
-        }
-
-        context.setUser(user);
         context.success();
     }
 

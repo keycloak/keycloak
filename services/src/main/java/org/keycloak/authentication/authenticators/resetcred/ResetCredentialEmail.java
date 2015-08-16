@@ -7,11 +7,13 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.login.LoginFormsProvider;
@@ -49,13 +51,29 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         UserModel user = context.getUser();
-        EventBuilder event = context.getEvent();
-        if (user.getEmail() == null || user.getEmail().trim().length() == 0) {
-            event.user(user).error(Errors.INVALID_EMAIL);
+        String username = context.getClientSession().getNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
+
+        // we don't want people guessing usernames, so if there was a problem obtaining the user, the user will be null.
+        // just redisplay this form
+        if (user == null) {
             Response challenge = context.form()
-                    .setError(Messages.INVALID_EMAIL)
-                    .createPasswordReset();
-            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challenge);
+                    .setSuccess(Messages.EMAIL_SENT)
+                    .createForm("validate-reset-email.ftl");
+            context.challenge(challenge);
+            return;
+        }
+
+
+        EventBuilder event = context.getEvent();
+        // we don't want people guessing usernames, so if there is a problem, just continuously challenge
+        if (user.getEmail() == null || user.getEmail().trim().length() == 0) {
+            event.user(user)
+                    .detail(Details.USERNAME, username)
+                    .error(Errors.INVALID_EMAIL);
+            Response challenge = context.form()
+                    .setSuccess(Messages.EMAIL_SENT)
+                    .createForm("validate-reset-email.ftl");
+            context.challenge(challenge);
             return;
         }
 
@@ -68,14 +86,19 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         try {
 
             context.getSession().getProvider(EmailProvider.class).setRealm(context.getRealm()).setUser(user).sendPasswordReset(secret, link, expiration);
-
-            event.detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, context.getClientSession().getId()).success();
+            event.clone().event(EventType.SEND_RESET_PASSWORD)
+                         .user(user)
+                         .detail(Details.USERNAME, username)
+                         .detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, context.getClientSession().getId()).success();
             Response challenge = context.form()
                     .setSuccess(Messages.EMAIL_SENT)
                     .createForm("validate-reset-email.ftl");
             context.challenge(challenge);
         } catch (EmailException e) {
-            event.error(Errors.EMAIL_SEND_FAILED);
+            event.clone().event(EventType.SEND_RESET_PASSWORD)
+                    .detail(Details.USERNAME, username)
+                    .user(user)
+                    .error(Errors.EMAIL_SEND_FAILED);
             logger.error("Failed to send password reset email", e);
             Response challenge = context.form()
                     .setError(Messages.EMAIL_SENT_ERROR)
@@ -92,7 +115,13 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
             key =context.getUriInfo().getQueryParameters().getFirst(KEY);
 
         } else if (context.getHttpRequest().getHttpMethod().equalsIgnoreCase("POST")) {
-            key = context.getHttpRequest().getDecodedFormParameters().getFirst(KEY);
+            MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+            if (formData.containsKey("cancel")) {
+                context.resetBrowserLogin();
+                return;
+            }
+
+            key = formData.getFirst(KEY);
         }
 
         // Can only guess once!  We remove the note so another guess can't happen
@@ -110,7 +139,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
 
     @Override
     public boolean requiresUser() {
-        return true;
+        return false;
     }
 
     @Override

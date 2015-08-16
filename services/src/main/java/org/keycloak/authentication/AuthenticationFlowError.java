@@ -16,5 +16,6 @@ public enum AuthenticationFlowError {
     USER_CONFLICT,
     USER_TEMPORARILY_DISABLED,
     INTERNAL_ERROR,
-    UNKNOWN_USER
+    UNKNOWN_USER,
+    RESET_TO_BROWSER_LOGIN
 }

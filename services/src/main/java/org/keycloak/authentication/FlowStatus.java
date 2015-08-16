@@ -42,6 +42,12 @@ public enum FlowStatus {
      * a Kerberos authenticator did not see a negotiate header.  There was no error, but the execution was attempted.
      *
      */
-    ATTEMPTED
+    ATTEMPTED,
+
+    /**
+     * Aborting this flow and starting the realm's browser flow from the beginning
+     *
+     */
+    RESET_BROWSER_LOGIN
 
 }

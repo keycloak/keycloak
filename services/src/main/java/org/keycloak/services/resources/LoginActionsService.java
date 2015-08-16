@@ -29,6 +29,7 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionContextResult;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.events.Details;
@@ -762,85 +763,6 @@ public class LoginActionsService {
         }
     }
 
-    private Response sendPasswordReset(@QueryParam("code") String code,
-                                      final MultivaluedMap<String, String> formData) {
-        event.event(EventType.SEND_RESET_PASSWORD);
-        if (!realm.isResetPasswordAllowed()) {
-            event.error(Errors.RESET_CREDENTIAL_DISABLED);
-            return ErrorPage.error(session, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
-        }
-        Checks checks = new Checks();
-        if (!checks.verifyCode(code)) {
-            return checks.response;
-        }
-        final ClientSessionCode accessCode = checks.clientCode;
-        final ClientSessionModel clientSession = accessCode.getClientSession();
-        ClientModel client = clientSession.getClient();
-
-
-        String username = formData.getFirst("username");
-        if (username == null || username.isEmpty()) {
-            event.error(Errors.USERNAME_MISSING);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.MISSING_USERNAME)
-                    .setClientSessionCode(accessCode.getCode())
-                    .createPasswordReset();
-        }
-
-        event.client(client.getClientId())
-                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
-                .detail(Details.RESPONSE_TYPE, "code")
-                .detail(Details.AUTH_METHOD, "form")
-                .detail(Details.USERNAME, username);
-
-        UserModel user = session.users().getUserByUsername(username, realm);
-        if (user == null && username.contains("@")) {
-            user = session.users().getUserByEmail(username, realm);
-        }
-
-        if (user == null) {
-            event.error(Errors.USER_NOT_FOUND);
-        } else if (!user.isEnabled()) {
-            event.user(user).error(Errors.USER_DISABLED);
-        } else if (user.getEmail() == null || user.getEmail().trim().length() == 0) {
-            event.user(user).error(Errors.INVALID_EMAIL);
-        } else {
-            event.user(user);
-
-            UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false, null, null);
-            event.session(userSession);
-            TokenManager.attachClientSession(userSession, clientSession);
-
-            accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD.name());
-
-            try {
-                UriBuilder builder = Urls.loginResetCredentialsBuilder(uriInfo.getBaseUri());
-                builder.queryParam("key", accessCode.getCode());
-
-                String link = builder.build(realm.getName()).toString();
-                long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
-
-                this.session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendChangePassword(link, expiration);
-
-                event.detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, clientSession.getId()).success();
-            } catch (EmailException e) {
-                event.error(Errors.EMAIL_SEND_FAILED);
-                logger.error("Failed to send password reset email", e);
-                return session.getProvider(LoginFormsProvider.class)
-                        .setError(Messages.EMAIL_SENT_ERROR)
-                        .setClientSessionCode(accessCode.getCode())
-                        .createErrorPage();
-            }
-
-            createActionCookie(realm, uriInfo, clientConnection, userSession.getId());
-        }
-
-        return session.getProvider(LoginFormsProvider.class)
-                .setSuccess(Messages.EMAIL_SENT)
-                .setClientSessionCode(accessCode.getCode())
-                .createPasswordReset();
-    }
-
     private String getActionCookie() {
         Cookie cookie = headers.getCookies().get(ACTION_COOKIE);
         AuthenticationManager.expireCookie(realm, ACTION_COOKIE, AuthenticationManager.getRealmCookiePath(realm, uriInfo), realm.getSslRequired().isRequired(clientConnection), clientConnection);
@@ -857,6 +779,7 @@ public class LoginActionsService {
                 .session(clientSession.getUserSession().getId())
                 .detail(Details.CODE_ID, clientSession.getId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
+                .detail(Details.USERNAME, clientSession.getNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME))
                 .detail(Details.RESPONSE_TYPE, "code");
 
         UserSessionModel userSession = clientSession.getUserSession();
