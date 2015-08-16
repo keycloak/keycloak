@@ -21,6 +21,7 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -58,6 +59,8 @@ import javax.mail.internet.MimeMessage;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
 
@@ -125,6 +128,21 @@ public class ResetPasswordTest {
     @Rule
     public AssertEvents events = new AssertEvents(keycloakRule);
 
+    @Before
+    public void resetPasswordToOriginal() {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                UserModel user = session.users().getUserByUsername("login-test", appRealm);
+                UserCredentialModel creds = new UserCredentialModel();
+                creds.setType(CredentialRepresentation.PASSWORD);
+                creds.setValue("password");
+
+                user.updateCredential(creds);
+            }
+        });
+    }
+
     @Test
     public void resetPassword() throws IOException, MessagingException {
         resetPassword("login-test");
@@ -150,6 +168,11 @@ public class ResetPasswordTest {
         assertTrue(loginPage.isCurrent());
 
         loginPage.login("login-test", "password");
+
+        String currentUrl = driver.getCurrentUrl();
+        String src = driver.getPageSource();
+
+        System.out.println("currentUrl: " + currentUrl);
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
 
@@ -381,7 +404,7 @@ public class ResetPasswordTest {
 
             String changePasswordUrl = getPasswordResetEmailLink(message);
 
-            Time.setOffset(1800+23);
+            Time.setOffset(1800 + 23);
 
             driver.navigate().to(changePasswordUrl.trim());
 
@@ -602,6 +625,81 @@ public class ResetPasswordTest {
             Time.setOffset(0);
         }
     }
+
+    @Test
+    public void resetPasswordByCode() throws IOException, MessagingException {
+        try {
+            String username = "login@test.com";
+            loginPage.open();
+            loginPage.resetPassword();
+
+            resetPasswordPage.assertCurrent();
+
+            resetPasswordPage.changePassword(username);
+
+            validateResetPage.assertCurrent();
+
+            events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+                    .user(userId)
+                    .detail(Details.USERNAME, username)
+                    .detail(Details.EMAIL, "login@test.com")
+                    .session((String) null)
+                    .assertEvent();
+
+            assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
+
+            assertEquals(1, greenMail.getReceivedMessages().length);
+
+            MimeMessage message = greenMail.getReceivedMessages()[0];
+
+            String code = getTemporaryCode(message);
+
+            validateResetPage.submitCode(code);
+
+            updatePasswordPage.assertCurrent();
+
+            updatePasswordPage.changePassword("resetPassword", "resetPassword");
+
+            String sessionId = events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, username).assertEvent().getSessionId();
+
+            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            events.expectLogin().user(userId).detail(Details.USERNAME, username).session(sessionId).assertEvent();
+
+            oauth.openLogout();
+
+            events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
+
+            loginPage.open();
+
+            loginPage.login("login-test", "resetPassword");
+
+            events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+
+            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        } finally {
+
+        }
+    }
+
+
+    private String getTemporaryCode(MimeMessage message) throws IOException, MessagingException {
+        Multipart multipart = (Multipart) message.getContent();
+
+        final String textContentType = multipart.getBodyPart(0).getContentType();
+
+        assertEquals("text/plain; charset=UTF-8", textContentType);
+
+        final String textBody = (String) multipart.getBodyPart(0).getContent();
+        Pattern pattern = Pattern.compile("Temporary Code: ([^\\s]*)");
+        Matcher matcher = pattern.matcher(textBody);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
+    }
+
 
     private String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
     	Multipart multipart = (Multipart) message.getContent();

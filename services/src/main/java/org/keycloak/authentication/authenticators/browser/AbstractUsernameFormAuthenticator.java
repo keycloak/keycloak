@@ -137,6 +137,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             if (context.getUser() != null) {
                 context.getEvent().user(context.getUser());
             }
+            logger.info("null password");
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = invalidCredentials(context);
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
@@ -145,6 +146,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         credentials.add(UserCredentialModel.password(password));
         boolean valid = context.getSession().users().validCredentials(context.getRealm(), context.getUser(), credentials);
         if (!valid) {
+            logger.info("bad password:" + password);
             context.getEvent().user(context.getUser());
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = invalidCredentials(context);
