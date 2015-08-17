@@ -10,6 +10,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.AngularCorsProductExample;
 import org.keycloak.testsuite.adapter.page.CorsDatabaseServiceExample;
+import org.keycloak.testsuite.arquillian.jira.Jira;
 import org.keycloak.testsuite.auth.page.account.Account;
 
 import java.io.File;
@@ -62,6 +63,7 @@ public abstract class AbstractCorsExampleAdapterTest extends AbstractExampleAdap
         driver.manage().deleteAllCookies();
     }
 
+    @Jira("KEYCLOAK-1546")
     @Test
     public void angularCorsProductTest() {
         angularCorsProductExample.navigateTo();
