@@ -262,7 +262,7 @@
 
         <!-- mongo -->
 
-        <module-def name="org.keycloak.keycloak-connections-mongo">
+        <!--<module-def name="org.keycloak.keycloak-connections-mongo">
             <maven-resource group="org.keycloak" artifact="keycloak-connections-mongo"/>
         </module-def>
 
@@ -280,7 +280,7 @@
 
         <module-def name="org.mongodb.mongo-java-driver">
             <maven-resource group="org.mongodb" artifact="mongo-java-driver"/>
-        </module-def>
+        </module-def>-->
 
         <!-- export/import -->
 
