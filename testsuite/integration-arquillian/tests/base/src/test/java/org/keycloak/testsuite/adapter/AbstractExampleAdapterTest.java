@@ -5,9 +5,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
@@ -47,11 +47,10 @@ public abstract class AbstractExampleAdapterTest extends AbstractAdapterTest {
         URL webXML = Paths.get(EXAMPLES_WEB_XML).toUri().toURL();
         String webXmlContent = IOUtils.toString(webXML.openStream())
                 .replace("%CONTEXT_PATH%", contextPath);
-        FileUtils.writeStringToFile(new File(webXML.getPath()), webXmlContent);
         WebArchive webArchive = ShrinkWrap.createFromZipFile(WebArchive.class,
                 new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".war"))
                 .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML)
-                .setWebXML(webXML);
+                .add(new StringAsset(webXmlContent), "/WEB-INF/web.xml");
         return webArchive;
     }
 
