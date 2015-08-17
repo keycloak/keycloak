@@ -16,8 +16,8 @@
         <module name="org.keycloak.keycloak-connections-infinispan" services="import"/>
         <module name="org.keycloak.keycloak-connections-jpa" services="import"/>
         <module name="org.keycloak.keycloak-connections-jpa-liquibase" services="import"/>
-        <module name="org.keycloak.keycloak-connections-mongo" services="import"/>
-        <module name="org.keycloak.keycloak-connections-mongo-update" services="import"/>
+        <!--<module name="org.keycloak.keycloak-connections-mongo" services="import"/>
+        <module name="org.keycloak.keycloak-connections-mongo-update" services="import"/>-->
         <module name="org.keycloak.keycloak-connections-truststore" services="import"/>
         <module name="org.keycloak.keycloak-common" services="import"/>
         <module name="org.keycloak.keycloak-core" services="import"/>
@@ -27,7 +27,7 @@
         <module name="org.keycloak.keycloak-events-email" services="import"/>
         <module name="org.keycloak.keycloak-events-jboss-logging" services="import"/>
         <module name="org.keycloak.keycloak-events-jpa" services="import"/>
-        <module name="org.keycloak.keycloak-events-mongo" services="import"/>
+        <!--<module name="org.keycloak.keycloak-events-mongo" services="import"/>-->
         <module name="org.keycloak.keycloak-export-import-api" services="import"/>
         <module name="org.keycloak.keycloak-export-import-dir" services="import"/>
         <module name="org.keycloak.keycloak-export-import-single-file" services="import"/>
@@ -42,7 +42,7 @@
         <module name="org.keycloak.keycloak-login-freemarker" services="import"/>
         <module name="org.keycloak.keycloak-model-api" services="import"/>
         <module name="org.keycloak.keycloak-model-jpa" services="import"/>
-        <module name="org.keycloak.keycloak-model-mongo" services="import"/>
+        <!--<module name="org.keycloak.keycloak-model-mongo" services="import"/>-->
         <module name="org.keycloak.keycloak-model-sessions-infinispan" services="import"/>
 
         <module name="org.keycloak.keycloak-saml-core" services="import"/>
