@@ -45,6 +45,9 @@ public class CustomerPortalExample extends AbstractPageWithInjectedUrl {
     @FindByJQuery("a:contains('products')")
     private WebElement productsLink;
 
+    @FindByJQuery("a:contains('logout')")
+    private WebElement logOutButton;
+
     public void goToProducts() {
         productsLink.click();
     }
@@ -60,6 +63,10 @@ public class CustomerPortalExample extends AbstractPageWithInjectedUrl {
     public void customerSession() {
         SeleniumUtils.waitGuiForElement(customerSessionLink);
         customerSessionLink.click();
+    }
+
+    public void logOut() {
+        logOutButton.click();
     }
 
     public void waitForCustomerListingHeader() {

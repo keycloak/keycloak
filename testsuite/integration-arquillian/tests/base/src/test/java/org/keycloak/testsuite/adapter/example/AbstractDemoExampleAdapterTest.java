@@ -63,11 +63,12 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     public void beforeDemoExampleTest() {
         customerPortalExample.navigateTo();
         driver.manage().deleteAllCookies();
+        productPortalExample.navigateTo();
+        driver.manage().deleteAllCookies();
     }
 
-    @Ignore
     @Test
-    public void customerPortalListingTest() throws InterruptedException {
+    public void customerPortalListingTest() {
 
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
@@ -82,7 +83,6 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         Assert.assertTrue(driver.getPageSource().contains("Stian Thorgersen"));
     }
 
-    @Ignore
     @Test
     public void customerPortalSessionTest() {
 
@@ -97,7 +97,6 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         Assert.assertTrue(driver.getPageSource().contains("You visited this page"));
     }
 
-    @Ignore
     @Test
     public void productPortalListingTest() {
 
@@ -145,13 +144,14 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         assertCurrentUrlStartsWith(productPortalExample);
         productPortalExample.waitForProductListingHeader();
 
-        driver.findElement(By.cssSelector("a:contains('logout')")).click();
-        assertCurrentUrlStartsWith(customerPortalExample);
+        productPortalExample.logOut();
+        assertCurrentUrlStartsWith(productPortalExample);
+        productPortalExample.productListing();
 
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
         testRealmLogin.form().login("bburke@redhat.com", "password");
 
-        driver.findElement(By.cssSelector("a:contains('logout')")).click();
+        customerPortalExample.logOut();
     }
 }
