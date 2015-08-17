@@ -26,7 +26,7 @@
             <module name="org.keycloak.keycloak-ldap-federation" services="import"/>
             <module name="org.keycloak.keycloak-server-spi" services="import"/>
             <module name="org.keycloak.keycloak-model-jpa" services="import" meta-inf="import"/>
-            <module name="org.keycloak.keycloak-model-mongo" services="import"/>
+            <!--<module name="org.keycloak.keycloak-model-mongo" services="import"/>-->
             <module name="org.keycloak.keycloak-model-infinispan" services="import"/>
             <module name="org.keycloak.keycloak-services" export="true" services="import"/>
             <module name="org.hibernate" services="import"/>
