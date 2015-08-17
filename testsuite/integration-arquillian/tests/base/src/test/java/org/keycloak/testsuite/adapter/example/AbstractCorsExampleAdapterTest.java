@@ -22,7 +22,7 @@ import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 /**
  * Created by fkiss.
  */
-public class AbstractCorsExampleAdapterTest extends AbstractExampleAdapterTest {
+public abstract class AbstractCorsExampleAdapterTest extends AbstractExampleAdapterTest {
 
     public static final String CORS = "cors";
 
