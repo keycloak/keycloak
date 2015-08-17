@@ -30,7 +30,7 @@
                             A flow is a container for all authentications that must happen during login or registration.  If you
                             go to the admin console authentication page, you can view all the defined flows in the system and
                             what authenticators they are made up of.  Flows can contain other flows.  You can also bind a new
-                            different flow for browser login, direct granta access, and registration.
+                            different flow for browser login, direct grant access, and registration.
                         </para>
                     </listitem>
                 </varlistentry>
@@ -170,7 +170,7 @@ Forms Subflow - ALTERNATIVE
                 </listitem>
                 <listitem>
                     <para>
-                        After the flow is complete, the authentication processor creates a UserSEssionModel and associates it with the ClientSEssionModel.
+                        After the flow is complete, the authentication processor creates a UserSessionModel and associates it with the ClientSessionModel.
                         It then checks to see if the user is required to complete any required actions before logging in.
                     </para>
                 </listitem>
@@ -236,13 +236,13 @@ Forms Subflow - ALTERNATIVE
                 When implementing the Authenticator interface, the first method that needs to be implemented is the
                 requiresUser() method.  For our example, this method must return true as we need to validate the secret question
                 associated with the user.  A provider like kerberos would return false from this method as it can
-                resolve a user from the negotiate header.  This example however is validating a specific credential of a specific
+                resolve a user from the negotiate header.  This example, however, is validating a specific credential of a specific
                 user.
             </para>
             <para>
                 The next method to implement is the configuredFor() method.  This method is responsible for determining if the
-                user is configured for this particular authenticator.  For this example, we need to check of the answer to the
-                secret question is been set up by the user or not.  In our case we are storing this information, hashed, within
+                user is configured for this particular authenticator.  For this example, we need to check if the answer to the
+                secret question has been set up by the user or not.  In our case we are storing this information, hashed, within
                 a UserCredentialValueModel within the UserModel (just like passwords are stored).  Here's how we do this
                 very simple check:
 <programlisting>
@@ -256,8 +256,8 @@ Forms Subflow - ALTERNATIVE
                 The configuredForCredentialType() call queries the user to see if it supports that credential type.
             </para>
             <para>
-                The next method to implement on the Authenticator is setRequiredActions().  If configuredFor() returns fales
-                and our example authenticator is required within the flow, this method will be called.  It is response for
+                The next method to implement on the Authenticator is setRequiredActions().  If configuredFor() returns false
+                and our example authenticator is required within the flow, this method will be called.  It is responsible for
                 registering any required actions that must be performed by the user.  In our example, we need to register
                 a required action that will force the user to set up the answer to the secret question.  We will implement
                 this required action provider later in this chapter.  Here is the implementation of the setRequiredActions()
@@ -272,8 +272,8 @@ Forms Subflow - ALTERNATIVE
             <para>
                 Now we are getting into the meat of the Authenticator implementation.  The next method to implement is
                 authenticate().  This is the initial method the flow invokes when the execution is first visited.  What we
-                want is that if a user has answered the secret question already on their browser's machine, that the
-                user doesn't have to answer the question again.  Basically making that machine "trusted".  The authenticate()
+                want is that if a user has answered the secret question already on their browser's machine, then the
+                user doesn't have to answer the question again, making that machine "trusted".  The authenticate()
                 method isn't responsible for processing the secret question form.  Its sole purpose is to render the page
                 or to continue the flow.
 <programlisting>
@@ -289,7 +289,7 @@ Forms Subflow - ALTERNATIVE
 </programlisting>
             </para>
             <para>
-                If the hasCookie() method checks to see if there is already a cookie set on the browser which indicates
+                The hasCookie() method checks to see if there is already a cookie set on the browser which indicates
                 that the secret question has already been answered.  If that returns true, we just mark this execution's
                 status as SUCCESS using the AuthenticationFlowContext.success() method and returning from the authentication()
                 method.
@@ -463,7 +463,7 @@ public class SecretQuestionAuthenticatorFactory implements AuthenticatorFactory,
             <para>
                 Keycloak comes with a Freemarker <link linkend="themes">theme and template engine</link>.  The createForm()
                 method you called within authenticate() of your Authenticator class, builds an HTML page from a file within
-                your login them: secret-question.ftl.  This file should be placed in the login theme with all the other
+                your login theme: secret-question.ftl.  This file should be placed in the login theme with all the other
                 .ftl files you see for login.
             </para>
             <para>
@@ -521,7 +521,7 @@ public class SecretQuestionAuthenticatorFactory implements AuthenticatorFactory,
     <section>
         <title>Required Action Walkthrough</title>
         <para>
-            In this section will discuss how to define a required action.  In the Authenticator section you may have wondered,
+            In this section we will discuss how to define a required action.  In the Authenticator section you may have wondered,
             "How will we get the user's answer to the secret question entered into the system?".  As we showed in the example,
             if the answer is not set up, a required action will be triggered.  This section discusses how to implement
             the required action for the Secret Question Authenticator.
@@ -583,7 +583,7 @@ public class SecretQuestionAuthenticatorFactory implements AuthenticatorFactory,
 </programlisting>
             </para>
             <para>
-                The answer is pulled out of the form post.  a UserCredentialValueModel is created and the type and value
+                The answer is pulled out of the form post.  A UserCredentialValueModel is created and the type and value
                 of the credential are set.  Then UserModel.updateCredentialDirectly() is invoked.  Finally, RequiredActionContext.success()
                 notifies the container that the required action was successful.
             </para>
@@ -633,7 +633,7 @@ public class SecretQuestionRequiredActionFactory implements RequiredActionFactor
         <title>Modifying/Extending the Registration Form</title>
         <para>
             It is entirely possible for you to implement your own flow with a set of Authenticators to totally change
-            how regisration is done in Keycloak.  But what you'll usually want to do is just add a little be of validation
+            how regisration is done in Keycloak.  But what you'll usually want to do is just add a little bit of validation
             to the out of the box registration page.
             An additional SPI was created to be able to do this.  It basically allows
             you to add validation of form elements on the page as well as to initialize UserModel attributes and data
