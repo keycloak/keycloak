@@ -257,9 +257,6 @@
                                             <property>keycloak.connectionsJpa.url</property>
                                         </requireProperty>
                                         <requireProperty>
-                                            <property>keycloak.connectionsJpa.driver</property>
-                                        </requireProperty>
-                                        <requireProperty>
                                             <property>keycloak.connectionsJpa.user</property>
                                         </requireProperty>
                                         <requireProperty>
@@ -341,7 +338,7 @@
                                                 </parameter>
                                                 <parameter>
                                                     <name>driver</name>
-                                                    <value>${keycloak.connectionsJpa.driver}</value>
+                                                    <value>${jdbc.mvn.artifactId}</value>
                                                 </parameter>
                                                 <parameter>
                                                     <name>username</name>
