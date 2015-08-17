@@ -144,17 +144,29 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
         return authValue != null && authValue.startsWith("Bearer");
     }
 
+    /**
+     * Returns true if the request was made with a Basic authentication authorization header.
+     *
+     * @param request the current <code>HttpServletRequest</code>
+     * @return <code>true</code> if the <code>request</code> was made with a Basic authentication authorization header;
+     * <code>false</code> otherwise.
+     */
+    protected boolean isBasicAuthRequest(HttpServletRequest request) {
+        String authValue = request.getHeader(AUTHORIZATION_HEADER);
+        return authValue != null && authValue.startsWith("Basic");
+    }
+
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
             Authentication authResult) throws IOException, ServletException {
 
-        if (!this.isBearerTokenRequest(request)) {
+        if (!(this.isBearerTokenRequest(request) || this.isBasicAuthRequest(request))) {
             super.successfulAuthentication(request, response, chain, authResult);
             return;
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Authentication success using bearer token. Updating SecurityContextHolder to contain: {}", authResult);
+            log.debug("Authentication success using bearer token/basic authentication. Updating SecurityContextHolder to contain: {}", authResult);
         }
 
         SecurityContextHolder.getContext().setAuthentication(authResult);
@@ -176,9 +188,9 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException failed) throws IOException, ServletException {
 
-        if (this.isBearerTokenRequest(request)) {
+        if (this.isBearerTokenRequest(request) || this.isBasicAuthRequest(request)) {
             SecurityContextHolder.clearContext();
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Unable to authenticate bearer token");
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Unable to authenticate bearer token/basic authentication");
             return;
         }
 
