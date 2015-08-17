@@ -188,9 +188,14 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException failed) throws IOException, ServletException {
 
-        if (this.isBearerTokenRequest(request) || this.isBasicAuthRequest(request)) {
+        if (this.isBearerTokenRequest(request)) {
             SecurityContextHolder.clearContext();
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Unable to authenticate bearer token/basic authentication");
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Unable to authenticate bearer token");
+            return;
+        }
+        else if (this.isBasicAuthRequest(request)) {
+            SecurityContextHolder.clearContext();
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Unable to authenticate with basic authentication");
             return;
         }
 
