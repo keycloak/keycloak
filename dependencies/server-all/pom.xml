@@ -116,7 +116,7 @@
         </dependency>
 
         <!-- mongo -->
-        <dependency>
+        <!-- <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-connections-mongo</artifactId>
         </dependency>
@@ -135,7 +135,7 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-        </dependency>
+        </dependency> -->
 
         <dependency>
             <groupId>org.liquibase</groupId>
