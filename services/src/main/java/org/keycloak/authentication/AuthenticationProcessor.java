@@ -33,6 +33,7 @@ import org.keycloak.util.Time;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -67,6 +68,7 @@ public class AuthenticationProcessor {
 
     // Used for client authentication
     protected ClientModel client;
+    protected Map<String, String> clientAuthAttributes = new HashMap<>();
 
     public AuthenticationProcessor() {
     }
@@ -81,6 +83,10 @@ public class AuthenticationProcessor {
 
     public void setClient(ClientModel client) {
         this.client = client;
+    }
+
+    public Map<String, String> getClientAuthAttributes() {
+        return clientAuthAttributes;
     }
 
     public ClientSessionModel getClientSession() {
@@ -339,6 +345,11 @@ public class AuthenticationProcessor {
         @Override
         public void setClient(ClientModel client) {
             AuthenticationProcessor.this.setClient(client);
+        }
+
+        @Override
+        public Map<String, String> getClientAuthAttributes() {
+            return AuthenticationProcessor.this.getClientAuthAttributes();
         }
 
         @Override

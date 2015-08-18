@@ -7,13 +7,23 @@
     <module-name>service-account-portal</module-name>
 
     <servlet>
-        <servlet-name>ServiceAccountExample</servlet-name>
-        <servlet-class>org.keycloak.example.ProductServiceAccountServlet</servlet-class>
+        <servlet-name>ProductSAClientSecretServlet</servlet-name>
+        <servlet-class>org.keycloak.example.ProductSAClientSecretServlet</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>ProductSAClientSignedJWTServlet</servlet-name>
+        <servlet-class>org.keycloak.example.ProductSAClientSignedJWTServlet</servlet-class>
     </servlet>
 
     <servlet-mapping>
-        <servlet-name>ServiceAccountExample</servlet-name>
-        <url-pattern>/app/*</url-pattern>
+        <servlet-name>ProductSAClientSecretServlet</servlet-name>
+        <url-pattern>/app-secret/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>ProductSAClientSignedJWTServlet</servlet-name>
+        <url-pattern>/app-jwt/*</url-pattern>
     </servlet-mapping>
 
 </web-app>
