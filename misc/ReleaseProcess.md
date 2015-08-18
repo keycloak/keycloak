@@ -1,68 +1,90 @@
 ## Test
 
-* Make sure tests pass on Travis
-* Make sure tests pass on Jenkins
+* Make sure tests pass on Travis (https://travis-ci.org/keycloak/keycloak)
+* Make sure tests pass on Jenkins (https://jenkins.mw.lab.eng.bos.redhat.com/hudson/view/Keycloak/job/keycloak_all/)
 * Go through the (manual testing)[https://docs.google.com/spreadsheets/d/17C_WEHNE03r5DxN71OXGJaytjA6_WjZKCXRcsnmNQD4]
 
-## Create release
 
-* Get from github
-```
-$ git@github.com:keycloak/keycloak.git
-```
+## Release
 
-* Build everything to make sure its kosher.
-```
-$ cd keycloak
-$ mvn -Pjboss-release install
-```
+*Releasing currently requires using JDK 7 due to a bug in JAX-RS Doclets*
 
-* Upload to Nexus (from project root)
-```
-$ mvn -Pjboss-release deploy
-```
+### Clone from GitHub
 
-* Login to Nexus and release the maven repository uploads in the staging area.
+    # git clone https://github.com/keycloak/keycloak.git
+    # cd keycloak
 
-* Upload src and distro zips to sf.net/projects/keycloak.  This includes appliance, war-dist, each adapter, and proxy distros.  You need to create an adapters folder on sf.net and each uploaded adapter there.
+### Update version
 
-* Upload documentation to http://keycloak.github.io/
-```
-$ git clone https://github.com/keycloak/keycloak.github.io.git
-$ cd keycloak.github.io.git/docs
-$ rm -rf *
-$ unzip distribution/docs-dist/target/keycloak-docs-1.0.0.Final.zip
-$ git add --all
-$ git commit
-$ git push
-```
-* tag release
-```
-$ git tag -a -m "1.0.0.Final" 1.0.0.Final
-$ git push --tags
-```
+    # mvn versions:set -DnewVersion=$VERSION -DgenerateBackupPoms=false -Pjboss-release
 
-## Update Bower
-```
-$ git clone https://github.com/keycloak/keycloak-js-bower
-$ cp <keycloak.js from dist> dist/keycloak-js-bower
-$ cp <keycloak.min.js from dist> dist/keycloak-js-bower
-```
-Edit bower.json and set version (include -beta -rc, but not -final). Create tag.
+### Build
 
-## Update OpenShift Cartridge
+    # mvn install install -Pdistribution
+    # mvn install -Pjboss-release -DskipTests
 
-See https://github.com/keycloak/openshift-keycloak-cartridge for details
+### Tag
 
-## Update Docker image
+    # git tag $VERSION
+    # git push --tags
+
+### Deploy to Nexus
+
+    # mvn deploy -DskipTests -Pjboss-release
+
+Then login to Nexus and release the maven uploads in the staging area. Artifacts will eventually be synced to Maven Central, but this can take up to 24 hours.
+
+### Upload
+
+Upload all artifacts to downloads.jboss.org (see https://mojo.redhat.com/docs/DOC-81955 for more details):
+
+    # rsync -rv --protocol=28 distribution/downloads/target/$VERSION keycloak@filemgmt.jboss.org:/downloads_htdocs/keycloak
+
+### Upload documentation
+
+    # git clone https://github.com/keycloak/keycloak.github.io.git
+    # cd keycloak.github.io
+    # rm -rf docs
+    # unzip ../distribution/downloads/target/$VERSION/keycloak-docs-$VERSION.zip
+    # mv keycloak-docs-$VERSION docs
+    # git commit -m "Updated docs to $VERSION"
+    # git tag $VERSION
+    # git push --tags
+
+
+## After Release
+
+### Update Bower
+
+    # git clone https://github.com/keycloak/keycloak-js-bower
+    # cd keycloak-js-bower
+    # unzip ../distribution/downloads/target/$VERSION/adapters/keycloak-js-adapter-dist-$VERSION.zip
+    # mv keycloak-js-adapter-dist-$VERSION/*.js dist/keycloak-js-bower
+    # rmdir keycloak-js-adapter-dist-$VERSION
+
+Edit bower.json and set version (include -beta -rc, but not -final). Then commit create tag:
+
+    # git commit -m "Updated to $VERSION"
+    # git tag $VERSION
+    # git push --tags
+
+### Update Website
+
+* Edit [Docs page](https://www.jboss.org/author/keycloak/docs.html) and update version
+* Edit [Downloads page](https://www.jboss.org/author/keycloak/downloads) edit directory listing component and update version in title and project root
+
+### Announce release
+
+Write a blog post on blog.keycloak.org, blurb about what's new and include links to website for download and jira for changes.
+
+Copy blog post and send to keycloak-dev and keycloak-users mailing lists.
+
+Post link to blog post on Twitter (with Keycloak user).
+
+### Update OpenShift Cartridge
 
 Instructions TBD
 
-## Maven central
+### Update Docker image
 
-Releases are automatically synced to Maven central, but this can take up to one day
-
-## Announce
-
-* Update Magnolia site to link keycloak docs and announcements.
-* Write a blog and email about release including links to download, migration guide, docs, and blurb about what's new
+Instructions TBD
