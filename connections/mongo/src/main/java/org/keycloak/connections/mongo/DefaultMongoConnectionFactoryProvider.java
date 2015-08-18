@@ -27,26 +27,23 @@ import java.util.Map;
  */
 public class DefaultMongoConnectionFactoryProvider implements MongoConnectionProviderFactory {
 
-    // TODO Make configurable
+    // TODO Make it dynamic
     private String[] entities = new String[]{
             "org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoUserEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity",
+            "org.keycloak.models.mongo.keycloak.entities.MongoClientEntity",
+            "org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity",
+            "org.keycloak.models.mongo.keycloak.entities.MongoMigrationModelEntity",
             "org.keycloak.models.entities.IdentityProviderEntity",
             "org.keycloak.models.entities.ClientIdentityProviderMappingEntity",
             "org.keycloak.models.entities.RequiredCredentialEntity",
             "org.keycloak.models.entities.CredentialEntity",
             "org.keycloak.models.entities.FederatedIdentityEntity",
-            "org.keycloak.models.mongo.keycloak.entities.MongoClientEntity",
-            "org.keycloak.models.sessions.mongo.entities.MongoUsernameLoginFailureEntity",
-            "org.keycloak.models.sessions.mongo.entities.MongoUserSessionEntity",
-            "org.keycloak.models.sessions.mongo.entities.MongoClientSessionEntity",
             "org.keycloak.models.entities.UserFederationProviderEntity",
             "org.keycloak.models.entities.UserFederationMapperEntity",
             "org.keycloak.models.entities.ProtocolMapperEntity",
             "org.keycloak.models.entities.IdentityProviderMapperEntity",
-            "org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity",
-            "org.keycloak.models.mongo.keycloak.entities.MongoMigrationModelEntity",
             "org.keycloak.models.entities.AuthenticationExecutionEntity",
             "org.keycloak.models.entities.AuthenticationFlowEntity",
             "org.keycloak.models.entities.AuthenticatorConfigEntity",
