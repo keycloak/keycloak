@@ -33,8 +33,8 @@ public class LdapUserProviderForm extends Form {
     @FindBy(id = "ldapBaseDn")
     private WebElement ldapBaseDnInput;
 
-    @FindBy(id = "ldapUserDnSuffix")
-    private WebElement ldapUserDnSuffixInput;
+    @FindBy(id = "ldapUsersDn")
+    private WebElement ldapUserDnInput;
 
     @FindBy(id = "ldapBindDn")
     private WebElement ldapBindDnInput;
@@ -96,6 +96,9 @@ public class LdapUserProviderForm extends Form {
     @FindByJQuery("div[class='onoffswitch']:eq(7)")
     private OnOffSwitch periodicChangedUsersSync;
 
+    @FindByJQuery("button:contains('Save')")
+    private WebElement saveButton;
+
     public void selectEditMode(String mode){
         waitGuiForElement(By.id("editMode"));
         editModeSelect.selectByVisibleText(mode);
@@ -104,5 +107,24 @@ public class LdapUserProviderForm extends Form {
     public void selectVendor(String vendor){
         waitGuiForElement(By.id("editMode"));
         vendorSelect.selectByVisibleText(vendor);
+    }
+
+    public void configureLdap(String displayName, String editMode, String vendor, String connectionUrl, String userDN, String ldapBindDn, String ldapBindCredential){
+        consoleDisplayNameInput.sendKeys(displayName);
+        editModeSelect.selectByVisibleText(editMode);
+        selectVendor(vendor);
+        ldapConnectionUrlInput.sendKeys(connectionUrl);
+        ldapUserDnInput.sendKeys(userDN);
+        ldapBindDnInput.sendKeys(ldapBindDn);
+        ldapBindCredentialInput.sendKeys(ldapBindCredential);
+        saveButton.click();
+    }
+
+    public void testConnection(){
+        testConnectionButton.click();
+    }
+
+    public void testAuthentication(){
+        testAuthenticationButton.click();
     }
 }
