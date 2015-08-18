@@ -47,6 +47,7 @@ public class JettySessionTokenStore extends AbstractJettySessionTokenStore {
                     myRequest.setMethod(method);
                     MultivaluedHashMap<String, String> j_post = (MultivaluedHashMap<String, String>) session.getAttribute(CACHED_FORM_PARAMETERS);
                     if (j_post != null) {
+                        myRequest.setContentType("application/x-www-form-urlencoded");
                         MultiMap<String> map = new MultiMap<String>();
                         for (String key : j_post.keySet()) {
                             for (String val : j_post.getList(key)) {
