@@ -30,17 +30,23 @@ module.controller('ClientRoleListCtrl', function($scope, $location, realm, clien
     });
 });
 
-module.controller('ClientCredentialsCtrl', function($scope, $location, realm, client, ClientCredentials, Notifications) {
+module.controller('ClientCredentialsCtrl', function($scope, $location, realm, client, clientAuthenticatorProviders, Notifications) {
     $scope.realm = realm;
     $scope.client = client;
-    var secret = ClientCredentials.get({ realm : realm.realm, client : client.id },
+    $scope.clientAuthenticatorProviders = clientAuthenticatorProviders;
+});
+
+module.controller('ClientSecretCtrl', function($scope, $location, realm, client, ClientSecret, Notifications) {
+    $scope.realm = realm;
+    $scope.client = client;
+    var secret = ClientSecret.get({ realm : realm.realm, client : client.id },
         function() {
             $scope.secret = secret.value;
         }
     );
 
     $scope.changePassword = function() {
-        var secret = ClientCredentials.update({ realm : realm.realm, client : client.id },
+        var secret = ClientSecret.update({ realm : realm.realm, client : client.id },
             function() {
                 Notifications.success('The secret has been changed.');
                 $scope.secret = secret.value;
@@ -57,6 +63,34 @@ module.controller('ClientCredentialsCtrl', function($scope, $location, realm, cl
     }, function() {
         $scope.path = $location.path().substring(1).split("/");
     });
+
+    $scope.cancel = function() {
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials");
+    };
+});
+
+module.controller('ClientSignedJWTCtrl', function($scope, $location, realm, client, ClientCertificate, Notifications) {
+
+    $scope.realm = realm;
+    $scope.client = client;
+
+    var signingKeyInfo = ClientCertificate.get({ realm : realm.realm, client : client.id, attribute: 'jwt.credentials' },
+        function() {
+            $scope.signingKeyInfo = signingKeyInfo;
+        }
+    );
+
+    $scope.importCertificate = function() {
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-signed-jwt/Signing/import/jwt.credentials");
+    };
+
+    $scope.generateSigningKey = function() {
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-signed-jwt/Signing/export/jwt.credentials");
+    };
+
+    $scope.cancel = function() {
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials");
+    };
 });
 
 module.controller('ClientIdentityProviderCtrl', function($scope, $location, $route, realm, client, Client, $location, Notifications) {
@@ -212,15 +246,25 @@ module.controller('ClientSamlKeyCtrl', function($scope, $location, $http, $uploa
     });
 });
 
-module.controller('ClientCertificateImportCtrl', function($scope, $location, $http, $upload, realm, client, $routeParams,
+module.controller('ClientCertificateImportCtrl', function($scope, $location, $http, $upload, realm, client, callingContext, $routeParams,
                                                          ClientCertificate, ClientCertificateGenerate,
                                                          ClientCertificateDownload, Notifications) {
+
+    console.log("callingContext: " + callingContext);
 
     var keyType = $routeParams.keyType;
     var attribute = $routeParams.attribute;
     $scope.realm = realm;
     $scope.client = client;
     $scope.keyType = keyType;
+
+    if (callingContext == 'saml') {
+        var uploadUrl = authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id + '/certificates/' + attribute + '/upload';
+        var redirectLocation = "/realms/" + realm.realm + "/clients/" + client.id + "/saml/keys";
+    } else if (callingContext == 'jwt-credentials') {
+        var uploadUrl = authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id + '/certificates/' + attribute + '/upload-certificate';
+        var redirectLocation = "/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-signed-jwt";
+    }
 
     $scope.files = [];
 
@@ -244,7 +288,7 @@ module.controller('ClientCertificateImportCtrl', function($scope, $location, $ht
         for (var i = 0; i < $scope.files.length; i++) {
             var $file = $scope.files[i];
             $scope.upload = $upload.upload({
-                url: authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id + '/certificates/' + attribute + '/upload',
+                url: uploadUrl,
                 // method: POST or PUT,
                 // headers: {'headerKey': 'headerValue'}, withCredential: true,
                 data: {keystoreFormat: $scope.uploadKeyFormat,
@@ -259,12 +303,11 @@ module.controller('ClientCertificateImportCtrl', function($scope, $location, $ht
                 //formDataAppender: function(formData, key, val){}
             }).success(function(data, status, headers) {
                 Notifications.success("Keystore uploaded successfully.");
-                $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/saml/keys");
-            })
-                .error(function() {
-                    Notifications.error("The key store can not be uploaded. Please verify the file.");
-
-                });
+                $location.url(redirectLocation);
+            }).error(function(data) {
+                var errorMsg = data['error_description'] ? data['error_description'] : 'The key store can not be uploaded. Please verify the file.';
+                Notifications.error(errorMsg);
+            });
             //.then(success, error, progress);
         }
     };
@@ -276,7 +319,7 @@ module.controller('ClientCertificateImportCtrl', function($scope, $location, $ht
     });
 });
 
-module.controller('ClientCertificateExportCtrl', function($scope, $location, $http, $upload, realm, client, $routeParams,
+module.controller('ClientCertificateExportCtrl', function($scope, $location, $http, $upload, realm, client, callingContext, $routeParams,
                                                          ClientCertificate, ClientCertificateGenerate,
                                                          ClientCertificateDownload, Notifications) {
     var keyType = $routeParams.keyType;
@@ -284,9 +327,19 @@ module.controller('ClientCertificateExportCtrl', function($scope, $location, $ht
     $scope.realm = realm;
     $scope.client = client;
     $scope.keyType = keyType;
+
+    if (callingContext == 'saml') {
+        var downloadUrl = authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id + '/certificates/' + attribute + '/download';
+        var realmCertificate = true;
+    } else if (callingContext == 'jwt-credentials') {
+        var downloadUrl = authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id + '/certificates/' + attribute + '/generate-and-download'
+        var realmCertificate = false;
+    }
+
     var jks = {
         keyAlias: client.clientId,
-        realmAlias: realm.realm
+        realmAlias: realm.realm,
+        realmCertificate: realmCertificate
     };
 
     $scope.keyFormats = [
@@ -304,7 +357,7 @@ module.controller('ClientCertificateExportCtrl', function($scope, $location, $ht
 
     $scope.download = function() {
         $http({
-            url: authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id + '/certificates/' + attribute + '/download',
+            url: downloadUrl,
             method: 'POST',
             responseType: 'arraybuffer',
             data: $scope.jks,
@@ -335,6 +388,10 @@ module.controller('ClientCertificateExportCtrl', function($scope, $location, $ht
     }, function() {
         $scope.path = $location.path().substring(1).split("/");
     });
+
+    $scope.cancel = function() {
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-signed-jwt");
+    }
 });
 
 module.controller('ClientSessionsCtrl', function($scope, realm, sessionCount, client,

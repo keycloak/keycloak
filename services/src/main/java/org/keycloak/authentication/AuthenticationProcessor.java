@@ -5,6 +5,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -12,6 +13,7 @@ import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -58,9 +60,22 @@ public class AuthenticationProcessor {
     protected String forwardedErrorMessage;
     protected boolean userSessionCreated;
 
+    // Used for client authentication
+    protected ClientModel client;
+
+    public AuthenticationProcessor() {
+    }
 
     public RealmModel getRealm() {
         return realm;
+    }
+
+    public ClientModel getClient() {
+        return client;
+    }
+
+    public void setClient(ClientModel client) {
+        this.client = client;
     }
 
     public ClientSessionModel getClientSession() {
@@ -175,11 +190,12 @@ public class AuthenticationProcessor {
     }
 
 
-    public class Result implements AuthenticationFlowContext {
+    public class Result implements AuthenticationFlowContext, ClientAuthenticationFlowContext {
         AuthenticatorConfigModel authenticatorConfig;
         AuthenticationExecutionModel execution;
         Authenticator authenticator;
         FlowStatus status;
+        ClientAuthenticator clientAuthenticator;
         Response challenge;
         AuthenticationFlowError error;
         List<AuthenticationExecutionModel> currentExecutions;
@@ -187,6 +203,12 @@ public class AuthenticationProcessor {
         private Result(AuthenticationExecutionModel execution, Authenticator authenticator, List<AuthenticationExecutionModel> currentExecutions) {
             this.execution = execution;
             this.authenticator = authenticator;
+            this.currentExecutions = currentExecutions;
+        }
+
+        private Result(AuthenticationExecutionModel execution, ClientAuthenticator clientAuthenticator, List<AuthenticationExecutionModel> currentExecutions) {
+            this.execution = execution;
+            this.clientAuthenticator = clientAuthenticator;
             this.currentExecutions = currentExecutions;
         }
 
@@ -228,6 +250,10 @@ public class AuthenticationProcessor {
         @Override
         public FlowStatus getStatus() {
             return status;
+        }
+
+        public ClientAuthenticator getClientAuthenticator() {
+            return clientAuthenticator;
         }
 
         @Override
@@ -291,6 +317,16 @@ public class AuthenticationProcessor {
         @Override
         public RealmModel getRealm() {
             return AuthenticationProcessor.this.getRealm();
+        }
+
+        @Override
+        public ClientModel getClient() {
+            return AuthenticationProcessor.this.getClient();
+        }
+
+        @Override
+        public void setClient(ClientModel client) {
+            AuthenticationProcessor.this.setClient(client);
         }
 
         @Override
@@ -467,6 +503,30 @@ public class AuthenticationProcessor {
 
     }
 
+    public Response handleClientAuthException(Exception failure) {
+        if (failure instanceof AuthenticationFlowException) {
+            AuthenticationFlowException e = (AuthenticationFlowException) failure;
+            logger.error("Failed client authentication: " + e.getError().toString(), e);
+            if (e.getError() == AuthenticationFlowError.CLIENT_NOT_FOUND) {
+                event.error(Errors.CLIENT_NOT_FOUND);
+                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Could not find client");
+            } else if (e.getError() == AuthenticationFlowError.CLIENT_DISABLED) {
+                event.error(Errors.CLIENT_DISABLED);
+                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Client is not enabled");
+            } else if (e.getError() == AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED) {
+                event.error(Errors.INVALID_CLIENT_CREDENTIALS);
+                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", e.getMessage());
+            } else {
+                event.error(Errors.INVALID_CLIENT_CREDENTIALS);
+                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", e.getError().toString() + ": " + e.getMessage());
+            }
+        } else {
+            logger.error("Unexpected error when authenticating client", failure);
+            event.error(Errors.INVALID_CLIENT_CREDENTIALS);
+            return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Unexpected error when authenticating client: " + failure.getMessage());
+        }
+    }
+
     public AuthenticationFlow createFlowExecution(String flowId, AuthenticationExecutionModel execution) {
         AuthenticationFlowModel flow = realm.getAuthenticationFlowById(flowId);
         if (flow == null) {
@@ -479,6 +539,9 @@ public class AuthenticationProcessor {
 
         } else if (flow.getProviderId().equals(AuthenticationFlow.FORM_FLOW)) {
             FormAuthenticationFlow flowExecution = new FormAuthenticationFlow(this, execution);
+            return flowExecution;
+        } else if (flow.getProviderId().equals(AuthenticationFlow.CLIENT_FLOW)) {
+            ClientAuthenticationFlow flowExecution = new ClientAuthenticationFlow(this, flow);
             return flowExecution;
         }
         throw new AuthenticationFlowException("Unknown flow provider type", AuthenticationFlowError.INTERNAL_ERROR);
@@ -503,6 +566,16 @@ public class AuthenticationProcessor {
             throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
         }
         return authenticationComplete();
+    }
+
+    public Response authenticateClient() throws AuthenticationFlowException {
+        AuthenticationFlow authenticationFlow = createFlowExecution(this.flowId, null);
+        try {
+            Response challenge = authenticationFlow.processFlow();
+            return challenge;
+        } catch (Exception e) {
+            return handleClientAuthException(e);
+        }
     }
 
     public static void resetFlow(ClientSessionModel clientSession) {
@@ -630,6 +703,10 @@ public class AuthenticationProcessor {
 
     public AuthenticationProcessor.Result createAuthenticatorContext(AuthenticationExecutionModel model, Authenticator authenticator, List<AuthenticationExecutionModel> executions) {
         return new Result(model, authenticator, executions);
+    }
+
+    public AuthenticationProcessor.Result createClientAuthenticatorContext(AuthenticationExecutionModel model, ClientAuthenticator clientAuthenticator, List<AuthenticationExecutionModel> executions) {
+        return new Result(model, clientAuthenticator, executions);
     }
 
 

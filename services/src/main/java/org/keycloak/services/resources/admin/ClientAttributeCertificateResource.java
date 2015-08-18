@@ -3,7 +3,6 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotAcceptableException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
@@ -11,8 +10,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.util.CertificateUtils;
 import org.keycloak.util.PemUtils;
 
 import javax.ws.rs.Consumes;
@@ -28,10 +27,7 @@ import javax.ws.rs.core.UriInfo;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -67,28 +63,6 @@ public class ClientAttributeCertificateResource {
         this.adminEvent = adminEvent;
     }
 
-    public static class ClientKeyPairInfo {
-        protected String privateKey;
-        protected String publicKey;
-        protected String certificate;
-
-        public String getPrivateKey() {
-            return privateKey;
-        }
-
-        public void setPrivateKey(String privateKey) {
-            this.privateKey = privateKey;
-        }
-
-        public String getCertificate() {
-            return certificate;
-        }
-
-        public void setCertificate(String certificate) {
-            this.certificate = certificate;
-        }
-    }
-
     /**
      *
      * @return
@@ -96,8 +70,8 @@ public class ClientAttributeCertificateResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public ClientKeyPairInfo getKeyInfo() {
-        ClientKeyPairInfo info = new ClientKeyPairInfo();
+    public CertificateRepresentation getKeyInfo() {
+        CertificateRepresentation info = new CertificateRepresentation();
         info.setCertificate(client.getAttribute(certificateAttribute));
         info.setPrivateKey(client.getAttribute(privateAttribute));
         return info;
@@ -111,34 +85,13 @@ public class ClientAttributeCertificateResource {
     @NoCache
     @Path("generate")
     @Produces(MediaType.APPLICATION_JSON)
-    public ClientKeyPairInfo generate() {
+    public CertificateRepresentation generate() {
         auth.requireManage();
 
-        String subject = client.getClientId();
-        KeyPair keyPair = null;
-        try {
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-            generator.initialize(2048);
-            keyPair = generator.generateKeyPair();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-        X509Certificate certificate = null;
-        try {
-            certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        String privateKeyPem = KeycloakModelUtils.getPemFromKey(keyPair.getPrivate());
-        String certPem = KeycloakModelUtils.getPemFromCertificate(certificate);
+        CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId());
 
-        client.setAttribute(privateAttribute, privateKeyPem);
-        client.setAttribute(certificateAttribute, certPem);
-
-        KeycloakModelUtils.generateClientKeyPairCertificate(client);
-        ClientKeyPairInfo info = new ClientKeyPairInfo();
-        info.setCertificate(client.getAttribute(certificateAttribute));
-        info.setPrivateKey(client.getAttribute(privateAttribute));
+        client.setAttribute(privateAttribute, info.getPrivateKey());
+        client.setAttribute(certificateAttribute, info.getCertificate());
         
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
 
@@ -146,6 +99,7 @@ public class ClientAttributeCertificateResource {
     }
 
     /**
+     * Upload certificate and eventually private key
      *
      * @param uriInfo
      * @param input
@@ -156,9 +110,52 @@ public class ClientAttributeCertificateResource {
     @Path("upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public ClientKeyPairInfo uploadJks(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
+    public CertificateRepresentation uploadJks(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
+        CertificateRepresentation info = getCertFromRequest(uriInfo, input);
+
+        if (info.getPrivateKey() != null) {
+            client.setAttribute(privateAttribute, info.getPrivateKey());
+        } else if (info.getCertificate() != null) {
+            client.removeAttribute(privateAttribute);
+        } else {
+            throw new ErrorResponseException("certificate-not-found", "Certificate or key with given alias not found in the keystore", Response.Status.BAD_REQUEST);
+        }
+
+        if (info.getCertificate() != null) {
+            client.setAttribute(certificateAttribute, info.getCertificate());
+        }
+
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
+        return info;
+    }
+
+    /**
+     * Upload only certificate, not private key
+     *
+     * @param uriInfo
+     * @param input
+     * @return
+     * @throws IOException
+     */
+    @POST
+    @Path("upload-certificate")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    public CertificateRepresentation uploadJksCertificate(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
+        CertificateRepresentation info = getCertFromRequest(uriInfo, input);
+
+        if (info.getCertificate() != null) {
+            client.setAttribute(certificateAttribute, info.getCertificate());
+        } else {
+            throw new ErrorResponseException("certificate-not-found", "Certificate with given alias not found in the keystore", Response.Status.BAD_REQUEST);
+        }
+
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
+        return info;
+    }
+
+    private CertificateRepresentation getCertFromRequest(UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
         auth.requireManage();
-        ClientKeyPairInfo info = new ClientKeyPairInfo();
         Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
         List<InputPart> inputParts = uploadForm.get("file");
 
@@ -185,21 +182,18 @@ public class ClientAttributeCertificateResource {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+        CertificateRepresentation info = new CertificateRepresentation();
         if (privateKey != null) {
             String privateKeyPem = KeycloakModelUtils.getPemFromKey(privateKey);
-            client.setAttribute(privateAttribute, privateKeyPem);
             info.setPrivateKey(privateKeyPem);
-        } else if (certificate != null) {
-            client.removeAttribute(privateAttribute);
         }
 
         if (certificate != null) {
             String certPem = KeycloakModelUtils.getPemFromCertificate(certificate);
-            client.setAttribute(certificateAttribute, certPem);
             info.setCertificate(certPem);
         }
-        
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
+
         return info;
     }
 
@@ -274,9 +268,9 @@ public class ClientAttributeCertificateResource {
     public byte[] getKeystore(final KeyStoreConfig config) {
         auth.requireView();
         if (config.getFormat() != null && !config.getFormat().equals("JKS") && !config.getFormat().equals("PKCS12")) {
-            throw new NotAcceptableException("Only support jks format.");
+            throw new NotAcceptableException("Only support jks or pkcs12 format.");
         }
-        String format = config.getFormat();
+
         String privatePem = client.getAttribute(privateAttribute);
         String certPem = client.getAttribute(certificateAttribute);
         if (privatePem == null && certPem == null) {
@@ -288,8 +282,48 @@ public class ClientAttributeCertificateResource {
         if (config.getStorePassword() == null) {
             throw new ErrorResponseException("password-missing", "Need to specify a store password for jks download", Response.Status.BAD_REQUEST);
         }
-        final KeyStore keyStore;
+
+        byte[] rtn = getKeystore(config, privatePem, certPem);
+        return rtn;
+    }
+
+    /**
+     * Generate new keypair and certificate and downloads private key into specified keystore format. Only generated certificate is saved in Keycloak DB, but private
+     * key is not.
+     *
+     * @param config
+     * @return
+     */
+    @POST
+    @NoCache
+    @Path("/generate-and-download")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public byte[] generateAndGetKeystore(final KeyStoreConfig config) {
+        auth.requireManage();
+
+        if (config.getFormat() != null && !config.getFormat().equals("JKS") && !config.getFormat().equals("PKCS12")) {
+            throw new NotAcceptableException("Only support jks or pkcs12 format.");
+        }
+        if (config.getKeyPassword() == null) {
+            throw new ErrorResponseException("password-missing", "Need to specify a key password for jks generation and download", Response.Status.BAD_REQUEST);
+        }
+        if (config.getStorePassword() == null) {
+            throw new ErrorResponseException("password-missing", "Need to specify a store password for jks generation and download", Response.Status.BAD_REQUEST);
+        }
+
+        CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId());
+        byte[] rtn = getKeystore(config, info.getPrivateKey(), info.getCertificate());
+
+        client.setAttribute(certificateAttribute, info.getCertificate());
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
+        return rtn;
+    }
+
+    private byte[] getKeystore(KeyStoreConfig config, String privatePem, String certPem) {
         try {
+            String format = config.getFormat();
+            KeyStore keyStore;
             if (format.equals("JKS")) keyStore = KeyStore.getInstance("JKS");
             else keyStore = KeyStore.getInstance(format, "BC");
             keyStore.load(null, null);

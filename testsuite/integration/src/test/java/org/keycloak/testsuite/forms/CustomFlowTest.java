@@ -26,7 +26,10 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AuthenticationFlow;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -39,6 +42,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
@@ -116,7 +120,24 @@ public class CustomFlowTest {
             execution.setAuthenticatorFlow(false);
             appRealm.addAuthenticatorExecution(execution);
 
+            new ClientManager().createClient(appRealm, "dummy-client");
 
+            AuthenticationFlowModel clientFlow = new AuthenticationFlowModel();
+            clientFlow.setAlias("client-dummy");
+            clientFlow.setDescription("dummy pass through flow");
+            clientFlow.setProviderId(AuthenticationFlow.CLIENT_FLOW);
+            clientFlow.setTopLevel(true);
+            clientFlow.setBuiltIn(false);
+            clientFlow = appRealm.addAuthenticationFlow(clientFlow);
+            appRealm.setClientAuthenticationFlow(clientFlow);
+
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(clientFlow.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+            execution.setAuthenticator(PassThroughClientAuthenticator.PROVIDER_ID);
+            execution.setPriority(10);
+            execution.setAuthenticatorFlow(false);
+            appRealm.addAuthenticatorExecution(execution);
         }
     });
 
@@ -165,11 +186,36 @@ public class CustomFlowTest {
     @Test
     public void grantTest() throws Exception {
         PassThroughAuthenticator.username = "login-test";
-        grantAccessToken("login-test");
+        grantAccessToken("test-app", "login-test");
+    }
+
+    @Test
+    public void clientAuthTest() throws Exception {
+        PassThroughClientAuthenticator.clientId = "dummy-client";
+        PassThroughAuthenticator.username = "login-test";
+        grantAccessToken("dummy-client", "login-test");
+
+        PassThroughClientAuthenticator.clientId = "test-app";
+        grantAccessToken("test-app", "login-test");
+
+        PassThroughClientAuthenticator.clientId = "unknown";
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user", "password");
+        assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_client", response.getError());
+
+        events.expectLogin()
+                .client((String) null)
+                .user((String) null)
+                .session((String) null)
+                .removeDetail(Details.CODE_ID)
+                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
+                .error(Errors.CLIENT_NOT_FOUND)
+                .assertEvent();
     }
 
 
-    private void grantAccessToken(String login) throws Exception {
+    private void grantAccessToken(String clientId, String login) throws Exception {
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", login, "password");
 
@@ -179,13 +225,14 @@ public class CustomFlowTest {
         RefreshToken refreshToken = oauth.verifyRefreshToken(response.getRefreshToken());
 
         events.expectLogin()
-                .client("test-app")
+                .client(clientId)
                 .user(userId)
                 .session(accessToken.getSessionState())
                 .detail(Details.RESPONSE_TYPE, "token")
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.USERNAME, login)
+                .detail(Details.CLIENT_AUTH_METHOD, PassThroughClientAuthenticator.PROVIDER_ID)
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .removeDetail(Details.CONSENT)
@@ -201,7 +248,11 @@ public class CustomFlowTest {
         assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).user(userId).client("test-app").assertEvent();
+        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
+                .user(userId)
+                .client(clientId)
+                .detail(Details.CLIENT_AUTH_METHOD, PassThroughClientAuthenticator.PROVIDER_ID)
+                .assertEvent();
     }
 
 

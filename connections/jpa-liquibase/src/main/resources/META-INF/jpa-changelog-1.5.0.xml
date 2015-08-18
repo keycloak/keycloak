@@ -55,6 +55,9 @@
             <column name="RESET_CREDENTIALS_FLOW" type="VARCHAR(36)">
                 <constraints nullable="true"/>
             </column>
+            <column name="CLIENT_AUTH_FLOW" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
         </addColumn>
 
     </changeSet>

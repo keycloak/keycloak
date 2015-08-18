@@ -23,18 +23,23 @@ public class DefaultKeycloakContext implements KeycloakContext {
 
     @Override
     public String getContextPath() {
-        KeycloakApplication app = ResteasyProviderFactory.getContextData(KeycloakApplication.class);
+        KeycloakApplication app = getContextObject(KeycloakApplication.class);
         return app.getContextPath();
     }
 
     @Override
     public UriInfo getUri() {
-        return ResteasyProviderFactory.getContextData(UriInfo.class);
+        return getContextObject(UriInfo.class);
     }
 
     @Override
     public HttpHeaders getRequestHeaders() {
-        return ResteasyProviderFactory.getContextData(HttpHeaders.class);
+        return getContextObject(HttpHeaders.class);
+    }
+
+    @Override
+    public <T> T getContextObject(Class<T> clazz) {
+        return ResteasyProviderFactory.getContextData(clazz);
     }
 
     @Override

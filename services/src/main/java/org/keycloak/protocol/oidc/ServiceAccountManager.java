@@ -1,10 +1,5 @@
 package org.keycloak.protocol.oidc;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -21,12 +16,10 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
@@ -45,47 +38,34 @@ public class ServiceAccountManager {
     protected static final Logger logger = Logger.getLogger(ServiceAccountManager.class);
 
     private TokenManager tokenManager;
-    private AuthenticationManager authManager;
     private EventBuilder event;
     private HttpRequest request;
     private MultivaluedMap<String, String> formParams;
 
     private KeycloakSession session;
 
-    private RealmModel realm;
-    private HttpHeaders headers;
     private UriInfo uriInfo;
     private ClientConnection clientConnection;
 
     private ClientModel client;
     private UserModel clientUser;
 
-    public ServiceAccountManager(TokenManager tokenManager, AuthenticationManager authManager, EventBuilder event, HttpRequest request, MultivaluedMap<String, String> formParams, KeycloakSession session) {
+    public ServiceAccountManager(TokenManager tokenManager, EventBuilder event, HttpRequest request,
+                                 MultivaluedMap<String, String> formParams, KeycloakSession session, ClientModel client) {
         this.tokenManager = tokenManager;
-        this.authManager = authManager;
         this.event = event;
         this.request = request;
         this.formParams = formParams;
         this.session = session;
 
-        this.realm = session.getContext().getRealm();
-        this.headers = session.getContext().getRequestHeaders();
+        this.client = client;
         this.uriInfo = session.getContext().getUri();
         this.clientConnection = session.getContext().getConnection();
     }
 
     public Response buildClientCredentialsGrant() {
-        authenticateClient();
         checkClient();
         return finishClientAuthorization();
-    }
-
-    protected void authenticateClient() {
-        // TODO: This should be externalized into pluggable SPI for client authentication (hopefully Authentication SPI can be reused).
-        // Right now, just Client Credentials Grants (as per OAuth2 specs) is supported
-        String authorizationHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        client = AuthorizeClientUtil.authorizeClient(authorizationHeader, formParams, event, realm);
-        event.detail(Details.CLIENT_AUTH_METHOD, Details.CLIENT_AUTH_METHOD_VALUE_CLIENT_CREDENTIALS);
     }
 
     protected void checkClient() {
@@ -104,6 +84,7 @@ public class ServiceAccountManager {
     }
 
     protected Response finishClientAuthorization() {
+        RealmModel realm = client.getRealm();
         event.detail(Details.RESPONSE_TYPE, ServiceAccountConstants.CLIENT_AUTH);
 
         clientUser = session.users().getUserByServiceAccountClient(client);

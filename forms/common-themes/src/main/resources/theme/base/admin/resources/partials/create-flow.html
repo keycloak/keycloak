@@ -19,6 +19,19 @@
             </div>
         </div>
         <div class="form-group">
+            <label class="col-md-2 control-label" for="flowType">Top Level Flow Type</label>
+            <div class="col-sm-6">
+                <div>
+                    <select class="form-control" id="flowType"
+                            ng-model="flow.providerId">
+                        <option value="basic-flow">generic</option>
+                        <option value="client-flow">client</option>
+                    </select>
+                </div>
+            </div>
+            <kc-tooltip>What kind of top level flow is it? Type 'client' is used for authentication of clients (applications) when generic is for everything else</kc-tooltip>
+        </div>
+        <div class="form-group">
             <div class="col-md-10 col-md-offset-2">
                 <button kc-save>Save</button>
                 <button type="button" class="btn btn-default" ng-click="cancel()">Cancel</button>

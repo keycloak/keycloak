@@ -8,6 +8,7 @@ import org.keycloak.util.UriUtils;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -15,6 +16,10 @@ import java.util.Set;
 public class AdapterUtils {
 
     private static Logger log = Logger.getLogger(AdapterUtils.class);
+
+    public static String generateId() {
+        return UUID.randomUUID().toString();
+    }
 
     /**
      * Best effort to find origin for REST request calls from web UI application to REST application. In case of relative or absolute

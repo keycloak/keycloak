@@ -155,18 +155,17 @@ public class LogoutEndpoint {
      * returns 204 if successful, 400 if not with a json error response.
      *
      * @param authorizationHeader
-     * @param form
      * @return
      */
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response logoutToken(final @HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
-                                final MultivaluedMap<String, String> form) {
+    public Response logoutToken(final @HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        MultivaluedMap<String, String> form = request.getDecodedFormParameters();
         checkSsl();
 
         event.event(EventType.LOGOUT);
 
-        ClientModel client = authorizeClient(authorizationHeader, form, event);
+        ClientModel client = authorizeClient();
         String refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
         if (refreshToken == null) {
             event.error(Errors.INVALID_TOKEN);
@@ -190,10 +189,10 @@ public class LogoutEndpoint {
         event.user(userSession.getUser()).session(userSession).success();
     }
 
-    private ClientModel authorizeClient(String authorizationHeader, MultivaluedMap<String, String> formData, EventBuilder event) {
-        ClientModel client = AuthorizeClientUtil.authorizeClient(authorizationHeader, formData, event, realm);
+    private ClientModel authorizeClient() {
+        ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, realm);
 
-        if ( (client instanceof ClientModel) && ((ClientModel)client).isBearerOnly()) {
+        if (client.isBearerOnly()) {
             throw new ErrorResponseException("invalid_client", "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
 

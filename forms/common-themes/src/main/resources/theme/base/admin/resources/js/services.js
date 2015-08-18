@@ -931,7 +931,7 @@ module.factory('ClientInstallationJBoss', function($resource) {
     }
 });
 
-module.factory('ClientCredentials', function($resource) {
+module.factory('ClientSecret', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/clients/:client/client-secret', {
         realm : '@realm',
         client : '@client'
@@ -1219,6 +1219,12 @@ module.factory('AuthenticationFormActionProviders', function($resource) {
 
 module.factory('AuthenticatorProviders', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/authentication/authenticator-providers', {
+        realm : '@realm'
+    });
+});
+
+module.factory('ClientAuthenticatorProviders', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/client-authenticator-providers', {
         realm : '@realm'
     });
 });
