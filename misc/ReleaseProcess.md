@@ -83,8 +83,70 @@ Post link to blog post on Twitter (with Keycloak user).
 
 ### Update OpenShift Cartridge
 
-Instructions TBD
+If Keycloak has upgraded the WildFly version since the cartridge was upgraded the first step is to rebase the cartridge from the [wildfly-cartridge](https://github.com/openshift-cartridges/openshift-wildfly-cartridge):
+
+    # git clone https://github.com/keycloak/openshift-keycloak-cartridge.git
+    # cd openshift-keycloak-cartridge
+    # git remote add wildfly https://github.com/openshift-cartridges/openshift-wildfly-cartridge.git
+    # git fetch wildfly
+    # git rebase wildfly
+
+If the WildFly version is the same you can skip the above step.
+
+To upgrade Keycloak on the cartridge run:
+
+    # git clone https://github.com/openshift-cartridges/openshift-wildfly-cartridge.git
+    # cd openshift-keycloak-cartridge
+    # rm -rf versions/9/modules/system
+    # rm -rf versions/9/standalone/providers
+    # rm -rf versions/9/standalone/themes
+    # rm -rf versions/9/standalone/configuration/configuration/keycloak-sever.json
+    # unzip ../distribution/downloads/target/$VERSION/keycloak-$VERSION.zip
+    # cp -r keycloak-$VERSION/modules/system versions/9/modules/
+    # cp -r keycloak-$VERSION/standalone/providers versions/9/standalone/
+    # cp -r keycloak-$VERSION/standalone/themes versions/9/standalone/
+    # cp keycloak-$VERSION/standalone/configuration/configuration/keycloak-sever.json versions/9/standalone/configuration/
+    # git commit -m "Updated to $VERSION" -a
+    # git tag $VERSION
+    # git push --tags master
 
 ### Update Docker image
 
-Instructions TBD
+    # git clone https://github.com/jboss-dockerfiles/keycloak.git
+    # cd keycloak
+
+Edit server/Dockerfile and update version in `ENV KEYCLOAK_VERSION ...` line.
+
+Edit the following files:
+
+* server-postgres/Dockerfile
+* adapter-wildfly/Dockerfile
+* server-ha-postgres/Dockerfile
+* server/Dockerfile
+* server-mongo/Dockerfile
+* examples/Dockerfile
+* server-mysql/Dockerfile
+
+And update version in `FROM jboss/keycloak:...` line.
+
+    # git commit -m "Updated to $VERSION" -a
+    # git tag $VERSION
+    # git push --tags master
+
+Go to Docker Hub. First create tags for the following images:
+
+* server
+* adapter-wildfly
+* examples
+
+Schedule builds of the images and wait until it completes. Then do the same for:
+
+* server-postgres
+* server-mysql
+* server-mongo
+
+Wait until they complete. Then do the same for:
+
+* server-ha-postgres
+
+Wasn't that fun :)
