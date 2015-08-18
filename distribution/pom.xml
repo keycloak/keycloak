@@ -25,4 +25,14 @@
         <module>src-dist</module>
         <module>feature-packs</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>jboss-release</id>
+            <modules>
+                <module>downloads</module>
+            </modules>
+        </profile>
+    </profiles>
+
 </project>
