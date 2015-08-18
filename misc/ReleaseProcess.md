@@ -133,20 +133,15 @@ And update version in `FROM jboss/keycloak:...` line.
     # git tag $VERSION
     # git push --tags master
 
-Go to Docker Hub. First create tags for the following images:
+Go to Docker Hub. Update build settings for the following images and change `Name` and `Docker Tag Name` to the version you are releasing:
 
-* server
-* adapter-wildfly
-* examples
+* [keycloak](https://hub.docker.com/r/jboss/keycloak/~/settings/automated-builds/)
+* [adapter-wildfly](https://hub.docker.com/r/jboss/keycloak-adapter-wildfly/~/settings/automated-builds/)
+* [examples](https://hub.docker.com/r/jboss/keycloak-examples/~/settings/automated-builds/)
+* [postgres](https://hub.docker.com/r/jboss/keycloak-postgres/~/settings/automated-builds/)
+* [mysql](https://hub.docker.com/r/jboss/keycloak-mysql/~/settings/automated-builds/)
+* [mongo](https://hub.docker.com/r/jboss/keycloak-mongo/~/settings/automated-builds/)
+* [ha-postgres](https://hub.docker.com/r/jboss/keycloak-ha-postgres/~/settings/automated-builds/)
 
-Schedule builds of the images and wait until it completes. Then do the same for:
-
-* server-postgres
-* server-mysql
-* server-mongo
-
-Wait until they complete. Then do the same for:
-
-* server-ha-postgres
-
-Wasn't that fun :)
+Once you've updated all images. Schedule a build of the [keycloak image](https://hub.docker.com/r/jboss/keycloak/builds/). Once completed it will trigger
+builds of all other images as they are linked.
