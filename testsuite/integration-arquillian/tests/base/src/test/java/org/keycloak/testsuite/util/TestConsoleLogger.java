@@ -19,38 +19,42 @@ import org.junit.runner.notification.RunListener;
  */
 public class TestConsoleLogger extends RunListener {
 
-	private static SimpleDateFormat formatter = new SimpleDateFormat("hh:MM:ss");
-	private boolean isFailure = false;
+    private static SimpleDateFormat formatter = new SimpleDateFormat("hh:MM:ss");
+    private boolean isFailure = false;
 
-	@Override
-	public void testStarted(Description d) throws Exception {
-		System.out.println(String.format("\n[%s] STARTED: %s#%s", getFormattedTime(), d.getClassName(), d.getMethodName()));
-	}
+    @Override
+    public void testStarted(Description d) throws Exception {
+        System.out.println(String.format(getDivider() + "\n[%s] STARTED: %s#%s", getFormattedTime(), d.getClassName(), d.getMethodName()));
+    }
 
-	@Override
-	public void testFailure(Failure failure) throws Exception {
-		isFailure = true;
-		System.out.println(getMessage("FAILURE", failure.getDescription()));
-	}
+    @Override
+    public void testFailure(Failure failure) throws Exception {
+        isFailure = true;
+        System.out.println(getMessage("FAILURE", failure.getDescription()));
+    }
 
-	@Override
-	public void testIgnored(Description description) throws Exception {
-		System.out.println(getMessage("IGNORED", description));
-	}
+    @Override
+    public void testIgnored(Description description) throws Exception {
+        System.out.println(getMessage("IGNORED", description));
+    }
 
-	@Override
-	public void testFinished(Description description) throws Exception {
-		if (!isFailure) {
-			System.out.println(getMessage("SUCCESS", description));
-		}
-	}
+    @Override
+    public void testFinished(Description description) throws Exception {
+        if (!isFailure) {
+            System.out.println(getMessage("SUCCESS", description));
+        }
+    }
 
-	private String getMessage(String status, Description d) {
-		return String.format("[%s] %s: %s#%s\n", getFormattedTime(), status, d.getClassName(), d.getMethodName());
-	}
+    private String getMessage(String status, Description d) {
+        return String.format("[%s] %s: %s#%s\n" + getDivider(), getFormattedTime(), status, d.getClassName(), d.getMethodName());
+    }
 
-	private String getFormattedTime() {
-		return formatter.format(new Date());
-	}
+    private String getFormattedTime() {
+        return formatter.format(new Date());
+    }
+
+    private String getDivider() {
+        return "--------------------------------------------------------------";
+    }
 
 }
