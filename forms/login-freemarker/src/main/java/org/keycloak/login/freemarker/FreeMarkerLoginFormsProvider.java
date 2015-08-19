@@ -276,7 +276,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
             }
-            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, Urls.localeCookiePath(baseUri, realm.getName()));
+
+            String keycloakLocaleCookiePath = Urls.localeCookiePath(baseUri, realm.getName());
+            String ngTranslateCookiePath = Urls.ngTranslateLocaleCookiePath(baseUri, realm.getName());
+            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, keycloakLocaleCookiePath, ngTranslateCookiePath);
+
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
@@ -374,7 +378,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
             }
-            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, Urls.localeCookiePath(baseUri, realm.getName()));
+
+            String keycloakLocaleCookiePath = Urls.localeCookiePath(baseUri, realm.getName());
+            String ngTranslateCookiePath = Urls.ngTranslateLocaleCookiePath(baseUri, realm.getName());
+
+            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, keycloakLocaleCookiePath, ngTranslateCookiePath);
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);

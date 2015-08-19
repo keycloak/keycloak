@@ -21,6 +21,11 @@
     <script src="${resourceUrl}/lib/angular/angular.js"></script>
     <script src="${resourceUrl}/lib/angular/angular-resource.js"></script>
     <script src="${resourceUrl}/lib/angular/angular-route.js"></script>
+    <script src="${resourceUrl}/lib/angular/angular-cookies.js"></script>
+    <script src="${resourceUrl}/lib/angular/angular-sanitize.js"></script>
+    <script src="${resourceUrl}/lib/angular/angular-translate.js"></script>
+    <script src="${resourceUrl}/lib/angular/angular-translate-storage-cookie.js"></script>
+    <script src="${resourceUrl}/lib/angular/angular-translate-loader-url.js"></script>
     <script src="${resourceUrl}/lib/angular/ui-bootstrap-tpls-0.11.0.js"></script>
 
     <script src="${resourceUrl}/lib/angular/select2.js" type="text/javascript"></script>

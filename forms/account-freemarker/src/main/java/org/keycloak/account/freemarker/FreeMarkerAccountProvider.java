@@ -197,7 +197,11 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             String result = freeMarker.processTemplate(attributes, Templates.getTemplate(page), theme);
             Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML).entity(result);
             BrowserSecurityHeaderSetup.headers(builder, realm);
-            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, Urls.localeCookiePath(baseUri,realm.getName()));
+
+            String keycloakLocaleCookiePath = Urls.localeCookiePath(baseUri, realm.getName());
+            String ngTranslateCookiePath = Urls.ngTranslateLocaleCookiePath(baseUri, realm.getName());
+
+            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, keycloakLocaleCookiePath, ngTranslateCookiePath);
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
@@ -209,7 +213,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         this.passwordSet = passwordSet;
         return this;
     }
-    
+
     protected void setMessage(MessageType type, String message, Object... parameters) {
         messageType = type;
         messages = new ArrayList<>();
@@ -225,7 +229,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             return message.getMessage();
         }
     }
-  
+
     @Override
     public AccountProvider setErrors(List<FormMessage> messages) {
         this.messageType = MessageType.ERROR;
