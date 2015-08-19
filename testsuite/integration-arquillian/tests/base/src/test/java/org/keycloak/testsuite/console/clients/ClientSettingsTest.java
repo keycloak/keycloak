@@ -21,7 +21,6 @@ import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -128,8 +127,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         assertEqualsListAttributes(c1.getWebOrigins(), c2.getWebOrigins());
     }
 
-    @Test
-    @Ignore
+//    @Test
     public void createInconsistentClient() {
         ClientRepresentation c = createClientRepresentation("inconsistent_client");
         c.setPublicClient(true);
@@ -155,8 +153,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         }
     }
 
-    @Test
-    @Ignore
+//    @Test
     public void clientsPagination() {
         createClients("test_client_", 100);
         clients.navigateTo();

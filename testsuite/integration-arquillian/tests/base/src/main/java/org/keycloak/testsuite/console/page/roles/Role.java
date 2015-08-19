@@ -26,7 +26,7 @@ public class Role extends RealmRoles {
     @Page
     private RoleForm form;
 
-    public RoleForm role() {
+    public RoleForm form() {
         return form;
     }
 

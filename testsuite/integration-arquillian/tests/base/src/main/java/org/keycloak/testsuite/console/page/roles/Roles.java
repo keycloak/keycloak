@@ -12,7 +12,7 @@ import org.openqa.selenium.support.FindBy;
  */
 public class Roles extends AdminConsoleRealm {
 
-    @FindBy(xpath = "")
+    @FindBy(css = "ul.nav-tabs")
     private RoleTabs tabs;
 
     public RoleTabs tabs() {
@@ -35,7 +35,7 @@ public class Roles extends AdminConsoleRealm {
         }
 
     }
-    
+
     public RolesResource rolesResource() {
         return realmResource().roles();
     }

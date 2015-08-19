@@ -78,15 +78,15 @@ public class Users extends AdminConsoleRealm {
         }
 
         public void editUser(String username) {
-            clickActionButton(getRowByLinkText(username), EDIT);
+            clickRowActionButton(getRowByLinkText(username), EDIT);
         }
 
         public void impersonateUser(String username) {
-            clickActionButton(getRowByLinkText(username), IMPERSONATE);
+            clickRowActionButton(getRowByLinkText(username), IMPERSONATE);
         }
 
         public void deleteUser(String username) {
-            clickActionButton(getRowByLinkText(username), DELETE);
+            clickRowActionButton(getRowByLinkText(username), DELETE);
             modalDialog.confirmDeletion();
         }
 
@@ -120,7 +120,7 @@ public class Users extends AdminConsoleRealm {
         public List<UserRepresentation> getUsersFromTableRows() {
             List<UserRepresentation> users = new ArrayList<>();
             List<WebElement> rows = rows();
-            if (rows.size() > 1) {
+//            if (rows.size() > 1) {
                 for (WebElement rowElement : rows) {
                     if (rowElement.isDisplayed()) {
                         UserRepresentation user = getUserFromTableRow(rowElement);
@@ -129,7 +129,7 @@ public class Users extends AdminConsoleRealm {
                         }
                     }
                 }
-            }
+//            }
             return users;
         }
 

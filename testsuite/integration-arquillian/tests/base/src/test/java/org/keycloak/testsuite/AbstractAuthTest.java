@@ -10,8 +10,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
@@ -52,11 +51,10 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
         deleteAllCookiesForTestRealm();
     }
-
+    
     public void createTestUserWithAdminClient() {
-        String id = createUserWithAdminClient(testRealmResource(), testRealmUser);
+        String id = createUserAndResetPasswordWithAdminClient(testRealmResource(), testRealmUser, PASSWORD);
         testRealmUser.setId(id);
-        resetUserPassword(testRealmResource().users().get(id), PASSWORD, false);
     }
 
     public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, boolean enabled) {

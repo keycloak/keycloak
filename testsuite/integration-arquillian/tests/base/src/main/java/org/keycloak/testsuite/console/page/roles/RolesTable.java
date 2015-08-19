@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.console.page.fragment.DataTable;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
-import static org.openqa.selenium.By.linkText;
 import static org.openqa.selenium.By.tagName;
 import org.openqa.selenium.WebElement;
 
@@ -30,55 +28,45 @@ public class RolesTable extends DataTable {
     }
 
     public void clickRole(String name) {
-        waitAjaxForElement(body());
-        body().findElement(linkText(name)).click();
-    }
-
-    public void clickRole(RoleRepresentation role) {
-        clickRole(role.getName());
+        waitAjaxForBody();
+        clickRowByLinkText(name);
     }
 
     public void editRole(String name) {
-        clickActionButton(getRowByLinkText(name), EDIT);
-    }
-
-    public void editRole(RoleRepresentation role) {
-        editRole(role.getName());
-    }
-
-    public void deleteRole(RoleRepresentation role) {
-        deleteRole(role.getName());
+        clickRowActionButton(getRowByLinkText(name), EDIT);
     }
 
     public void deleteRole(String name) {
-        deleteRole(name, true);
-    }
-
-    public void deleteRole(String name, boolean confirm) {
-        clickActionButton(getRowByLinkText(name), DELETE);
-        if (confirm) {
-            modalDialog.confirmDeletion();
-        } else {
-            modalDialog.cancel();
-        }
+        clickRowActionButton(getRowByLinkText(name), DELETE);
     }
 
     public RoleRepresentation findRole(String name) {
         List<RoleRepresentation> roles = searchRoles(name);
-        assert 1 == roles.size();
-        return roles.get(0);
+        if (roles.isEmpty()) {
+            return null;
+        } else {
+            assert 1 == roles.size();
+            return roles.get(0);
+        }
+    }
+
+    public boolean containsRole(String roleName) {
+        for (RoleRepresentation r : getRolesFromTableRows()) {
+            if (roleName.equals(r.getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public List<RoleRepresentation> getRolesFromTableRows() {
         List<RoleRepresentation> rows = new ArrayList<>();
-//        if (rows.size() > 1) {
-            for (WebElement row : rows()) {
-                RoleRepresentation role = getRoleFromRow(row);
-                if (role != null) {
-                    rows.add(role);
-                }
+        for (WebElement row : rows()) {
+            RoleRepresentation role = getRoleFromRow(row);
+            if (role != null) {
+                rows.add(role);
             }
-//        }
+        }
         return rows;
     }
 

@@ -59,6 +59,7 @@ public class ClientRolesTest extends AbstractClientTest {
         configure().clients();
         clients.table().search(newClient.getClientId());
         clients.table().deleteClient(newClient.getClientId());
+        modalDialog.confirmDeletion();
         assertFlashMessageSuccess();
         assertNull(clients.table().findClient(newClient.getClientId()));
     }

@@ -28,13 +28,6 @@ public class RoleForm extends Form {
     @FindBy(id = "removeRole")
     private WebElement removeIcon;
 
-    @FindBy(css = ".modal-dialog")
-    private ModalDialog modalDialog;
-
-    public ModalDialog deleteDialog() {
-        return modalDialog;
-    }
-
     public RoleRepresentation getRole() {
         RoleRepresentation role = new RoleRepresentation(getName(), getDescription());
         role.setComposite(isComposite());
@@ -103,16 +96,7 @@ public class RoleForm extends Form {
     }
 
     public void delete() {
-        delete(true);
-    }
-
-    public void delete(boolean confirm) {
         removeIcon.click();
-        if (confirm) {
-            modalDialog.confirmDeletion();
-        } else {
-            modalDialog.cancel();
-        }
     }
 
 }

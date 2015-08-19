@@ -58,7 +58,7 @@ public class Clients extends AdminConsoleRealm {
 
         public List<ClientRepresentation> searchClients(String searchPattern) {
             search(searchPattern);
-            return getClientsFromTable();
+            return getClientsFromRows();
         }
 
         public void createClient() {
@@ -83,13 +83,12 @@ public class Clients extends AdminConsoleRealm {
 
         public void editClient(String clientId) {
             waitAjaxForBody();
-            clickActionButton(getRowByLinkText(clientId), EDIT);
+            clickRowActionButton(getRowByLinkText(clientId), EDIT);
         }
 
         public void deleteClient(String clientId) {
             waitAjaxForBody();
-            clickActionButton(getRowByLinkText(clientId), DELETE);
-            modalDialog.confirmDeletion();
+            clickRowActionButton(getRowByLinkText(clientId), DELETE);
         }
 
         public ClientRepresentation findClient(String clientId) {
@@ -102,14 +101,12 @@ public class Clients extends AdminConsoleRealm {
             }
         }
 
-        public List<ClientRepresentation> getClientsFromTable() {
+        public List<ClientRepresentation> getClientsFromRows() {
             List<ClientRepresentation> rows = new ArrayList<>();
-            if (rows().size() > 1) {
-                for (WebElement row : rows()) {
-                    ClientRepresentation client = getClientFromRow(row);
-                    if (client != null) {
-                        rows.add(client);
-                    }
+            for (WebElement row : rows()) {
+                ClientRepresentation client = getClientFromRow(row);
+                if (client != null) {
+                    rows.add(client);
                 }
             }
             return rows;
@@ -133,7 +130,7 @@ public class Clients extends AdminConsoleRealm {
         clientsTable.searchClients(clientId);
         clientsTable.deleteClient(clientId);
     }
-    
+
     public ClientsResource clientsResource() {
         return realmResource().clients();
     }

@@ -27,8 +27,10 @@ import org.keycloak.testsuite.console.page.AdminConsoleRealm.ConfigureMenu;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ManageMenu;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.keycloak.testsuite.auth.page.login.Login;
+import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
+import org.openqa.selenium.support.FindBy;
 
 /**
  *
@@ -44,6 +46,9 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
 
     @Page
     protected AdminConsole testRealmAdminConsole;
+    
+    @FindBy(xpath = "//div[@class='modal-dialog']")
+    protected ModalDialog modalDialog;
 
     protected boolean adminLoggedIn = false;
 

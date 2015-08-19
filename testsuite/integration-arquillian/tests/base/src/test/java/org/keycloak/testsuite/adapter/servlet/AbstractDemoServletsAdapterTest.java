@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.Version;
@@ -223,7 +224,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     }
 
     @Test
-    @Jira(value = "KEYCLOAK-1478")
+    @Jira(value = "KEYCLOAK-1478") // rejected
     public void testLoginSSOIdleRemoveExpiredUserSessions() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
@@ -240,13 +241,10 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         RealmRepresentation demoRealmRep = testRealmResource().toRepresentation();
         int originalIdle = demoRealmRep.getSsoSessionIdleTimeout();
         demoRealmRep.setSsoSessionIdleTimeout(1);
-//        keycloak.realm("demo").update(demoRealm);
+        testRealmResource().update(demoRealmRep);
 
         Time.setOffset(2);
 
-        // FIXME
-        // KEYCLOAK-1478 - no REST API alternative for removeExpiredUserSessions()
-        // test SSO
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealm);
 
