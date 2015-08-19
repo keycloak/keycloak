@@ -91,6 +91,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     public FreeMarkerLoginFormsProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
         this.freeMarker = freeMarker;
+        this.attributes.put("scripts", new LinkedList<String>());
+    }
+
+    @Override
+    public void addScript(String scriptUrl) {
+        List<String> scripts = (List<String>)this.attributes.get("scripts");
+        scripts.add(scriptUrl);
     }
 
     public Response createResponse(UserModel.RequiredAction action) {
@@ -244,7 +251,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("totp", new TotpBean(realm, user, baseUri));
                 break;
             case LOGIN_UPDATE_PROFILE:
-                attributes.put("user", new ProfileBean(user));
+                attributes.put("user", new ProfileBean(user, formData));
                 break;
             case REGISTER:
                 attributes.put("register", new RegisterBean(formData));
@@ -278,7 +285,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public Response createForm(String form, Map<String, Object> extraAttributes) {
+    public Response createForm(String form) {
 
         RealmModel realm = session.getContext().getRealm();
         ClientModel client = session.getContext().getClient();

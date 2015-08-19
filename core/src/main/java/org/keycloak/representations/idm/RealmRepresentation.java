@@ -90,6 +90,7 @@ public class RealmRepresentation {
     protected String browserFlow;
     protected String registrationFlow;
     protected String directGrantFlow;
+    protected String clientAuthenticationFlow;
 
     @Deprecated
     protected Boolean social;
@@ -734,5 +735,13 @@ public class RealmRepresentation {
 
     public void setDirectGrantFlow(String directGrantFlow) {
         this.directGrantFlow = directGrantFlow;
+    }
+
+    public String getClientAuthenticationFlow() {
+        return clientAuthenticationFlow;
+    }
+
+    public void setClientAuthenticationFlow(String clientAuthenticationFlow) {
+        this.clientAuthenticationFlow = clientAuthenticationFlow;
     }
 }

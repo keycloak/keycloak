@@ -7,10 +7,14 @@ import org.keycloak.ClientConnection;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.authentication.RequiredActionContext;
+import org.keycloak.authentication.RequiredActionContextResult;
+import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
@@ -418,7 +422,7 @@ public class AuthenticationManager {
         final UserModel user = userSession.getUser();
         final ClientModel client = clientSession.getClient();
 
-        RequiredActionContext context = evaluateRequiredActionTriggers(session, userSession, clientSession, clientConnection, request, uriInfo, event, realm, user);
+        evaluateRequiredActionTriggers(session, userSession, clientSession, clientConnection, request, uriInfo, event, realm, user);
 
 
         logger.debugv("processAccessCode: go to oauth page?: {0}", client.isConsentRequired());
@@ -428,12 +432,29 @@ public class AuthenticationManager {
         Set<String> requiredActions = user.getRequiredActions();
         for (String action : requiredActions) {
             RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
-            RequiredActionProvider actionProvider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
-            Response challenge = actionProvider.requiredActionChallenge(context);
-            if (challenge != null) {
-                return challenge;
+            RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
+            if (factory == null) {
+                throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
             }
+            RequiredActionProvider actionProvider = factory.create(session);
+            RequiredActionContextResult context = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user, factory);
+            actionProvider.requiredActionChallenge(context);
 
+            if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
+                LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, context.getClientSession().getAuthMethod());
+                protocol.setRealm(context.getRealm())
+                        .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
+                        .setUriInfo(context.getUriInfo());
+                event.error(Errors.REJECTED_BY_USER);
+                return protocol.consentDenied(context.getClientSession());
+            }
+            else if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
+                return context.getChallenge();
+            }
+            else if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
+                event.clone().event(EventType.CUSTOM_REQUIRED_ACTION).detail(Details.CUSTOM_REQUIRED_ACTION, factory.getId()).success();
+                clientSession.getUserSession().getUser().removeRequiredAction(factory.getId());
+            }
         }
         if (client.isConsentRequired()) {
 
@@ -484,68 +505,40 @@ public class AuthenticationManager {
 
     }
 
-    public static RequiredActionContext evaluateRequiredActionTriggers(final KeycloakSession session, final UserSessionModel userSession, final ClientSessionModel clientSession, final ClientConnection clientConnection, final HttpRequest request, final UriInfo uriInfo, final EventBuilder event, final RealmModel realm, final UserModel user) {
-        RequiredActionContext context = new RequiredActionContext() {
-            @Override
-            public EventBuilder getEvent() {
-                return event;
-            }
-
-            @Override
-            public UserModel getUser() {
-                return user;
-            }
-
-            @Override
-            public RealmModel getRealm() {
-                return realm;
-            }
-
-            @Override
-            public ClientSessionModel getClientSession() {
-                return clientSession;
-            }
-
-            @Override
-            public UserSessionModel getUserSession() {
-                return userSession;
-            }
-
-            @Override
-            public ClientConnection getConnection() {
-                return clientConnection;
-            }
-
-            @Override
-            public UriInfo getUriInfo() {
-                return uriInfo;
-            }
-
-            @Override
-            public KeycloakSession getSession() {
-                return session;
-            }
-
-            @Override
-            public HttpRequest getHttpRequest() {
-                return request;
-            }
-
-            @Override
-            public String generateAccessCode(String action) {
-                ClientSessionCode code = new ClientSessionCode(getRealm(), getClientSession());
-                code.setAction(action);
-                return code.getCode();
-            }
-        };
+    public static void evaluateRequiredActionTriggers(final KeycloakSession session, final UserSessionModel userSession, final ClientSessionModel clientSession, final ClientConnection clientConnection, final HttpRequest request, final UriInfo uriInfo, final EventBuilder event, final RealmModel realm, final UserModel user) {
 
         // see if any required actions need triggering, i.e. an expired password
         for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
             if (!model.isEnabled()) continue;
-            RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, model.getProviderId());
-            provider.evaluateTriggers(context);
+            RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
+            if (factory == null) {
+                throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
+            }
+            RequiredActionProvider provider = factory.create(session);
+            RequiredActionContextResult result = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user, factory) {
+                @Override
+                public void challenge(Response response) {
+                    throw new RuntimeException("Not allowed to call challenge() within evaluateTriggers()");
+                }
+
+                @Override
+                public void failure() {
+                    throw new RuntimeException("Not allowed to call failure() within evaluateTriggers()");
+                }
+
+                @Override
+                public void success() {
+                    throw new RuntimeException("Not allowed to call success() within evaluateTriggers()");
+                }
+
+                @Override
+                public void ignore() {
+                    throw new RuntimeException("Not allowed to call ignore() within evaluateTriggers()");
+                }
+            };
+
+            provider.evaluateTriggers(result);
         }
-        return context;
     }
 
 

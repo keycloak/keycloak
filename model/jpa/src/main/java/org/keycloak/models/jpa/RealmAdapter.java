@@ -1581,6 +1581,28 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public AuthenticationFlowModel getResetCredentialsFlow() {
+        String flowId = realm.getResetCredentialsFlow();
+        if (flowId == null) return null;
+        return getAuthenticationFlowById(flowId);
+    }
+
+    @Override
+    public void setResetCredentialsFlow(AuthenticationFlowModel flow) {
+        realm.setResetCredentialsFlow(flow.getId());
+    }
+
+    public AuthenticationFlowModel getClientAuthenticationFlow() {
+        String flowId = realm.getClientAuthenticationFlow();
+        if (flowId == null) return null;
+        return getAuthenticationFlowById(flowId);
+    }
+
+    public void setClientAuthenticationFlow(AuthenticationFlowModel flow) {
+        realm.setClientAuthenticationFlow(flow.getId());
+    }
+
+    @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {
         TypedQuery<AuthenticationFlowEntity> query = em.createNamedQuery("getAuthenticationFlowsByRealm", AuthenticationFlowEntity.class);
         query.setParameter("realm", realm);

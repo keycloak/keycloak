@@ -4,7 +4,7 @@ package org.keycloak.events;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface Details {
-
+    String CUSTOM_REQUIRED_ACTION="custom_required_action";
     String EMAIL = "email";
     String PREVIOUS_EMAIL = "previous_email";
     String UPDATED_EMAIL = "updated_email";
@@ -37,9 +37,5 @@ public interface Details {
     String IMPERSONATOR = "impersonator";
 
     String CLIENT_AUTH_METHOD = "client_auth_method";
-    String CLIENT_AUTH_METHOD_VALUE_CLIENT_CREDENTIALS = "client_credentials";
-    String CLIENT_AUTH_METHOD_VALUE_CERTIFICATE = "client_certificate";
-    String CLIENT_AUTH_METHOD_VALUE_KERBEROS_KEYTAB = "kerberos_keytab";
-    String CLIENT_AUTH_METHOD_VALUE_SIGNED_JWT = "signed_jwt";
 
 }

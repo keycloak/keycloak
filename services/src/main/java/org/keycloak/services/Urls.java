@@ -152,12 +152,16 @@ public class Urls {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "emailVerification");
     }
 
-    public static URI loginPasswordReset(URI baseUri, String realmId) {
-        return loginPasswordResetBuilder(baseUri).build(realmId);
+    public static URI loginResetCredentials(URI baseUri, String realmId) {
+        return loginResetCredentialsBuilder(baseUri).build(realmId);
     }
 
-    public static UriBuilder loginPasswordResetBuilder(URI baseUri) {
-        return loginActionsBase(baseUri).path(LoginActionsService.class, "passwordReset");
+    public static UriBuilder recoverPasswordBuilder(URI baseUri) {
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "recoverPassword");
+    }
+
+    public static UriBuilder loginResetCredentialsBuilder(URI baseUri) {
+        return loginActionsBase(baseUri).path(LoginActionsService.RESET_CREDENTIALS_PATH);
     }
 
     public static URI loginUsernameReminder(URI baseUri, String realmId) {

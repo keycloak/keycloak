@@ -15,21 +15,25 @@ public class DefaultAuthenticationFlows {
     public static final String REGISTRATION_FORM_FLOW = "registration form";
     public static final String BROWSER_FLOW = "browser";
     public static final String DIRECT_GRANT_FLOW = "direct grant";
+    public static final String RESET_CREDENTIALS_FLOW = "reset credentials";
     public static final String LOGIN_FORMS_FLOW = "forms";
+
+    public static final String CLIENT_AUTHENTICATION_FLOW = "clients";
 
     public static void addFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm);
         if (realm.getFlowByAlias(DIRECT_GRANT_FLOW) == null) directGrantFlow(realm, false);
         if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
+        if (realm.getFlowByAlias(RESET_CREDENTIALS_FLOW) == null) resetCredentialsFlow(realm);
+        if (realm.getFlowByAlias(CLIENT_AUTHENTICATION_FLOW) == null) clientAuthFlow(realm);
     }
     public static void migrateFlows(RealmModel realm) {
-        browserFlow(realm, true);
-        directGrantFlow(realm, true);
+        if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm, true);
+        if (realm.getFlowByAlias(DIRECT_GRANT_FLOW) == null) directGrantFlow(realm, true);
         if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
+        if (realm.getFlowByAlias(RESET_CREDENTIALS_FLOW) == null) resetCredentialsFlow(realm);
+        if (realm.getFlowByAlias(CLIENT_AUTHENTICATION_FLOW) == null) clientAuthFlow(realm);
     }
-
-
-
 
     public static void registrationFlow(RealmModel realm) {
         AuthenticationFlowModel registrationFlow = new AuthenticationFlowModel();
@@ -118,6 +122,53 @@ public class DefaultAuthenticationFlows {
         return false;
     }
 
+    public static void resetCredentialsFlow(RealmModel realm) {
+        AuthenticationFlowModel grant = new AuthenticationFlowModel();
+        grant.setAlias(RESET_CREDENTIALS_FLOW);
+        grant.setDescription("Reset credentials for a user if they forgot their password or something");
+        grant.setProviderId("basic-flow");
+        grant.setTopLevel(true);
+        grant.setBuiltIn(true);
+        grant = realm.addAuthenticationFlow(grant);
+        realm.setResetCredentialsFlow(grant);
+
+        // username
+        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(grant.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("reset-credentials-choose-user");
+        execution.setPriority(10);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        // send email
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(grant.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("reset-credential-email");
+        execution.setPriority(20);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        // password
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(grant.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("reset-password");
+        execution.setPriority(30);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        // otp
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(grant.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.OPTIONAL);
+        execution.setAuthenticator("reset-otp");
+        execution.setPriority(40);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+    }
+
     public static void directGrantFlow(RealmModel realm, boolean migrate) {
         AuthenticationFlowModel grant = new AuthenticationFlowModel();
         grant.setAlias(DIRECT_GRANT_FLOW);
@@ -160,9 +211,6 @@ public class DefaultAuthenticationFlows {
         execution.setPriority(30);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
-
-
-
     }
 
     public static void browserFlow(RealmModel realm, boolean migrate) {
@@ -230,6 +278,33 @@ public class DefaultAuthenticationFlows {
         }
 
         execution.setAuthenticator("auth-otp-form");
+        execution.setPriority(20);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+    }
+
+    public static void clientAuthFlow(RealmModel realm) {
+        AuthenticationFlowModel clients = new AuthenticationFlowModel();
+        clients.setAlias(CLIENT_AUTHENTICATION_FLOW);
+        clients.setDescription("Base authentication for clients");
+        clients.setProviderId("client-flow");
+        clients.setTopLevel(true);
+        clients.setBuiltIn(true);
+        clients = realm.addAuthenticationFlow(clients);
+        realm.setClientAuthenticationFlow(clients);
+
+        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(clients.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+        execution.setAuthenticator("client-secret");
+        execution.setPriority(10);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(clients.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+        execution.setAuthenticator("client-signed-jwt");
         execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);

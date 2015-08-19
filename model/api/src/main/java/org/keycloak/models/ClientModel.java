@@ -127,8 +127,8 @@ public interface ClientModel extends RoleContainerModel {
     ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model);
     void removeProtocolMapper(ProtocolMapperModel mapping);
     void updateProtocolMapper(ProtocolMapperModel mapping);
-    public ProtocolMapperModel getProtocolMapperById(String id);
-    public ProtocolMapperModel getProtocolMapperByName(String protocol, String name);
+    ProtocolMapperModel getProtocolMapperById(String id);
+    ProtocolMapperModel getProtocolMapperByName(String protocol, String name);
 
     Map<String, Integer> getRegisteredNodes();
 

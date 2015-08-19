@@ -73,6 +73,14 @@ module.factory('RequiredActionsListLoader', function(Loader, RequiredActions, $r
     });
 });
 
+module.factory('UnregisteredRequiredActionsListLoader', function(Loader, UnregisteredRequiredActions, $route, $q) {
+    return Loader.query(UnregisteredRequiredActions, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
 module.factory('RealmSessionStatsLoader', function(Loader, RealmSessionStats, $route, $q) {
     return Loader.get(RealmSessionStats, function() {
         return {
@@ -378,6 +386,14 @@ module.factory('AuthenticationFormActionProvidersLoader', function(Loader, Authe
 
 module.factory('AuthenticatorProvidersLoader', function(Loader, AuthenticatorProviders, $route, $q) {
     return Loader.query(AuthenticatorProviders, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
+module.factory('ClientAuthenticatorProvidersLoader', function(Loader, ClientAuthenticatorProviders, $route, $q) {
+    return Loader.query(ClientAuthenticatorProviders, function() {
         return {
             realm : $route.current.params.realm
         }

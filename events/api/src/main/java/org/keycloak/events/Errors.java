@@ -38,6 +38,7 @@ public interface Errors {
     String EXPIRED_CODE = "expired_code";
 
     String REGISTRATION_DISABLED = "registration_disabled";
+    String RESET_CREDENTIAL_DISABLED = "reset_credential_disabled";
 
     String REJECTED_BY_USER = "rejected_by_user";
 

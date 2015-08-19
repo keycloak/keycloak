@@ -7,11 +7,15 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorUtil;
+import org.keycloak.authentication.ClientAuthenticator;
+import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
 import org.keycloak.authentication.DefaultAuthenticationFlow;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormAuthenticationFlow;
 import org.keycloak.authentication.FormAuthenticator;
+import org.keycloak.authentication.RequiredActionFactory;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -172,7 +176,7 @@ public class AuthenticationManagementResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Map<String, String>> getFormProviders() {
+    public List<Map<String, Object>> getFormProviders() {
         this.auth.requireView();
         List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(FormAuthenticator.class);
         return buildProviderMetadata(factories);
@@ -182,19 +186,36 @@ public class AuthenticationManagementResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Map<String, String>> getAuthenticatorProviders() {
+    public List<Map<String, Object>> getAuthenticatorProviders() {
         this.auth.requireView();
         List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(Authenticator.class);
         return buildProviderMetadata(factories);
     }
 
-    public List<Map<String, String>> buildProviderMetadata(List<ProviderFactory> factories) {
-        List<Map<String, String>> providers = new LinkedList<>();
+    @Path("/client-authenticator-providers")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Map<String, Object>> getClientAuthenticatorProviders() {
+        this.auth.requireView();
+        List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(ClientAuthenticator.class);
+        return buildProviderMetadata(factories);
+    }
+
+    public List<Map<String, Object>> buildProviderMetadata(List<ProviderFactory> factories) {
+        List<Map<String, Object>> providers = new LinkedList<>();
         for (ProviderFactory factory : factories) {
-            Map<String, String> data = new HashMap<>();
+            Map<String, Object> data = new HashMap<>();
             data.put("id", factory.getId());
-            ConfiguredProvider configured = (ConfiguredProvider)factory;
+            ConfigurableAuthenticatorFactory configured = (ConfigurableAuthenticatorFactory)factory;
             data.put("description", configured.getHelpText());
+            data.put("displayName", configured.getDisplayType());
+
+            if (configured instanceof ClientAuthenticatorFactory) {
+                ClientAuthenticatorFactory configuredClient = (ClientAuthenticatorFactory) configured;
+                data.put("configurablePerClient", configuredClient.isConfigurablePerClient());
+            }
+
             providers.add(data);
         }
         return providers;
@@ -204,7 +225,7 @@ public class AuthenticationManagementResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Map<String, String>> getFormActionProviders() {
+    public List<Map<String, Object>> getFormActionProviders() {
         this.auth.requireView();
         List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(FormAction.class);
         return buildProviderMetadata(factories);
@@ -420,6 +441,10 @@ public class AuthenticationManagementResource {
                     rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.DISABLED.name());
                     rep.setProviderId(execution.getAuthenticator());
                     rep.setAuthenticationConfig(execution.getAuthenticatorConfig());
+                } else if (AuthenticationFlow.CLIENT_FLOW.equals(flowRef.getProviderId())) {
+                    rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.ALTERNATIVE.name());
+                    rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.REQUIRED.name());
+                    rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.DISABLED.name());
                 }
                 rep.setDisplayName(flowRef.getAlias());
                 rep.setConfigurable(false);
@@ -681,6 +706,50 @@ public class AuthenticationManagementResource {
             this.config = config;
         }
     }
+
+    @Path("unregistered-required-actions")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public List<Map<String, String>> getUnregisteredRequiredActions() {
+        List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(RequiredActionProvider.class);
+        List<Map<String, String>> unregisteredList = new LinkedList<>();
+        for (ProviderFactory factory : factories) {
+            RequiredActionFactory requiredActionFactory = (RequiredActionFactory) factory;
+            boolean found = false;
+            for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
+                if (model.getProviderId().equals(factory.getId())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                Map<String, String> data = new HashMap<>();
+                data.put("name", requiredActionFactory.getDisplayText());
+                data.put("providerId", requiredActionFactory.getId());
+                unregisteredList.add(data);
+            }
+
+        }
+        return unregisteredList;
+    }
+
+    @Path("register-required-action")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    public void registereRequiredAction(Map<String, String> data) {
+        String providerId = data.get("providerId");
+        String name = data.get("name");
+        RequiredActionProviderModel requiredAction = new RequiredActionProviderModel();
+        requiredAction.setAlias(providerId);
+        requiredAction.setName(name);
+        requiredAction.setProviderId(providerId);
+        requiredAction.setDefaultAction(false);
+        requiredAction.setEnabled(true);
+        realm.addRequiredActionProvider(requiredAction);
+    }
+
 
 
     @Path("required-actions")

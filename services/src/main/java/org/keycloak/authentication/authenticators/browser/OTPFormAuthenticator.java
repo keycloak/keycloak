@@ -14,7 +14,6 @@ import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -22,7 +21,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OTPFormAuthenticator extends AbstractFormAuthenticator implements Authenticator {
+public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator implements Authenticator {
     public static final String TOTP_FORM_ACTION = "totp";
 
     @Override
@@ -63,11 +62,7 @@ public class OTPFormAuthenticator extends AbstractFormAuthenticator implements A
     }
 
     protected Response challenge(AuthenticationFlowContext context, String error) {
-        String accessCode = context.generateAccessCode();
-        URI action = getActionUrl(context, accessCode);
-        LoginFormsProvider forms = context.getSession().getProvider(LoginFormsProvider.class)
-                .setActionUri(action)
-                .setClientSessionCode(accessCode);
+        LoginFormsProvider forms = context.form();
         if (error != null) forms.setError(error);
 
         return forms.createLoginTotp();

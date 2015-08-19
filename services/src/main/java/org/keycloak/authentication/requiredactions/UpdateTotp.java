@@ -25,18 +25,17 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     }
 
     @Override
-    public Response requiredActionChallenge(RequiredActionContext context) {
+    public void requiredActionChallenge(RequiredActionContext context) {
          LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class)
-                 .setClientSessionCode(context.generateAccessCode(getProviderId()))
+                 .setClientSessionCode(context.generateAccessCode(UserModel.RequiredAction.CONFIGURE_TOTP.name()))
                 .setUser(context.getUser());
-        return loginFormsProvider.createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
+        Response challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
+        context.challenge(challenge);
     }
 
     @Override
-    public Object jaxrsService(RequiredActionContext context) {
-        // this is handled by LoginActionsService at the moment
-        // todo should be refactored to contain it here
-        return null;
+    public void processAction(RequiredActionContext context) {
+        context.failure();
     }
 
 
@@ -70,11 +69,4 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     public String getId() {
         return UserModel.RequiredAction.CONFIGURE_TOTP.name();
     }
-
-    @Override
-    public String getProviderId() {
-        return getId();
-    }
-
-
 }

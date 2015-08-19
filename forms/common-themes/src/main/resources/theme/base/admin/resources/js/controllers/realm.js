@@ -1651,14 +1651,16 @@ module.controller('CreateFlowCtrl', function($scope, realm,
     };
 });
 
-module.controller('CreateExecutionFlowCtrl', function($scope, realm, parentFlow, formProviders,
+module.controller('CreateExecutionFlowCtrl', function($scope, realm, topFlow, parentFlow, formProviders,
                                                       CreateExecutionFlow,
                                                       Notifications, $location) {
     $scope.realm = realm;
     $scope.formProviders = formProviders;
+
+    var defaultFlowType = parentFlow.providerId == 'client-flow' ? 'client-flow' : 'basic-flow';
     $scope.flow = {
         alias: "",
-        type: "basic-flow",
+        type: defaultFlowType,
         description: ""
     }
     $scope.provider = {};
@@ -1669,16 +1671,16 @@ module.controller('CreateExecutionFlowCtrl', function($scope, realm, parentFlow,
     $scope.save = function() {
         $scope.flow.provider = $scope.provider.id;
         CreateExecutionFlow.save({realm: realm.realm, alias: parentFlow.alias}, $scope.flow, function() {
-            $location.url("/realms/" + realm.realm + "/authentication/flows/" + parentFlow.alias);
+            $location.url("/realms/" + realm.realm + "/authentication/flows/" + topFlow);
             Notifications.success("Flow Created.");
         })
     }
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/authentication/flows/" + parentFlow.alias);
+        $location.url("/realms/" + realm.realm + "/authentication/flows/" + topFlow);
     };
 });
 
-module.controller('CreateExecutionCtrl', function($scope, realm, parentFlow, formActionProviders, authenticatorProviders,
+module.controller('CreateExecutionCtrl', function($scope, realm, topFlow, parentFlow, formActionProviders, authenticatorProviders, clientAuthenticatorProviders,
                                                       CreateExecution,
                                                       Notifications, $location) {
     $scope.realm = realm;
@@ -1686,6 +1688,8 @@ module.controller('CreateExecutionCtrl', function($scope, realm, parentFlow, for
     console.log('parentFlow.providerId: ' + parentFlow.providerId);
     if (parentFlow.providerId == 'form-flow') {
         $scope.providers = formActionProviders;
+    } else if (parentFlow.providerId == 'client-flow') {
+        $scope.providers = clientAuthenticatorProviders;
     } else {
         $scope.providers = authenticatorProviders;
     }
@@ -1700,12 +1704,12 @@ module.controller('CreateExecutionCtrl', function($scope, realm, parentFlow, for
             provider: $scope.provider.id
         }
         CreateExecution.save({realm: realm.realm, alias: parentFlow.alias}, execution, function() {
-            $location.url("/realms/" + realm.realm + "/authentication/flows/" + parentFlow.alias);
+            $location.url("/realms/" + realm.realm + "/authentication/flows/" + topFlow);
             Notifications.success("Execution Created.");
         })
     }
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/authentication/flows/" + parentFlow.alias);
+        $location.url("/realms/" + realm.realm + "/authentication/flows/" + topFlow);
     };
 });
 
@@ -1793,12 +1797,12 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
     }
 
     $scope.addSubFlow = function(execution) {
-        $location.url("/realms/" + realm.realm + '/authentication/flows/' + execution.flowId + '/create/flow/execution');
+        $location.url("/realms/" + realm.realm + '/authentication/flows/' + execution.flowId + '/create/flow/execution/' + $scope.flow.alias);
 
     }
 
     $scope.addSubFlowExecution = function(execution) {
-        $location.url("/realms/" + realm.realm + '/authentication/flows/' + execution.flowId + '/create/execution');
+        $location.url("/realms/" + realm.realm + '/authentication/flows/' + execution.flowId + '/create/execution/' + $scope.flow.alias);
 
     }
 
@@ -1853,13 +1857,16 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 
 });
 
-module.controller('RequiredActionsCtrl', function($scope, realm, RequiredActions, Notifications) {
+module.controller('RequiredActionsCtrl', function($scope, realm, unregisteredRequiredActions,
+                                                  $modal, $route,
+                                                  RegisterRequiredAction, RequiredActions, Notifications) {
     console.log('RequiredActionsCtrl');
     $scope.realm = realm;
+    $scope.unregisteredRequiredActions = unregisteredRequiredActions;
     $scope.requiredActions = [];
     var setupRequiredActionsForm = function() {
         console.log('setupRequiredActionsForm');
-        RequiredActions.query({id: realm.realm}, function(data) {
+        RequiredActions.query({realm: realm.realm}, function(data) {
             $scope.requiredActions = [];
             for (var i = 0; i < data.length; i++) {
                 $scope.requiredActions.push(data[i]);
@@ -1868,9 +1875,32 @@ module.controller('RequiredActionsCtrl', function($scope, realm, RequiredActions
     };
 
     $scope.updateRequiredAction = function(action) {
-        RequiredActions.update({id: realm.realm, alias: action.alias}, action, function() {
+        RequiredActions.update({realm: realm.realm, alias: action.alias}, action, function() {
             Notifications.success("Required action updated");
             setupRequiredActionsForm();
+        });
+    }
+
+    $scope.register = function() {
+        var controller = function($scope, $modalInstance) {
+            $scope.unregisteredRequiredActions = unregisteredRequiredActions;
+            $scope.selected = {
+                selected: $scope.unregisteredRequiredActions[0]
+            }
+            $scope.ok = function () {
+                $modalInstance.close();
+                RegisterRequiredAction.save({realm: realm.realm}, $scope.selected.selected);
+                $route.reload();
+            };
+            $scope.cancel = function () {
+                $modalInstance.dismiss('cancel');
+            };
+        }
+        $modal.open({
+            templateUrl: resourceUrl + '/partials/modal/unregistered-required-action-selector.html',
+            controller: controller,
+            resolve: {
+            }
         });
     }
 

@@ -66,7 +66,8 @@ public enum EventType {
     IDENTITY_PROVIDER_RETRIEVE_TOKEN_ERROR(false),
     IDENTITY_PROVIDER_ACCCOUNT_LINKING(false),
     IDENTITY_PROVIDER_ACCCOUNT_LINKING_ERROR(false),
-    IMPERSONATE(true);
+    IMPERSONATE(true),
+    CUSTOM_REQUIRED_ACTION(true);
 
     private boolean saveByDefault;
 

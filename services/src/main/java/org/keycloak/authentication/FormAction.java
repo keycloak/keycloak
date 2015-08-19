@@ -16,6 +16,14 @@ import org.keycloak.provider.Provider;
  */
 public interface FormAction extends Provider {
     /**
+     * When a FormAuthenticator is rendering the challenge page, even FormAction.buildPage() method will be called
+     * This gives the FormAction the opportunity to add additional attributes to the form to be displayed.
+     *
+     * @param context
+     * @param form
+     */
+    void buildPage(FormContext context, LoginFormsProvider form);
+    /**
      * This is the first phase of form processing.  Each FormAction.validate() method is called.  This gives the
      * FormAction a chance to validate and challenge if user input is invalid.
      *
@@ -53,13 +61,5 @@ public interface FormAction extends Provider {
      */
     void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user);
 
-    /**
-     * When a FormAuthenticator is rendering the challenge page, even FormAction.buildPage() method will be called
-     * This gives the FormAction the opportunity to add additional attributes to the form to be displayed.
-     *
-     * @param context
-     * @param form
-     */
-    void buildPage(FormContext context, LoginFormsProvider form);
 
 }

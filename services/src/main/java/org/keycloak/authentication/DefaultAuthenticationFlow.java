@@ -54,7 +54,10 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return authenticationFlow.processAction(actionExecution);
             } else if (model.getId().equals(actionExecution)) {
                 AuthenticatorFactory factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
-                Authenticator authenticator = factory.create();
+                if (factory == null) {
+                    throw new RuntimeException("Unable to find factory for AuthenticatorFactory: " + model.getAuthenticator() + " did you forget to declare it in a META-INF/services file?");
+                }
+                Authenticator authenticator = factory.create(processor.getSession());
                 AuthenticationProcessor.Result result = processor.createAuthenticatorContext(model, authenticator, executions);
                 authenticator.action(result);
                 Response response = processResult(result);
@@ -106,9 +109,9 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
             AuthenticatorFactory factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
             if (factory == null) {
-                throw new AuthenticationFlowException("Could not find AuthenticatorFactory for: " + model.getAuthenticator(), AuthenticationFlowError.INTERNAL_ERROR);
+                throw new RuntimeException("Unable to find factory for AuthenticatorFactory: " + model.getAuthenticator() + " did you forget to declare it in a META-INF/services file?");
             }
-            Authenticator authenticator = factory.create();
+            Authenticator authenticator = factory.create(processor.getSession());
             AuthenticationProcessor.logger.debugv("authenticator: {0}", factory.getId());
             UserModel authUser = processor.getClientSession().getAuthenticatedUser();
 
@@ -149,13 +152,13 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
     public Response processResult(AuthenticationProcessor.Result result) {
         AuthenticationExecutionModel execution = result.getExecution();
-        AuthenticationProcessor.Status status = result.getStatus();
-        if (status == AuthenticationProcessor.Status.SUCCESS) {
+        FlowStatus status = result.getStatus();
+        if (status == FlowStatus.SUCCESS) {
             AuthenticationProcessor.logger.debugv("authenticator SUCCESS: {0}", execution.getAuthenticator());
             processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.SUCCESS);
             if (execution.isAlternative()) alternativeSuccessful = true;
             return null;
-        } else if (status == AuthenticationProcessor.Status.FAILED) {
+        } else if (status == FlowStatus.FAILED) {
             AuthenticationProcessor.logger.debugv("authenticator FAILED: {0}", execution.getAuthenticator());
             processor.logFailure();
             processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.FAILED);
@@ -163,10 +166,13 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return sendChallenge(result, execution);
             }
             throw new AuthenticationFlowException(result.getError());
-        } else if (status == AuthenticationProcessor.Status.FORCE_CHALLENGE) {
+        } else if (status == FlowStatus.RESET_BROWSER_LOGIN) {
+            AuthenticationProcessor.logger.debugv("reset browser login from authenticator: {0}", execution.getAuthenticator());
+            throw new AuthenticationFlowException(AuthenticationFlowError.RESET_TO_BROWSER_LOGIN);
+        } else if (status == FlowStatus.FORCE_CHALLENGE) {
             processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
             return sendChallenge(result, execution);
-        } else if (status == AuthenticationProcessor.Status.CHALLENGE) {
+        } else if (status == FlowStatus.CHALLENGE) {
             AuthenticationProcessor.logger.debugv("authenticator CHALLENGE: {0}", execution.getAuthenticator());
             if (execution.isRequired()) {
                 processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
@@ -184,12 +190,12 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
             }
             return null;
-        } else if (status == AuthenticationProcessor.Status.FAILURE_CHALLENGE) {
+        } else if (status == FlowStatus.FAILURE_CHALLENGE) {
             AuthenticationProcessor.logger.debugv("authenticator FAILURE_CHALLENGE: {0}", execution.getAuthenticator());
             processor.logFailure();
             processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
             return sendChallenge(result, execution);
-        } else if (status == AuthenticationProcessor.Status.ATTEMPTED) {
+        } else if (status == FlowStatus.ATTEMPTED) {
             AuthenticationProcessor.logger.debugv("authenticator ATTEMPTED: {0}", execution.getAuthenticator());
             if (execution.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) {
                 throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CREDENTIALS);

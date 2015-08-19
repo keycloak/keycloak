@@ -117,7 +117,7 @@ public class RequiredActionTotpSetupTest {
     public void setupTotpRegister() {
         loginPage.open();
         loginPage.clickRegister();
-        registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
+        registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password", null);
 
         String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
 
@@ -170,7 +170,7 @@ public class RequiredActionTotpSetupTest {
         // Register new user
         loginPage.open();
         loginPage.clickRegister();
-        registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2");
+        registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2", null);
 
         String userId = events.expectRegister("setupTotp2", "email2@mail.com").assertEvent().getUserId();
 
@@ -204,7 +204,7 @@ public class RequiredActionTotpSetupTest {
         // Login with one-time password
         loginTotpPage.login(totp.generateTOTP(totpCode));
 
-        loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
+        loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
 
         // Open account page
         accountTotpPage.open();
@@ -227,11 +227,11 @@ public class RequiredActionTotpSetupTest {
         totpPage.assertCurrent();
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent().getSessionId();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setuptotp2").assertEvent();
+        events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setupTotp2").assertEvent();
     }
 
     @Test

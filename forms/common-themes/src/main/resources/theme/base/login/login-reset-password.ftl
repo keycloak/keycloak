@@ -5,7 +5,7 @@
     <#elseif section = "header">
         ${msg("emailForgotTitle")}
     <#elseif section = "form">
-        <form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginPasswordResetUrl}" method="post">
+        <form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="username" class="${properties.kcLabelClass!}">${msg("usernameOrEmail")}</label>

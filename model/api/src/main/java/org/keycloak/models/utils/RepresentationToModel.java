@@ -359,6 +359,11 @@ public class RepresentationToModel {
         } else {
             newRealm.setDirectGrantFlow(newRealm.getFlowByAlias(rep.getDirectGrantFlow()));
         }
+        if (rep.getClientAuthenticationFlow() == null) {
+            newRealm.setClientAuthenticationFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW));
+        } else {
+            newRealm.setClientAuthenticationFlow(newRealm.getFlowByAlias(rep.getClientAuthenticationFlow()));
+        }
 
     }
 
@@ -565,6 +570,9 @@ public class RepresentationToModel {
         }
         if (rep.getDirectGrantFlow() != null) {
             realm.setDirectGrantFlow(realm.getFlowByAlias(rep.getDirectGrantFlow()));
+        }
+        if (rep.getClientAuthenticationFlow() != null) {
+            realm.setClientAuthenticationFlow(realm.getFlowByAlias(rep.getClientAuthenticationFlow()));
         }
     }
 

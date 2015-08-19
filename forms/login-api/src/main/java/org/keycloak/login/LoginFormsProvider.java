@@ -23,9 +23,16 @@ import org.keycloak.provider.Provider;
  */
 public interface LoginFormsProvider extends Provider {
 
+    /**
+     * Adds a script to the html header
+     *
+     * @param scriptUrl
+     */
+    void addScript(String scriptUrl);
+
     public Response createResponse(UserModel.RequiredAction action);
 
-    Response createForm(String form, Map<String, Object> attributes);
+    Response createForm(String form);
 
     public Response createLogin();
 

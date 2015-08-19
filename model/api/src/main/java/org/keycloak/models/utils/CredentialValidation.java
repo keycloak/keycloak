@@ -38,29 +38,34 @@ public class CredentialValidation {
      * @return
      */
     public static boolean validPassword(RealmModel realm, UserModel user, String password) {
-        boolean validated = false;
         UserCredentialValueModel passwordCred = null;
         for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
             if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                validated = new Pbkdf2PasswordEncoder(cred.getSalt()).verify(password, cred.getValue(), cred.getHashIterations());
                 passwordCred = cred;
             }
         }
+        if (passwordCred == null) return false;
+
+        return validateHashedCredential(realm, user, password, passwordCred);
+
+    }
+
+    public static boolean validateHashedCredential(RealmModel realm, UserModel user, String unhashedCredValue, UserCredentialValueModel credential) {
+        boolean validated = new Pbkdf2PasswordEncoder(credential.getSalt()).verify(unhashedCredValue, credential.getValue(), credential.getHashIterations());
         if (validated) {
             int iterations = hashIterations(realm);
-            if (iterations > -1 && iterations != passwordCred.getHashIterations()) {
+            if (iterations > -1 && iterations != credential.getHashIterations()) {
                 UserCredentialValueModel newCred = new UserCredentialValueModel();
-                newCred.setType(passwordCred.getType());
-                newCred.setDevice(passwordCred.getDevice());
-                newCred.setSalt(passwordCred.getSalt());
+                newCred.setType(credential.getType());
+                newCred.setDevice(credential.getDevice());
+                newCred.setSalt(credential.getSalt());
                 newCred.setHashIterations(iterations);
-                newCred.setValue(new Pbkdf2PasswordEncoder(newCred.getSalt()).encode(password, iterations));
+                newCred.setValue(new Pbkdf2PasswordEncoder(newCred.getSalt()).encode(unhashedCredValue, iterations));
                 user.updateCredentialDirectly(newCred);
             }
 
         }
         return validated;
-
     }
 
     public static boolean validPasswordToken(RealmModel realm, UserModel user, String encodedPasswordToken) {

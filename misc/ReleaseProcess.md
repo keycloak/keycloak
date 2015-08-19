@@ -1,68 +1,147 @@
 ## Test
 
-* Make sure tests pass on Travis
-* Make sure tests pass on Jenkins
+* Make sure tests pass on Travis (https://travis-ci.org/keycloak/keycloak)
+* Make sure tests pass on Jenkins (https://jenkins.mw.lab.eng.bos.redhat.com/hudson/view/Keycloak/job/keycloak_all/)
 * Go through the (manual testing)[https://docs.google.com/spreadsheets/d/17C_WEHNE03r5DxN71OXGJaytjA6_WjZKCXRcsnmNQD4]
 
-## Create release
 
-* Get from github
-```
-$ git@github.com:keycloak/keycloak.git
-```
+## Release
 
-* Build everything to make sure its kosher.
-```
-$ cd keycloak
-$ mvn -Pjboss-release install
-```
+*Releasing currently requires using JDK 7 due to a bug in JAX-RS Doclets*
 
-* Upload to Nexus (from project root)
-```
-$ mvn -Pjboss-release deploy
-```
+### Clone from GitHub
 
-* Login to Nexus and release the maven repository uploads in the staging area.
+    # git clone https://github.com/keycloak/keycloak.git
+    # cd keycloak
 
-* Upload src and distro zips to sf.net/projects/keycloak.  This includes appliance, war-dist, each adapter, and proxy distros.  You need to create an adapters folder on sf.net and each uploaded adapter there.
+### Update version
 
-* Upload documentation to http://keycloak.github.io/
-```
-$ git clone https://github.com/keycloak/keycloak.github.io.git
-$ cd keycloak.github.io.git/docs
-$ rm -rf *
-$ unzip distribution/docs-dist/target/keycloak-docs-1.0.0.Final.zip
-$ git add --all
-$ git commit
-$ git push
-```
-* tag release
-```
-$ git tag -a -m "1.0.0.Final" 1.0.0.Final
-$ git push --tags
-```
+    # mvn versions:set -DnewVersion=$VERSION -DgenerateBackupPoms=false -Pjboss-release
 
-## Update Bower
-```
-$ git clone https://github.com/keycloak/keycloak-js-bower
-$ cp <keycloak.js from dist> dist/keycloak-js-bower
-$ cp <keycloak.min.js from dist> dist/keycloak-js-bower
-```
-Edit bower.json and set version (include -beta -rc, but not -final). Create tag.
+### Build
 
-## Update OpenShift Cartridge
+    # mvn install install -Pdistribution
+    # mvn install -Pjboss-release -DskipTests
 
-See https://github.com/keycloak/openshift-keycloak-cartridge for details
+### Tag
 
-## Update Docker image
+    # git tag $VERSION
+    # git push --tags
 
-Instructions TBD
+### Deploy to Nexus
 
-## Maven central
+    # mvn deploy -DskipTests -Pjboss-release
 
-Releases are automatically synced to Maven central, but this can take up to one day
+Then login to Nexus and release the maven uploads in the staging area. Artifacts will eventually be synced to Maven Central, but this can take up to 24 hours.
 
-## Announce
+### Upload
 
-* Update Magnolia site to link keycloak docs and announcements.
-* Write a blog and email about release including links to download, migration guide, docs, and blurb about what's new
+Upload all artifacts to downloads.jboss.org (see https://mojo.redhat.com/docs/DOC-81955 for more details):
+
+    # rsync -rv --protocol=28 distribution/downloads/target/$VERSION keycloak@filemgmt.jboss.org:/downloads_htdocs/keycloak
+
+### Upload documentation
+
+    # git clone https://github.com/keycloak/keycloak.github.io.git
+    # cd keycloak.github.io
+    # rm -rf docs
+    # unzip ../distribution/downloads/target/$VERSION/keycloak-docs-$VERSION.zip
+    # mv keycloak-docs-$VERSION docs
+    # git commit -m "Updated docs to $VERSION"
+    # git tag $VERSION
+    # git push --tags
+
+
+## After Release
+
+### Update Bower
+
+    # git clone https://github.com/keycloak/keycloak-js-bower
+    # cd keycloak-js-bower
+    # unzip ../distribution/downloads/target/$VERSION/adapters/keycloak-js-adapter-dist-$VERSION.zip
+    # mv keycloak-js-adapter-dist-$VERSION/*.js dist/keycloak-js-bower
+    # rmdir keycloak-js-adapter-dist-$VERSION
+
+Edit bower.json and set version (include -beta -rc, but not -final). Then commit create tag:
+
+    # git commit -m "Updated to $VERSION"
+    # git tag $VERSION
+    # git push --tags
+
+### Update Website
+
+* Edit [Docs page](https://www.jboss.org/author/keycloak/docs.html) and update version
+* Edit [Downloads page](https://www.jboss.org/author/keycloak/downloads) edit directory listing component and update version in title and project root
+
+### Announce release
+
+Write a blog post on blog.keycloak.org, blurb about what's new and include links to website for download and jira for changes.
+
+Copy blog post and send to keycloak-dev and keycloak-users mailing lists.
+
+Post link to blog post on Twitter (with Keycloak user).
+
+### Update OpenShift Cartridge
+
+If Keycloak has upgraded the WildFly version since the cartridge was upgraded the first step is to rebase the cartridge from the [wildfly-cartridge](https://github.com/openshift-cartridges/openshift-wildfly-cartridge):
+
+    # git clone https://github.com/keycloak/openshift-keycloak-cartridge.git
+    # cd openshift-keycloak-cartridge
+    # git remote add wildfly https://github.com/openshift-cartridges/openshift-wildfly-cartridge.git
+    # git fetch wildfly
+    # git rebase wildfly
+
+If the WildFly version is the same you can skip the above step.
+
+To upgrade Keycloak on the cartridge run:
+
+    # git clone https://github.com/openshift-cartridges/openshift-wildfly-cartridge.git
+    # cd openshift-keycloak-cartridge
+    # rm -rf versions/9/modules/system
+    # rm -rf versions/9/standalone/providers
+    # rm -rf versions/9/standalone/themes
+    # rm -rf versions/9/standalone/configuration/configuration/keycloak-sever.json
+    # unzip ../distribution/downloads/target/$VERSION/keycloak-$VERSION.zip
+    # cp -r keycloak-$VERSION/modules/system versions/9/modules/
+    # cp -r keycloak-$VERSION/standalone/providers versions/9/standalone/
+    # cp -r keycloak-$VERSION/standalone/themes versions/9/standalone/
+    # cp keycloak-$VERSION/standalone/configuration/configuration/keycloak-sever.json versions/9/standalone/configuration/
+    # git commit -m "Updated to $VERSION" -a
+    # git tag $VERSION
+    # git push --tags master
+
+### Update Docker image
+
+    # git clone https://github.com/jboss-dockerfiles/keycloak.git
+    # cd keycloak
+
+Edit server/Dockerfile and update version in `ENV KEYCLOAK_VERSION ...` line.
+
+Edit the following files:
+
+* server-postgres/Dockerfile
+* adapter-wildfly/Dockerfile
+* server-ha-postgres/Dockerfile
+* server/Dockerfile
+* server-mongo/Dockerfile
+* examples/Dockerfile
+* server-mysql/Dockerfile
+
+And update version in `FROM jboss/keycloak:...` line.
+
+    # git commit -m "Updated to $VERSION" -a
+    # git tag $VERSION
+    # git push --tags master
+
+Go to Docker Hub. Update build settings for the following images and change `Name` and `Docker Tag Name` to the version you are releasing:
+
+* [keycloak](https://hub.docker.com/r/jboss/keycloak/~/settings/automated-builds/)
+* [adapter-wildfly](https://hub.docker.com/r/jboss/keycloak-adapter-wildfly/~/settings/automated-builds/)
+* [examples](https://hub.docker.com/r/jboss/keycloak-examples/~/settings/automated-builds/)
+* [postgres](https://hub.docker.com/r/jboss/keycloak-postgres/~/settings/automated-builds/)
+* [mysql](https://hub.docker.com/r/jboss/keycloak-mysql/~/settings/automated-builds/)
+* [mongo](https://hub.docker.com/r/jboss/keycloak-mongo/~/settings/automated-builds/)
+* [ha-postgres](https://hub.docker.com/r/jboss/keycloak-ha-postgres/~/settings/automated-builds/)
+
+Once you've updated all images. Schedule a build of the [keycloak image](https://hub.docker.com/r/jboss/keycloak/builds/). Once completed it will trigger
+builds of all other images as they are linked.

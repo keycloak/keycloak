@@ -28,23 +28,12 @@ public interface RequiredActionProvider extends Provider {
      * @param context
      * @return
      */
-    Response requiredActionChallenge(RequiredActionContext context);
+    void requiredActionChallenge(RequiredActionContext context);
 
     /**
-     * This is an optional method.  If the required action has a more complex interaction, you can encapsulate it within
-     * a REST service.  This method returns a JAX-RS sub locator object that can be referenced at:
-     *
-     * /realms/{realm}/login-actions/required-actions/{provider-id}
+     * Called when a required action has form input you want to process.
      *
      * @param context
-     * @return
      */
-    Object jaxrsService(RequiredActionContext context);
-
-    /**
-     * Provider id of this required action.  Must match ProviderFactory.getId().
-     *
-     * @return
-     */
-    String getProviderId();
+    void processAction(RequiredActionContext context);
 }

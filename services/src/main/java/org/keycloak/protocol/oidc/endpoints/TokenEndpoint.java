@@ -98,11 +98,7 @@ public class TokenEndpoint {
         checkSsl();
         checkRealm();
         checkGrantType();
-
-        // client grant type will do it's own verification of client
-        if (!grantType.equals(OAuth2Constants.CLIENT_CREDENTIALS)) {
-            checkClient();
-        }
+        checkClient();
 
         switch (action) {
             case AUTHORIZATION_CODE:
@@ -148,8 +144,7 @@ public class TokenEndpoint {
     }
 
     private void checkClient() {
-        String authorizationHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        client = AuthorizeClientUtil.authorizeClient(authorizationHeader, formParams, event, realm);
+        client = AuthorizeClientUtil.authorizeClient(session, event, realm);
 
         if (client.isBearerOnly()) {
             throw new ErrorResponseException("invalid_client", "Bearer-only not allowed", Response.Status.BAD_REQUEST);
@@ -368,7 +363,7 @@ public class TokenEndpoint {
     }
 
     public Response buildClientCredentialsGrant() {
-        ServiceAccountManager serviceAccountManager = new ServiceAccountManager(tokenManager, authManager, event, request, formParams, session);
+        ServiceAccountManager serviceAccountManager = new ServiceAccountManager(tokenManager, event, request, formParams, session, client);
         return serviceAccountManager.buildClientCredentialsGrant();
     }
 

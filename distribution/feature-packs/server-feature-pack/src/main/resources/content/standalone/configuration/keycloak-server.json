@@ -22,18 +22,6 @@
         "provider": "jpa"
     },
 
-    "userSessions": {
-        "provider" : "infinispan"
-    },
-
-    "realmCache": {
-        "provider": "infinispan"
-    },
-
-    "userCache": {
-        "provider": "infinispan"
-    },
-
     "timer": {
         "provider": "basic"
     },
@@ -46,18 +34,6 @@
         "folder": {
           "dir": "${jboss.server.config.dir}/themes"
         }
-    },
-
-    "login": {
-        "provider": "freemarker"
-    },
-
-    "account": {
-        "provider": "freemarker"
-    },
-
-    "email": {
-        "provider": "freemarker"
     },
 
     "scheduled": {

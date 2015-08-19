@@ -188,7 +188,11 @@ public class RealmEntity {
 
     @Column(name="DIRECT_GRANT_FLOW")
     protected String directGrantFlow;
+    @Column(name="RESET_CREDENTIALS_FLOW")
+    protected String resetCredentialsFlow;
 
+    @Column(name="CLIENT_AUTH_FLOW")
+    protected String clientAuthenticationFlow;
 
 
 
@@ -677,6 +681,22 @@ public class RealmEntity {
 
     public void setDirectGrantFlow(String directGrantFlow) {
         this.directGrantFlow = directGrantFlow;
+    }
+
+    public String getResetCredentialsFlow() {
+        return resetCredentialsFlow;
+    }
+
+    public void setResetCredentialsFlow(String resetCredentialsFlow) {
+        this.resetCredentialsFlow = resetCredentialsFlow;
+    }
+
+    public String getClientAuthenticationFlow() {
+        return clientAuthenticationFlow;
+    }
+
+    public void setClientAuthenticationFlow(String clientAuthenticationFlow) {
+        this.clientAuthenticationFlow = clientAuthenticationFlow;
     }
 }
 

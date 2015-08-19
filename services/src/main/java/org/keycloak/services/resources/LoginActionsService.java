@@ -26,7 +26,10 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.RequiredActionContext;
+import org.keycloak.authentication.RequiredActionContextResult;
+import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.events.Details;
@@ -48,13 +51,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.CredentialValidation;
-import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -68,7 +68,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
@@ -91,6 +90,9 @@ public class LoginActionsService {
     protected static final Logger logger = Logger.getLogger(LoginActionsService.class);
 
     public static final String ACTION_COOKIE = "KEYCLOAK_ACTION";
+    public static final String AUTHENTICATE_PATH = "authenticate";
+    public static final String REGISTRATION_PATH = "registration";
+    public static final String RESET_CREDENTIALS_PATH = "reset-credentials";
 
     private RealmModel realm;
 
@@ -125,6 +127,10 @@ public class LoginActionsService {
         return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "authenticateForm");
     }
 
+    public static UriBuilder requiredActionProcessor(UriInfo uriInfo) {
+        return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "requiredActionPOST");
+    }
+
     public static UriBuilder registrationFormProcessor(UriInfo uriInfo) {
         return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "processRegister");
     }
@@ -152,8 +158,8 @@ public class LoginActionsService {
         ClientSessionCode clientCode;
         Response response;
 
-        boolean verifyCode(AuthenticationFlowModel flow, String code, String requiredAction) {
-            if (!verifyCode(flow, code)) {
+        boolean verifyCode(String code, String requiredAction) {
+            if (!verifyCode(code)) {
                 return false;
             } else if (!clientCode.isValidAction(requiredAction)) {
                 event.client(clientCode.getClientSession().getClient());
@@ -175,8 +181,8 @@ public class LoginActionsService {
             }
         }
 
-        boolean verifyCode(AuthenticationFlowModel flow, String code, String requiredAction, String alternativeRequiredAction) {
-            if (!verifyCode(flow, code)) {
+        boolean verifyCode(String code, String requiredAction, String alternativeRequiredAction) {
+            if (!verifyCode(code)) {
                 return false;
             } else if (!(clientCode.isValidAction(requiredAction) || clientCode.isValidAction(alternativeRequiredAction))) {
                 event.client(clientCode.getClientSession().getClient());
@@ -201,7 +207,7 @@ public class LoginActionsService {
             }
         }
 
-        public boolean verifyCode(AuthenticationFlowModel flow, String code) {
+        public boolean verifyCode(String code) {
             if (!checkSsl()) {
                 event.error(Errors.SSL_REQUIRED);
                 response = ErrorPage.error(session, Messages.HTTPS_REQUIRED);
@@ -220,7 +226,7 @@ public class LoginActionsService {
                         ClientSessionModel clientSession = RestartLoginCookie.restartSession(session, realm, code);
                         if (clientSession != null) {
                             event.clone().detail(Details.RESTART_AFTER_TIMEOUT, "true").error(Errors.EXPIRED_CODE);
-                            response = processFlow(null, clientSession, flow, Messages.LOGIN_TIMEOUT);
+                            response = processFlow(null, clientSession, AUTHENTICATE_PATH, realm.getBrowserFlow(), Messages.LOGIN_TIMEOUT);
                             return false;
                         }
                     } catch (Exception e) {
@@ -262,13 +268,13 @@ public class LoginActionsService {
      * @param code
      * @return
      */
-    @Path("authenticate")
+    @Path(AUTHENTICATE_PATH)
     @GET
     public Response authenticate(@QueryParam("code") String code,
                                  @QueryParam("execution") String execution) {
         event.event(EventType.LOGIN);
         Checks checks = new Checks();
-        if (!checks.verifyCode(realm.getBrowserFlow(), code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
             return checks.response;
         }
         event.detail(Details.CODE_ID, code);
@@ -284,12 +290,13 @@ public class LoginActionsService {
     }
 
     protected Response processAuthentication(String execution, ClientSessionModel clientSession, String errorMessage) {
-        return processFlow(execution, clientSession, realm.getBrowserFlow(), errorMessage);
+        return processFlow(execution, clientSession, AUTHENTICATE_PATH, realm.getBrowserFlow(), errorMessage);
     }
 
-    protected Response processFlow(String execution, ClientSessionModel clientSession, AuthenticationFlowModel flow, String errorMessage) {
+    protected Response processFlow(String execution, ClientSessionModel clientSession, String flowPath, AuthenticationFlowModel flow, String errorMessage) {
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setClientSession(clientSession)
+                .setFlowPath(flowPath)
                 .setFlowId(flow.getId())
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
@@ -317,13 +324,13 @@ public class LoginActionsService {
      * @param code
      * @return
      */
-    @Path("authenticate")
+    @Path(AUTHENTICATE_PATH)
     @POST
     public Response authenticateForm(@QueryParam("code") String code,
                                      @QueryParam("execution") String execution) {
         event.event(EventType.LOGIN);
         Checks checks = new Checks();
-        if (!checks.verifyCode(realm.getBrowserFlow(), code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
             return checks.response;
         }
         final ClientSessionCode clientCode = checks.clientCode;
@@ -332,8 +339,39 @@ public class LoginActionsService {
         return processAuthentication(execution, clientSession, null);
     }
 
+    @Path(RESET_CREDENTIALS_PATH)
+    @POST
+    public Response resetCredentialsPOST(@QueryParam("code") String code,
+                                         @QueryParam("execution") String execution) {
+        return resetCredentials(code, execution);
+    }
+
+    @Path(RESET_CREDENTIALS_PATH)
+    @GET
+    public Response resetCredentialsGET(@QueryParam("code") String code,
+                                         @QueryParam("execution") String execution) {
+        return resetCredentials(code, execution);
+    }
+
+    protected Response resetCredentials(String code, String execution) {
+        event.event(EventType.RESET_PASSWORD);
+        Checks checks = new Checks();
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+            return checks.response;
+        }
+        final ClientSessionCode clientCode = checks.clientCode;
+        final ClientSessionModel clientSession = clientCode.getClientSession();
+
+        return processResetCredentials(execution, clientSession, null);
+    }
+
+    protected Response processResetCredentials(String execution, ClientSessionModel clientSession, String errorMessage) {
+        return processFlow(execution, clientSession, RESET_CREDENTIALS_PATH, realm.getResetCredentialsFlow(), errorMessage);
+    }
+
+
     protected Response processRegistration(String execution, ClientSessionModel clientSession, String errorMessage) {
-        return processFlow(execution, clientSession, realm.getRegistrationFlow(), errorMessage);
+        return processFlow(execution, clientSession, REGISTRATION_PATH, realm.getRegistrationFlow(), errorMessage);
     }
 
 
@@ -343,7 +381,7 @@ public class LoginActionsService {
      * @param code
      * @return
      */
-    @Path("registration")
+    @Path(REGISTRATION_PATH)
     @GET
     public Response registerPage(@QueryParam("code") String code,
                                  @QueryParam("execution") String execution) {
@@ -354,7 +392,7 @@ public class LoginActionsService {
         }
 
         Checks checks = new Checks();
-        if (!checks.verifyCode(realm.getRegistrationFlow(), code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
             return checks.response;
         }
         event.detail(Details.CODE_ID, code);
@@ -374,18 +412,18 @@ public class LoginActionsService {
      * @param code
      * @return
      */
-    @Path("registration")
+    @Path(REGISTRATION_PATH)
     @POST
     public Response processRegister(@QueryParam("code") String code,
                                     @QueryParam("execution") String execution) {
         event.event(EventType.REGISTER);
-        Checks checks = new Checks();
-        if (!checks.verifyCode(realm.getRegistrationFlow(), code, ClientSessionModel.Action.AUTHENTICATE.name())) {
-            return checks.response;
-        }
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
             return ErrorPage.error(session, Messages.REGISTRATION_NOT_ALLOWED);
+        }
+        Checks checks = new Checks();
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+            return checks.response;
         }
 
         ClientSessionCode clientCode = checks.clientCode;
@@ -481,7 +519,7 @@ public class LoginActionsService {
                                   final MultivaluedMap<String, String> formData) {
         event.event(EventType.UPDATE_PROFILE);
         Checks checks = new Checks();
-        if (!checks.verifyCode(realm.getBrowserFlow(), code, ClientSessionModel.Action.UPDATE_PROFILE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.UPDATE_PROFILE.name())) {
             return checks.response;
         }
         ClientSessionCode accessCode = checks.clientCode;
@@ -497,6 +535,7 @@ public class LoginActionsService {
                     .setClientSessionCode(accessCode.getCode())
                     .setUser(user)
                     .setErrors(errors)
+                    .setFormData(formData)
                     .createResponse(RequiredAction.UPDATE_PROFILE);
         }
 
@@ -517,6 +556,7 @@ public class LoginActionsService {
                         .setUser(user)
                         .setError(Messages.EMAIL_EXISTS)
                         .setClientSessionCode(accessCode.getCode())
+                        .setFormData(formData)
                         .createResponse(RequiredAction.UPDATE_PROFILE);
             }
 
@@ -543,7 +583,7 @@ public class LoginActionsService {
                                final MultivaluedMap<String, String> formData) {
         event.event(EventType.UPDATE_TOTP);
         Checks checks = new Checks();
-        if (!checks.verifyCode(realm.getBrowserFlow(), code, ClientSessionModel.Action.CONFIGURE_TOTP.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.CONFIGURE_TOTP.name())) {
             return checks.response;
         }
         ClientSessionCode accessCode = checks.clientCode;
@@ -595,7 +635,7 @@ public class LoginActionsService {
                                    final MultivaluedMap<String, String> formData) {
         event.event(EventType.UPDATE_PASSWORD);
         Checks checks = new Checks();
-        if (!checks.verifyCode(realm.getBrowserFlow(), code, ClientSessionModel.Action.UPDATE_PASSWORD.name(), ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.UPDATE_PASSWORD.name(), ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
             return checks.response;
         }
         ClientSessionCode accessCode = checks.clientCode;
@@ -637,13 +677,10 @@ public class LoginActionsService {
         event.event(EventType.UPDATE_PASSWORD).success();
 
         if (clientSession.getAction().equals(ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
-            String actionCookieValue = getActionCookie();
-            if (actionCookieValue == null || !actionCookieValue.equals(userSession.getId())) {
-                session.sessions().removeClientSession(realm, clientSession);
-                return session.getProvider(LoginFormsProvider.class)
-                        .setSuccess(Messages.ACCOUNT_PASSWORD_UPDATED)
-                        .createInfoPage();
-            }
+            session.sessions().removeClientSession(realm, clientSession);
+            return session.getProvider(LoginFormsProvider.class)
+                    .setSuccess(Messages.ACCOUNT_PASSWORD_UPDATED)
+                    .createInfoPage();
         }
 
         event = event.clone().event(EventType.LOGIN);
@@ -658,7 +695,7 @@ public class LoginActionsService {
         event.event(EventType.VERIFY_EMAIL);
         if (key != null) {
             Checks checks = new Checks();
-            if (!checks.verifyCode(realm.getBrowserFlow(), key, ClientSessionModel.Action.VERIFY_EMAIL.name())) {
+            if (!checks.verifyCode(key, ClientSessionModel.Action.VERIFY_EMAIL.name())) {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
@@ -685,7 +722,7 @@ public class LoginActionsService {
             return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
         } else {
             Checks checks = new Checks();
-            if (!checks.verifyCode(realm.getBrowserFlow(), code, ClientSessionModel.Action.VERIFY_EMAIL.name())) {
+            if (!checks.verifyCode(code, ClientSessionModel.Action.VERIFY_EMAIL.name())) {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
@@ -702,102 +739,30 @@ public class LoginActionsService {
         }
     }
 
-    @Path("password-reset")
+    /**
+     * Initiated by admin, not the user on login
+     *
+     * @param key
+     * @return
+     */
+    @Path("recover-password")
     @GET
-    public Response passwordReset(@QueryParam("code") String code, @QueryParam("key") String key) {
+    public Response recoverPassword(@QueryParam("key") String key) {
         event.event(EventType.RESET_PASSWORD);
         if (key != null) {
             Checks checks = new Checks();
-            if (!checks.verifyCode(realm.getBrowserFlow(), key, ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
-                return checks.response;
+            if (!checks.verifyCode(key, ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
+                event.error(Errors.RESET_CREDENTIAL_DISABLED);
+                return ErrorPage.error(session, Messages.INVALID_CODE);
             }
             ClientSessionCode accessCode = checks.clientCode;
             return session.getProvider(LoginFormsProvider.class)
                     .setClientSessionCode(accessCode.getCode())
                     .createResponse(RequiredAction.UPDATE_PASSWORD);
         } else {
-            return session.getProvider(LoginFormsProvider.class)
-                    .setClientSessionCode(code)
-                    .createPasswordReset();
+            event.error(Errors.RESET_CREDENTIAL_DISABLED);
+            return ErrorPage.error(session, Messages.INVALID_CODE);
         }
-    }
-
-    @Path("password-reset")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response sendPasswordReset(@QueryParam("code") String code,
-                                      final MultivaluedMap<String, String> formData) {
-        event.event(EventType.SEND_RESET_PASSWORD);
-        Checks checks = new Checks();
-        if (!checks.verifyCode(realm.getBrowserFlow(), code)) {
-            return checks.response;
-        }
-        final ClientSessionCode accessCode = checks.clientCode;
-        final ClientSessionModel clientSession = accessCode.getClientSession();
-        ClientModel client = clientSession.getClient();
-
-
-        String username = formData.getFirst("username");
-        if (username == null || username.isEmpty()) {
-            event.error(Errors.USERNAME_MISSING);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setError(Messages.MISSING_USERNAME)
-                    .setClientSessionCode(accessCode.getCode())
-                    .createPasswordReset();
-        }
-
-        event.client(client.getClientId())
-                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
-                .detail(Details.RESPONSE_TYPE, "code")
-                .detail(Details.AUTH_METHOD, "form")
-                .detail(Details.USERNAME, username);
-
-        UserModel user = session.users().getUserByUsername(username, realm);
-        if (user == null && username.contains("@")) {
-            user = session.users().getUserByEmail(username, realm);
-        }
-
-        if (user == null) {
-            event.error(Errors.USER_NOT_FOUND);
-        } else if (!user.isEnabled()) {
-            event.user(user).error(Errors.USER_DISABLED);
-        } else if (user.getEmail() == null || user.getEmail().trim().length() == 0) {
-            event.user(user).error(Errors.INVALID_EMAIL);
-        } else {
-            event.user(user);
-
-            UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, clientConnection.getRemoteAddr(), "form", false, null, null);
-            event.session(userSession);
-            TokenManager.attachClientSession(userSession, clientSession);
-
-            accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD.name());
-
-            try {
-                UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
-                builder.queryParam("key", accessCode.getCode());
-
-                String link = builder.build(realm.getName()).toString();
-                long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
-
-                this.session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendPasswordReset(link, expiration);
-
-                event.detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, clientSession.getId()).success();
-            } catch (EmailException e) {
-                event.error(Errors.EMAIL_SEND_FAILED);
-                logger.error("Failed to send password reset email", e);
-                return session.getProvider(LoginFormsProvider.class)
-                        .setError(Messages.EMAIL_SENT_ERROR)
-                        .setClientSessionCode(accessCode.getCode())
-                        .createErrorPage();
-            }
-
-            createActionCookie(realm, uriInfo, clientConnection, userSession.getId());
-        }
-
-        return session.getProvider(LoginFormsProvider.class)
-                .setSuccess(Messages.EMAIL_SENT)
-                .setClientSessionCode(accessCode.getCode())
-                .createPasswordReset();
     }
 
     private String getActionCookie() {
@@ -816,6 +781,7 @@ public class LoginActionsService {
                 .session(clientSession.getUserSession().getId())
                 .detail(Details.CODE_ID, clientSession.getId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
+                .detail(Details.USERNAME, clientSession.getNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME))
                 .detail(Details.RESPONSE_TYPE, "code");
 
         UserSessionModel userSession = clientSession.getUserSession();
@@ -829,10 +795,26 @@ public class LoginActionsService {
         }
     }
 
-    @Path("required-actions/{action}")
-    public Object requiredAction(@QueryParam("code") final String code,
-                                 @PathParam("action") String action) {
-        event.event(EventType.LOGIN);
+    @Path("required-action")
+    @POST
+    public Response requiredActionPOST(@QueryParam("code") final String code,
+                                       @QueryParam("action") String action) {
+        return processRequireAction(code, action);
+
+
+
+    }
+
+    @Path("required-action")
+    @GET
+    public Response requiredActionGET(@QueryParam("code") final String code,
+                                       @QueryParam("action") String action) {
+        return processRequireAction(code, action);
+    }
+
+    public Response processRequireAction(final String code, String action) {
+        event.event(EventType.CUSTOM_REQUIRED_ACTION);
+        event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
         if (action == null) {
             logger.error("required action query param was null");
             event.error(Errors.INVALID_CODE);
@@ -840,14 +822,15 @@ public class LoginActionsService {
 
         }
 
-        RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, action);
-        if (provider == null) {
+        RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, action);
+        if (factory == null) {
             logger.error("required action provider was null");
             event.error(Errors.INVALID_CODE);
             throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
         }
+        RequiredActionProvider provider = factory.create(session);
         Checks checks = new Checks();
-        if (!checks.verifyCode(realm.getBrowserFlow(), code, action)) {
+        if (!checks.verifyCode(code, action)) {
             return checks.response;
         }
         final ClientSessionCode clientCode = checks.clientCode;
@@ -859,54 +842,11 @@ public class LoginActionsService {
             throw new WebApplicationException(ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE));
         }
 
+        initEvent(clientSession);
 
-        RequiredActionContext context = new RequiredActionContext() {
-            @Override
-            public EventBuilder getEvent() {
-                return event;
-            }
 
-            @Override
-            public UserModel getUser() {
-                return getUserSession().getUser();
-            }
-
-            @Override
-            public RealmModel getRealm() {
-                return realm;
-            }
-
-            @Override
-            public ClientSessionModel getClientSession() {
-                return clientSession;
-            }
-
-            @Override
-            public UserSessionModel getUserSession() {
-                return clientSession.getUserSession();
-            }
-
-            @Override
-            public ClientConnection getConnection() {
-                return clientConnection;
-            }
-
-            @Override
-            public UriInfo getUriInfo() {
-                return uriInfo;
-            }
-
-            @Override
-            public KeycloakSession getSession() {
-                return session;
-            }
-
-            @Override
-            public HttpRequest getHttpRequest() {
-                return request;
-            }
-
-            @Override
+        RequiredActionContextResult context = new RequiredActionContextResult(clientSession.getUserSession(), clientSession, realm, event, session, request, clientSession.getUserSession().getUser(), factory) {
+             @Override
             public String generateAccessCode(String action) {
                 String clientSessionAction = clientSession.getAction();
                 if (action.equals(clientSessionAction)) {
@@ -917,10 +857,32 @@ public class LoginActionsService {
                 code.setAction(action);
                 return code.getCode();
             }
+
+            @Override
+            public void ignore() {
+                throw new RuntimeException("Cannot call ignore within processAction()");
+            }
         };
-        return provider.jaxrsService(context);
+        provider.processAction(context);
+        if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
+            event.clone().event(EventType.CUSTOM_REQUIRED_ACTION)
+                         .detail(Details.CUSTOM_REQUIRED_ACTION, action).success();
+            clientSession.getUserSession().getUser().removeRequiredAction(factory.getId());
+            return AuthenticationManager.nextActionAfterAuthentication(session, clientSession.getUserSession(), clientSession, clientConnection, request, uriInfo, event);
+        }
+        if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
+            return context.getChallenge();
+        }
+        if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
+            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, context.getClientSession().getAuthMethod());
+            protocol.setRealm(context.getRealm())
+                    .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
+                    .setUriInfo(context.getUriInfo());
+            event.detail(Details.CUSTOM_REQUIRED_ACTION, action).error(Errors.REJECTED_BY_USER);
+            return protocol.consentDenied(context.getClientSession());
+        }
 
-
+        throw new RuntimeException("Unreachable");
     }
 
 }
