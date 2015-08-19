@@ -9,7 +9,7 @@ import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.federation.LdapUserProviderForm;
 import org.keycloak.testsuite.console.page.federation.UserFederation;
 import org.keycloak.testsuite.console.page.users.Users;
-import org.keycloak.testsuite.federation.LDAPTestConfiguration;
+import org.keycloak.testsuite.util.LDAPTestConfiguration;
 
 import java.util.Map;
 
