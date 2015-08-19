@@ -84,11 +84,8 @@ public class RealmRolesTest extends AbstractRolesTest {
 
         // delete from table
         realmRoles.table().deleteRole(testRole.getName());
-        modalDialog.cancel();
-        assertTrue(realmRoles.table().containsRole(testRole.getName()));
-        realmRoles.table().deleteRole(testRole.getName());
         modalDialog.confirmDeletion();
-        assertNull(realmRoles.table().findRole(testRole.getName()));
+        assertFalse(realmRoles.table().containsRole(testRole.getName()));
 
         // add again
         addRole(testRole);
