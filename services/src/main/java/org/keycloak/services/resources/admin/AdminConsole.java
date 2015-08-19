@@ -44,7 +44,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import javax.ws.rs.QueryParam;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -302,4 +304,27 @@ public class AdminConsole {
         return Response.status(302).location(uriInfo.getRequestUriBuilder().path("../").build()).build();
     }
 
+    @GET
+    @Path("messages.json")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Properties getMessages(@QueryParam("lang") String lang) {
+        if (lang == null) {
+            logger.warn("Locale not specified for messages.json");
+            lang = "en";
+        }
+
+        try {
+            Properties msgs = AdminMessagesLoader.getMessages(lang);
+            if (msgs.isEmpty()) {
+                logger.warn("Message bundle not found for language code '" + lang + "'");
+                msgs = AdminMessagesLoader.getMessages("en"); // fall back to en
+            }
+
+            if (msgs.isEmpty()) logger.fatal("Message bundle not found for language code 'en'");
+            
+            return msgs;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

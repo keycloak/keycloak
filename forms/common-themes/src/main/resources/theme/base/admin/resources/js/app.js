@@ -7,7 +7,7 @@ var configUrl = consoleBaseUrl + "/config";
 
 var auth = {};
 
-var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload' ]);
+var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload', 'pascalprecht.translate', 'ngCookies', 'ngSanitize']);
 var resourceRequests = 0;
 var loadingTimer = -1;
 
@@ -52,8 +52,12 @@ module.factory('authInterceptor', function($q, Auth) {
     };
 });
 
-
-
+module.config(function($translateProvider) {
+    $translateProvider.useSanitizeValueStrategy('sanitize');
+    $translateProvider.preferredLanguage('en');
+    $translateProvider.useCookieStorage();
+    $translateProvider.useUrlLoader('messages.json');
+    });
 
 module.config([ '$routeProvider', function($routeProvider) {
     $routeProvider

@@ -15,6 +15,7 @@ import java.util.*;
  */
 public class LocaleHelper {
     public final static String LOCALE_COOKIE = "KEYCLOAK_LOCALE";
+    public final static String NG_LOCALE_COOKIE = "NG_TRANSLATE_LANG_KEY";
     public static final String UI_LOCALES_PARAM = "ui_locales";
     public static final String KC_LOCALE_PARAM = "kc_locale";
 
@@ -42,7 +43,7 @@ public class LocaleHelper {
                 LOGGER.infof("Locale %s is not supported.", localeString);
             }
         }
-         
+
         //1. Locale cookie
         if(httpHeaders != null && httpHeaders.getCookies().containsKey(LOCALE_COOKIE)){
             String localeString = httpHeaders.getCookies().get(LOCALE_COOKIE).getValue();
@@ -101,12 +102,18 @@ public class LocaleHelper {
         return Locale.ENGLISH;
     }
 
-    public static void updateLocaleCookie(Response.ResponseBuilder builder, Locale locale, RealmModel realm, UriInfo uriInfo, String path) {
+    public static void updateLocaleCookie(Response.ResponseBuilder builder,
+                                          Locale locale,
+                                          RealmModel realm,
+                                          UriInfo uriInfo,
+                                          String keycloakLocaleCookiePath,
+                                          String ngTranslateLocaleCookiePath) {
         if (locale == null) {
             return;
         }
         boolean secure = realm.getSslRequired().isRequired(uriInfo.getRequestUri().getHost());
-        builder.cookie(new NewCookie(LocaleHelper.LOCALE_COOKIE, locale.toLanguageTag(), path, null, null, 31536000, secure));
+        builder.cookie(new NewCookie(LocaleHelper.LOCALE_COOKIE, locale.toLanguageTag(), keycloakLocaleCookiePath, null, null, 31536000, secure),
+                       new NewCookie(LocaleHelper.NG_LOCALE_COOKIE, "%22" + locale.toLanguageTag() + "%22", ngTranslateLocaleCookiePath, null, null, 31536000, secure));
     }
 
 
