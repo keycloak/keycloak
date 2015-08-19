@@ -83,30 +83,33 @@ Post link to blog post on Twitter (with Keycloak user).
 
 ### Update OpenShift Cartridge
 
-If Keycloak has upgraded the WildFly version since the cartridge was upgraded the first step is to rebase the cartridge from the [wildfly-cartridge](https://github.com/openshift-cartridges/openshift-wildfly-cartridge):
+The OpenShift Cartridge has a base branch that is based on the WildFly cartridge and includes any changes related to Keycloak, but does not include Keycloak
+itself. Any configuration changes or upgrading WildFly should be done in the base branch.
+
+To include changes from the WildFly cartridge, for example when upgrading to a new WildFly version the base branch should be rebased on from the [wildfly-cartridge](https://github.com/openshift-cartridges/openshift-wildfly-cartridge):
 
     # git clone https://github.com/keycloak/openshift-keycloak-cartridge.git
     # cd openshift-keycloak-cartridge
     # git remote add wildfly https://github.com/openshift-cartridges/openshift-wildfly-cartridge.git
     # git fetch wildfly
+    # git checkout base
     # git rebase wildfly
-
-If the WildFly version is the same you can skip the above step.
+    # git push orgin base:base
 
 To upgrade Keycloak on the cartridge run:
 
     # git clone https://github.com/openshift-cartridges/openshift-wildfly-cartridge.git
     # cd openshift-keycloak-cartridge
-    # rm -rf versions/9/modules/system
-    # rm -rf versions/9/standalone/providers
-    # rm -rf versions/9/standalone/themes
-    # rm -rf versions/9/standalone/configuration/configuration/keycloak-sever.json
-    # unzip ../distribution/downloads/target/$VERSION/keycloak-$VERSION.zip
-    # cp -r keycloak-$VERSION/modules/system versions/9/modules/
-    # cp -r keycloak-$VERSION/standalone/providers versions/9/standalone/
-    # cp -r keycloak-$VERSION/standalone/themes versions/9/standalone/
-    # cp keycloak-$VERSION/standalone/configuration/configuration/keycloak-sever.json versions/9/standalone/configuration/
-    # git commit -m "Updated to $VERSION" -a
+
+To remove the previous release of Keycloak on master run:
+
+    # git reset --hard upstream/base
+
+Once you've done that install the Keycloak overlay:
+
+    # cd versions/9
+    # unzip keycloak-overlay-$VERSION.zip
+    # git commit -m "Install Keycloak $VERSION" -a
     # git tag $VERSION
     # git push --tags master
 
