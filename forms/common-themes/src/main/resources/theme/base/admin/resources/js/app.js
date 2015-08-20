@@ -345,6 +345,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'UserDetailCtrl'
         })
+        .when('/realms/:realm/users/:user/user-attributes', {
+            templateUrl : resourceUrl + '/partials/user-attributes.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                }
+            },
+            controller : 'UserDetailCtrl'
+        })
         .when('/realms/:realm/users/:user/user-credentials', {
             templateUrl : resourceUrl + '/partials/user-credentials.html',
             resolve : {

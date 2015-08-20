@@ -25,21 +25,16 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.constants.KerberosConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
@@ -117,7 +112,7 @@ public class RequiredActionTotpSetupTest {
     public void setupTotpRegister() {
         loginPage.open();
         loginPage.clickRegister();
-        registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password", null);
+        registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
 
         String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
 
@@ -170,7 +165,7 @@ public class RequiredActionTotpSetupTest {
         // Register new user
         loginPage.open();
         loginPage.clickRegister();
-        registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2", null);
+        registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2");
 
         String userId = events.expectRegister("setupTotp2", "email2@mail.com").assertEvent().getUserId();
 

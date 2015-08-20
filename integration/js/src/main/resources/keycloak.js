@@ -261,7 +261,7 @@
                 throw 'Not authenticated';
             }
 
-            var expiresIn = kc.tokenParsed['exp'] - (new Date().getTime() / 1000);
+            var expiresIn = kc.tokenParsed['exp'] - (new Date().getTime() / 1000) + kc.timeSkew;
             if (minValidity) {
                 expiresIn -= minValidity;
             }
@@ -299,11 +299,18 @@
                             params += '&client_id=' + encodeURIComponent(kc.clientId);
                         }
 
+                        var timeLocal = new Date().getTime();
+
                         req.onreadystatechange = function () {
                             if (req.readyState == 4) {
                                 if (req.status == 200) {
+                                    timeLocal = (timeLocal + new Date().getTime()) / 2;
+
                                     var tokenResponse = JSON.parse(req.responseText);
                                     setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token']);
+
+                                    kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
+
                                     kc.onAuthRefreshSuccess && kc.onAuthRefreshSuccess();
                                     for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
                                         p.setSuccess(true);
@@ -385,11 +392,18 @@
 
                 req.withCredentials = true;
 
+                var timeLocal = new Date().getTime();
+
                 req.onreadystatechange = function() {
                     if (req.readyState == 4) {
                         if (req.status == 200) {
+                            timeLocal = (timeLocal + new Date().getTime()) / 2;
+
                             var tokenResponse = JSON.parse(req.responseText);
                             setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token']);
+
+                            kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
+
                             kc.onAuthSuccess && kc.onAuthSuccess();
                             promise && promise.setSuccess();
                         } else {

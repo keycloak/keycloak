@@ -450,6 +450,15 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
     $scope.cancel = function() {
         $location.url("/realms/" + realm.realm + "/users");
     };
+
+    $scope.addAttribute = function() {
+        $scope.user.attributes[$scope.newAttribute.key] = $scope.newAttribute.value;
+        delete $scope.newAttribute;
+    }
+
+    $scope.removeAttribute = function(key) {
+        delete $scope.user.attributes[key];
+    }
 });
 
 module.controller('UserCredentialsCtrl', function($scope, realm, user, User, UserCredentials, Notifications, Dialog) {

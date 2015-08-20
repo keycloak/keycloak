@@ -62,7 +62,51 @@
                 </div>
             </div>
             </#if>
+            <div class="form-group">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="user.attributes.street" class="${properties.kcLabelClass!}">${msg("street")}</label>
+                </div>
 
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.street" name="user.attributes.street" value="${(register.formData['user.attributes.street']!'')?html}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="user.attributes.locality" class="${properties.kcLabelClass!}">${msg("locality")}</label>
+                </div>
+
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.locality" name="user.attributes.locality" value="${(register.formData['user.attributes.locality']!'')?html}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="user.attributes.region" class="${properties.kcLabelClass!}">${msg("region")}</label>
+                </div>
+
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.region" name="user.attributes.region" value="${(register.formData['user.attributes.region']!'')?html}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="user.attributes.postal_code" class="${properties.kcLabelClass!}">${msg("postal_code")}</label>
+                </div>
+
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.postal_code" name="user.attributes.postal_code" value="${(register.formData['user.attributes.postal_code']!'')?html}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="user.attributes.country" class="${properties.kcLabelClass!}">${msg("country")}</label>
+                </div>
+
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.country" name="user.attributes.country" value="${(register.formData['user.attributes.country']!'')?html}"/>
+                </div>
+            </div>
             <#if recaptchaRequired??>
             <div class="form-group">
                 <div class="${properties.kcInputWrapperClass!}">

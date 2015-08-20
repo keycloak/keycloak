@@ -191,8 +191,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             if (authResult != null) {
                 AccessToken token = authResult.getToken();
-                String audience = token.getAudience();
-                ClientModel clientModel = this.realmModel.getClientByClientId(audience);
+                String[] audience = token.getAudience();
+                ClientModel clientModel = this.realmModel.getClientByClientId(audience[0]);
 
                 if (clientModel == null) {
                     return badRequest("Invalid client.");
