@@ -47,9 +47,6 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
     @FindBy(id = "email")
     private WebElement emailInput;
 
-    @FindBy(id = "user.attributes.postal_code")
-    private WebElement postalCodeInput;
-
 
     @FindBy(id = "referrer")
     private WebElement backToApplicationLink;
@@ -105,10 +102,6 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
 
     public String getLastName() {
         return lastNameInput.getAttribute("value");
-    }
-
-    public String getPostalCode() {
-        return postalCodeInput.getAttribute("value");
     }
 
     public String getEmail() {

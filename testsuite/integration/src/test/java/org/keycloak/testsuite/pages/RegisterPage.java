@@ -50,9 +50,6 @@ public class RegisterPage extends AbstractPage {
 
     @FindBy(id = "password-confirm")
     private WebElement passwordConfirmInput;
-    
-    @FindBy(id = "user.attributes.street")
-    private WebElement attributeStreetInput;
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
@@ -60,7 +57,7 @@ public class RegisterPage extends AbstractPage {
     @FindBy(className = "feedback-error")
     private WebElement loginErrorMessage;
 
-    public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm, String attributeStreet) {
+    public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {
         firstNameInput.clear();
         if (firstName != null) {
             firstNameInput.sendKeys(firstName);
@@ -89,11 +86,6 @@ public class RegisterPage extends AbstractPage {
         passwordConfirmInput.clear();
         if (passwordConfirm != null) {
             passwordConfirmInput.sendKeys(passwordConfirm);
-        }
-
-        attributeStreetInput.clear();
-        if (attributeStreet != null) {
-            attributeStreetInput.sendKeys(attributeStreet);
         }
 
         submitButton.click();
@@ -161,10 +153,6 @@ public class RegisterPage extends AbstractPage {
 
     public String getPasswordConfirm() {
         return passwordConfirmInput.getAttribute("value");
-    }
-
-    public String getAttributeStreet() {
-        return attributeStreetInput.getAttribute("value");
     }
 
     public boolean isCurrent() {
