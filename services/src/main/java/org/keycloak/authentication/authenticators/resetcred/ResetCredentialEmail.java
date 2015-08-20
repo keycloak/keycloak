@@ -1,7 +1,6 @@
 package org.keycloak.authentication.authenticators.resetcred;
 
 import org.jboss.logging.Logger;
-import org.keycloak.ClientConnection;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -14,24 +13,16 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.HmacOTP;
-import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 
-import javax.crypto.SecretKey;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.util.List;
@@ -54,12 +45,9 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         String username = context.getClientSession().getNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
 
         // we don't want people guessing usernames, so if there was a problem obtaining the user, the user will be null.
-        // just redisplay this form
+        // just reset login for with a success message
         if (user == null) {
-            Response challenge = context.form()
-                    .setSuccess(Messages.EMAIL_SENT)
-                    .createForm("validate-reset-email.ftl");
-            context.challenge(challenge);
+            context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
             return;
         }
 
@@ -70,10 +58,8 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
             event.user(user)
                     .detail(Details.USERNAME, username)
                     .error(Errors.INVALID_EMAIL);
-            Response challenge = context.form()
-                    .setSuccess(Messages.EMAIL_SENT)
-                    .createForm("validate-reset-email.ftl");
-            context.challenge(challenge);
+
+            context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
             return;
         }
 
@@ -85,15 +71,12 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         long expiration = TimeUnit.SECONDS.toMinutes(context.getRealm().getAccessCodeLifespanUserAction());
         try {
 
-            context.getSession().getProvider(EmailProvider.class).setRealm(context.getRealm()).setUser(user).sendPasswordReset(secret, link, expiration);
+            context.getSession().getProvider(EmailProvider.class).setRealm(context.getRealm()).setUser(user).sendPasswordReset(link, expiration);
             event.clone().event(EventType.SEND_RESET_PASSWORD)
                          .user(user)
                          .detail(Details.USERNAME, username)
                          .detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, context.getClientSession().getId()).success();
-            Response challenge = context.form()
-                    .setSuccess(Messages.EMAIL_SENT)
-                    .createForm("validate-reset-email.ftl");
-            context.challenge(challenge);
+            context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
         } catch (EmailException e) {
             event.clone().event(EventType.SEND_RESET_PASSWORD)
                     .detail(Details.USERNAME, username)
@@ -110,19 +93,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
     @Override
     public void action(AuthenticationFlowContext context) {
         String secret = context.getClientSession().getNote(RESET_CREDENTIAL_SECRET);
-        String key = null;
-        if (context.getHttpRequest().getHttpMethod().equalsIgnoreCase("GET")) {
-            key =context.getUriInfo().getQueryParameters().getFirst(KEY);
-
-        } else if (context.getHttpRequest().getHttpMethod().equalsIgnoreCase("POST")) {
-            MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-            if (formData.containsKey("cancel")) {
-                context.resetBrowserLogin();
-                return;
-            }
-
-            key = formData.getFirst(KEY);
-        }
+        String key = context.getUriInfo().getQueryParameters().getFirst(KEY);
 
         // Can only guess once!  We remove the note so another guess can't happen
         context.getClientSession().removeNote(RESET_CREDENTIAL_SECRET);

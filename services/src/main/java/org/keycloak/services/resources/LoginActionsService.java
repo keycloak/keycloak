@@ -301,11 +301,11 @@ public class LoginActionsService {
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
                 .setProtector(authManager.getProtector())
-                .setForwardedErrorMessage(errorMessage)
                 .setRealm(realm)
                 .setSession(session)
                 .setUriInfo(uriInfo)
                 .setRequest(request);
+        if (errorMessage != null) processor.setForwardedErrorMessage(new FormMessage(null, errorMessage));
 
         try {
             if (execution != null) {

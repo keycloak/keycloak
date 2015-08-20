@@ -45,9 +45,9 @@ public enum FlowStatus {
     ATTEMPTED,
 
     /**
-     * Aborting this flow and starting the realm's browser flow from the beginning
+     * This flow is being forked.  The current client session is being cloned, reset, and redirected to browser login.
      *
      */
-    RESET_BROWSER_LOGIN
+    FORK
 
 }

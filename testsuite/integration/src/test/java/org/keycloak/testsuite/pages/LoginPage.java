@@ -68,6 +68,10 @@ public class LoginPage extends AbstractPage {
     @FindBy(className = "feedback-warning")
     private WebElement loginWarningMessage;
 
+    @FindBy(className = "feedback-success")
+    private WebElement emailSuccessMessage;
+
+
     @FindBy(id = "kc-current-locale-link")
     private WebElement languageText;
 
@@ -115,6 +119,11 @@ public class LoginPage extends AbstractPage {
     public String getError() {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
     }
+
+    public String getSuccessMessage() {
+        return emailSuccessMessage != null ? emailSuccessMessage.getText() : null;
+    }
+
 
     public boolean isCurrent() {
         return driver.getTitle().equals("Log in to test") || driver.getTitle().equals("Anmeldung bei test");

@@ -3,6 +3,7 @@ package org.keycloak.protocol.oidc;
 import org.jboss.logging.Logger;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -224,6 +225,7 @@ public class TokenManager {
         }
 
     }
+
 
     public static void dettachClientSession(UserSessionProvider sessions, RealmModel realm, ClientSessionModel clientSession) {
         UserSessionModel userSession = clientSession.getUserSession();
