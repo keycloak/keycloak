@@ -177,6 +177,7 @@ new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp'
                 <listitem>resourceAccess - the resource roles assocaited with the token</listitem>
                 <listitem>refreshToken - the base64 encoded token that can be used to retrieve a new token</listitem>
                 <listitem>refreshTokenParsed - the parsed refresh token</listitem>
+                <listitem>timeSkew - estimated skew between local time and Keycloak server in seconds</listitem>
             </itemizedlist>
         </section>
 

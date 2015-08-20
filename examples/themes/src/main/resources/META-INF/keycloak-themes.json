@@ -1,5 +1,8 @@
 {
     "themes": [{
+        "name" : "address",
+        "types": [ "admin", "account", "login" ]
+    }, {
         "name" : "logo-example",
         "types": [ "admin", "account", "login", "welcome" ]
     }, {

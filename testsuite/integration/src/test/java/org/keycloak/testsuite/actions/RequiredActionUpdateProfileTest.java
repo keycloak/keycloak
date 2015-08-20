@@ -87,7 +87,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "New last", "new@email.com", "mystreet");
+        updateProfilePage.update("New first", "New last", "new@email.com");
 
         String sessionId = events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent().getSessionId();
         events.expectRequiredAction(EventType.UPDATE_EMAIL).session(sessionId).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
@@ -101,7 +101,6 @@ public class RequiredActionUpdateProfileTest {
         Assert.assertEquals("New first", user.getFirstName());
         Assert.assertEquals("New last", user.getLastName());
         Assert.assertEquals("new@email.com", user.getEmail());
-        Assert.assertEquals("mystreet", user.getAttributesAsListValues().get("street").get(0));
     }
 
     @Test
@@ -112,7 +111,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("", "New last", "new@email.com", "mystreet");
+        updateProfilePage.update("", "New last", "new@email.com");
 
         updateProfilePage.assertCurrent();
 
@@ -120,7 +119,6 @@ public class RequiredActionUpdateProfileTest {
         Assert.assertEquals("", updateProfilePage.getFirstName());
         Assert.assertEquals("New last", updateProfilePage.getLastName());
         Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
-        Assert.assertEquals("mystreet", updateProfilePage.getAttributeStreet());
 
         Assert.assertEquals("Please specify first name.", updateProfilePage.getError());
 
@@ -135,7 +133,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "", "new@email.com", null);
+        updateProfilePage.update("New first", "", "new@email.com");
 
         updateProfilePage.assertCurrent();
 
@@ -143,7 +141,6 @@ public class RequiredActionUpdateProfileTest {
         Assert.assertEquals("New first", updateProfilePage.getFirstName());
         Assert.assertEquals("", updateProfilePage.getLastName());
         Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
-        Assert.assertEquals("", updateProfilePage.getAttributeStreet());
 
         Assert.assertEquals("Please specify last name.", updateProfilePage.getError());
 
@@ -158,7 +155,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "New last", "", "mystreet");
+        updateProfilePage.update("New first", "New last", "");
 
         updateProfilePage.assertCurrent();
 
@@ -166,7 +163,6 @@ public class RequiredActionUpdateProfileTest {
         Assert.assertEquals("New first", updateProfilePage.getFirstName());
         Assert.assertEquals("New last", updateProfilePage.getLastName());
         Assert.assertEquals("", updateProfilePage.getEmail());
-        Assert.assertEquals("mystreet", updateProfilePage.getAttributeStreet());
 
         Assert.assertEquals("Please specify email.", updateProfilePage.getError());
 
@@ -181,7 +177,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "New last", "invalidemail", null);
+        updateProfilePage.update("New first", "New last", "invalidemail");
 
         updateProfilePage.assertCurrent();
 
@@ -189,7 +185,6 @@ public class RequiredActionUpdateProfileTest {
         Assert.assertEquals("New first", updateProfilePage.getFirstName());
         Assert.assertEquals("New last", updateProfilePage.getLastName());
         Assert.assertEquals("invalidemail", updateProfilePage.getEmail());
-        Assert.assertEquals("", updateProfilePage.getAttributeStreet());
 
         Assert.assertEquals("Invalid email address.", updateProfilePage.getError());
 
@@ -204,7 +199,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "New last", "keycloak-user@localhost", null);
+        updateProfilePage.update("New first", "New last", "keycloak-user@localhost");
 
         updateProfilePage.assertCurrent();
 
