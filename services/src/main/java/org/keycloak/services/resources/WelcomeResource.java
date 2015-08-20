@@ -84,4 +84,17 @@ public class WelcomeResource {
         }
     }
 
+     /**
+     * Fonts for welcome page
+     *
+     * @param path
+     * @return
+     */
+    @GET
+    @Path("/welcome-content/fonts/{path}")
+    @Produces("text/html")
+    public Response getFonts(@PathParam("path") String path) {
+        return getResource("fonts/"+path);
+    }
+
 }

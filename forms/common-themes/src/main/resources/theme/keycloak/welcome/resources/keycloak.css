@@ -20,46 +20,151 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
 */
 
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Open Sans Light'), local('OpenSans-Light'), url(fonts/OpenSans-Light.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(fonts/OpenSans-Regular.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Open Sans Semibold'), local('OpenSans-Semibold'), url(fonts/OpenSans-Semibold.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Open Sans Bold'), local('OpenSans-Bold'), url(fonts/OpenSans-Bold.ttf) format('truetype');
+}
+
 body {
-	/*background: url(bkg.gif) repeat-x;*/
-	color: #5B5B5B;
-	font-family: "Lucida Sans Unicode", "Lucida Grande", Geneva, Verdana, Arial, sans-serif;
-	margin-top: 100px;
-	text-align: center;
-}
-.wrapper {
-	margin-left: auto;
-	margin-right: auto;
-	width: 50em;
-	text-align: left;
-}
-a {
-	text-decoration: none;
-	color: #5e8a9a;
-}
-h1 {
-	padding-top: 20px;
-	color: #7b1e1e;
-}
-a:hover {
-	text-decoration: underline;
-	color: #8ec6d9;
-}
-.content {
+    background-color: #ECECEC;    
+    color: #4E5255;
+    font: 12px/1.4 "Open Sans","Lucida Sans Unicode","Lucida Grande",sans-serif;
     margin: 0;
-    padding: 0;
 }
-.dualbrand {
-	padding-top: 20px;
+
+#container {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border-left: 1px solid #CECECE;
+    border-right: 1px solid #CECECE;
+    box-shadow: 6px 6px 6px #E3E3E3, -6px 6px 6px #E3E3E3, 6px -6px 6px #E3E3E3, -6px -6px 6px #E3E3E3;
+    margin: 0 auto;
+    max-width: 1003px;
 }
-.wildfly {
-	float:left;
-	margin-left: 10px;
+
+#content {
+    background-color: #ffffff;
+    margin-top: 4px;
+    height: 100%;
 }
-.logo{
-    margin-bottom: 10px;
+#content sub{
+    font-size: 12px;
 }
-.note {
-	font-size: 8pt;
-	color: #aaaaaa;
+
+
+#footer {    
+    background-color: #F1F1F1;
+    border-top: 1px solid #CFCFCF;
+    height: 42px;
+    min-height: 42px;
+    width: 100%;
+    position: absolute;    
+    bottom: 0;
+}
+
+.section {
+    margin-left: 170px;
+    margin-right: 170px;
+    padding-top: 20px;
+}
+
+a {
+    color: #009ADA;
+    outline: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+a:active {
+    outline: none;
+}
+
+a:link {
+    outline: none;
+}
+
+H1 {
+    color: #656565;
+    font-size: 20px;
+    font-weight: 300 !important;
+    padding-bottom: 8px;
+}
+
+H2 {
+   color: #656565;
+    font-size: 14px;
+    font-weight: 300 !important;    
+}
+
+sub {
+    color: #a3a7aa;
+}
+
+.prod-title {
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 11px;
+}
+
+.prod-img {
+    height: 100%;
+}
+
+.WarnBlock {
+    color: #000000;
+    padding: 15px;
+    background-color: #FFD272;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+}
+
+.header-top {
+    background-color: #383F45;
+    border-bottom: 1px solid #53565B;
+    height:32px;
+    max-height:32px;
+    padding-left:15px;
+}
+
+.header-bottom {
+    background-color: #46494E;
+    border-bottom: 1px solid #272A2F;
+    height:43px;
+    max-height:43px;
+}
+
+.header-line {
+    background-color: #C82E2E;
+    border-bottom: 1px solid #272A2F;
+    max-height:3px;
+    height:3px;
+}
+
+.header-panel {
+    height: 80px;
+    min-height: 80px;
+    width: 100%;
 }
