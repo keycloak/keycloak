@@ -111,13 +111,9 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             }
 
             // Validate other things
-            String audience = token.getAudience();
             String expectedAudience = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
-            if (audience == null) {
-                throw new RuntimeException("Audience is null on JWT");
-            }
-            if (!audience.equals(expectedAudience)) {
-                throw new RuntimeException("Token audience doesn't match domain. Realm audience is '" + expectedAudience + "' but audience from token is '" + audience + "'");
+            if (!token.hasAudience(expectedAudience)) {
+                throw new RuntimeException("Token audience doesn't match domain. Realm audience is '" + expectedAudience + "' but audience from token is '" + token.getAudience() + "'");
             }
 
             if (!token.isActive()) {

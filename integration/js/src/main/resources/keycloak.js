@@ -309,7 +309,7 @@
                                     var tokenResponse = JSON.parse(req.responseText);
                                     setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token']);
 
-                                    kc.timeSkew = Math.floor(timeLocal / 1000) - keycloak.tokenParsed.iat;
+                                    kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
 
                                     kc.onAuthRefreshSuccess && kc.onAuthRefreshSuccess();
                                     for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
@@ -402,7 +402,7 @@
                             var tokenResponse = JSON.parse(req.responseText);
                             setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token']);
 
-                            kc.timeSkew = Math.floor(timeLocal / 1000) - keycloak.tokenParsed.iat;
+                            kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
 
                             kc.onAuthSuccess && kc.onAuthSuccess();
                             promise && promise.setSuccess();

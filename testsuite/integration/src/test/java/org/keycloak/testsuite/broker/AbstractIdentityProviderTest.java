@@ -48,6 +48,7 @@ import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.rule.GreenMailRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
@@ -801,10 +802,9 @@ public abstract class AbstractIdentityProviderTest {
         UserSessionStatus sessionStatus = null;
 
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
             String pageSource = this.driver.getPageSource();
 
-            sessionStatus = objectMapper.readValue(pageSource.getBytes(), UserSessionStatus.class);
+            sessionStatus = JsonSerialization.readValue(pageSource.getBytes(), UserSessionStatus.class);
         } catch (IOException ignore) {
             ignore.printStackTrace();
         }

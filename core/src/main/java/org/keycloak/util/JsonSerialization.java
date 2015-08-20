@@ -3,7 +3,6 @@ package org.keycloak.util;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
-import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
 import java.io.InputStream;
