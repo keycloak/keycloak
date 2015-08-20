@@ -235,7 +235,7 @@ public class CustomerService {
 </programlisting>
 </para>
         <para>
-            The <literal>security-deployment</literal> <literal>name</literal> attribute identifies the WAR you want
+            The <literal>secure-deployment</literal> <literal>name</literal> attribute identifies the WAR you want
             to secure.  Its value is the <literal>module-name</literal> defined in <literal>web.xml</literal> with
             <literal>.war</literal> appended.  The rest of the configuration corresponds pretty much one to one
             with the <literal>keycloak.json</literal> configuration options defined in <link linkend='adapter-config'>general adapter configuration</link>.
