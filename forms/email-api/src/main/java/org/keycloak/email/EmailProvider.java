@@ -24,7 +24,7 @@ public interface EmailProvider extends Provider {
      * @param expirationInMinutes
      * @throws EmailException
      */
-    public void sendPasswordReset(String code, String link, long expirationInMinutes) throws EmailException;
+    public void sendPasswordReset(String link, long expirationInMinutes) throws EmailException;
 
     /**
      * Change password email requested by admin
