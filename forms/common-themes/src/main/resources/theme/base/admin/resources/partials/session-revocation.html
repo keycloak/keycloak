@@ -21,7 +21,7 @@
             <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageClients">
                 <button type="submit" data-ng-click="setNotBeforeNow()" class="btn btn-default">Set To Now</button>
                 <button type="submit" data-ng-click="clear()" class="btn btn-default">Clear</button>
-                <button type="submit" data-ng-click="pushRevocation()" class="btn btn-primary" tooltip="For every client that has an admin URL, notify them of the new revocation policy." tooltip-placement="bottom">Push</button>
+                <button type="submit" data-ng-click="pushRevocation()" class="btn btn-primary" tooltip-trigger="mouseover mouseout" tooltip="For every client that has an admin URL, notify them of the new revocation policy." tooltip-placement="bottom">Push</button>
             </div>
         </div>
     </form>
