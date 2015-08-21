@@ -16,7 +16,7 @@ public class AbstractOAuthClient {
     private final AtomicLong counter = new AtomicLong();
 
     protected String clientId;
-    protected Map<String, String> credentials;
+    protected Map<String, Object> credentials;
     protected String authUrl;
     protected String tokenUrl;
     protected RelativeUrlsUsed relativeUrlsUsed;
@@ -37,11 +37,11 @@ public class AbstractOAuthClient {
         this.clientId = clientId;
     }
 
-    public Map<String, String> getCredentials() {
+    public Map<String, Object> getCredentials() {
         return credentials;
     }
 
-    public void setCredentials(Map<String, String> credentials) {
+    public void setCredentials(Map<String, Object> credentials) {
         this.credentials = credentials;
     }
 

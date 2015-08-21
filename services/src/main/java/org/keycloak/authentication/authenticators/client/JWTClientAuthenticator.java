@@ -24,13 +24,19 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 
 /**
+ * Client authentication based on JWT signed by client private key .
+ * See <a href="https://tools.ietf.org/html/draft-jones-oauth-jwt-bearer-03">specs</a> for more details.
+ *
+ * This is server side, which verifies JWT from client_assertion parameter, where the assertion was created on adapter side by
+ * org.keycloak.adapters.authentication.JWTClientCredentialsProvider
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
     protected static Logger logger = Logger.getLogger(JWTClientAuthenticator.class);
 
-    public static final String PROVIDER_ID = "client-signed-jwt";
+    public static final String PROVIDER_ID = "client-jwt";
     public static final String CERTIFICATE_ATTR = "jwt.credential.certificate";
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {

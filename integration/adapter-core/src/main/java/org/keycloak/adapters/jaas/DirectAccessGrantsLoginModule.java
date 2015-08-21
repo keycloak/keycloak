@@ -23,6 +23,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.VerificationException;
+import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.BasicAuthHelper;
@@ -72,14 +73,8 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
         formparams.add(new BasicNameValuePair("username", username));
         formparams.add(new BasicNameValuePair("password", password));
 
-        if (deployment.isPublicClient()) { // if client is public access type
-            formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, deployment.getResourceName()));
-        } else {
-            String clientId = deployment.getResourceName();
-            String clientSecret = deployment.getResourceCredentials().get("secret");
-            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
-            post.setHeader("Authorization", authorization);
-        }
+        ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
+
         UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
         post.setEntity(form);
 
@@ -135,15 +130,7 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
                 HttpPost post = new HttpPost(logoutUri);
 
                 List<NameValuePair> formparams = new ArrayList<NameValuePair>();
-                if (deployment.isPublicClient()) { // if client is public access type
-                    formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, deployment.getResourceName()));
-                } else {
-                    String clientId = deployment.getResourceName();
-                    String clientSecret = deployment.getResourceCredentials().get("secret");
-                    String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
-                    post.setHeader("Authorization", authorization);
-                }
-
+                ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
                 formparams.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
 
                 UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");

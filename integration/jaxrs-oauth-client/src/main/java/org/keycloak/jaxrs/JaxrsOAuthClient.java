@@ -50,8 +50,8 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
                 .param(OAuth2Constants.CODE, code)
                 .param(OAuth2Constants.CLIENT_ID, clientId)
                 .param(OAuth2Constants.REDIRECT_URI, redirectUri);
-        for (Map.Entry<String, String> entry : credentials.entrySet()) {
-            codeForm.param(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, Object> entry : credentials.entrySet()) {
+            codeForm.param(entry.getKey(), (String) entry.getValue());
         }
         Response res = client.target(tokenUrl).request().post(Entity.form(codeForm));
         try {

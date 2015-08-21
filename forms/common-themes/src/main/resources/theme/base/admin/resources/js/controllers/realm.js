@@ -1622,7 +1622,15 @@ module.controller('IdentityProviderMapperCreateCtrl', function($scope, realm, id
 });
 
 module.controller('RealmFlowBindingCtrl', function($scope, flows, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications) {
-    $scope.flows = flows;
+    $scope.flows = [];
+    $scope.clientFlows = [];
+    for (var i=0 ; i<flows.length ; i++) {
+        if (flows[i].providerId == 'client-flow') {
+            $scope.clientFlows.push(flows[i]);
+        } else {
+            $scope.flows.push(flows[i]);
+        }
+    }
 
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/flow-bindings");
 });
@@ -1792,7 +1800,7 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
     };
 
     $scope.addFlow = function() {
-        $location.url("/realms/" + realm.realm + '/authentication/flows/' + $scope.flow.id + '/create/flow/execution');
+        $location.url("/realms/" + realm.realm + '/authentication/flows/' + $scope.flow.id + '/create/flow/execution/' + $scope.flow.id);
 
     }
 
@@ -1807,7 +1815,7 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
     }
 
     $scope.addExecution = function() {
-        $location.url("/realms/" + realm.realm + '/authentication/flows/' + $scope.flow.id + '/create/execution');
+        $location.url("/realms/" + realm.realm + '/authentication/flows/' + $scope.flow.id + '/create/execution/' + $scope.flow.id);
 
     }
 

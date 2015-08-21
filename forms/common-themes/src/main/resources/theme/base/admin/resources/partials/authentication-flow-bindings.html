@@ -46,6 +46,17 @@
             <kc-tooltip>Select the flow you want to use when the user has forgotten their credentials.</kc-tooltip>
         </div>
 
+        <div class="form-group">
+            <label for="resetCredentials" class="col-md-2 control-label">Client Authentication</label>
+            <div class="col-md-2">
+                <div>
+                    <select id="clientAuthentication" ng-model="realm.clientAuthenticationFlow" class="form-control" ng-options="flow.alias as flow.alias for flow in clientFlows">
+                    </select>
+                </div>
+            </div>
+            <kc-tooltip>Select the flow you want to use for authentication of clients.</kc-tooltip>
+        </div>
+
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-12">
                 <button kc-save data-ng-disabled="!changed">Save</button>

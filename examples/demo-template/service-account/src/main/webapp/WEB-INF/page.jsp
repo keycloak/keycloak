@@ -13,10 +13,16 @@
     AccessToken token = (AccessToken) request.getSession().getAttribute(ProductServiceAccountServlet.TOKEN_PARSED);
     String products = (String) request.getAttribute(ProductServiceAccountServlet.PRODUCTS);
     String appError = (String) request.getAttribute(ProductServiceAccountServlet.ERROR);
+    String clientAuthMethod = (String) request.getAttribute(ProductServiceAccountServlet.CLIENT_AUTH_METHOD);
+
+    String loginUrl = ProductServiceAccountServlet.getLoginUrl(request);
+    String refreshUrl = ProductServiceAccountServlet.getRefreshUrl(request);
+    String logoutUrl = ProductServiceAccountServlet.getLogoutUrl(request);
 %>
 <h1>Service account portal</h1>
-<p><a href="/service-account-portal/app/login">Login</a> | <a href="/service-account-portal/app/refresh">Refresh token</a> | <a
-        href="/service-account-portal/app/logout">Logout</a></p>
+<h2>Client authentication method: <%= clientAuthMethod %></h2>
+<p><a href="<%= loginUrl %>">Login</a> | <a href="<%= refreshUrl %>">Refresh token</a> | <a
+        href="<%= logoutUrl %>">Logout</a></p>
 <hr />
 
 <% if (appError != null) { %>

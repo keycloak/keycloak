@@ -74,18 +74,18 @@ module.controller('ClientSignedJWTCtrl', function($scope, $location, realm, clie
     $scope.realm = realm;
     $scope.client = client;
 
-    var signingKeyInfo = ClientCertificate.get({ realm : realm.realm, client : client.id, attribute: 'jwt.credentials' },
+    var signingKeyInfo = ClientCertificate.get({ realm : realm.realm, client : client.id, attribute: 'jwt.credential' },
         function() {
             $scope.signingKeyInfo = signingKeyInfo;
         }
     );
 
     $scope.importCertificate = function() {
-        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-signed-jwt/Signing/import/jwt.credentials");
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-jwt/Signing/import/jwt.credential");
     };
 
     $scope.generateSigningKey = function() {
-        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-signed-jwt/Signing/export/jwt.credentials");
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-jwt/Signing/export/jwt.credential");
     };
 
     $scope.cancel = function() {
@@ -263,7 +263,7 @@ module.controller('ClientCertificateImportCtrl', function($scope, $location, $ht
         var redirectLocation = "/realms/" + realm.realm + "/clients/" + client.id + "/saml/keys";
     } else if (callingContext == 'jwt-credentials') {
         var uploadUrl = authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id + '/certificates/' + attribute + '/upload-certificate';
-        var redirectLocation = "/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-signed-jwt";
+        var redirectLocation = "/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-jwt";
     }
 
     $scope.files = [];
@@ -371,6 +371,12 @@ module.controller('ClientCertificateExportCtrl', function($scope, $location, $ht
             });
             var ext = ".jks";
             if ($scope.jks.format == 'PKCS12') ext = ".p12";
+
+            if (callingContext == 'jwt-credentials') {
+                $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-jwt");
+                Notifications.success("New keypair and certificate generated successfully. Download keystore file")
+            }
+
             saveAs(blob, 'keystore' + ext);
         }).error(function(data) {
             var errorMsg = 'Error downloading';
@@ -390,7 +396,7 @@ module.controller('ClientCertificateExportCtrl', function($scope, $location, $ht
     });
 
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-signed-jwt");
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-jwt");
     }
 });
 

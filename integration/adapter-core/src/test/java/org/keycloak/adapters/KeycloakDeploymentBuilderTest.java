@@ -2,6 +2,9 @@ package org.keycloak.adapters;
 
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.junit.Test;
+import org.keycloak.adapters.authentication.ClientIdAndSecretCredentialsProvider;
+import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
+import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.util.PemUtils;
@@ -32,13 +35,27 @@ public class KeycloakDeploymentBuilderTest {
         assertTrue(deployment.isEnableBasicAuth());
         assertTrue(deployment.isExposeToken());
         assertEquals("234234-234234-234234", deployment.getResourceCredentials().get("secret"));
+        assertEquals(ClientIdAndSecretCredentialsProvider.PROVIDER_ID, deployment.getClientAuthenticator().getId());
         assertEquals(20, ((ThreadSafeClientConnManager) deployment.getClient().getConnectionManager()).getMaxTotal());
         assertEquals("https://backend:8443/auth/realms/demo/protocol/openid-connect/token", deployment.getTokenUrl());
+        assertEquals(RelativeUrlsUsed.NEVER, deployment.getRelativeUrls());
         assertTrue(deployment.isAlwaysRefreshToken());
         assertTrue(deployment.isRegisterNodeAtStartup());
         assertEquals(1000, deployment.getRegisterNodePeriod());
         assertEquals(TokenStore.COOKIE, deployment.getTokenStore());
         assertEquals("email", deployment.getPrincipalAttribute());
+    }
+
+    @Test
+    public void loadNoClientCredentials() throws Exception {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/keycloak-no-credentials.json"));
+        assertEquals(ClientIdAndSecretCredentialsProvider.PROVIDER_ID, deployment.getClientAuthenticator().getId());
+    }
+
+    @Test
+    public void loadJwtCredentials() throws Exception {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/keycloak-jwt.json"));
+        assertEquals(JWTClientCredentialsProvider.PROVIDER_ID, deployment.getClientAuthenticator().getId());
     }
 
 }

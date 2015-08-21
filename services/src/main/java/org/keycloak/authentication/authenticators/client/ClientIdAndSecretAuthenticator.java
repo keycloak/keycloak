@@ -8,6 +8,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
@@ -21,7 +22,9 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.util.BasicAuthHelper;
 
 /**
- * Validates client based on "client_id" and "client_secret" sent either in request parameters or in "Authorization: Basic" header
+ * Validates client based on "client_id" and "client_secret" sent either in request parameters or in "Authorization: Basic" header .
+ *
+ * See org.keycloak.adapters.authentication.ClientIdAndSecretAuthenticator for the adapter
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -39,20 +42,59 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
-        ClientModel client = ClientAuthUtil.getClientFromClientId(context);
-        if (client == null) {
-            return;
-        } else {
-            context.setClient(client);
+        String client_id = null;
+        String clientSecret = null;
+
+        String authorizationHeader = context.getHttpRequest().getHttpHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+
+        if (authorizationHeader != null) {
+            String[] usernameSecret = BasicAuthHelper.parseHeader(authorizationHeader);
+            if (usernameSecret != null) {
+                client_id = usernameSecret[0];
+                clientSecret = usernameSecret[1];
+            } else {
+
+                // Don't send 401 if client_id parameter was sent in request. For example IE may automatically send "Authorization: Negotiate" in XHR requests even for public clients
+                if (!formData.containsKey(OAuth2Constants.CLIENT_ID)) {
+                    Response challengeResponse = Response.status(Response.Status.UNAUTHORIZED).header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"" + context.getRealm().getName() + "\"").build();
+                    context.challenge(challengeResponse);
+                    return;
+                }
+            }
         }
+
+        if (client_id == null) {
+            client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
+            clientSecret = formData.getFirst("client_secret");
+        }
+
+        if (client_id == null) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Missing client_id parameter");
+            context.challenge(challengeResponse);
+            return;
+        }
+
+        context.getEvent().client(client_id);
+
+        ClientModel client = context.getRealm().getClientByClientId(client_id);
+        if (client == null) {
+            context.failure(AuthenticationFlowError.CLIENT_NOT_FOUND, null);
+            return;
+        }
+
+        if (!client.isEnabled()) {
+            context.failure(AuthenticationFlowError.CLIENT_DISABLED, null);
+            return;
+        }
+
+        context.setClient(client);
 
         // Skip client_secret validation for public client
         if (client.isPublicClient()) {
             context.success();
             return;
         }
-
-        String clientSecret = getClientSecret(context);
 
         if (clientSecret == null) {
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client secret not provided in request");
@@ -73,30 +115,6 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
         }
 
         context.success();
-    }
-
-    protected String getClientSecret(ClientAuthenticationFlowContext context) {
-        String clientSecret = null;
-        String authorizationHeader = context.getHttpRequest().getHttpHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-
-        if (authorizationHeader != null) {
-            String[] usernameSecret = BasicAuthHelper.parseHeader(authorizationHeader);
-            if (usernameSecret != null) {
-                clientSecret = usernameSecret[1];
-            }
-        }
-
-        if (clientSecret == null) {
-            clientSecret = formData.getFirst("client_secret");
-        }
-
-        return clientSecret;
-    }
-
-    protected void setError(AuthenticationFlowContext context, Response challengeResponse) {
-        context.getEvent().error(Errors.INVALID_CLIENT_CREDENTIALS);
-        context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
     }
 
     @Override

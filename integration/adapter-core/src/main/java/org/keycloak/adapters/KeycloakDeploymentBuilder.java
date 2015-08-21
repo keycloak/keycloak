@@ -3,6 +3,7 @@ package org.keycloak.adapters;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
@@ -55,7 +56,10 @@ public class KeycloakDeploymentBuilder {
             deployment.setTokenStore(TokenStore.SESSION);
         }
         if (adapterConfig.getPrincipalAttribute() != null) deployment.setPrincipalAttribute(adapterConfig.getPrincipalAttribute());
+
         deployment.setResourceCredentials(adapterConfig.getCredentials());
+        deployment.setClientAuthenticator(ClientCredentialsProviderUtils.bootstrapClientAuthenticator(deployment));
+
         deployment.setPublicClient(adapterConfig.isPublicClient());
         deployment.setUseResourceRoleMappings(adapterConfig.isUseResourceRoleMappings());
 

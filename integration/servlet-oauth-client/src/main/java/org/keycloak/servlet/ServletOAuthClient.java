@@ -1,45 +1,44 @@
 package org.keycloak.servlet;
 
-import org.apache.http.client.HttpClient;
-import org.keycloak.AbstractOAuthClient;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.ServerRequest;
+import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
-import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.KeycloakUriBuilder;
 import org.keycloak.util.UriUtils;
 
+import javax.security.cert.X509Certificate;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ServletOAuthClient extends AbstractOAuthClient {
-    protected HttpClient client;
-    protected AdapterConfig adapterConfig;
-
-    public void start() {
-        client = new HttpClientBuilder().build(adapterConfig);
-    }
+public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
 
     /**
      * closes client
      */
     public void stop() {
-        client.getConnectionManager().shutdown();
+        getDeployment().getClient().getConnectionManager().shutdown();
     }
 
     private AccessTokenResponse resolveBearerToken(HttpServletRequest request, String redirectUri, String code) throws IOException, ServerRequest.HttpFailure {
         // Don't send sessionId in oauth clients for now
-        return ServerRequest.invokeAccessCodeToToken(client, publicClient, code, getUrl(request, tokenUrl, false), redirectUri, clientId, credentials, null);
+        KeycloakDeployment resolvedDeployment = resolveDeployment(getDeployment(), request);
+        return ServerRequest.invokeAccessCodeToToken(resolvedDeployment, code, redirectUri, null);
     }
 
     /**
@@ -72,10 +71,12 @@ public class ServletOAuthClient extends AbstractOAuthClient {
      */
     public void redirect(String redirectUri, HttpServletRequest request, HttpServletResponse response) throws IOException {
         String state = getStateCode();
+        KeycloakDeployment resolvedDeployment = resolveDeployment(getDeployment(), request);
+        String authUrl = resolvedDeployment.getAuthUrl().clone().build().toString();
 
-        KeycloakUriBuilder uriBuilder =  KeycloakUriBuilder.fromUri(getUrl(request, authUrl, true))
+        KeycloakUriBuilder uriBuilder =  KeycloakUriBuilder.fromUri(authUrl)
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
-                .queryParam(OAuth2Constants.CLIENT_ID, clientId)
+                .queryParam(OAuth2Constants.CLIENT_ID, getClientId())
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
                 .queryParam(OAuth2Constants.STATE, state);
         if (scope != null) {
@@ -146,7 +147,8 @@ public class ServletOAuthClient extends AbstractOAuthClient {
     }
 
     public AccessTokenResponse refreshToken(HttpServletRequest request, String refreshToken) throws IOException, ServerRequest.HttpFailure {
-        return ServerRequest.invokeRefresh(client, publicClient, refreshToken, getUrl(request, tokenUrl, false), clientId, credentials);
+        KeycloakDeployment resolvedDeployment = resolveDeployment(getDeployment(), request);
+        return ServerRequest.invokeRefresh(resolvedDeployment, refreshToken);
     }
 
     public static IDToken extractIdToken(String idToken) {
@@ -159,16 +161,90 @@ public class ServletOAuthClient extends AbstractOAuthClient {
         }
     }
 
-    private String getUrl(HttpServletRequest request, String url, boolean isBrowserRequest) {
-        if (relativeUrlsUsed.useRelative(isBrowserRequest)) {
-            String baseUrl = UriUtils.getOrigin(request.getRequestURL().toString());
-            return baseUrl + url;
-        } else {
-            return url;
-        }
+    private KeycloakDeployment resolveDeployment(KeycloakDeployment baseDeployment, HttpServletRequest request) {
+        ServletFacade facade = new ServletFacade(request);
+        return new AdapterDeploymentContext(baseDeployment).resolveDeployment(facade);
     }
 
-    public void setAdapterConfig(AdapterConfig adapterConfig) {
-        this.adapterConfig = adapterConfig;
+
+    public static class ServletFacade implements HttpFacade {
+
+        private final HttpServletRequest servletRequest;
+
+        private ServletFacade(HttpServletRequest servletRequest) {
+            this.servletRequest = servletRequest;
+        }
+
+        @Override
+        public KeycloakSecurityContext getSecurityContext() {
+            throw new IllegalStateException("Not yet implemented");
+        }
+
+        @Override
+        public Request getRequest() {
+            return new Request() {
+
+                @Override
+                public String getMethod() {
+                    return servletRequest.getMethod();
+                }
+
+                @Override
+                public String getURI() {
+                    return servletRequest.getRequestURL().toString();
+                }
+
+                @Override
+                public boolean isSecure() {
+                    return servletRequest.isSecure();
+                }
+
+                @Override
+                public String getQueryParamValue(String param) {
+                    return servletRequest.getParameter(param);
+                }
+
+                @Override
+                public Cookie getCookie(String cookieName) {
+                    // TODO
+                    return null;
+                }
+
+                @Override
+                public String getHeader(String name) {
+                    return servletRequest.getHeader(name);
+                }
+
+                @Override
+                public List<String> getHeaders(String name) {
+                    // TODO
+                    return null;
+                }
+
+                @Override
+                public InputStream getInputStream() {
+                    try {
+                        return servletRequest.getInputStream();
+                    } catch (IOException ioe) {
+                        throw new RuntimeException(ioe);
+                    }
+                }
+
+                @Override
+                public String getRemoteAddr() {
+                    return servletRequest.getRemoteAddr();
+                }
+            };
+        }
+
+        @Override
+        public Response getResponse() {
+            throw new IllegalStateException("Not yet implemented");
+        }
+
+        @Override
+        public X509Certificate[] getCertificateChain() {
+            throw new IllegalStateException("Not yet implemented");
+        }
     }
 }
