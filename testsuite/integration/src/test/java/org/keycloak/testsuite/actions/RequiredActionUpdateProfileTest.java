@@ -89,8 +89,8 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.update("New first", "New last", "new@email.com");
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent().getSessionId();
-        events.expectRequiredAction(EventType.UPDATE_EMAIL).session(sessionId).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent().getSessionId();
+        events.expectRequiredAction(EventType.UPDATE_PROFILE).session(sessionId).assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 

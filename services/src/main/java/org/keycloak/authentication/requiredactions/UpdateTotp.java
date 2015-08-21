@@ -36,7 +36,8 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        Response challenge = context.form().createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
+        Response challenge = context.form()
+                .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
         context.challenge(challenge);
     }
 

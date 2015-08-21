@@ -58,7 +58,8 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        Response challenge = context.form().createForm("login-update-password.ftl");
+        Response challenge = context.form()
+                .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
         context.challenge(challenge);
     }
 
@@ -73,13 +74,13 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         if (Validation.isBlank(passwordNew)) {
             Response challenge = context.form()
                     .setError(Messages.MISSING_PASSWORD)
-                    .createForm("login-update-password.ftl");
+                    .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
             return;
         } else if (!passwordNew.equals(passwordConfirm)) {
             Response challenge = context.form()
                     .setError(Messages.NOTMATCH_PASSWORD)
-                    .createForm("login-update-password.ftl");
+                    .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
             return;
         }
@@ -90,13 +91,13 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         } catch (ModelException me) {
             Response challenge = context.form()
                     .setError(me.getMessage(), me.getParameters())
-                    .createForm("login-update-password.ftl");
+                    .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
             return;
         } catch (Exception ape) {
             Response challenge = context.form()
                     .setError(ape.getMessage())
-                    .createForm("login-update-password.ftl");
+                    .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
             return;
         }
