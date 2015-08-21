@@ -22,7 +22,9 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.util.BasicAuthHelper;
 
 /**
- * Validates client based on "client_id" and "client_secret" sent either in request parameters or in "Authorization: Basic" header
+ * Validates client based on "client_id" and "client_secret" sent either in request parameters or in "Authorization: Basic" header .
+ *
+ * See org.keycloak.adapters.authentication.ClientIdAndSecretAuthenticator for the adapter
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

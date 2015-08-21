@@ -60,6 +60,9 @@ public class ClientCredentialsProviderUtils {
         }
     }
 
+    /**
+     * Use this method when calling backchannel request directly from your application. See service-account example from demo for more details
+     */
     public static void setClientCredentials(KeycloakDeployment deployment, Map<String, String> requestHeaders, Map<String, String> formparams) {
         ClientCredentialsProvider authenticator = deployment.getClientAuthenticator();
         authenticator.setClientCredentials(deployment, requestHeaders, formparams);

@@ -12,7 +12,8 @@ import org.keycloak.util.KeystoreUtil;
 import org.keycloak.util.Time;
 
 /**
- * Client authentication based on JWT signed by client private key
+ * Client authentication based on JWT signed by client private key .
+ * See <a href="https://tools.ietf.org/html/draft-jones-oauth-jwt-bearer-03">specs</a> for more details.
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
