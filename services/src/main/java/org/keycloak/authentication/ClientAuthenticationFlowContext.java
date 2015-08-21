@@ -5,6 +5,7 @@ import java.util.Map;
 import org.keycloak.models.ClientModel;
 
 /**
+ * Encapsulates information about the execution in ClientAuthenticationFlow
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

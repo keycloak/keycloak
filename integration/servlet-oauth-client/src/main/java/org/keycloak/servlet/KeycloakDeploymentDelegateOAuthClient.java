@@ -4,7 +4,9 @@ import java.util.Map;
 
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.enums.RelativeUrlsUsed;
+import org.keycloak.util.KeycloakUriBuilder;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -43,7 +45,7 @@ public class KeycloakDeploymentDelegateOAuthClient extends AbstractOAuthClient {
 
     @Override
     public String getAuthUrl() {
-        return deployment.getAuthUrl().clone().build().toString();
+        throw new IllegalStateException("Illegal to call this method. Use KeycloakDeployment to resolve correct deployment for this request");
     }
 
     @Override
@@ -53,7 +55,7 @@ public class KeycloakDeploymentDelegateOAuthClient extends AbstractOAuthClient {
 
     @Override
     public String getTokenUrl() {
-        return deployment.getTokenUrl();
+        throw new IllegalStateException("Illegal to call this method. Use KeycloakDeployment to resolve correct deployment for this request");
     }
 
     @Override

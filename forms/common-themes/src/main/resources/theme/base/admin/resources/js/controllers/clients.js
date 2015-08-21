@@ -74,18 +74,18 @@ module.controller('ClientSignedJWTCtrl', function($scope, $location, realm, clie
     $scope.realm = realm;
     $scope.client = client;
 
-    var signingKeyInfo = ClientCertificate.get({ realm : realm.realm, client : client.id, attribute: 'jwt.credentials' },
+    var signingKeyInfo = ClientCertificate.get({ realm : realm.realm, client : client.id, attribute: 'jwt.credential' },
         function() {
             $scope.signingKeyInfo = signingKeyInfo;
         }
     );
 
     $scope.importCertificate = function() {
-        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-jwt/Signing/import/jwt.credentials");
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-jwt/Signing/import/jwt.credential");
     };
 
     $scope.generateSigningKey = function() {
-        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-jwt/Signing/export/jwt.credentials");
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-jwt/Signing/export/jwt.credential");
     };
 
     $scope.cancel = function() {
