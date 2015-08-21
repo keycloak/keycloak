@@ -2,6 +2,7 @@ package org.keycloak.adapters;
 
 import org.apache.http.client.HttpClient;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.enums.SslRequired;
@@ -39,7 +40,8 @@ public class KeycloakDeployment {
     protected boolean bearerOnly;
     protected boolean enableBasicAuth;
     protected boolean publicClient;
-    protected Map<String, String> resourceCredentials = new HashMap<String, String>();
+    protected Map<String, Object> resourceCredentials = new HashMap<>();
+    protected ClientCredentialsProvider clientAuthenticator;
     protected HttpClient client;
 
     protected String scope;
@@ -216,12 +218,20 @@ public class KeycloakDeployment {
         this.publicClient = publicClient;
     }
 
-    public Map<String, String> getResourceCredentials() {
+    public Map<String, Object> getResourceCredentials() {
         return resourceCredentials;
     }
 
-    public void setResourceCredentials(Map<String, String> resourceCredentials) {
+    public void setResourceCredentials(Map<String, Object> resourceCredentials) {
         this.resourceCredentials = resourceCredentials;
+    }
+
+    public ClientCredentialsProvider getClientAuthenticator() {
+        return clientAuthenticator;
+    }
+
+    public void setClientAuthenticator(ClientCredentialsProvider clientAuthenticator) {
+        this.clientAuthenticator = clientAuthenticator;
     }
 
     public HttpClient getClient() {

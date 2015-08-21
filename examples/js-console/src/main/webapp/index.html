@@ -49,7 +49,7 @@
             if (refreshed) {
                 output(keycloak.tokenParsed);
             } else {
-                output('Token not refreshed, valid for ' + Math.round(keycloak.tokenParsed.exp - new Date().getTime() / 1000) + ' seconds');
+                output('Token not refreshed, valid for ' + Math.round(keycloak.tokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds');
             }
         }).error(function() {
             output('Failed to refresh token');
@@ -62,11 +62,11 @@
             return;
         }
 
-        var o = 'Token Expires:\t\t' + new Date(keycloak.tokenParsed.exp * 1000).toLocaleString() + '\n';
-        o += 'Token Expires in:\t' + Math.round(keycloak.tokenParsed.exp - new Date().getTime() / 1000) + ' seconds\n';
+        var o = 'Token Expires:\t\t' + new Date((keycloak.tokenParsed.exp + keycloak.timeSkew) * 1000).toLocaleString() + '\n';
+        o += 'Token Expires in:\t' + Math.round(keycloak.tokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds\n';
 
-        o += 'Refresh Token Expires:\t' + new Date(keycloak.refreshTokenParsed.exp * 1000).toLocaleString() + '\n';
-        o += 'Refresh Expires in:\t' + Math.round(keycloak.refreshTokenParsed.exp - new Date().getTime() / 1000) + ' seconds';
+        o += 'Refresh Token Expires:\t' + new Date((keycloak.refreshTokenParsed.exp + keycloak.timeSkew) * 1000).toLocaleString() + '\n';
+        o += 'Refresh Expires in:\t' + Math.round(keycloak.refreshTokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds';
         output(o);
     }
 

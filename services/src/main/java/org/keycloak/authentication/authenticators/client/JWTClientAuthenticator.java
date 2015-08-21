@@ -30,7 +30,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
     protected static Logger logger = Logger.getLogger(JWTClientAuthenticator.class);
 
-    public static final String PROVIDER_ID = "client-signed-jwt";
+    public static final String PROVIDER_ID = "client-jwt";
     public static final String CERTIFICATE_ATTR = "jwt.credential.certificate";
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
@@ -111,13 +111,9 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             }
 
             // Validate other things
-            String audience = token.getAudience();
             String expectedAudience = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
-            if (audience == null) {
-                throw new RuntimeException("Audience is null on JWT");
-            }
-            if (!audience.equals(expectedAudience)) {
-                throw new RuntimeException("Token audience doesn't match domain. Realm audience is '" + expectedAudience + "' but audience from token is '" + audience + "'");
+            if (!token.hasAudience(expectedAudience)) {
+                throw new RuntimeException("Token audience doesn't match domain. Realm audience is '" + expectedAudience + "' but audience from token is '" + token.getAudience() + "'");
             }
 
             if (!token.isActive()) {

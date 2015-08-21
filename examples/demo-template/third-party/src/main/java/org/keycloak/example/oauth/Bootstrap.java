@@ -27,8 +27,6 @@ public class Bootstrap implements ServletContextListener {
         ServletContext context = sce.getServletContext();
 
         configureClient(context);
-
-        client.start();
         context.setAttribute(ServletOAuthClient.class.getName(), client);
     }
 

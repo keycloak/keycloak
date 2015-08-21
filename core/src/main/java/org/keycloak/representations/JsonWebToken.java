@@ -4,6 +4,10 @@ import org.codehaus.jackson.annotate.JsonAnyGetter;
 import org.codehaus.jackson.annotate.JsonAnySetter;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.map.annotate.JsonDeserialize;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.keycloak.json.StringOrArrayDeserializer;
+import org.keycloak.json.StringOrArraySerializer;
 import org.keycloak.util.Time;
 
 import java.io.Serializable;
@@ -26,14 +30,16 @@ public class JsonWebToken implements Serializable {
     @JsonProperty("iss")
     protected String issuer;
     @JsonProperty("aud")
-    protected String audience;
+    @JsonSerialize(using = StringOrArraySerializer.class)
+    @JsonDeserialize(using = StringOrArrayDeserializer.class)
+    protected String[] audience;
     @JsonProperty("sub")
     protected String subject;
     @JsonProperty("typ")
     protected String type;
     @JsonProperty("azp")
     public String issuedFor;
-    protected Map<String, Object> otherClaims = new HashMap<String, Object>();
+    protected Map<String, Object> otherClaims = new HashMap<>();
 
     public String getId() {
         return id;
@@ -72,7 +78,6 @@ public class JsonWebToken implements Serializable {
     @JsonIgnore
     public boolean isNotBefore() {
         return Time.currentTime() >= notBefore;
-
     }
 
     /**
@@ -113,12 +118,21 @@ public class JsonWebToken implements Serializable {
         return this;
     }
 
-
-    public String getAudience() {
+    @JsonIgnore
+    public String[] getAudience() {
         return audience;
     }
 
-    public JsonWebToken audience(String audience) {
+    public boolean hasAudience(String audience) {
+        for (String a : this.audience) {
+            if (a.equals(audience)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public JsonWebToken audience(String... audience) {
         this.audience = audience;
         return this;
     }

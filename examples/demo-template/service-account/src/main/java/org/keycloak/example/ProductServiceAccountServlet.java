@@ -4,7 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -26,30 +28,46 @@ import org.keycloak.VerificationException;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.ServerRequest;
-import org.keycloak.constants.ServiceAccountConstants;
+import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ProductServiceAccountServlet extends HttpServlet {
+public abstract class ProductServiceAccountServlet extends HttpServlet {
 
     public static final String ERROR = "error";
     public static final String TOKEN = "token";
     public static final String TOKEN_PARSED = "idTokenParsed";
     public static final String REFRESH_TOKEN = "refreshToken";
     public static final String PRODUCTS = "products";
+    public static final String CLIENT_AUTH_METHOD = "clientAuthMethod";
+
+    protected abstract String getAdapterConfigLocation();
+    protected abstract String getClientAuthenticationMethod();
+
+    public static String getLoginUrl(HttpServletRequest request) {
+        return "/service-account-portal/app-" + request.getAttribute(CLIENT_AUTH_METHOD) + "/login";
+    }
+
+    public static String getRefreshUrl(HttpServletRequest request) {
+        return "/service-account-portal/app-" + request.getAttribute(CLIENT_AUTH_METHOD) + "/refresh";
+    }
+
+    public static String getLogoutUrl(HttpServletRequest request) {
+        return "/service-account-portal/app-" + request.getAttribute(CLIENT_AUTH_METHOD) + "/logout";
+    }
 
     @Override
     public void init() throws ServletException {
-        InputStream config = getServletContext().getResourceAsStream("WEB-INF/keycloak.json");
+        String adapterConfigLocation = getAdapterConfigLocation();
+        InputStream config = getServletContext().getResourceAsStream(adapterConfigLocation);
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(config);
-        HttpClient client = new DefaultHttpClient();
+        getServletContext().setAttribute("deployment-" + getClientAuthenticationMethod(), deployment);
 
-        getServletContext().setAttribute(KeycloakDeployment.class.getName(), deployment);
+        HttpClient client = new DefaultHttpClient();
         getServletContext().setAttribute(HttpClient.class.getName(), client);
     }
 
@@ -60,6 +78,8 @@ public class ProductServiceAccountServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.setAttribute(CLIENT_AUTH_METHOD, getClientAuthenticationMethod());
+
         String reqUri = req.getRequestURI();
         if (reqUri.endsWith("/login")) {
             serviceAccountLogin(req);
@@ -81,16 +101,21 @@ public class ProductServiceAccountServlet extends HttpServlet {
         KeycloakDeployment deployment = getKeycloakDeployment();
         HttpClient client = getHttpClient();
 
-        String clientId = deployment.getResourceName();
-        String clientSecret = deployment.getResourceCredentials().get("secret");
-
         try {
             HttpPost post = new HttpPost(deployment.getTokenUrl());
             List<NameValuePair> formparams = new ArrayList<NameValuePair>();
             formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
 
-            String authHeader = BasicAuthHelper.createHeader(clientId, clientSecret);
-            post.addHeader("Authorization", authHeader);
+            // Add client credentials according to the method configured in keycloak.json file
+            Map<String, String> reqHeaders = new HashMap<>();
+            Map<String, String> reqParams = new HashMap<>();
+            ClientCredentialsProviderUtils.setClientCredentials(deployment, reqHeaders, reqParams);
+            for (Map.Entry<String, String> header : reqHeaders.entrySet()) {
+                post.setHeader(header.getKey(), header.getValue());
+            }
+            for (Map.Entry<String, String> param : reqParams.entrySet()) {
+                formparams.add(new BasicNameValuePair(param.getKey(), param.getValue()));
+            }
 
             UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
             post.setEntity(form);
@@ -217,7 +242,7 @@ public class ProductServiceAccountServlet extends HttpServlet {
     }
 
     private KeycloakDeployment getKeycloakDeployment() {
-        return (KeycloakDeployment) getServletContext().getAttribute(KeycloakDeployment.class.getName());
+        return (KeycloakDeployment) getServletContext().getAttribute("deployment-" + getClientAuthenticationMethod());
     }
 
     private HttpClient getHttpClient() {

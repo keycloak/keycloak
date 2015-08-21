@@ -5,6 +5,13 @@
   "auth-server-url" : "http://localhost:8080/auth",
   "ssl-required" : "external",
   "credentials" : {
-      "secret": "password"
-   }
+    "jwt": {
+      "client-keystore-file": "classpath:adapter-test/secure-portal-keystore.jks",
+      "client-keystore-type": "JKS",
+      "client-keystore-password": "storepass",
+      "client-key-password": "keypass",
+      "client-key-alias": "clientkey",
+      "token-expiration": 10
+    }
+  }
 }

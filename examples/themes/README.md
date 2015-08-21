@@ -26,6 +26,14 @@ Then open $KEYCLOAK_HOME/standalone/configuration/keycloak-server.json and regis
     }
 
 
+Address Theme
+-------------------
+
+Example theme that adds address fields to registration page, account management and admin console. To enable the theme open the admin console, select your realm, click on `Theme`. In the dropdown for `Login Theme` and `Account Theme` select `address`. Click `Save` and login to the realm to see the new theme in action.
+
+One thing to note is that to change the admin console for the master admin console (`/auth/admin`) you need to change the theme for the master realm. Changing the admin console theme for any other realms will only change the admin console for that specific realm (for example `/auth/admin/myrealm/console`).
+
+
 Sunrise Login Theme
 -------------------
 

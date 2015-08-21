@@ -55,20 +55,6 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
                 AuthenticationFlow authenticationFlow;
                 authenticationFlow = processor.createFlowExecution(model.getFlowId(), model);
 
-
-                /*if (model.getFlowId() != null) {
-                    authenticationFlow = processor.createFlowExecution(model.getFlowId(), model);
-                } else {
-                    // Continue with the flow specific to authenticatedClient
-                    ClientModel authenticatedClient = processor.getClient();
-                    if (authenticatedClient != null) {
-                        String clientFlowId = authenticatedClient.getClientAuthFlowId();
-                        authenticationFlow = processor.createFlowExecution(clientFlowId, model);
-                    } else {
-                        throw new AuthenticationFlowException("Authenticated client required for: " + model.getAuthenticator(), AuthenticationFlowError.CLIENT_NOT_FOUND);
-                    }
-                }*/
-
                 Response flowChallenge = authenticationFlow.processFlow();
                 if (flowChallenge == null) {
                     if (model.isAlternative()) alternativeSuccessful = true;

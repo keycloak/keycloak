@@ -289,10 +289,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             }
             JsonWebToken token = jws.readJsonContent(JsonWebToken.class);
 
-            String aud = token.getAudience();
             String iss = token.getIssuer();
 
-            if (aud != null && !aud.equals(getConfig().getClientId())) {
+            if (!token.hasAudience(getConfig().getClientId())) {
                 throw new IdentityBrokerException("Wrong audience from token.");
             }
 

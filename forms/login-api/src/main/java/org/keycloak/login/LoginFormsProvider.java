@@ -72,6 +72,14 @@ public interface LoginFormsProvider extends Provider {
 
     LoginFormsProvider addError(FormMessage errorMessage);
 
+    /**
+     * Add a success message to the form
+     *
+     * @param errorMessage
+     * @return
+     */
+    LoginFormsProvider addSuccess(FormMessage errorMessage);
+
     public LoginFormsProvider setSuccess(String message, Object ... parameters);
 
     public LoginFormsProvider setUser(UserModel user);

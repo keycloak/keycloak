@@ -167,6 +167,9 @@ public class CustomerService {
         <auth-constraint>
             <role-name>admin</role-name>
         </auth-constraint>
+        <user-data-constraint>
+            <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+        </user-data-constraint>
     </security-constraint>
     <security-constraint>
         <web-resource-collection>
@@ -176,12 +179,6 @@ public class CustomerService {
         <auth-constraint>
             <role-name>user</role-name>
         </auth-constraint>
-    </security-constraint>
-
-    <security-constraint>
-        <web-resource-collection>
-            <url-pattern>/*</url-pattern>
-        </web-resource-collection>
         <user-data-constraint>
             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
         </user-data-constraint>
@@ -235,7 +232,7 @@ public class CustomerService {
 </programlisting>
 </para>
         <para>
-            The <literal>security-deployment</literal> <literal>name</literal> attribute identifies the WAR you want
+            The <literal>secure-deployment</literal> <literal>name</literal> attribute identifies the WAR you want
             to secure.  Its value is the <literal>module-name</literal> defined in <literal>web.xml</literal> with
             <literal>.war</literal> appended.  The rest of the configuration corresponds pretty much one to one
             with the <literal>keycloak.json</literal> configuration options defined in <link linkend='adapter-config'>general adapter configuration</link>.

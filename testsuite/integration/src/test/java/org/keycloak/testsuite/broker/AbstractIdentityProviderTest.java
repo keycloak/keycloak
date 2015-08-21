@@ -48,6 +48,7 @@ import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.rule.GreenMailRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
@@ -451,7 +452,7 @@ public abstract class AbstractIdentityProviderTest {
         doAfterProviderAuthentication();
 
         this.updateProfilePage.assertCurrent();
-        this.updateProfilePage.update("Test", "User", "psilva@redhat.com", null);
+        this.updateProfilePage.update("Test", "User", "psilva@redhat.com");
 
         WebElement element = this.driver.findElement(By.className("kc-feedback-text"));
 
@@ -460,7 +461,7 @@ public abstract class AbstractIdentityProviderTest {
         assertEquals("Email already exists.", element.getText());
 
         this.updateProfilePage.assertCurrent();
-        this.updateProfilePage.update("Test", "User", "test-user@redhat.com", null);
+        this.updateProfilePage.update("Test", "User", "test-user@redhat.com");
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
 
@@ -724,7 +725,7 @@ public abstract class AbstractIdentityProviderTest {
 
             // update profile
             this.updateProfilePage.assertCurrent();
-            this.updateProfilePage.update(userFirstName, userLastName, userEmail, null);
+            this.updateProfilePage.update(userFirstName, userLastName, userEmail);
         }
 
     }
@@ -801,10 +802,9 @@ public abstract class AbstractIdentityProviderTest {
         UserSessionStatus sessionStatus = null;
 
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
             String pageSource = this.driver.getPageSource();
 
-            sessionStatus = objectMapper.readValue(pageSource.getBytes(), UserSessionStatus.class);
+            sessionStatus = JsonSerialization.readValue(pageSource.getBytes(), UserSessionStatus.class);
         } catch (IOException ignore) {
             ignore.printStackTrace();
         }

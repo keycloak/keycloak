@@ -34,6 +34,10 @@ public class FormMessage {
 		this(field, message);
 		this.parameters = parameters;
 	}
+
+    public FormMessage(String message, Object...parameters) {
+        this(null, message, parameters);
+    }
 	
 	/**
      * Create message without parameters.

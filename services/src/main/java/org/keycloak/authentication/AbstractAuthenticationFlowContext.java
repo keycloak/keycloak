@@ -10,6 +10,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.managers.BruteForceProtector;
 
 /**
@@ -79,11 +80,19 @@ public interface AbstractAuthenticationFlowContext {
     AuthenticatorConfigModel getAuthenticatorConfig();
 
     /**
-     * This could be an error message forwarded from brokering when the broker failed authentication
+     * This could be an error message forwarded from another authenticator that is restarting or continuing the flo.  For example
+     * the brokering API sends this when the broker failed authentication
      * and we want to continue authentication locally.  forwardedErrorMessage can then be displayed by
      * whatever form is challenging.
      */
-    String getForwardedErrorMessage();
+    FormMessage getForwardedErrorMessage();
+
+    /**
+     * This could be an success message forwarded from another authenticator that is restarting or continuing the flow.  For example
+     * a reset password sends an email, then resets the flow with a success message.  forwardedSuccessMessage can then be displayed by
+     * whatever form is challenging.
+     */
+    FormMessage getForwardedSuccessMessage();
 
     /**
      * Generates access code and updates clientsession timestamp

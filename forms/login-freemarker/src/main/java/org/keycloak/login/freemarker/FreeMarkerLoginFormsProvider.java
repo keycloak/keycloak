@@ -474,6 +474,21 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
+    public LoginFormsProvider addSuccess(FormMessage errorMessage) {
+        if (this.messageType != MessageType.SUCCESS) {
+            this.messageType = null;
+            this.messages = null;
+        }
+        if (messages == null) {
+            this.messageType = MessageType.SUCCESS;
+            this.messages = new LinkedList<>();
+        }
+        this.messages.add(errorMessage);
+        return this;
+
+    }
+
+    @Override
     public FreeMarkerLoginFormsProvider setSuccess(String message, Object... parameters) {
         setMessage(MessageType.SUCCESS, message, parameters);
         return this;

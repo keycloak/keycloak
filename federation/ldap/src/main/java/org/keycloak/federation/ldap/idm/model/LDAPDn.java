@@ -1,5 +1,6 @@
 package org.keycloak.federation.ldap.idm.model;
 
+import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.regex.Matcher;
@@ -26,6 +27,10 @@ public class LDAPDn {
 
     @Override
     public String toString() {
+        return toString(entries);
+    }
+
+    private static String toString(Collection<Entry> entries) {
         StringBuilder builder = new StringBuilder();
 
         boolean first = true;
@@ -62,7 +67,9 @@ public class LDAPDn {
      * @return string like "dc=something,dc=org" from the DN like "uid=joe,dc=something,dc=org"
      */
     public String getParentDn() {
-        return new LinkedList<>(entries).remove().toString();
+        LinkedList<Entry> parentDnEntries = new LinkedList<>(entries);
+        parentDnEntries.remove();
+        return toString(parentDnEntries);
     }
 
     public void addFirst(String rdnName, String rdnValue) {

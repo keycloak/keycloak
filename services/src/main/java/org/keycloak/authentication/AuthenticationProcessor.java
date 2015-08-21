@@ -19,6 +19,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.ErrorPage;
@@ -32,7 +33,9 @@ import org.keycloak.util.Time;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -53,15 +56,19 @@ public class AuthenticationProcessor {
     protected String flowId;
     protected String flowPath;
     /**
-     * This could be an error message forwarded from brokering when the broker failed authentication
-     * and we want to continue authentication locally.  forwardedErrorMessage can then be displayed by
-     * whatever form is challenging.
+     * This could be an error message forwarded from another authenticator
      */
-    protected String forwardedErrorMessage;
+    protected FormMessage forwardedErrorMessage;
+
+    /**
+     * This could be an success message forwarded from another authenticator
+     */
+    protected FormMessage forwardedSuccessMessage;
     protected boolean userSessionCreated;
 
     // Used for client authentication
     protected ClientModel client;
+    protected Map<String, String> clientAuthAttributes = new HashMap<>();
 
     public AuthenticationProcessor() {
     }
@@ -76,6 +83,10 @@ public class AuthenticationProcessor {
 
     public void setClient(ClientModel client) {
         this.client = client;
+    }
+
+    public Map<String, String> getClientAuthAttributes() {
+        return clientAuthAttributes;
     }
 
     public ClientSessionModel getClientSession() {
@@ -157,8 +168,13 @@ public class AuthenticationProcessor {
         return this;
     }
 
-    public AuthenticationProcessor setForwardedErrorMessage(String forwardedErrorMessage) {
+    public AuthenticationProcessor setForwardedErrorMessage(FormMessage forwardedErrorMessage) {
         this.forwardedErrorMessage = forwardedErrorMessage;
+        return this;
+    }
+
+    public AuthenticationProcessor setForwardedSuccessMessage(FormMessage forwardedSuccessMessage) {
+        this.forwardedSuccessMessage = forwardedSuccessMessage;
         return this;
     }
 
@@ -199,6 +215,8 @@ public class AuthenticationProcessor {
         Response challenge;
         AuthenticationFlowError error;
         List<AuthenticationExecutionModel> currentExecutions;
+        FormMessage errorMessage;
+        FormMessage successMessage;
 
         private Result(AuthenticationExecutionModel execution, Authenticator authenticator, List<AuthenticationExecutionModel> currentExecutions) {
             this.execution = execution;
@@ -330,6 +348,11 @@ public class AuthenticationProcessor {
         }
 
         @Override
+        public Map<String, String> getClientAuthAttributes() {
+            return AuthenticationProcessor.this.getClientAuthAttributes();
+        }
+
+        @Override
         public ClientSessionModel getClientSession() {
             return AuthenticationProcessor.this.getClientSession();
         }
@@ -370,7 +393,7 @@ public class AuthenticationProcessor {
         }
 
         @Override
-        public String getForwardedErrorMessage() {
+        public FormMessage getForwardedErrorMessage() {
             return AuthenticationProcessor.this.forwardedErrorMessage;
         }
 
@@ -398,7 +421,9 @@ public class AuthenticationProcessor {
                     .setActionUri(action)
                     .setClientSessionCode(accessCode);
             if (getForwardedErrorMessage() != null) {
-                provider.setError(getForwardedErrorMessage());
+                provider.addError(getForwardedErrorMessage());
+            } else if (getForwardedSuccessMessage() != null) {
+                provider.addSuccess(getForwardedSuccessMessage());
             }
             return provider;
         }
@@ -429,8 +454,35 @@ public class AuthenticationProcessor {
         }
 
         @Override
-        public void resetBrowserLogin() {
-            this.status = FlowStatus.RESET_BROWSER_LOGIN;
+        public void fork() {
+            this.status = FlowStatus.FORK;
+        }
+
+        @Override
+        public void forkWithSuccessMessage(FormMessage message) {
+            this.status = FlowStatus.FORK;
+            this.successMessage = message;
+
+        }
+
+        @Override
+        public void forkWithErrorMessage(FormMessage message) {
+            this.status = FlowStatus.FORK;
+            this.errorMessage = message;
+
+        }
+
+        @Override
+        public FormMessage getForwardedSuccessMessage() {
+            return AuthenticationProcessor.this.forwardedSuccessMessage;
+        }
+
+        public FormMessage getErrorMessage() {
+            return errorMessage;
+        }
+
+        public FormMessage getSuccessMessage() {
+            return successMessage;
         }
     }
 
@@ -456,31 +508,39 @@ public class AuthenticationProcessor {
     public Response handleBrowserException(Exception failure) {
         if (failure instanceof AuthenticationFlowException) {
             AuthenticationFlowException e = (AuthenticationFlowException) failure;
-            logger.error("failed authentication: " + e.getError().toString(), e);
             if (e.getError() == AuthenticationFlowError.INVALID_USER) {
+                logger.error("failed authentication: " + e.getError().toString(), e);
                 event.error(Errors.USER_NOT_FOUND);
                 return ErrorPage.error(session, Messages.INVALID_USER);
             } else if (e.getError() == AuthenticationFlowError.USER_DISABLED) {
+                logger.error("failed authentication: " + e.getError().toString(), e);
                 event.error(Errors.USER_DISABLED);
                 return ErrorPage.error(session, Messages.ACCOUNT_DISABLED);
             } else if (e.getError() == AuthenticationFlowError.USER_TEMPORARILY_DISABLED) {
+                logger.error("failed authentication: " + e.getError().toString(), e);
                 event.error(Errors.USER_TEMPORARILY_DISABLED);
                 return ErrorPage.error(session, Messages.ACCOUNT_TEMPORARILY_DISABLED);
 
             } else if (e.getError() == AuthenticationFlowError.INVALID_CLIENT_SESSION) {
+                logger.error("failed authentication: " + e.getError().toString(), e);
                 event.error(Errors.INVALID_CODE);
                 return ErrorPage.error(session, Messages.INVALID_CODE);
 
             } else if (e.getError() == AuthenticationFlowError.EXPIRED_CODE) {
+                logger.error("failed authentication: " + e.getError().toString(), e);
                 event.error(Errors.EXPIRED_CODE);
                 return ErrorPage.error(session, Messages.EXPIRED_CODE);
 
-            } else if (e.getError() == AuthenticationFlowError.RESET_TO_BROWSER_LOGIN) {
-                resetFlow(getClientSession());
+            } else if (e.getError() == AuthenticationFlowError.FORK_FLOW) {
+                ForkFlowException reset = (ForkFlowException)e;
+                ClientSessionModel clone = clone(session, clientSession);
+                clone.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
                 AuthenticationProcessor processor = new AuthenticationProcessor();
-                processor.setClientSession(clientSession)
+                processor.setClientSession(clone)
                         .setFlowPath(LoginActionsService.AUTHENTICATE_PATH)
                         .setFlowId(realm.getBrowserFlow().getId())
+                        .setForwardedErrorMessage(reset.getErrorMessage())
+                        .setForwardedSuccessMessage(reset.getSuccessMessage())
                         .setConnection(connection)
                         .setEventBuilder(event)
                         .setProtector(protector)
@@ -491,6 +551,7 @@ public class AuthenticationProcessor {
                 return processor.authenticate();
 
             } else {
+                logger.error("failed authentication: " + e.getError().toString(), e);
                 event.error(Errors.INVALID_USER_CREDENTIALS);
                 return ErrorPage.error(session, Messages.INVALID_USER);
             }
@@ -585,6 +646,20 @@ public class AuthenticationProcessor {
         clientSession.clearUserSessionNotes();
         clientSession.removeNote(CURRENT_AUTHENTICATION_EXECUTION);
     }
+
+    public static ClientSessionModel clone(KeycloakSession session, ClientSessionModel clientSession) {
+        ClientSessionModel clone = session.sessions().createClientSession(clientSession.getRealm(), clientSession.getClient());
+        for (Map.Entry<String, String> entry : clientSession.getNotes().entrySet()) {
+            clone.setNote(entry.getKey(), entry.getValue());
+        }
+        clone.setRedirectUri(clientSession.getRedirectUri());
+        clone.setAuthMethod(clientSession.getAuthMethod());
+        clone.setTimestamp(Time.currentTime());
+        clone.removeNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+        return clone;
+
+    }
+
 
     public Response authenticationAction(String execution) {
         checkClientSession();
@@ -708,6 +783,8 @@ public class AuthenticationProcessor {
     public AuthenticationProcessor.Result createClientAuthenticatorContext(AuthenticationExecutionModel model, ClientAuthenticator clientAuthenticator, List<AuthenticationExecutionModel> executions) {
         return new Result(model, clientAuthenticator, executions);
     }
+
+
 
 
 }

@@ -345,6 +345,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'UserDetailCtrl'
         })
+        .when('/realms/:realm/users/:user/user-attributes', {
+            templateUrl : resourceUrl + '/partials/user-attributes.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                }
+            },
+            controller : 'UserDetailCtrl'
+        })
         .when('/realms/:realm/users/:user/user-credentials', {
             templateUrl : resourceUrl + '/partials/user-credentials.html',
             resolve : {
@@ -642,7 +654,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientSecretCtrl'
         })
-        .when('/realms/:realm/clients/:client/credentials/client-signed-jwt', {
+        .when('/realms/:realm/clients/:client/credentials/client-jwt', {
             templateUrl : resourceUrl + '/partials/client-credentials-jwt.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -654,7 +666,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientSignedJWTCtrl'
         })
-        .when('/realms/:realm/clients/:client/credentials/client-signed-jwt/:keyType/import/:attribute', {
+        .when('/realms/:realm/clients/:client/credentials/client-jwt/:keyType/import/:attribute', {
             templateUrl : resourceUrl + '/partials/client-credentials-jwt-key-import.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -669,7 +681,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientCertificateImportCtrl'
         })
-        .when('/realms/:realm/clients/:client/credentials/client-signed-jwt/:keyType/export/:attribute', {
+        .when('/realms/:realm/clients/:client/credentials/client-jwt/:keyType/export/:attribute', {
             templateUrl : resourceUrl + '/partials/client-credentials-jwt-key-export.html',
             resolve : {
                 realm : function(RealmLoader) {

@@ -4,6 +4,8 @@ import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.FormMessage;
+
 import java.net.URI;
 
 /**
@@ -70,9 +72,34 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
     void cancelLogin();
 
     /**
-     * Abort the current flow and restart it using the realm's browser login
+     * Fork the current flow.  The client session will be cloned and set to point at the realm's browser login flow.  The Response will be the result
+     * of this fork.  The previous flow will still be set at the current execution.  This is used by reset password when it sends an email.
+     * It sends an email linking to the current flow and redirects the browser to a new browser login flow.
+     *
+     *
      *
      * @return
      */
-    void resetBrowserLogin();
+    void fork();
+
+    /**
+     * Fork the current flow.  The client session will be cloned and set to point at the realm's browser login flow.  The Response will be the result
+     * of this fork.  The previous flow will still be set at the current execution.  This is used by reset password when it sends an email.
+     * It sends an email linking to the current flow and redirects the browser to a new browser login flow.
+     *
+     * This method will set up a success message that will be displayed in the first page of the new flow
+     *
+     * @param message Corresponds to raw text or a message property defined in a message bundle
+     */
+    void forkWithSuccessMessage(FormMessage message);
+    /**
+     * Fork the current flow.  The client session will be cloned and set to point at the realm's browser login flow.  The Response will be the result
+     * of this fork.  The previous flow will still be set at the current execution.  This is used by reset password when it sends an email.
+     * It sends an email linking to the current flow and redirects the browser to a new browser login flow.
+     *
+     * This method will set up an error message that will be displayed in the first page of the new flow
+     *
+     * @param message Corresponds to raw text or a message property defined in a message bundle
+     */
+    void forkWithErrorMessage(FormMessage message);
 }

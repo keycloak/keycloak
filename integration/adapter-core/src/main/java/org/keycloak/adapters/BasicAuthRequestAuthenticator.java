@@ -9,6 +9,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.BasicAuthHelper;
@@ -76,13 +77,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
     	    formparams.add(new BasicNameValuePair("username", username));
     	    formparams.add(new BasicNameValuePair("password", password));
 
-    	    if (deployment.isPublicClient()) {
-    	        formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, deployment.getResourceName()));
-    	    } else {
-    	        String authorization = BasicAuthHelper.createHeader(deployment.getResourceName(),
-    	                deployment.getResourceCredentials().get("secret"));
-    	        post.setHeader("Authorization", authorization);
-    	    }
+			ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
 
     	    UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
     	    post.setEntity(form);

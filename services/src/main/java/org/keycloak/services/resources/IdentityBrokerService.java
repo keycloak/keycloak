@@ -46,6 +46,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
@@ -190,8 +191,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             if (authResult != null) {
                 AccessToken token = authResult.getToken();
-                String audience = token.getAudience();
-                ClientModel clientModel = this.realmModel.getClientByClientId(audience);
+                String[] audience = token.getAudience();
+                ClientModel clientModel = this.realmModel.getClientByClientId(audience[0]);
 
                 if (clientModel == null) {
                     return badRequest("Invalid client.");
@@ -482,7 +483,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 .setSession(session)
                 .setUriInfo(uriInfo)
                 .setRequest(request);
-        if (errorMessage != null) processor.setForwardedErrorMessage(errorMessage);
+        if (errorMessage != null) processor.setForwardedErrorMessage(new FormMessage(null, errorMessage));
 
         try {
             return processor.authenticate();

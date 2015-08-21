@@ -164,11 +164,6 @@ public class AccessToken extends IDToken {
     }
 
     @Override
-    public AccessToken audience(String audience) {
-        return (AccessToken) super.audience(audience);
-    }
-
-    @Override
     public AccessToken subject(String subject) {
         return (AccessToken) super.subject(subject);
     }

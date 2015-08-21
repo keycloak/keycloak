@@ -104,6 +104,14 @@
                     impacts on performance.
                 </para>
             </simplesect>
+            <simplesect>
+                <title>Contact details removed from registration and account management</title>
+                <para>
+                    In the default theme we have now removed the contact details from the registration page and account management. The admin console now lists
+                    all the users attributes, not just contact specific attributes. The admin console also has the ability to add/remove attributes to a user.
+                    If you want to add contact details, please refer to the address theme included in the examples.
+                </para>
+            </simplesect>
         </section>
         <section>
             <title>Migrating to 1.3.0.Final</title>

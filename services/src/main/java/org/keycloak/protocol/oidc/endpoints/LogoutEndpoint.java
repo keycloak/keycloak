@@ -190,7 +190,7 @@ public class LogoutEndpoint {
     }
 
     private ClientModel authorizeClient() {
-        ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, realm);
+        ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, realm).getClient();
 
         if (client.isBearerOnly()) {
             throw new ErrorResponseException("invalid_client", "Bearer-only not allowed", Response.Status.BAD_REQUEST);
