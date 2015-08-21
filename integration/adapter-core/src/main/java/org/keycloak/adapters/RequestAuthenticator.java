@@ -52,10 +52,6 @@ public abstract class RequestAuthenticator {
             completeAuthentication(bearer, "KEYCLOAK");
             log.debug("Bearer AUTHENTICATED");
             return AuthOutcome.AUTHENTICATED;
-        } else if (deployment.isBearerOnly()) {
-            challenge = bearer.getChallenge();
-            log.debug("NOT_ATTEMPTED: bearer only");
-            return AuthOutcome.NOT_ATTEMPTED;
         }
 
         if (deployment.isEnableBasicAuth()) {
@@ -74,6 +70,12 @@ public abstract class RequestAuthenticator {
                 completeAuthentication(basicAuth, "BASIC");
                 return AuthOutcome.AUTHENTICATED;
             }
+        }
+
+        if (deployment.isBearerOnly()) {
+            challenge = bearer.getChallenge();
+            log.debug("NOT_ATTEMPTED: bearer only");
+            return AuthOutcome.NOT_ATTEMPTED;
         }
 
         if (log.isTraceEnabled()) {
