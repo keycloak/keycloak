@@ -22,4 +22,34 @@
         setting is enabled, the Keycloak adapter will handle all CORS preflight requests.  It will validate authenticated
         requests (protected resource requests), but will let unauthenticated requests (unprotected resource requests) pass through.
     </para>
+    <section>
+        <title>Handling CORS Yourself</title>
+        <para>
+            This section is for Java developers securing servlet-based applications using our servlet adapter.
+        </para>
+        <para>
+            If you don't like our CORS support you can handle it yourself in a filter or something.  One problem you will encounter is that our adapter will
+            may trigger for any CORS preflight OPTIONS requests to blindly secured URLs.  This will result in 302 redirection or 401 responses
+            for the preflight OPTIONS request.  To workaround this problem, you must modify your web.xml security constraints to let OPTIONS requests
+            through
+<programlisting><![CDATA[
+<security-constraint>
+     <web-resource-collection>
+         <web-resource-name>wholesale</web-resource-name>
+         <url-pattern>/*</url-pattern>
+         <http-method>GET</http-method>
+         <http-method>POST</http-method>
+         <http-method>PUT</http-method>
+         <http-method>DELETE</http-method>
+     </web-resource-collection>
+...
+</security-constraint>]]>
+
+</programlisting>
+        </para>
+        <para>
+            The above security constraint will secure all URLs, but only on GET, POST, PUT, and DELETE calls.  OPTIONS requests
+            will be let through.
+        </para>
+    </section>
 </chapter>
