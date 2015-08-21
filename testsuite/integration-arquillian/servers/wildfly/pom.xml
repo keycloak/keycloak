@@ -350,6 +350,15 @@
                                                 </parameter>
                                             </parameters>
                                         </transformationSet>
+                                        <!-- add logger for org.hibernate.dialect.Dialect -->
+                                        <transformationSet>
+                                            <dir>${keycloak.server.home}/standalone/configuration</dir>
+                                            <stylesheet>src/main/xslt/add-logger.xsl</stylesheet>
+                                            <includes>
+                                                <include>standalone.xml</include>
+                                            </includes>
+                                            <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
+                                        </transformationSet>
                                     </transformationSets>
                                 </configuration>
                             </execution>
@@ -359,5 +368,5 @@
             </build>
         </profile>        
     </profiles>
-            
+    
 </project>
