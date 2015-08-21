@@ -5,6 +5,7 @@
   "auth-server-url": "http://localhost:8081/auth",
   "ssl-required" : "external",
   "bearer-only" : true,
+  "enable-basic-auth": true,
   "enable-cors" : true
 
 }
