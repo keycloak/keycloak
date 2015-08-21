@@ -576,58 +576,6 @@ public class LoginActionsService {
         return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
     }
 
-    @Path("totp")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response updateTotp(@QueryParam("code") String code,
-                               final MultivaluedMap<String, String> formData) {
-        event.event(EventType.UPDATE_TOTP);
-        Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.CONFIGURE_TOTP.name())) {
-            return checks.response;
-        }
-        ClientSessionCode accessCode = checks.clientCode;
-        ClientSessionModel clientSession = accessCode.getClientSession();
-        UserSessionModel userSession = clientSession.getUserSession();
-        UserModel user = userSession.getUser();
-
-        initEvent(clientSession);
-
-        String totp = formData.getFirst("totp");
-        String totpSecret = formData.getFirst("totpSecret");
-
-        LoginFormsProvider loginForms = session.getProvider(LoginFormsProvider.class).setUser(user);
-        if (Validation.isBlank(totp)) {
-            return loginForms.setError(Messages.MISSING_TOTP)
-                    .setClientSessionCode(accessCode.getCode())
-                    .createResponse(RequiredAction.CONFIGURE_TOTP);
-        } else if (!CredentialValidation.validOTP(realm, totp, totpSecret)) {
-            return loginForms.setError(Messages.INVALID_TOTP)
-                    .setClientSessionCode(accessCode.getCode())
-                    .createResponse(RequiredAction.CONFIGURE_TOTP);
-        }
-
-        UserCredentialModel credentials = new UserCredentialModel();
-        credentials.setType(realm.getOTPPolicy().getType());
-        credentials.setValue(totpSecret);
-        session.users().updateCredential(realm, user, credentials);
-
-
-        // if type is HOTP, to update counter we execute validation based on supplied token
-        UserCredentialModel cred = new UserCredentialModel();
-        cred.setType(realm.getOTPPolicy().getType());
-        cred.setValue(totp);
-        session.users().validCredentials(realm, user, cred);
-
-        user.setOtpEnabled(true);
-
-        user.removeRequiredAction(RequiredAction.CONFIGURE_TOTP);
-
-        event.clone().event(EventType.UPDATE_TOTP).success();
-
-        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
-    }
-
     @Path("email-verification")
     @GET
     public Response emailVerification(@QueryParam("code") String code, @QueryParam("key") String key) {

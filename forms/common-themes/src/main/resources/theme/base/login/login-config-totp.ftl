@@ -5,7 +5,7 @@
     <#elseif section = "header">
         ${msg("loginTotpTitle")}
     <#elseif section = "form">
-        <form action="${url.loginUpdateTotpUrl}" class="${properties.kcFormClass!}" id="kc-totp-settings-form" method="post">
+        <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-totp-settings-form" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="otp" class="${properties.kcLabelClass!}">${msg("loginTotpOneTime")}</label>
