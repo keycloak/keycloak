@@ -628,67 +628,6 @@ public class LoginActionsService {
         return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
     }
 
-    @Path("password")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response updatePassword(@QueryParam("code") String code,
-                                   final MultivaluedMap<String, String> formData) {
-        event.event(EventType.UPDATE_PASSWORD);
-        Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.UPDATE_PASSWORD.name(), ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
-            return checks.response;
-        }
-        ClientSessionCode accessCode = checks.clientCode;
-        ClientSessionModel clientSession = accessCode.getClientSession();
-        UserSessionModel userSession = clientSession.getUserSession();
-        UserModel user = userSession.getUser();
-
-        initEvent(clientSession);
-
-        String passwordNew = formData.getFirst("password-new");
-        String passwordConfirm = formData.getFirst("password-confirm");
-
-        LoginFormsProvider loginForms = session.getProvider(LoginFormsProvider.class)
-                .setUser(user);
-        if (Validation.isBlank(passwordNew)) {
-            return loginForms.setError(Messages.MISSING_PASSWORD)
-                    .setClientSessionCode(accessCode.getCode())
-                    .createResponse(RequiredAction.UPDATE_PASSWORD);
-        } else if (!passwordNew.equals(passwordConfirm)) {
-            return loginForms.setError(Messages.NOTMATCH_PASSWORD)
-                    .setClientSessionCode(accessCode.getCode())
-                    .createResponse(RequiredAction.UPDATE_PASSWORD);
-        }
-
-        try {
-            session.users().updateCredential(realm, user, UserCredentialModel.password(passwordNew));
-        } catch (ModelException me) {
-            return loginForms.setError(me.getMessage(), me.getParameters())
-                    .setClientSessionCode(accessCode.getCode())
-                    .createResponse(RequiredAction.UPDATE_PASSWORD);
-        } catch (Exception ape) {
-            return loginForms.setError(ape.getMessage())
-                    .setClientSessionCode(accessCode.getCode())
-                    .createResponse(RequiredAction.UPDATE_PASSWORD);
-        }
-
-        user.removeRequiredAction(RequiredAction.UPDATE_PASSWORD);
-
-        event.event(EventType.UPDATE_PASSWORD).success();
-
-        if (clientSession.getAction().equals(ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
-            session.sessions().removeClientSession(realm, clientSession);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setSuccess(Messages.ACCOUNT_PASSWORD_UPDATED)
-                    .createInfoPage();
-        }
-
-        event = event.clone().event(EventType.LOGIN);
-
-        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
-    }
-
-
     @Path("email-verification")
     @GET
     public Response emailVerification(@QueryParam("code") String code, @QueryParam("key") String key) {
@@ -752,13 +691,11 @@ public class LoginActionsService {
         if (key != null) {
             Checks checks = new Checks();
             if (!checks.verifyCode(key, ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
-                event.error(Errors.RESET_CREDENTIAL_DISABLED);
-                return ErrorPage.error(session, Messages.INVALID_CODE);
+                return checks.response;
             }
-            ClientSessionCode accessCode = checks.clientCode;
-            return session.getProvider(LoginFormsProvider.class)
-                    .setClientSessionCode(accessCode.getCode())
-                    .createResponse(RequiredAction.UPDATE_PASSWORD);
+            ClientSessionModel clientSession = checks.clientCode.getClientSession();
+            clientSession.setNote("END_AFTER_REQUIRED_ACTIONS", "true");
+            return AuthenticationManager.nextActionAfterAuthentication(session, clientSession.getUserSession(), clientSession, clientConnection, request, uriInfo, event);
         } else {
             event.error(Errors.RESET_CREDENTIAL_DISABLED);
             return ErrorPage.error(session, Messages.INVALID_CODE);
@@ -843,6 +780,7 @@ public class LoginActionsService {
         }
 
         initEvent(clientSession);
+        event.event(EventType.CUSTOM_REQUIRED_ACTION);
 
 
         RequiredActionContextResult context = new RequiredActionContextResult(clientSession.getUserSession(), clientSession, realm, event, session, request, clientSession.getUserSession().getUser(), factory) {
@@ -865,9 +803,9 @@ public class LoginActionsService {
         };
         provider.processAction(context);
         if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
-            event.clone().event(EventType.CUSTOM_REQUIRED_ACTION)
-                         .detail(Details.CUSTOM_REQUIRED_ACTION, action).success();
+            event.clone().success();
             clientSession.getUserSession().getUser().removeRequiredAction(factory.getId());
+            event.event(EventType.LOGIN);
             return AuthenticationManager.nextActionAfterAuthentication(session, clientSession.getUserSession(), clientSession, clientConnection, request, uriInfo, event);
         }
         if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {

@@ -108,7 +108,7 @@ public class TermsAndConditionsTest {
 
         termsPage.declineTerms();
 
-        events.expectLogin().detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
+        events.expectLogin().event(EventType.CUSTOM_REQUIRED_ACTION_ERROR).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
                 .error(Errors.REJECTED_BY_USER)
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
