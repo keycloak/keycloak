@@ -5,14 +5,23 @@ import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.messages.Messages;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.util.Time;
 
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.concurrent.TimeUnit;
 
@@ -49,17 +58,48 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        LoginFormsProvider loginFormsProvider = context.getSession()
-                .getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(context.generateAccessCode(UserModel.RequiredAction.UPDATE_PASSWORD.name()))
-                .setUser(context.getUser());
-        Response challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
+        Response challenge = context.form().createForm("login-update-password.ftl");
         context.challenge(challenge);
     }
 
     @Override
     public void processAction(RequiredActionContext context) {
-        context.failure();
+        EventBuilder event = context.getEvent();
+        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        event.event(EventType.UPDATE_PASSWORD);
+        String passwordNew = formData.getFirst("password-new");
+        String passwordConfirm = formData.getFirst("password-confirm");
+
+        if (Validation.isBlank(passwordNew)) {
+            Response challenge = context.form()
+                    .setError(Messages.MISSING_PASSWORD)
+                    .createForm("login-update-password.ftl");
+            context.challenge(challenge);
+            return;
+        } else if (!passwordNew.equals(passwordConfirm)) {
+            Response challenge = context.form()
+                    .setError(Messages.NOTMATCH_PASSWORD)
+                    .createForm("login-update-password.ftl");
+            context.challenge(challenge);
+            return;
+        }
+
+        try {
+            context.getSession().users().updateCredential(context.getRealm(), context.getUser(), UserCredentialModel.password(passwordNew));
+            context.success();
+        } catch (ModelException me) {
+            Response challenge = context.form()
+                    .setError(me.getMessage(), me.getParameters())
+                    .createForm("login-update-password.ftl");
+            context.challenge(challenge);
+            return;
+        } catch (Exception ape) {
+            Response challenge = context.form()
+                    .setError(ape.getMessage())
+                    .createForm("login-update-password.ftl");
+            context.challenge(challenge);
+            return;
+        }
     }
 
     @Override

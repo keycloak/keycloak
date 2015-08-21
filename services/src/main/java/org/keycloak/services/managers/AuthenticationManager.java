@@ -32,6 +32,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.Urls;
@@ -57,6 +58,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class AuthenticationManager {
+    public static final String END_AFTER_REQUIRED_ACTIONS = "END_AFTER_REQUIRED_ACTIONS";
     protected static Logger logger = Logger.getLogger(AuthenticationManager.class);
     public static final String FORM_USERNAME = "username";
     // used for auth login
@@ -409,6 +411,15 @@ public class AuthenticationManager {
                                                   HttpRequest request, UriInfo uriInfo, EventBuilder event) {
         Response requiredAction = actionRequired(session, userSession, clientSession, clientConnection, request, uriInfo, event);
         if (requiredAction != null) return requiredAction;
+        if (clientSession.getNote(END_AFTER_REQUIRED_ACTIONS) != null) {
+            Response response = session.getProvider(LoginFormsProvider.class)
+                    .setAttribute("skipLink", true)
+                    .setSuccess(Messages.ACCOUNT_UPDATED)
+                    .createInfoPage();
+            session.sessions().removeUserSession(session.getContext().getRealm(), userSession);
+            return response;
+
+        }
         event.success();
         RealmModel realm = clientSession.getRealm();
         return redirectAfterSuccessfulFlow(session, realm , userSession, clientSession, request, uriInfo, clientConnection);

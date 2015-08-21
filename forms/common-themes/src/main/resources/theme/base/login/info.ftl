@@ -7,8 +7,11 @@
     <#elseif section = "form">
     <div id="kc-info-message">
         <p class="instruction">${message.summary}</p>
-        <#if client.baseUrl??>
-        <p><a href="${client.baseUrl}">${msg("backToApplication")}</a></p>
+        <#if skipLink??>
+        <#else>
+            <#if client.baseUrl??>
+                <p><a href="${client.baseUrl}">${msg("backToApplication")}</a></p>
+            </#if>
         </#if>
     </div>
     </#if>
