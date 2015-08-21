@@ -39,7 +39,7 @@ public class BaseAdapterConfig extends BaseRealmConfig {
     @JsonProperty("public-client")
     protected boolean publicClient;
     @JsonProperty("credentials")
-    protected Map<String, String> credentials = new HashMap<String, String>();
+    protected Map<String, Object> credentials = new HashMap<>();
 
 
     public boolean isUseResourceRoleMappings() {
@@ -114,11 +114,11 @@ public class BaseAdapterConfig extends BaseRealmConfig {
         this.enableBasicAuth = enableBasicAuth;
     }
 
-    public Map<String, String> getCredentials() {
+    public Map<String, Object> getCredentials() {
         return credentials;
     }
 
-    public void setCredentials(Map<String, String> credentials) {
+    public void setCredentials(Map<String, Object> credentials) {
         this.credentials = credentials;
     }
 

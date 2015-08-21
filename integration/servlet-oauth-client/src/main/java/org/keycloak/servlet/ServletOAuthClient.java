@@ -1,14 +1,10 @@
 package org.keycloak.servlet;
 
-import org.apache.http.client.HttpClient;
-import org.keycloak.AbstractOAuthClient;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
-import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.KeycloakUriBuilder;
 import org.keycloak.util.UriUtils;
 
@@ -22,24 +18,18 @@ import java.net.URI;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ServletOAuthClient extends AbstractOAuthClient {
-    protected HttpClient client;
-    protected AdapterConfig adapterConfig;
-
-    public void start() {
-        client = new HttpClientBuilder().build(adapterConfig);
-    }
+public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
 
     /**
      * closes client
      */
     public void stop() {
-        client.getConnectionManager().shutdown();
+        getDeployment().getClient().getConnectionManager().shutdown();
     }
 
     private AccessTokenResponse resolveBearerToken(HttpServletRequest request, String redirectUri, String code) throws IOException, ServerRequest.HttpFailure {
         // Don't send sessionId in oauth clients for now
-        return ServerRequest.invokeAccessCodeToToken(client, publicClient, code, getUrl(request, tokenUrl, false), redirectUri, clientId, credentials, null);
+        return ServerRequest.invokeAccessCodeToToken(getDeployment(), code, redirectUri, null);
     }
 
     /**
@@ -146,7 +136,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
     }
 
     public AccessTokenResponse refreshToken(HttpServletRequest request, String refreshToken) throws IOException, ServerRequest.HttpFailure {
-        return ServerRequest.invokeRefresh(client, publicClient, refreshToken, getUrl(request, tokenUrl, false), clientId, credentials);
+        return ServerRequest.invokeRefresh(getDeployment(), refreshToken);
     }
 
     public static IDToken extractIdToken(String idToken) {
@@ -166,9 +156,5 @@ public class ServletOAuthClient extends AbstractOAuthClient {
         } else {
             return url;
         }
-    }
-
-    public void setAdapterConfig(AdapterConfig adapterConfig) {
-        this.adapterConfig = adapterConfig;
     }
 }

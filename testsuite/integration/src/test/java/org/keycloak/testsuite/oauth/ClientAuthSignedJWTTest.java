@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.oauth;
 
+import java.security.PrivateKey;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -17,7 +18,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.ClientAuthAdapterUtils;
+import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.constants.ServiceAccountConstants;
 import org.keycloak.constants.ServiceUrlConstants;
@@ -238,8 +239,8 @@ public class ClientAuthSignedJWTTest {
 
     @Test
     public void testAssertionMissingIssuer() throws Exception {
-        String invalidJwt = ClientAuthAdapterUtils.createSignedJWT(null, getRealmInfoUrl(),
-                "classpath:client-auth-test/keystore-client1.jks", "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS, 10);
+        String invalidJwt = getClientSignedJWT(
+                "classpath:client-auth-test/keystore-client1.jks", "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS, null);
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
@@ -254,8 +255,8 @@ public class ClientAuthSignedJWTTest {
 
     @Test
     public void testAssertionUnknownClient() throws Exception {
-        String invalidJwt = ClientAuthAdapterUtils.createSignedJWT("unknown-client", getRealmInfoUrl(),
-                "classpath:client-auth-test/keystore-client1.jks", "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS, 10);
+        String invalidJwt = getClientSignedJWT(
+                "classpath:client-auth-test/keystore-client1.jks", "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS, "unknown-client");
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
@@ -339,24 +340,8 @@ public class ClientAuthSignedJWTTest {
     @Test
     public void testAssertionInvalidSignature() throws Exception {
         // JWT for client1, but signed by privateKey of client2
-        String invalidJwt =  ClientAuthAdapterUtils.createSignedJWT("client1", getRealmInfoUrl(),
-                "classpath:client-auth-test/keystore-client2.jks", "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS, 10);
-
-        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, invalidJwt));
-
-        HttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
-
-        assertError(response, "client1", "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
-    }
-
-    @Test
-    public void testAssertionInvalidAudience() throws Exception {
-        String invalidJwt = ClientAuthAdapterUtils.createSignedJWT("client1", "invalid-audience",
-                "classpath:client-auth-test/keystore-client1.jks", "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS, 10);
+        String invalidJwt =  getClientSignedJWT(
+                "classpath:client-auth-test/keystore-client2.jks", "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS, "client1");
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
@@ -491,17 +476,20 @@ public class ClientAuthSignedJWTTest {
 
 
     private String getClient1SignedJWT() {
-        return ClientAuthAdapterUtils.createSignedJWT("client1", getRealmInfoUrl(),
-                "classpath:client-auth-test/keystore-client1.jks", "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS, 10);
+        return getClientSignedJWT("classpath:client-auth-test/keystore-client1.jks", "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS, "client1");
     }
 
     private String getClient2SignedJWT() {
-        // keystore-client2.p12 doesn't work on Sun JDK due to restrictions on key length
-        // String keystoreFile = "classpath:client-auth-test/keystore-client2.p12";
+        return getClientSignedJWT("classpath:client-auth-test/keystore-client2.jks", "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS, "client2");
+    }
 
-        String keystoreFile = "classpath:client-auth-test/keystore-client2.jks";
-        return ClientAuthAdapterUtils.createSignedJWT("client2", getRealmInfoUrl(),
-                keystoreFile, "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS, 10);
+    private String getClientSignedJWT(String keystoreFile, String storePassword, String keyPassword, String keyAlias, KeystoreUtil.KeystoreFormat format, String clientId) {
+        PrivateKey privateKey = KeystoreUtil.loadPrivateKeyFromKeystore(keystoreFile, storePassword, keyPassword, keyAlias, format);
+
+        JWTClientCredentialsProvider jwtProvider = new JWTClientCredentialsProvider();
+        jwtProvider.setPrivateKey(privateKey);
+        jwtProvider.setTokenTimeout(10);
+        return jwtProvider.createSignedRequestToken(clientId, getRealmInfoUrl());
     }
 
     private String getRealmInfoUrl() {

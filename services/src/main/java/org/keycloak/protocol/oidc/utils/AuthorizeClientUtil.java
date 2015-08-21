@@ -1,5 +1,7 @@
 package org.keycloak.protocol.oidc.utils;
 
+import java.util.Map;
+
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.events.EventBuilder;
@@ -17,7 +19,7 @@ import javax.ws.rs.core.Response;
  */
 public class AuthorizeClientUtil {
 
-    public static ClientModel authorizeClient(KeycloakSession session, EventBuilder event, RealmModel realm) {
+    public static ClientAuthResult authorizeClient(KeycloakSession session, EventBuilder event, RealmModel realm) {
         AuthenticationFlowModel clientAuthFlow = realm.getClientAuthenticationFlow();
         String flowId = clientAuthFlow.getId();
 
@@ -40,7 +42,26 @@ public class AuthorizeClientUtil {
             throw new ErrorResponseException("invalid_client", "Client authentication was successful, but client is null", Response.Status.BAD_REQUEST);
         }
 
-        return client;
+        return new ClientAuthResult(client, processor.getClientAuthAttributes());
+    }
+
+    public static class ClientAuthResult {
+
+        private final ClientModel client;
+        private final Map<String, String> clientAuthAttributes;
+
+        private ClientAuthResult(ClientModel client, Map<String, String> clientAuthAttributes) {
+            this.client = client;
+            this.clientAuthAttributes = clientAuthAttributes;
+        }
+
+        public ClientModel getClient() {
+            return client;
+        }
+
+        public Map<String, String> getClientAuthAttributes() {
+            return clientAuthAttributes;
+        }
     }
 
 }

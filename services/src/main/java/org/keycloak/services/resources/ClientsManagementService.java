@@ -153,7 +153,7 @@ public class ClientsManagementService {
     }
 
     protected ClientModel authorizeClient() {
-        ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, realm);
+        ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, realm).getClient();
 
         if (client.isPublicClient()) {
             Map<String, String> error = new HashMap<String, String>();

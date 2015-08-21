@@ -30,7 +30,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
     protected static Logger logger = Logger.getLogger(JWTClientAuthenticator.class);
 
-    public static final String PROVIDER_ID = "client-signed-jwt";
+    public static final String PROVIDER_ID = "client-jwt";
     public static final String CERTIFICATE_ATTR = "jwt.credential.certificate";
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {

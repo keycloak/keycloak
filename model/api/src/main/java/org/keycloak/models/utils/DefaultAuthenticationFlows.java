@@ -304,7 +304,7 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(clients.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
-        execution.setAuthenticator("client-signed-jwt");
+        execution.setAuthenticator("client-jwt");
         execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);

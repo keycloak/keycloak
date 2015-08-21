@@ -5,6 +5,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.enums.TokenStore;
@@ -253,13 +254,23 @@ public class AdapterDeploymentContext {
         }
 
         @Override
-        public Map<String, String> getResourceCredentials() {
+        public Map<String, Object> getResourceCredentials() {
             return delegate.getResourceCredentials();
         }
 
         @Override
-        public void setResourceCredentials(Map<String, String> resourceCredentials) {
+        public void setResourceCredentials(Map<String, Object> resourceCredentials) {
             delegate.setResourceCredentials(resourceCredentials);
+        }
+
+        @Override
+        public void setClientAuthenticator(ClientCredentialsProvider clientAuthenticator) {
+            delegate.setClientAuthenticator(clientAuthenticator);
+        }
+
+        @Override
+        public ClientCredentialsProvider getClientAuthenticator() {
+            return delegate.getClientAuthenticator();
         }
 
         @Override
