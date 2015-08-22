@@ -123,12 +123,12 @@ public class RequiredActionMultipleActionsTest {
     public String updateProfile(String sessionId) {
         updateProfilePage.update("New first", "New last", "new@email.com");
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction(EventType.UPDATE_PROFILE);
+        AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com");
         if (sessionId != null) {
             expectedEvent.session(sessionId);
         }
         sessionId = expectedEvent.assertEvent().getSessionId();
-        events.expectRequiredAction(EventType.UPDATE_EMAIL).session(sessionId).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_PROFILE).session(sessionId).assertEvent();
         return sessionId;
     }
 
