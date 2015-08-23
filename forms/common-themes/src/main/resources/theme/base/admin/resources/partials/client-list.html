@@ -33,7 +33,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr ng-repeat="client in clients | filter:search">
+        <tr ng-repeat="client in clients | filter:search | orderBy:'clientId'">
             <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></td>
             <td>{{client.enabled}}</td>
             <td ng-class="{'text-muted': !client.baseUrl}">
