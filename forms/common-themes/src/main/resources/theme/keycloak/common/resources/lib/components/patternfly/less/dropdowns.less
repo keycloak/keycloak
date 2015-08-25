@@ -1,0 +1,145 @@
+//
+// Dropdowns
+// --------------------------------------------------
+
+
+// Dropdown arrow/caret
+// Modified to use Font Awesome's angle-down icon
+.caret {
+  font-family: @icon-font-name-fa;
+  font-weight: normal;
+  height: @font-size-base - 3;
+  position: relative;
+  vertical-align: baseline;
+  width: @font-size-base;
+  &:before {
+    bottom: 0;
+    content: @fa-var-angle-down;
+    left: 0;
+    line-height: @font-size-base;
+    position: absolute;
+    text-align: center;
+    top: -1px;
+    right: 0;
+  }
+}
+
+// The dropdown menu (ul)
+.dropdown-menu {
+  // Dividers (basically an hr) within the dropdown
+  .divider {
+    .nav-divider(@dropdown-divider-bg, @dropdown-divider-margin);
+  }
+  // Links within the dropdown menu
+  > li > a {
+    border-color: transparent;
+    border-style: solid;
+    border-width: 1px 0;
+    padding: 1px 10px;
+  }
+}
+
+// Hover/Focus state
+.dropdown-menu > li > a {
+  &:hover, &:focus {
+    border-color: @dropdown-link-hover-border-color;
+    .reset-filter();
+  }
+  &:active {
+    background-color: @dropdown-link-focus-bg;
+    border-color: @dropdown-link-active-border-color;
+    color: @dropdown-link-focus-color !important;
+    .reset-filter();
+  }
+}
+
+// Active state
+.dropdown-menu > .active > a {
+  &,
+  &:hover,
+  &:focus {
+    background-color: @dropdown-link-active-bg !important;
+    border-color: @dropdown-link-active-border-color !important;
+    .reset-filter();
+  }
+}
+
+// Disabled state
+.dropdown-menu > .disabled > a {
+  &,
+  &:hover,
+  &:focus {
+    border-color: transparent;
+  }
+}
+// Nuke hover/focus effects
+.dropdown-menu > .disabled > a {
+  &:hover,
+  &:focus {
+    border-color: transparent;
+  }
+}
+
+// Dropdown section headers
+.dropdown-header {
+  padding-left: 10px;
+  padding-right: 10px;
+  text-transform: uppercase;
+}
+
+// Position Menu closer to button
+.btn-group, .input-group-btn {
+  > .dropdown-menu {
+    margin-top: -1px;
+  }
+}
+
+// Position Menu closer to button (dropup-menu)
+.dropup .dropdown-menu {
+  margin-bottom: -1px;
+}
+
+// Add back styles for dropdown-submenu
+.dropdown-submenu {
+  position:relative;
+  &:hover {
+    > a {
+      background-color: @dropdown-link-hover-bg;
+      border-color: @dropdown-link-hover-border-color;
+    }
+    > .dropdown-menu {
+      display: block;
+    }
+  }
+  &.pull-left {
+    float: none !important;
+    > .dropdown-menu {
+      left: auto;
+      margin-left: 10px;
+      right: 100%;
+    }
+  }
+  > a {
+    padding-right: 20px !important;
+    &:after {
+      content: @fa-var-angle-right;
+      font-family: @icon-font-name-fa;
+      display: block;
+      position: absolute;
+      right: 10px;
+      top: 2px;
+    }
+  }
+  > .dropdown-menu {
+    left: 100%;
+    margin-top: 0;
+    top: -6px;
+  }
+  .dropup & > .dropdown-menu {
+    bottom: -5px;
+    top: auto;
+  }
+  .open &.active > .dropdown-menu {
+    display: block;
+  }
+}

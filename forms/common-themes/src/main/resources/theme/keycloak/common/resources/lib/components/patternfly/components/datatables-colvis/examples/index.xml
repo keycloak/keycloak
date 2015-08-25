@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dt-example table-type="html" order="0">
+
+<title lib="ColVis">ColVis examples</title>
+
+<js lib="jquery" />
+<info><![CDATA[
+
+ColVis adds a button to the toolbars around DataTables which gives the end user of the table the ability to dynamically change the visibility of the columns in the table:
+
+* Dynamically show and hide columns in a table
+* Very easy integration with DataTables
+* Ability to exclude columns from being either hidden or shown
+* Save saving integration with DataTables
+
+]]></info>
+
+</dt-example>
