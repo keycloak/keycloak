@@ -21,7 +21,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
-import org.junit.Ignore;
 import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import org.keycloak.testsuite.console.page.users.UserAttributes;
@@ -56,16 +55,6 @@ public class UserAttributesTest extends AbstractUserTest {
         assertFlashMessageDanger();
     }
 
-    @Ignore
-    @Test
-    public void longUsername() {
-        String longUserName = "thisisthelongestnameeveranditcannotbeusedwhencreatingnewuserinkeycloak";
-        newTestRealmUser.setUsername(longUserName);
-        createUser(newTestRealmUser);
-        assertFlashMessageDanger();
-        assertNull(users.table().findUser(newTestRealmUser.getUsername()));
-    }
-
     @Test
     public void existingUser() {
         String testUsername = "test_duplicated_user";
@@ -89,7 +78,7 @@ public class UserAttributesTest extends AbstractUserTest {
         disabledUser.setUsername("disabled_user");
         createUser(disabledUser);
         assertFlashMessageSuccess();
-        // TODO try to log in        
+        // TODO try to log in
     }
 
 }
