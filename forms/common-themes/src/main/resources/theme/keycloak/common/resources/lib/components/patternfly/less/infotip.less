@@ -1,0 +1,149 @@
+//
+// Info Tip
+// --------------------------------------------------
+
+// Overwrites for navbar.less
+.navbar-nav > li > .dropdown-menu.infotip {
+  border-top-width: 1px !important;
+  margin-top: @popover-arrow-width;
+}
+
+// Overwrites for PatternFly - navbar.less
+@media (max-width: @grid-float-breakpoint-max) {
+  .navbar-pf .navbar-nav .open .dropdown-menu.infotip {
+    background-color: #fff !important;
+    margin-top: 0;
+  }
+}
+
+// Extends "dropdown-menu"
+.infotip {
+  min-width: 235px;
+  padding: 0;
+  .list-group {
+    border-top: 0;
+    margin: 0;
+    padding: 8px 0;
+    .list-group-item {
+      border: none;
+      margin: 0 15px 0 34px;
+      padding: 5px 0;
+      > .i {
+        color: @gray-pf;
+        font-size: 13px;
+        left: -20px;
+        position: absolute;
+        top: 8px;
+      }
+      > a {
+        color: @gray-pf;
+        line-height: 13px;
+      }
+      > .close {
+        float: right;
+      }
+    }
+  }
+  .footer {
+    background-color: #f5f5f5;
+    padding: 6px 15px;
+    a:hover {
+      color: @link-color;
+    }
+  }
+}
+
+// Arrows (Copy from popovers.less)
+//
+// .arrow is outer, .arrow:after is inner
+
+.infotip .arrow {
+  &,
+  &:after {
+    border-color: transparent;
+    border-style: solid;
+    display: block;
+    height: 0;
+    position: absolute;
+    width: 0;
+  }
+}
+.infotip .arrow {
+  border-width: @popover-arrow-outer-width;
+}
+.infotip .arrow:after {
+  border-width: @popover-arrow-width;
+  content: "";
+}
+
+.infotip {
+  &.bottom .arrow,
+  &.bottom-left .arrow,
+  &.bottom-right .arrow {
+    border-bottom-color: @popover-arrow-outer-fallback-color; // IE8 fallback
+    border-bottom-color: @popover-arrow-outer-color;
+    border-top-width: 0;
+    left: 50%;
+    margin-left: -@popover-arrow-outer-width;
+    top: -@popover-arrow-outer-width;
+    &:after {
+      border-top-width: 0;
+      border-bottom-color: @popover-arrow-color;
+      content: " ";
+      margin-left: -@popover-arrow-width;
+      top: 1px;
+    }
+  }
+  &.bottom-left .arrow {
+    left: 20%;
+  }
+  // Default:
+  &.bottom-right .arrow {
+    left: 80%;
+  }
+  &.top .arrow {
+    border-bottom-width: 0;
+    border-top-color: @popover-arrow-outer-fallback-color; // IE8 fallback
+    border-top-color: @popover-arrow-outer-color;
+    bottom: -@popover-arrow-outer-width;
+    left: 50%;
+    margin-left: -@popover-arrow-outer-width;
+    &:after {
+      border-bottom-width: 0;
+      border-top-color: #f5f5f5;
+      bottom: 1px;
+      content: " ";
+      margin-left: -@popover-arrow-width;
+    }
+  }
+  &.right .arrow {
+    border-left-width: 0;
+    border-right-color: @popover-arrow-outer-fallback-color; // IE8 fallback
+    border-right-color: @popover-arrow-outer-color;
+    left: -@popover-arrow-outer-width;
+    margin-top: -@popover-arrow-outer-width;
+    top: 50%;
+    &:after {
+      bottom: -@popover-arrow-width;
+      border-left-width: 0;
+      border-right-color: @popover-arrow-color;
+      content: " ";
+      left: 1px;
+    }
+  }
+  &.left .arrow {
+    border-left-color: @popover-arrow-outer-fallback-color; // IE8 fallback
+    border-left-color: @popover-arrow-outer-color;
+    border-right-width: 0;
+    margin-top: -@popover-arrow-outer-width;
+    right: -@popover-arrow-outer-width;
+    top: 50%;
+    &:after {
+      border-left-color: @popover-arrow-color;
+      border-right-width: 0;
+      bottom: -@popover-arrow-width;
+      content: " ";
+      right: 1px;
+    }
+  }
+}

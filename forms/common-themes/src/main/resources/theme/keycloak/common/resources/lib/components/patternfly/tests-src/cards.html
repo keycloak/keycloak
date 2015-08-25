@@ -1,0 +1,190 @@
+---
+categories: [Layouts]
+css-extra: false
+layout: cards
+resource: true
+title: Cards
+url-js-extra: ['!URL_COMPONENTS!matchHeight/jquery.matchHeight-min.js']
+weight: 8
+---
+{% include layouts-navbar-primary.html %}
+    <div class="container-fluid container-cards-pf">
+      <div class="row row-cards-pf">
+        <div class="col-xs-6 col-sm-4 col-md-2">
+          <div class="card-pf card-pf-accented">
+            <h2 class="card-pf-title">
+              Card Title
+            </h2>
+            <div class="card-pf-body">
+              <p>
+                [card contents]
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xs-6 col-sm-4 col-md-2">
+          <div class="card-pf card-pf-accented">
+            <h2 class="card-pf-title">
+              Card Title
+            </h2>
+            <div class="card-pf-body">
+              <p>
+                [card contents]
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xs-6 col-sm-4 col-md-2">
+          <div class="card-pf card-pf-accented">
+            <h2 class="card-pf-title">
+              Card Title
+            </h2>
+            <div class="card-pf-body">
+              <p>
+                [card contents]
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xs-6 col-sm-4 col-md-2">
+          <div class="card-pf card-pf-accented">
+            <h2 class="card-pf-title">
+              Card Title
+            </h2>
+            <div class="card-pf-body">
+              <p>
+                [card contents]
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xs-6 col-sm-4 col-md-2">
+          <div class="card-pf card-pf-accented">
+            <h2 class="card-pf-title">
+              Card Title
+            </h2>
+            <div class="card-pf-body">
+              <p>
+                [card contents]
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xs-6 col-sm-4 col-md-2">
+          <div class="card-pf card-pf-accented">
+            <h2 class="card-pf-title">
+              Card Title
+            </h2>
+            <div class="card-pf-body">
+              <p>
+                [card contents]
+              </p>
+            </div>
+          </div>
+        </div>
+      </div><!-- /row -->
+      <div class="row row-cards-pf">
+        <div class="col-xs-6 col-sm-5 col-md-5">
+          <div class="card-pf">
+            <h2 class="card-pf-title">
+              Card Title
+            </h2>
+            <div class="card-pf-body">
+              <p>[card contents]</p>
+            </div>
+            <div class="card-pf-footer">
+              <p><a href="#">Footer link</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xs-6 col-sm-7 col-md-7">
+          <div class="card-pf">
+            <h2 class="card-pf-title">
+              Card Title
+            </h2>
+            <div class="card-pf-body">
+              <p>[card contents]</p>
+            </div>
+          </div>
+        </div>
+      </div><!-- /row -->
+      <div class="row row-cards-pf">
+        <div class="col-xs-6 col-sm-3 col-md-3">
+          <div class="card-pf">
+            <div class="card-pf-heading">
+              <h2 class="card-pf-title">
+                Card Title
+              </h2>
+            </div>
+            <div class="card-pf-body">
+              <p>[card contents]</p>
+            </div>
+            <div class="card-pf-footer">
+              <p><a href="#">Footer link</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xs-6 col-sm-9 col-md-9">
+          <div class="card-pf">
+            <div class="card-pf-heading">
+              <h2 class="card-pf-title">
+                Card Title
+              </h2>
+            </div>
+            <div class="card-pf-body">
+              <p>[card contents]</p>
+            </div>
+            <div class="card-pf-footer">
+              <p><a href="#">Footer link</a></p>
+            </div>
+          </div>
+        </div>
+      </div><!-- /row -->
+      <div class="row row-cards-pf">
+        <div class="col-xs-6 col-sm-8 col-md-8">
+          <div class="card-pf">
+            <div class="card-pf-body">
+              <p>[card contents]</p>
+            </div>
+            <div class="card-pf-footer">
+              <p><a href="#">Footer link</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xs-6 col-sm-4 col-md-4">
+          <div class="card-pf">
+            <div class="card-pf-body">
+              <p>[card contents]</p>
+            </div>
+            <div class="card-pf-footer">
+              <p><a href="#">Footer link</a></p>
+            </div>
+          </div>
+        </div>
+      </div><!-- /row -->
+      <div class="row row-cards-pf">
+        <div class="col-xs-6 col-sm-6 col-md-6">
+          <div class="card-pf">
+            <div class="card-pf-body">
+              <p>[card contents]</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+          <div class="card-pf">
+            <div class="card-pf-body">
+              <p>[card contents]</p>
+            </div>
+          </div>
+        </div>
+      </div><!-- /row -->
+    </div><!-- /container -->
+    <script>
+      $(function() {
+        // matchHeight the contents of each .card-pf and then the .card-pf itself
+        $(".row-cards-pf > [class*='col'] > .card-pf .card-pf-title").matchHeight();
+        $(".row-cards-pf > [class*='col'] > .card-pf > .card-pf-body").matchHeight();
+        $(".row-cards-pf > [class*='col'] > .card-pf > .card-pf-footer").matchHeight();
+        $(".row-cards-pf > [class*='col'] > .card-pf").matchHeight();
+      });
+    </script>

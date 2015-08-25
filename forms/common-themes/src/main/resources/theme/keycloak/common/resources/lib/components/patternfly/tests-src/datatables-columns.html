@@ -1,0 +1,34 @@
+---
+alert-message: ', <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>, and <a href="http://datatables.net" class="alert-link">http://datatables.net</a>.'
+categories: [Widgets]
+layout: page
+title: Data Tables with column visibility, reordering
+resource: true
+url-js-extra: ['!URL_COMPONENTS!datatables/media/js/jquery.dataTables.js', '!URL_COMPONENTS!datatables-colvis/js/dataTables.colVis.js', '!URL_COMPONENTS!datatables-colreorder/js/dataTables.colReorder.js']
+---
+{% include datatable.html %}
+      <script>
+        $(document).ready(function() {
+          // Initialize Datatables
+          var table = $('.datatable').DataTable({
+            // Customize the header and footer
+            "dom": 'R<"dataTables_header"fCi>t<"dataTables_footer"p>',
+            // Customize the ColVis button text so it's an icon and align the dropdown to the right side
+            "colVis": {
+              "buttonText": "<i class='fa fa-columns'></i>",
+              "sAlign": "right"
+            }
+          });
+          // On click of ColVis_Button, add Bootstrap classes and...
+          $(".ColVis_Button").addClass("btn btn-default dropdown-toggle").click(function() {
+            // Add Bootstrap classes to ColVis_Button's parent
+            $(this).parent(".ColVis").addClass("btn-group open");
+            // Add Bootstrap classes to the checkboxes
+            $(".ColVis_collection label").addClass("checkbox");
+            // Remove class from ColVis when clicking outside ColVis_Collection
+            $(".ColVis_collectionBackground, .ColVis_catcher").click(function() {
+              $(".ColVis").removeClass("open");
+            });
+          });
+        });
+      </script>
