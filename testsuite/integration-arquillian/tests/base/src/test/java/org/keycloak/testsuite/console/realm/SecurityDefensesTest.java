@@ -41,8 +41,8 @@ public class SecurityDefensesTest extends AbstractRealmTest {
     @Test
     @Ignore // TODO
     public void securitySettingsTest() {
-        securityDefenses.goToAndEnableBruteForceProtectionTab();
         //TODO:
-
+        securityDefenses.goToBruteForceDetection();
+        securityDefenses.bruteForceDetection().form().setMaxLoginFailures("5");
     }
 }
