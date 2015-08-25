@@ -38,7 +38,7 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
     @Before
     public void beforeCredentialsTest() {
         configure().authentication();
-        passwordPolicy.passwordPolicy();
+        passwordPolicy.tabs().passwordPolicy();
     }
 
     @Test
