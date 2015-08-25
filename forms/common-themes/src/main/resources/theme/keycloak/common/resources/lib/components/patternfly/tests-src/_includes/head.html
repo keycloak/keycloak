@@ -1,0 +1,28 @@
+  {% strip %}<head>
+    <title>{% if page.title %}{{ page.title }} - {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../dist/img/favicon.ico">
+    <!-- iPad retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../dist/img/apple-touch-icon-precomposed-152.png">
+    <!-- iPad retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../dist/img/apple-touch-icon-precomposed-144.png">
+    <!-- iPad non-retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="../dist/img/apple-touch-icon-precomposed-76.png">
+    <!-- iPad non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../dist/img/apple-touch-icon-precomposed-72.png">
+    <!-- iPhone 6 Plus icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="../dist/img/apple-touch-icon-precomposed-180.png">
+    <!-- iPhone retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../dist/img/apple-touch-icon-precomposed-114.png">
+    <!-- iPhone non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="../dist/img/apple-touch-icon-precomposed-57.png">
+    <link href="{{site.url-css-main}}" rel="stylesheet" media="screen, print">
+    <link href="{{site.url-css-additions}}" rel="stylesheet" media="screen, print">
+    {% if page.css-extra %}<link href="{% if page.url-css-extra %}{{ page.url-css-extra }}{% else %}{{ site.url-css-extra }}{% endif %}" rel="stylesheet" media="screen, print">{% endif %}
+    <script src="{{site.url-jquery}}"></script>
+    <script src="{{site.url-components}}bootstrap/dist/js/bootstrap.min.js"></script>
+    {% if page.url-js-extra %}{% for urlextrajs in page.url-js-extra %}
+    <script src="{{ urlextrajs | replace: '!URL_COMPONENTS!', site.url-components }}"></script>
+    {% endfor %}{% endif %}
+    <script src="{{site.url-js}}"></script>
+  </head>{% endstrip %}

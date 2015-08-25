@@ -1,0 +1,29 @@
+---
+categories: [Layouts]
+css-extra: false
+layout: layout
+title: Basic
+resource: true
+url-js-extra: '!URL_COMPONENTS!datatables/media/js/jquery.dataTables.js'
+weight: 1
+---
+{% include layouts-navbar-primary.html %}
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-md-12">
+          <ol class="breadcrumb">
+            <li><a href="#">Home</a></li>
+            <li>{{ page.title }}</li>
+          </ol>
+          <h1>{{ page.title }}</h1>
+{% include datatable.html %}
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum eget eros tincidunt, semper ante nec, dapibus ante.</p>
+        </div><!-- /col -->
+      </div><!-- /row -->
+    </div><!-- /container -->
+    <script>
+      // Initialize Datatables
+      $(document).ready( function() {
+        $('.datatable').dataTable();
+      });
+    </script>

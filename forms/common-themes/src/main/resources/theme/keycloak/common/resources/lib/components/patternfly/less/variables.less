@@ -1,0 +1,230 @@
+//
+// Variables
+// --------------------------------------------------
+// Bootstrap overrides and PatternFly-specific variables
+
+// PatternFly-specific
+// -------------------
+@btn-default-bg-img-start:                                          #fafafa;
+@btn-default-bg-img-stop:                                           #ededed;
+@btn-xs-font-weight:                                                400;
+@card-pf-accented-border-top-color:                                 #39a5dc;
+@card-pf-bg-color:                                                  #fff;
+@card-pf-border-color:                                              #d1d1d1;
+@card-pf-border-top-color:                                          transparent;
+@card-pf-container-bg-color:                                        #f5f5f5;
+@card-pf-footer-bg-color:                                           #fafafa;
+@dropdown-divider-margin:                                           4px 1px;
+@dropdown-link-active-border-color:                                 #0076b7;
+@dropdown-link-hover-border-color:                                  #b3d3e7;
+@dropdown-link-focus-color:                                         #fff;
+@font-family-monospace:                                             Menlo, Monaco, Consolas, monospace;
+@fa-font-path:                                                      "../../components/font-awesome/fonts";
+@font-path:                                                         "../fonts";
+@gray-light-pf:                                                     #aaa;
+@gray-pf:                                                           #4d5258;
+@icon-font-name-fa:                                                 "FontAwesome";
+@icon-font-name-pf:                                                 "PatternFlyIcons-webfont";
+@icon-prefix:                                                       pficon;
+@img-bg-login:                                                      "bg-login.jpg";
+@img-path:                                                          "../img";
+@img-spinner:                                                       "spinner.gif";
+@img-spinner-lg:                                                    "spinner-lg.gif";
+@img-spinner-sm:                                                    "spinner-sm.gif";
+@img-spinner-xs:                                                    "spinner-xs.gif";
+@input-border-disabled:                                             #d4d4d4;
+@input-border-hover:                                                #7BB2DD;
+@list-group-top-border:                                             #e9e8e8;
+@login-bg-color:                                                    #080808;
+@login-container-bg-color:                                          #181818;
+@login-container-bg-color-rgba:                                     rgba(255, 255, 255, 0.055);
+@modal-title-padding-horizontal:                                    18px;
+@modal-title-padding-vertical:                                      10px;
+@navbar-pf-active-color:                                            #f1f1f1;
+@navbar-pf-bg-color:                                                #030303; //#393F45
+@navbar-pf-border-color:                                            #199dde;
+@navbar-pf-color:                                                   #cfcfcf;
+@navbar-pf-icon-bar-bg-color:                                       #fff;
+@navbar-pf-navbar-navbar-brand-min-width:                           270px;
+@navbar-pf-navbar-navbar-brand-padding:                             8px 0 7px;
+@navbar-pf-navbar-navbar-persistent-bg-color:                       #f6f6f6;
+@navbar-pf-navbar-navbar-persistent-border-color:                   #cecdcd;
+@pagination-padding-small-vertical:                                 0;
+@panel-default-border-color:                                        #bebdbd;
+@sidebar-pf-bg:                                                     #fafafa;
+@sidebar-pf-border-color:                                           #d0d0d0;
+@table-border-hover:                                                #a7cadf;
+@table-cell-padding-bottom:                                         3px;
+@table-cell-padding-top:                                            2px;
+// Reference variables declared in block above
+@img-path-alt:                                                      @img-path;
+@navbar-pf-navbar-header-border-color:                              lighten(@navbar-pf-bg-color, 15%);
+@navbar-pf-navbar-nav-active-active-bg-color:                       lighten(@navbar-pf-bg-color, 8%);
+@navbar-pf-navbar-nav-active-active-open-bg-color:                  lighten(@navbar-pf-bg-color, 11%);
+@navbar-pf-navbar-nav-active-bg-color:                              lighten(@navbar-pf-bg-color, 12.5%);
+@navbar-pf-navbar-primary-bg-color-start:                           lighten(@navbar-pf-bg-color, 10%); // #474C50;
+@navbar-pf-navbar-primary-bg-color-stop:                            @navbar-pf-bg-color; // #383F43;
+@navbar-pf-navbar-utility-border-color:                             lighten(@navbar-pf-bg-color, 15.5%);
+@navbar-pf-navbar-utility-color:                                    @navbar-pf-color;
+@navbar-pf-navbar-utility-hover-bg-color:                           lighten(@navbar-pf-bg-color, 12.5%);
+@nav-tabs-color:                                                    @gray-pf;
+// Reference variables declared in block above
+@navbar-pf-navbar-primary-context-bg-color-start:                   lighten(@navbar-pf-navbar-primary-bg-color-start, 8.5%);
+@navbar-pf-navbar-primary-context-bg-color-stop:                    lighten(@navbar-pf-navbar-primary-bg-color-stop, 11%);
+@navbar-pf-navbar-primary-hover-bg-color-start:                     lighten(@navbar-pf-navbar-primary-bg-color-start, 10%);
+@navbar-pf-navbar-primary-hover-bg-color-stop:                      lighten(@navbar-pf-navbar-primary-bg-color-stop, 10%);
+@navbar-pf-navbar-primary-hover-border-color:                       lighten(@navbar-pf-navbar-header-border-color, 20%);
+@navbar-pf-navbar-primary-context-border-color:                     lighten(@navbar-pf-navbar-header-border-color, 8%);
+@navbar-pf-navbar-primary-context-border-top-color:                 lighten(@navbar-pf-navbar-header-border-color, 7%);
+@navbar-pf-navbar-utility-hover-border-color:                       lighten(@navbar-pf-navbar-utility-border-color, 5%);
+@navbar-pf-navbar-utility-open-bg-color:                            lighten(@navbar-pf-navbar-utility-hover-bg-color, 7.5%);
+@navbar-pf-navbar-utility-open-border-color:                        lighten(@navbar-pf-navbar-utility-hover-border-color, 5%);
+// Reference variables declared in block above
+@navbar-pf-navbar-primary-active-bg-color-start:                    lighten(@navbar-pf-navbar-primary-hover-bg-color-start, 5%);
+@navbar-pf-navbar-primary-active-bg-color-stop:                     lighten(@navbar-pf-navbar-primary-hover-bg-color-stop, 7.5%);
+@navbar-pf-navbar-primary-active-border-color:                      lighten(@navbar-pf-navbar-primary-hover-border-color, 5%);
+@navbar-pf-navbar-primary-context-hover-bg-color-start:             lighten(@navbar-pf-navbar-primary-context-bg-color-start, 5%);
+@navbar-pf-navbar-primary-context-hover-bg-color-stop:              lighten(@navbar-pf-navbar-primary-context-bg-color-stop, 7.5%);
+@navbar-pf-navbar-primary-context-hover-border-color:               lighten(@navbar-pf-navbar-primary-context-border-color, 5%);
+@navbar-pf-navbar-primary-context-hover-border-top-color:           lighten(@navbar-pf-navbar-primary-context-border-top-color, 6%);
+// Reference variables declared in block above
+@navbar-pf-navbar-primary-context-active-bg-color-start:            lighten(@navbar-pf-navbar-primary-context-hover-bg-color-start, 5%);
+@navbar-pf-navbar-primary-context-active-bg-color-stop:             lighten(@navbar-pf-navbar-primary-context-hover-bg-color-stop, 7.5%);
+@navbar-pf-navbar-primary-context-active-border-color:              lighten(@navbar-pf-navbar-primary-context-hover-border-color, 5%);
+@navbar-pf-navbar-primary-context-active-border-top-color:          lighten(@navbar-pf-navbar-primary-context-hover-border-top-color, 6%);
+// References variable declared in block above
+@navbar-pf-navbar-primary-context-active-border-right-color:        @navbar-pf-navbar-primary-context-active-border-color;
+
+
+// Bootstrap overrides
+// -------------------
+@alert-info-border:                                                 #ccc;
+@alert-link-font-weight:                                            500;
+@alert-padding:                                                     7px;
+@body-bg:                                                           #ffffff;
+@border-radius-base:                                                1px;
+@brand-danger:                                                      #cc0000;
+@brand-info:                                                        #006e9c;
+@brand-primary:                                                     #00a8e1;
+@brand-success:                                                     #3f9c35;
+@brand-warning:                                                     #ec7a08;
+@breadcrumb-bg:                                                     transparent;
+@breadcrumb-separator:                                              "\f105";
+@btn-danger-bg:                                                     #a30000;
+@btn-danger-border:                                                 #781919;
+@btn-default-border:                                                #b7b7b7;
+@btn-font-weight:                                                   600;
+@btn-primary-bg:                                                    #0085cf;
+@btn-primary-border:                                                #006e9c;
+@caret-width-base:                                                  0;
+@dropdown-border:                                                   #b6b6b6;
+@dropdown-divider-bg:                                               #e5e5e5;
+@dropdown-link-active-color:                                        #fff;
+@dropdown-link-hover-bg:                                            #d4edfa;
+@font-family-base:                                                  "Open Sans", Helvetica, Arial, sans-serif;
+@font-size-base:                                                    12px;
+@gray-dark:                                                         lighten(#000, 20%);   // #333
+@gray-darker:                                                       lighten(#000, 13.5%); // #222
+@gray-light:                                                        lighten(#000, 60%);   // #999
+@gray-lighter:                                                      lighten(#000, 93.5%); // #eee
+@grid-gutter-width:                                                 40px;
+@icon-font-path:                                                    "../../components/bootstrap/dist/fonts/";
+@input-bg-disabled:                                                 #F8F8F8;
+@input-border:                                                      #BABABA;
+@line-height-base:                                                  1.66666667; // 20/12
+@link-color:                                                        #0099d3;
+@list-group-border:                                                 #f2f2f2;
+@list-group-border-radius:                                          0;
+@list-group-hover-bg:                                               #d4edfa;
+@link-hover-color:                                                  #00618a;
+@nav-tabs-border-color:                                             #e9e8e8;
+@nav-tabs-link-hover-border-color:                                  transparent;
+@padding-large-horizontal:                                          10px;
+@padding-base-horizontal:                                           6px;
+@padding-base-vertical:                                             2px;
+@padding-large-vertical:                                            6px;
+@pager-border-radius:                                               0;
+@pager-disabled-color:                                              #969696;
+@pagination-bg:                                                     #f5f5f5;
+@pagination-border:                                                 #bbbbbb;
+@pagination-hover-bg:                                               #ededed;
+@panel-inner-border:                                                #cecdcd;
+@popover-arrow-color:                                               #fff;
+@popover-arrow-outer-color:                                         #bbb;
+@popover-border-color:                                              #bbb;
+@popover-max-width:                                                 220px;
+@popover-title-bg:                                                  #f5f5f5;
+@pre-bg:                                                            #fcfcfc;
+@progress-bg:                                                       #ededed;
+@table-bg-accent:                                                   #f5f5f5;
+@table-bg-hover:                                                    #d5ecf9;
+@table-border-color:                                                #d1d1d1;
+@table-cell-padding:                                                10px;
+@tooltip-arrow-width:                                               8px;
+@tooltip-bg:                                                        #434343;
+@tooltip-max-width:                                                 220px;
+// Reference variables declared in block above
+@alert-danger-bg:                                                   @body-bg;
+@alert-danger-border:                                               @brand-danger;
+@alert-danger-text:                                                 @gray-dark;
+@alert-info-bg:                                                     @body-bg;
+@alert-info-text:                                                   @gray-dark;
+@alert-success-bg:                                                  @body-bg;
+@alert-success-border:                                              @brand-success;
+@alert-success-text:                                                @gray-dark;
+@alert-warning-bg:                                                  @body-bg;
+@alert-warning-border:                                              @brand-warning;
+@alert-warning-text:                                                @gray-dark;
+@badge-border-radius:                                               @border-radius-base;
+@border-radius-large:                                               @border-radius-base;
+@border-radius-small:                                               @border-radius-base;
+@breadcrumb-active-color:                                           @gray-pf;
+@breadcrumb-color:                                                  @gray-pf;
+@btn-default-bg:                                                    @gray-lighter;
+@btn-default-color:                                                 @gray-pf;
+@caret-width-large:                                                 @caret-width-base;
+@dropdown-fallback-border:                                          @dropdown-border;
+@dropdown-link-active-bg:                                           @link-color;
+@dropdown-link-hover-color:                                         @gray-pf;
+@font-size-h1:                                                      ceil(@font-size-base * 2); // ~24px
+@font-size-h2:                                                      ceil(@font-size-base * 1.8333); // ~22px
+@font-size-h3:                                                      ceil(@font-size-base * 1.3333); // ~16px
+@font-size-h5:                                                      ceil(@font-size-base * 1.0833); // ~13px
+@font-size-large:                                                   ceil(@font-size-base * 1.1666); // ~14px
+@font-size-small:                                                   ceil(@font-size-base * .9166); // ~11px
+@input-color:                                                       @gray-dark;
+@nav-tabs-active-link-hover-color:                                  @link-color;
+@nav-tabs-justified-link-border-color:                              @nav-tabs-border-color;
+@padding-small-horizontal:                                          @padding-base-horizontal;
+@padding-small-vertical:                                            @padding-base-vertical;
+@panel-danger-border:                                               @brand-danger;
+@panel-danger-heading-bg:                                           @brand-danger;
+@panel-info-border:                                                 @brand-info;
+@panel-info-heading-bg:                                             @brand-info;
+@panel-primary-text:                                                @body-bg;
+@panel-success-border:                                              @brand-success;
+@panel-success-heading-bg:                                          @brand-success;
+@panel-warning-border:                                              @brand-warning;
+@panel-warning-heading-bg:                                          @brand-warning;
+@state-warning-text:                                                @brand-warning;
+// Reference variable declared in block above
+@panel-danger-text:                                                 @panel-primary-text;
+@panel-info-text:                                                   @panel-primary-text;
+@panel-success-text:                                                @panel-primary-text;
+@panel-warning-text:                                                @panel-primary-text;
+
+// PatternFly-specific variables based on Bootstrap overides
+// ---------------------------------------------------------
+@btn-danger-bg-img-start:                                           @brand-danger;
+@btn-danger-bg-img-stop:                                            @btn-danger-bg;
+@btn-primary-bg-img-start:                                          @brand-primary;
+@btn-primary-bg-img-stop:                                           @btn-primary-bg;
+@dropdown-link-focus-bg:                                            @link-color;
+@line-height-computed:                                              floor((@font-size-base * @line-height-base));
+@progress-sm:                                                       @line-height-computed - 6;
+@progress-xs:                                                       @line-height-computed - 14;
+@syntax-1:                                                          @btn-danger-bg;
+@syntax-2:                                                          @gray-dark;
+@syntax-3:                                                          @brand-success;
+@syntax-4:                                                          @brand-info;
+@tooltip-font-size:                                                 @font-size-base;
