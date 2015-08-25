@@ -1,0 +1,9 @@
+@import url('http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css');
+@import url('../../../dist/css/bootstrap-datepicker.min.css');
+
+body {
+    /* Padding around all elements to allow space for screenshots */
+    padding: 10px;
+    /* Transparent background for PNG screenshots */
+    background: none;
+}

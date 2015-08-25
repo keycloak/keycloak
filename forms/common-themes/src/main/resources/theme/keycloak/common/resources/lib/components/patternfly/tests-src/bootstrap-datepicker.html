@@ -1,0 +1,36 @@
+---
+alert-message: ', <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>, and <a href="http://bootstrap-datepicker.readthedocs.org/en/latest/">http://bootstrap-datepicker.readthedocs.org/en/latest/</a>.'
+categories: [Widgets]
+layout: page
+title: Bootstrap-Datepicker
+resource: true
+url-js-extra: '!URL_COMPONENTS!bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js'
+---
+      <h2>Text Input</h2>
+      <input type="text" class="form-control bootstrap-datepicker">
+      <h2>Component</h2>
+      <div class="input-group date">
+        <input type="text" class="form-control"><span class="input-group-addon"><span class="fa fa-calendar"></span></span>
+      </div>
+      <h2>Inline</h2>
+      <div class="bootstrap-datepicker-inline"></div>
+      <h2>Range <small>Do not use.  PatternFly-approved design coming in a future update.</small></h2>
+      <div class="input-daterange input-group">
+        <input type="text" class="form-control" name="start">
+        <span class="input-group-addon">to</span>
+        <input type="text" class="form-control" name="end">
+      </div>
+      <script>
+        // Initialize Boostrap-Datepicker
+        $('.bootstrap-datepicker, .input-group.date, .bootstrap-datepicker-inline').datepicker({
+          autoclose: true,
+          orientation: "top auto",
+          todayBtn: "linked",
+          todayHighlight: true
+        });
+        $('.input-daterange').datepicker({
+          autoclose: true,
+          todayBtn: "linked",
+          todayHighlight: true
+        });
+      </script>
