@@ -18,15 +18,16 @@
 package org.keycloak.testsuite.console.page.realm;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
+import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
-import org.keycloak.testsuite.util.SeleniumUtils;
+import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
 /**
- *
  * @author Filip Kiss
+ * @author mhajas
  */
 public class SecurityDefenses extends RealmSettings {
 
@@ -35,78 +36,164 @@ public class SecurityDefenses extends RealmSettings {
         return super.getUriFragment() + "/defense";
     }
 
-    @FindByJQuery("a:contains('Brute Force Detection')")
-    private WebElement bruteForceProtectionLink;
+    @Page
+    private Headers headers;
 
-    @FindByJQuery("div[class='onoffswitch']")
-    private OnOffSwitch protectionEnabled;
+    public Headers headers() {
+        return headers;
+    }
 
-    @FindBy(id = "failureFactor")
-    private WebElement failureFactorInput;
+    public class Headers {
 
-    @FindBy(id = "waitIncrement")
-    private WebElement waitIncrementInput;
+        @Page
+        private Headers form;
 
-    @FindBy(id = "waitIncrementUnit")
-    private Select waitIncrementSelect;
+        public Headers form() {
+            return form;
+        }
 
-    @FindBy(id = "quickLoginCheckMilliSeconds")
-    private WebElement quickLoginCheckInput;
+        public class HeadersForm extends Form {
 
-    @FindBy(id = "minimumQuickLoginWait")
-    private WebElement minQuickLoginWaitInput;
+            @FindBy(id = "xFrameOptions")
+            private WebElement xFrameIptions;
 
-    @FindBy(id = "minimumQuickLoginWaitUnit")
-    private Select minQuickLoginWaitSelect;
+            public void setXFrameIptions(String value) {
+                setInputValue(xFrameIptions, value);
+            }
 
-    @FindBy(id = "maxFailureWait")
-    private WebElement maxWaitInput;
+            @FindBy(id = "contentSecurityPolicy")
+            private WebElement contentSecurityPolicy;
 
-    @FindBy(id = "maxFailureWaitUnit")
-    private Select maxWaitSelect;
-
-    @FindBy(id = "maxDeltaTime")
-    private WebElement failureResetTimeInput;
-
-    @FindBy(id = "maxDeltaTimeUnit")
-    private Select failureResetTimeSelect;
-
-    public void goToAndEnableBruteForceProtectionTab() {
-        SeleniumUtils.waitGuiForElement(bruteForceProtectionLink);
-        bruteForceProtectionLink.click();
-        if (!protectionEnabled.isOn()) {
-            protectionEnabled.on();
+            public void setContentSecurityPolicy(String value) {
+                setInputValue(contentSecurityPolicy, value);
+            }
         }
     }
 
-    public void setFailureFactorInput(String value) {
-        failureFactorInput.clear();
-        failureFactorInput.sendKeys(value);
+    @Page
+    private BruteForceDetection bruteForceDetection;
+
+    public BruteForceDetection bruteForceDetection() {
+        return bruteForceDetection;
     }
 
-    public void setWaitIncrementInput(String value) {
-        waitIncrementInput.clear();
-        waitIncrementInput.sendKeys(value);
+    public enum TimeSelectValues {
+
+        SECONDS("Seconds"), MINUTES("Minutes"), HOURS("Hours"), DAYS("Days");
+
+        private String name;
+
+        private TimeSelectValues(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
     }
 
-    public void setQuickLoginCheckInput(String value) {
-        quickLoginCheckInput.clear();
-        quickLoginCheckInput.sendKeys(value);
+    public class BruteForceDetection {
+
+        @Page
+        BruteForceDetectionForm form;
+
+        public BruteForceDetectionForm form() {
+            return form;
+        }
+
+        public class BruteForceDetectionForm extends Form {
+            @FindByJQuery("div[class='onoffswitch']")
+            private OnOffSwitch protectionEnabled;
+
+            public void setProtectionEnabled(boolean protectionEnabled) {
+                this.protectionEnabled.setOn(protectionEnabled);
+            }
+
+            @FindBy(id = "failureFactor")
+            private WebElement maxLoginFailures;
+
+            public void setMaxLoginFailures(String value) {
+                setInputValue(maxLoginFailures, value);
+            }
+
+            @FindBy(id = "waitIncrement")
+            private WebElement waitIncrementInput;
+
+            @FindBy(id = "waitIncrementUnit")
+            private Select waitIncrementSelect;
+
+            public void setWaitIncrementInput(String value) {
+                setInputValue(waitIncrementInput, value);
+            }
+
+            public void setWaitIncrementSelect(TimeSelectValues value) {
+                waitIncrementSelect.selectByVisibleText(value.getName());
+            }
+
+            @FindBy(id = "quickLoginCheckMilliSeconds")
+            private WebElement quickLoginCheckInput;
+
+            public void setQuickLoginCheckInput(String value) {
+                setInputValue(quickLoginCheckInput, value);
+            }
+
+            @FindBy(id = "minimumQuickLoginWait")
+            private WebElement minQuickLoginWaitInput;
+
+            @FindBy(id = "minimumQuickLoginWaitUnit")
+            private Select minQuickLoginWaitSelect;
+
+            public void setMinQuickLoginWaitInput(String value) {
+                setInputValue(minQuickLoginWaitInput, value);
+            }
+
+            public void setMinQuickLoginWaitSelect(TimeSelectValues value) {
+                minQuickLoginWaitSelect.selectByVisibleText(value.getName());
+            }
+
+            @FindBy(id = "maxFailureWait")
+            private WebElement maxWaitInput;
+
+            @FindBy(id = "maxFailureWaitUnit")
+            private Select maxWaitSelect;
+
+            public void setMaxWaitInput(String value) {
+                setInputValue(maxWaitInput, value);
+            }
+
+            public void setMaxWaitSelect(TimeSelectValues value) {
+                maxWaitSelect.selectByVisibleText(value.getName());
+            }
+
+            @FindBy(id = "maxDeltaTime")
+            private WebElement failureResetTimeInput;
+
+            @FindBy(id = "maxDeltaTimeUnit")
+            private Select failureResetTimeSelect;
+
+            public void setFailureResetTimeInput(String value) {
+                setInputValue(failureResetTimeInput, value);
+            }
+
+            public void setFailureResetTimeSelect(TimeSelectValues value) {
+                failureResetTimeSelect.selectByVisibleText(value.getName());
+            }
+
+        }
+
     }
 
-    public void setMinQuickLoginWaitInput(String value) {
-        minQuickLoginWaitInput.clear();
-        minQuickLoginWaitInput.sendKeys(value);
+    @FindByJQuery("a:contains('Brute Force Detection')")
+    private WebElement bruteForceDetectionTab;
+
+    public void goToBruteForceDetection() {
+        bruteForceDetectionTab.click();
     }
 
-    public void setMaxWaitInput(String value) {
-        maxWaitInput.clear();
-        maxWaitInput.sendKeys(value);
-    }
+    @FindByJQuery("a:contains('Headers')")
+    private WebElement headersTab;
 
-    public void setFailureResetTimeInput(String value) {
-        failureResetTimeInput.clear();
-        failureResetTimeInput.sendKeys(value);
+    public void goToHeaders() {
+        headersTab.click();
     }
-
 }
