@@ -5,6 +5,7 @@
     "auth-server-url": "http://localhost:8081/auth",
     "ssl-required" : "external",
     "enable-basic-auth": true,
+    "bearer-only": true,
     "credentials": {
       "secret": "password"
 	}

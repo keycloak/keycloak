@@ -854,6 +854,7 @@ public class UsersResource {
         accessCode.setAction(ClientSessionModel.Action.RECOVER_PASSWORD.name());
 
         try {
+            user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
             UriBuilder builder = Urls.recoverPasswordBuilder(uriInfo.getBaseUri());
             builder.queryParam("key", accessCode.getCode());
 

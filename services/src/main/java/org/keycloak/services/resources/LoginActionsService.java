@@ -512,183 +512,6 @@ public class LoginActionsService {
         return authManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, clientConnection);
     }
 
-    @Path("profile")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response updateProfile(@QueryParam("code") String code,
-                                  final MultivaluedMap<String, String> formData) {
-        event.event(EventType.UPDATE_PROFILE);
-        Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.UPDATE_PROFILE.name())) {
-            return checks.response;
-        }
-        ClientSessionCode accessCode = checks.clientCode;
-        ClientSessionModel clientSession = accessCode.getClientSession();
-        UserSessionModel userSession = clientSession.getUserSession();
-        UserModel user = userSession.getUser();
-
-        initEvent(clientSession);
-
-        List<FormMessage> errors = Validation.validateUpdateProfileForm(formData);
-        if (errors != null && !errors.isEmpty()) {
-            return session.getProvider(LoginFormsProvider.class)
-                    .setClientSessionCode(accessCode.getCode())
-                    .setUser(user)
-                    .setErrors(errors)
-                    .setFormData(formData)
-                    .createResponse(RequiredAction.UPDATE_PROFILE);
-        }
-
-        user.setFirstName(formData.getFirst("firstName"));
-        user.setLastName(formData.getFirst("lastName"));
-
-        String email = formData.getFirst("email");
-
-        String oldEmail = user.getEmail();
-        boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
-
-        if (emailChanged) {
-            UserModel userByEmail = session.users().getUserByEmail(email, realm);
-
-            // check for duplicated email
-            if (userByEmail != null && !userByEmail.getId().equals(user.getId())) {
-                return session.getProvider(LoginFormsProvider.class)
-                        .setUser(user)
-                        .setError(Messages.EMAIL_EXISTS)
-                        .setClientSessionCode(accessCode.getCode())
-                        .setFormData(formData)
-                        .createResponse(RequiredAction.UPDATE_PROFILE);
-            }
-
-            user.setEmail(email);
-            user.setEmailVerified(false);
-        }
-
-        AttributeFormDataProcessor.process(formData, realm, user);
-
-        user.removeRequiredAction(RequiredAction.UPDATE_PROFILE);
-        event.clone().event(EventType.UPDATE_PROFILE).success();
-
-        if (emailChanged) {
-            event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
-        }
-
-        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
-    }
-
-    @Path("totp")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response updateTotp(@QueryParam("code") String code,
-                               final MultivaluedMap<String, String> formData) {
-        event.event(EventType.UPDATE_TOTP);
-        Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.CONFIGURE_TOTP.name())) {
-            return checks.response;
-        }
-        ClientSessionCode accessCode = checks.clientCode;
-        ClientSessionModel clientSession = accessCode.getClientSession();
-        UserSessionModel userSession = clientSession.getUserSession();
-        UserModel user = userSession.getUser();
-
-        initEvent(clientSession);
-
-        String totp = formData.getFirst("totp");
-        String totpSecret = formData.getFirst("totpSecret");
-
-        LoginFormsProvider loginForms = session.getProvider(LoginFormsProvider.class).setUser(user);
-        if (Validation.isBlank(totp)) {
-            return loginForms.setError(Messages.MISSING_TOTP)
-                    .setClientSessionCode(accessCode.getCode())
-                    .createResponse(RequiredAction.CONFIGURE_TOTP);
-        } else if (!CredentialValidation.validOTP(realm, totp, totpSecret)) {
-            return loginForms.setError(Messages.INVALID_TOTP)
-                    .setClientSessionCode(accessCode.getCode())
-                    .createResponse(RequiredAction.CONFIGURE_TOTP);
-        }
-
-        UserCredentialModel credentials = new UserCredentialModel();
-        credentials.setType(realm.getOTPPolicy().getType());
-        credentials.setValue(totpSecret);
-        session.users().updateCredential(realm, user, credentials);
-
-
-        // if type is HOTP, to update counter we execute validation based on supplied token
-        UserCredentialModel cred = new UserCredentialModel();
-        cred.setType(realm.getOTPPolicy().getType());
-        cred.setValue(totp);
-        session.users().validCredentials(realm, user, cred);
-
-        user.setOtpEnabled(true);
-
-        user.removeRequiredAction(RequiredAction.CONFIGURE_TOTP);
-
-        event.clone().event(EventType.UPDATE_TOTP).success();
-
-        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
-    }
-
-    @Path("password")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response updatePassword(@QueryParam("code") String code,
-                                   final MultivaluedMap<String, String> formData) {
-        event.event(EventType.UPDATE_PASSWORD);
-        Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.UPDATE_PASSWORD.name(), ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
-            return checks.response;
-        }
-        ClientSessionCode accessCode = checks.clientCode;
-        ClientSessionModel clientSession = accessCode.getClientSession();
-        UserSessionModel userSession = clientSession.getUserSession();
-        UserModel user = userSession.getUser();
-
-        initEvent(clientSession);
-
-        String passwordNew = formData.getFirst("password-new");
-        String passwordConfirm = formData.getFirst("password-confirm");
-
-        LoginFormsProvider loginForms = session.getProvider(LoginFormsProvider.class)
-                .setUser(user);
-        if (Validation.isBlank(passwordNew)) {
-            return loginForms.setError(Messages.MISSING_PASSWORD)
-                    .setClientSessionCode(accessCode.getCode())
-                    .createResponse(RequiredAction.UPDATE_PASSWORD);
-        } else if (!passwordNew.equals(passwordConfirm)) {
-            return loginForms.setError(Messages.NOTMATCH_PASSWORD)
-                    .setClientSessionCode(accessCode.getCode())
-                    .createResponse(RequiredAction.UPDATE_PASSWORD);
-        }
-
-        try {
-            session.users().updateCredential(realm, user, UserCredentialModel.password(passwordNew));
-        } catch (ModelException me) {
-            return loginForms.setError(me.getMessage(), me.getParameters())
-                    .setClientSessionCode(accessCode.getCode())
-                    .createResponse(RequiredAction.UPDATE_PASSWORD);
-        } catch (Exception ape) {
-            return loginForms.setError(ape.getMessage())
-                    .setClientSessionCode(accessCode.getCode())
-                    .createResponse(RequiredAction.UPDATE_PASSWORD);
-        }
-
-        user.removeRequiredAction(RequiredAction.UPDATE_PASSWORD);
-
-        event.event(EventType.UPDATE_PASSWORD).success();
-
-        if (clientSession.getAction().equals(ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
-            session.sessions().removeClientSession(realm, clientSession);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setSuccess(Messages.ACCOUNT_PASSWORD_UPDATED)
-                    .createInfoPage();
-        }
-
-        event = event.clone().event(EventType.LOGIN);
-
-        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
-    }
-
-
     @Path("email-verification")
     @GET
     public Response emailVerification(@QueryParam("code") String code, @QueryParam("key") String key) {
@@ -752,13 +575,11 @@ public class LoginActionsService {
         if (key != null) {
             Checks checks = new Checks();
             if (!checks.verifyCode(key, ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
-                event.error(Errors.RESET_CREDENTIAL_DISABLED);
-                return ErrorPage.error(session, Messages.INVALID_CODE);
+                return checks.response;
             }
-            ClientSessionCode accessCode = checks.clientCode;
-            return session.getProvider(LoginFormsProvider.class)
-                    .setClientSessionCode(accessCode.getCode())
-                    .createResponse(RequiredAction.UPDATE_PASSWORD);
+            ClientSessionModel clientSession = checks.clientCode.getClientSession();
+            clientSession.setNote("END_AFTER_REQUIRED_ACTIONS", "true");
+            return AuthenticationManager.nextActionAfterAuthentication(session, clientSession.getUserSession(), clientSession, clientConnection, request, uriInfo, event);
         } else {
             event.error(Errors.RESET_CREDENTIAL_DISABLED);
             return ErrorPage.error(session, Messages.INVALID_CODE);
@@ -843,6 +664,7 @@ public class LoginActionsService {
         }
 
         initEvent(clientSession);
+        event.event(EventType.CUSTOM_REQUIRED_ACTION);
 
 
         RequiredActionContextResult context = new RequiredActionContextResult(clientSession.getUserSession(), clientSession, realm, event, session, request, clientSession.getUserSession().getUser(), factory) {
@@ -865,9 +687,9 @@ public class LoginActionsService {
         };
         provider.processAction(context);
         if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
-            event.clone().event(EventType.CUSTOM_REQUIRED_ACTION)
-                         .detail(Details.CUSTOM_REQUIRED_ACTION, action).success();
+            event.clone().success();
             clientSession.getUserSession().getUser().removeRequiredAction(factory.getId());
+            event.event(EventType.LOGIN);
             return AuthenticationManager.nextActionAfterAuthentication(session, clientSession.getUserSession(), clientSession, clientConnection, request, uriInfo, event);
         }
         if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {

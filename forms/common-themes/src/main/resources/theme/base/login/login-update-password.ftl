@@ -5,7 +5,7 @@
     <#elseif section = "header">
         ${msg("updatePasswordTitle")}
     <#elseif section = "form">
-        <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" action="${url.loginUpdatePasswordUrl}" method="post">
+        <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="password-new" class="${properties.kcLabelClass!}">${msg("passwordNew")}</label>

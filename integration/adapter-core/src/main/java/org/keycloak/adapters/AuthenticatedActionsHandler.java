@@ -90,8 +90,7 @@ public class AuthenticatedActionsHandler {
             if (allowedOrigins == null || (!allowedOrigins.contains("*") && !allowedOrigins.contains(origin))) {
                 if (allowedOrigins == null) {
                     log.debugv("allowedOrigins was null in token");
-                }
-                if (!allowedOrigins.contains("*") && !allowedOrigins.contains(origin)) {
+                } else {
                     log.debugv("allowedOrigins did not contain origin");
 
                 }
