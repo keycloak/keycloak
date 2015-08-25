@@ -20,21 +20,21 @@ import org.keycloak.testsuite.util.Timer;
  * @author tkyjovsk
  */
 public class RealmRolesTest extends AbstractRolesTest {
-
+    
     @Page
     private RealmRoles realmRoles;
     @Page
     private CreateRole createRole;
     @Page
     private Role role;
-
+    
     private RoleRepresentation testRole;
-
+    
     @Before
     public void beforeTestAddNewRole() {
         testRole = new RoleRepresentation("test_role", "role description");
     }
-
+    
     public void addRole(RoleRepresentation roleRep) {
         assertCurrentUrl(realmRoles);
         realmRoles.table().addRole();
@@ -45,7 +45,7 @@ public class RealmRolesTest extends AbstractRolesTest {
         createRole.form().setCompositeRoles(roleRep);
         // TODO add verification of notification message when KEYCLOAK-1497 gets resolved
     }
-
+    
     public void updateRole(RoleRepresentation roleRep) {
         assertCurrentUrl(realmRoles);
         realmRoles.table().editRole(roleRep.getName());
@@ -55,36 +55,40 @@ public class RealmRolesTest extends AbstractRolesTest {
         assertFlashMessageSuccess();
         role.form().setCompositeRoles(roleRep);
     }
-
+    
     public void assertBasicRoleAttributesEqual(RoleRepresentation r1, RoleRepresentation r2) {
         assertEquals(r1.getName(), r2.getName());
         assertEquals(r1.getDescription(), r2.getDescription());
         assertEquals(r1.isComposite(), r2.isComposite());
     }
-
+    
     @Test
     public void crudRole() {
         addRole(testRole);
-
+        
         configure().roles();
         RoleRepresentation foundRole = realmRoles.table().findRole(testRole.getName()); // search & get role from table
         assertBasicRoleAttributesEqual(testRole, foundRole);
         realmRoles.table().editRole(testRole.getName());
         foundRole = role.form().getBasicAttributes();
         assertBasicRoleAttributesEqual(testRole, foundRole);
-
+        
         testRole.setDescription("updated role description");
         role.form().setDescription(testRole.getDescription());
         role.form().save();
         assertFlashMessageSuccess();
-
+        
         configure().roles();
         foundRole = realmRoles.table().findRole(testRole.getName()); // search & get role from table
         assertBasicRoleAttributesEqual(testRole, foundRole);
 
         // delete from table
         realmRoles.table().deleteRole(testRole.getName());
+        modalDialog.cancel();
+        assertTrue(realmRoles.table().containsRole(testRole.getName()));
+        realmRoles.table().deleteRole(testRole.getName());
         modalDialog.confirmDeletion();
+        pause(250);
         assertFalse(realmRoles.table().containsRole(testRole.getName()));
 
         // add again
@@ -98,7 +102,7 @@ public class RealmRolesTest extends AbstractRolesTest {
         modalDialog.confirmDeletion();
         assertCurrentUrl(realmRoles);
     }
-
+    
     @Test
     @Ignore
     public void testAddRoleWithLongName() {
@@ -106,19 +110,19 @@ public class RealmRolesTest extends AbstractRolesTest {
         addRole(new RoleRepresentation(name, ""));
         assertNotNull(realmRoles.table().findRole(name));
     }
-
+    
     @Test
     public void testAddExistingRole() {
         addRole(testRole);
         assertFlashMessageSuccess();
-
+        
         configure().roles();
         realmRoles.table().addRole();
         createRole.form().setBasicAttributes(testRole);
         createRole.form().save();
         assertFlashMessageDanger();
     }
-
+    
     public void createTestRoles(String namePrefix, int count) {
         Timer.time();
         for (int i = 0; i < count; i++) {
