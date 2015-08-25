@@ -1,6 +1,8 @@
-.login-pf body {
-    background: #0f0f0f url("../img/keycloak-bg.png") top left no-repeat;
-    background-size: 100% auto;
+/** Delete after proper logo insertion */
+#brand .iam-logo-wrapper {
+    padding-left: 80px;
+    height: 10px;
+    text-align: inherit;
 }
 
 .kc-dropdown{
@@ -68,17 +70,25 @@
 }
 
 #kc-logo {
-    width: 100%;
+    float: right;
+    margin-right: 64px;
+    margin-left: auto;
+    display: block;
+    position: relative;
+    text-align: center;
 }
 
 #kc-logo-wrapper {
-    background-image: url("../img/keycloak-logo.png");
-    background-repeat: no-repeat;
-    background-position: top right;
-
-    height: 37px;
-
-    margin: 50px;
+    background-image: url("../lib/rcue/img/logo.svg");
+    border: 0px none;
+    vertical-align: middle;
+    color: #0099D3;
+    text-decoration: none;
+    background-color: transparent;
+    width: 137px;
+    height: 44px;
+    margin-top: 50px;
+    margin-bottom: 50px;
 }
 
 #kc-header {
@@ -89,7 +99,7 @@
 }
 
 #kc-header-wrapper {
-    font-size: 26px;
+    font-size: 17px;
     text-transform: uppercase;
     line-height: 1.2em;
     margin-bottom: 15px;
@@ -280,9 +290,32 @@ ol#kc-totp-settings li:first-of-type {
 }
 
 @media (max-width: 767px) {
+    #kc-logo {
+        float: none;
+        margin: auto;
+        display: block;
+        position: relative;
+        text-align: center;
+    }
+
     #kc-logo-wrapper {
-        margin-top: 30px;
-        margin-right: 15px;
+        background-image: url("../lib/rcue/img/logo.svg");
+        border: 0px none;
+        vertical-align: middle;
+        color: #0099D3;
+        text-decoration: none;
+        background-color: transparent;
+        width: 137px;
+        height: 44px;
+        margin: 20px auto 50px auto;
+    }
+
+    #kc-container-wrapper {
+        bottom : auto;
+    }
+
+    #brand .iam-logo-wrapper {
+        padding-left: 15px;
     }
 
     #kc-header {
@@ -322,7 +355,6 @@ ol#kc-totp-settings li:first-of-type {
 
 @media (max-height: 500px) {
     #kc-container-wrapper {
-        position: inherit;
         float: none;
     }
 }
