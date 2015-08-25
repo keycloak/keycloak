@@ -1,0 +1,31 @@
+//
+// Forms
+// --------------------------------------------------
+
+.form-control {
+  &[disabled], &[readonly], fieldset[disabled] & {
+    border-color: @input-border-disabled !important;
+    .box-shadow(none);
+    color: #969696;
+  }
+  &:hover {
+    border-color: @input-border-hover;
+    .has-error & {
+      border-color: darken(@state-danger-text, 10%);
+    }
+    .has-success & {
+      border-color: darken(@state-success-text, 10%);
+    }
+    .has-warning & {
+      border-color: darken(@state-warning-text, 10%);
+    }
+  }
+}
+
+.input-group .input-group-btn .btn {
+  .box-shadow(none);
+}
+
+label {
+  font-weight: 600;
+}

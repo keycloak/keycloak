@@ -1,0 +1,71 @@
+//
+// Bootstrap-Datepicker
+// --------------------------------------------------
+
+.datepicker {
+  border-radius: @border-radius-base;
+  .datepicker-switch, tfoot .today {
+    font-size: @font-size-large;
+    font-weight: 500;
+  }
+  .next, .prev {
+    font-weight: 500;
+  }
+  table tr {
+    td, th {
+      border-radius: @border-radius-base;
+    }
+    td {
+      &.active.active,
+      &.active.active:hover,
+      &.active.active.disabled,
+      &.active.active.disabled:hover {
+        background: @dropdown-link-active-bg !important;
+        color: #fff !important;
+        text-shadow: none;
+      }
+      &.day:hover, &.day.focused {
+        background: @dropdown-link-hover-bg;
+      }
+      &.selected,
+      &.selected:hover,
+      &.selected.disabled,
+      &.selected.disabled:hover {
+        text-shadow: none;
+      }
+      span {
+        border-radius: @border-radius-base;
+        &.active.active,
+        &.active.active:hover,
+        &.active.active.disabled,
+        &.active.active.disabled:hover {
+          background: @dropdown-link-active-bg;
+          text-shadow: none;
+        }
+        &:hover {
+          background: @dropdown-link-hover-bg;
+        }
+      }
+    }
+  }
+  thead tr:first-child th, tfoot tr th {
+    &:hover {
+      background: @dropdown-link-hover-bg;
+    }
+  }
+}
+
+.input-daterange {
+  input:first-child {
+    border-radius: @border-radius-base 0 0 @border-radius-base;
+  }
+  input:last-child {
+    border-radius: 0 @border-radius-base @border-radius-base 0;
+  }
+  .input-group-addon {
+    background-color: @input-group-addon-bg;
+    border-color: @input-group-addon-border-color;
+    line-height: @line-height-base;
+    padding: @padding-base-vertical @padding-base-horizontal;
+  }
+}

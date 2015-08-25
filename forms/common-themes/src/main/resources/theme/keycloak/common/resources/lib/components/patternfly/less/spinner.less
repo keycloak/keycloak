@@ -1,0 +1,60 @@
+//
+// Spinner
+// --------------------------------------------------
+
+@-webkit-keyframes rotation {
+  from {-webkit-transform: rotate(0deg);}
+  to {-webkit-transform: rotate(359deg);}
+}
+
+@keyframes rotation {
+  from {transform: rotate(0deg);}
+  to {transform: rotate(359deg);}
+}
+
+.spinner {
+  -webkit-animation: rotation .6s infinite linear;
+  animation: rotation .6s infinite linear;
+  border-bottom: 4px solid rgba(0,0,0,.25);
+  border-left: 4px solid rgba(0,0,0,.25);
+  border-right: 4px solid rgba(0,0,0,.25);
+  border-radius: 100%;
+  border-top: 4px solid rgba(0,0,0,.75);
+  height: @font-size-base*2;
+  margin: 0 auto;
+  position: relative;
+  width: @font-size-base*2;
+  &.spinner-inline {
+    display: inline-block;
+    margin-right: 3px;
+  }
+  &.spinner-lg {
+    border-width: 5px;
+    height: @font-size-base*2.5;
+    width: @font-size-base*2.5;
+  }
+  &.spinner-sm {
+    border-width: 3px;
+    height: @font-size-base*1.5;
+    width: @font-size-base*1.5;
+  }
+  &.spinner-xs {
+    border-width: 2px;
+    height: @font-size-base;
+    width: @font-size-base;
+  }
+}
+
+.ie9 .spinner {
+  background: url("@{img-path}/@{img-spinner}") no-repeat;
+  border: 0;
+  &.spinner-lg {
+    background-image: url("@{img-path}/@{img-spinner-lg}");
+  }
+  &.spinner-sm {
+    background-image: url("@{img-path}/@{img-spinner-sm}");
+  }
+  &.spinner-xs {
+    background-image: url("@{img-path}/@{img-spinner-xs}");
+  }
+}
