@@ -10,7 +10,21 @@
         </#list>
     </#if>
     <title><#nested "title"></title>
-    <link rel="icon" href="${url.resourcesPath}/img/favicon.ico" />
+    <link rel="icon" href="${url.resourcesPath}/lib/rcue/img/favicon.ico" />
+    <!-- iPad retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="${url.resourcesPath}/lib/rcue/img/apple-touch-icon-precomposed-152.png">
+    <!-- iPad retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="${url.resourcesPath}/lib/rcue/img/apple-touch-icon-precomposed-144.png">
+    <!-- iPad non-retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="${url.resourcesPath}/lib/rcue/img/apple-touch-icon-precomposed-76.png">
+    <!-- iPad non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="${url.resourcesPath}/lib/rcue/img/apple-touch-icon-precomposed-72.png">
+    <!-- iPhone 6 Plus icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="${url.resourcesPath}/lib/rcue/img/apple-touch-icon-precomposed-180.png">
+    <!-- iPhone retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="${url.resourcesPath}/lib/rcue/img/apple-touch-icon-precomposed-114.png">
+    <!-- iPhone non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="${url.resourcesPath}/lib/rcue/img/apple-touch-icon-precomposed-57.png">
     <#if properties.styles?has_content>
         <#list properties.styles?split(' ') as style>
             <link href="${url.resourcesPath}/${style}" rel="stylesheet" />
@@ -29,10 +43,19 @@
 </head>
 
 <body class="${properties.kcBodyClass!}">
-    <div id="kc-logo"><div id="kc-logo-wrapper"></div></div>
+    
+    <span id="badge">
+        <a href="http://www.redhat.com/">
+            <img alt="Red Hat&reg; logo" src="${url.resourcesPath}/lib/rcue/img/logo.svg">
+        </a>
+    </span>
 
     <div id="kc-container" class="${properties.kcContainerClass!}">
         <div id="kc-container-wrapper" class="${properties.kcContainerWrapperClass!}">
+            
+            <div id="brand">
+                <img class="${properties.iamLogo!}" alt="RED HAT&reg; JBOSS&reg; IDENTITY AND ACCESS MANAGEMENT" src="${url.resourcesPath}/img/brand.svg">
+            </div>
 
             <div id="kc-header" class="${properties.kcHeaderClass!}">
                 <div id="kc-header-wrapper" class="${properties.kcHeaderWrapperClass!}"><#nested "header"></div>
