@@ -13,6 +13,8 @@ import java.io.PrintWriter;
  */
 public class InputServlet extends HttpServlet {
 
+    private static final String FORM_URLENCODED = "application/x-www-form-urlencoded";
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String appBase = System.getProperty("app.server.base.url", "http://localhost:8081");
@@ -33,6 +35,15 @@ public class InputServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (!FORM_URLENCODED.equals(req.getContentType())) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            PrintWriter pw = resp.getWriter();
+            resp.setContentType("text/plain");
+            pw.printf("Expecting content type " + FORM_URLENCODED +
+                    ", received " + req.getContentType() + " instead");
+            pw.flush();
+            return;
+        }
         resp.setContentType("text/plain");
         PrintWriter pw = resp.getWriter();
         pw.printf("parameter="+req.getParameter("parameter"));
