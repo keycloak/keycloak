@@ -129,6 +129,10 @@ public class LoginTest {
 
         loginPage.assertCurrent();
 
+        // KEYCLOAK-1741 - assert form field values kept
+        Assert.assertEquals("login-test", loginPage.getUsername());
+        Assert.assertEquals("", loginPage.getPassword());
+
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
         events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
@@ -143,6 +147,10 @@ public class LoginTest {
         loginPage.missingPassword("login-test");
 
         loginPage.assertCurrent();
+
+        // KEYCLOAK-1741 - assert form field values kept
+        Assert.assertEquals("login-test", loginPage.getUsername());
+        Assert.assertEquals("", loginPage.getPassword());
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
@@ -166,6 +174,10 @@ public class LoginTest {
             loginPage.login("login-test", "invalid");
 
             loginPage.assertCurrent();
+
+            // KEYCLOAK-1741 - assert form field values kept
+            Assert.assertEquals("login-test", loginPage.getUsername());
+            Assert.assertEquals("", loginPage.getPassword());
 
             Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
 
@@ -198,6 +210,10 @@ public class LoginTest {
 
             loginPage.assertCurrent();
 
+            // KEYCLOAK-1741 - assert form field values kept
+            Assert.assertEquals("login-test", loginPage.getUsername());
+            Assert.assertEquals("", loginPage.getPassword());
+
             Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
 
             events.expectLogin().user(userId).session((String) null).error("user_disabled")
@@ -220,6 +236,10 @@ public class LoginTest {
         loginPage.login("invalid", "password");
 
         loginPage.assertCurrent();
+
+        // KEYCLOAK-1741 - assert form field values kept
+        Assert.assertEquals("invalid", loginPage.getUsername());
+        Assert.assertEquals("", loginPage.getPassword());
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
