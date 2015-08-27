@@ -419,6 +419,7 @@ public class AuthenticationProcessor {
             LoginFormsProvider provider = getSession().getProvider(LoginFormsProvider.class)
                     .setUser(getUser())
                     .setActionUri(action)
+                    .setFormData(request.getDecodedFormParameters())
                     .setClientSessionCode(accessCode);
             if (getForwardedErrorMessage() != null) {
                 provider.addError(getForwardedErrorMessage());
