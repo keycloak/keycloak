@@ -1,9 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Keycloak Admin Console</title>
+    <title>IAM Admin Console</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="${resourceUrl}/img/favicon.ico">
+    <link rel="shortcut icon" href="${resourceUrl}/lib/rcue/img/favicon.ico">
+    <!-- iPad retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="${resourceUrl}/lib/rcue/img/apple-touch-icon-precomposed-152.png">
+    <!-- iPad retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="${resourceUrl}/lib/rcue/img/apple-touch-icon-precomposed-144.png">
+    <!-- iPad non-retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="${resourceUrl}/lib/rcue/img/apple-touch-icon-precomposed-76.png">
+    <!-- iPad non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="${resourceUrl}/lib/rcue/img/apple-touch-icon-precomposed-72.png">
+    <!-- iPhone 6 Plus icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="${resourceUrl}/lib/rcue/img/apple-touch-icon-precomposed-180.png">
+    <!-- iPhone retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="${resourceUrl}/lib/rcue/img/apple-touch-icon-precomposed-114.png">
+    <!-- iPhone non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="${resourceUrl}/lib/rcue/img/apple-touch-icon-precomposed-57.png">
     <#if properties.styles?has_content>
     <#list properties.styles?split(' ') as style>
     <link href="${resourceUrl}/${style}" rel="stylesheet" />
@@ -39,6 +53,9 @@
     <script src="${resourceUrl}/js/controllers/users.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/loaders.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/services.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/lib/components/patternfly/components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="${resourceUrl}/lib/components/patternfly/components/datatables/media/js/jquery.dataTables.js"></script>
+    <script src="${resourceUrl}/lib/components/patternfly/dist/js/patternfly.min.js"></script>
 </head>
 <body data-ng-controller="GlobalCtrl" data-ng-cloak data-ng-show="auth.user">
 

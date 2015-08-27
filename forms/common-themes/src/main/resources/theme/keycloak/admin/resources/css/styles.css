@@ -149,6 +149,11 @@ table {
 
 /*********** New Menu ***********/
 
+.navbar-brand span{
+  font-size: 10pt !important;
+  font-weight: bold;
+  color: #ffffff !important;   
+}
 
 .sidebar-pf-left{
   background: #292e34;
@@ -256,29 +261,6 @@ table {
 
 /*********** Overwrites header defaults ***********/
 
-.navbar-pf{
-  border-top: none!important;
-}
-
-.navbar-pf .navbar-brand {
-  padding: 0;
-  height: 56px;
-  line-height: 56px;
-  background-position: center center;
-  background-image: url('../img/keyclok-logo.svg');
-  background-size: 148px 36px;
-  background-repeat: no-repeat;
-  width: 148px;
-}
-
-.navbar-pf .navbar-utility > li > a{
-  padding: 22px 30px 23px 40px!important;
-}
-/* @media (min-width: 768px) */
-.navbar-pf .navbar-utility li.dropdown > .dropdown-toggle .pficon-user {
-  top: 22px;
-  left:20px;
-}
 
 .clickable {
     cursor: pointer;
