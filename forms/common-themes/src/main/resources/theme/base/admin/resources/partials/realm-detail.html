@@ -12,7 +12,7 @@
             <div class="form-group">
                 <label class="col-md-2 control-label" for="enabled">{{'enabled' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="realm.enabled" name="enabled" id="enabled" onoffswitch />
+                    <input ng-model="realm.enabled" name="enabled" id="enabled" onoffswitch on-text="{{'onText' | translate}}" off-text="{{'offText' | translate}}" />
                 </div>
                 <kc-tooltip>{{'realm-detail.enabled.tooltip' | translate}}</kc-tooltip>
             </div>
