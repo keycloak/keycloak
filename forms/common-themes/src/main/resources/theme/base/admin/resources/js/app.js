@@ -57,7 +57,7 @@ module.config(function($translateProvider) {
     $translateProvider.preferredLanguage('en');
     $translateProvider.useCookieStorage();
     $translateProvider.useUrlLoader('messages.json');
-    });
+});
 
 module.config([ '$routeProvider', function($routeProvider) {
     $routeProvider
