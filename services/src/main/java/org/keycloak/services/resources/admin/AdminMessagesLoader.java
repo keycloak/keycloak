@@ -17,8 +17,10 @@
 
 package org.keycloak.services.resources.admin;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -33,6 +35,8 @@ import java.util.Properties;
  * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
  */
 public class AdminMessagesLoader {
+    private static final String CONFIG_DIR = System.getProperty("jboss.server.config.dir");
+    private static final String BUNDLE_DIR = CONFIG_DIR + "/themes/base/admin/angular-messages/";
 
     private static final Map<String, Properties> allMessages = new HashMap<String, Properties>();
 
@@ -44,19 +48,46 @@ public class AdminMessagesLoader {
     }
 
     private static Properties loadMessages(String locale) throws IOException {
-        Properties msgs = new Properties();
+        Properties masterMsgs = new Properties();
 
-        try (InputStream msgStream = getBundleStream(locale)){
-            if (msgStream == null) return msgs;
-            msgs.load(msgStream);
+        for (File file : getBundlesForLocale(locale)) {
+            try (FileInputStream msgStream = new FileInputStream(file)){
+                Properties propsFromFile = new Properties();
+                propsFromFile.load(msgStream);
+                checkForDups(masterMsgs, propsFromFile, file, locale);
+                masterMsgs.putAll(propsFromFile);
+            }
         }
 
-        allMessages.put(locale, msgs);
-        return msgs;
+        allMessages.put(locale, masterMsgs);
+        return masterMsgs;
     }
 
-    private static InputStream getBundleStream(String locale) {
-        String filename = "admin-messages_" + locale + ".properties";
-        return AdminMessagesLoader.class.getResourceAsStream(filename);
+    private static void checkForDups(Properties masterMsgs, Properties propsFromFile, File file, String locale) {
+        for (String prop : propsFromFile.stringPropertyNames()) {
+            if (masterMsgs.getProperty(prop) != null) {
+                String errorMsg = "Message bundle " + file.getName() + " contains key '" + prop;
+                errorMsg += "', which already exists in another bundle for " + locale + " locale.";
+                throw new RuntimeException(errorMsg);
+            }
+        }
+    }
+
+    private static File[] getBundlesForLocale(String locale) {
+        File bundleDir = new File(BUNDLE_DIR);
+        return bundleDir.listFiles(new LocaleFilter(locale));
+    }
+
+    private static class LocaleFilter implements FilenameFilter {
+        private final String locale;
+
+        public LocaleFilter(String locale) {
+            this.locale = locale;
+        }
+
+        @Override
+        public boolean accept(File dir, String name) {
+            return name.endsWith("_" + locale + ".properties");
+        }
     }
 }
