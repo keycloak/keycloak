@@ -75,7 +75,7 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Test
     public void testAddRegexPatternsPolicy() {
-        passwordPolicy.editPolicy(REGEX_PATTERNS, "^[A-Z]{5}");
+        passwordPolicy.addPolicy(REGEX_PATTERNS, "^[A-Z]{5}");
         assertFlashMessageSuccess();
     }
 
