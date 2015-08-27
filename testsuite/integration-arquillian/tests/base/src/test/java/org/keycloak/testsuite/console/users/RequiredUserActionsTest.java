@@ -8,10 +8,15 @@ import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
+import org.keycloak.testsuite.console.page.authentication.RequiredActions;
 import org.keycloak.testsuite.console.page.users.UserAttributes;
+
+import static org.keycloak.testsuite.model.RequiredUserAction.TERMS_AND_CONDITIONS;
 import static org.keycloak.testsuite.model.RequiredUserAction.UPDATE_PASSWORD;
 import static org.keycloak.testsuite.model.RequiredUserAction.UPDATE_PROFILE;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
+
+import org.keycloak.testsuite.util.SeleniumUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -19,19 +24,24 @@ import org.openqa.selenium.support.FindBy;
 /**
  *
  * @author tkyjovsk
+ * @author mhajas
  */
 public class RequiredUserActionsTest extends AbstractUserTest {
 
     @Page
-    private UserAttributes userAttrinbutes;
+    private UserAttributes userAttributes;
 
     @Page
     private Account testRealmAccount;
 
     @Page
     private UpdateAccount testRealmUpdateAccount;
+
     @Page
     private UpdatePassword testRealmUpdatePassword;
+
+    @Page
+    private RequiredActions requiredActions;
 
     @FindBy(css = "kc-feedback-text")
     protected WebElement feedbackText;
@@ -57,8 +67,8 @@ public class RequiredUserActionsTest extends AbstractUserTest {
 
     @Test
     public void updatePassword() {
-        userAttrinbutes.form().addRequiredAction(UPDATE_PASSWORD.getActionName());
-        userAttrinbutes.form().save();
+        userAttributes.form().addRequiredAction(UPDATE_PASSWORD.getActionName());
+        userAttributes.form().save();
         assertFlashMessageSuccess();
 
         testRealmAccount.navigateTo();
@@ -81,8 +91,8 @@ public class RequiredUserActionsTest extends AbstractUserTest {
 
     @Test
     public void updateProfile() {
-        userAttrinbutes.form().addRequiredAction(UPDATE_PROFILE.getActionName());
-        userAttrinbutes.form().save();
+        userAttributes.form().addRequiredAction(UPDATE_PROFILE.getActionName());
+        userAttributes.form().save();
         assertFlashMessageSuccess();
 
         testRealmAccount.navigateTo();
@@ -108,5 +118,28 @@ public class RequiredUserActionsTest extends AbstractUserTest {
         testRealmUpdateAccount.updateAccount(testRealmUser);
         assertCurrentUrlStartsWith(testRealmAccount);
     }
+
+    @Test
+    public void termsAndConditions() {
+        requiredActions.navigateTo();
+        requiredActions.clickTermsAndConditionEnabled();
+
+        manage().users();
+        users.table().viewAllUsers();
+        users.table().clickUser(testRealmUser.getUsername());
+
+        userAttributes.form().addRequiredAction(TERMS_AND_CONDITIONS.getActionName());
+        userAttributes.form().save();
+        assertFlashMessageSuccess();
+
+        testRealmAccount.navigateTo();
+
+        testRealmLogin.form().login(testRealmUser);
+
+        driver.findElement(By.xpath("//div[@id='kc-header-wrapper' and text()[contains(.,'Terms and Conditions')]]"));
+    }
+
+
+
 
 }
