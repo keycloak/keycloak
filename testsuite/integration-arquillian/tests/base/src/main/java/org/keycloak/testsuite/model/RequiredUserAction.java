@@ -26,7 +26,8 @@ public enum RequiredUserAction {
     UPDATE_PASSWORD("Update Password"),
     VERIFY_EMAIL("Verify Email"),
     UPDATE_PROFILE("Update Profile"),
-    CONFIGURE_TOTP("Configure Totp");
+    CONFIGURE_TOTP("Configure Totp"),
+    TERMS_AND_CONDITIONS("Terms and Conditions");
 
     private final String actionName;
 

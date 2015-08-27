@@ -3,6 +3,9 @@ package org.keycloak.testsuite.console.page;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.testsuite.console.page.fragment.Navigation;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+
+import org.keycloak.testsuite.util.SeleniumUtils;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -36,6 +39,7 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
     private ConfigureMenu configureMenu;
 
     public ConfigureMenu configure() {
+        SeleniumUtils.waitGuiForElement(By.xpath("//div[./h2[text()='Configure']]"));
         return configureMenu;
     }
 
@@ -88,6 +92,7 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
     protected ManageMenu manageMenu;
 
     public ManageMenu manage() {
+        SeleniumUtils.waitGuiForElement(By.xpath("//div[./h2[text()='Manage']]"));
         return manageMenu;
     }
 

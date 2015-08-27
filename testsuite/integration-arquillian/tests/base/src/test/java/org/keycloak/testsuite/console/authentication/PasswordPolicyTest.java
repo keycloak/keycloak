@@ -66,18 +66,16 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
     @Test
     public void testAddPolicyWithWrongArguments() {
         passwordPolicy.addPolicy(HASH_ITERATIONS, "asd");
-        assertFlashMessageError();
+        assertFlashMessageDanger();
         passwordPolicy.removePolicy(HASH_ITERATIONS);
 
-
+        passwordPolicy.addPolicy(REGEX_PATTERNS, "^[A-Z]{8,5}");
+        assertFlashMessageDanger();
     }
 
     @Test
     public void testAddRegexPatternsPolicy() {
-        passwordPolicy.addPolicy(REGEX_PATTERNS, "^[A-Z]{8,5}");
-        assertFlashMessageDanger();
-
-        passwordPolicy.editPolicy(REGEX_PATTERNS, "^[A-Z]{5}");
+        passwordPolicy.addPolicy(REGEX_PATTERNS, "^[A-Z]{5}");
         assertFlashMessageSuccess();
     }
 
