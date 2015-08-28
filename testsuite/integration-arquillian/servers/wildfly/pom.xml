@@ -353,7 +353,7 @@
                                         <!-- add logger for org.hibernate.dialect.Dialect -->
                                         <transformationSet>
                                             <dir>${keycloak.server.home}/standalone/configuration</dir>
-                                            <stylesheet>src/main/xslt/add-logger.xsl</stylesheet>
+                                            <stylesheet>src/main/xslt/add-dialect-logger.xsl</stylesheet>
                                             <includes>
                                                 <include>standalone.xml</include>
                                             </includes>
