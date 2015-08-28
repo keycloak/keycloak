@@ -57,13 +57,13 @@ public class ContainersTestEnricher {
 
     public void startSuiteContainers(@Observes(precedence = 1) StartSuiteContainers event) {
         if (migrationTests) {
-            System.out.println("### Starting keycloak with previous version ###");
+            System.out.println("\n### Starting keycloak with previous version ###\n");
         }
     }
 
     public void stopSuiteContainers(@Observes(precedence = -1) StartSuiteContainers event) {
         if (migrationTests) {
-            System.out.println("### Stopping keycloak with previous version ###");
+            System.out.println("\n### Stopping keycloak with previous version ###\n");
 
             stopSuiteContainers.fire(new StopSuiteContainers());
         }
