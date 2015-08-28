@@ -2,10 +2,10 @@ package org.keycloak.testsuite.arquillian;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.MessageFormat;
-import java.util.Date;
-import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
+import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
 import org.jboss.arquillian.container.test.api.ContainerController;
+import org.jboss.arquillian.core.api.Event;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
@@ -17,6 +17,7 @@ import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.testsuite.arquillian.annotation.AdapterLibsLocationProperty;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
@@ -28,6 +29,9 @@ public class ContainersTestEnricher {
 
     @Inject
     private Instance<ContainerController> containerController;
+
+    @Inject
+    private Event<StopSuiteContainers> stopSuiteContainers;
 
     private String authServerQualifier;
     private String appServerQualifier;
@@ -48,6 +52,22 @@ public class ContainersTestEnricher {
     private InstanceProducer<Keycloak> adminClient;
 
     private ContainerController controller;
+
+    private final boolean migrationTests = System.getProperty("migration", "false").equals("true");
+
+    public void startSuiteContainers(@Observes(precedence = 1) StartSuiteContainers event) {
+        if (migrationTests) {
+            System.out.println("### Starting keycloak with previous version ###");
+        }
+    }
+
+    public void stopSuiteContainers(@Observes(precedence = -1) StartSuiteContainers event) {
+        if (migrationTests) {
+            System.out.println("### Stopping keycloak with previous version ###");
+
+            stopSuiteContainers.fire(new StopSuiteContainers());
+        }
+    }
 
     public void beforeSuite(@Observes BeforeSuite event) {
         suiteContext.set(new SuiteContext());
