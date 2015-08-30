@@ -1340,7 +1340,7 @@ module.config([ '$routeProvider', function($routeProvider) {
 } ]);
 
 module.config(function($httpProvider) {
-    $httpProvider.responseInterceptors.push('errorInterceptor');
+    $httpProvider.interceptors.push('errorInterceptor');
 
     var spinnerFunction = function(data, headersGetter) {
         if (resourceRequests == 0) {
@@ -1354,14 +1354,14 @@ module.config(function($httpProvider) {
     };
     $httpProvider.defaults.transformRequest.push(spinnerFunction);
 
-    $httpProvider.responseInterceptors.push('spinnerInterceptor');
+    $httpProvider.interceptors.push('spinnerInterceptor');
     $httpProvider.interceptors.push('authInterceptor');
 
 });
 
 module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location) {
-    return function(promise) {
-        return promise.then(function(response) {
+    return {
+        response: function(response) {
             resourceRequests--;
             if (resourceRequests == 0) {
                 if(loadingTimer != -1) {
@@ -1371,7 +1371,8 @@ module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location
                 $('#loading').hide();
             }
             return response;
-        }, function(response) {
+        }, 
+        responseError: function(response) {
             resourceRequests--;
             if (resourceRequests == 0) {
                 if(loadingTimer != -1) {
@@ -1382,15 +1383,16 @@ module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location
             }
 
             return $q.reject(response);
-        });
+        }
     };
 });
 
 module.factory('errorInterceptor', function($q, $window, $rootScope, $location, Notifications, Auth) {
-    return function(promise) {
-        return promise.then(function(response) {
+    return {
+        response: function(response) {
             return response;
-        }, function(response) {
+        }, 
+        responseError: function(response) {
             if (response.status == 401) {
                 Auth.authz.logout();
             } else if (response.status == 403) {
@@ -1405,7 +1407,7 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
                 }
             }
             return $q.reject(response);
-        });
+        }
     };
 });
 
@@ -2035,7 +2037,7 @@ module.directive('kcTooltip', function($compile) {
                 element.addClass('hidden');
 
                 var label = angular.element(element.parent().children()[0]);
-                label.append(' <i class="fa fa-question-circle text-muted" tooltip="' + tooltip + '" tooltip-placement="right"></i>');
+                label.append(' <i class="fa fa-question-circle text-muted" tooltip="' + tooltip + '" tooltip-placement="right" tooltip-trigger="mouseover mouseout"></i>');
 
                 $compile(label)(scope);
             }
