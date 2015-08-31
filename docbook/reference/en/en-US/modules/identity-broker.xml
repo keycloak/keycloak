@@ -1275,19 +1275,11 @@ keycloak.createLoginUrl({
                     <term>BROKER_PROVIDER_ID</term>
                     <listitem>
                         <para>
-                            This is the provider id of the broker used to perform the login.
+                            This is the IDP alias of the broker used to perform the login.
                         </para>
                     </listitem>
                 </varlistentry>
-                <varlistentry>
-                    <term>BROKER_ALIAS</term>
-                    <listitem>
-                        <para>
-                            This is the provider id of the broker used to perform the login.
-                        </para>
-                    </listitem>
-                </varlistentry>
-            </variablelist>
+             </variablelist>
         </para>
     </section>
 
