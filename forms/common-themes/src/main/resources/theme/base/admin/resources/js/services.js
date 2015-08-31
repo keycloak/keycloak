@@ -5,7 +5,7 @@ var module = angular.module('keycloak.services', [ 'ngResource', 'ngRoute' ]);
 module.service('Dialog', function($modal) {
 	var dialog = {};
 
-    var openDialog = function(title, message, btns) {
+    var openDialog = function(title, message, btns, template) {
         var controller = function($scope, $modalInstance, title, message, btns) {
             $scope.title = title;
             $scope.message = message;
@@ -20,7 +20,7 @@ module.service('Dialog', function($modal) {
         };
 
         return $modal.open({
-            templateUrl: resourceUrl + '/templates/kc-modal.html',
+            templateUrl: resourceUrl + template,
             controller: controller,
             resolve: {
                 title: function() {
@@ -56,7 +56,7 @@ module.service('Dialog', function($modal) {
             }
         }
 
-        openDialog(title, msg, btns).then(success);
+        openDialog(title, msg, btns, '/templates/kc-modal.html').then(success);
 	}
 
     dialog.confirmGenerateKeys = function(name, type, success) {
@@ -73,7 +73,7 @@ module.service('Dialog', function($modal) {
             }
         }
 
-        openDialog(title, msg, btns).then(success);
+        openDialog(title, msg, btns, '/templates/kc-modal.html').then(success);
     }
 
     dialog.confirm = function(title, message, success, cancel) {
@@ -88,10 +88,21 @@ module.service('Dialog', function($modal) {
             }
         }
 
-        openDialog(title, message, btns).then(success, cancel);
+        openDialog(title, message, btns, '/templates/kc-modal.html').then(success, cancel);
     }
 
-	return dialog
+    dialog.message = function(title, message, success, cancel) {
+        var btns = {
+            ok: {
+                label: "Ok",
+                cssClass: 'btn btn-default'
+            }
+        }
+
+        openDialog(title, message, btns, '/templates/kc-modal-message.html').then(success, cancel);
+    }
+
+    return dialog
 });
 
 module.service('CopyDialog', function($modal) {
@@ -427,16 +438,18 @@ module.factory('UserCredentials', function($resource) {
         }
     }).update;
 
-    credentials.resetPasswordEmail = $resource(authUrl + '/admin/realms/:realm/users/:userId/reset-password-email', {
+    return credentials;
+});
+
+module.factory('UserExecuteActionsEmail', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/:userId/execute-actions-email', {
         realm : '@realm',
         userId : '@userId'
     }, {
         update : {
             method : 'PUT'
         }
-    }).update;
-
-    return credentials;
+    });
 });
 
 module.factory('RealmRoleMapping', function($resource) {

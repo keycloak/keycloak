@@ -274,17 +274,12 @@ public class LoginActionsService {
                                  @QueryParam("execution") String execution) {
         event.event(EventType.LOGIN);
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
             return checks.response;
         }
         event.detail(Details.CODE_ID, code);
         ClientSessionCode clientSessionCode = checks.clientCode;
         ClientSessionModel clientSession = clientSessionCode.getClientSession();
-
-        if (clientSession.getAction().equals(ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
-            TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
-            clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-        }
 
         return processAuthentication(execution, clientSession, null);
     }
@@ -568,20 +563,21 @@ public class LoginActionsService {
      * @param key
      * @return
      */
-    @Path("recover-password")
+    @Path("execute-actions")
     @GET
-    public Response recoverPassword(@QueryParam("key") String key) {
-        event.event(EventType.RESET_PASSWORD);
+    public Response executeActions(@QueryParam("key") String key) {
+        event.event(EventType.EXECUTE_ACTIONS);
         if (key != null) {
             Checks checks = new Checks();
-            if (!checks.verifyCode(key, ClientSessionModel.Action.RECOVER_PASSWORD.name())) {
+            if (!checks.verifyCode(key, ClientSessionModel.Action.EXECUTE_ACTIONS.name())) {
                 return checks.response;
             }
             ClientSessionModel clientSession = checks.clientCode.getClientSession();
             clientSession.setNote("END_AFTER_REQUIRED_ACTIONS", "true");
+            clientSession.setNote(ClientSessionModel.Action.EXECUTE_ACTIONS.name(), "true");
             return AuthenticationManager.nextActionAfterAuthentication(session, clientSession.getUserSession(), clientSession, clientConnection, request, uriInfo, event);
         } else {
-            event.error(Errors.RESET_CREDENTIAL_DISABLED);
+            event.error(Errors.INVALID_CODE);
             return ErrorPage.error(session, Messages.INVALID_CODE);
         }
     }

@@ -19,7 +19,6 @@ public interface EmailProvider extends Provider {
     /**
      * Reset password sent from forgot password link on login
      *
-     * @param code
      * @param link
      * @param expirationInMinutes
      * @throws EmailException
@@ -33,7 +32,7 @@ public interface EmailProvider extends Provider {
      * @param expirationInMinutes
      * @throws EmailException
      */
-    public void sendChangePassword(String link, long expirationInMinutes) throws EmailException;
+    public void sendExecuteActions(String link, long expirationInMinutes) throws EmailException;
 
     public void sendVerifyEmail(String link, long expirationInMinutes) throws EmailException;
 

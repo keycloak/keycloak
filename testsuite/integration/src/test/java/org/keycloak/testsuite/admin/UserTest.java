@@ -361,7 +361,7 @@ public class UserTest extends AbstractClientTest {
         UserResource user = realm.users().get(id);
 
         try {
-            user.resetPasswordEmail();
+            user.executeActionsEmail();
             fail("Expected failure");
         } catch (ClientErrorException e) {
             assertEquals(400, e.getResponse().getStatus());
@@ -374,7 +374,7 @@ public class UserTest extends AbstractClientTest {
             userRep.setEmail("user1@localhost");
             userRep.setEnabled(false);
             user.update(userRep);
-            user.resetPasswordEmail();
+            user.executeActionsEmail();
             fail("Expected failure");
         } catch (ClientErrorException e) {
             assertEquals(400, e.getResponse().getStatus());
@@ -385,7 +385,7 @@ public class UserTest extends AbstractClientTest {
         try {
             userRep.setEnabled(true);
             user.update(userRep);
-            user.resetPasswordEmail("invalidClientId");
+            user.executeActionsEmail("invalidClientId");
             fail("Expected failure");
         } catch (ClientErrorException e) {
             assertEquals(400, e.getResponse().getStatus());
