@@ -835,7 +835,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         }
     }, true);
 
-    $scope.callbackUrl = $location.absUrl().replace(/\/admin.*/, "/realms/") + realm.realm + "/broker/" ;
+    $scope.callbackUrl = encodeURI($location.absUrl().replace(/\/admin.*/, "/realms/") + realm.realm + "/broker/") ;
 
     $scope.addProvider = function(provider) {
         $location.url("/create/identity-provider/" + realm.realm + "/" + provider.id);
