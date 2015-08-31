@@ -156,8 +156,8 @@ public class Urls {
         return loginResetCredentialsBuilder(baseUri).build(realmId);
     }
 
-    public static UriBuilder recoverPasswordBuilder(URI baseUri) {
-        return loginActionsBase(baseUri).path(LoginActionsService.class, "recoverPassword");
+    public static UriBuilder executeActionsBuilder(URI baseUri) {
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "executeActions");
     }
 
     public static UriBuilder loginResetCredentialsBuilder(URI baseUri) {

@@ -77,11 +77,12 @@ public interface ClientSessionModel {
         UPDATE_PROFILE,
         CONFIGURE_TOTP,
         UPDATE_PASSWORD,
-        RECOVER_PASSWORD,
+        RECOVER_PASSWORD, // deprecated
         AUTHENTICATE,
         SOCIAL_CALLBACK,
         LOGGED_OUT,
-        RESET_CREDENTIALS
+        RESET_CREDENTIALS,
+        EXECUTE_ACTIONS
     }
 
     public enum ExecutionStatus {
