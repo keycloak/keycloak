@@ -840,4 +840,29 @@ public class SecretQuestionRequiredActionFactory implements RequiredActionFactor
             </para>
         </section>
     </section>
+    <section>
+        <title>Modifying Forgot Password/Credential Flow</title>
+        <para>
+            Keycloak also has a specific authentication flow for forgot password, or rather credential reset initiated
+            by a user.  If you go to the admin console flows page, there is a "reset credentials" flow.  By default,
+            Keycloak asks for the email or username of the user and sends an email to them.  If the user clicks on the
+            link, then they are able to reset both their password and OTP (if an OTP has been set up).  You can disable
+            automatic OTP reset by disabling the "Reset OTP" authenticator in the flow.
+        </para>
+        <para>
+            You can add additional functionality to this flow as well.  For example, many deployments would like for the
+            user to answer one or more secret questions in additional to sending an email with a link.  You could expand
+            on the secret question example that comes with the distro and incorporate it into the reset credential flow.
+        </para>
+        <para>
+            One thing to note if you are extending the reset credentials flow.  The first "authenticator" is just
+            a page to obtain the username or email.  If the username or email exists, then the AuthenticationFlowContext.getUser()
+            will return the located user.  Otherwise this will be null.  This form *WILL NOT* re-ask the user to enter in
+            an email or username if the previous email or username did not exist.  You need to prevent attackers from being able
+            to guess valid users.  So, if AuthenticationFlowContext.getUser() returns null, you should proceed with the flow to make
+            it look like a valid user was selected.  I suggest that if you want to add secret questions to this flow, you should
+            ask these questions after the email is sent.  In other words, add your custom authenticator after the "Send Reset Email"
+            authenticator.
+        </para>
+    </section>
 </chapter>
