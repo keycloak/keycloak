@@ -1516,6 +1516,7 @@ module.controller('RealmBruteForceCtrl', function($scope, Realm, realm, $http, $
 
         $scope.changed = false;
         Realm.update(realmCopy, function () {
+            oldCopy = angular.copy($scope.realm);
             $location.url("/realms/" + realm.realm + "/defense/brute-force");
             Notifications.success("Your changes have been saved to the realm.");
         });
