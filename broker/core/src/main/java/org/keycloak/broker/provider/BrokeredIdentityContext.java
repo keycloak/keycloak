@@ -17,6 +17,7 @@
  */
 package org.keycloak.broker.provider;
 
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.IdentityProviderModel;
 
 import java.util.HashMap;
@@ -43,6 +44,7 @@ public class BrokeredIdentityContext {
     private IdentityProviderModel idpConfig;
     private IdentityProvider idp;
     private Map<String, Object> contextData = new HashMap<>();
+    private ClientSessionModel clientSession;
 
     public BrokeredIdentityContext(String id) {
         if (id == null) {
@@ -164,6 +166,14 @@ public class BrokeredIdentityContext {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    public ClientSessionModel getClientSession() {
+        return clientSession;
+    }
+
+    public void setClientSession(ClientSessionModel clientSession) {
+        this.clientSession = clientSession;
     }
 
     public void setName(String name) {

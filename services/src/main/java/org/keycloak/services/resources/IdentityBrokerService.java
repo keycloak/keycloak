@@ -256,6 +256,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         ClientSessionModel clientSession = clientCode.getClientSession();
+        context.setClientSession(clientSession);
 
         session.getContext().setClient(clientSession.getClient());
 
