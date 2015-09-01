@@ -27,7 +27,7 @@
             </modules>
         </profile>
         <profile>
-            <id>previous-server-wildfly_kc14</id>
+            <id>migration-kc14</id>
             <modules>
                 <module>wildfly_kc14</module>
             </modules>

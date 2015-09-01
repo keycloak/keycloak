@@ -25,7 +25,7 @@
                 <configuration>
                     <skip>true</skip>
                 </configuration>
-            </plugin>        
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -60,7 +60,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>   
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -93,7 +93,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>${jdbc.mvn.groupId}</groupId>
-                                    <artifactId>${jdbc.mvn.artifactId}</artifactId>        
+                                    <artifactId>${jdbc.mvn.artifactId}</artifactId>
                                     <version>${jdbc.mvn.version}</version>
                                     <type>jar</type>
                                 </artifactItem>
@@ -103,7 +103,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin> 
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>xml-maven-plugin</artifactId>
@@ -196,55 +196,4 @@
             </plugin>
         </plugins>
     </build>
-    
-    <profiles>
-        <profile>
-            <id>prepare-base-tests-for-migration-tests</id>
-            <properties>
-                <tests.pom.xml.location>../../tests</tests.pom.xml.location>
-                <arquillian.xml.location>${tests.pom.xml.location}/base/src/test/resources</arquillian.xml.location>
-            </properties>
-            <build>
-                <plugins>
-                    <!-- add profile to integration-arquillian-tests (integration-arquillian/tests/pom.xml) -->
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>xml-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>prepare-tests-for-migration-testing</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <!-- add container definition to integration-arquillian/tests/base/src/
-                                        test/resources/arquillian.xml  -->
-                                        <transformationSet>
-                                            <dir>${arquillian.xml.location}</dir>
-                                            <stylesheet>src/main/xslt/arquillian.xsl</stylesheet>
-                                            <includes>
-                                                <include>arquillian.xml</include>
-                                            </includes>
-                                            <outputDir>${arquillian.xml.location}</outputDir>
-                                        </transformationSet>
-                                        <!-- add profile to integration-arquillian/tests/pom.xml -->
-                                        <transformationSet>
-                                            <dir>${tests.pom.xml.location}</dir>
-                                            <stylesheet>src/main/xslt/add-profile.xsl</stylesheet>
-                                            <includes>
-                                                <include>pom.xml</include>
-                                            </includes>
-                                            <outputDir>${tests.pom.xml.location}</outputDir>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
