@@ -51,6 +51,8 @@
         </configuration>
     </container>
     
+    <!-- KEYCLOAK PREVIOUS VERSIONS FOR MIGRATION TESTS -->
+    
     <container qualifier="keycloak-1.4.0.Final" mode="suite" >
         <configuration>
             <property name="enabled">${migration.kc14}</property>
@@ -62,5 +64,15 @@
         </configuration>
     </container>
     
+    <container qualifier="keycloak-1.3.1.Final" mode="suite" >
+        <configuration>
+            <property name="enabled">${migration.kc13}</property>
+            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
+            <property name="jbossHome">${keycloak-1.3.1.Final.home}</property>
+            <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
+            <property name="managementPort">${auth.server.management.port}</property>
+            <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
+        </configuration>
+    </container>
     
 </arquillian>
