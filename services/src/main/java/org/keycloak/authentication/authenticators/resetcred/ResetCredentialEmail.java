@@ -125,7 +125,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
 
     @Override
     public String getDisplayType() {
-        return "Reset Via Email";
+        return "Send Reset Email";
     }
 
     @Override

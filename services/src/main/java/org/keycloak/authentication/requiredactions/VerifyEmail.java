@@ -8,6 +8,7 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserCredentialModel;
@@ -35,6 +36,13 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     }
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
+        // if this is EXECUTE_ACTIONS we know that the email sent is valid so we can verify it automatically
+        if (context.getClientSession().getNote(ClientSessionModel.Action.EXECUTE_ACTIONS.name()) != null) {
+            context.getUser().setEmailVerified(true);
+            context.success();
+            return;
+        }
+
         if (Validation.isBlank(context.getUser().getEmail())) {
             context.ignore();
             return;

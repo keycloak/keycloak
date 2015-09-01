@@ -1,1 +1,0 @@
-${msg("changePasswordBody",link, linkExpiration, realmName)}

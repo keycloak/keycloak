@@ -4,5 +4,6 @@ org.keycloak.protocol.saml.mappers.HardcodedRole
 org.keycloak.protocol.saml.mappers.HardcodedAttributeMapper
 org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper
 org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper
+org.keycloak.protocol.saml.mappers.UserSessionNoteStatementMapper
 
 

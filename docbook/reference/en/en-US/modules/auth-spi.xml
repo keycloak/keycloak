@@ -200,7 +200,7 @@ Forms Subflow - ALTERNATIVE
             </orderedlist>
         </para>
     </section>
-    <section>
+    <section id="auth_spi_walkthrough">
         <title>Authenticator SPI Walk Through</title>
         <para>
             In this section, we'll take a look at the Authenticator interface.  For this, we are going to implement an authenticator
@@ -502,7 +502,7 @@ public class SecretQuestionAuthenticatorFactory implements AuthenticatorFactory,
                 bean as well.
             </para>
         </section>
-        <section>
+        <section id="adding_authenticator">
             <title>Adding Authenticator to a Flow</title>
             <para>
                 Adding an Authenticator to a flow must be done in the admin console.
@@ -837,6 +837,167 @@ public class SecretQuestionRequiredActionFactory implements RequiredActionFactor
                 After you've created your flow, you have to bind it to registration.  If you go
                 to the Authentication menu and go  to the Bindings tab you will see options to bind a flow to
                 the browser, registration, or direct grant flow.
+            </para>
+        </section>
+    </section>
+    <section>
+        <title>Modifying Forgot Password/Credential Flow</title>
+        <para>
+            Keycloak also has a specific authentication flow for forgot password, or rather credential reset initiated
+            by a user.  If you go to the admin console flows page, there is a "reset credentials" flow.  By default,
+            Keycloak asks for the email or username of the user and sends an email to them.  If the user clicks on the
+            link, then they are able to reset both their password and OTP (if an OTP has been set up).  You can disable
+            automatic OTP reset by disabling the "Reset OTP" authenticator in the flow.
+        </para>
+        <para>
+            You can add additional functionality to this flow as well.  For example, many deployments would like for the
+            user to answer one or more secret questions in additional to sending an email with a link.  You could expand
+            on the secret question example that comes with the distro and incorporate it into the reset credential flow.
+        </para>
+        <para>
+            One thing to note if you are extending the reset credentials flow.  The first "authenticator" is just
+            a page to obtain the username or email.  If the username or email exists, then the AuthenticationFlowContext.getUser()
+            will return the located user.  Otherwise this will be null.  This form *WILL NOT* re-ask the user to enter in
+            an email or username if the previous email or username did not exist.  You need to prevent attackers from being able
+            to guess valid users.  So, if AuthenticationFlowContext.getUser() returns null, you should proceed with the flow to make
+            it look like a valid user was selected.  I suggest that if you want to add secret questions to this flow, you should
+            ask these questions after the email is sent.  In other words, add your custom authenticator after the "Send Reset Email"
+            authenticator.
+        </para>
+    </section>
+
+    <section id="client_authentication">
+        <title>Authentication of clients</title>
+        <para>Keycloak actually supports pluggable authentication for <ulink url="http://openid.net/specs/openid-connect-core-1_0.html">OpenID Connect</ulink>
+            client applications. Authentication of client (application) is used under the hood by the <link linkend="adapter-config">Keycloak adapter</link>
+            during sending any backchannel requests to the Keycloak server (like the request for exchange code to access token after
+            successful authentication or request to refresh token). But the client authentication can be also used directly by you during
+            <link linkend="direct-access-grants">Direct Access grants</link> or during <link linkend="service-accounts">Service account</link> authentication.
+        </para>
+        <section>
+            <title>Default implementations</title>
+            <para>
+                Actually Keycloak has 2 builtin implementations of client authentication:
+                <variablelist>
+                    <varlistentry>
+                        <term>Traditional authentication with client_id and client_secret</term>
+                        <listitem>
+                            <para>
+                                This is default mechanism mentioned in the <ulink url="http://openid.net/specs/openid-connect-core-1_0.html">OpenID Connect</ulink>
+                                or <ulink url="http://tools.ietf.org/html/rfc6749">OAuth2</ulink> specification and Keycloak supports it since it's early days.
+                                The public client needs to include <literal>client_id</literal> parameter with it's ID in the POST request (so it's defacto not authenticated)
+                                and the confidential client needs to include <literal>Authorization: Basic</literal> header with
+                                the clientId and clientSecret used as username and password.
+                            </para>
+                            <para>
+                                For the public/javascript clients, you
+                                don't need to add anything into your keycloak.json configuration file. For the confidential (server) clients, you need to add something like this:
+<programlisting><![CDATA[
+"credentials": {
+    "secret": "mysecret"
+}
+]]></programlisting>
+
+                                where the <literal>mysecret</literal> needs to be replaced with the real value of client secret. You can obtain it from client admin console.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>Authentication with signed JWT</term>
+                        <listitem>
+                            <para>
+                                This is based on the <ulink url="https://tools.ietf.org/html/draft-jones-oauth-jwt-bearer-03">JWT Bearer Token Profiles for OAuth 2.0</ulink> specification.
+                                The client/adapter generates the <ulink url="https://tools.ietf.org/html/rfc7519">JWT</ulink> and signs it with his private key.
+                                The Keycloak then verifies the signed JWT with the client's public key and authenticates client based on it.
+                            </para>
+                            <para>
+                                To achieve this, you need those steps:
+                                <itemizedlist>
+                                    <listitem>Your client needs to have private key and Keycloak needs to have client public key. This can be either:
+                                        <itemizedlist>
+                                            <listitem>
+                                                Generated in Keycloak admin console - In this case, Keycloak will generate pair of keys and it will save
+                                                public key and certificate in it's DB. The keystore file with the private key will be downloaded and you need to save it
+                                                in the location accessible to your client application
+                                            </listitem>
+                                            <listitem>
+                                                Uploaded in Keycloak admin console - This option is useful if you already has existing private key of your client.
+                                                In this case, you just need to upload the public key and certificate to the Keycloak server.
+                                            </listitem>
+                                        </itemizedlist>
+                                        In both cases, the private key is not saved in Keycloak DB, but it's owned exclusively by your client. The Keycloak DB has just public key.
+                                    </listitem>
+                                    <listitem>
+                                        As second step, you need to use the configuration like this in your <literal>keycloak.json</literal> adapter configuration:
+<programlisting><![CDATA[
+"credentials": {
+    "jwt": {
+        "client-keystore-file": "classpath:keystore-client.jks",
+        "client-keystore-type": "JKS",
+        "client-keystore-password": "storepass",
+        "client-key-password": "keypass",
+        "client-key-alias": "clientkey",
+        "token-expiration": 10
+    }
+}
+]]></programlisting>
+                                        The <literal>client-keystore-file</literal> is the location of the keystore file, which is either on classpath
+                                        (for example if bundled in the WAR itself) or somewhere on the filesystem. Other options specify type of keystore and password of keystore itself
+                                        and of the private key. Last option <literal>token-expiration</literal> is the expiration of JWT in seconds. The token needs to be valid
+                                        just for single request, so 10 seconds is usually sufficient.
+                                    </listitem>
+                                </itemizedlist>
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
+            </para>
+            <para>
+                See the demo example and especially the <literal>examples/preconfigured-demo/service-account</literal>
+                for the example application showing service accounts authentication with both clientId+clientSecret and with signed JWT.
+            </para>
+        </section>
+
+        <section>
+            <title>Implement your own client authenticator</title>
+            <para>
+                For plug your own client authenticator, you need to implement few interfaces on both client (adapter) and server side.
+                <variablelist>
+                    <varlistentry>
+                        <term>Client side</term>
+                        <listitem>
+                            <para>
+                                Here you need to implement <literal>org.keycloak.adapters.authentication.ClientCredentialsProvider</literal> and put the implementation either to:
+                                <itemizedlist>
+                                    <listitem>your WAR file into WEB-INF/classes . But in this case, the implementation can be used just for this single WAR application</listitem>
+                                    <listitem>Some JAR file, which will be added into WEB-INF/lib of your WAR</listitem>
+                                    <listitem>Some JAR file, which will be used as jboss module and configured in jboss-deployment-structure.xml of your WAR.</listitem>
+                                </itemizedlist>
+                                In all cases, you also need to create the file <literal>META-INF/services/org.keycloak.adapters.authentication.ClientCredentialsProvider</literal>
+                                either in the WAR or in your JAR.
+                            </para>
+                            <para>
+                                You also need to configure your clientCredentialsProvider in <literal>keycloak.json</literal> . See the javadoc for more details.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>Server side</term>
+                        <listitem>
+                            <para>
+                                Here you need to implement <literal>org.keycloak.authentication.ClientAuthenticatorFactory</literal> and
+                                <literal>org.keycloak.authentication.ClientAuthenticator</literal> . You also need to add the file
+                                <literal>META-INF/services/org.keycloak.authentication.ClientAuthenticatorFactory</literal> with the name of the implementation classes.
+                                See <link linkend="auth_spi_walkthrough">authenticators</link> for more details.
+                            </para>
+                            <para>
+                                Finally you need to configure admin console . You need to create new client authentication flow and define execution
+                                with your authenticator (you can also add the builtin authenticators and configure requirements etc)
+                                and finally configure Clients binding . See <link linkend="adding_authenticator">Adding Authenticator</link> for more details.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
             </para>
         </section>
     </section>

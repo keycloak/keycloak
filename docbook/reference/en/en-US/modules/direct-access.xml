@@ -30,7 +30,9 @@
         an access token for.  You must also pass along the "client_id" of the client you are creating
         an access token for.  This "client_id" is the Client Id specified in admin console (not it's id from DB!).  Depending on
         whether your client is <link linkend='access-types'>"public" or "confidential"</link>, you may also have to pass along
-        it's client secret as well. Finally you need to pass "grant_type" parameter with value "password" .
+        it's client secret as well. We support pluggable client authentication, so alternatively you can use other form of client credentials like signed JWT assertion.
+        See <link linkend="client_authentication">Client Authentication</link> section for more details. Finally you need to pass "grant_type"
+        parameter with value "password" .
     </para>
     <para>
         For public client's, the POST invocation requires form parameters that contain the username,
@@ -70,6 +72,10 @@ Pragma: no-cache
     username=bburke&password=geheim&grant_type=password]]>
 </programlisting>
 
+    </para>
+    <para>As mentioned above, we support also other means of authenticating clients. In adition to default client_id and client secret,
+        we also have signed JWT assertion by default. There is possibility to use any other form of client authentication implemented by you. See <link linkend="client_authentication">Client Authentication</link>
+        section for more details.
     </para>
     <para>
         Here's a Java example using Apache HTTP Client and some Keycloak utility classes.:

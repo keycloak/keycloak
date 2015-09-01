@@ -68,7 +68,8 @@ public enum EventType {
     IDENTITY_PROVIDER_ACCCOUNT_LINKING_ERROR(false),
     IMPERSONATE(true),
     CUSTOM_REQUIRED_ACTION(true),
-    CUSTOM_REQUIRED_ACTION_ERROR(true);
+    CUSTOM_REQUIRED_ACTION_ERROR(true),
+    EXECUTE_ACTIONS(true);
 
     private boolean saveByDefault;
 

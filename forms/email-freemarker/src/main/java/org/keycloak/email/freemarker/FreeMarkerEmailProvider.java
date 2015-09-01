@@ -82,7 +82,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
     }
 
     @Override
-    public void sendChangePassword(String link, long expirationInMinutes) throws EmailException {
+    public void sendExecuteActions(String link, long expirationInMinutes) throws EmailException {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
@@ -90,7 +90,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
         String realmName = realm.getName().substring(0, 1).toUpperCase() + realm.getName().substring(1);
         attributes.put("realmName", realmName);
 
-        send("changePasswordSubject", "changePassword.ftl", attributes);
+        send("executeActionsSubject", "executeActions.ftl", attributes);
 
     }
 

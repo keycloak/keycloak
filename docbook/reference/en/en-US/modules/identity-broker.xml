@@ -1264,6 +1264,24 @@ keycloak.createLoginUrl({
             JSON structure in Keycloak log file. 
         </para>
     </section>
+    <section>
+        <title>User Session Data</title>
+        <para>
+           After a user logs in from the external IDP, there's some additional user session note data that Keycloak stores that you
+            can access.  This data can be propagated to the client requesting a login
+            via the token or SAML assertion being passed back to it by using an appropriate client mapper.
+            <variablelist>
+                <varlistentry>
+                    <term>BROKER_PROVIDER_ID</term>
+                    <listitem>
+                        <para>
+                            This is the IDP alias of the broker used to perform the login.
+                        </para>
+                    </listitem>
+                </varlistentry>
+             </variablelist>
+        </para>
+    </section>
 
     <section>
         <title>Examples</title>

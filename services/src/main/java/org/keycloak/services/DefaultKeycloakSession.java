@@ -1,5 +1,6 @@
 package org.keycloak.services;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.KeycloakContext;
@@ -16,6 +17,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 
 import javax.ws.rs.core.UriInfo;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -37,6 +39,8 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private UserSessionProvider sessionProvider;
     private UserFederationManager federationManager;
     private KeycloakContext context;
+    
+    private static final Logger logger = Logger.getLogger(DefaultKeycloakSession.class);
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
@@ -108,6 +112,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         T provider = (T) providers.get(hash);
         if (provider == null) {
             ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, id);
+          
             if (providerFactory != null) {
                 provider = providerFactory.create(this);
                 providers.put(hash, provider);

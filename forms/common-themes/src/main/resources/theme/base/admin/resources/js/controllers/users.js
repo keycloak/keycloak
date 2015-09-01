@@ -304,7 +304,7 @@ module.controller('UserTabCtrl', function($scope, $location, Dialog, Notificatio
     };
 });
 
-module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser, User, UserFederationInstances, UserImpersonation, RequiredActions, $location, Dialog, Notifications) {
+module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser, User, UserExecuteActionsEmail, UserFederationInstances, UserImpersonation, RequiredActions, $location, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.create = !user.id;
     $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
@@ -388,6 +388,21 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
             $scope.changed = true;
         }
     }, true);
+
+    $scope.sendExecuteActionsEmail = function() {
+        if ($scope.changed) {
+            Dialog.message("Cannot send email", "You must save your current changes before you can send an email");
+            return;
+        }
+        Dialog.confirm('Send Email', 'Are you sure you want to send email to user?', function() {
+            UserExecuteActionsEmail.update({ realm: realm.realm, userId: user.id }, { }, function() {
+                Notifications.success("Email sent to user");
+            }, function() {
+                Notifications.error("Failed to send email to user");
+            });
+        });
+    };
+
 
     $scope.save = function() {
         convertAttributeValuesToLists();
@@ -513,15 +528,6 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
         });
     };
 
-    $scope.resetPasswordEmail = function() {
-        Dialog.confirm('Reset password email', 'Are you sure you want to send password reset email to user?', function() {
-            UserCredentials.resetPasswordEmail({ realm: realm.realm, userId: user.id }, { }, function() {
-                Notifications.success("Password reset email sent to user");
-            }, function() {
-                Notifications.error("Failed to send password reset mail to user");
-            });
-        });
-    };
 
     $scope.$watch('user', function() {
         if (!angular.equals($scope.user, user)) {
