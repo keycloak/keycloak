@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.forms;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -24,6 +25,25 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED
     };
+
+    private static final List<ProviderConfigProperty> clientConfigProperties = new ArrayList<ProviderConfigProperty>();
+
+    static {
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
+        property.setName("passthroughauth.foo");
+        property.setLabel("Foo Property");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Foo Property of this authenticator, which does nothing");
+        clientConfigProperties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName("passthroughauth.bar");
+        property.setLabel("Bar Property");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setHelpText("Bar Property of this authenticator, which does nothing");
+        clientConfigProperties.add(property);
+
+    }
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
@@ -60,7 +80,7 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
 
     @Override
     public boolean isConfigurablePerClient() {
-        return false;
+        return true;
     }
 
     @Override
@@ -76,6 +96,11 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return new LinkedList<>();
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigPropertiesPerClient() {
+        return clientConfigProperties;
     }
 
     @Override

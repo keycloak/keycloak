@@ -1,5 +1,8 @@
 package org.keycloak.authentication;
 
+import java.util.List;
+
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 
 /**
@@ -28,5 +31,13 @@ public interface ClientAuthenticatorFactory extends ProviderFactory<ClientAuthen
      * @return
      */
     boolean isConfigurablePerClient();
+
+    /**
+     * List of config properties for this client implementation. Those will be shown in admin console in clients credentials tab and can be configured per client.
+     * Applicable only if "isConfigurablePerClient" is true
+     *
+     * @return
+     */
+    List<ProviderConfigProperty> getConfigPropertiesPerClient();
 
 }

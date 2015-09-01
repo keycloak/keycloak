@@ -106,7 +106,7 @@ public abstract class ProductServiceAccountServlet extends HttpServlet {
             List<NameValuePair> formparams = new ArrayList<NameValuePair>();
             formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
 
-            // Add client credentials according to the method configured in keycloak.json file
+            // Add client credentials according to the method configured in keycloak-client-secret.json or keycloak-client-signed-jwt.json file
             Map<String, String> reqHeaders = new HashMap<>();
             Map<String, String> reqParams = new HashMap<>();
             ClientCredentialsProviderUtils.setClientCredentials(deployment, reqHeaders, reqParams);
