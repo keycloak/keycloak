@@ -666,6 +666,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientSignedJWTCtrl'
         })
+        .when('/realms/:realm/clients/:client/credentials/:provider', {
+            templateUrl : resourceUrl + '/partials/client-credentials-generic.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                },
+                clientConfigProperties: function(PerClientAuthenticationConfigDescriptionLoader) {
+                    return PerClientAuthenticationConfigDescriptionLoader();
+                }
+            },
+            controller : 'ClientGenericCredentialsCtrl'
+        })
         .when('/realms/:realm/clients/:client/credentials/client-jwt/:keyType/import/:attribute', {
             templateUrl : resourceUrl + '/partials/client-credentials-jwt-key-import.html',
             resolve : {

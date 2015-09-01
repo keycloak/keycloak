@@ -1,5 +1,6 @@
 package org.keycloak.authentication.authenticators.client;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -155,6 +156,12 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return new LinkedList<>();
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigPropertiesPerClient() {
+        // This impl doesn't use generic screen in admin console, but has it's own screen. So no need to return anything here
+        return Collections.emptyList();
     }
 
     @Override

@@ -93,6 +93,39 @@ module.controller('ClientSignedJWTCtrl', function($scope, $location, realm, clie
     };
 });
 
+module.controller('ClientGenericCredentialsCtrl', function($scope, $location, realm, client, clientConfigProperties, Client, Notifications) {
+
+    console.log('ClientGenericCredentialsCtrl invoked');
+
+    $scope.realm = realm;
+    $scope.client = angular.copy(client);
+    $scope.clientConfigProperties = clientConfigProperties;
+    $scope.changed = false;
+
+    $scope.$watch('client', function() {
+        if (!angular.equals($scope.client, client)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+
+        Client.update({
+            realm : realm.realm,
+            client : client.id
+        }, $scope.client, function() {
+            $scope.changed = false;
+            client = $scope.client;
+            Notifications.success("Client authentication configuration has been saved to the client.");
+        });
+    };
+
+    $scope.reset = function() {
+        $scope.client = angular.copy(client);
+        $scope.changed = false;
+    };
+});
+
 module.controller('ClientIdentityProviderCtrl', function($scope, $location, $route, realm, client, Client, $location, Notifications) {
     $scope.realm = realm;
     $scope.client = angular.copy(client);

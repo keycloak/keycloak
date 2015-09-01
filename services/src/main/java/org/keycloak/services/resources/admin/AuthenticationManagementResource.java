@@ -877,15 +877,38 @@ public class AuthenticationManagementResource {
         rep.setProperties(new LinkedList<ConfigPropertyRepresentation>());
         List<ProviderConfigProperty> configProperties = factory.getConfigProperties();
         for (ProviderConfigProperty prop : configProperties) {
-            ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
-            propRep.setName(prop.getName());
-            propRep.setLabel(prop.getLabel());
-            propRep.setType(prop.getType());
-            propRep.setDefaultValue(prop.getDefaultValue());
-            propRep.setHelpText(prop.getHelpText());
+            ConfigPropertyRepresentation propRep = getConfigPropertyRep(prop);
             rep.getProperties().add(propRep);
         }
         return rep;
+    }
+
+    private ConfigPropertyRepresentation getConfigPropertyRep(ProviderConfigProperty prop) {
+        ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
+        propRep.setName(prop.getName());
+        propRep.setLabel(prop.getLabel());
+        propRep.setType(prop.getType());
+        propRep.setDefaultValue(prop.getDefaultValue());
+        propRep.setHelpText(prop.getHelpText());
+        return propRep;
+    }
+
+
+    @Path("per-client-config-description/{providerId}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public List<ConfigPropertyRepresentation> getPerClientConfigDescription(@PathParam("providerId") String providerId) {
+        this.auth.requireView();
+        ConfigurableAuthenticatorFactory factory = CredentialHelper.getConfigurableAuthenticatorFactory(session, providerId);
+        ClientAuthenticatorFactory clientAuthFactory = (ClientAuthenticatorFactory) factory;
+        List<ProviderConfigProperty> perClientConfigProps = clientAuthFactory.getConfigPropertiesPerClient();
+        List<ConfigPropertyRepresentation> result = new LinkedList<>();
+        for (ProviderConfigProperty prop : perClientConfigProps) {
+            ConfigPropertyRepresentation propRep = getConfigPropertyRep(prop);
+            result.add(propRep);
+        }
+        return result;
     }
 
     @Path("config")
