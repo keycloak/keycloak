@@ -18,6 +18,7 @@ public class FolderTheme implements Theme {
     private String parentName;
     private String importName;
     private File themeDir;
+    private File resourcesDir;
     private String name;
     private Type type;
     private final Properties properties;
@@ -34,6 +35,8 @@ public class FolderTheme implements Theme {
             parentName = properties.getProperty("parent");
             importName = properties.getProperty("import");
         }
+
+        resourcesDir = new File(themeDir, "resources");
     }
 
     @Override
@@ -73,8 +76,13 @@ public class FolderTheme implements Theme {
         if (File.separatorChar != '/') {
             path = path.replace('/', File.separatorChar);
         }
-        File file = new File(themeDir, "/resources/" + path);
-        return file.isFile() ? file.toURI().toURL() : null;
+
+        File file = new File(resourcesDir, path);
+        if (!file.isFile() || !file.getCanonicalPath().startsWith(resourcesDir.getCanonicalPath())) {
+            return null;
+        } else {
+            return file.toURI().toURL();
+        }
     }
 
     @Override
