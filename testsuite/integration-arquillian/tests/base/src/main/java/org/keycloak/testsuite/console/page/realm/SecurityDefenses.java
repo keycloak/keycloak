@@ -46,19 +46,19 @@ public class SecurityDefenses extends RealmSettings {
     public class Headers {
 
         @Page
-        private Headers form;
+        private HeadersForm form;
 
-        public Headers form() {
+        public HeadersForm form() {
             return form;
         }
 
         public class HeadersForm extends Form {
 
             @FindBy(id = "xFrameOptions")
-            private WebElement xFrameIptions;
+            private WebElement xFrameOptions;
 
-            public void setXFrameIptions(String value) {
-                setInputValue(xFrameIptions, value);
+            public void setXFrameOptions(String value) {
+                setInputValue(xFrameOptions, value);
             }
 
             @FindBy(id = "contentSecurityPolicy")
@@ -119,7 +119,7 @@ public class SecurityDefenses extends RealmSettings {
             @FindBy(id = "waitIncrement")
             private WebElement waitIncrementInput;
 
-            @FindBy(id = "waitIncrementUnit")
+            @FindBy(name = "waitIncrementUnit")
             private Select waitIncrementSelect;
 
             public void setWaitIncrementInput(String value) {
@@ -140,7 +140,7 @@ public class SecurityDefenses extends RealmSettings {
             @FindBy(id = "minimumQuickLoginWait")
             private WebElement minQuickLoginWaitInput;
 
-            @FindBy(id = "minimumQuickLoginWaitUnit")
+            @FindBy(name = "minimumQuickLoginWaitUnit")
             private Select minQuickLoginWaitSelect;
 
             public void setMinQuickLoginWaitInput(String value) {
@@ -154,7 +154,7 @@ public class SecurityDefenses extends RealmSettings {
             @FindBy(id = "maxFailureWait")
             private WebElement maxWaitInput;
 
-            @FindBy(id = "maxFailureWaitUnit")
+            @FindBy(name = "maxFailureWaitUnit")
             private Select maxWaitSelect;
 
             public void setMaxWaitInput(String value) {
@@ -168,7 +168,7 @@ public class SecurityDefenses extends RealmSettings {
             @FindBy(id = "maxDeltaTime")
             private WebElement failureResetTimeInput;
 
-            @FindBy(id = "maxDeltaTimeUnit")
+            @FindBy(name = "maxDeltaTimeUnit")
             private Select failureResetTimeSelect;
 
             public void setFailureResetTimeInput(String value) {

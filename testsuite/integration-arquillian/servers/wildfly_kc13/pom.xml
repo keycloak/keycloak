@@ -8,12 +8,12 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-server-wildfly-kc14</artifactId>
+    <artifactId>integration-arquillian-server-wildfly-kc13</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak 1.4.0.Final on Wildfly</name>
+    <name>Keycloak 1.3.1.Final on Wildfly</name>
     
     <properties>
-        <keycloak.server.home>${project.build.directory}/unpacked/keycloak-1.4.0.Final</keycloak.server.home>
+        <keycloak.server.home>${project.build.directory}/unpacked/keycloak-1.3.1.Final</keycloak.server.home>
         <jdbc.mvn.driver.deployment.dir>${keycloak.server.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
     </properties>
     
@@ -76,7 +76,7 @@
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-server-dist</artifactId>
-                                    <version>1.4.0.Final</version>
+                                    <version>1.3.1.Final</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
                                 </artifactItem>
