@@ -1,1 +1,3 @@
 org.keycloak.broker.provider.HardcodedRoleMapper
+org.keycloak.broker.provider.HardcodedAttributeMapper
+org.keycloak.broker.provider.HardcodedUserSessionAttributeMapper
