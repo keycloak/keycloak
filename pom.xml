@@ -1356,7 +1356,6 @@
             <id>distribution</id>
             <modules>
                 <module>distribution</module>
-                <module>testsuite/integration-arquillian</module>
             </modules>
         </profile>
         <profile>
@@ -1364,7 +1363,6 @@
             <modules>
                 <module>docbook</module>
                 <module>distribution</module>
-                <module>testsuite/integration-arquillian</module>
             </modules>
             <build>
                 <plugins>
@@ -1409,6 +1407,13 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>arquillian-integration-tests</id>
+            <modules>
+                <module>distribution</module>
+                <module>testsuite/integration-arquillian</module>
+            </modules>
         </profile>
     </profiles>
 </project>

@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian-tests-adapters</artifactId>
+        <version>1.5.0.Final-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>integration-arquillian-adapters-karaf</artifactId>
+    <name>Adapter Tests on Karaf</name>
+    
+    <properties>
+        <karaf.version>3.0.3</karaf.version>
+        <karaf.home>${project.build.directory}/assembly</karaf.home>
+                
+        <!--fuse examples expect auth server on 8080-->
+        <auth.server.port.offset>0</auth.server.port.offset>
+        <auth.server.http.port>8080</auth.server.http.port>
+        <auth.server.management.port>9990</auth.server.management.port>
+        <!--fuse examples expect default karaf http port 8181-->
+        <app.server.http.port>8181</app.server.http.port>
+                
+    </properties>
+
+    <dependencies>
+        <!-- for karaf-maven-plugin -->
+        <dependency>
+            <groupId>org.apache.karaf.features</groupId>
+            <artifactId>framework</artifactId>
+            <version>${karaf.version}</version>
+            <type>kar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.karaf</groupId>
+            <artifactId>apache-camel</artifactId>
+            <version>2.12.5</version>
+            <classifier>features</classifier>
+            <type>xml</type>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf.karaf</groupId>
+            <artifactId>apache-cxf</artifactId>
+            <version>2.7.14</version>
+            <classifier>features</classifier>
+            <type>xml</type>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-osgi-features</artifactId>
+            <version>${project.version}</version>
+            <classifier>features</classifier>
+            <type>xml</type>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.example.demo</groupId>
+            <artifactId>keycloak-fuse-example-features</artifactId>
+            <version>${project.version}</version>
+            <classifier>features</classifier>
+            <type>xml</type>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- for arquillian -->
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-container-karaf-managed</artifactId>
+            <version>2.1.0.CR18</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.aries.jmx</groupId>
+            <artifactId>org.apache.aries.jmx</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.karaf.tooling</groupId>
+                <artifactId>karaf-maven-plugin</artifactId>
+                <version>${karaf.version}</version>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>prepare-karaf-with-examples</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <!-- creates custom karaf distro in ${project.build.directory}/assembly -->
+                            <goal>install-kars</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <bootFeatures>
+                        <!-- this installs all fuse examples -->
+                        <feature>keycloak-fuse-example</feature>
+                    </bootFeatures>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <app.server.karaf>true</app.server.karaf>
+                        <karaf.home>${karaf.home}</karaf.home>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>xml-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

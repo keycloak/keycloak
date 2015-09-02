@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian</artifactId>
+        <version>1.5.0.Final-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>integration-arquillian-servers</artifactId>
+    <packaging>pom</packaging>
+    <name>Servers</name>
+
+    <profiles>
+        <profile>
+            <id>auth-server-wildfly</id>
+            <modules>
+                <module>wildfly</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>auth-server-eap6</id>
+            <modules>
+                <!--doesn't work yet, WIP-->
+                <module>eap6</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>migration-kc14</id>
+            <modules>
+                <module>wildfly_kc14</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>migration-kc13</id>
+            <modules>
+                <module>wildfly_kc13</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>migration-kc12</id>
+            <modules>
+                <module>wildfly_kc12</module>
+            </modules>
+        </profile>
+    </profiles>    
+
+</project>

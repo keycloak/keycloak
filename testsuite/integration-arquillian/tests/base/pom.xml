@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian-tests</artifactId>
+        <version>1.5.0.Final-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>integration-arquillian-tests-base</artifactId>
+    <name>Base Test Suite</name>
+
+    <properties>
+        <exclude.console>-</exclude.console>
+        <exclude.account>-</exclude.account>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>${exclude.console}</exclude>
+                        <exclude>${exclude.account}</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    
+    <profiles>    
+        <profile>
+            <id>no-console</id>
+            <properties>
+                <!-- Exclude all admin console tests. -->
+                <exclude.console>**/console/**/*Test.java</exclude.console>           
+            </properties>
+        </profile>
+        <profile>
+            <id>no-account</id>
+            <properties>
+                <!-- Exclude all account management tests. -->
+                <exclude.account>**/account/**/*Test.java</exclude.account>
+            </properties>
+        </profile>
+        <profile>
+            <id>adapters-only</id>
+            <properties>
+                <exclude.console>**/console/**/*Test.java</exclude.console>           
+                <exclude.account>**/account/**/*Test.java</exclude.account>
+            </properties>
+        </profile>
+    </profiles>
+    
+</project>

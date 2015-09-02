@@ -1,0 +1,9 @@
+{
+    "realm": "demo",
+    "resource": "customer-portal",
+    "auth-server-url": "/auth",
+    "ssl-required" : "external",
+    "credentials": {
+        "secret": "password"
+    }
+}
