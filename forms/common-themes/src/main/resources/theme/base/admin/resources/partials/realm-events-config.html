@@ -24,7 +24,7 @@
                         </select>
                     </div>
 
-                    <span tooltip-placement="right" tooltip="Configure what listeners receive events for the realm." class="fa fa-info-circle"></span>
+                    <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="Configure what listeners receive events for the realm." class="fa fa-info-circle"></span>
                 </div>
             </fieldset>
 
@@ -36,7 +36,7 @@
                     <div class="col-md-6">
                         <input ng-model="eventsConfig.eventsEnabled" name="enabled" id="enabled" onoffswitch />
                     </div>
-                    <span tooltip-placement="right" tooltip="If enabled login events are saved to the database which makes events available to the admin and account management consoles." class="fa fa-info-circle"></span>
+                    <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="If enabled login events are saved to the database which makes events available to the admin and account management consoles." class="fa fa-info-circle"></span>
                 </div>
 
                 <div class="form-group" data-ng-show="eventsConfig.eventsEnabled">
@@ -46,7 +46,7 @@
                         <input ui-select2="eventSelectOptions" id="enabledEventTypes" ng-model="eventsConfig.enabledEventTypes" data-placeholder="Select event types..."/>
                     </div>
 
-                    <span tooltip-placement="right" tooltip="Configure what event types are saved. By default events related to login and users modifying their accounts are persisted." class="fa fa-info-circle"></span>
+                    <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="Configure what event types are saved. By default events related to login and users modifying their accounts are persisted." class="fa fa-info-circle"></span>
                 </div>
 
                 <div class="form-group" data-ng-show="access.manageEvents && eventsConfig.eventsEnabled">
@@ -54,7 +54,7 @@
                     <div class="col-md-6">
                         <button class="btn btn-danger" type="submit" data-ng-click="clearEvents()" >Clear Events</button>
                     </div>
-                    <span tooltip-placement="right" tooltip="Deletes all events in the database." class="fa fa-info-circle"></span>
+                    <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="Deletes all events in the database." class="fa fa-info-circle"></span>
                 </div>
                 <div class="form-group input-select" data-ng-show="eventsConfig.eventsEnabled">
                     <label class="col-md-2 control-label" for="expiration">Expiration</label>
@@ -67,7 +67,7 @@
                             <option>Hours</option>
                             <option>Days</option>
                         </select>
-                    <span tooltip-placement="right" tooltip="Sets the expiration for events. Expired events are periodically deleted from the database." class="fa fa-info-circle"></span>
+                    <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="Sets the expiration for events. Expired events are periodically deleted from the database." class="fa fa-info-circle"></span>
                     </div>
                 </div>
             </fieldset>
@@ -82,7 +82,7 @@
                         <input ng-model="eventsConfig.adminEventsEnabled" name="adminEventsEnabled" id="adminEventsEnabled" onoffswitch />
                     </div>
 
-                    <span tooltip-placement="right" tooltip="If enabled admin events are saved to the database which makes events available to the admin console." class="fa fa-info-circle"></span>
+                    <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="If enabled admin events are saved to the database which makes events available to the admin console." class="fa fa-info-circle"></span>
                 </div>
 
                 <div class="form-group" data-ng-show="eventsConfig.adminEventsEnabled">
@@ -91,7 +91,7 @@
                         <input ng-model="eventsConfig.adminEventsDetailsEnabled" name="adminEventsDetailsEnabled" id="adminEventsDetailsEnabled" onoffswitch />
                     </div>
 
-                    <span tooltip-placement="right" tooltip="Include JSON representation for create and update requests." class="fa fa-info-circle"></span>
+                    <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="Include JSON representation for create and update requests." class="fa fa-info-circle"></span>
                 </div>
                 
                 <div class="form-group" data-ng-show="access.manageEvents && eventsConfig.adminEventsEnabled">
@@ -99,7 +99,7 @@
                     <div class="col-md-6">
                         <button class="btn btn-danger" type="submit" data-ng-click="clearAdminEvents()" >Clear Admin Events</button>
                     </div>
-                    <span tooltip-placement="right" tooltip="Deletes all admin events in the database." class="fa fa-info-circle"></span>
+                    <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="Deletes all admin events in the database." class="fa fa-info-circle"></span>
                 </div>
                 
             </fieldset>

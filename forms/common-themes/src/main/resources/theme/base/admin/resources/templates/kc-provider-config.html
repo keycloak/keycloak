@@ -16,7 +16,7 @@
         <input class="form-control" type="text" data-ng-model="config[ option.name ]" >
     </div>
     <div class="col-sm-4" data-ng-show="option.type == 'Role'">
-        <button type="submit" data-ng-click="openRoleSelector(option.name)" class="btn btn-default" tooltip="Enter role in the textbox to the left, or click this button to browse and select the role you want">Select Role</button>
+        <button type="submit" data-ng-click="openRoleSelector(option.name)" class="btn btn-default" tooltip-placement="top" tooltip-trigger="mouseover mouseout" tooltip="Enter role in the textbox to the left, or click this button to browse and select the role you want">Select Role</button>
     </div>
     <div class="col-sm-4" data-ng-show="option.type == 'ClientList'">
         <select ng-model="config[ option.name ]" ng-options="client.clientId as client.clientId for client in clients">
