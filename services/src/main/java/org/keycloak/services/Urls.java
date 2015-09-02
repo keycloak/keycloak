@@ -208,6 +208,15 @@ public class Urls {
         return realmBase(baseUri).path(realmName).build().getRawPath();
     }
 
+    public static String ngTranslateLocaleCookiePath(URI baseUri, String realmName) {
+        // I'm only using using localeCookiePath to get the /auth part of the path.
+        // I can't assume the URL starts with "/auth".  Keycloak could be installed
+        // as root context.  Typically, the angular-translate cookie path needs to be
+        //  /auth/admin/{realmName}/console/
+        String basePath = localeCookiePath(baseUri, realmName);
+        return basePath.substring(0, basePath.indexOf("realms")) + "admin/" + realmName + "/console/";
+    }
+
     public static URI themeRoot(URI baseUri) {
         return themeBase(baseUri).path(Version.RESOURCES_VERSION).build();
     }
