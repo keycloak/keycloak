@@ -208,7 +208,7 @@ public class RealmsAdminResource {
                                             @PathParam("realm") final String name) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(name);
-        if (realm == null) throw new NotFoundException("{realm} = " + name);
+        if (realm == null) throw new NotFoundException("Realm not found.");
 
         if (!auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())
                 && !auth.getRealm().equals(realm)) {

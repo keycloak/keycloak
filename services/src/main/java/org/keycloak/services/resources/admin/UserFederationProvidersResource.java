@@ -183,7 +183,7 @@ public class UserFederationProvidersResource {
 
         UserFederationProviderModel model = KeycloakModelUtils.findUserFederationProviderById(id, realm);
         if (model == null) {
-            throw new NotFoundException("Could not find federation provider with id: " + id);
+            throw new NotFoundException("Could not find federation provider");
         }
 
         UserFederationProviderResource instanceResource = new UserFederationProviderResource(session, realm, this.auth, model, adminEvent);

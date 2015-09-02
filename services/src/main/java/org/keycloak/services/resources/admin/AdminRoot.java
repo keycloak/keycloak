@@ -101,7 +101,7 @@ public class AdminRoot {
     protected RealmModel locateRealm(String name, RealmManager realmManager) {
         RealmModel realm = realmManager.getRealmByName(name);
         if (realm == null) {
-            throw new NotFoundException("Realm " + name + " not found");
+            throw new NotFoundException("Realm not found.  Did you type in a bad URL?");
         }
         return realm;
     }

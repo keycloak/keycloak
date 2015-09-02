@@ -112,7 +112,7 @@ public class ClientsResource {
     public ClientResource getClient(final @PathParam("id") String id) {
         ClientModel clientModel = realm.getClientById(id);
         if (clientModel == null) {
-            throw new NotFoundException("Could not find client: " + id);
+            throw new NotFoundException("Could not find client");
         }
 
         session.getContext().setClient(clientModel);
