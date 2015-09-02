@@ -3,6 +3,7 @@ package org.keycloak.models.sessions.infinispan.compat.entities;
 import org.keycloak.models.ClientSessionModel;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,6 +29,8 @@ public class ClientSessionEntity {
     private Set<String> protocolMappers;
     private Map<String, String> notes = new HashMap<>();
     private Map<String, String> userSessionNotes = new HashMap<>();
+    private Set<String> requiredActions = new HashSet<>();
+
 
     public String getId() {
         return id;
@@ -131,6 +134,10 @@ public class ClientSessionEntity {
 
     public Map<String, String> getUserSessionNotes() {
         return userSessionNotes;
+    }
+
+    public Set<String> getRequiredActions() {
+        return requiredActions;
     }
 
     @Override

@@ -441,32 +441,14 @@ public class AuthenticationManager {
         event.detail(Details.CODE_ID, clientSession.getId());
 
         Set<String> requiredActions = user.getRequiredActions();
-        for (String action : requiredActions) {
-            RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
-            RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
-            if (factory == null) {
-                throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
-            }
-            RequiredActionProvider actionProvider = factory.create(session);
-            RequiredActionContextResult context = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user, factory);
-            actionProvider.requiredActionChallenge(context);
+        Response action = executionActions(session, userSession, clientSession, request, event, realm, user, requiredActions);
+        if (action != null) return action;
 
-            if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
-                LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, context.getClientSession().getAuthMethod());
-                protocol.setRealm(context.getRealm())
-                        .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
-                        .setUriInfo(context.getUriInfo());
-                event.error(Errors.REJECTED_BY_USER);
-                return protocol.consentDenied(context.getClientSession());
-            }
-            else if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
-                return context.getChallenge();
-            }
-            else if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
-                event.clone().event(EventType.CUSTOM_REQUIRED_ACTION).detail(Details.CUSTOM_REQUIRED_ACTION, factory.getId()).success();
-                clientSession.getUserSession().getUser().removeRequiredAction(factory.getId());
-            }
-        }
+        // executionActions() method should remove any duplicate actions that might be in the clientSession
+        requiredActions = clientSession.getRequiredActions();
+        action = executionActions(session, userSession, clientSession, request, event, realm, user, requiredActions);
+        if (action != null) return action;
+
         if (client.isConsentRequired()) {
 
             UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
@@ -514,6 +496,40 @@ public class AuthenticationManager {
         }
         return null;
 
+    }
+
+    protected static Response executionActions(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession,
+                                               HttpRequest request, EventBuilder event, RealmModel realm, UserModel user,
+                                               Set<String> requiredActions) {
+        for (String action : requiredActions) {
+            RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
+            RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
+            if (factory == null) {
+                throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
+            }
+            RequiredActionProvider actionProvider = factory.create(session);
+            RequiredActionContextResult context = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user, factory);
+            actionProvider.requiredActionChallenge(context);
+
+            if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
+                LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, context.getClientSession().getAuthMethod());
+                protocol.setRealm(context.getRealm())
+                        .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
+                        .setUriInfo(context.getUriInfo());
+                event.error(Errors.REJECTED_BY_USER);
+                return protocol.consentDenied(context.getClientSession());
+            }
+            else if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
+                return context.getChallenge();
+            }
+            else if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
+                event.clone().event(EventType.CUSTOM_REQUIRED_ACTION).detail(Details.CUSTOM_REQUIRED_ACTION, factory.getId()).success();
+                // don't have to perform the same action twice, so remove it from both the user and session required actions
+                clientSession.getUserSession().getUser().removeRequiredAction(factory.getId());
+                clientSession.removeRequiredAction(factory.getId());
+            }
+        }
+        return null;
     }
 
     public static void evaluateRequiredActionTriggers(final KeycloakSession session, final UserSessionModel userSession, final ClientSessionModel clientSession, final ClientConnection clientConnection, final HttpRequest request, final UriInfo uriInfo, final EventBuilder event, final RealmModel realm, final UserModel user) {

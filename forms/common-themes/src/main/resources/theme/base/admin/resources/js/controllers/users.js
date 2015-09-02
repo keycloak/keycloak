@@ -304,7 +304,9 @@ module.controller('UserTabCtrl', function($scope, $location, Dialog, Notificatio
     };
 });
 
-module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser, User, UserExecuteActionsEmail, UserFederationInstances, UserImpersonation, RequiredActions, $location, Dialog, Notifications) {
+module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser, User,
+                                             UserFederationInstances, UserImpersonation, RequiredActions,
+                                             $location, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.create = !user.id;
     $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
@@ -374,35 +376,11 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         }
 
     });
-
-        /*[
-        {id: "VERIFY_EMAIL", text: "Verify Email"},
-        {id: "UPDATE_PROFILE", text: "Update Profile"},
-        {id: "CONFIGURE_TOTP", text: "Configure Totp"},
-        {id: "UPDATE_PASSWORD", text: "Update Password"}
-    ];
-    */
-
     $scope.$watch('user', function() {
         if (!angular.equals($scope.user, user)) {
             $scope.changed = true;
         }
     }, true);
-
-    $scope.sendExecuteActionsEmail = function() {
-        if ($scope.changed) {
-            Dialog.message("Cannot send email", "You must save your current changes before you can send an email");
-            return;
-        }
-        Dialog.confirm('Send Email', 'Are you sure you want to send email to user?', function() {
-            UserExecuteActionsEmail.update({ realm: realm.realm, userId: user.id }, { }, function() {
-                Notifications.success("Email sent to user");
-            }, function() {
-                Notifications.error("Failed to send email to user");
-            });
-        });
-    };
-
 
     $scope.save = function() {
         convertAttributeValuesToLists();
@@ -476,7 +454,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
     }
 });
 
-module.controller('UserCredentialsCtrl', function($scope, realm, user, User, UserCredentials, Notifications, Dialog) {
+module.controller('UserCredentialsCtrl', function($scope, realm, user, RequiredActions, User, UserExecuteActionsEmail, UserCredentials, Notifications, Dialog) {
     console.log('UserCredentialsCtrl');
 
     $scope.realm = realm;
@@ -487,6 +465,18 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
     if(!!user.totp){
         $scope.isTotp = user.totp;
     }
+    // ID - Name map for required actions. IDs are enum names.
+    RequiredActions.query({realm: realm.realm}, function(data) {
+        $scope.userReqActionList = [];
+        for (var i = 0; i < data.length; i++) {
+            console.log("listed required action: " + data[i].name);
+            if (data[i].enabled) {
+                var item = data[i];
+                $scope.userReqActionList.push(item);
+            }
+        }
+
+    });
 
     $scope.resetPassword = function() {
         if ($scope.pwdChange) {
@@ -527,6 +517,24 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
             });
         });
     };
+
+    $scope.emailActions = [];
+
+    $scope.sendExecuteActionsEmail = function() {
+        if ($scope.changed) {
+            Dialog.message("Cannot send email", "You must save your current changes before you can send an email");
+            return;
+        }
+        Dialog.confirm('Send Email', 'Are you sure you want to send email to user?', function() {
+            UserExecuteActionsEmail.update({ realm: realm.realm, userId: user.id }, $scope.emailActions, function() {
+                Notifications.success("Email sent to user");
+                $scope.emailActions = [];
+            }, function() {
+                Notifications.error("Failed to send email to user");
+            });
+        });
+    };
+
 
 
     $scope.$watch('user', function() {

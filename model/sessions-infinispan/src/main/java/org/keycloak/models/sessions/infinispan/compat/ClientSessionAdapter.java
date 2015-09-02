@@ -11,6 +11,7 @@ import org.keycloak.models.sessions.infinispan.compat.entities.UserSessionEntity
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -197,4 +198,35 @@ public class ClientSessionAdapter implements ClientSessionModel {
         else entity.setAuthUserId(user.getId());
 
     }
+
+    @Override
+    public Set<String> getRequiredActions() {
+        Set<String> copy = new HashSet<>();
+        copy.addAll(entity.getRequiredActions());
+        return copy;
+    }
+
+    @Override
+    public void addRequiredAction(String action) {
+        entity.getRequiredActions().add(action);
+
+    }
+
+    @Override
+    public void removeRequiredAction(String action) {
+        entity.getRequiredActions().remove(action);
+
+    }
+
+    @Override
+    public void addRequiredAction(UserModel.RequiredAction action) {
+        addRequiredAction(action.name());
+
+    }
+
+    @Override
+    public void removeRequiredAction(UserModel.RequiredAction action) {
+        removeRequiredAction(action.name());
+    }
+
 }

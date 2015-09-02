@@ -54,6 +54,22 @@ public interface ClientSessionModel {
     public Map<String, String> getNotes();
 
     /**
+     * Required actions that are attached to this client session.
+     *
+     * @return
+     */
+    Set<String> getRequiredActions();
+
+    void addRequiredAction(String action);
+
+    void removeRequiredAction(String action);
+
+    void addRequiredAction(UserModel.RequiredAction action);
+
+    void removeRequiredAction(UserModel.RequiredAction action);
+
+
+    /**
      * These are notes you want applied to the UserSessionModel when the client session is attached to it.
      *
      * @param name
