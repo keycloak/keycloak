@@ -9,6 +9,7 @@
         <delete tableName="USER_SESSION_NOTE"/>
         <delete tableName="USER_SESSION"/>
 
+        <dropDefaultValue tableName="AUTHENTICATION_EXECUTION" columnName="USER_SETUP_ALLOWED" />
         <dropColumn tableName="AUTHENTICATION_EXECUTION" columnName="USER_SETUP_ALLOWED"/>
         <addColumn tableName="CREDENTIAL">
             <column name="COUNTER" type="INT" defaultValueNumeric="0">
