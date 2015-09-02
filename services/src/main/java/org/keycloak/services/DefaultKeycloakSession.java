@@ -46,7 +46,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         this.factory = factory;
         this.transactionManager = new DefaultKeycloakTransactionManager();
         federationManager = new UserFederationManager(this);
-        context = new DefaultKeycloakContext();
+        context = new DefaultKeycloakContext(this);
     }
 
     @Override

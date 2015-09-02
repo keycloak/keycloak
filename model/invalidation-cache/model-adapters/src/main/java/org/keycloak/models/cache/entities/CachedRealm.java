@@ -187,7 +187,8 @@ public class CachedRealm implements Serializable {
         adminEventsDetailsEnabled = model.isAdminEventsDetailsEnabled();
         
         defaultRoles.addAll(model.getDefaultRoles());
-        masterAdminClient = model.getMasterAdminClient().getId();
+        ClientModel masterAdminClient = model.getMasterAdminClient();
+        this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
         for (RoleModel role : model.getRoles()) {
             realmRoles.put(role.getName(), role.getId());

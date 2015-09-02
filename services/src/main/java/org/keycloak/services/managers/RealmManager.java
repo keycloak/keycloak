@@ -3,7 +3,7 @@ package org.keycloak.services.managers;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.enums.SslRequired;
-import org.keycloak.exportimport.util.ImportUtils;
+import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -39,7 +39,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RealmManager {
+public class RealmManager implements RealmImporter {
     protected static final Logger logger = Logger.getLogger(RealmManager.class);
 
     protected KeycloakSession session;
@@ -161,7 +161,9 @@ public class RealmManager {
 
         boolean removed = model.removeRealm(realm.getId());
         if (removed) {
-            new ClientManager(this).removeClient(getKeycloakAdminstrationRealm(), realm.getMasterAdminClient());
+            if (realm.getMasterAdminClient() != null) {
+                new ClientManager(this).removeClient(getKeycloakAdminstrationRealm(), realm.getMasterAdminClient());
+            }
 
             UserSessionProvider sessions = session.sessions();
             if (sessions != null) {
@@ -191,9 +193,47 @@ public class RealmManager {
         realm.setAdminEventsDetailsEnabled(rep.isAdminEventsDetailsEnabled());
     }
 
-    // Should be RealmManager moved to model/api instead of referencing methods this way?
     private void setupMasterAdminManagement(RealmModel realm) {
-        ImportUtils.setupMasterAdminManagement(model, realm);
+        // Need to refresh masterApp for current realm
+        String adminRealmId = Config.getAdminRealm();
+        RealmModel adminRealm = model.getRealm(adminRealmId);
+        ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
+        if (masterApp != null) {
+            realm.setMasterAdminClient(masterApp);
+        }  else {
+            createMasterAdminManagement(model, realm);
+        }
+    }
+
+    private void createMasterAdminManagement(RealmProvider model, RealmModel realm) {
+        RealmModel adminRealm;
+        RoleModel adminRole;
+
+        if (realm.getName().equals(Config.getAdminRealm())) {
+            adminRealm = realm;
+
+            adminRole = realm.addRole(AdminRoles.ADMIN);
+
+            RoleModel createRealmRole = realm.addRole(AdminRoles.CREATE_REALM);
+            adminRole.addCompositeRole(createRealmRole);
+            createRealmRole.setDescription("${role_"+AdminRoles.CREATE_REALM+"}");
+        } else {
+            adminRealm = model.getRealmByName(Config.getAdminRealm());
+            adminRole = adminRealm.getRole(AdminRoles.ADMIN);
+        }
+        adminRole.setDescription("${role_"+AdminRoles.ADMIN+"}");
+
+        ClientModel realmAdminApp = KeycloakModelUtils.createClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
+        // No localized name for now
+        realmAdminApp.setName(realm.getName() + " Realm");
+        realmAdminApp.setBearerOnly(true);
+        realm.setMasterAdminClient(realmAdminApp);
+
+        for (String r : AdminRoles.ALL_REALM_ROLES) {
+            RoleModel role = realmAdminApp.addRole(r);
+            role.setDescription("${role_"+r+"}");
+            adminRole.addCompositeRole(role);
+        }
     }
 
     private void setupRealmAdminManagement(RealmModel realm) {
@@ -257,6 +297,7 @@ public class RealmManager {
         }
     }
 
+    @Override
     public RealmModel importRealm(RealmRepresentation rep) {
         String id = rep.getId();
         if (id == null) {
@@ -268,7 +309,12 @@ public class RealmManager {
         // setup defaults
 
         setupRealmDefaults(realm);
-        setupMasterAdminManagement(realm);
+
+        boolean postponeMasterClientSetup = postponeMasterClientSetup(rep);
+        if (!postponeMasterClientSetup) {
+            setupMasterAdminManagement(realm);
+        }
+
         if (!hasRealmAdminManagementClient(rep)) setupRealmAdminManagement(realm);
         if (!hasAccountManagementClient(rep)) setupAccountManagement(realm);
 
@@ -285,6 +331,10 @@ public class RealmManager {
         if (!hasAdminConsoleClient(rep)) setupAdminConsole(realm);
 
         RepresentationToModel.importRealm(session, rep, realm);
+
+        if (postponeMasterClientSetup) {
+            setupMasterAdminManagement(realm);
+        }
 
         // Could happen when migrating from older version and I have exported JSON file, which contains "realm-management" client but not "impersonation" client
         // I need to postpone impersonation because it needs "realm-management" client and it's roles set
@@ -304,8 +354,16 @@ public class RealmManager {
         return realm;
     }
 
+    private boolean postponeMasterClientSetup(RealmRepresentation rep) {
+        if (!Config.getAdminRealm().equals(rep.getRealm())) {
+            return false;
+        }
+
+        return hasRealmAdminManagementClient(rep);
+    }
+
     private boolean hasRealmAdminManagementClient(RealmRepresentation rep) {
-        String realmAdminClientId = getRealmAdminClientId(rep);
+        String realmAdminClientId =  Config.getAdminRealm().equals(rep.getRealm()) ?  KeycloakModelUtils.getMasterRealmAdminApplicationClientId(rep.getRealm()) : getRealmAdminClientId(rep);
         return hasClient(rep, realmAdminClientId);
     }
 
