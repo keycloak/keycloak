@@ -43,7 +43,6 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Before
     public void beforePasswordPolicyTest() {
-        SeleniumUtils.waitGuiForElement(By.tagName("h2"));
         configure().authentication();
         passwordPolicy.tabs().passwordPolicy();
         changePassword.setAuthRealm("test");
