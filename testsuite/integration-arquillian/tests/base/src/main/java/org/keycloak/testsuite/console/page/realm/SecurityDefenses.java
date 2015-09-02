@@ -95,7 +95,7 @@ public class SecurityDefenses extends RealmSettings {
     public class BruteForceDetection {
 
         @Page
-        BruteForceDetectionForm form;
+        private BruteForceDetectionForm form;
 
         public BruteForceDetectionForm form() {
             return form;
