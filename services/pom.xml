@@ -13,6 +13,10 @@
     <name>Keycloak REST Services</name>
     <description />
 
+    <properties>
+        <version.swagger.doclet>1.0.5</version.swagger.doclet>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -188,27 +192,114 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <subpackages>org.keycloak.services.resources.admin:org.keycloak.protocol.oidc</subpackages>
-                    <doclet>com.lunatech.doclets.jax.jaxrs.JAXRSDoclet</doclet>
-                    <docletArtifacts>
-                        <docletArtifact>
-                            <groupId>com.lunatech.jax-doclets</groupId>
-                            <artifactId>doclets</artifactId>
-                            <version>0.10.2</version>
-                        </docletArtifact>
-                    </docletArtifacts>
-                    <detectOfflineLinks>false</detectOfflineLinks>
-                    <offlineLinks>
-                        <offlineLink>
-                            <url>../javadocs</url>
-                            <location>${project.basedir}/../target/site/apidocs</location>
-                        </offlineLink>
-                    </offlineLinks>
-                    <additionalparam>-disablejavascriptexample</additionalparam>
-                    <additionalparam>-pathexcludefilter '/admin/.*index.*' -pathexcludefilter '/admin' -pathexcludefilter '/admin/\\{realm\\}/console.*'</additionalparam>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-service-docs</id>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <doclet>com.carma.swagger.doclet.ServiceDoclet</doclet>
+                            <docletArtifact>
+                                <groupId>com.carma</groupId>
+                                <artifactId>swagger-doclet</artifactId>
+                                <version>${version.swagger.doclet}</version>
+                            </docletArtifact>
+
+                            <subpackages>org.keycloak.services.resources.admin:org.keycloak.protocol.oidc</subpackages>
+                            <detectOfflineLinks>false</detectOfflineLinks>
+                            <offlineLinks>
+                                <offlineLink>
+                                    <url>../javadocs</url>
+                                    <location>${project.basedir}/../target/site/apidocs</location>
+                                </offlineLink>
+                            </offlineLinks>
+
+                            <reportOutputDirectory>${project.basedir}/target/apidocs-rest/swagger</reportOutputDirectory>
+                            <useStandardDocletOptions>false</useStandardDocletOptions>
+                            <additionalparam> -skipUiFiles -apiVersion 1 -includeResourcePrefixes org.keycloak.services.resources.admin,org.keycloak.protocol.oidc -docBasePath /apidocs -apiBasePath http://localhost:8080/auth -apiInfoFile ${project.basedir}/src/docs/swagger/apiinfo.json</additionalparam>
+                        </configuration>
+                        <goals>
+                            <goal>javadoc</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>jboss-release</id>
+
+            <repositories>
+                <repository>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                    <id>central</id>
+                    <name>bintray</name>
+                    <url>http://jcenter.bintray.com</url>
+                </repository>
+            </repositories>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.redowlanalytics</groupId>
+                        <artifactId>swagger2markup-maven-plugin</artifactId>
+                        <version>0.7.1</version>
+
+                        <dependencies>
+                            <dependency>
+                                <groupId>io.github.robwin</groupId>
+                                <artifactId>swagger2markup</artifactId>
+                                <version>0.7.1</version>
+                            </dependency>
+                        </dependencies>
+
+                        <executions>
+                            <execution>
+                                <id>gen-asciidoc</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>process-swagger</goal>
+                                </goals>
+                                <configuration>
+                                    <inputDirectory>${project.basedir}/target/apidocs-rest/swagger/apidocs</inputDirectory>
+                                    <outputDirectory>${project.basedir}/target/apidocs-rest/asciidoc</outputDirectory>
+                                    <markupLanguage>asciidoc</markupLanguage>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctor-maven-plugin</artifactId>
+                        <version>1.5.2</version>
+                        <executions>
+                            <execution>
+                                <id>generate-docs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>process-asciidoc</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceDirectory>${project.basedir}/src/docs/asciidoc</sourceDirectory>
+                                    <sourceDocumentName>index.adoc</sourceDocumentName>
+                                    <outputDirectory>${project.basedir}/target/apidocs-rest/output</outputDirectory>
+                                    <backend>html5</backend>
+                                    <attributes>
+                                        <!-- List of attributes:
+                                        https://github.com/asciidoctor/asciidoctorj/blob/master/asciidoctorj-core/src/main/java/org/asciidoctor/Attributes.java
+                                         -->
+                                        <generated>${project.basedir}/target/apidocs-rest/asciidoc</generated>
+                                    </attributes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
