@@ -837,7 +837,10 @@ public class UsersResource {
     @Path("{id}/execute-actions-email")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response executeActionsEmail(@PathParam("id") String id, @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
+    public Response executeActionsEmail(@PathParam("id") String id,
+                                        @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
+                                        @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId,
+                                        List<String> actions) {
         auth.requireManage();
 
         UserModel user = session.users().getUserById(id, realm);
@@ -850,6 +853,9 @@ public class UsersResource {
         }
 
         ClientSessionModel clientSession = createClientSession(user, redirectUri, clientId);
+        for (String action : actions) {
+            clientSession.addRequiredAction(action);
+        }
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
         accessCode.setAction(ClientSessionModel.Action.EXECUTE_ACTIONS.name());
 

@@ -19,7 +19,7 @@ public class ResetOTP extends AbstractSetRequiredActionAuthenticator {
         if (context.getExecution().isRequired() ||
                 (context.getExecution().isOptional() &&
                         configuredFor(context))) {
-            context.getUser().addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
+            context.getClientSession().addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
         }
         context.success();
     }

@@ -684,6 +684,8 @@ public class LoginActionsService {
         provider.processAction(context);
         if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
             event.clone().success();
+            // do both
+            clientSession.removeRequiredAction(factory.getId());
             clientSession.getUserSession().getUser().removeRequiredAction(factory.getId());
             event.event(EventType.LOGIN);
             return AuthenticationManager.nextActionAfterAuthentication(session, clientSession.getUserSession(), clientSession, clientConnection, request, uriInfo, event);
