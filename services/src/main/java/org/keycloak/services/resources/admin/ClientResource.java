@@ -436,7 +436,7 @@ public class ClientResource {
 
         Integer time = client.getRegisteredNodes().get(node);
         if (time == null) {
-            throw new NotFoundException("Client does not have a node " + node);
+            throw new NotFoundException("Client does not have node ");
         }
         client.unregisterNode(node);
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();

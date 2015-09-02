@@ -155,7 +155,7 @@ public class IdentityProvidersResource {
         }
 
         if (identityProviderModel == null) {
-            throw new NotFoundException("Could not find identity provider: " + alias);
+            throw new NotFoundException("Could not find identity provider");
         }
 
         IdentityProviderResource identityProviderResource = new IdentityProviderResource(this.auth, realm, session, identityProviderModel, adminEvent);

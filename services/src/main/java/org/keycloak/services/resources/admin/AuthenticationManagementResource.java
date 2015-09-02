@@ -782,7 +782,7 @@ public class AuthenticationManagementResource {
     public RequiredActionProviderRepresentation getRequiredAction(@PathParam("alias") String alias) {
         RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(alias);
         if (model == null) {
-            throw new NotFoundException("Failed to find required action: " + alias);
+            throw new NotFoundException("Failed to find required action");
         }
         return toRepresentation(model);
     }
@@ -795,7 +795,7 @@ public class AuthenticationManagementResource {
         this.auth.requireManage();
         RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(alias);
         if (model == null) {
-            throw new NotFoundException("Failed to find required action: " + alias);
+            throw new NotFoundException("Failed to find required action");
         }
         RequiredActionProviderModel update = new RequiredActionProviderModel();
         update.setId(model.getId());
@@ -814,7 +814,7 @@ public class AuthenticationManagementResource {
         this.auth.requireManage();
         RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(alias);
         if (model == null) {
-            throw new NotFoundException("Failed to find required action: " + alias);
+            throw new NotFoundException("Failed to find required action.");
         }
         realm.removeRequiredActionProvider(model);
     }
