@@ -12,7 +12,7 @@ import org.openqa.selenium.support.FindBy;
 public class Authentication extends AdminConsoleRealm {
 
     @FindBy(xpath = "//h1[text()='Authentication']/..")
-    public AuthenticationTabs authenticationTabs;
+    private AuthenticationTabs authenticationTabs;
 
     public AuthenticationTabs tabs() {
         return authenticationTabs;
