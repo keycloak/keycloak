@@ -77,7 +77,7 @@ public class ImpersonationTest {
             {
                 UserModel masterImpersonator = manager.getSession().users().addUser(adminstrationRealm, "master-impersonator");
                 masterImpersonator.setEnabled(true);
-                ClientModel adminRealmClient = adminstrationRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(appRealm));
+                ClientModel adminRealmClient = adminstrationRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(appRealm.getName()));
                 RoleModel masterImpersonatorRole = adminRealmClient.getRole(ImpersonationConstants.IMPERSONATION_ROLE);
                 masterImpersonator.grantRole(masterImpersonatorRole);
             }

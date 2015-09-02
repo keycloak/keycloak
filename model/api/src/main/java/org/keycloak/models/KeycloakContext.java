@@ -1,6 +1,7 @@
 package org.keycloak.models;
 
 import org.keycloak.ClientConnection;
+import org.keycloak.models.utils.RealmImporter;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
@@ -29,5 +30,7 @@ public interface KeycloakContext {
     ClientConnection getConnection();
 
     void setConnection(ClientConnection connection);
+
+    RealmImporter getRealmManager();
 
 }

@@ -4,7 +4,10 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.RealmImporter;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -20,6 +23,12 @@ public class DefaultKeycloakContext implements KeycloakContext {
     private ClientModel client;
 
     private ClientConnection connection;
+
+    private KeycloakSession session;
+
+    public DefaultKeycloakContext(KeycloakSession session) {
+        this.session = session;
+    }
 
     @Override
     public String getContextPath() {
@@ -70,5 +79,12 @@ public class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public void setConnection(ClientConnection connection) {
         this.connection = connection;
+    }
+
+    @Override
+    public RealmImporter getRealmManager() {
+        RealmManager manager = new RealmManager(session);
+        manager.setContextPath(getContextPath());
+        return manager;
     }
 }

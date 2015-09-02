@@ -257,8 +257,8 @@ public final class KeycloakModelUtils {
         }
     }
 
-    public static String getMasterRealmAdminApplicationClientId(RealmModel realm) {
-        return realm.getName() + "-realm";
+    public static String getMasterRealmAdminApplicationClientId(String realmName) {
+        return realmName + "-realm";
     }
 
     /**

@@ -14,6 +14,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -76,11 +77,8 @@ public class ImportUtils {
             }
         }
 
-        realm = rep.getId() != null ? model.createRealm(rep.getId(), realmName) : model.createRealm(realmName);
-
-        RepresentationToModel.importRealm(session, rep, realm);
-
-        refreshMasterAdminApps(model, realm);
+        RealmImporter realmManager = session.getContext().getRealmManager();
+        realm = realmManager.importRealm(rep);
 
         if (System.getProperty(ExportImportConfig.ACTION) != null) {
             logger.infof("Realm '%s' imported", realmName);
@@ -88,64 +86,6 @@ public class ImportUtils {
         
         return;
     }
-
-    private static void refreshMasterAdminApps(RealmProvider model, RealmModel realm) {
-        String adminRealmId = Config.getAdminRealm();
-        if (adminRealmId.equals(realm.getId())) {
-            // We just imported master realm. All 'masterAdminApps' need to be refreshed
-            RealmModel adminRealm = realm;
-            for (RealmModel currentRealm : model.getRealms()) {
-                ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(currentRealm));
-                if (masterApp != null) {
-                    currentRealm.setMasterAdminClient(masterApp);
-                }  else {
-                    setupMasterAdminManagement(model, currentRealm);
-                }
-            }
-        } else {
-            // Need to refresh masterApp for current realm
-            RealmModel adminRealm = model.getRealm(adminRealmId);
-            ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm));
-            if (masterApp != null) {
-                realm.setMasterAdminClient(masterApp);
-            }  else {
-                setupMasterAdminManagement(model, realm);
-            }
-        }
-    }
-
-    // TODO: We need method here, so we are able to refresh masterAdmin applications after import. Should be RealmManager moved to model/api instead?
-    public static void setupMasterAdminManagement(RealmProvider model, RealmModel realm) {
-        RealmModel adminRealm;
-        RoleModel adminRole;
-
-        if (realm.getName().equals(Config.getAdminRealm())) {
-            adminRealm = realm;
-
-            adminRole = realm.addRole(AdminRoles.ADMIN);
-
-            RoleModel createRealmRole = realm.addRole(AdminRoles.CREATE_REALM);
-            adminRole.addCompositeRole(createRealmRole);
-            createRealmRole.setDescription("${role_"+AdminRoles.CREATE_REALM+"}");
-        } else {
-            adminRealm = model.getRealmByName(Config.getAdminRealm());
-            adminRole = adminRealm.getRole(AdminRoles.ADMIN);
-        }
-        adminRole.setDescription("${role_"+AdminRoles.ADMIN+"}");
-
-        ClientModel realmAdminApp = KeycloakModelUtils.createClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm));
-        // No localized name for now
-        realmAdminApp.setName(realm.getName() + " Realm");
-        realmAdminApp.setBearerOnly(true);
-        realm.setMasterAdminClient(realmAdminApp);
-
-        for (String r : AdminRoles.ALL_REALM_ROLES) {
-            RoleModel role = realmAdminApp.addRole(r);
-            role.setDescription("${role_"+r+"}");
-            adminRole.addCompositeRole(role);
-        }
-    }
-
 
     /**
      * Fully import realm (or more realms from particular stream)
@@ -187,12 +127,12 @@ public class ImportUtils {
                 }
 
                 for (RealmRepresentation realmRep : realmReps) {
-                    result.put(realmRep.getId(), realmRep);
+                    result.put(realmRep.getRealm(), realmRep);
                 }
             } else if (parser.getCurrentToken() == JsonToken.START_OBJECT) {
                 // Case with single realm in stream
                 RealmRepresentation realmRep = parser.readValueAs(RealmRepresentation.class);
-                result.put(realmRep.getId(), realmRep);
+                result.put(realmRep.getRealm(), realmRep);
             }
         } finally {
             parser.close();

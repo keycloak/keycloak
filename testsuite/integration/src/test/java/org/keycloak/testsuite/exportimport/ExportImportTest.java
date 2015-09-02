@@ -26,6 +26,7 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -186,6 +187,37 @@ public class ExportImportTest {
     }
 
     @Test
+    public void testSingleFileRealmWithoutBuiltinsImport() throws Throwable {
+        // Remove test realm
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            new RealmManager(session).removeRealm(session.realms().getRealmByName("test-realm"));
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        // Set the realm, which doesn't have builtin clients/roles inside JSON
+        ExportImportConfig.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        URL url = ExportImportTest.class.getResource("/model/testrealm.json");
+        String targetFilePath = new File(url.getFile()).getAbsolutePath();
+        ExportImportConfig.setFile(targetFilePath);
+
+        ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
+
+        // Restart server to trigger import
+        keycloakRule.restartServer();
+
+        // Ensure realm imported
+        session = keycloakRule.startSession();
+        try {
+            RealmModel testRealmRealm = session.realms().getRealmByName("test-realm");
+            ImportTest.assertDataImportedInRealm(session, testRealmRealm);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
+
+    @Test
     public void testZipFullExportImport() throws Throwable {
         ExportImportConfig.setProvider(ZipExportProviderFactory.PROVIDER_ID);
         String zipFilePath = getExportImportTestDirectory() + File.separator + "export-full.zip";
@@ -222,7 +254,8 @@ public class ExportImportTest {
             RealmProvider realmProvider = session.realms();
             UserProvider userProvider = session.users();
             new RealmManager(session).removeRealm(realmProvider.getRealmByName("test"));
-            Assert.assertEquals(2, realmProvider.getRealms().size());
+            new RealmManager(session).removeRealm(realmProvider.getRealmByName("test-realm"));
+            Assert.assertEquals(1, realmProvider.getRealms().size());
 
             assertNotAuthenticated(userProvider, realmProvider, "test", "test-user@localhost", "password");
             assertNotAuthenticated(userProvider, realmProvider, "test", "user1", "password");
@@ -250,7 +283,7 @@ public class ExportImportTest {
             assertAuthenticated(userProvider, model, "test", "user2", "password");
             assertAuthenticated(userProvider, model, "test", "user3", "password");
 
-            RealmModel testRealmRealm = model.getRealm("test-realm");
+            RealmModel testRealmRealm = model.getRealmByName("test-realm");
             ImportTest.assertDataImportedInRealm(session, testRealmRealm);
         } finally {
             keycloakRule.stopSession(session, true);

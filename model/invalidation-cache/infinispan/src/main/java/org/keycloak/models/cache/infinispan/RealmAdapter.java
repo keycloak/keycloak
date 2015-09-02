@@ -779,7 +779,7 @@ public class RealmAdapter implements RealmModel {
     
     @Override
     public ClientModel getMasterAdminClient() {
-        return cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminClient());
+        return cached.getMasterAdminClient()==null ? null : cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminClient());
     }
 
     @Override
