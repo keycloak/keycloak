@@ -193,8 +193,8 @@ public class UserModelTest extends AbstractModelTest {
         Assert.assertEquals("val23", attrVals.get(0));
     }
 
-    // @Test
-    public void testSearchByUserAttributes() throws Exception {
+    @Test
+    public void testSearchByUserAttribute() throws Exception {
         RealmModel realm = realmManager.createRealm("original");
         UserModel user1 = session.users().addUser(realm, "user1");
         UserModel user2 = session.users().addUser(realm, "user2");
@@ -210,20 +210,21 @@ public class UserModelTest extends AbstractModelTest {
 
         commit();
 
-        Map<String, String> attributes = new HashMap<String, String>();
-        attributes.put("key1", "value1");
-        List<UserModel> users = session.users().searchForUserByUserAttributes(attributes, realm);
+        List<UserModel> users = session.users().searchForUserByUserAttribute("key1", "value1", realm);
         Assert.assertEquals(2, users.size());
         Assert.assertTrue(users.contains(user1));
         Assert.assertTrue(users.contains(user2));
 
-        attributes.put("key2", "value21");
-        users = session.users().searchForUserByUserAttributes(attributes, realm);
-        Assert.assertEquals(1, users.size());
+        users = session.users().searchForUserByUserAttribute("key2", "value21", realm);
+        Assert.assertEquals(2, users.size());
         Assert.assertTrue(users.contains(user1));
+        Assert.assertTrue(users.contains(user3));
 
-        attributes.put("key3", "value3");
-        users = session.users().searchForUserByUserAttributes(attributes, realm);
+        users = session.users().searchForUserByUserAttribute("key2", "value22", realm);
+        Assert.assertEquals(1, users.size());
+        Assert.assertTrue(users.contains(user2));
+
+        users = session.users().searchForUserByUserAttribute("key3", "value3", realm);
         Assert.assertEquals(0, users.size());
     }
 
