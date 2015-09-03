@@ -231,7 +231,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
 
     }
 
-    private String getTable(String table, String defaultSchema) {
+    public static String getTable(String table, String defaultSchema) {
         return defaultSchema != null ? defaultSchema + "." + table : table;
     }
 

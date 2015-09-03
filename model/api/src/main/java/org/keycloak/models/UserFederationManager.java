@@ -314,8 +314,8 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public List<UserModel> searchForUserByUserAttributes(Map<String, String> attributes, RealmModel realm) {
-        return session.userStorage().searchForUserByUserAttributes(attributes, realm);
+    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
+        return session.userStorage().searchForUserByUserAttribute(attrName, attrValue, realm);
     }
 
     @Override

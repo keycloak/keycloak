@@ -4,6 +4,7 @@ import org.hibernate.ejb.AvailableSettings;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -108,7 +109,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
                     String schema = config.get("schema");
                     if (schema != null) {
-                        properties.put("hibernate.default_schema", schema);
+                        properties.put(JpaUtils.HIBERNATE_DEFAULT_SCHEMA, schema);
                     }
 
                     if (databaseSchema != null) {

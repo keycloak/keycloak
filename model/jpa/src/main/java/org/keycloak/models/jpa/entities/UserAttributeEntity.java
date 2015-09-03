@@ -21,6 +21,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 @NamedQueries({
+        @NamedQuery(name="getAttributesByNameAndValue", query="select attr from UserAttributeEntity attr where attr.name = :name and attr.value = :value"),
         @NamedQuery(name="deleteUserAttributesByRealm", query="delete from  UserAttributeEntity attr where attr.user IN (select u from UserEntity u where u.realmId=:realmId)"),
         @NamedQuery(name="deleteUserAttributesByRealmAndLink", query="delete from  UserAttributeEntity attr where attr.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")
 })

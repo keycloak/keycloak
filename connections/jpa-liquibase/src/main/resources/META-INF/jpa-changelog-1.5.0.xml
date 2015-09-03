@@ -61,5 +61,10 @@
             </column>
         </addColumn>
 
+        <!-- Sybase specific hacks -->
+        <modifySql dbms="sybase">
+            <regExpReplace replace=".*(SET DEFAULT NULL)" with="SELECT 1" />
+        </modifySql>
+
     </changeSet>
 </databaseChangeLog>
