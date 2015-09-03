@@ -17,6 +17,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
@@ -36,7 +37,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            ClientModel app = appRealm.addClient("resource-owner");
+            ClientModel app = new ClientManager(manager).createClient(appRealm, "resource-owner");
             app.setSecret("secret");
 
             UserModel user = session.users().addUser(appRealm, "direct-login");

@@ -14,6 +14,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private String name;
     private String realmId;
     private boolean enabled;
+    private String clientAuthenticatorType;
     private String secret;
     private String protocol;
     private int notBefore;
@@ -65,6 +66,14 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getClientAuthenticatorType() {
+        return clientAuthenticatorType;
+    }
+
+    public void setClientAuthenticatorType(String clientAuthenticatorType) {
+        this.clientAuthenticatorType = clientAuthenticatorType;
     }
 
     public String getSecret() {

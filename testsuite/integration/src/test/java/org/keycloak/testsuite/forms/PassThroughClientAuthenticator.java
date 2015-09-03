@@ -59,16 +59,6 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
     }
 
     @Override
-    public boolean requiresClient() {
-        return false;
-    }
-
-    @Override
-    public boolean configuredFor(KeycloakSession session, RealmModel realm, ClientModel client) {
-        return true;
-    }
-
-    @Override
     public String getDisplayType() {
         return "PassThrough Client Validation";
     }

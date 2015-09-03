@@ -39,7 +39,7 @@ public class AuthorizeClientUtil {
 
         ClientModel client = processor.getClient();
         if (client == null) {
-            throw new ErrorResponseException("invalid_client", "Client authentication was successful, but client is null", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException("invalid_client", "Client authentication ended, but client is null", Response.Status.BAD_REQUEST);
         }
 
         return new ClientAuthResult(client, processor.getClientAuthAttributes());
