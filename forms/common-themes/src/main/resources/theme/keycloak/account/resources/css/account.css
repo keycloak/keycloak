@@ -9,35 +9,10 @@ body {
     height: 100%;
 }
 
-header .navbar {
-    margin-bottom: 0;
-    min-height: inherit;
-}
-
-.header .container {
-    position: relative;
-}
-
-.navbar-title {
-    background-image: url('../img/logo.png');
-    height: 25px;
-    background-repeat: no-repeat;
-    width: 103px;
-    margin: 3px 10px 5px;
-    text-indent: -99999px;
-}
-
-.navbar-pf .navbar-utility {
-	right: 20px;
-    top: -34px;
-    font-size: 12px;
-}
-
-.navbar-pf .navbar-utility > li > a {
-    color: #fff !important;
-    padding-bottom: 12px;
-    padding-top: 11px;
-    border-left: medium none;
+.navbar-brand span{
+  font-size: 10pt !important;
+  font-weight: bold;
+  color: #ffffff !important;   
 }
 
 .container {
