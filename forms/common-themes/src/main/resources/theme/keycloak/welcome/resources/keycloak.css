@@ -123,16 +123,12 @@ sub {
 }
 
 .prod-title {
-    vertical-align:middle; 
-    padding-bottom:5px;   
-}
-
-.prod-version {    
+    vertical-align:middle;   
     padding-left: 8px;
-    padding-bottom: 12px;
     font-size: 10pt !important;
     font-weight: bold;
-    color: #ffffff !important;        
+    color: #ffffff !important;   
+    line-height: 32px;     
 }
 
 .WarnBlock {
