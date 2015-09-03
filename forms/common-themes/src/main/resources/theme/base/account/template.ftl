@@ -4,7 +4,21 @@
 <head>
     <meta charset="utf-8">
     <title>${msg("accountManagementTitle")}</title>
-    <link rel="icon" href="${url.resourcesPath}/img/favicon.ico">
+    <link rel="icon" href="${url.resourcesPath}/lib/rcue/img/favicon.ico">
+    <!-- iPad retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="${url.resourcesPath}/lib/rcue/img/apple-touch-icon-precomposed-152.png">
+    <!-- iPad retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="${url.resourcesPath}/lib/rcue/img/apple-touch-icon-precomposed-144.png">
+    <!-- iPad non-retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="${url.resourcesPath}/lib/rcue/img/apple-touch-icon-precomposed-76.png">
+    <!-- iPad non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="${url.resourcesPath}/lib/rcue/img/apple-touch-icon-precomposed-72.png">
+    <!-- iPhone 6 Plus icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="${url.resourcesPath}/lib/rcue/img/apple-touch-icon-precomposed-180.png">
+    <!-- iPhone retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="${url.resourcesPath}/lib/rcue/img/apple-touch-icon-precomposed-114.png">
+    <!-- iPhone non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="${url.resourcesPath}/lib/rcue/img/apple-touch-icon-precomposed-57.png">
     <#if properties.styles?has_content>
         <#list properties.styles?split(' ') as style>
             <link href="${url.resourcesPath}/${style}" rel="stylesheet" />
@@ -17,36 +31,61 @@
     </#if>
 </head>
 <body class="admin-console user ${bodyClass}">
-
-    <header class="navbar navbar-default navbar-pf navbar-main header">
-        <nav class="navbar" role="navigation">
+        <nav class="navbar navbar-default navbar-pf" role="navigation">
             <div class="navbar-header">
-                <div class="container">
-                    <h1 class="navbar-title">Keycloak</h1>
-                </div>
+            <#if referrer?has_content && referrer.url?has_content>
+                <a class="navbar-brand" href="${referrer.url}">
+            <#else>
+                <a class="navbar-brand" href="#">
+            </#if>
+              <span>RED HAT&reg; JBOSS&reg; IDENTITY AND ACCESS MANAGEMENT</span>
+            <!--  <img src="${url.resourcesPath}/img/brand.svg" alt="Red Hat&reg; JBoss&reg; Identity and Access Management" />-->
+            </a>
             </div>
-            <div class="navbar-collapse navbar-collapse-1">
-                <div class="container">
-                    <ul class="nav navbar-nav navbar-utility">
-                        <#if realm.internationalizationEnabled>
-                            <li>
-                                <div class="kc-dropdown" id="kc-locale-dropdown">
-                                    <a href="#" id="kc-current-locale-link">${locale.current}</a>
-                                    <ul>
-                                        <#list locale.supported as l>
-                                            <li class="kc-dropdown-item"><a href="${l.url}">${l.label}</a></li>
-                                        </#list>
-                                    </ul>
-                                </div>
-                            <li>
+            <div class="collapse navbar-collapse navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-utility">
+                <#if realm.internationalizationEnabled>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">${locale.current}</a>
+                        <ul class="dropdown-menu">
+                            <#list locale.supported as l>
+                                <li><a href="${l.url}">${l.label}</a></li>
+                            </#list>
+                        </ul>
+                    </li>
+              </#if>
+              <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <span class="pficon pficon-user"></span>
+                    <#if account.firstName?has_content || account.lastName?has_content>
+                        <#if account.firstName?has_content && account.lastName?has_content>
+                            ${(account.firstName + " " +  account.lastName)?capitalize?html}
+                        <#elseif account.firstName?has_content> 
+                            ${account.firstName?capitalize?html}
+                        <#else>
+                            ${account.lastName?capitalize?html}
                         </#if>
-                        <#if referrer?has_content && referrer.url?has_content><li><a href="${referrer.url}" id="referrer">${msg("backTo",referrer.name)}</a></li></#if>
-                        <li><a href="${url.logoutUrl}">${msg("doSignOut")}</a></li>
-                    </ul>
-                </div>
+                    <#else>
+                        ${(account.userName!'')?capitalize?html}
+                    </#if>
+                  <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="${url.logoutUrl}">${msg("doSignOut")}</a></li>
+                </ul>
+              </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-primary">
+              <li>
+                <#if referrer?has_content && referrer.url?has_content>
+                <a href="${referrer.url}">Home</a>
+                <#else>
+                <a href="#">Home</a>
+                </#if>
+              </li>
+            </ul>
             </div>
         </nav>
-    </header>
 
     <div class="container">
         <div class="bs-sidebar col-sm-3  ng-scope">
