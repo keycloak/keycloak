@@ -671,6 +671,7 @@ function roleControl($scope, realm, role, roles, clients,
                     }
                 }
                 $scope.selectedRealmRoles = [];
+                Notifications.success("Role added to composite.");
             });
     };
 
@@ -687,6 +688,7 @@ function roleControl($scope, realm, role, roles, clients,
                     }
                 }
                 $scope.selectedRealmMappings = [];
+                Notifications.success("Role removed from composite.");
             });
     };
 
