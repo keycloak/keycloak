@@ -121,39 +121,6 @@ public class AuthorizationCodeTest {
     }
 
     @Test
-    public void authorizationRequestInstalledAppCancel() throws IOException {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getClientNameMap().get("test-app").addRedirectUri(Constants.INSTALLED_APP_URN);
-            }
-        });
-        oauth.redirectUri(Constants.INSTALLED_APP_URN);
-
-        oauth.openLoginForm();
-        driver.findElement(By.name("cancel")).click();
-
-        String title = driver.getTitle();
-        Assert.assertEquals("Error code: access_denied",title);
-
-        String error = driver.findElement(By.id(OAuth2Constants.ERROR)).getText();
-        assertEquals("access_denied", error);
-
-        events.expectLogin().error("rejected_by_user").user((String) null).session((String) null)
-                .removeDetail(Details.USERNAME)
-                .removeDetail(Details.CONSENT)
-                .detail(Details.REDIRECT_URI, "http://localhost:8081/auth/realms/test/protocol/openid-connect/oauth/oob")
-                .assertEvent().getDetails().get(Details.CODE_ID);
-
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getClientNameMap().get("test-app").removeRedirectUri(Constants.INSTALLED_APP_URN);
-            }
-        });
-    }
-
-    @Test
     public void authorizationValidRedirectUri() throws IOException {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override

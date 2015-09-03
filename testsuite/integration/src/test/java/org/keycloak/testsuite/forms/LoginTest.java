@@ -470,20 +470,6 @@ public class LoginTest {
         }
     }
 
-    @Test
-    public void loginCancel() {
-        loginPage.open();
-        loginPage.cancel();
-
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertEquals("access_denied", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
-
-        events.expectLogin().error("rejected_by_user").user((String) null).session((String) null)
-                .removeDetail(Details.USERNAME)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
-    }
-
     // KEYCLOAK-1037
     @Test
     public void loginExpiredCode() {
