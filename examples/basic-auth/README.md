@@ -22,7 +22,8 @@ Step 2: Deploy and run the example
 
     curl http://admin:password@localhost:8080/basicauth/service/echo?value=hello
 	
-(If we navigate directly to http://localhost:8080/basicauth/service/echo?value=hello we get "Invalid parameter: redirect_uri" error due to missing Valid Redirect URI in realm)
+(If we navigate directly to http://localhost:8080/basicauth/service/echo?value=hello, we get "Invalid parameter: redirect_uri" error due to missing Valid Redirect URI in realm).
+
 This should result in the value 'hello' being returned as a response.
 
 Simply change the username (currently 'admin') or password (currently 'password') in the command to see an "Unauthorized" response.
