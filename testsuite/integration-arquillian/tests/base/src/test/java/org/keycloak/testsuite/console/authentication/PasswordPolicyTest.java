@@ -20,14 +20,11 @@ package org.keycloak.testsuite.console.authentication;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.testsuite.auth.page.account.ChangePassword;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.PasswordPolicy;
-import org.keycloak.testsuite.util.SeleniumUtils;
-import org.openqa.selenium.By;
 
-import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.*;
+import org.keycloak.testsuite.console.page.users.UserCredentials;
 
 /**
  * @author Petr Mensik
@@ -36,158 +33,131 @@ import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.
 public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Page
-    private PasswordPolicy passwordPolicy;
+    private PasswordPolicy passwordPolicyPage;
 
     @Page
-    private ChangePassword changePassword;
+    private UserCredentials testUserCredentialsPage;
 
     @Before
     public void beforePasswordPolicyTest() {
-        configure().authentication();
-        passwordPolicy.tabs().passwordPolicy();
-        changePassword.setAuthRealm("test");
+        testUserCredentialsPage.setId(testRealmUser.getId());
+        passwordPolicyPage.navigateTo();
     }
 
     @Test
-    public void testAddPolicy() {
-        passwordPolicy.addPolicy(HASH_ITERATIONS, 5);
+    public void testAddAndRemovePolicy() {
+        passwordPolicyPage.addPolicy(HASH_ITERATIONS, 5);
+        passwordPolicyPage.removePolicy(HASH_ITERATIONS);
         assertFlashMessageSuccess();
     }
 
     @Test
-    public void testRemovePolicy() {
-        passwordPolicy.addPolicy(HASH_ITERATIONS, 5);
-
-        passwordPolicy.removePolicy(HASH_ITERATIONS);
-        assertFlashMessageSuccess();
-    }
-
-    @Test
-    public void testAddPolicyWithWrongArguments() {
-        passwordPolicy.addPolicy(HASH_ITERATIONS, "asd");
+    public void testInvalidPolicyValues() {
+        passwordPolicyPage.addPolicy(HASH_ITERATIONS, "asd");
         assertFlashMessageDanger();
-        passwordPolicy.removePolicy(HASH_ITERATIONS);
+        passwordPolicyPage.removePolicy(HASH_ITERATIONS);
 
-        passwordPolicy.addPolicy(REGEX_PATTERNS, "^[A-Z]{8,5}");
+        passwordPolicyPage.addPolicy(REGEX_PATTERNS, "^[A-Z]{8,5}");
         assertFlashMessageDanger();
-    }
-
-    @Test
-    public void testAddRegexPatternsPolicy() {
-        passwordPolicy.addPolicy(REGEX_PATTERNS, "^[A-Z]{5}");
-        assertFlashMessageSuccess();
     }
 
     @Test
     public void testLengthPolicy() {
-        passwordPolicy.addPolicy(LENGTH, 8);
+        passwordPolicyPage.addPolicy(LENGTH, 8);
 
-        navigateToTestRealmChangePassword();
+        testUserCredentialsPage.navigateTo();
+        testUserCredentialsPage.resetPassword("1234567");
+        assertFlashMessageDanger();
 
-        changePassword.changePasswords(getPasswordOf(testRealmUser), "1234567", "1234567");
-        assertFlashMessageError();
-
-        changePassword.changePasswords(getPasswordOf(testRealmUser), "12345678", "12345678");
+        testUserCredentialsPage.resetPassword("12345678");
         assertFlashMessageSuccess();
     }
 
     @Test
     public void testDigitsPolicy() {
-        passwordPolicy.addPolicy(DIGITS, 2);
+        passwordPolicyPage.addPolicy(DIGITS, 2);
 
-        navigateToTestRealmChangePassword();
+        testUserCredentialsPage.navigateTo();
+        testUserCredentialsPage.resetPassword("invalidPassword1");
+        assertFlashMessageDanger();
 
-        changePassword.changePasswords(getPasswordOf(testRealmUser), "invalidPassword1", "invalidPassword1");
-        assertFlashMessageError();
-
-        changePassword.changePasswords(getPasswordOf(testRealmUser), "validPassword12", "validPassword12");
+        testUserCredentialsPage.resetPassword("validPassword12");
         assertFlashMessageSuccess();
     }
 
     @Test
     public void testLowerCasePolicy() {
-        passwordPolicy.addPolicy(LOWER_CASE, 2);
+        passwordPolicyPage.addPolicy(LOWER_CASE, 2);
 
-        navigateToTestRealmChangePassword();
+        testUserCredentialsPage.navigateTo();
+        testUserCredentialsPage.resetPassword("iNVALIDPASSWORD");
+        assertFlashMessageDanger();
 
-        changePassword.changePasswords(getPasswordOf(testRealmUser), "iNVALIDPASSWORD", "iNVALIDPASSWORD");
-        assertFlashMessageError();
-
-        changePassword.changePasswords(getPasswordOf(testRealmUser), "vaLIDPASSWORD", "vaLIDPASSWORD");
+        testUserCredentialsPage.resetPassword("vaLIDPASSWORD");
         assertFlashMessageSuccess();
     }
 
     @Test
     public void testUpperCasePolicy() {
-        passwordPolicy.addPolicy(UPPER_CASE, 2);
+        passwordPolicyPage.addPolicy(UPPER_CASE, 2);
 
-        navigateToTestRealmChangePassword();
+        testUserCredentialsPage.navigateTo();
+        testUserCredentialsPage.resetPassword("Invalidpassword");
+        assertFlashMessageDanger();
 
-        changePassword.changePasswords(getPasswordOf(testRealmUser), "Invalidpassword", "Invalidpassword");
-        assertFlashMessageError();
-
-        changePassword.changePasswords(getPasswordOf(testRealmUser), "VAlidpassword", "VAlidpassword");
+        testUserCredentialsPage.resetPassword("VAlidpassword");
         assertFlashMessageSuccess();
     }
 
     @Test
     public void testSpecialCharsPolicy() {
-        passwordPolicy.addPolicy(SPECIAL_CHARS, 2);
+        passwordPolicyPage.addPolicy(SPECIAL_CHARS, 2);
 
-        navigateToTestRealmChangePassword();
+        testUserCredentialsPage.navigateTo();
+        testUserCredentialsPage.resetPassword("invalidPassword*");
+        assertFlashMessageDanger();
 
-        changePassword.changePasswords(getPasswordOf(testRealmUser), "invalidPassword*", "invalidPassword*");
-        assertFlashMessageError();
-
-        changePassword.changePasswords(getPasswordOf(testRealmUser), "validPassword*#", "validPassword*#");
+        testUserCredentialsPage.resetPassword("validPassword*#");
         assertFlashMessageSuccess();
     }
 
     @Test
     public void testNotUsernamePolicy() {
-        passwordPolicy.addPolicy(NOT_USERNAME);
+        passwordPolicyPage.addPolicy(NOT_USERNAME);
 
-        navigateToTestRealmChangePassword();
+        testUserCredentialsPage.navigateTo();
+        testUserCredentialsPage.resetPassword(testRealmUser.getUsername());
+        assertFlashMessageDanger();
 
-        changePassword.changePasswords(getPasswordOf(testRealmUser), testRealmUser.getUsername(), testRealmUser.getUsername());
-        assertFlashMessageError();
-
-        changePassword.changePasswords(getPasswordOf(testRealmUser), "validpassword", "validpassword");
+        testUserCredentialsPage.resetPassword("validpassword");
         assertFlashMessageSuccess();
     }
 
     @Test
     public void testRegexPatternsPolicy() {
-        passwordPolicy.addPolicy(REGEX_PATTERNS, "^[A-Z]+#[a-z]{8}$");
+        passwordPolicyPage.addPolicy(REGEX_PATTERNS, "^[A-Z]+#[a-z]{8}$");
 
-        navigateToTestRealmChangePassword();
+        testUserCredentialsPage.navigateTo();
+        testUserCredentialsPage.resetPassword("invalidPassword");
+        assertFlashMessageDanger();
 
-        changePassword.changePasswords(getPasswordOf(testRealmUser), "invalidPassword", "invalidPassword");
-        assertFlashMessageError();
-
-        changePassword.changePasswords(getPasswordOf(testRealmUser), "VALID#password", "VALID#password");
+        testUserCredentialsPage.resetPassword("VALID#password");
         assertFlashMessageSuccess();
     }
 
     @Test
     public void testPasswordHistoryPolicy() {
-        passwordPolicy.addPolicy(PASSWORD_HISTORY, 2);
+        passwordPolicyPage.addPolicy(PASSWORD_HISTORY, 2);
 
-        navigateToTestRealmChangePassword();
-
-        changePassword.changePasswords(getPasswordOf(testRealmUser), "firstPassword", "firstPassword");
+        testUserCredentialsPage.navigateTo();
+        testUserCredentialsPage.resetPassword("firstPassword");
         assertFlashMessageSuccess();
 
-        changePassword.changePasswords("firstPassword", "secondPassword", "secondPassword");
+        testUserCredentialsPage.resetPassword("secondPassword");
         assertFlashMessageSuccess();
 
-        changePassword.changePasswords("secondPassword", "firstPassword", "firstPassword");
-        assertFlashMessageError();
+        testUserCredentialsPage.resetPassword("firstPassword");
+        assertFlashMessageDanger();
     }
 
-    private void navigateToTestRealmChangePassword() {
-        changePassword.navigateTo();
-        testRealmLogin.form().login(testRealmUser);
-        changePassword.password();
-    }
 }

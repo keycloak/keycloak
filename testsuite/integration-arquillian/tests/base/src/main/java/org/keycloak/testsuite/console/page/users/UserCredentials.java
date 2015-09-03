@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.console.page.users;
 
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
+import static org.keycloak.testsuite.page.Form.setInputValue;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -21,32 +22,36 @@ public class UserCredentials extends User {
     @FindBy(id = "confirmPassword")
     private WebElement confirmPasswordInput;
 
-    @FindBy(xpath = "//div[@class='onoffswitch' and ./input[@id='temporaryPassword']]")
+    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='temporaryPassword']]")
     private OnOffSwitch temporaryOnOffSwitch;
 
-    @FindBy
+    @FindBy(xpath = ".//button[contains(@data-ng-click, 'resetPassword')]")
     private WebElement resetPasswordButton;
 
     public void setNewPassword(String newPassword) {
-        newPasswordInput.clear();
-        if (newPassword != null) {
-            newPasswordInput.sendKeys(newPassword);
-        }
+        setInputValue(newPasswordInput, newPassword);
     }
 
-    public void setConfirmPassword(String confirm) {
-        confirmPasswordInput.clear();
-        if (confirm != null) {
-            confirmPasswordInput.sendKeys(confirm);
-        }
+    public void setConfirmPassword(String confirmPassword) {
+        setInputValue(confirmPasswordInput, confirmPassword);
     }
-    
+
     public void setTemporary(boolean temporary) {
         temporaryOnOffSwitch.setOn(temporary);
     }
-    
-    public void resetPassword() {
-        resetPasswordButton.click();
-    }
 
+    public void clickResetPasswordAndConfirm() {
+        resetPasswordButton.click();
+        modalDialog.ok();
+    }
+    
+    public void resetPassword(String newPassword) {
+        resetPassword(newPassword, newPassword);
+    }
+    public void resetPassword(String newPassword, String confirmPassword) {
+        setNewPassword(newPassword);
+        setConfirmPassword(confirmPassword);
+        clickResetPasswordAndConfirm();
+    }
+    
 }

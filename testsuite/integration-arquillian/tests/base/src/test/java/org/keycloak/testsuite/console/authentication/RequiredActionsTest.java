@@ -37,58 +37,62 @@ import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 public class RequiredActionsTest extends AbstractConsoleTest {
 
     @Page
-    private RequiredActions requiredActions;
+    private RequiredActions requiredActionsPage;
 
     @Page
-    private LoginSettings loginSettings;
+    private LoginSettings loginSettingsPage;
 
     @Page
-    private Registration testRealmRegistration;
+    private Registration testRealmRegistrationPage;
 
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealmRegistrationPage.setAuthRealm("test");
+    }
+    
     @Before
     public void beforeRequiredActionsTest() {
-        configure().authentication();
-        requiredActions.tabs().requiredActions();
-        testRealmRegistration.setAuthRealm("test");
+        requiredActionsPage.navigateTo();
     }
 
     @Test
     public void requiredActionsTest() {
-        requiredActions.clickTermsAndConditionEnabled();
+        requiredActionsPage.clickTermsAndConditionEnabled();
         assertFlashMessageSuccess();
 
-        requiredActions.clickTermsAndConditionDefaultAction();
+        requiredActionsPage.clickTermsAndConditionDefaultAction();
         assertFlashMessageSuccess();
 
-        requiredActions.clickVerifyEmailEnabled();
+        requiredActionsPage.clickVerifyEmailEnabled();
         assertFlashMessageSuccess();
 
-        requiredActions.clickVerifyEmailDefaultAction();
+        requiredActionsPage.clickVerifyEmailDefaultAction();
         assertFlashMessageSuccess();
 
-        requiredActions.clickUpdatePasswordEnabled();
+        requiredActionsPage.clickUpdatePasswordEnabled();
         assertFlashMessageSuccess();
 
-        requiredActions.clickUpdatePasswordDefaultAction();
+        requiredActionsPage.clickUpdatePasswordDefaultAction();
         assertFlashMessageSuccess();
 
-        requiredActions.clickConfigureTotpEnabled();
+        requiredActionsPage.clickConfigureTotpEnabled();
         assertFlashMessageSuccess();
 
-        requiredActions.clickConfigureTotpDefaultAction();
+        requiredActionsPage.clickConfigureTotpDefaultAction();
         assertFlashMessageSuccess();
 
-        requiredActions.clickUpdateProfileEnabled();
+        requiredActionsPage.clickUpdateProfileEnabled();
         assertFlashMessageSuccess();
 
-        requiredActions.clickUpdateProfileDefaultAction();
+        requiredActionsPage.clickUpdateProfileDefaultAction();
         assertFlashMessageSuccess();
     }
 
     @Test
     public void termsAndConditionsDefaultActionTest() {
-        requiredActions.clickTermsAndConditionEnabled();
-        requiredActions.clickTermsAndConditionDefaultAction();
+        requiredActionsPage.clickTermsAndConditionEnabled();
+        requiredActionsPage.clickTermsAndConditionDefaultAction();
 
         allowTestRealmUserRegistration();
 
@@ -101,7 +105,7 @@ public class RequiredActionsTest extends AbstractConsoleTest {
 
     @Test
     public void configureTotpDefaultActionTest() {
-        requiredActions.clickConfigureTotpDefaultAction();
+        requiredActionsPage.clickConfigureTotpDefaultAction();
 
         allowTestRealmUserRegistration();
 
@@ -113,9 +117,9 @@ public class RequiredActionsTest extends AbstractConsoleTest {
     }
 
     private void allowTestRealmUserRegistration() {
-        loginSettings.navigateTo();
-        loginSettings.form().setRegistrationAllowed(true);
-        loginSettings.form().save();
+        loginSettingsPage.navigateTo();
+        loginSettingsPage.form().setRegistrationAllowed(true);
+        loginSettingsPage.form().save();
     }
 
     private void navigateToTestRealmRegistration() {
@@ -127,6 +131,6 @@ public class RequiredActionsTest extends AbstractConsoleTest {
         UserRepresentation user = createUserRepresentation("testUser", "testUser@email.test", "test", "user", true);
         setPasswordFor(user, PASSWORD);
 
-        testRealmRegistration.register(user);
+        testRealmRegistrationPage.register(user);
     }
 }

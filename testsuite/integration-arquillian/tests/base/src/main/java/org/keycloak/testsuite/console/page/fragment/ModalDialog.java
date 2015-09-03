@@ -15,6 +15,14 @@ public class ModalDialog {
     @FindBy(xpath = ".//button[text()='Delete']")
     private WebElement deleteButton;
 
+    @FindBy(xpath = ".//button[@ng-click='ok()']")
+    private WebElement okButton;
+
+    public void ok() {
+        waitAjaxForElement(okButton);
+        okButton.click();
+    }
+    
     public void confirmDeletion() {
         waitAjaxForElement(deleteButton);
         deleteButton.click();
