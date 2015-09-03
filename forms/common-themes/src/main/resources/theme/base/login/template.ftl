@@ -54,7 +54,8 @@
         <div id="kc-container-wrapper" class="${properties.kcContainerWrapperClass!}">
             
             <div id="brand">
-                <img class="${properties.iamLogo!}" alt="RED HAT&reg; JBOSS&reg; IDENTITY AND ACCESS MANAGEMENT" src="${url.resourcesPath}/img/brand.svg">
+<!--                <img class="${properties.iamLogo!}" alt="Red Hat&reg; JBoss&reg; Identity and Access Management" src="${url.resourcesPath}/img/brand.svg">-->
+                <span class="${properties.iamLogo!}">RED HAT&reg; JBOSS&reg; IDENTITY AND ACCESS MANAGEMENT</span>
             </div>
 
             <div id="kc-header" class="${properties.kcHeaderClass!}">
