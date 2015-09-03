@@ -61,6 +61,12 @@
             </column>
         </addColumn>
 
+        <addColumn tableName="CLIENT">
+            <column name="CLIENT_AUTHENTICATOR_TYPE" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
         <!-- Sybase specific hacks -->
         <modifySql dbms="sybase">
             <regExpReplace replace=".*(SET DEFAULT NULL)" with="SELECT 1" />

@@ -95,6 +95,18 @@ public class ClientAdapter implements ClientModel {
         updated.setEnabled(enabled);
     }
 
+    @Override
+    public String getClientAuthenticatorType() {
+        if (updated != null) return updated.getClientAuthenticatorType();
+        return cached.getClientAuthenticatorType();
+    }
+
+    @Override
+    public void setClientAuthenticatorType(String clientAuthenticatorType) {
+        getDelegateForUpdate();
+        updated.setClientAuthenticatorType(clientAuthenticatorType);
+    }
+
     public boolean validateSecret(String secret) {
         return secret.equals(getSecret());
     }

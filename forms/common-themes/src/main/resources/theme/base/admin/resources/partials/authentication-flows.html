@@ -19,7 +19,7 @@
                     <button class="btn btn-default" data-ng-click="copyFlow()">Copy</button>
                     <button class="btn btn-default" data-ng-hide="flow.builtIn" data-ng-click="removeFlow()">Delete</button>
                     <button class="btn btn-default" data-ng-hide="flow.builtIn" data-ng-click="addExecution()">Add Execution</button>
-                    <button class="btn btn-default" data-ng-hide="flow.builtIn" data-ng-click="addFlow()">Add Flow</button>
+                    <button class="btn btn-default" data-ng-hide="flow.builtIn || flow.providerId === 'client-flow'" data-ng-click="addFlow()">Add Flow</button>
                 </div>
             </th>
          </tr>

@@ -30,6 +30,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
+import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.adapter.AdapterTest;
@@ -78,7 +79,7 @@ public class LDAPMultipleAttributesTest {
             ldapFedProvider.getLdapIdentityStore().updatePassword(bruce, "password");
 
             // Create ldap-portal client
-            ClientModel ldapClient = appRealm.addClient("ldap-portal");
+            ClientModel ldapClient = new ClientManager(manager).createClient(appRealm, "ldap-portal");
             ldapClient.addRedirectUri("/ldap-portal");
             ldapClient.addRedirectUri("/ldap-portal/*");
             ldapClient.setManagementUrl("/ldap-portal");

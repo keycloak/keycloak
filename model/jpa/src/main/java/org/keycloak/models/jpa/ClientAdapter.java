@@ -152,6 +152,16 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public String getClientAuthenticatorType() {
+        return entity.getClientAuthenticatorType();
+    }
+
+    @Override
+    public void setClientAuthenticatorType(String clientAuthenticatorType) {
+        entity.setClientAuthenticatorType(clientAuthenticatorType);
+    }
+
+    @Override
     public String getSecret() {
         return entity.getSecret();
     }

@@ -28,21 +28,4 @@ public interface ClientAuthenticator extends Provider {
      */
     void authenticateClient(ClientAuthenticationFlowContext context);
 
-
-    /**
-     * Does this authenticator require that the client has already been identified?  That ClientAuthenticationFlowContext.getClient() is not null?
-     *
-     * @return
-     */
-    boolean requiresClient();
-
-    /**
-     * Is this authenticator configured for this client?
-     *
-     * @param session
-     * @param realm
-     * @param client
-     * @return
-     */
-    boolean configuredFor(KeycloakSession session, RealmModel realm, ClientModel client);
 }
