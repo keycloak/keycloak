@@ -20,7 +20,7 @@ public abstract class AbstractRolesTest extends AbstractConsoleTest {
     
     @Before
     public void beforeRolesTest() {
-        configure().roles();
+//        configure().roles();
     }
     
 }

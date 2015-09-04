@@ -21,6 +21,7 @@ import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
+import static org.keycloak.testsuite.page.Form.setInputValue;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -33,17 +34,15 @@ public class SecurityDefenses extends RealmSettings {
 
     @Override
     public String getUriFragment() {
-        return super.getUriFragment() + "/defense";
+        return super.getUriFragment() + "/defense"; // NOTE: page doesn't exist, only subpages
     }
 
-    @Page
-    private Headers headers;
+    public class Headers extends SecurityDefenses {
 
-    public Headers headers() {
-        return headers;
-    }
-
-    public class Headers {
+        @Override
+        public String getUriFragment() {
+            return super.getUriFragment() + "/headers";
+        }
 
         @Page
         private HeadersForm form;
@@ -70,13 +69,6 @@ public class SecurityDefenses extends RealmSettings {
         }
     }
 
-    @Page
-    private BruteForceDetection bruteForceDetection;
-
-    public BruteForceDetection bruteForceDetection() {
-        return bruteForceDetection;
-    }
-
     public enum TimeSelectValues {
 
         SECONDS("Seconds"), MINUTES("Minutes"), HOURS("Hours"), DAYS("Days");
@@ -92,7 +84,12 @@ public class SecurityDefenses extends RealmSettings {
         }
     }
 
-    public class BruteForceDetection {
+    public class BruteForceDetection extends SecurityDefenses {
+
+        @Override
+        public String getUriFragment() {
+            return super.getUriFragment() + "/brute-force";
+        }
 
         @Page
         private BruteForceDetectionForm form;
@@ -102,6 +99,7 @@ public class SecurityDefenses extends RealmSettings {
         }
 
         public class BruteForceDetectionForm extends Form {
+
             @FindByJQuery("div[class='onoffswitch']")
             private OnOffSwitch protectionEnabled;
 

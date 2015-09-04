@@ -21,6 +21,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
+import org.junit.Before;
 import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import org.keycloak.testsuite.console.page.users.UserAttributes;
@@ -35,6 +36,11 @@ public class UserAttributesTest extends AbstractUserTest {
     @Page
     private UserAttributes userAttributesPage;
 
+    @Before
+    public void beforeUserAttributesTest() {
+        usersPage.navigateTo();
+    }
+    
     @Test
     public void invalidEmail() {
         String testUsername = "testUserInvEmail";

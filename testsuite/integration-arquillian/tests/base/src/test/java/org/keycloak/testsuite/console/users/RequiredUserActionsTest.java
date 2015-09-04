@@ -5,6 +5,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
@@ -53,15 +54,17 @@ public class RequiredUserActionsTest extends AbstractUserTest {
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmAccountPage.setAuthRealm(testRealmPage);
-        testRealmUpdateAccountPage.setAuthRealm(testRealmPage);
-        testRealmUpdatePasswordPage.setAuthRealm(testRealmPage);
+        testRealmAccountPage.setAuthRealm(TEST);
+        testRealmUpdateAccountPage.setAuthRealm(TEST);
+        testRealmUpdatePasswordPage.setAuthRealm(TEST);
     }
 
     @Before
     public void beforeRequiredActionsTest() {
-        usersPage.table().viewAllUsers();
-        usersPage.table().clickUser(testUser.getUsername());
+//        usersPage.table().viewAllUsers();
+//        usersPage.table().clickUser(testUser.getUsername());
+        userAttributesPage.setId(testUser.getId());
+        userAttributesPage.navigateTo();
     }
 
     @Test

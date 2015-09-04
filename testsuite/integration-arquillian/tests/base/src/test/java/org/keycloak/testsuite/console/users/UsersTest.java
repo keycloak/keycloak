@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.console.users;
 
 import javax.ws.rs.core.Response;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -13,6 +14,11 @@ import org.keycloak.testsuite.util.Timer;
  * @author tkyjovsk
  */
 public class UsersTest extends AbstractUserTest {
+    
+    @Before
+    public void beforeUserAttributesTest() {
+        usersPage.navigateTo();
+    }
     
     public void createTestUsers(String usernamePrefix, int count) {
 //        Timer.time();

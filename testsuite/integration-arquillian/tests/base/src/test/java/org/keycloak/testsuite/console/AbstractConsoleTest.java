@@ -66,7 +66,7 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
             loginToMasterRealmAdminConsoleAs(adminUser);
             testContext.setAdminLoggedIn(true);
         } else {
-            adminConsoleRealmPage.navigateTo();
+//            adminConsoleRealmPage.navigateTo();
         }
     }
 

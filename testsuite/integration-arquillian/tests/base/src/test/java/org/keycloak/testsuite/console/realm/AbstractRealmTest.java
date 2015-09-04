@@ -21,7 +21,7 @@ public abstract class AbstractRealmTest extends AbstractConsoleTest {
     
     @Before
     public void beforeRealmTest() {
-        configure().realmSettings();
+//        configure().realmSettings();
     }
 
 }

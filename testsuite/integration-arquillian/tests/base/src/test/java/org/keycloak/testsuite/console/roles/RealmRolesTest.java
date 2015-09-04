@@ -33,6 +33,7 @@ public class RealmRolesTest extends AbstractRolesTest {
     @Before
     public void beforeTestAddNewRole() {
         testRole = new RoleRepresentation("test_role", "role description");
+        realmRolesPage.navigateTo();
     }
     
     public void addRole(RoleRepresentation roleRep) {

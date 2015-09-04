@@ -30,6 +30,7 @@ import java.util.Date;
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  *
@@ -39,28 +40,34 @@ import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 public class SecurityDefensesTest extends AbstractRealmTest {
 
     @Page
-    private SecurityDefenses securityDefensesPage;
+    private SecurityDefenses.BruteForceDetection bruteForceDetectionPage;
 
     @Page
     private Account testRealmAccountPage;
 
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealmAccountPage.setAuthRealm(TEST);
+    }
+
     @Before
     public void beforeSecurityDefensesTest() {
-        configure().realmSettings();
-        tabs().securityDefenses();
-        testRealmAccountPage.setAuthRealm("test");
+//        configure().realmSettings();
+//        tabs().securityDefenses();
+        bruteForceDetectionPage.navigateTo();
     }
 
     @Test
     public void maxLoginFailuresTest() {
         int secondsToWait = 3;
 
-        securityDefensesPage.goToBruteForceDetection();
-        securityDefensesPage.bruteForceDetection().form().setProtectionEnabled(true);
-        securityDefensesPage.bruteForceDetection().form().setMaxLoginFailures("1");
-        securityDefensesPage.bruteForceDetection().form().setWaitIncrementSelect(SecurityDefenses.TimeSelectValues.SECONDS);
-        securityDefensesPage.bruteForceDetection().form().setWaitIncrementInput(String.valueOf(secondsToWait));
-        securityDefensesPage.bruteForceDetection().form().save();
+//        securityDefensesPage.goToBruteForceDetection();
+        bruteForceDetectionPage.form().setProtectionEnabled(true);
+        bruteForceDetectionPage.form().setMaxLoginFailures("1");
+        bruteForceDetectionPage.form().setWaitIncrementSelect(SecurityDefenses.TimeSelectValues.SECONDS);
+        bruteForceDetectionPage.form().setWaitIncrementInput(String.valueOf(secondsToWait));
+        bruteForceDetectionPage.form().save();
         assertFlashMessageSuccess();
 
         testRealmAccountPage.navigateTo();
@@ -71,17 +78,17 @@ public class SecurityDefensesTest extends AbstractRealmTest {
         testRealmLoginPage.form().login(user);
         waitForFeedbackText("Invalid username or password.");
         Date startTime = new Date();
-        Date endTime = new Date(startTime.getTime() + secondsToWait*1000);
+        Date endTime = new Date(startTime.getTime() + secondsToWait * 1000);
 
         testRealmLoginPage.form().login(user);
         waitGui().until().element(By.className("instruction"))
                 .text().contains("Account is temporarily disabled, contact admin or try again later.");
-        endTime = new Date(endTime.getTime() + secondsToWait*1000);
+        endTime = new Date(endTime.getTime() + secondsToWait * 1000);
         testRealmAccountPage.navigateTo();
         testRealmLoginPage.form().login(user);
-        endTime = new Date(endTime.getTime() + secondsToWait*1000);
+        endTime = new Date(endTime.getTime() + secondsToWait * 1000);
 
-        while(new Date().compareTo(endTime) < 0) {
+        while (new Date().compareTo(endTime) < 0) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
@@ -93,18 +100,17 @@ public class SecurityDefensesTest extends AbstractRealmTest {
         waitForFeedbackText("Invalid username or password.");
     }
 
-
     @Test
     public void quickLoginCheck() {
         int secondsToWait = 3;
 
-        securityDefensesPage.goToBruteForceDetection();
-        securityDefensesPage.bruteForceDetection().form().setProtectionEnabled(true);
-        securityDefensesPage.bruteForceDetection().form().setMaxLoginFailures("100");
-        securityDefensesPage.bruteForceDetection().form().setQuickLoginCheckInput("1500");
-        securityDefensesPage.bruteForceDetection().form().setMinQuickLoginWaitSelect(SecurityDefenses.TimeSelectValues.SECONDS);
-        securityDefensesPage.bruteForceDetection().form().setMinQuickLoginWaitInput(String.valueOf(secondsToWait));
-        securityDefensesPage.bruteForceDetection().form().save();
+//        securityDefensesPage.goToBruteForceDetection();
+        bruteForceDetectionPage.form().setProtectionEnabled(true);
+        bruteForceDetectionPage.form().setMaxLoginFailures("100");
+        bruteForceDetectionPage.form().setQuickLoginCheckInput("1500");
+        bruteForceDetectionPage.form().setMinQuickLoginWaitSelect(SecurityDefenses.TimeSelectValues.SECONDS);
+        bruteForceDetectionPage.form().setMinQuickLoginWaitInput(String.valueOf(secondsToWait));
+        bruteForceDetectionPage.form().save();
         assertFlashMessageSuccess();
 
         testRealmAccountPage.navigateTo();
@@ -115,16 +121,16 @@ public class SecurityDefensesTest extends AbstractRealmTest {
         testRealmLoginPage.form().login(user);
         testRealmLoginPage.form().login(user);
         Date startTime = new Date();
-        Date endTime = new Date(startTime.getTime() + secondsToWait*1000);
+        Date endTime = new Date(startTime.getTime() + secondsToWait * 1000);
         testRealmLoginPage.form().login(user);
         waitGui().until().element(By.className("instruction"))
                 .text().contains("Account is temporarily disabled, contact admin or try again later.");
-        endTime = new Date(endTime.getTime() + secondsToWait*1000);
+        endTime = new Date(endTime.getTime() + secondsToWait * 1000);
 
         testRealmAccountPage.navigateTo();
         testRealmLoginPage.form().login(user);
 
-        while(new Date().compareTo(endTime) < 0) {
+        while (new Date().compareTo(endTime) < 0) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
@@ -140,12 +146,12 @@ public class SecurityDefensesTest extends AbstractRealmTest {
     public void maxWaitLoginFailures() {
         int secondsToWait = 5;
 
-        securityDefensesPage.goToBruteForceDetection();
-        securityDefensesPage.bruteForceDetection().form().setProtectionEnabled(true);
-        securityDefensesPage.bruteForceDetection().form().setMaxLoginFailures("1");
-        securityDefensesPage.bruteForceDetection().form().setMaxWaitSelect(SecurityDefenses.TimeSelectValues.SECONDS);
-        securityDefensesPage.bruteForceDetection().form().setMaxWaitInput(String.valueOf(secondsToWait));
-        securityDefensesPage.bruteForceDetection().form().save();
+//        securityDefensesPage.goToBruteForceDetection();
+        bruteForceDetectionPage.form().setProtectionEnabled(true);
+        bruteForceDetectionPage.form().setMaxLoginFailures("1");
+        bruteForceDetectionPage.form().setMaxWaitSelect(SecurityDefenses.TimeSelectValues.SECONDS);
+        bruteForceDetectionPage.form().setMaxWaitInput(String.valueOf(secondsToWait));
+        bruteForceDetectionPage.form().save();
 
         testRealmAccountPage.navigateTo();
 
@@ -161,10 +167,10 @@ public class SecurityDefensesTest extends AbstractRealmTest {
                 .text().contains("Account is temporarily disabled, contact admin or try again later.");
         testRealmAccountPage.navigateTo();
         testRealmLoginPage.form().login(user);
-        Date endTime = new Date(new Date().getTime() + secondsToWait*1000);
+        Date endTime = new Date(new Date().getTime() + secondsToWait * 1000);
         waitForFeedbackText("Account is temporarily disabled, contact admin or try again later.");
 
-        while(new Date().compareTo(endTime) < 0) {
+        while (new Date().compareTo(endTime) < 0) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
@@ -180,12 +186,12 @@ public class SecurityDefensesTest extends AbstractRealmTest {
     public void failureResetTime() {
         int secondsToWait = 3;
 
-        securityDefensesPage.goToBruteForceDetection();
-        securityDefensesPage.bruteForceDetection().form().setProtectionEnabled(true);
-        securityDefensesPage.bruteForceDetection().form().setMaxLoginFailures("2");
-        securityDefensesPage.bruteForceDetection().form().setFailureResetTimeSelect(SecurityDefenses.TimeSelectValues.SECONDS);
-        securityDefensesPage.bruteForceDetection().form().setFailureResetTimeInput(String.valueOf(secondsToWait));
-        securityDefensesPage.bruteForceDetection().form().save();
+//        securityDefensesPage.goToBruteForceDetection();
+        bruteForceDetectionPage.form().setProtectionEnabled(true);
+        bruteForceDetectionPage.form().setMaxLoginFailures("2");
+        bruteForceDetectionPage.form().setFailureResetTimeSelect(SecurityDefenses.TimeSelectValues.SECONDS);
+        bruteForceDetectionPage.form().setFailureResetTimeInput(String.valueOf(secondsToWait));
+        bruteForceDetectionPage.form().save();
         assertFlashMessageSuccess();
 
         testRealmAccountPage.navigateTo();
@@ -195,9 +201,9 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
         testRealmLoginPage.form().login(user);
         waitForFeedbackText("Invalid username or password.");
-        Date endTime = new Date(new Date().getTime() + secondsToWait*1000);
+        Date endTime = new Date(new Date().getTime() + secondsToWait * 1000);
 
-        while(new Date().compareTo(endTime) < 0) {
+        while (new Date().compareTo(endTime) < 0) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {

@@ -40,8 +40,9 @@ public class TokensTest extends AbstractRealmTest {
 
     @Before
     public void beforeTokensTest() {
-        configure().realmSettings();
-        tabs().tokens();
+//        configure().realmSettings();
+//        tabs().tokens();
+        tokenSettingsPage.navigateTo();
     }
 
     @Test

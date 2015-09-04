@@ -28,7 +28,8 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
 
     @Before
     public void beforeClientTest() {
-        configure().clients();
+//        configure().clients();
+        clientsPage.navigateTo();
     }
 
     public void createClient(ClientRepresentation client) {

@@ -33,8 +33,9 @@ public class DefaultRolesTest extends AbstractRolesTest {
         defaultRoleRep = new RoleRepresentation("default-role", "");
         rolesPage.rolesResource().create(defaultRoleRep);
 
+        defaultRolesPage.navigateTo();
         // navigate to default roles page
-        rolesPage.tabs().defaultRoles();
+//        rolesPage.tabs().defaultRoles();
     }
 
     @Test

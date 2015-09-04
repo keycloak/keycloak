@@ -30,7 +30,8 @@ public class LoginSettingsTest extends AbstractRealmTest {
     
     @Before
     public void beforeLoginSettingsTest() {
-        tabs().login();
+//        tabs().login();
+        loginSettingsPage.navigateTo();
     }
 
     @Test

@@ -35,8 +35,9 @@ public class ThemeSettingsTest extends AbstractRealmTest {
 
     @Before
     public void beforeThemeTest() {
-        configure().realmSettings();
-        tabs().themes();
+//        configure().realmSettings();
+//        tabs().themes();
+        themeSettingsPage.navigateTo();
     }
 
     @Test
