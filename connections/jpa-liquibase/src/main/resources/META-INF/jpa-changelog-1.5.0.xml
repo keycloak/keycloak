@@ -9,6 +9,7 @@
         <delete tableName="USER_SESSION_NOTE"/>
         <delete tableName="USER_SESSION"/>
 
+        <dropDefaultValue tableName="AUTHENTICATION_EXECUTION" columnName="USER_SETUP_ALLOWED" />
         <dropColumn tableName="AUTHENTICATION_EXECUTION" columnName="USER_SETUP_ALLOWED"/>
         <addColumn tableName="CREDENTIAL">
             <column name="COUNTER" type="INT" defaultValueNumeric="0">
@@ -59,6 +60,17 @@
                 <constraints nullable="true"/>
             </column>
         </addColumn>
+
+        <addColumn tableName="CLIENT">
+            <column name="CLIENT_AUTHENTICATOR_TYPE" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Sybase specific hacks -->
+        <modifySql dbms="sybase">
+            <regExpReplace replace=".*(SET DEFAULT NULL)" with="SELECT 1" />
+        </modifySql>
 
     </changeSet>
 </databaseChangeLog>

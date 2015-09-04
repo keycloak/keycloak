@@ -110,6 +110,10 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(10 == appRegisteredNodes.get("node1"));
         Assert.assertTrue(20 == appRegisteredNodes.get("172.10.15.20"));
 
+        // test clientAuthenticatorType
+        Assert.assertEquals(application.getClientAuthenticatorType(), "client-secret");
+        Assert.assertEquals(otherApp.getClientAuthenticatorType(), "client-jwt");
+
         // Test finding applications by ID
         Assert.assertNull(realm.getClientById("982734"));
         Assert.assertEquals(application, realm.getClientById(application.getId()));

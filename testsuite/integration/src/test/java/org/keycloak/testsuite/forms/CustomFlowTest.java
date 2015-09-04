@@ -35,6 +35,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -120,8 +121,6 @@ public class CustomFlowTest {
             execution.setAuthenticatorFlow(false);
             appRealm.addAuthenticatorExecution(execution);
 
-            new ClientManager().createClient(appRealm, "dummy-client");
-
             AuthenticationFlowModel clientFlow = new AuthenticationFlowModel();
             clientFlow.setAlias("client-dummy");
             clientFlow.setDescription("dummy pass through flow");
@@ -138,6 +137,11 @@ public class CustomFlowTest {
             execution.setPriority(10);
             execution.setAuthenticatorFlow(false);
             appRealm.addAuthenticatorExecution(execution);
+
+            // Set passthrough clientAuthenticator for our clients
+            ClientModel dummyClient = new ClientManager().createClient(appRealm, "dummy-client");
+            dummyClient.setClientAuthenticatorType(PassThroughClientAuthenticator.PROVIDER_ID);
+            appRealm.getClientByClientId("test-app").setClientAuthenticatorType(PassThroughClientAuthenticator.PROVIDER_ID);
         }
     });
 

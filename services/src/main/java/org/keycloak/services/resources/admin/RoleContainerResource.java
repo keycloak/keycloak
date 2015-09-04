@@ -107,7 +107,7 @@ public class RoleContainerResource extends RoleResource {
 
         RoleModel roleModel = roleContainer.getRole(roleName);
         if (roleModel == null) {
-            throw new NotFoundException("Could not find role: " + roleName);
+            throw new NotFoundException("Could not find role");
         }
 
         return getRole(roleModel);
@@ -127,7 +127,7 @@ public class RoleContainerResource extends RoleResource {
         RoleRepresentation rep = getRole(roleName);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
-            throw new NotFoundException("Could not find role: " + roleName);
+            throw new NotFoundException("Could not find role");
         }
         deleteRole(role);
 
@@ -150,7 +150,7 @@ public class RoleContainerResource extends RoleResource {
 
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
-            throw new NotFoundException("Could not find role: " + roleName);
+            throw new NotFoundException("Could not find role");
         }
         try {
             updateRole(rep, role);
@@ -177,7 +177,7 @@ public class RoleContainerResource extends RoleResource {
 
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
-            throw new NotFoundException("Could not find role: " + roleName);
+            throw new NotFoundException("Could not find role");
         }
         addComposites(adminEvent, uriInfo, roles, role);
     }
@@ -197,7 +197,7 @@ public class RoleContainerResource extends RoleResource {
 
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
-            throw new NotFoundException("Could not find role: " + roleName);
+            throw new NotFoundException("Could not find role");
         }
         return getRoleComposites(role);
     }
@@ -217,7 +217,7 @@ public class RoleContainerResource extends RoleResource {
 
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
-            throw new NotFoundException("Could not find role: " + roleName);
+            throw new NotFoundException("Could not find role");
         }
         return getRealmRoleComposites(role);
     }
@@ -240,11 +240,11 @@ public class RoleContainerResource extends RoleResource {
 
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
-            throw new NotFoundException("Could not find role: " + roleName);
+            throw new NotFoundException("Could not find role");
         }
         ClientModel clientModel = realm.getClientById(client);
         if (client == null) {
-            throw new NotFoundException("Could not find client: " + client);
+            throw new NotFoundException("Could not find client");
 
         }
         return getClientRoleComposites(clientModel, role);
@@ -267,7 +267,7 @@ public class RoleContainerResource extends RoleResource {
 
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
-            throw new NotFoundException("Could not find role: " + roleName);
+            throw new NotFoundException("Could not find role");
         }
         deleteComposites(roles, role);
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();

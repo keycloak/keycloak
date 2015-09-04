@@ -20,7 +20,7 @@ public class JpaUpdate1_4_0_Final extends CustomKeycloakTask {
         String userAttributeTableName = database.correctObjectName("USER_ATTRIBUTE", Table.class);
 
         try {
-            PreparedStatement statement = jdbcConnection.prepareStatement("select NAME, USER_ID from USER_ATTRIBUTE");
+            PreparedStatement statement = jdbcConnection.prepareStatement("select NAME, USER_ID from " + getTableName("USER_ATTRIBUTE"));
 
             try {
                 ResultSet resultSet = statement.executeQuery();

@@ -11,6 +11,7 @@ import liquibase.statement.core.InsertStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Table;
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClaimMask;
@@ -49,7 +50,10 @@ public class JpaUpdate1_2_0_Beta1 extends CustomKeycloakTask {
         String identityProviderTableName = database.correctObjectName("IDENTITY_PROVIDER", Table.class);
         String idpConfigTableName = database.correctObjectName("IDENTITY_PROVIDER_CONFIG", Table.class);
 
-        PreparedStatement statement = jdbcConnection.prepareStatement("select RSC.NAME, VALUE, REALM_ID, UPDATE_PROFILE_ON_SOC_LOGIN from REALM_SOCIAL_CONFIG RSC,REALM where RSC.REALM_ID = REALM.ID ORDER BY RSC.REALM_ID, RSC.NAME");
+        String realmSocialConfigTable = getTableName("REALM_SOCIAL_CONFIG");
+        String realmTableName = getTableName("REALM");
+        PreparedStatement statement = jdbcConnection.prepareStatement("select RSC.NAME, VALUE, REALM_ID, UPDATE_PROFILE_ON_SOC_LOGIN from " + realmSocialConfigTable + " RSC," + realmTableName +
+                " REALM where RSC.REALM_ID = REALM.ID ORDER BY RSC.REALM_ID, RSC.NAME");
         try {
             ResultSet resultSet = statement.executeQuery();
             try {
@@ -124,7 +128,7 @@ public class JpaUpdate1_2_0_Beta1 extends CustomKeycloakTask {
 
     protected void convertSocialToIdFedUsers() throws SQLException, DatabaseException {
         String federatedIdentityTableName = database.correctObjectName("FEDERATED_IDENTITY", Table.class);
-        PreparedStatement statement = jdbcConnection.prepareStatement("select REALM_ID, USER_ID, SOCIAL_PROVIDER, SOCIAL_USER_ID, SOCIAL_USERNAME from USER_SOCIAL_LINK");
+        PreparedStatement statement = jdbcConnection.prepareStatement("select REALM_ID, USER_ID, SOCIAL_PROVIDER, SOCIAL_USER_ID, SOCIAL_USERNAME from " + getTableName("USER_SOCIAL_LINK"));
         try {
             ResultSet resultSet = statement.executeQuery();
             try {
@@ -170,7 +174,7 @@ public class JpaUpdate1_2_0_Beta1 extends CustomKeycloakTask {
         String adminRoleId = getAdminRoleId();
         String masterRealmId = Config.getAdminRealm();
 
-        PreparedStatement statement = jdbcConnection.prepareStatement("select NAME from REALM");
+        PreparedStatement statement = jdbcConnection.prepareStatement("select NAME from " + getTableName("REALM"));
         try {
             ResultSet resultSet = statement.executeQuery();
             try {
@@ -178,7 +182,7 @@ public class JpaUpdate1_2_0_Beta1 extends CustomKeycloakTask {
                     String realmName = resultSet.getString("NAME");
                     String masterAdminAppName = realmName + "-realm";
 
-                    PreparedStatement statement2 = jdbcConnection.prepareStatement("select ID from CLIENT where REALM_ID = ? AND NAME = ?");
+                    PreparedStatement statement2 = jdbcConnection.prepareStatement("select ID from " + getTableName("CLIENT") + " where REALM_ID = ? AND NAME = ?");
                     statement2.setString(1, masterRealmId);
                     statement2.setString(2, masterAdminAppName);
 
@@ -209,7 +213,7 @@ public class JpaUpdate1_2_0_Beta1 extends CustomKeycloakTask {
     }
 
     private String getAdminRoleId() throws SQLException, DatabaseException {
-        PreparedStatement statement = jdbcConnection.prepareStatement("select ID from KEYCLOAK_ROLE where NAME = ? AND REALM = ?");
+        PreparedStatement statement = jdbcConnection.prepareStatement("select ID from " + getTableName("KEYCLOAK_ROLE") + " where NAME = ? AND REALM = ?");
         statement.setString(1, AdminRoles.ADMIN);
         statement.setString(2, Config.getAdminRealm());
 
@@ -231,7 +235,8 @@ public class JpaUpdate1_2_0_Beta1 extends CustomKeycloakTask {
 
 
     protected void addNewRealmAdminRoles() throws SQLException, DatabaseException {
-        PreparedStatement statement = jdbcConnection.prepareStatement("select CLIENT.ID REALM_ADMIN_APP_ID, CLIENT.REALM_ID REALM_ID, KEYCLOAK_ROLE.ID ADMIN_ROLE_ID from CLIENT,KEYCLOAK_ROLE where KEYCLOAK_ROLE.APPLICATION = CLIENT.ID AND CLIENT.NAME = 'realm-management' AND KEYCLOAK_ROLE.NAME = ?");
+        PreparedStatement statement = jdbcConnection.prepareStatement("select CLIENT.ID REALM_ADMIN_APP_ID, CLIENT.REALM_ID REALM_ID, KEYCLOAK_ROLE.ID ADMIN_ROLE_ID from " +
+                getTableName("CLIENT") + " CLIENT," + getTableName("KEYCLOAK_ROLE") + " KEYCLOAK_ROLE where KEYCLOAK_ROLE.APPLICATION = CLIENT.ID AND CLIENT.NAME = 'realm-management' AND KEYCLOAK_ROLE.NAME = ?");
         statement.setString(1, AdminRoles.REALM_ADMIN);
 
         try {
@@ -280,7 +285,7 @@ public class JpaUpdate1_2_0_Beta1 extends CustomKeycloakTask {
         String protocolMapperTableName = database.correctObjectName("PROTOCOL_MAPPER", Table.class);
         String protocolMapperCfgTableName = database.correctObjectName("PROTOCOL_MAPPER_CONFIG", Table.class);
 
-        PreparedStatement statement = jdbcConnection.prepareStatement("select ID, NAME, ALLOWED_CLAIMS_MASK from CLIENT");
+        PreparedStatement statement = jdbcConnection.prepareStatement("select ID, NAME, ALLOWED_CLAIMS_MASK from " + getTableName("CLIENT"));
 
         try {
             ResultSet resultSet = statement.executeQuery();

@@ -692,6 +692,12 @@ public class RepresentationToModel {
             client.setNotBefore(resourceRep.getNotBefore());
         }
 
+        if (resourceRep.getClientAuthenticatorType() != null) {
+            client.setClientAuthenticatorType(resourceRep.getClientAuthenticatorType());
+        } else {
+            client.setClientAuthenticatorType(KeycloakModelUtils.getDefaultClientAuthenticatorType());
+        }
+
         client.setSecret(resourceRep.getSecret());
         if (client.getSecret() == null) {
             KeycloakModelUtils.generateSecret(client);
@@ -770,6 +776,7 @@ public class RepresentationToModel {
         if (rep.getBaseUrl() != null) resource.setBaseUrl(rep.getBaseUrl());
         if (rep.isSurrogateAuthRequired() != null) resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
         if (rep.getNodeReRegistrationTimeout() != null) resource.setNodeReRegistrationTimeout(rep.getNodeReRegistrationTimeout());
+        if (rep.getClientAuthenticatorType() != null) resource.setClientAuthenticatorType(rep.getClientAuthenticatorType());
         resource.updateClient();
 
         if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());

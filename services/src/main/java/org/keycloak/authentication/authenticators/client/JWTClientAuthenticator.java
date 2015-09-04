@@ -41,7 +41,6 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     public static final String CERTIFICATE_ATTR = "jwt.credential.certificate";
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.REQUIRED,
             AuthenticationExecutionModel.Requirement.ALTERNATIVE,
             AuthenticationExecutionModel.Requirement.DISABLED
     };
@@ -133,16 +132,6 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client authentication with signed JWT failed: " + e.getMessage());
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
         }
-    }
-
-    @Override
-    public boolean requiresClient() {
-        return false;
-    }
-
-    @Override
-    public boolean configuredFor(KeycloakSession session, RealmModel realm, ClientModel client) {
-        return client.getAttribute(CERTIFICATE_ATTR) != null;
     }
 
     @Override

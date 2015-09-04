@@ -133,6 +133,9 @@ public class AdminAPITest {
                 ClientRepresentation newApp = new ClientRepresentation();
                 if (appRep.getId() != null) newApp.setId(appRep.getId());
                 newApp.setClientId(appRep.getClientId());
+                if (appRep.getClientAuthenticatorType() != null) {
+                    newApp.setClientAuthenticatorType(appRep.getClientAuthenticatorType());
+                }
                 if (appRep.getSecret() != null) {
                     newApp.setSecret(appRep.getSecret());
                 }
@@ -177,6 +180,7 @@ public class AdminAPITest {
         if (appRep.getAdminUrl() != null) Assert.assertEquals(appRep.getAdminUrl(), storedApp.getAdminUrl());
         if (appRep.getBaseUrl() != null) Assert.assertEquals(appRep.getBaseUrl(), storedApp.getBaseUrl());
         if (appRep.isSurrogateAuthRequired() != null) Assert.assertEquals(appRep.isSurrogateAuthRequired(), storedApp.isSurrogateAuthRequired());
+        if (appRep.getClientAuthenticatorType() != null) Assert.assertEquals(appRep.getClientAuthenticatorType(), storedApp.getClientAuthenticatorType());
 
         if (appRep.getNotBefore() != null) {
             Assert.assertEquals(appRep.getNotBefore(), storedApp.getNotBefore());

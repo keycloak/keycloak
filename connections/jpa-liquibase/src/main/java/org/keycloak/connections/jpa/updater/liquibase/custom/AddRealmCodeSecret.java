@@ -12,6 +12,7 @@ import liquibase.statement.SqlStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Schema;
 import liquibase.structure.core.Table;
+import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.sql.Connection;
@@ -36,7 +37,7 @@ public class AddRealmCodeSecret implements CustomSqlChange {
 
             String correctedTableName = database.correctObjectName("REALM", Table.class);
             if (SnapshotGeneratorFactory.getInstance().has(new Table().setName(correctedTableName), database)) {
-                ResultSet resultSet = connection.createStatement().executeQuery("SELECT ID FROM REALM WHERE CODE_SECRET IS NULL");
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT ID FROM " + LiquibaseJpaUpdaterProvider.getTable(correctedTableName, database.getDefaultSchemaName()) + " WHERE CODE_SECRET IS NULL");
                 while (resultSet.next()) {
                     String id = resultSet.getString(1);
 

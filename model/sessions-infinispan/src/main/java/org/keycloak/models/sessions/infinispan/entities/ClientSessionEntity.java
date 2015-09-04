@@ -3,6 +3,9 @@ package org.keycloak.models.sessions.infinispan.entities;
 import org.keycloak.models.ClientSessionModel;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,6 +34,8 @@ public class ClientSessionEntity extends SessionEntity {
     private Map<String, String> userSessionNotes;
     private Map<String, ClientSessionModel.ExecutionStatus> authenticatorStatus = new HashMap<>();
     private String authUserId;
+    private Set<String> requiredActions = new HashSet<>();
+
 
     public String getClient() {
         return client;
@@ -136,5 +141,7 @@ public class ClientSessionEntity extends SessionEntity {
         this.userSessionNotes = userSessionNotes;
     }
 
-
+    public Set<String> getRequiredActions() {
+        return requiredActions;
+    }
 }

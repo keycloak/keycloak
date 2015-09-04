@@ -14,6 +14,7 @@ import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -359,9 +360,9 @@ public class UserTest extends AbstractClientTest {
         String id = ApiUtil.getCreatedId(response);
         response.close();
         UserResource user = realm.users().get(id);
-
+        List<String> actions = new LinkedList<>();
         try {
-            user.executeActionsEmail();
+            user.executeActionsEmail(actions);
             fail("Expected failure");
         } catch (ClientErrorException e) {
             assertEquals(400, e.getResponse().getStatus());
@@ -374,7 +375,7 @@ public class UserTest extends AbstractClientTest {
             userRep.setEmail("user1@localhost");
             userRep.setEnabled(false);
             user.update(userRep);
-            user.executeActionsEmail();
+            user.executeActionsEmail(actions);
             fail("Expected failure");
         } catch (ClientErrorException e) {
             assertEquals(400, e.getResponse().getStatus());
@@ -385,7 +386,7 @@ public class UserTest extends AbstractClientTest {
         try {
             userRep.setEnabled(true);
             user.update(userRep);
-            user.executeActionsEmail("invalidClientId");
+            user.executeActionsEmail("invalidClientId", actions);
             fail("Expected failure");
         } catch (ClientErrorException e) {
             assertEquals(400, e.getResponse().getStatus());

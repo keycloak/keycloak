@@ -22,7 +22,7 @@ public class ImpersonationConstants {
             adminRealm = model.getRealmByName(Config.getAdminRealm());
             adminRole = adminRealm.getRole(AdminRoles.ADMIN);
         }
-        ClientModel realmAdminApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm));
+        ClientModel realmAdminApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
         if (realmAdminApp.getRole(IMPERSONATION_ROLE) != null) return;
         RoleModel impersonationRole = realmAdminApp.addRole(IMPERSONATION_ROLE);
         impersonationRole.setDescription("${role_" + IMPERSONATION_ROLE + "}");

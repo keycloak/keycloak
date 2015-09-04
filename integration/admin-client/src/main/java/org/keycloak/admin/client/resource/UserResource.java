@@ -48,11 +48,11 @@ public interface UserResource {
 
     @PUT
     @Path("execute-actions-email")
-    public void executeActionsEmail();
+    public void executeActionsEmail(List<String> actions);
 
     @PUT
     @Path("execute-actions-email")
-    public void executeActionsEmail(@QueryParam("client_id") String clientId);
+    public void executeActionsEmail(@QueryParam("client_id") String clientId, List<String> actions);
 
     @PUT
     @Path("send-verify-email")

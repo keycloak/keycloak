@@ -16,6 +16,7 @@ import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.statement.SqlStatement;
 import liquibase.structure.core.Table;
 import org.jboss.logging.Logger;
+import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
@@ -88,7 +89,7 @@ public abstract class CustomKeycloakTask implements CustomSqlChange {
         try {
             String correctedTableName = database.correctObjectName("REALM", Table.class);
             if (SnapshotGeneratorFactory.getInstance().has(new Table().setName(correctedTableName), database)) {
-                ResultSet resultSet = connection.createStatement().executeQuery("SELECT ID FROM REALM");
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT ID FROM " + getTableName(correctedTableName));
                 try {
                     return (resultSet.next());
                 } finally {
@@ -108,4 +109,9 @@ public abstract class CustomKeycloakTask implements CustomSqlChange {
     protected abstract void generateStatementsImpl() throws CustomChangeException;
 
     protected abstract String getTaskId();
+
+    // get Table name for sql selects
+    protected String getTableName(String tableName) {
+       return LiquibaseJpaUpdaterProvider.getTable(tableName, database.getDefaultSchemaName());
+    }
 }

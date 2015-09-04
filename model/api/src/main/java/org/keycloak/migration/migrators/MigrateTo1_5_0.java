@@ -2,6 +2,7 @@ package org.keycloak.migration.migrators;
 
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
@@ -37,6 +38,10 @@ public class MigrateTo1_5_0 {
                 DefaultAuthenticationFlows.clientAuthFlow(realm);
             } else {
                 realm.setClientAuthenticationFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW));
+            }
+
+            for (ClientModel client : realm.getClients()) {
+                client.setClientAuthenticatorType(KeycloakModelUtils.getDefaultClientAuthenticatorType());
             }
         }
 

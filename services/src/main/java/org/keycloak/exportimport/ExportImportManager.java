@@ -35,14 +35,18 @@ public class ExportImportManager {
                 if (export) {
                     ExportProvider exportProvider = session.getProvider(ExportProvider.class, exportImportProviderId);
 
-                    if (realmName == null) {
-                        logger.info("Full model export requested");
-                        exportProvider.exportModel(sessionFactory);
+                    if (exportProvider == null) {
+                        logger.errorf("Invalid Export Provider %s", exportImportProviderId);
                     } else {
-                        logger.infof("Export of realm '%s' requested", realmName);
-                        exportProvider.exportRealm(sessionFactory, realmName);
+                        if (realmName == null) {
+                            logger.info("Full model export requested");
+                            exportProvider.exportModel(sessionFactory);
+                        } else {
+                            logger.infof("Export of realm '%s' requested", realmName);
+                            exportProvider.exportRealm(sessionFactory, realmName);
+                        }
+                        logger.info("Export finished successfully");
                     }
-                    logger.info("Export finished successfully");
                 } else {
                     ImportProvider importProvider = session.getProvider(ImportProvider.class, exportImportProviderId);
                     

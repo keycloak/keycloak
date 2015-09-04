@@ -36,7 +36,6 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
     public static final String PROVIDER_ID = "client-secret";
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.REQUIRED,
             AuthenticationExecutionModel.Requirement.ALTERNATIVE,
             AuthenticationExecutionModel.Requirement.DISABLED
     };
@@ -131,16 +130,6 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
     @Override
     public boolean isConfigurablePerClient() {
         return true;
-    }
-
-    @Override
-    public boolean requiresClient() {
-        return false;
-    }
-
-    @Override
-    public boolean configuredFor(KeycloakSession session, RealmModel realm, ClientModel client) {
-        return client.getSecret() != null;
     }
 
     @Override

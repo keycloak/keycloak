@@ -180,12 +180,17 @@ public final class KeycloakModelUtils {
         return secret;
     }
 
+    public static String getDefaultClientAuthenticatorType() {
+        return "client-secret";
+    }
+
     public static String generateCodeSecret() {
         return UUID.randomUUID().toString();
     }
 
     public static ClientModel createClient(RealmModel realm, String name) {
         ClientModel app = realm.addClient(name);
+        app.setClientAuthenticatorType(getDefaultClientAuthenticatorType());
         generateSecret(app);
         app.setFullScopeAllowed(true);
 
@@ -257,8 +262,8 @@ public final class KeycloakModelUtils {
         }
     }
 
-    public static String getMasterRealmAdminApplicationClientId(RealmModel realm) {
-        return realm.getName() + "-realm";
+    public static String getMasterRealmAdminApplicationClientId(String realmName) {
+        return realmName + "-realm";
     }
 
     /**

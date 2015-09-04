@@ -123,6 +123,7 @@
             "enabled": true,
             "adminUrl": "http://localhost:8082/secure-portal",
             "baseUrl": "http://localhost:8082/secure-portal",
+            "clientAuthenticatorType": "client-jwt",
             "redirectUris": [
                 "http://localhost:8082/secure-portal/*"
             ],

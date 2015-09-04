@@ -29,6 +29,7 @@ public class CachedClient implements Serializable {
     private String realm;
     private Set<String> redirectUris = new HashSet<String>();
     private boolean enabled;
+    private String clientAuthenticatorType;
     private String secret;
     private String protocol;
     private Map<String, String> attributes = new HashMap<String, String>();
@@ -53,6 +54,7 @@ public class CachedClient implements Serializable {
 
     public CachedClient(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientModel model) {
         id = model.getId();
+        clientAuthenticatorType = model.getClientAuthenticatorType();
         secret = model.getSecret();
         clientId = model.getClientId();
         name = model.getName();
@@ -110,6 +112,10 @@ public class CachedClient implements Serializable {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public String getClientAuthenticatorType() {
+        return clientAuthenticatorType;
     }
 
     public String getSecret() {

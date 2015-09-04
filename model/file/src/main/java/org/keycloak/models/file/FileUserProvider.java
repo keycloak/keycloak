@@ -255,22 +255,18 @@ public class FileUserProvider implements UserProvider {
     }
 
     @Override
-    public List<UserModel> searchForUserByUserAttributes(Map<String, String> attributes, RealmModel realm) {
+    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
         Collection<UserModel> users = inMemoryModel.getUsers(realm.getId());
 
-        for (Map.Entry<String, String> entry : attributes.entrySet()) {
-
-            List<UserModel> matchedUsers = new ArrayList<>();
-            for (UserModel user : users) {
-                List<String> vals = user.getAttribute(entry.getKey());
-                if (vals.contains(entry.getValue())) {
-                    matchedUsers.add(user);
-                }
+        List<UserModel> matchedUsers = new ArrayList<>();
+        for (UserModel user : users) {
+            List<String> vals = user.getAttribute(attrName);
+            if (vals.contains(attrValue)) {
+                matchedUsers.add(user);
             }
-            users = matchedUsers;
         }
 
-        return (List<UserModel>) users;
+        return matchedUsers;
     }
 
     @Override

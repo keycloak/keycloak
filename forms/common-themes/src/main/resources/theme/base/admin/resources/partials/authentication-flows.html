@@ -13,13 +13,13 @@
                             data-ng-change="setupForm()">
                     </select>
                 </div>
-                &nbsp;&nbsp;<i class="fa fa-question-circle text-muted" tooltip="{{flow.description}}" tooltip-placement="right"> </i>
+                &nbsp;&nbsp;<i class="fa fa-question-circle text-muted" tooltip-trigger="mouseover mouseout" tooltip="{{flow.description}}" tooltip-placement="right"> </i>
                 <div class="pull-right" data-ng-show="access.manageRealm">
                     <button class="btn btn-default" data-ng-click="createFlow()">New</button>
                     <button class="btn btn-default" data-ng-click="copyFlow()">Copy</button>
                     <button class="btn btn-default" data-ng-hide="flow.builtIn" data-ng-click="removeFlow()">Delete</button>
                     <button class="btn btn-default" data-ng-hide="flow.builtIn" data-ng-click="addExecution()">Add Execution</button>
-                    <button class="btn btn-default" data-ng-hide="flow.builtIn" data-ng-click="addFlow()">Add Flow</button>
+                    <button class="btn btn-default" data-ng-hide="flow.builtIn || flow.providerId === 'client-flow'" data-ng-click="addFlow()">Add Flow</button>
                 </div>
             </th>
          </tr>
