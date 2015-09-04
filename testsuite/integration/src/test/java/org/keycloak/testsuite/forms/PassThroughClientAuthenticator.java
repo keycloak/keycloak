@@ -19,7 +19,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  */
 public class PassThroughClientAuthenticator extends AbstractClientAuthenticator {
 
-    public static final String PROVIDER_ID = "client-passthrough";
+    public static final String PROVIDER_ID = "testsuite-client-passthrough";
     public static String clientId = "test-app";
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
@@ -60,7 +60,7 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
 
     @Override
     public String getDisplayType() {
-        return "PassThrough Client Validation";
+        return "Testsuite Dummy Client Validation";
     }
 
     @Override
@@ -80,7 +80,7 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
 
     @Override
     public String getHelpText() {
-        return "Automatically authenticates client 'test-app' ";
+        return "Testsuite dummy authenticator, which automatically authenticates hardcoded client (like 'test-app' )";
     }
 
     @Override

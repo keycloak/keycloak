@@ -20,7 +20,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class PassThroughAuthenticator implements Authenticator, AuthenticatorFactory {
-    public static final String PROVIDER_ID = "dummy-passthrough";
+    public static final String PROVIDER_ID = "testsuite-dummy-passthrough";
     public static String username = "test-user@localhost";
 
     @Override
@@ -56,7 +56,7 @@ public class PassThroughAuthenticator implements Authenticator, AuthenticatorFac
 
    @Override
     public String getDisplayType() {
-        return "Dummy Pass Thru";
+        return "Testsuite Dummy Pass Thru";
     }
 
     @Override
@@ -85,7 +85,7 @@ public class PassThroughAuthenticator implements Authenticator, AuthenticatorFac
 
     @Override
     public String getHelpText() {
-        return "Dummy authenticator.  Just passes through and is hardcoded to a specific user";
+        return "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user";
     }
 
     @Override

@@ -26,9 +26,11 @@ import org.keycloak.social.SocialIdentityProviderFactory;
  */
 public class CustomSocialProviderFactory extends AbstractIdentityProviderFactory<CustomSocialProvider> implements SocialIdentityProviderFactory<CustomSocialProvider> {
 
+    public static final String PROVIDER_ID = "testsuite-custom-social-provider";
+
     @Override
     public String getName() {
-        return "Custom Social Provider";
+        return "Testsuite Dummy Custom Social Provider";
     }
 
     @Override
@@ -38,6 +40,6 @@ public class CustomSocialProviderFactory extends AbstractIdentityProviderFactory
 
     @Override
     public String getId() {
-        return "custom-social-provider";
+        return PROVIDER_ID;
     }
 }
