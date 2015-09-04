@@ -64,7 +64,7 @@
         <winzipaes.version>1.0.1</winzipaes.version>
         <freemarker.version>2.3.20.redhat-2</freemarker.version>
         <twitter4j.version>3.0.5</twitter4j.version>
-        <selenium.version>2.35.0</selenium.version>
+        <selenium.version>2.36.0</selenium.version>
         <!--<sun.istack.version>2.21</sun.istack.version>-->
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <!--<sun.xsom.version>20140925</sun.xsom.version>
