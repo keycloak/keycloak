@@ -15,11 +15,23 @@ import java.net.URI;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SAML2LogoutRequestBuilder extends SAML2BindingBuilder<SAML2LogoutRequestBuilder> {
+public class SAML2LogoutRequestBuilder {
     protected String userPrincipal;
     protected String userPrincipalFormat;
     protected String sessionIndex;
     protected long assertionExpiration;
+    protected String destination;
+    protected String issuer;
+
+    public SAML2LogoutRequestBuilder destination(String destination) {
+        this.destination = destination;
+        return this;
+    }
+
+    public SAML2LogoutRequestBuilder issuer(String issuer) {
+        this.issuer = issuer;
+        return this;
+    }
 
     /**
      * Length of time in seconds the assertion is valid for
@@ -45,20 +57,8 @@ public class SAML2LogoutRequestBuilder extends SAML2BindingBuilder<SAML2LogoutRe
         return this;
     }
 
-    public RedirectBindingBuilder redirectBinding()  throws ConfigurationException, ProcessingException, ParsingException {
-        Document samlResponseDocument = buildDocument();
-        return new RedirectBindingBuilder(samlResponseDocument);
-
-    }
-
-    public PostBindingBuilder postBinding()  throws ConfigurationException, ProcessingException, ParsingException {
-        Document samlResponseDocument = buildDocument();
-        return new PostBindingBuilder(samlResponseDocument);
-
-    }
     public Document buildDocument() throws ProcessingException, ConfigurationException, ParsingException {
         Document document = new SAML2Request().convert(createLogoutRequest());
-        if (encrypt) encryptDocument(document);
         return document;
     }
 

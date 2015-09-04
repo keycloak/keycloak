@@ -92,7 +92,7 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
         AdapterDeploymentContext deploymentContext = (AdapterDeploymentContext) request.getAttribute(AdapterDeploymentContext.class.getName());
         KeycloakSecurityContext ksc = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
         if (ksc != null) {
-            JettyHttpFacade facade = new JettyHttpFacade(request, null);
+            JettyHttpFacade facade = new OIDCJettyHttpFacade(request, null);
             KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
             if (ksc instanceof RefreshableKeycloakSecurityContext) {
                 ((RefreshableKeycloakSecurityContext) ksc).logout(deployment);
@@ -229,7 +229,7 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
             log.trace("*** authenticate");
         }
         Request request = resolveRequest(req);
-        JettyHttpFacade facade = new JettyHttpFacade(request, (HttpServletResponse) res);
+        OIDCJettyHttpFacade facade = new OIDCJettyHttpFacade(request, (HttpServletResponse) res);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (deployment == null || !deployment.isConfigured()) {
             log.debug("*** deployment isn't configured return false");

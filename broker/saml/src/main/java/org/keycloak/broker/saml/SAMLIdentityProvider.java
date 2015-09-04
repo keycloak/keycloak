@@ -33,6 +33,7 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.protocol.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.protocol.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.protocol.saml.SAML2NameIDPolicyBuilder;
@@ -92,7 +93,8 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                     .issuer(issuerURL)
                     .forceAuthn(getConfig().isForceAuthn())
                     .protocolBinding(protocolBinding)
-                    .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat))
+                    .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat));
+            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
                     .relayState(request.getState());
 
             if (getConfig().isWantAuthnRequestsSigned()) {
@@ -109,14 +111,14 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
                 KeyPair keypair = new KeyPair(publicKey, privateKey);
 
-                authnRequestBuilder.signWith(keypair);
-                authnRequestBuilder.signDocument();
+                binding.signWith(keypair);
+                binding.signDocument();
             }
 
             if (getConfig().isPostBindingAuthnRequest()) {
-                return authnRequestBuilder.postBinding().request();
+                return binding.postBinding(authnRequestBuilder.toDocument()).request(destinationUrl);
             } else {
-                return authnRequestBuilder.redirectBinding().request();
+                return binding.redirectBinding(authnRequestBuilder.toDocument()).request(destinationUrl);
             }
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not create authentication request.", e);
@@ -153,9 +155,10 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         String singleLogoutServiceUrl = getConfig().getSingleLogoutServiceUrl();
         if (singleLogoutServiceUrl == null || singleLogoutServiceUrl.trim().equals("") || !getConfig().isBackchannelSupported()) return;
         SAML2LogoutRequestBuilder logoutBuilder = buildLogoutRequest(userSession, uriInfo, realm, singleLogoutServiceUrl);
+        JaxrsSAML2BindingBuilder binding = buildLogoutBinding(userSession, realm);
         try {
             int status = SimpleHttp.doPost(singleLogoutServiceUrl)
-                    .param(GeneralConstants.SAML_REQUEST_KEY, logoutBuilder.postBinding().encoded())
+                    .param(GeneralConstants.SAML_REQUEST_KEY, binding.postBinding(logoutBuilder.buildDocument()).encoded())
                     .param(GeneralConstants.RELAY_STATE, userSession.getId()).asStatus();
             boolean success = status >=200 && status < 400;
             if (!success) {
@@ -178,7 +181,8 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
        } else {
             try {
                 SAML2LogoutRequestBuilder logoutBuilder = buildLogoutRequest(userSession, uriInfo, realm, singleLogoutServiceUrl);
-                return logoutBuilder.postBinding().request();
+                JaxrsSAML2BindingBuilder binding = buildLogoutBinding(userSession, realm);
+                return binding.postBinding(logoutBuilder.buildDocument()).request(singleLogoutServiceUrl);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -192,13 +196,18 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 .issuer(getEntityId(uriInfo, realm))
                 .sessionIndex(userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX))
                 .userPrincipal(userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT), userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEFORMAT))
-                .destination(singleLogoutServiceUrl)
+                .destination(singleLogoutServiceUrl);
+        return logoutBuilder;
+    }
+
+    private JaxrsSAML2BindingBuilder buildLogoutBinding(UserSessionModel userSession, RealmModel realm) {
+        JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
                 .relayState(userSession.getId());
         if (getConfig().isWantAuthnRequestsSigned()) {
-            logoutBuilder.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
+            binding.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
                     .signDocument();
         }
-        return logoutBuilder;
+        return binding;
     }
 
     @Override

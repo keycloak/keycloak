@@ -3,15 +3,13 @@ package org.keycloak.servlet;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AdapterDeploymentContext;
-import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.ServerRequest;
-import org.keycloak.enums.RelativeUrlsUsed;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.KeycloakUriBuilder;
-import org.keycloak.util.UriUtils;
 
 import javax.security.cert.X509Certificate;
 import javax.servlet.http.Cookie;
@@ -167,7 +165,7 @@ public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
     }
 
 
-    public static class ServletFacade implements HttpFacade {
+    public static class ServletFacade implements OIDCHttpFacade {
 
         private final HttpServletRequest servletRequest;
 

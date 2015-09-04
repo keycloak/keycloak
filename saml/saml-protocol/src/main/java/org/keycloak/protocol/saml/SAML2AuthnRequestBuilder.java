@@ -30,9 +30,21 @@ import java.net.URI;
 /**
  * @author pedroigor
  */
-public class SAML2AuthnRequestBuilder extends SAML2BindingBuilder<SAML2AuthnRequestBuilder> {
+public class SAML2AuthnRequestBuilder {
 
     private final AuthnRequestType authnRequestType;
+    protected String destination;
+    protected String issuer;
+
+    public SAML2AuthnRequestBuilder destination(String destination) {
+        this.destination = destination;
+        return this;
+    }
+
+    public SAML2AuthnRequestBuilder issuer(String issuer) {
+        this.issuer = issuer;
+        return this;
+    }
 
     public SAML2AuthnRequestBuilder() {
         try {
@@ -62,23 +74,7 @@ public class SAML2AuthnRequestBuilder extends SAML2BindingBuilder<SAML2AuthnRequ
         return this;
     }
 
-    public RedirectBindingBuilder redirectBinding() {
-        try {
-            return new RedirectBindingBuilder(toDocument());
-        } catch (Exception e) {
-            throw new RuntimeException("Could not build authn request for post binding.", e);
-        }
-    }
-
-    public PostBindingBuilder postBinding() {
-        try {
-            return new PostBindingBuilder(toDocument());
-        } catch (Exception e) {
-            throw new RuntimeException("Could not build authn request for post binding.", e);
-        }
-    }
-
-    private Document toDocument()  {
+    public Document toDocument()  {
         try {
             AuthnRequestType authnRequestType = this.authnRequestType;
 

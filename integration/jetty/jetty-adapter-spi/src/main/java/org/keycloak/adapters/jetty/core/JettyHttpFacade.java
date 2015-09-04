@@ -1,6 +1,5 @@
 package org.keycloak.adapters.jetty.core;
 
-import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.HttpFacade;
 import org.keycloak.util.MultivaluedHashMap;
 import org.keycloak.util.UriUtils;
@@ -24,6 +23,30 @@ public class JettyHttpFacade implements HttpFacade {
     protected RequestFacade requestFacade = new RequestFacade();
     protected ResponseFacade responseFacade = new ResponseFacade();
     protected MultivaluedHashMap<String, String> queryParameters;
+
+    public JettyHttpFacade(org.eclipse.jetty.server.Request request, HttpServletResponse response) {
+        this.request = request;
+        this.response = response;
+    }
+
+    @Override
+    public Request getRequest() {
+        return requestFacade;
+    }
+
+    @Override
+    public Response getResponse() {
+        return responseFacade;
+    }
+
+    @Override
+    public X509Certificate[] getCertificateChain() {
+        throw new IllegalStateException("Not supported yet");
+    }
+
+    public boolean isEnded() {
+        return responseFacade.isEnded();
+    }
 
     protected class RequestFacade implements Request {
         @Override
@@ -158,34 +181,5 @@ public class JettyHttpFacade implements HttpFacade {
         public boolean isEnded() {
             return ended;
         }
-    }
-
-    public JettyHttpFacade(org.eclipse.jetty.server.Request request, HttpServletResponse response) {
-        this.request = request;
-        this.response = response;
-    }
-
-    @Override
-    public Request getRequest() {
-        return requestFacade;
-    }
-
-    @Override
-    public Response getResponse() {
-        return responseFacade;
-    }
-
-    @Override
-    public KeycloakSecurityContext getSecurityContext() {
-        return (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
-    }
-
-    @Override
-    public X509Certificate[] getCertificateChain() {
-        throw new IllegalStateException("Not supported yet");
-    }
-
-    public boolean isEnded() {
-        return responseFacade.isEnded();
     }
 }

@@ -24,6 +24,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.protocol.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.protocol.saml.SAMLRequestParser;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -247,16 +248,17 @@ public class SAMLEndpoint {
             builder.logoutRequestID(request.getID());
             builder.destination(config.getSingleLogoutServiceUrl());
             builder.issuer(issuerURL);
-            builder.relayState(relayState);
+            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
+                        .relayState(relayState);
             if (config.isWantAuthnRequestsSigned()) {
-                builder.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
+                binding.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
                         .signDocument();
             }
             try {
                 if (config.isPostBindingResponse()) {
-                    return builder.postBinding().response();
+                    return binding.postBinding(builder.buildDocument()).response(config.getSingleLogoutServiceUrl());
                 } else {
-                    return builder.redirectBinding().response();
+                    return binding.redirectBinding(builder.buildDocument()).response(config.getSingleLogoutServiceUrl());
                 }
             } catch (ConfigurationException e) {
                 throw new RuntimeException(e);

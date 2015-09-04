@@ -389,19 +389,20 @@ public class SamlService {
             builder.logoutRequestID(logoutRequest.getID());
             builder.destination(logoutBindingUri);
             builder.issuer(RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
-            builder.relayState(logoutRelayState);
+            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
+                    .relayState(logoutRelayState);
             if (SamlProtocol.requiresRealmSignature(client)) {
                 SignatureAlgorithm algorithm = SamlProtocol.getSignatureAlgorithm(client);
-                builder.signatureAlgorithm(algorithm)
+                binding.signatureAlgorithm(algorithm)
                         .signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
                         .signDocument();
 
             }
             try {
                 if (SamlProtocol.SAML_POST_BINDING.equals(logoutBinding)) {
-                    return builder.postBinding().response(logoutBindingUri);
+                    return binding.postBinding(builder.buildDocument()).response(logoutBindingUri);
                 } else {
-                    return builder.redirectBinding().response(logoutBindingUri);
+                    return binding.redirectBinding(builder.buildDocument()).response(logoutBindingUri);
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);

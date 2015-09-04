@@ -14,7 +14,6 @@ import org.keycloak.util.KeycloakUriBuilder;
 import org.keycloak.util.UriUtils;
 
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 
@@ -93,12 +92,12 @@ public class OAuthRequestAuthenticator {
         return facade.getRequest().isSecure();
     }
 
-    protected HttpFacade.Cookie getCookie(String cookieName) {
+    protected OIDCHttpFacade.Cookie getCookie(String cookieName) {
         return facade.getRequest().getCookie(cookieName);
     }
 
     protected String getCookieValue(String cookieName) {
-        HttpFacade.Cookie cookie = getCookie(cookieName);
+        OIDCHttpFacade.Cookie cookie = getCookie(cookieName);
         if (cookie == null) return null;
         return cookie.getValue();
     }
@@ -198,7 +197,7 @@ public class OAuthRequestAuthenticator {
     }
 
     protected AuthChallenge checkStateCookie() {
-        HttpFacade.Cookie stateCookie = getCookie(deployment.getStateCookieName());
+        OIDCHttpFacade.Cookie stateCookie = getCookie(deployment.getStateCookieName());
 
         if (stateCookie == null) {
             log.warn("No state cookie");

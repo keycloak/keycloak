@@ -19,25 +19,25 @@ import java.net.URI;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SAML2LogoutResponseBuilder extends SAML2BindingBuilder<SAML2LogoutResponseBuilder> {
+public class SAML2LogoutResponseBuilder {
 
     protected String logoutRequestID;
+    protected String destination;
+    protected String issuer;
 
     public SAML2LogoutResponseBuilder logoutRequestID(String logoutRequestID) {
         this.logoutRequestID = logoutRequestID;
         return this;
     }
 
-    public RedirectBindingBuilder redirectBinding()  throws ConfigurationException, ProcessingException {
-        Document samlResponseDocument = buildDocument();
-        return new RedirectBindingBuilder(samlResponseDocument);
-
+    public SAML2LogoutResponseBuilder destination(String destination) {
+        this.destination = destination;
+        return this;
     }
 
-    public PostBindingBuilder postBinding()  throws ConfigurationException, ProcessingException {
-        Document samlResponseDocument = buildDocument();
-        return new PostBindingBuilder(samlResponseDocument);
-
+    public SAML2LogoutResponseBuilder issuer(String issuer) {
+        this.issuer = issuer;
+        return this;
     }
 
 
@@ -67,7 +67,6 @@ public class SAML2LogoutResponseBuilder extends SAML2BindingBuilder<SAML2LogoutR
         } catch (ParsingException e) {
             throw new ProcessingException(e);
         }
-        if (encrypt) encryptDocument(samlResponse);
         return samlResponse;
 
     }

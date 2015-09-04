@@ -11,16 +11,13 @@ import org.keycloak.saml.processing.core.saml.v2.util.DocumentUtil;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
+import org.keycloak.util.KeycloakUriBuilder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.namespace.QName;
 import java.io.IOException;
@@ -31,15 +28,15 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
 
-import static org.keycloak.util.HtmlUtils.escapeAttribute;
 import static org.keycloak.saml.common.util.StringUtil.isNotNull;
+import static org.keycloak.util.HtmlUtils.escapeAttribute;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
-    protected static final Logger logger = Logger.getLogger(SAML2BindingBuilder2.class);
+public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
+    protected static final Logger logger = Logger.getLogger(BaseSAML2BindingBuilder.class);
 
     protected KeyPair signingKeyPair;
     protected X509Certificate signingCertificate;
@@ -116,17 +113,19 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
         return (T)this;
     }
 
-    public class PostBindingBuilder {
+    public static class BasePostBindingBuilder {
         protected Document document;
+        protected BaseSAML2BindingBuilder builder;
 
-        public PostBindingBuilder(Document document) throws ProcessingException {
-            if (encrypt) encryptDocument(document);
+        public BasePostBindingBuilder(BaseSAML2BindingBuilder builder, Document document) throws ProcessingException {
+            this.builder = builder;
+            if (builder.encrypt) builder.encryptDocument(document);
             this.document = document;
-            if (signAssertions) {
-                signAssertion(document);
+            if (builder.signAssertions) {
+                builder.signAssertion(document);
             }
-            if (sign) {
-                signDocument(document);
+            if (builder.sign) {
+                builder.signDocument(document);
             }
         }
 
@@ -137,24 +136,28 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
         public Document getDocument() {
             return document;
         }
+        public String getHtmlResponse(String actionUrl) throws ProcessingException, ConfigurationException, IOException {
+            String str = builder.buildHtmlPostResponse(document, actionUrl, false);
+            return str;
+        }
+        public String getHtmlRequest(String actionUrl) throws ProcessingException, ConfigurationException, IOException {
+            String str = builder.buildHtmlPostResponse(document, actionUrl, true);
+            return str;
+        }
 
-        public Response request(String actionUrl) throws ConfigurationException, ProcessingException, IOException {
-            return buildResponse(document, actionUrl, true);
-        }
-        public Response response(String actionUrl) throws ConfigurationException, ProcessingException, IOException {
-            return buildResponse(document, actionUrl, false);
-        }
     }
 
 
-    public class RedirectBindingBuilder {
+    public static class BaseRedirectBindingBuilder {
         protected Document document;
+        protected BaseSAML2BindingBuilder builder;
 
-        public RedirectBindingBuilder(Document document) throws ProcessingException {
-            if (encrypt) encryptDocument(document);
+        public BaseRedirectBindingBuilder(BaseSAML2BindingBuilder builder, Document document) throws ProcessingException {
+            this.builder = builder;
+            if (builder.encrypt) builder.encryptDocument(document);
             this.document = document;
-            if (signAssertions) {
-                signAssertion(document);
+            if (builder.signAssertions) {
+                builder.signAssertion(document);
             }
         }
 
@@ -168,26 +171,8 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
                 samlParameterName = GeneralConstants.SAML_REQUEST_KEY;
             }
 
-            return generateRedirectUri(samlParameterName, redirectUri, document);
+            return builder.generateRedirectUri(samlParameterName, redirectUri, document);
         }
-        public Response response(String redirectUri) throws ProcessingException, ConfigurationException, IOException {
-            return response(redirectUri, false);
-        }
-
-        public Response request(String redirect) throws ProcessingException, ConfigurationException, IOException {
-            return response(redirect, true);
-        }
-
-        private Response response(String redirectUri, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
-            URI uri = responseUri(redirectUri, asRequest);
-            if (logger.isDebugEnabled()) logger.trace("redirect-binding uri: " + uri.toString());
-            CacheControl cacheControl = new CacheControl();
-            cacheControl.setNoCache(true);
-            return Response.status(302).location(uri)
-                    .header("Pragma", "no-cache")
-                    .header("Cache-Control", "no-cache, no-store").build();
-        }
-
     }
 
 
@@ -272,16 +257,6 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
     }
 
 
-    protected Response buildResponse(Document responseDoc, String actionUrl, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
-        String str = buildHtmlPostResponse(responseDoc, actionUrl, asRequest);
-
-        CacheControl cacheControl = new CacheControl();
-        cacheControl.setNoCache(true);
-        return Response.ok(str, MediaType.TEXT_HTML_TYPE)
-                       .header("Pragma", "no-cache")
-                       .header("Cache-Control", "no-cache, no-store").build();
-    }
-
     protected String buildHtmlPostResponse(Document responseDoc, String actionUrl, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
         byte[] responseBytes = org.keycloak.saml.common.util.DocumentUtil.getDocumentAsString(responseDoc).getBytes("UTF-8");
         String samlResponse = PostBindingUtil.base64Encode(new String(responseBytes));
@@ -301,7 +276,7 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
         builder.append("<HTML>");
         builder.append("<HEAD>");
 
-        builder.append("<TITLE>HTTP Post Binding Response (Response)</TITLE>");
+        builder.append("<TITLE>SAML HTTP Post Binding</TITLE>");
         builder.append("</HEAD>");
         builder.append("<BODY Onload=\"document.forms[0].submit()\">");
 
@@ -332,7 +307,7 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
 
 
     protected URI generateRedirectUri(String samlParameterName, String redirectUri, Document document) throws ConfigurationException, ProcessingException, IOException {
-        UriBuilder builder = UriBuilder.fromUri(redirectUri)
+        KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(redirectUri)
                 .replaceQuery(null)
                 .queryParam(samlParameterName, base64Encoded(document));
         if (relayState != null) {
@@ -358,13 +333,4 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
         return builder.build();
     }
 
-    public RedirectBindingBuilder redirectBinding(Document document) throws ProcessingException  {
-        return new RedirectBindingBuilder(document);
-    }
-
-    public PostBindingBuilder postBinding(Document document) throws ProcessingException  {
-        return new PostBindingBuilder(document);
-    }
-
-
-}
+ }

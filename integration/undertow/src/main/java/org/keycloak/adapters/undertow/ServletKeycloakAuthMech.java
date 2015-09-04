@@ -16,7 +16,6 @@
  */
 package org.keycloak.adapters.undertow;
 
-import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.api.ConfidentialPortManager;
@@ -25,7 +24,6 @@ import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.NodesRegistrationManagement;
@@ -81,7 +79,7 @@ public class ServletKeycloakAuthMech extends AbstractUndertowKeycloakAuthMech {
 
     @Override
     public AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange, SecurityContext securityContext) {
-        UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
+        UndertowHttpFacade facade = new OIDCUndertowHttpFacade(exchange);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (!deployment.isConfigured()) {
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;

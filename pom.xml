@@ -767,6 +767,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-adapter-spi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-adapter-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -793,6 +798,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-jboss-adapter-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-jetty-adapter-spi</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -867,6 +877,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-tomcat-adapter-spi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-tomcat-core-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -883,6 +898,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-tomcat8-adapter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-undertow-adapter-spi</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

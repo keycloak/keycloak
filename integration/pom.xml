@@ -14,6 +14,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>adapter-spi</module>
         <module>adapter-core</module>
         <module>jaxrs-oauth-client</module>
         <module>servlet-oauth-client</module>
@@ -21,6 +22,7 @@
         <module>tomcat</module>
         <module>as7-eap6</module>
         <module>jetty</module>
+        <module>undertow-adapter-spi</module>
         <module>undertow</module>
         <module>wildfly</module>
         <module>js</module>

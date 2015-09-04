@@ -21,18 +21,14 @@ import io.undertow.security.api.NotificationReceiver;
 import io.undertow.security.api.SecurityContext;
 import io.undertow.security.api.SecurityNotification;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.server.session.Session;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.Headers;
-import io.undertow.util.Sessions;
 import io.undertow.util.StatusCodes;
-import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.AuthOutcome;
-import org.keycloak.adapters.CookieTokenStore;
 import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
@@ -64,7 +60,7 @@ public abstract class AbstractUndertowKeycloakAuthMech implements Authentication
                 Integer code = servePage(exchange, errorPage);
                 return new ChallengeResult(true, code);
             }
-            UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
+            UndertowHttpFacade facade = new OIDCUndertowHttpFacade(exchange);
             if (challenge.challenge(facade)) {
                 return new ChallengeResult(true, exchange.getResponseCode());
             }
@@ -93,9 +89,9 @@ public abstract class AbstractUndertowKeycloakAuthMech implements Authentication
                 if (notification.getEventType() != SecurityNotification.EventType.LOGGED_OUT) return;
 
                 HttpServerExchange exchange = notification.getExchange();
-                UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
+                UndertowHttpFacade facade = new OIDCUndertowHttpFacade(exchange);
                 KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
-                KeycloakSecurityContext ksc = exchange.getAttachment(UndertowHttpFacade.KEYCLOAK_SECURITY_CONTEXT_KEY);
+                KeycloakSecurityContext ksc = exchange.getAttachment(OIDCUndertowHttpFacade.KEYCLOAK_SECURITY_CONTEXT_KEY);
                 if (ksc != null && ksc instanceof RefreshableKeycloakSecurityContext) {
                     ((RefreshableKeycloakSecurityContext) ksc).logout(deployment);
                 }

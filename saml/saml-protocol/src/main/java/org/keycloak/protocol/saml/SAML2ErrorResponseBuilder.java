@@ -16,25 +16,25 @@ import org.w3c.dom.Document;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SAML2ErrorResponseBuilder extends SAML2BindingBuilder<SAML2ErrorResponseBuilder> {
+public class SAML2ErrorResponseBuilder {
 
     protected String status;
+    protected String destination;
+    protected String issuer;
 
     public SAML2ErrorResponseBuilder status(String status) {
         this.status = status;
         return this;
     }
 
-    public RedirectBindingBuilder redirectBinding()  throws ConfigurationException, ProcessingException {
-        Document samlResponseDocument = buildDocument();
-        return new RedirectBindingBuilder(samlResponseDocument);
-
+    public SAML2ErrorResponseBuilder destination(String destination) {
+        this.destination = destination;
+        return this;
     }
 
-    public PostBindingBuilder postBinding()  throws ConfigurationException, ProcessingException {
-        Document samlResponseDocument = buildDocument();
-        return new PostBindingBuilder(samlResponseDocument);
-
+    public SAML2ErrorResponseBuilder issuer(String issuer) {
+        this.issuer = issuer;
+        return this;
     }
 
 
@@ -61,7 +61,6 @@ public class SAML2ErrorResponseBuilder extends SAML2BindingBuilder<SAML2ErrorRes
         responseType.setStatus(JBossSAMLAuthnResponseFactory.createStatusTypeForResponder(status));
         responseType.setDestination(destination);
 
-        if (encrypt) encryptDocument(samlResponse);
         return samlResponse;
     }
 

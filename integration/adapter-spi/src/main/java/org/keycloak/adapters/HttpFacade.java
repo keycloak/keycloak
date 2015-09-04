@@ -1,55 +1,20 @@
 package org.keycloak.adapters;
 
-import org.keycloak.KeycloakSecurityContext;
-
 import javax.security.cert.X509Certificate;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
 /**
- * Bridge between core adapter and HTTP Engine
- *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface HttpFacade {
+    Request getRequest();
 
-    public class Cookie {
-        protected String name;
-        protected String value;
-        protected int version;
-        protected String domain;
-        protected String path;
+    Response getResponse();
 
-        public Cookie(String name, String value, int version, String domain, String path) {
-            this.name = name;
-            this.value = value;
-            this.version = version;
-            this.domain = domain;
-            this.path = path;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public int getVersion() {
-            return version;
-        }
-
-        public String getDomain() {
-            return domain;
-        }
-
-        public String getPath() {
-            return path;
-        }
-    }
+    X509Certificate[] getCertificateChain();
 
     interface Request {
 
@@ -93,8 +58,39 @@ public interface HttpFacade {
         void end();
     }
 
-    KeycloakSecurityContext getSecurityContext();
-    Request getRequest();
-    Response getResponse();
-    X509Certificate[] getCertificateChain();
+    public class Cookie {
+        protected String name;
+        protected String value;
+        protected int version;
+        protected String domain;
+        protected String path;
+
+        public Cookie(String name, String value, int version, String domain, String path) {
+            this.name = name;
+            this.value = value;
+            this.version = version;
+            this.domain = domain;
+            this.path = path;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public int getVersion() {
+            return version;
+        }
+
+        public String getDomain() {
+            return domain;
+        }
+
+        public String getPath() {
+            return path;
+        }
+    }
 }

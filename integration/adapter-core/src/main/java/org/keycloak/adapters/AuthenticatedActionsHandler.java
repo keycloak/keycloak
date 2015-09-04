@@ -23,9 +23,9 @@ import java.util.Set;
 public class AuthenticatedActionsHandler {
     private static final Logger log = Logger.getLogger(AuthenticatedActionsHandler.class);
     protected KeycloakDeployment deployment;
-    protected HttpFacade facade;
+    protected OIDCHttpFacade facade;
 
-    public AuthenticatedActionsHandler(KeycloakDeployment deployment, HttpFacade facade) {
+    public AuthenticatedActionsHandler(KeycloakDeployment deployment, OIDCHttpFacade facade) {
         this.deployment = deployment;
         this.facade = facade;
     }
