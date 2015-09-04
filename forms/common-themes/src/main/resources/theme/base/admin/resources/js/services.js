@@ -1258,9 +1258,8 @@ module.factory('AuthenticationConfigDescription', function($resource) {
     });
 });
 module.factory('PerClientAuthenticationConfigDescription', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/authentication/per-client-config-description/:provider', {
-        realm : '@realm',
-        provider: '@provider'
+    return $resource(authUrl + '/admin/realms/:realm/authentication/per-client-config-description', {
+        realm : '@realm'
     });
 });
 
