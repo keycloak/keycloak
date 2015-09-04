@@ -1840,7 +1840,6 @@ module.directive('kcTabsUserFederation', function () {
 });
 
 module.controller('RoleSelectorModalCtrl', function($scope, realm, config, configName, RealmRoles, Client, ClientRole, $modalInstance) {
-    console.log('realm: ' + realm.realm);
     $scope.selectedRealmRole = {
         role: undefined
     };
@@ -1888,6 +1887,25 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
     })
 });
 
+module.controller('ProviderConfigCtrl', function ($modal, $scope) {
+    $scope.openRoleSelector = function (configName, config) {
+        $modal.open({
+            templateUrl: resourceUrl + '/partials/modal/role-selector.html',
+            controller: 'RoleSelectorModalCtrl',
+            resolve: {
+                realm: function () {
+                    return $scope.realm;
+                },
+                config: function () {
+                    return config;
+                },
+                configName: function () {
+                    return configName;
+                }
+            }
+        })
+    }
+});
 
 module.directive('kcProviderConfig', function ($modal) {
     return {
@@ -1895,32 +1913,12 @@ module.directive('kcProviderConfig', function ($modal) {
             config: '=',
             properties: '=',
             realm: '=',
-            clients: '='
+            clients: '=',
+            configName: '='
         },
         restrict: 'E',
         replace: true,
-        link: function(scope, element, attrs) {
-            scope.openRoleSelector = function(configName) {
-                $modal.open({
-                    templateUrl: resourceUrl + '/partials/modal/role-selector.html',
-                    controller: 'RoleSelectorModalCtrl',
-                    resolve: {
-                        realm: function () {
-                            return scope.realm;
-                        },
-                        config: function() {
-                            return scope.config;
-                        },
-                        configName: function() {
-
-                            return configName;
-                        }
-                    }
-                })
-
-            };
-
-        },
+        controller: 'ProviderConfigCtrl',
         templateUrl: resourceUrl + '/templates/kc-provider-config.html'
     }
 });
