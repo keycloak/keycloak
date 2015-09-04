@@ -6,7 +6,7 @@
             <input class="form-control" type="text" data-ng-model="config[ option.name ]" >
         </div>
         <div class="col-sm-6" data-ng-show="option.type == 'boolean'">
-            <input ng-model="config[ option.name ]" value="'true'" name="option.name" id="option.name" onoffswitchmodel />
+            <input ng-model="config[ option.name ]" value="'true'" name="option.name" id="option.name" onoffswitchstring />
         </div>
         <div class="col-sm-6" data-ng-show="option.type == 'List'">
             <select ng-model="config[ option.name ]" ng-options="data for data in option.defaultValue">

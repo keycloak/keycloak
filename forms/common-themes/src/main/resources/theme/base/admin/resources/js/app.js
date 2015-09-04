@@ -1465,7 +1465,7 @@ module.directive('onoffswitch', function() {
 });
 
 /**
- * Directive for presenting an ON-OFF switch for checkbox.
+ * Directive for presenting an ON-OFF switch for checkbox. The directive expects the value to be string 'true' or 'false', not boolean true/false
  * This directive provides some additional capabilities to the default onoffswitch such as:
  *
  * - Dynamic values for id and name attributes. Useful if you need to use this directive inside a ng-repeat
@@ -1473,7 +1473,7 @@ module.directive('onoffswitch', function() {
  *
  * Usage: <input ng-model="mmm" name="nnn" id="iii" kc-onoffswitch-model [on-text="ooo" off-text="fff"] />
  */
-module.directive('onoffswitchmodel', function() {
+module.directive('onoffswitchstring', function() {
     return {
         restrict: "EA",
         replace: true,
@@ -1488,7 +1488,7 @@ module.directive('onoffswitchmodel', function() {
         },
         // TODO - The same code acts differently when put into the templateURL. Find why and move the code there.
         //templateUrl: "templates/kc-switch.html",
-        template: "<span><div class='onoffswitch' tabindex='0'><input type='checkbox' ng-true-value='{{value}}' ng-model='ngModel' ng-disabled='ngDisabled' class='onoffswitch-checkbox' name='kc{{name}}' id='kc{{id}}'><label for='kc{{id}}' class='onoffswitch-label'><span class='onoffswitch-inner'><span class='onoffswitch-active'>{{kcOnText}}</span><span class='onoffswitch-inactive'>{{kcOffText}}</span></span><span class='onoffswitch-switch'></span></label></div></span>",
+        template: '<span><div class="onoffswitch" tabindex="0"><input type="checkbox" ng-true-value="\'true\'" ng-false-value="\'false\'" ng-model="ngModel" ng-disabled="ngDisabled" class="onoffswitch-checkbox" name="kc{{name}}" id="kc{{id}}"><label for="kc{{id}}" class="onoffswitch-label"><span class="onoffswitch-inner"><span class="onoffswitch-active">{{kcOnText}}</span><span class="onoffswitch-inactive">{{kcOffText}}</span></span><span class="onoffswitch-switch"></span></label></div></span>',
         compile: function(element, attrs) {
 
             if (!attrs.onText) { attrs.onText = "ON"; }
