@@ -53,7 +53,7 @@ module.factory('authInterceptor', function($q, Auth) {
 });
 
 module.config(function($translateProvider) {
-    $translateProvider.useSanitizeValueStrategy('sanitize');
+    $translateProvider.useSanitizeValueStrategy('sanitizeParameters');
     $translateProvider.preferredLanguage('en');
     $translateProvider.useCookieStorage();
     $translateProvider.useUrlLoader('messages.json');
