@@ -25,9 +25,11 @@ import org.keycloak.models.IdentityProviderModel;
  */
 public class CustomIdentityProviderFactory extends AbstractIdentityProviderFactory<CustomIdentityProvider> {
 
+    public static final String PROVIDER_ID = "testsuite-custom-identity-provider";
+
     @Override
     public String getName() {
-        return "Custom Identity Provider";
+        return "Testsuite Custom Identity Provider";
     }
 
     @Override
@@ -37,6 +39,6 @@ public class CustomIdentityProviderFactory extends AbstractIdentityProviderFacto
 
     @Override
     public String getId() {
-        return "custom-identity-provider";
+        return PROVIDER_ID;
     }
 }
