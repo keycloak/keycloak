@@ -69,11 +69,6 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
     }
 
     @Override
-    public boolean isConfigurablePerClient() {
-        return true;
-    }
-
-    @Override
     public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
         return REQUIREMENT_CHOICES;
     }

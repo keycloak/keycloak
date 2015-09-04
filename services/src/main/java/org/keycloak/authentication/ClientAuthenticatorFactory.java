@@ -26,13 +26,6 @@ public interface ClientAuthenticatorFactory extends ProviderFactory<ClientAuthen
     boolean isConfigurable();
 
     /**
-     * Is this authenticator configurable per client? The configuration will be in "Clients" / "Credentials" tab in admin console
-     *
-     * @return
-     */
-    boolean isConfigurablePerClient();
-
-    /**
      * List of config properties for this client implementation. Those will be shown in admin console in clients credentials tab and can be configured per client.
      * Applicable only if "isConfigurablePerClient" is true
      *

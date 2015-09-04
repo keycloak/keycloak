@@ -638,6 +638,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 clientAuthenticatorProviders : function(ClientAuthenticatorProvidersLoader) {
                     return ClientAuthenticatorProvidersLoader();
+                },
+                clientConfigProperties: function(PerClientAuthenticationConfigDescriptionLoader) {
+                    return PerClientAuthenticationConfigDescriptionLoader();
                 }
             },
             controller : 'ClientCredentialsCtrl'
