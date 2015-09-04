@@ -1,7 +1,9 @@
 package org.keycloak.authentication;
 
 import java.util.List;
+import java.util.Map;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 
@@ -32,5 +34,13 @@ public interface ClientAuthenticatorFactory extends ProviderFactory<ClientAuthen
      * @return
      */
     List<ProviderConfigProperty> getConfigPropertiesPerClient();
+
+    /**
+     * Get configuration, which needs to be used for adapter ( keycloak.json ) of particular client. Some implementations
+     * may return just template and user needs to edit the values according to his environment (For example fill the location of keystore file)
+     *
+     * @return
+     */
+    Map<String, Object> getAdapterConfiguration(ClientModel client);
 
 }

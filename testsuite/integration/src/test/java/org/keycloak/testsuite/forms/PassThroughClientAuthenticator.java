@@ -1,8 +1,10 @@
 package org.keycloak.testsuite.forms;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
@@ -86,6 +88,17 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
     @Override
     public List<ProviderConfigProperty> getConfigPropertiesPerClient() {
         return clientConfigProperties;
+    }
+
+    @Override
+    public Map<String, Object> getAdapterConfiguration(ClientModel client) {
+        Map<String, Object> props = new HashMap<>();
+        props.put("foo", "some foo value");
+        props.put("bar", true);
+
+        Map<String, Object> config = new HashMap<>();
+        config.put("dummy", props);
+        return config;
     }
 
     @Override

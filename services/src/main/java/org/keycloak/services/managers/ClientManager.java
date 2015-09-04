@@ -3,6 +3,8 @@ package org.keycloak.services.managers;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.ClientAuthenticator;
+import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.constants.ServiceAccountConstants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -156,7 +158,7 @@ public class ClientManager {
         @JsonProperty("public-client")
         protected Boolean publicClient;
         @JsonProperty("credentials")
-        protected Map<String, String> credentials;
+        protected Map<String, Object> credentials;
 
         public Boolean isUseResourceRoleMappings() {
             return useResourceRoleMappings;
@@ -174,11 +176,11 @@ public class ClientManager {
             this.resource = resource;
         }
 
-        public Map<String, String> getCredentials() {
+        public Map<String, Object> getCredentials() {
             return credentials;
         }
 
-        public void setCredentials(Map<String, String> credentials) {
+        public void setCredentials(Map<String, Object> credentials) {
             this.credentials = credentials;
         }
 
@@ -214,10 +216,10 @@ public class ClientManager {
         rep.setResource(clientModel.getClientId());
 
         if (!clientModel.isBearerOnly() && !clientModel.isPublicClient()) {
-            Map<String, String> creds = new HashMap<String, String>();
-            String cred = clientModel.getSecret();
-            creds.put(CredentialRepresentation.SECRET, cred);
-            rep.setCredentials(creds);
+            String clientAuthenticator = clientModel.getClientAuthenticatorType();
+            ClientAuthenticatorFactory authenticator = (ClientAuthenticatorFactory) realmManager.getSession().getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, clientAuthenticator);
+            Map<String, Object> adapterConfig = authenticator.getAdapterConfiguration(clientModel);
+            rep.setCredentials(adapterConfig);
         }
 
         return rep;
