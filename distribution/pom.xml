@@ -19,6 +19,7 @@
         <module>saml-adapters</module>
         <!--<module>demo-dist</module>-->
         <module>docs-dist</module>
+        <module>eap6-server-dist</module>
         <module>examples-dist</module>
         <!--<module>proxy-dist</module>-->
         <!--<module>server-dist</module>-->
