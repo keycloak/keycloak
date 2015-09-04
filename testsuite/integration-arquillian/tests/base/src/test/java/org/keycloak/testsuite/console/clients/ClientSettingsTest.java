@@ -41,7 +41,7 @@ import org.keycloak.testsuite.util.Timer;
 public class ClientSettingsTest extends AbstractClientTest {
 
     @Page
-    private ClientSettings clientSettings;
+    private ClientSettings clientSettingsPage;
 
     private ClientRepresentation newClient;
 
@@ -50,20 +50,20 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClient(newClient);
         assertFlashMessageSuccess();
 
-        client.backToClientsViaBreadcrumb();
-        assertCurrentUrl(clients);
-        assertEquals(1, clients.table().searchClients(newClient.getClientId()).size());
+        clientPage.backToClientsViaBreadcrumb();
+        assertCurrentUrl(clientsPage);
+        assertEquals(1, clientsPage.table().searchClients(newClient.getClientId()).size());
 
         // read & verify
-        clients.table().clickClient(newClient);
-        ClientRepresentation found = clientSettings.form().getValues();
+        clientsPage.table().clickClient(newClient);
+        ClientRepresentation found = clientSettingsPage.form().getValues();
         assertClientSettingsEqual(newClient, found);
 
         // update & verify
         // TODO change attributes, add redirect uris and weborigins
         // delete
         // TODO
-        client.backToClientsViaBreadcrumb();
+        clientPage.backToClientsViaBreadcrumb();
     }
 
     public void createOIDCPublic() {
@@ -72,9 +72,9 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClient(newClient);
         assertFlashMessageSuccess();
 
-        client.backToClientsViaBreadcrumb();
-        assertCurrentUrl(clients);
-        assertEquals(1, clients.table().searchClients(newClient.getClientId()).size());
+        clientPage.backToClientsViaBreadcrumb();
+        assertCurrentUrl(clientsPage);
+        assertEquals(1, clientsPage.table().searchClients(newClient.getClientId()).size());
     }
 
     public void createOIDCBearerOnly() {
@@ -83,9 +83,9 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClient(newClient);
         assertFlashMessageSuccess();
 
-        client.backToClientsViaBreadcrumb();
-        assertCurrentUrl(clients);
-        assertEquals(1, clients.table().searchClients(newClient.getClientId()).size());
+        clientPage.backToClientsViaBreadcrumb();
+        assertCurrentUrl(clientsPage);
+        assertEquals(1, clientsPage.table().searchClients(newClient.getClientId()).size());
     }
 
     @Test
@@ -97,12 +97,12 @@ public class ClientSettingsTest extends AbstractClientTest {
 
     @Test
     public void invalidSettings() {
-        clients.table().createClient();
-        createClient.form().save();
+        clientsPage.table().createClient();
+        createClientPage.form().save();
         assertFlashMessageDanger();
 
-        createClient.form().setClientId("test-client");
-        createClient.form().save();
+        createClientPage.form().setClientId("test-client");
+        createClientPage.form().save();
         assertFlashMessageDanger();
     }
 
@@ -133,11 +133,11 @@ public class ClientSettingsTest extends AbstractClientTest {
         c.setPublicClient(true);
         c.setBearerOnly(true);
 
-        Response r = clients.clientsResource().create(c);
+        Response r = clientsPage.clientsResource().create(c);
         r.close();
-        clientSettings.setId(getCreatedId(r));
+        clientSettingsPage.setId(getCreatedId(r));
 
-        c = clientSettings.clientResource().toRepresentation();
+        c = clientSettingsPage.clientResource().toRepresentation();
         assertTrue(c.isBearerOnly());
         assertTrue(c.isPublicClient());
     }
@@ -156,7 +156,7 @@ public class ClientSettingsTest extends AbstractClientTest {
 //    @Test
     public void clientsPagination() {
         createClients("test_client_", 100);
-        clients.navigateTo();
+        clientsPage.navigateTo();
         pause(120000);
     }
 

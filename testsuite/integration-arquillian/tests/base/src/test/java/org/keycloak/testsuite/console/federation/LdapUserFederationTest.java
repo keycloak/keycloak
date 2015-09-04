@@ -26,10 +26,10 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
     private LdapUserProviderForm ldapUserProviderForm;
 
     @Page
-    private UserFederation userFederation;
+    private UserFederation userFederationPage;
 
     @Page
-    private Users users;
+    private Users usersPage;
 
     @Before
     public void beforeTestLdapUserFederation() {
@@ -39,8 +39,8 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
     @Ignore
     @Test
     public void addAndConfigureProvider() {
-        adminConsole.navigateTo();
-        testRealmLogin.form().login(testRealmUser);
+        adminConsolePage.navigateTo();
+        testRealmLoginPage.form().login(testUser);
 
         String name = "ldapname";
 
@@ -56,7 +56,7 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
 
         //addLdapProviderTest
         configure().userFederation();
-        userFederation.addProvider("ldap");
+        userFederationPage.addProvider("ldap");
         ldapUserProviderForm.configureLdap(ldapConfig.get(LDAPConstants.LDAP_PROVIDER), ldapConfig.get(LDAPConstants.EDIT_MODE), ldapConfig.get(LDAPConstants.VENDOR), ldapConfig.get(LDAPConstants.CONNECTION_URL), ldapConfig.get(LDAPConstants.USERS_DN), ldapConfig.get(LDAPConstants.BIND_DN), ldapConfig.get(LDAPConstants.BIND_CREDENTIAL));
     }
 
@@ -64,8 +64,8 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
     @Test
     public void caseSensitiveSearch() {
         // This should fail for now due to case-sensitivity
-        adminConsole.navigateTo();
-        testRealmLogin.form().login("johnKeycloak", "Password1");
+        adminConsolePage.navigateTo();
+        testRealmLoginPage.form().login("johnKeycloak", "Password1");
         assertTrue(flashMessage.getText(), flashMessage.isDanger());
     }
 }

@@ -3,6 +3,7 @@ package org.keycloak.testsuite.console.page.authentication;
 import java.util.List;
 
 import org.jboss.arquillian.graphene.findby.ByJQuery;
+import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -22,11 +23,15 @@ public class PasswordPolicy extends Authentication {
 
     @FindBy(tagName = "select")
     private Select addPolicySelect;
+    
+    @FindBy(tagName = "select")
+    private WebElement addPolicySelectElement;
 
     @FindBy(css = "tr.ng-scope")
     private List<WebElement> allRows;
 
     public void addPolicy(PasswordPolicy.Type policy, String value) {
+        waitGuiForElement(addPolicySelectElement);
         addPolicySelect.selectByVisibleText(policy.getName());
         setPolicyValue(policy, value);
         primaryButton.click();

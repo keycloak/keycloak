@@ -54,8 +54,8 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealm.setAuthRealm(DEMO);
-        testRealmLogin.setAuthRealm(DEMO);
+        testRealmPage.setAuthRealm(DEMO);
+        testRealmLoginPage.setAuthRealm(DEMO);
         testRealmAccount.setAuthRealm(DEMO);
     }
 
@@ -73,7 +73,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
 
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
 
         assertCurrentUrlStartsWith(customerPortalExample);
         customerPortalExample.waitForCustomerListingHeader();
@@ -89,7 +89,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         customerPortalExample.navigateTo();
         customerPortalExample.customerSession();
 
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
 
         assertCurrentUrlStartsWith(customerPortalExample);
 
@@ -103,7 +103,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         productPortalExample.navigateTo();
         productPortalExample.productListing();
 
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
 
         assertCurrentUrlStartsWith(productPortalExample);
         productPortalExample.waitForProductListingHeader();
@@ -121,7 +121,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         productPortalExample.navigateTo();
         productPortalExample.productListing();
 
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
 
         assertCurrentUrlStartsWith(productPortalExample);
         productPortalExample.waitForProductListingHeader();
@@ -139,7 +139,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         productPortalExample.navigateTo();
         productPortalExample.productListing();
 
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
 
         assertCurrentUrlStartsWith(productPortalExample);
         productPortalExample.waitForProductListingHeader();
@@ -150,7 +150,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
         customerPortalExample.navigateTo();
         customerPortalExample.customerListing();
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
 
         customerPortalExample.logOut();
     }

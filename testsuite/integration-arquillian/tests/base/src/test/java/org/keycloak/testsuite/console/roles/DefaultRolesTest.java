@@ -17,10 +17,10 @@ import org.keycloak.testsuite.console.page.users.Users;
 public class DefaultRolesTest extends AbstractRolesTest {
 
     @Page
-    private DefaultRoles defaultRoles;
+    private DefaultRoles defaultRolesPage;
 
     @Page
-    private UserRoleMappings userRoleMappings;
+    private UserRoleMappings userRolesPage;
 
     private RoleRepresentation defaultRoleRep;
 
@@ -31,10 +31,10 @@ public class DefaultRolesTest extends AbstractRolesTest {
     public void beforeDefaultRolesTest() {
         // create a role via admin client
         defaultRoleRep = new RoleRepresentation("default-role", "");
-        roles.rolesResource().create(defaultRoleRep);
+        rolesPage.rolesResource().create(defaultRoleRep);
 
         // navigate to default roles page
-        roles.tabs().defaultRoles();
+        rolesPage.tabs().defaultRoles();
     }
 
     @Test
@@ -42,7 +42,7 @@ public class DefaultRolesTest extends AbstractRolesTest {
 
         String defaultRoleName = defaultRoleRep.getName();
 
-        defaultRoles.form().addAvailableRole(defaultRoleName);
+        defaultRolesPage.form().addAvailableRole(defaultRoleName);
         assertFlashMessageSuccess();
 
         UserRepresentation newUser = new UserRepresentation();
@@ -53,8 +53,8 @@ public class DefaultRolesTest extends AbstractRolesTest {
         users.table().search(newUser.getUsername());
         users.table().clickUser(newUser.getUsername());
 
-        user.tabs().roleMappings();
-        assertTrue(userRoleMappings.form().isAssignedRole(defaultRoleName));
+        userPage.tabs().roleMappings();
+        assertTrue(userRolesPage.form().isAssignedRole(defaultRoleName));
     }
 
 }

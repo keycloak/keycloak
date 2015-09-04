@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.console.sessions;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.sessions.RealmSessions;
@@ -27,24 +28,26 @@ import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWith
  *
  * @author Petr Mensik
  */
+@Ignore
 public class SessionsTest extends AbstractConsoleTest {
 
     @Page
-    private RealmSessions realmSessions;
+    private RealmSessions realmSessionsPage;
     
     @Test
     public void testLogoutAllSessions() {
-        loginToTestRealmConsoleAs(testRealmUser);
+        loginToTestRealmConsoleAs(testUser);
         
         // back to master admin console
-        adminConsoleRealm.navigateTo();
+        adminConsoleRealmPage.navigateTo();
         manage().sessions();
-        realmSessions.realmSessions();
+        realmSessionsPage.realmSessions();
 
-        realmSessions.logoutAllSessions();
+        realmSessionsPage.logoutAllSessions();
 
         // verify test user was logged out from the admin console
-        testRealmAdminConsole.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        testRealmAdminConsolePage.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
+    
 }

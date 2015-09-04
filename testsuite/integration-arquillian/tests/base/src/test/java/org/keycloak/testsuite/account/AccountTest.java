@@ -37,44 +37,44 @@ public class AccountTest extends AbstractAccountManagementTest {
     private static final String NEW_LAST_NAME = "Smith";
 
     @Page
-    private Account testRealmAccount;
+    private Account testRealmAccountPage;
 
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmAccount.setAuthRealm(testRealm);
+        testRealmAccountPage.setAuthRealm(testRealmPage);
     }
     
     @Before
     public void beforeAccountTest() {
-        testRealmAccountManagement.navigateTo();
-        testRealmLogin.form().login(testRealmUser);
+        testRealmAccountManagementPage.navigateTo();
+        testRealmLoginPage.form().login(testUser);
     }
 
     @After
     public void afterAccountTest() {
-        testRealmAccountManagement.navigateTo();
-        testRealmAccountManagement.signOut();
+        testRealmAccountManagementPage.navigateTo();
+        testRealmAccountManagementPage.signOut();
     }
 
     @Test
     public void editAccount() {
-        testRealmAccountManagement.account();
-        assertEquals(testRealmAccount.getUsername(), testRealmUser.getUsername());
+        testRealmAccountManagementPage.account();
+        assertEquals(testRealmAccountPage.getUsername(), testUser.getUsername());
         
-        testRealmAccount.setEmail(UPDATED_EMAIL);
-        testRealmAccount.setFirstName(NEW_FIRST_NAME);
-        testRealmAccount.setLastName(NEW_LAST_NAME);
-        testRealmAccount.save();
+        testRealmAccountPage.setEmail(UPDATED_EMAIL);
+        testRealmAccountPage.setFirstName(NEW_FIRST_NAME);
+        testRealmAccountPage.setLastName(NEW_LAST_NAME);
+        testRealmAccountPage.save();
         assertFlashMessageSuccess();
 
-        testRealmAccountManagement.signOut();
-        testRealmLogin.form().login(testRealmUser);
+        testRealmAccountManagementPage.signOut();
+        testRealmLoginPage.form().login(testUser);
         
-        testRealmAccountManagement.account();
-        assertEquals(testRealmAccount.getEmail(), UPDATED_EMAIL);
-        assertEquals(testRealmAccount.getFirstName(), NEW_FIRST_NAME);
-        assertEquals(testRealmAccount.getLastName(), NEW_LAST_NAME);
+        testRealmAccountManagementPage.account();
+        assertEquals(testRealmAccountPage.getEmail(), UPDATED_EMAIL);
+        assertEquals(testRealmAccountPage.getFirstName(), NEW_FIRST_NAME);
+        assertEquals(testRealmAccountPage.getLastName(), NEW_LAST_NAME);
     }
 
 }

@@ -95,21 +95,21 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrl(inputPortal);
         inputPortal.execute("hello");
 
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertEquals(driver.getCurrentUrl(), inputPortal + "/secured/post");
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("parameter=hello"));
 
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
                 .queryParam(OAuth2Constants.REDIRECT_URI, customerPortal.toString())
                 .build("demo").toString();
         driver.navigate().to(logoutUri);
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         customerPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
         // test unsecured POST KEYCLOAK-901
         Client client = ClientBuilder.newClient();
@@ -124,9 +124,9 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     public void testLoginSSOAndLogout() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        testRealmLogin.form().waitForUsernameInputPresent();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrl(customerPortal);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
@@ -155,15 +155,15 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         assertEquals(1, Integer.parseInt(productPortalStats.get("active")));
 
         // test logout
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
                 .queryParam(OAuth2Constants.REDIRECT_URI, customerPortal.toString()).build("demo").toString();
         driver.navigate().to(logoutUri);
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         customerPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        testRealmLogin.form().cancel();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().cancel();
         assertTrue(driver.getPageSource().contains("Error Page"));
     }
 
@@ -171,8 +171,8 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     public void testServletRequestLogout() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrl(customerPortal);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
@@ -194,18 +194,18 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         assertTrue(driver.getPageSource().contains("servlet logout ok"));
 
         customerPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
 
     @Test
     public void testLoginSSOIdle() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        testRealmLogin.form().waitForUsernameInputPresent();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrl(customerPortal);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
@@ -217,7 +217,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
 //		Thread.sleep(2000);
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
         demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
         testRealmResource().update(demoRealmRep);
@@ -229,9 +229,9 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
         System.out.println("Current url: " + driver.getCurrentUrl());
-        testRealmLogin.form().waitForUsernameInputPresent();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
         System.out.println("Current url: " + driver.getCurrentUrl());
         assertCurrentUrl(customerPortal);
         String pageSource = driver.getPageSource();
@@ -246,7 +246,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         Time.setOffset(2);
 
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
         // need to cleanup so other tests don't fail, so invalidate http sessions on remote clients.
         demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
@@ -259,9 +259,9 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     public void testLoginSSOMax() throws InterruptedException {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        testRealmLogin.form().waitForUsernameInputPresent();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrl(customerPortal);
         String pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
@@ -273,7 +273,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         TimeUnit.SECONDS.sleep(2);
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
         demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
         testRealmResource().update(demoRealmRep);
@@ -330,7 +330,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Test
     public void testBadUser() {
         Client client = ClientBuilder.newClient();
-        URI uri = OIDCLoginProtocolService.tokenUrl(authServer.createUriBuilder()).build("demo");
+        URI uri = OIDCLoginProtocolService.tokenUrl(authServerPage.createUriBuilder()).build("demo");
         WebTarget target = client.target(uri);
         String header = BasicAuthHelper.createHeader("customer-portal", "password");
         Form form = new Form();
@@ -349,7 +349,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Test
     public void testVersion() {
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(authServer.createUriBuilder()).path("version");
+        WebTarget target = client.target(authServerPage.createUriBuilder()).path("version");
         Version version = target.request().get(Version.class);
         assertNotNull(version);
         assertNotNull(version.getVersion());
@@ -370,18 +370,18 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     public void testAuthenticated() {
         // test login to customer-portal which does a bearer request to customer-db
         securePortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrl(securePortal);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
         // test logout
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
                 .queryParam(OAuth2Constants.REDIRECT_URI, securePortal.toString()).build("demo").toString();
         driver.navigate().to(logoutUri);
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         securePortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
 
 }

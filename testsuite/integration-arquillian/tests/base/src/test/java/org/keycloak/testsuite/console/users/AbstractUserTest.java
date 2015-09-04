@@ -16,9 +16,9 @@ import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 public abstract class AbstractUserTest extends AbstractConsoleTest {
 
     @Page
-    protected Users users;
+    protected Users usersPage;
     @Page
-    protected CreateUser createUser;
+    protected CreateUser createUserPage;
 
     protected UserRepresentation newTestRealmUser;
     
@@ -29,11 +29,11 @@ public abstract class AbstractUserTest extends AbstractConsoleTest {
     }
 
     public void createUser(UserRepresentation user) {
-        assertCurrentUrl(users);
-        users.table().addUser();
-        assertCurrentUrlStartsWith(createUser);
-        createUser.form().setValues(user);
-        createUser.form().save();
+        assertCurrentUrl(usersPage);
+        usersPage.table().addUser();
+        assertCurrentUrlStartsWith(createUserPage);
+        createUserPage.form().setValues(user);
+        createUserPage.form().save();
     }
 
 }

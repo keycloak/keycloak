@@ -31,7 +31,7 @@ import org.keycloak.testsuite.console.page.realm.ThemeSettings;
 public class ThemeSettingsTest extends AbstractRealmTest {
 
     @Page
-    private ThemeSettings themeSettings;
+    private ThemeSettings themeSettingsPage;
 
     @Before
     public void beforeThemeTest() {
@@ -41,22 +41,22 @@ public class ThemeSettingsTest extends AbstractRealmTest {
 
     @Test
     public void changeLoginThemeTest() {
-        themeSettings.changeLoginTheme(Theme.BASE.getName());
-        themeSettings.saveTheme();
+        themeSettingsPage.changeLoginTheme(Theme.BASE.getName());
+        themeSettingsPage.saveTheme();
 
-        testRealmAdminConsole.navigateTo();
-        testRealmLogin.waitForKeycloakThemeNotPresent();
-        testRealmLogin.form().login(testRealmUser);
-        testRealmAdminConsole.logOut();
+        testRealmAdminConsolePage.navigateTo();
+        testRealmLoginPage.waitForKeycloakThemeNotPresent();
+        testRealmLoginPage.form().login(testUser);
+        testRealmAdminConsolePage.logOut();
 
-        themeSettings.navigateTo();
-        themeSettings.changeLoginTheme(Theme.KEYCLOAK.getName());
-        themeSettings.saveTheme();
+        themeSettingsPage.navigateTo();
+        themeSettingsPage.changeLoginTheme(Theme.KEYCLOAK.getName());
+        themeSettingsPage.saveTheme();
 
-        testRealmAdminConsole.navigateTo();
-        testRealmLogin.waitForKeycloakThemePresent();
-        testRealmLogin.form().login(testRealmUser);
-        testRealmAdminConsole.logOut();
+        testRealmAdminConsolePage.navigateTo();
+        testRealmLoginPage.waitForKeycloakThemePresent();
+        testRealmLoginPage.form().login(testUser);
+        testRealmAdminConsolePage.logOut();
     }
 
 }

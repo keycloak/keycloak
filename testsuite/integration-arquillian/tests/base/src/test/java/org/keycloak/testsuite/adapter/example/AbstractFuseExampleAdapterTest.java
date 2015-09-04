@@ -48,8 +48,8 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealm.setAuthRealm(DEMO);
-        testRealmLogin.setAuthRealm(DEMO);
+        testRealmPage.setAuthRealm(DEMO);
+        testRealmLoginPage.setAuthRealm(DEMO);
         testRealmAccount.setAuthRealm(DEMO);
     }
 
@@ -61,9 +61,9 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         assertCurrentUrlStartsWith(customerPortal);
 
         customerPortal.clickCustomerListingLink();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(customerListing);
 
         String src = driver.getPageSource();
@@ -83,7 +83,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
 
         // assert user not logged in
         customerPortal.clickCustomerListingLink();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
     }
 
@@ -93,9 +93,9 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         assertCurrentUrlStartsWith(customerPortal);
 
         customerPortal.clickAdminInterfaceLink();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
-        testRealmLogin.form().login("admin", "password");
+        testRealmLoginPage.form().login("admin", "password");
         assertCurrentUrlStartsWith(adminInterface);
         assertTrue(driver.getPageSource().contains("Hello admin!"));
 
@@ -105,9 +105,9 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         assertCurrentUrlStartsWith(customerPortal);
 
         customerPortal.clickAdminInterfaceLink();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(adminInterface);
         assertTrue(driver.getPageSource().contains("Status code is 403"));
     }
@@ -115,9 +115,9 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
     @Test
     public void testProductPortal() {
         productPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(productPortal);
 
         assertTrue(productPortal.getProduct1UnsecuredText().contains("401: Unauthorized"));
@@ -125,7 +125,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         assertTrue(productPortal.getProduct2SecuredText().contains("Product received: id=2"));
 
         productPortal.clickLogOutLink();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
 
 }

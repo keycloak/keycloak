@@ -36,7 +36,7 @@ public abstract class AbstractBasicAuthExampleAdapterTest extends AbstractExampl
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealm.setAuthRealm(EXAMPLE);
+        testRealmPage.setAuthRealm(EXAMPLE);
     }
 
     @Test

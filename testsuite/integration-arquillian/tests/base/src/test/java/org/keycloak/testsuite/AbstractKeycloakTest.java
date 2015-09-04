@@ -55,19 +55,19 @@ public abstract class AbstractKeycloakTest {
     protected WebDriver driver;
 
     @Page
-    protected AuthServerContextRoot authServerContextRoot;
+    protected AuthServerContextRoot authServerContextRootPage;
     @Page
-    protected AuthServer authServer;
+    protected AuthServer authServerPage;
 
     @Page
-    protected AuthRealm masterRealm;
+    protected AuthRealm masterRealmPage;
 
     @Page
-    protected Account account;
+    protected Account accountPage;
     @Page
-    protected OIDCLogin login;
+    protected OIDCLogin loginPage;
     @Page
-    protected UpdatePassword updatePassword;
+    protected UpdatePassword updatePasswordPage;
 
     protected UserRepresentation adminUser;
 
@@ -95,28 +95,28 @@ public abstract class AbstractKeycloakTest {
     }
 
     private void updateMasterAdminPassword() {
-        account.navigateTo();
-        login.form().login(ADMIN, ADMIN);
-        updatePassword.updatePasswords(ADMIN, ADMIN);
-        assertCurrentUrlStartsWith(account);
+        accountPage.navigateTo();
+        loginPage.form().login(ADMIN, ADMIN);
+        updatePasswordPage.updatePasswords(ADMIN, ADMIN);
+        assertCurrentUrlStartsWith(accountPage);
         deleteAllCookiesForMasterRealm();
     }
 
     public void deleteAllCookiesForMasterRealm() {
-        masterRealm.navigateTo();
+        masterRealmPage.navigateTo();
         driver.manage().deleteAllCookies();
     }
 
     protected void driverSettings() {
-        driver.manage().timeouts().setScriptTimeout(3, TimeUnit.SECONDS);
+//        driver.manage().timeouts().setScriptTimeout(3, TimeUnit.SECONDS);
         driver.manage().timeouts().implicitlyWait(3, TimeUnit.SECONDS);
         driver.manage().timeouts().setScriptTimeout(3, TimeUnit.SECONDS);
         driver.manage().window().maximize();
     }
 
     public void setDefaultPageUriParameters() {
-        masterRealm.setAuthRealm(MASTER);
-        login.setAuthRealm(MASTER);
+        masterRealmPage.setAuthRealm(MASTER);
+        loginPage.setAuthRealm(MASTER);
     }
 
     public abstract void addTestRealms(List<RealmRepresentation> testRealms);

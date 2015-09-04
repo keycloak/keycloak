@@ -25,11 +25,11 @@ import org.openqa.selenium.Cookie;
 public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
     @Page
-    protected AuthRealm testRealm;
+    protected AuthRealm testRealmPage;
     @Page
-    protected OIDCLogin testRealmLogin;
+    protected OIDCLogin testRealmLoginPage;
 
-    protected UserRepresentation testRealmUser;
+    protected UserRepresentation testUser;
 
     @FindByJQuery(".alert")
     protected FlashMessage flashMessage;
@@ -44,17 +44,17 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
     @Before
     public void beforeAuthTest() {
-        testRealmLogin.setAuthRealm(testRealm);
+        testRealmLoginPage.setAuthRealm(testRealmPage);
 
-        testRealmUser = createUserRepresentation("test", "test@email.test", "test", "user", true);
-        setPasswordFor(testRealmUser, PASSWORD);
+        testUser = createUserRepresentation("test", "test@email.test", "test", "user", true);
+        setPasswordFor(testUser, PASSWORD);
 
         deleteAllCookiesForTestRealm();
     }
     
     public void createTestUserWithAdminClient() {
-        String id = createUserAndResetPasswordWithAdminClient(testRealmResource(), testRealmUser, PASSWORD);
-        testRealmUser.setId(id);
+        String id = createUserAndResetPasswordWithAdminClient(testRealmResource(), testUser, PASSWORD);
+        testUser.setId(id);
     }
 
     public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, boolean enabled) {
@@ -68,7 +68,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     }
 
     public void deleteAllCookiesForTestRealm() {
-        testRealm.navigateTo();
+        testRealmPage.navigateTo();
         driver.manage().deleteAllCookies();
     }
 
@@ -100,7 +100,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     }
 
     public RealmResource testRealmResource() {
-        return adminClient.realm(testRealm.getAuthRealm());
+        return adminClient.realm(testRealmPage.getAuthRealm());
     }
 
 }

@@ -13,10 +13,10 @@ import org.keycloak.testsuite.console.page.users.User;
 public abstract class AbstractRolesTest extends AbstractConsoleTest {
     
     @Page
-    protected Roles roles;
+    protected Roles rolesPage;
     
     @Page
-    protected User user;
+    protected User userPage;
     
     @Before
     public void beforeRolesTest() {

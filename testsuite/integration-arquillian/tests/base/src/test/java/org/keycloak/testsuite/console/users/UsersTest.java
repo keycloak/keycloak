@@ -38,8 +38,8 @@ public class UsersTest extends AbstractUserTest {
     public void usersPagination() {
         createTestUsers("test_user_", 100);
         
-        users.navigateTo();
-        users.table().viewAllUsers();
+        usersPage.navigateTo();
+        usersPage.table().viewAllUsers();
         pause(120000);
     }
     

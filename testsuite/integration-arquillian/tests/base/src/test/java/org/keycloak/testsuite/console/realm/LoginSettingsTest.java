@@ -17,15 +17,15 @@ import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 public class LoginSettingsTest extends AbstractRealmTest {
 
     @Page
-    private LoginSettings loginSettings;
+    private LoginSettings loginSettingsPage;
 
     @Page
-    private Registration testRealmRegistration;
+    private Registration testRealmRegistrationPage;
 
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmRegistration.setAuthRealm(TEST);
+        testRealmRegistrationPage.setAuthRealm(TEST);
     }
     
     @Before
@@ -36,35 +36,36 @@ public class LoginSettingsTest extends AbstractRealmTest {
     @Test
     public void userRegistration() {
 
-        loginSettings.form().setRegistrationAllowed(true);
-        loginSettings.form().save();
-        assertTrue(loginSettings.form().isRegistrationAllowed());
+        loginSettingsPage.form().setRegistrationAllowed(true);
+        loginSettingsPage.form().save();
+        assertTrue(loginSettingsPage.form().isRegistrationAllowed());
 
-        testRealmAdminConsole.navigateTo();
-        testRealmLogin.form().waitForRegisterLinkPresent();
-        testRealmLogin.form().register();
-        assertCurrentUrlStartsWith(testRealmRegistration);
-        testRealmRegistration.waitForUsernameInputPresent();
+        
+        testRealmAdminConsolePage.navigateTo();
+        testRealmLoginPage.form().waitForRegisterLinkPresent();
+        testRealmLoginPage.form().register();
+        assertCurrentUrlStartsWith(testRealmRegistrationPage);
+        testRealmRegistrationPage.waitForUsernameInputPresent();
 
         // test email as username
-        loginSettings.navigateTo();
-        loginSettings.form().setEmailAsUsername(true);
-        loginSettings.form().save();
+        loginSettingsPage.navigateTo();
+        loginSettingsPage.form().setEmailAsUsername(true);
+        loginSettingsPage.form().save();
 
-        testRealmAdminConsole.navigateTo();
-        testRealmLogin.form().waitForRegisterLinkPresent();
-        testRealmLogin.form().register();
-        assertCurrentUrlStartsWith(testRealmRegistration);
-        testRealmRegistration.waitForUsernameInputNotPresent();
+        testRealmAdminConsolePage.navigateTo();
+        testRealmLoginPage.form().waitForRegisterLinkPresent();
+        testRealmLoginPage.form().register();
+        assertCurrentUrlStartsWith(testRealmRegistrationPage);
+        testRealmRegistrationPage.waitForUsernameInputNotPresent();
 
         // test user reg. disabled
-        loginSettings.navigateTo();
-        loginSettings.form().setRegistrationAllowed(false);
-        loginSettings.form().save();
-        assertFalse(loginSettings.form().isRegistrationAllowed());
+        loginSettingsPage.navigateTo();
+        loginSettingsPage.form().setRegistrationAllowed(false);
+        loginSettingsPage.form().save();
+        assertFalse(loginSettingsPage.form().isRegistrationAllowed());
         
-        testRealmAdminConsole.navigateTo();
-        testRealmLogin.form().waitForRegistrationLinkNotPresent();
+        testRealmAdminConsolePage.navigateTo();
+        testRealmLoginPage.form().waitForRegistrationLinkNotPresent();
     }
 
 }

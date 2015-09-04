@@ -13,10 +13,10 @@ import org.keycloak.testsuite.console.page.realm.RealmSettings.RealmTabs;
 public abstract class AbstractRealmTest extends AbstractConsoleTest {
 
     @Page
-    protected RealmSettings realmSettings;
+    protected RealmSettings realmSettingsPage;
 
     public RealmTabs tabs() {
-        return realmSettings.tabs();
+        return realmSettingsPage.tabs();
     }
     
     @Before

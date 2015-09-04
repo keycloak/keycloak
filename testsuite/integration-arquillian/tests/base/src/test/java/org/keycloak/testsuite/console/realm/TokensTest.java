@@ -33,7 +33,7 @@ import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 public class TokensTest extends AbstractRealmTest {
 
     @Page
-    private TokenSettings tokenSettings;
+    private TokenSettings tokenSettingsPage;
 
     private static final int TIMEOUT = 4;
     private static final TimeUnit TIME_UNIT = TimeUnit.SECONDS;
@@ -46,31 +46,31 @@ public class TokensTest extends AbstractRealmTest {
 
     @Test
     public void testTimeoutForRealmSession() throws InterruptedException {
-        tokenSettings.form().setSessionTimeout(TIMEOUT, TIME_UNIT);
-        tokenSettings.form().save();
+        tokenSettingsPage.form().setSessionTimeout(TIMEOUT, TIME_UNIT);
+        tokenSettingsPage.form().save();
 
-        loginToTestRealmConsoleAs(testRealmUser);
+        loginToTestRealmConsoleAs(testUser);
         TIME_UNIT.sleep(TIMEOUT + 2);
         
         driver.navigate().refresh();
 
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
 
     @Test
     public void testLifespanOfRealmSession() throws InterruptedException {
-        tokenSettings.form().setSessionTimeoutLifespan(TIMEOUT, TIME_UNIT);
-        tokenSettings.form().save();
+        tokenSettingsPage.form().setSessionTimeoutLifespan(TIMEOUT, TIME_UNIT);
+        tokenSettingsPage.form().save();
         
-        loginToTestRealmConsoleAs(testRealmUser);
+        loginToTestRealmConsoleAs(testUser);
         TIME_UNIT.sleep(TIMEOUT/2);
 
         driver.navigate().refresh();
-        assertCurrentUrlStartsWith(testRealmAdminConsole); // assert still logged in (within lifespan)
+        assertCurrentUrlStartsWith(testRealmAdminConsolePage); // assert still logged in (within lifespan)
         
         TIME_UNIT.sleep(TIMEOUT/2 + 2);
         driver.navigate().refresh();
 
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm); // assert logged out (lifespan exceeded)
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage); // assert logged out (lifespan exceeded)
     }
 }

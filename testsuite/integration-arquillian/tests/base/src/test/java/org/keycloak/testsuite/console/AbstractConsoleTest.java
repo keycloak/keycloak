@@ -40,12 +40,12 @@ import org.openqa.selenium.support.FindBy;
 public abstract class AbstractConsoleTest extends AbstractAuthTest {
 
     @Page
-    protected AdminConsole adminConsole;
+    protected AdminConsole adminConsolePage;
     @Page
-    protected AdminConsoleRealm adminConsoleRealm;
+    protected AdminConsoleRealm adminConsoleRealmPage;
 
     @Page
-    protected AdminConsole testRealmAdminConsole;
+    protected AdminConsole testRealmAdminConsolePage;
     
     @FindBy(xpath = "//div[@class='modal-dialog']")
     protected ModalDialog modalDialog;
@@ -55,8 +55,8 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealm.setAuthRealm(TEST);
-        testRealmAdminConsole.setAdminRealm(TEST);
+        testRealmPage.setAuthRealm(TEST);
+        testRealmAdminConsolePage.setAdminRealm(TEST);
     }
 
     @Before
@@ -66,24 +66,24 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
             loginToMasterRealmAdminConsoleAs(adminUser);
             testContext.setAdminLoggedIn(true);
         } else {
-            adminConsoleRealm.navigateTo();
+            adminConsoleRealmPage.navigateTo();
         }
     }
 
     public void loginToMasterRealmAdminConsoleAs(UserRepresentation user) {
-        loginToAdminConsoleAs(adminConsole, login, user);
+        loginToAdminConsoleAs(adminConsolePage, loginPage, user);
     }
 
     public void logoutFromMasterRealmConsole() {
-        logoutFromAdminConsole(adminConsole);
+        logoutFromAdminConsole(adminConsolePage);
     }
 
     public void loginToTestRealmConsoleAs(UserRepresentation user) {
-        loginToAdminConsoleAs(testRealmAdminConsole, testRealmLogin, user);
+        loginToAdminConsoleAs(testRealmAdminConsolePage, testRealmLoginPage, user);
     }
 
     public void logoutFromTestRealmConsole() {
-        logoutFromAdminConsole(testRealmAdminConsole);
+        logoutFromAdminConsole(testRealmAdminConsolePage);
     }
 
     public void loginToAdminConsoleAs(AdminConsole adminConsole, Login login, UserRepresentation user) {
@@ -101,11 +101,11 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
     }
 
     public ConfigureMenu configure() {
-        return adminConsoleRealm.configure();
+        return adminConsoleRealmPage.configure();
     }
 
     public ManageMenu manage() {
-        return adminConsoleRealm.manage();
+        return adminConsoleRealmPage.manage();
     }
 
 }

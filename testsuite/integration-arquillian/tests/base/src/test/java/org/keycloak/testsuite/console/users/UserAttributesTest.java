@@ -33,7 +33,7 @@ import org.keycloak.testsuite.console.page.users.UserAttributes;
 public class UserAttributesTest extends AbstractUserTest {
 
     @Page
-    private UserAttributes userAttributes;
+    private UserAttributes userAttributesPage;
 
     @Test
     public void invalidEmail() {
@@ -45,8 +45,8 @@ public class UserAttributesTest extends AbstractUserTest {
         createUser(newTestRealmUser);
         assertFlashMessageDanger();
 
-        userAttributes.backToUsersViaBreadcrumb();
-        assertNull(users.table().findUser(testUsername));
+        userAttributesPage.backToUsersViaBreadcrumb();
+        assertNull(usersPage.table().findUser(testUsername));
     }
 
     @Test
@@ -62,8 +62,8 @@ public class UserAttributesTest extends AbstractUserTest {
         createUser(newTestRealmUser);
         assertFlashMessageSuccess();
 
-        userAttributes.backToUsersViaBreadcrumb();
-        assertNotNull(users.table().findUser(testUsername));
+        userAttributesPage.backToUsersViaBreadcrumb();
+        assertNotNull(usersPage.table().findUser(testUsername));
 
         UserRepresentation testUser2 = new UserRepresentation();
         testUser2.setUsername(testUsername);

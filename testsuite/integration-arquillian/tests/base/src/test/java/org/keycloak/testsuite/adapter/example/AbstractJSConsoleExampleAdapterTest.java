@@ -44,7 +44,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealm.setAuthRealm(EXAMPLE);
+        testRealmPage.setAuthRealm(EXAMPLE);
     }
 
     @Test
@@ -55,13 +55,13 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         pause(1000);
 
         jsConsoleExample.logIn();
-        testRealmLogin.form().login("user", "invalid-password");
+        testRealmLoginPage.form().login("user", "invalid-password");
         assertCurrentUrlDoesntStartWith(jsConsoleExample);
 
-        testRealmLogin.form().login("invalid-user", "password");
+        testRealmLoginPage.form().login("invalid-user", "password");
         assertCurrentUrlDoesntStartWith(jsConsoleExample);
 
-        testRealmLogin.form().login("user", "password");
+        testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Init Success (Authenticated)"));
         assertTrue(driver.getPageSource().contains("Auth Success"));
@@ -82,7 +82,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(driver.getPageSource().contains("Failed to refresh token"));
 
         jsConsoleExample.logIn();
-        testRealmLogin.form().login("user", "password");
+        testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Auth Success"));
 
@@ -99,7 +99,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(driver.getPageSource().contains("Failed to refresh token"));
 
         jsConsoleExample.logIn();
-        testRealmLogin.form().login("user", "password");
+        testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Auth Success"));
 
@@ -121,7 +121,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(driver.getPageSource().contains("Failed to load profile"));
         
         jsConsoleExample.logIn();
-        testRealmLogin.form().login("user", "password");
+        testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExample);
         assertTrue(driver.getPageSource().contains("Auth Success"));
 

@@ -52,8 +52,8 @@ public abstract class AbstractCorsExampleAdapterTest extends AbstractExampleAdap
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealm.setAuthRealm(CORS);
-        testRealmLogin.setAuthRealm(CORS);
+        testRealmPage.setAuthRealm(CORS);
+        testRealmLoginPage.setAuthRealm(CORS);
         testRealmAccount.setAuthRealm(CORS);
     }
 
@@ -67,7 +67,7 @@ public abstract class AbstractCorsExampleAdapterTest extends AbstractExampleAdap
     @Test
     public void angularCorsProductTest() {
         angularCorsProductExample.navigateTo();
-        testRealmLogin.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
 
         assertCurrentUrlStartsWith(angularCorsProductExample);
         angularCorsProductExample.reloadData();

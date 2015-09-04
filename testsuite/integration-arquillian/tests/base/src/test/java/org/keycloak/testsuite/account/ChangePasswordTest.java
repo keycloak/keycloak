@@ -17,50 +17,50 @@ public class ChangePasswordTest extends AbstractAccountManagementTest {
     private static final String WRONG_PASSWORD = "wrongpassword";
 
     @Page
-    private ChangePassword testRealmChangePassword;
+    private ChangePassword testRealmChangePasswordPage;
 
     private String correctPassword;
 
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmChangePassword.setAuthRealm(testRealm);
+        testRealmChangePasswordPage.setAuthRealm(testRealmPage);
     }
 
     @Before
     public void beforeChangePasswordTest() {
-        correctPassword = getPasswordOf(testRealmUser);
-        testRealmAccountManagement.navigateTo();
-        testRealmLogin.form().login(testRealmUser);
-        testRealmAccountManagement.password();
+        correctPassword = getPasswordOf(testUser);
+        testRealmAccountManagementPage.navigateTo();
+        testRealmLoginPage.form().login(testUser);
+        testRealmAccountManagementPage.password();
     }
 
     @Test
     public void invalidChangeAttempts() {
-        testRealmChangePassword.save();
+        testRealmChangePasswordPage.save();
         assertFlashMessageError();
 
-        testRealmChangePassword.changePasswords(WRONG_PASSWORD, NEW_PASSWORD, NEW_PASSWORD);
+        testRealmChangePasswordPage.changePasswords(WRONG_PASSWORD, NEW_PASSWORD, NEW_PASSWORD);
         assertFlashMessageError();
 
-        testRealmChangePassword.changePasswords(correctPassword, NEW_PASSWORD, NEW_PASSWORD + "-mismatch");
+        testRealmChangePasswordPage.changePasswords(correctPassword, NEW_PASSWORD, NEW_PASSWORD + "-mismatch");
         assertFlashMessageError();
     }
 
     @Test
     public void successfulChangeAttempts() {
         // change password successfully
-        testRealmChangePassword.changePasswords(correctPassword, NEW_PASSWORD, NEW_PASSWORD);
+        testRealmChangePasswordPage.changePasswords(correctPassword, NEW_PASSWORD, NEW_PASSWORD);
         assertFlashMessageSuccess();
 
         // login using new password
-        testRealmAccountManagement.signOut();
-        testRealmLogin.form().login(testRealmUser.getUsername(), NEW_PASSWORD);
-        assertCurrentUrlStartsWith(testRealmAccountManagement);
+        testRealmAccountManagementPage.signOut();
+        testRealmLoginPage.form().login(testUser.getUsername(), NEW_PASSWORD);
+        assertCurrentUrlStartsWith(testRealmAccountManagementPage);
 
         // change password back
-        testRealmAccountManagement.password();
-        testRealmChangePassword.changePasswords(NEW_PASSWORD, correctPassword, correctPassword);
+        testRealmAccountManagementPage.password();
+        testRealmChangePasswordPage.changePasswords(NEW_PASSWORD, correctPassword, correctPassword);
         assertFlashMessageSuccess();
     }
 

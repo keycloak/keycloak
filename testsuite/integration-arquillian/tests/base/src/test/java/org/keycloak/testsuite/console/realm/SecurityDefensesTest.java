@@ -19,7 +19,6 @@ package org.keycloak.testsuite.console.realm;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.auth.page.account.Account;
@@ -40,46 +39,46 @@ import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 public class SecurityDefensesTest extends AbstractRealmTest {
 
     @Page
-    private SecurityDefenses securityDefenses;
+    private SecurityDefenses securityDefensesPage;
 
     @Page
-    private Account testRealmAccount;
+    private Account testRealmAccountPage;
 
     @Before
     public void beforeSecurityDefensesTest() {
         configure().realmSettings();
         tabs().securityDefenses();
-        testRealmAccount.setAuthRealm("test");
+        testRealmAccountPage.setAuthRealm("test");
     }
 
     @Test
     public void maxLoginFailuresTest() {
         int secondsToWait = 3;
 
-        securityDefenses.goToBruteForceDetection();
-        securityDefenses.bruteForceDetection().form().setProtectionEnabled(true);
-        securityDefenses.bruteForceDetection().form().setMaxLoginFailures("1");
-        securityDefenses.bruteForceDetection().form().setWaitIncrementSelect(SecurityDefenses.TimeSelectValues.SECONDS);
-        securityDefenses.bruteForceDetection().form().setWaitIncrementInput(String.valueOf(secondsToWait));
-        securityDefenses.bruteForceDetection().form().save();
+        securityDefensesPage.goToBruteForceDetection();
+        securityDefensesPage.bruteForceDetection().form().setProtectionEnabled(true);
+        securityDefensesPage.bruteForceDetection().form().setMaxLoginFailures("1");
+        securityDefensesPage.bruteForceDetection().form().setWaitIncrementSelect(SecurityDefenses.TimeSelectValues.SECONDS);
+        securityDefensesPage.bruteForceDetection().form().setWaitIncrementInput(String.valueOf(secondsToWait));
+        securityDefensesPage.bruteForceDetection().form().save();
         assertFlashMessageSuccess();
 
-        testRealmAccount.navigateTo();
+        testRealmAccountPage.navigateTo();
 
         UserRepresentation user = createUserRepresentation("test", "test@email.test", "test", "user", true);
         setPasswordFor(user, PASSWORD + "-mismatch");
 
-        testRealmLogin.form().login(user);
+        testRealmLoginPage.form().login(user);
         waitForFeedbackText("Invalid username or password.");
         Date startTime = new Date();
         Date endTime = new Date(startTime.getTime() + secondsToWait*1000);
 
-        testRealmLogin.form().login(user);
+        testRealmLoginPage.form().login(user);
         waitGui().until().element(By.className("instruction"))
                 .text().contains("Account is temporarily disabled, contact admin or try again later.");
         endTime = new Date(endTime.getTime() + secondsToWait*1000);
-        testRealmAccount.navigateTo();
-        testRealmLogin.form().login(user);
+        testRealmAccountPage.navigateTo();
+        testRealmLoginPage.form().login(user);
         endTime = new Date(endTime.getTime() + secondsToWait*1000);
 
         while(new Date().compareTo(endTime) < 0) {
@@ -90,7 +89,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
             }
         }
 
-        testRealmLogin.form().login(user);
+        testRealmLoginPage.form().login(user);
         waitForFeedbackText("Invalid username or password.");
     }
 
@@ -99,31 +98,31 @@ public class SecurityDefensesTest extends AbstractRealmTest {
     public void quickLoginCheck() {
         int secondsToWait = 3;
 
-        securityDefenses.goToBruteForceDetection();
-        securityDefenses.bruteForceDetection().form().setProtectionEnabled(true);
-        securityDefenses.bruteForceDetection().form().setMaxLoginFailures("100");
-        securityDefenses.bruteForceDetection().form().setQuickLoginCheckInput("1500");
-        securityDefenses.bruteForceDetection().form().setMinQuickLoginWaitSelect(SecurityDefenses.TimeSelectValues.SECONDS);
-        securityDefenses.bruteForceDetection().form().setMinQuickLoginWaitInput(String.valueOf(secondsToWait));
-        securityDefenses.bruteForceDetection().form().save();
+        securityDefensesPage.goToBruteForceDetection();
+        securityDefensesPage.bruteForceDetection().form().setProtectionEnabled(true);
+        securityDefensesPage.bruteForceDetection().form().setMaxLoginFailures("100");
+        securityDefensesPage.bruteForceDetection().form().setQuickLoginCheckInput("1500");
+        securityDefensesPage.bruteForceDetection().form().setMinQuickLoginWaitSelect(SecurityDefenses.TimeSelectValues.SECONDS);
+        securityDefensesPage.bruteForceDetection().form().setMinQuickLoginWaitInput(String.valueOf(secondsToWait));
+        securityDefensesPage.bruteForceDetection().form().save();
         assertFlashMessageSuccess();
 
-        testRealmAccount.navigateTo();
+        testRealmAccountPage.navigateTo();
 
         UserRepresentation user = createUserRepresentation("test", "test@email.test", "test", "user", true);
         setPasswordFor(user, PASSWORD + "-mismatch");
 
-        testRealmLogin.form().login(user);
-        testRealmLogin.form().login(user);
+        testRealmLoginPage.form().login(user);
+        testRealmLoginPage.form().login(user);
         Date startTime = new Date();
         Date endTime = new Date(startTime.getTime() + secondsToWait*1000);
-        testRealmLogin.form().login(user);
+        testRealmLoginPage.form().login(user);
         waitGui().until().element(By.className("instruction"))
                 .text().contains("Account is temporarily disabled, contact admin or try again later.");
         endTime = new Date(endTime.getTime() + secondsToWait*1000);
 
-        testRealmAccount.navigateTo();
-        testRealmLogin.form().login(user);
+        testRealmAccountPage.navigateTo();
+        testRealmLoginPage.form().login(user);
 
         while(new Date().compareTo(endTime) < 0) {
             try {
@@ -133,7 +132,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
             }
         }
 
-        testRealmLogin.form().login(user);
+        testRealmLoginPage.form().login(user);
         waitForFeedbackText("Invalid username or password.");
     }
 
@@ -141,27 +140,27 @@ public class SecurityDefensesTest extends AbstractRealmTest {
     public void maxWaitLoginFailures() {
         int secondsToWait = 5;
 
-        securityDefenses.goToBruteForceDetection();
-        securityDefenses.bruteForceDetection().form().setProtectionEnabled(true);
-        securityDefenses.bruteForceDetection().form().setMaxLoginFailures("1");
-        securityDefenses.bruteForceDetection().form().setMaxWaitSelect(SecurityDefenses.TimeSelectValues.SECONDS);
-        securityDefenses.bruteForceDetection().form().setMaxWaitInput(String.valueOf(secondsToWait));
-        securityDefenses.bruteForceDetection().form().save();
+        securityDefensesPage.goToBruteForceDetection();
+        securityDefensesPage.bruteForceDetection().form().setProtectionEnabled(true);
+        securityDefensesPage.bruteForceDetection().form().setMaxLoginFailures("1");
+        securityDefensesPage.bruteForceDetection().form().setMaxWaitSelect(SecurityDefenses.TimeSelectValues.SECONDS);
+        securityDefensesPage.bruteForceDetection().form().setMaxWaitInput(String.valueOf(secondsToWait));
+        securityDefensesPage.bruteForceDetection().form().save();
 
-        testRealmAccount.navigateTo();
+        testRealmAccountPage.navigateTo();
 
         UserRepresentation user = createUserRepresentation("test", "test@email.test", "test", "user", true);
         setPasswordFor(user, PASSWORD + "-mismatch");
 
-        testRealmLogin.form().login(user);
+        testRealmLoginPage.form().login(user);
         waitForFeedbackText("Invalid username or password.");
         Date startTime = new Date();
 
-        testRealmLogin.form().login(user);
+        testRealmLoginPage.form().login(user);
         waitGui().until().element(By.className("instruction"))
                 .text().contains("Account is temporarily disabled, contact admin or try again later.");
-        testRealmAccount.navigateTo();
-        testRealmLogin.form().login(user);
+        testRealmAccountPage.navigateTo();
+        testRealmLoginPage.form().login(user);
         Date endTime = new Date(new Date().getTime() + secondsToWait*1000);
         waitForFeedbackText("Account is temporarily disabled, contact admin or try again later.");
 
@@ -173,7 +172,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
             }
         }
 
-        testRealmLogin.form().login(user);
+        testRealmLoginPage.form().login(user);
         waitForFeedbackText("Invalid username or password.");
     }
 
@@ -181,20 +180,20 @@ public class SecurityDefensesTest extends AbstractRealmTest {
     public void failureResetTime() {
         int secondsToWait = 3;
 
-        securityDefenses.goToBruteForceDetection();
-        securityDefenses.bruteForceDetection().form().setProtectionEnabled(true);
-        securityDefenses.bruteForceDetection().form().setMaxLoginFailures("2");
-        securityDefenses.bruteForceDetection().form().setFailureResetTimeSelect(SecurityDefenses.TimeSelectValues.SECONDS);
-        securityDefenses.bruteForceDetection().form().setFailureResetTimeInput(String.valueOf(secondsToWait));
-        securityDefenses.bruteForceDetection().form().save();
+        securityDefensesPage.goToBruteForceDetection();
+        securityDefensesPage.bruteForceDetection().form().setProtectionEnabled(true);
+        securityDefensesPage.bruteForceDetection().form().setMaxLoginFailures("2");
+        securityDefensesPage.bruteForceDetection().form().setFailureResetTimeSelect(SecurityDefenses.TimeSelectValues.SECONDS);
+        securityDefensesPage.bruteForceDetection().form().setFailureResetTimeInput(String.valueOf(secondsToWait));
+        securityDefensesPage.bruteForceDetection().form().save();
         assertFlashMessageSuccess();
 
-        testRealmAccount.navigateTo();
+        testRealmAccountPage.navigateTo();
 
         UserRepresentation user = createUserRepresentation("test", "test@email.test", "test", "user", true);
         setPasswordFor(user, PASSWORD + "-mismatch");
 
-        testRealmLogin.form().login(user);
+        testRealmLoginPage.form().login(user);
         waitForFeedbackText("Invalid username or password.");
         Date endTime = new Date(new Date().getTime() + secondsToWait*1000);
 
@@ -206,9 +205,9 @@ public class SecurityDefensesTest extends AbstractRealmTest {
             }
         }
 
-        testRealmLogin.form().login(user);
+        testRealmLoginPage.form().login(user);
         waitForFeedbackText("Invalid username or password.");
-        testRealmLogin.form().login(user);
+        testRealmLoginPage.form().login(user);
         waitForFeedbackText("Invalid username or password.");
     }
 

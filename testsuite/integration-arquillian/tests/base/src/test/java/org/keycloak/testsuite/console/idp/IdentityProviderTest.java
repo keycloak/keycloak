@@ -32,18 +32,18 @@ import org.keycloak.testsuite.model.SocialProvider;
 public class IdentityProviderTest extends AbstractConsoleTest {
     
     @Page
-    private IdentityProviderSettings page;
+    private IdentityProviderSettings idpSettingsPage;
 
 //	@Test
     public void testAddNewProvider() {
-        page.addNewProvider(new Provider(SocialProvider.FACEBOOK, "klic", "secret"));
+        idpSettingsPage.addNewProvider(new Provider(SocialProvider.FACEBOOK, "klic", "secret"));
         flashMessage.waitUntilPresent();
         assertTrue("Success message should be displayed", flashMessage.isSuccess());
     }
 
 //	@Test(expected = NoSuchElementException.class)
     public void testDuplicitProvider() {
-        page.addNewProvider(new Provider(SocialProvider.FACEBOOK, "a", "b"));
+        idpSettingsPage.addNewProvider(new Provider(SocialProvider.FACEBOOK, "a", "b"));
     }
 
 //	@Test

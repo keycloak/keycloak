@@ -18,26 +18,26 @@ import org.keycloak.testsuite.console.page.users.User;
 public class ClientRolesTest extends AbstractClientTest {
 
     @Page
-    private ClientRoles clientRoles;
+    private ClientRoles clientRolesPage;
     @Page
-    private CreateClientRole createClientRole;
+    private CreateClientRole createClientRolePage;
     @Page
-    private ClientRole clientRole;
+    private ClientRole clientRolePage;
 
     @Page
-    private User user; // note: cannot call navigateTo() unless user id is set
+    private User userPage; // note: cannot call navigateTo() unless user id is set
 
     @Page
-    private UserRoleMappingsForm roleMappings;
+    private UserRoleMappingsForm userRolesPage;
 
     public void addClientRole(RoleRepresentation roleRep) {
 //        assertCurrentUrl(clientRoles);
-        clientRoles.roles().addRole();
+        clientRolesPage.roles().addRole();
 //        assertCurrentUrl(createClientRole); // can't do this, need client id to build uri
-        createClientRole.form().setBasicAttributes(roleRep);
-        createClientRole.form().save();
+        createClientRolePage.form().setBasicAttributes(roleRep);
+        createClientRolePage.form().save();
         assertFlashMessageSuccess();
-        createClientRole.form().setCompositeRoles(roleRep);
+        createClientRolePage.form().setCompositeRoles(roleRep);
         // TODO add verification of notification message when KEYCLOAK-1497 gets resolved
     }
 
@@ -49,19 +49,19 @@ public class ClientRolesTest extends AbstractClientTest {
         createClient(newClient);
         assertFlashMessageSuccess();
 
-        client.tabs().roles();
+        clientPage.tabs().roles();
         addClientRole(newRole);
         assertFlashMessageSuccess();
 
-        clientRole.backToClientRolesViaBreadcrumb();
-        assertFalse(clientRoles.roles().getRolesFromTableRows().isEmpty());
+        clientRolePage.backToClientRolesViaBreadcrumb();
+        assertFalse(clientRolesPage.roles().getRolesFromTableRows().isEmpty());
 
         configure().clients();
-        clients.table().search(newClient.getClientId());
-        clients.table().deleteClient(newClient.getClientId());
+        clientsPage.table().search(newClient.getClientId());
+        clientsPage.table().deleteClient(newClient.getClientId());
         modalDialog.confirmDeletion();
         assertFlashMessageSuccess();
-        assertNull(clients.table().findClient(newClient.getClientId()));
+        assertNull(clientsPage.table().findClient(newClient.getClientId()));
     }
 
 //    @Test

@@ -38,14 +38,14 @@ import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 public class RegistrationTest extends AbstractAccountManagementTest {
 
     @Page
-    private Registration testRealmRegistration;
+    private Registration testRealmRegistrationPage;
 
     private UserRepresentation newUser;
 
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmRegistration.setAuthRealm(testRealm);
+        testRealmRegistrationPage.setAuthRealm(testRealmPage);
     }
 
     @Before
@@ -58,8 +58,8 @@ public class RegistrationTest extends AbstractAccountManagementTest {
         newUser = createUserRepresentation("new_user", "new_user@email.test", "new", "user", true);
         setPasswordFor(newUser, PASSWORD);
 
-        testRealmAccountManagement.navigateTo();
-        testRealmLogin.form().register();
+        testRealmAccountManagementPage.navigateTo();
+        testRealmLoginPage.form().register();
     }
 
     public void assertUserExistsWithAdminClient(UserRepresentation user) {
@@ -71,21 +71,21 @@ public class RegistrationTest extends AbstractAccountManagementTest {
     }
 
     public void assertMessageAttributeMissing(String attributeName) {
-        assertTrue(testRealmRegistration.getFeedbackText()
+        assertTrue(testRealmRegistrationPage.getFeedbackText()
                 .contains("Please specify " + attributeName + "."));
     }
 
     @Test
     public void successfulRegistration() {
-        testRealmRegistration.register(newUser);
+        testRealmRegistrationPage.register(newUser);
         assertUserExistsWithAdminClient(newUser);
     }
 
     @Test
     public void invalidEmail() {
         newUser.setEmail("invalid.email.value");
-        testRealmRegistration.register(newUser);
-        assertTrue(testRealmRegistration.getFeedbackText()
+        testRealmRegistrationPage.register(newUser);
+        assertTrue(testRealmRegistrationPage.getFeedbackText()
                 .equals("Invalid email address."));
         assertUserDoesntExistWithAdminClient(newUser);
     }
@@ -94,38 +94,38 @@ public class RegistrationTest extends AbstractAccountManagementTest {
     public void emptyAttributes() {
         UserRepresentation newUserEmpty = new UserRepresentation(); // empty user attributes
 
-        testRealmRegistration.register(newUserEmpty);
+        testRealmRegistrationPage.register(newUserEmpty);
         assertMessageAttributeMissing("username");
 
         newUserEmpty.setUsername(newUser.getUsername());
-        testRealmRegistration.register(newUserEmpty);
+        testRealmRegistrationPage.register(newUserEmpty);
         assertMessageAttributeMissing("first name");
 
         newUserEmpty.setFirstName(newUser.getFirstName());
-        testRealmRegistration.register(newUserEmpty);
+        testRealmRegistrationPage.register(newUserEmpty);
         assertMessageAttributeMissing("last name");
 
         newUserEmpty.setLastName(newUser.getLastName());
-        testRealmRegistration.register(newUserEmpty);
+        testRealmRegistrationPage.register(newUserEmpty);
         assertMessageAttributeMissing("email");
 
         newUserEmpty.setEmail(newUser.getEmail());
-        testRealmRegistration.register(newUserEmpty);
+        testRealmRegistrationPage.register(newUserEmpty);
         assertMessageAttributeMissing("password");
 
         setPasswordFor(newUserEmpty, getPasswordOf(newUser));
-        testRealmRegistration.register(newUser);
+        testRealmRegistrationPage.register(newUser);
         assertUserExistsWithAdminClient(newUserEmpty);
     }
 
     @Test
     public void notMatchingPasswords() {
-        testRealmRegistration.setValues(newUser, "not-matching-password");
-        testRealmRegistration.submit();
-        assertTrue(testRealmRegistration.getFeedbackText()
+        testRealmRegistrationPage.setValues(newUser, "not-matching-password");
+        testRealmRegistrationPage.submit();
+        assertTrue(testRealmRegistrationPage.getFeedbackText()
                 .equals("Password confirmation doesn't match."));
 
-        testRealmRegistration.register(newUser);
+        testRealmRegistrationPage.register(newUser);
         assertUserExistsWithAdminClient(newUser);
     }
 

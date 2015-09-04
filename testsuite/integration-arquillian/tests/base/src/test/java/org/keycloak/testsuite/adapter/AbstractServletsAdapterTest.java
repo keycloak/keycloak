@@ -39,7 +39,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealm.setAuthRealm(DEMO);
+        testRealmPage.setAuthRealm(DEMO);
     }
 
 }

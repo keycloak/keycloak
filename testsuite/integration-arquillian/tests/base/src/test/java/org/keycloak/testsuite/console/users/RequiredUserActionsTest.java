@@ -16,7 +16,6 @@ import static org.keycloak.testsuite.model.RequiredUserAction.UPDATE_PASSWORD;
 import static org.keycloak.testsuite.model.RequiredUserAction.UPDATE_PROFILE;
 import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 
-import org.keycloak.testsuite.util.SeleniumUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -29,19 +28,19 @@ import org.openqa.selenium.support.FindBy;
 public class RequiredUserActionsTest extends AbstractUserTest {
 
     @Page
-    private UserAttributes userAttributes;
+    private UserAttributes userAttributesPage;
 
     @Page
-    private Account testRealmAccount;
+    private Account testRealmAccountPage;
 
     @Page
-    private UpdateAccount testRealmUpdateAccount;
+    private UpdateAccount testRealmUpdateAccountPage;
 
     @Page
-    private UpdatePassword testRealmUpdatePassword;
+    private UpdatePassword testRealmUpdatePasswordPage;
 
     @Page
-    private RequiredActions requiredActions;
+    private RequiredActions requiredActionsPage;
 
     @FindBy(css = "kc-feedback-text")
     protected WebElement feedbackText;
@@ -54,87 +53,87 @@ public class RequiredUserActionsTest extends AbstractUserTest {
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmAccount.setAuthRealm(testRealm);
-        testRealmUpdateAccount.setAuthRealm(testRealm);
-        testRealmUpdatePassword.setAuthRealm(testRealm);
+        testRealmAccountPage.setAuthRealm(testRealmPage);
+        testRealmUpdateAccountPage.setAuthRealm(testRealmPage);
+        testRealmUpdatePasswordPage.setAuthRealm(testRealmPage);
     }
 
     @Before
     public void beforeRequiredActionsTest() {
-        users.table().viewAllUsers();
-        users.table().clickUser(testRealmUser.getUsername());
+        usersPage.table().viewAllUsers();
+        usersPage.table().clickUser(testUser.getUsername());
     }
 
     @Test
     public void updatePassword() {
-        userAttributes.form().addRequiredAction(UPDATE_PASSWORD.getActionName());
-        userAttributes.form().save();
+        userAttributesPage.form().addRequiredAction(UPDATE_PASSWORD.getActionName());
+        userAttributesPage.form().save();
         assertFlashMessageSuccess();
 
-        testRealmAccount.navigateTo();
+        testRealmAccountPage.navigateTo();
 
-        testRealmLogin.form().login(testRealmUser);
+        testRealmLoginPage.form().login(testUser);
         waitForFeedbackText("You need to change your password to activate your account.");
 
-        testRealmUpdatePassword.updatePasswords(null, null);
+        testRealmUpdatePasswordPage.updatePasswords(null, null);
         waitForFeedbackText("Please specify password.");
 
-        testRealmUpdatePassword.updatePasswords(PASSWORD, null);
+        testRealmUpdatePasswordPage.updatePasswords(PASSWORD, null);
         waitForFeedbackText("Passwords don't match.");
 
-        testRealmUpdatePassword.updatePasswords(PASSWORD, PASSWORD + "-mismatch");
+        testRealmUpdatePasswordPage.updatePasswords(PASSWORD, PASSWORD + "-mismatch");
         waitForFeedbackText("Passwords don't match.");
 
-        testRealmUpdatePassword.updatePasswords(PASSWORD, PASSWORD);
-        assertCurrentUrlStartsWith(testRealmAccount);
+        testRealmUpdatePasswordPage.updatePasswords(PASSWORD, PASSWORD);
+        assertCurrentUrlStartsWith(testRealmAccountPage);
     }
 
     @Test
     public void updateProfile() {
-        userAttributes.form().addRequiredAction(UPDATE_PROFILE.getActionName());
-        userAttributes.form().save();
+        userAttributesPage.form().addRequiredAction(UPDATE_PROFILE.getActionName());
+        userAttributesPage.form().save();
         assertFlashMessageSuccess();
 
-        testRealmAccount.navigateTo();
+        testRealmAccountPage.navigateTo();
 
-        testRealmLogin.form().login(testRealmUser);
+        testRealmLoginPage.form().login(testUser);
         waitForFeedbackText("You need to update your user profile to activate your account.");
 
-        testRealmUser.setEmail(null);
-        testRealmUser.setFirstName(null);
-        testRealmUser.setLastName(null);
-        testRealmUpdateAccount.updateAccount(testRealmUser);
+        testUser.setEmail(null);
+        testUser.setFirstName(null);
+        testUser.setLastName(null);
+        testRealmUpdateAccountPage.updateAccount(testUser);
         waitForFeedbackText("Please specify email.");
 
-        testRealmUser.setEmail("test@email.test");
-        testRealmUpdateAccount.updateAccount(testRealmUser);
+        testUser.setEmail("test@email.test");
+        testRealmUpdateAccountPage.updateAccount(testUser);
         waitForFeedbackText("Please specify first name.");
 
-        testRealmUser.setFirstName("test");
-        testRealmUpdateAccount.updateAccount(testRealmUser);
+        testUser.setFirstName("test");
+        testRealmUpdateAccountPage.updateAccount(testUser);
         waitForFeedbackText("Please specify last name.");
 
-        testRealmUser.setLastName("user");
-        testRealmUpdateAccount.updateAccount(testRealmUser);
-        assertCurrentUrlStartsWith(testRealmAccount);
+        testUser.setLastName("user");
+        testRealmUpdateAccountPage.updateAccount(testUser);
+        assertCurrentUrlStartsWith(testRealmAccountPage);
     }
 
     @Test
     public void termsAndConditions() {
-        requiredActions.navigateTo();
-        requiredActions.clickTermsAndConditionEnabled();
+        requiredActionsPage.navigateTo();
+        requiredActionsPage.clickTermsAndConditionEnabled();
 
         manage().users();
-        users.table().viewAllUsers();
-        users.table().clickUser(testRealmUser.getUsername());
+        usersPage.table().viewAllUsers();
+        usersPage.table().clickUser(testUser.getUsername());
 
-        userAttributes.form().addRequiredAction(TERMS_AND_CONDITIONS.getActionName());
-        userAttributes.form().save();
+        userAttributesPage.form().addRequiredAction(TERMS_AND_CONDITIONS.getActionName());
+        userAttributesPage.form().save();
         assertFlashMessageSuccess();
 
-        testRealmAccount.navigateTo();
+        testRealmAccountPage.navigateTo();
 
-        testRealmLogin.form().login(testRealmUser);
+        testRealmLoginPage.form().login(testUser);
 
         driver.findElement(By.xpath("//div[@id='kc-header-wrapper' and text()[contains(.,'Terms and Conditions')]]"));
     }

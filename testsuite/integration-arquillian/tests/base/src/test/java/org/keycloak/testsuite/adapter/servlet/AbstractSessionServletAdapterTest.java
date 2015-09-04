@@ -34,7 +34,7 @@ import org.openqa.selenium.WebDriver;
 public abstract class AbstractSessionServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Page
-    private SessionPortal sessionPortal;
+    private SessionPortal sessionPortalPage;
 
     @Page
     private Sessions testRealmSessions;
@@ -52,7 +52,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
 
     @After
     public void afterSessionServletAdapterTest() {
-        sessionPortal.navigateTo();
+        sessionPortalPage.navigateTo();
         driver.manage().deleteAllCookies();
     }
 
@@ -64,40 +64,40 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
     @Test
     public void testSingleSessionInvalidated() {
 
-        loginAndCheckSession(driver, testRealmLogin);
+        loginAndCheckSession(driver, testRealmLoginPage);
 
         // cannot pass to loginAndCheckSession becayse loginPage is not working together with driver2, therefore copypasta
-        driver2.navigate().to(sessionPortal.toString());
-        assertCurrentUrlStartsWithLoginUrlOf(driver2, testRealm);
+        driver2.navigate().to(sessionPortalPage.toString());
+        assertCurrentUrlStartsWithLoginUrlOf(driver2, testRealmPage);
         driver2.findElement(By.id("username")).sendKeys("bburke@redhat.com");
         driver2.findElement(By.id("password")).sendKeys("password");
         driver2.findElement(By.id("password")).submit();
-        assertCurrentUrl(driver2, sessionPortal.toString());
+        assertCurrentUrl(driver2, sessionPortalPage.toString());
         String pageSource = driver2.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));
         // Counter increased now
-        driver2.navigate().to(sessionPortal.toString());
+        driver2.navigate().to(sessionPortalPage.toString());
         pageSource = driver2.getPageSource();
         assertTrue(pageSource.contains("Counter=2"));
 
         // Logout in browser1
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
-                .queryParam(OAuth2Constants.REDIRECT_URI, sessionPortal.toString()).build("demo").toString();
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
+                .queryParam(OAuth2Constants.REDIRECT_URI, sessionPortalPage.toString()).build("demo").toString();
         driver.navigate().to(logoutUri);
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
         // Assert that I am logged out in browser1
-        sessionPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        sessionPortalPage.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
         // Assert that I am still logged in browser2 and same session is still preserved
-        driver2.navigate().to(sessionPortal.toString());
-        assertCurrentUrl(driver2, sessionPortal.toString());
+        driver2.navigate().to(sessionPortalPage.toString());
+        assertCurrentUrl(driver2, sessionPortalPage.toString());
         pageSource = driver2.getPageSource();
         assertTrue(pageSource.contains("Counter=3"));
 
         driver2.navigate().to(logoutUri);
-        assertCurrentUrlStartsWithLoginUrlOf(driver2, testRealm);
+        assertCurrentUrlStartsWithLoginUrlOf(driver2, testRealmPage);
 
     }
 
@@ -118,22 +118,22 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         testRealmResource().update(testRealmRep);
 
         // Login
-        loginAndCheckSession(driver, testRealmLogin);
+        loginAndCheckSession(driver, testRealmLoginPage);
 
         // Logout
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
-                .queryParam(OAuth2Constants.REDIRECT_URI, sessionPortal.toString()).build("demo").toString();
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
+                .queryParam(OAuth2Constants.REDIRECT_URI, sessionPortalPage.toString()).build("demo").toString();
         driver.navigate().to(logoutUri);
 
         // Assert that http session was invalidated
-        sessionPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
-        testRealmLogin.form().login("bburke@redhat.com", "password");
-        assertEquals(driver.getCurrentUrl(), sessionPortal.toString());
+        sessionPortalPage.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertEquals(driver.getCurrentUrl(), sessionPortalPage.toString());
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));
 
-        sessionPortalRes.toRepresentation().setAdminUrl(sessionPortal.toString());
+        sessionPortalRes.toRepresentation().setAdminUrl(sessionPortalPage.toString());
         testRealmRep.setAccessCodeLifespan(origTokenLifespan);
         testRealmResource().update(testRealmRep);
     }
@@ -142,17 +142,17 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
     @Jira("KEYCLOAK-942")
     public void testAdminApplicationLogout() {
         // login as bburke
-        loginAndCheckSession(driver, testRealmLogin);
+        loginAndCheckSession(driver, testRealmLoginPage);
         // logout mposolda with admin client
         findClientResourceByClientId(testRealmResource(), "session-portal")
                 .logoutUser("mposolda");
         // bburke should be still logged with original httpSession in our browser window
-        sessionPortal.navigateTo();
-        assertEquals(driver.getCurrentUrl(), sessionPortal.toString());
+        sessionPortalPage.navigateTo();
+        assertEquals(driver.getCurrentUrl(), sessionPortalPage.toString());
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=3"));
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServer.createUriBuilder())
-                .queryParam(OAuth2Constants.REDIRECT_URI, sessionPortal.toString()).build("demo").toString();
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
+                .queryParam(OAuth2Constants.REDIRECT_URI, sessionPortalPage.toString()).build("demo").toString();
         driver.navigate().to(logoutUri);
     }
 
@@ -160,23 +160,23 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
     @Jira("KEYCLOAK-1216, KEYCLOAK-1485")
     public void testAccountManagementSessionsLogout() {
         // login as bburke
-        loginAndCheckSession(driver, testRealmLogin);
+        loginAndCheckSession(driver, testRealmLoginPage);
         testRealmSessions.navigateTo();
         testRealmSessions.logoutAll();
         // Assert I need to login again (logout was propagated to the app)
-        loginAndCheckSession(driver, testRealmLogin);
+        loginAndCheckSession(driver, testRealmLoginPage);
     }
 
     private void loginAndCheckSession(WebDriver driver, Login login) {
-        sessionPortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealm);
+        sessionPortalPage.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         login.form().login("bburke@redhat.com", "password");
-        assertEquals(driver.getCurrentUrl(), sessionPortal.toString());
+        assertEquals(driver.getCurrentUrl(), sessionPortalPage.toString());
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));
 
         // Counter increased now
-        sessionPortal.navigateTo();
+        sessionPortalPage.navigateTo();
         pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=2"));
     }

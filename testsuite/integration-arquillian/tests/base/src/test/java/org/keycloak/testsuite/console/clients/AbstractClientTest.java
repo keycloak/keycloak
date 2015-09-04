@@ -20,11 +20,11 @@ import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
 public abstract class AbstractClientTest extends AbstractConsoleTest {
 
     @Page
-    protected Clients clients;
+    protected Clients clientsPage;
     @Page
-    protected Client client; // note: cannot call navigateTo() unless client id is set
+    protected Client clientPage; // note: cannot call navigateTo() unless client id is set
     @Page
-    protected CreateClient createClient;
+    protected CreateClient createClientPage;
 
     @Before
     public void beforeClientTest() {
@@ -32,22 +32,22 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
     }
 
     public void createClient(ClientRepresentation client) {
-        assertCurrentUrl(clients);
-        clients.table().createClient();
-        createClient.form().setValues(client);
-        createClient.form().save();
+        assertCurrentUrl(clientsPage);
+        clientsPage.table().createClient();
+        createClientPage.form().setValues(client);
+        createClientPage.form().save();
     }
 
     public void deleteClientViaTable(String clientId) {
-        assertCurrentUrl(clients);
-        clients.deleteClient(clientId);
+        assertCurrentUrl(clientsPage);
+        clientsPage.deleteClient(clientId);
     }
 
     public void deleteClientViaPage(String clientId) {
-        assertCurrentUrl(clients);
-        clients.table().search(clientId);
-        clients.table().clickClient(clientId);
-        client.delete();
+        assertCurrentUrl(clientsPage);
+        clientsPage.table().search(clientId);
+        clientsPage.table().clickClient(clientId);
+        clientPage.delete();
     }
 
     public static ClientRepresentation createClientRepresentation(String clientId, String... redirectUris) {

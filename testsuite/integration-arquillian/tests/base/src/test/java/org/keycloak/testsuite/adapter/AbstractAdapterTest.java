@@ -23,7 +23,7 @@ import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
 public abstract class AbstractAdapterTest extends AbstractAuthTest {
 
     @Page
-    protected AppServerContextRoot appServerContextRoot;
+    protected AppServerContextRoot appServerContextRootPage;
 
     public static final String JBOSS_DEPLOYMENT_STRUCTURE_XML = "jboss-deployment-structure.xml";
     public static final URL jbossDeploymentStructure = AbstractServletsAdapterTest.class
@@ -42,12 +42,12 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
             modifyClientUrls(tr, "http://localhost:8080", "");
 
             if (isRelative()) {
-                modifyClientRedirectUris(tr, appServerContextRoot.toString(), "");
-                modifyClientUrls(tr, appServerContextRoot.toString(), "");
+                modifyClientRedirectUris(tr, appServerContextRootPage.toString(), "");
+                modifyClientUrls(tr, appServerContextRootPage.toString(), "");
                 modifyClientWebOrigins(tr, "8080", System.getProperty("auth.server.http.port", null));
             } else {
-                modifyClientRedirectUris(tr, "^(/.*/\\*)", appServerContextRoot.toString() + "$1");
-                modifyClientUrls(tr, "^(/.*)", appServerContextRoot.toString() + "$1");
+                modifyClientRedirectUris(tr, "^(/.*/\\*)", appServerContextRootPage.toString() + "$1");
+                modifyClientUrls(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
             }
         }
     }

@@ -13,13 +13,13 @@ import org.keycloak.testsuite.auth.page.account.AccountManagement;
 public abstract class AbstractAccountManagementTest extends AbstractAuthTest {
 
     @Page
-    protected AccountManagement testRealmAccountManagement;
+    protected AccountManagement testRealmAccountManagementPage;
 
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealm.setAuthRealm(TEST);
-        testRealmAccountManagement.setAuthRealm(testRealm);
+        testRealmPage.setAuthRealm(TEST);
+        testRealmAccountManagementPage.setAuthRealm(TEST);
     }
 
     @Before
