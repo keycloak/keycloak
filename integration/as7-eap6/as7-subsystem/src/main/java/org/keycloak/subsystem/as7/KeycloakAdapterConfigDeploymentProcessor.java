@@ -67,7 +67,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         // if secure-deployment configuration exists for web app, we force KEYCLOAK auth method on it
         // otherwise we only set up KEYCLOAK auth if it's requested through web.xml auth-method
         LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
-        if (!service.isSecureDeployment(deploymentName) && (loginConfig == null || !loginConfig.getAuthMethod().equalsIgnoreCase("KEYCLOAK"))) {
+        if (!service.isSecureDeployment(deploymentName) || loginConfig == null || !loginConfig.getAuthMethod().equalsIgnoreCase("KEYCLOAK")) {
             return;
         }
 
