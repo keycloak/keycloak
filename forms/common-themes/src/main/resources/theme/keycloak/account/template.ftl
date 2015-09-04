@@ -44,8 +44,8 @@
             <div class="collapse navbar-collapse navbar-collapse-1">
             <ul class="nav navbar-nav navbar-utility">
                 <#if realm.internationalizationEnabled>
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">${locale.current}</a>
+                    <li class="dropdown" id="kc-locale-dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="kc-current-locale-link">${locale.current}</a>
                         <ul class="dropdown-menu">
                             <#list locale.supported as l>
                                 <li><a href="${l.url}">${l.label}</a></li>
@@ -65,7 +65,7 @@
                             ${account.lastName?capitalize?html}
                         </#if>
                     <#else>
-                        ${(account.username!'')?capitalize?html}
+                        ${(account.userName!'')?capitalize?html}
                     </#if>
                   <b class="caret"></b>
                 </a>
@@ -77,7 +77,7 @@
             <ul class="nav navbar-nav navbar-primary">
               <li>
                 <#if referrer?has_content && referrer.url?has_content>
-                <a href="${referrer.url}">Home</a>
+                <a href="${referrer.url}" id="referrer">Home</a>
                 <#else>
                 <a href="#">Home</a>
                 </#if>

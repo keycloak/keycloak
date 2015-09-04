@@ -66,7 +66,7 @@
         <!--<github.relaxng.version>2011.1</github.relaxng.version>-->
         <freemarker.version>2.3.23.redhat-1</freemarker.version>
         <twitter4j.version>4.0.4.redhat-1</twitter4j.version>
-        <selenium.version>2.35.0</selenium.version>
+        <selenium.version>2.36.0</selenium.version>
         <!--<sun.istack.version>2.21</sun.istack.version>-->
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <!--<sun.xsom.version>20140925</sun.xsom.version>
