@@ -9,6 +9,12 @@
     <listener>
         <listener-class>org.keycloak.example.oauth.Bootstrap</listener-class>
     </listener>
+
+    <error-page>
+        <exception-type>java.lang.RuntimeException</exception-type>
+        <location>/error.jsp</location>
+    </error-page>
+
     <!--
     <security-constraint>
         <web-resource-collection>
