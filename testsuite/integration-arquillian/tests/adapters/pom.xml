@@ -18,6 +18,7 @@
         <app.server.management.port>10190</app.server.management.port>
         <app.server.management.port.jmx>10199</app.server.management.port.jmx>
         <adapter.test.props>-Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</adapter.test.props>
+        <exclude.adapters>-</exclude.adapters>
     </properties>
     
     <build>
@@ -91,6 +92,9 @@
                             <adapter.config.mode>provided</adapter.config.mode>
                             
                         </systemPropertyVariables>
+                        <excludes>
+                            <exclude>${exclude.adapters}</exclude>
+                        </excludes>
                     </configuration>
                 </plugin>
             </plugins>
@@ -330,6 +334,13 @@
             <modules>
                 <module>karaf</module>
             </modules>
+        </profile>
+        <profile>
+            <id>no-adapter-tests</id>
+            <properties>
+                <!-- Exclude all adapters tests. -->
+                <exclude.adapters>**/adapter/**/*Test.java</exclude.adapters>
+            </properties>
         </profile>
         
     </profiles>
