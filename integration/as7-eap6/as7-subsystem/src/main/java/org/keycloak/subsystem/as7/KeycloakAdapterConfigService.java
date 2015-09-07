@@ -85,7 +85,19 @@ public final class KeycloakAdapterConfigService {
         }
 
         String credentialName = credentialNameFromOp(operation);
-        credentials.get(credentialName).set(model.get("value").asString());
+        if (!credentialName.contains(".")) {
+            credentials.get(credentialName).set(model.get("value").asString());
+        } else {
+            String[] parts = credentialName.split("\\.");
+            String provider = parts[0];
+            String property = parts[1];
+            ModelNode credential = credentials.get(provider);
+            if (!credential.isDefined()) {
+                credential = new ModelNode();
+            }
+            credential.get(property).set(model.get("value").asString());
+            credentials.set(provider, credential);
+        }
 
         ModelNode deployment = this.secureDeployments.get(deploymentNameFromOp(operation));
         deployment.get(CREDENTIALS_JSON_NAME).set(credentials);

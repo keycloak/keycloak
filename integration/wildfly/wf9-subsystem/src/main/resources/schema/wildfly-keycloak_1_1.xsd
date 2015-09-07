@@ -95,11 +95,10 @@
         </xs:attribute>
     </xs:complexType>
     
-    <xs:complexType name="credential-type">
-        <xs:simpleContent>
-            <xs:extension base="xs:string">
-                <xs:attribute name="name" type="xs:string" />
-            </xs:extension>
-        </xs:simpleContent>
+    <xs:complexType name="credential-type" mixed="true">
+        <xs:sequence maxOccurs="unbounded" minOccurs="0">
+            <xs:any processContents="lax"></xs:any>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required" />
     </xs:complexType>
 </xs:schema>
