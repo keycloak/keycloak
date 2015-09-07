@@ -1,5 +1,6 @@
 package org.keycloak.protocol.saml;
 
+import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.w3c.dom.Document;

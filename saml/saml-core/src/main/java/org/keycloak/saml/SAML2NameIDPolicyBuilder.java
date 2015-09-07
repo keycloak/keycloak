@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.saml;
+package org.keycloak.saml;
 
 import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
 

@@ -1,4 +1,4 @@
-package org.keycloak.protocol.saml;
+package org.keycloak.saml;
 
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;

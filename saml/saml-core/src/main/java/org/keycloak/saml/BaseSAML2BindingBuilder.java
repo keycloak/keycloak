@@ -1,4 +1,4 @@
-package org.keycloak.protocol.saml;
+package org.keycloak.saml;
 
 import org.jboss.logging.Logger;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -177,7 +177,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
 
 
-    private String getSAMLNSPrefix(Document samlResponseDocument) {
+    public String getSAMLNSPrefix(Document samlResponseDocument) {
         Node assertionElement = samlResponseDocument.getDocumentElement()
                 .getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ASSERTION.get()).item(0);
 
@@ -188,14 +188,14 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         return assertionElement.getPrefix();
     }
 
-    protected void encryptDocument(Document samlDocument) throws ProcessingException {
+    public void encryptDocument(Document samlDocument) throws ProcessingException {
         String samlNSPrefix = getSAMLNSPrefix(samlDocument);
 
         try {
             QName encryptedAssertionElementQName = new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
                     JBossSAMLConstants.ENCRYPTED_ASSERTION.get(), samlNSPrefix);
 
-            byte[] secret = SamlProtocolUtils.createRandomSecret(encryptionKeySize / 8);
+            byte[] secret = RandomSecret.createRandomSecret(encryptionKeySize / 8);
             SecretKey secretKey = new SecretKeySpec(secret, encryptionAlgorithm);
 
             // encrypt the Assertion element and replace it with a EncryptedAssertion element.
@@ -208,7 +208,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
     }
 
-    protected void signDocument(Document samlDocument) throws ProcessingException {
+    public void signDocument(Document samlDocument) throws ProcessingException {
         String signatureMethod = signatureAlgorithm.getXmlSignatureMethod();
         String signatureDigestMethod = signatureAlgorithm.getXmlSignatureDigestMethod();
         SAML2Signature samlSignature = new SAML2Signature();
@@ -232,7 +232,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         samlSignature.signSAMLDocument(samlDocument, signingKeyPair, canonicalizationMethodType);
     }
 
-    protected void signAssertion(Document samlDocument) throws ProcessingException {
+    public void signAssertion(Document samlDocument) throws ProcessingException {
         Element originalAssertionElement = org.keycloak.saml.common.util.DocumentUtil.getChildElement(samlDocument.getDocumentElement(), new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ASSERTION.get()));
         if (originalAssertionElement == null) return;
         Node clonedAssertionElement = originalAssertionElement.cloneNode(true);
@@ -257,14 +257,14 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
     }
 
 
-    protected String buildHtmlPostResponse(Document responseDoc, String actionUrl, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
+    public String buildHtmlPostResponse(Document responseDoc, String actionUrl, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
         byte[] responseBytes = org.keycloak.saml.common.util.DocumentUtil.getDocumentAsString(responseDoc).getBytes("UTF-8");
         String samlResponse = PostBindingUtil.base64Encode(new String(responseBytes));
 
         return buildHtml(samlResponse, actionUrl, asRequest);
     }
 
-    protected String buildHtml(String samlResponse, String actionUrl, boolean asRequest) {
+    public String buildHtml(String samlResponse, String actionUrl, boolean asRequest) {
         StringBuilder builder = new StringBuilder();
 
         String key = GeneralConstants.SAML_RESPONSE_KEY;
@@ -297,7 +297,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         return builder.toString();
     }
 
-    protected String base64Encoded(Document document) throws ConfigurationException, ProcessingException, IOException  {
+    public String base64Encoded(Document document) throws ConfigurationException, ProcessingException, IOException  {
         String documentAsString = DocumentUtil.getDocumentAsString(document);
         logger.debugv("saml docment: {0}", documentAsString);
         byte[] responseBytes = documentAsString.getBytes("UTF-8");
@@ -306,7 +306,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
     }
 
 
-    protected URI generateRedirectUri(String samlParameterName, String redirectUri, Document document) throws ConfigurationException, ProcessingException, IOException {
+    public URI generateRedirectUri(String samlParameterName, String redirectUri, Document document) throws ConfigurationException, ProcessingException, IOException {
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(redirectUri)
                 .replaceQuery(null)
                 .queryParam(samlParameterName, base64Encoded(document));

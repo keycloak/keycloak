@@ -1,4 +1,4 @@
-package org.keycloak.protocol.saml;
+package org.keycloak.saml;
 
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;

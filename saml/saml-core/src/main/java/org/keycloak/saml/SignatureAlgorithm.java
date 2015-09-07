@@ -1,4 +1,4 @@
-package org.keycloak.protocol.saml;
+package org.keycloak.saml;
 
 import java.security.Signature;
 import java.util.HashMap;
