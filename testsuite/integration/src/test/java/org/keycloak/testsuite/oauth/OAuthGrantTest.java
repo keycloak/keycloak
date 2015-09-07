@@ -49,6 +49,7 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import java.io.IOException;
@@ -130,10 +131,15 @@ public class OAuthGrantTest {
         events.expectCodeToToken(codeId, loginEvent.getSessionId()).client("third-party").assertEvent();
 
         accountAppsPage.open();
+
+        assertEquals(1, driver.findElements(By.id("revoke-third-party")).size());
+
         accountAppsPage.revokeGrant("third-party");
 
         events.expect(EventType.REVOKE_GRANT)
                 .client("account").detail(Details.REVOKED_CLIENT, "third-party").assertEvent();
+
+        assertEquals(0, driver.findElements(By.id("revoke-third-party")).size());
     }
 
     @Test
