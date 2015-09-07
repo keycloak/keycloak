@@ -66,7 +66,7 @@
                             ${account.lastName?capitalize?html}
                         </#if>
                     <#else>
-                        ${(account.userName!'')?capitalize?html}
+                        ${(account.username!'')?capitalize?html}
                     </#if>
                   <b class="caret"></b>
                 </a>
