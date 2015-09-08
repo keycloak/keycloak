@@ -7,6 +7,27 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $
     $scope.resourceUrl = resourceUrl;
     $scope.auth = Auth;
     $scope.serverInfo = ServerInfo.get();
+    
+    $scope.menuGoHome = function() {
+    	$scope.homeClass = 'active';
+    	$scope.serverInfoClass = '';
+    	$location.url('/');    	
+    }
+    
+    $scope.menuGoServerInfo = function() {
+    	$scope.homeClass = '';
+    	$scope.serverInfoClass = 'active';
+    	$location.url('/server-info');    	
+    }
+    
+    if($location.path().indexOf('server-info') === -1) {
+		$scope.homeClass = 'active';
+    	$scope.serverInfoClass = '';
+	}
+    else {
+    	$scope.homeClass = '';
+    	$scope.serverInfoClass = 'active';
+    }
 
     function hasAnyAccess() {
         var realmAccess = Auth.user && Auth.user['realm_access'];
