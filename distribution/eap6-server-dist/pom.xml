@@ -27,7 +27,7 @@
     </dependencies>
 
     <build>
-        <finalName>keycloak-${project.version}</finalName>
+        <finalName>keycloak-eap6-${project.version}</finalName>
 
         <plugins>
             <plugin>
