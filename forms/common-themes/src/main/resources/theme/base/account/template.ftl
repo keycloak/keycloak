@@ -36,7 +36,7 @@
             <#if referrer?has_content && referrer.url?has_content>
                 <a class="navbar-brand" href="${referrer.url}">
             <#else>
-                <a class="navbar-brand" href="#">
+                <a class="navbar-brand" href="/auth/admin">
             </#if>
               <span>RED HAT&reg; JBOSS&reg; IDENTITY AND ACCESS MANAGEMENT</span>
             <!--  <img src="${url.resourcesPath}/img/brand.svg" alt="Red Hat&reg; JBoss&reg; Identity and Access Management" />-->
@@ -80,7 +80,7 @@
                 <#if referrer?has_content && referrer.url?has_content>
                 <a href="${referrer.url}" id="referrer">Home</a>
                 <#else>
-                <a href="#">Home</a>
+                <a href="/auth/admin">Home</a>
                 </#if>
               </li>
             </ul>
