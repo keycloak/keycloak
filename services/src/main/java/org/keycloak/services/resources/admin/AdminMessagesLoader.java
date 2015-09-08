@@ -22,11 +22,13 @@ import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import org.keycloak.freemarker.Theme;
 
 /**
- * Simple loader for message bundles consumed by angular-translate.
+ * Simple loader and cache for message bundles consumed by angular-translate.
  *
  * Note that these bundles are converted to JSON before being shipped to the UI.
  * Also, the content should be formatted such that it can be interpolated by
@@ -35,59 +37,18 @@ import java.util.Properties;
  * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
  */
 public class AdminMessagesLoader {
-    private static final String CONFIG_DIR = System.getProperty("jboss.server.config.dir");
-    private static final String BUNDLE_DIR = CONFIG_DIR + "/themes/base/admin/angular-messages/";
-
     private static final Map<String, Properties> allMessages = new HashMap<String, Properties>();
 
-    static Properties getMessages(String locale) throws IOException {
-        Properties messages = allMessages.get(locale);
+    static Properties getMessages(Theme theme, String strLocale) throws IOException {
+        String allMessagesKey = theme.getName() + "_" + strLocale;
+        Properties messages = allMessages.get(allMessagesKey);
         if (messages != null) return messages;
 
-        return loadMessages(locale);
-    }
+        Locale locale = new Locale(strLocale);
+        messages = theme.getMessages("admin-messages", locale);
+        if (messages == null) return new Properties();
 
-    private static Properties loadMessages(String locale) throws IOException {
-        Properties masterMsgs = new Properties();
-
-        for (File file : getBundlesForLocale(locale)) {
-            try (FileInputStream msgStream = new FileInputStream(file)){
-                Properties propsFromFile = new Properties();
-                propsFromFile.load(msgStream);
-                checkForDups(masterMsgs, propsFromFile, file, locale);
-                masterMsgs.putAll(propsFromFile);
-            }
-        }
-
-        allMessages.put(locale, masterMsgs);
-        return masterMsgs;
-    }
-
-    private static void checkForDups(Properties masterMsgs, Properties propsFromFile, File file, String locale) {
-        for (String prop : propsFromFile.stringPropertyNames()) {
-            if (masterMsgs.getProperty(prop) != null) {
-                String errorMsg = "Message bundle " + file.getName() + " contains key '" + prop;
-                errorMsg += "', which already exists in another bundle for " + locale + " locale.";
-                throw new RuntimeException(errorMsg);
-            }
-        }
-    }
-
-    private static File[] getBundlesForLocale(String locale) {
-        File bundleDir = new File(BUNDLE_DIR);
-        return bundleDir.listFiles(new LocaleFilter(locale));
-    }
-
-    private static class LocaleFilter implements FilenameFilter {
-        private final String locale;
-
-        public LocaleFilter(String locale) {
-            this.locale = locale;
-        }
-
-        @Override
-        public boolean accept(File dir, String name) {
-            return name.endsWith("_" + locale + ".properties");
-        }
+        allMessages.put(allMessagesKey, messages);
+        return messages;
     }
 }

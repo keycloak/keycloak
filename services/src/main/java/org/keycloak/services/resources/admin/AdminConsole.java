@@ -285,8 +285,7 @@ public class AdminConsole {
             map.put("resourceUrl", Urls.themeRoot(baseUri) + "/admin/" + adminTheme);
             map.put("resourceVersion", Version.RESOURCES_VERSION);
 
-            ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-            Theme theme = themeProvider.getTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
+            Theme theme = getTheme();
 
             map.put("properties", theme.getProperties());
 
@@ -296,6 +295,11 @@ public class AdminConsole {
             BrowserSecurityHeaderSetup.headers(builder, realm);
             return builder.build();
         }
+    }
+
+    private Theme getTheme() throws IOException {
+        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
+        return themeProvider.getTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
     }
 
     @GET
@@ -314,14 +318,14 @@ public class AdminConsole {
         }
 
         try {
-            Properties msgs = AdminMessagesLoader.getMessages(lang);
+            Properties msgs = AdminMessagesLoader.getMessages(getTheme(), lang);
             if (msgs.isEmpty()) {
                 logger.warn("Message bundle not found for language code '" + lang + "'");
-                msgs = AdminMessagesLoader.getMessages("en"); // fall back to en
+                msgs = AdminMessagesLoader.getMessages(getTheme(), "en"); // fall back to en
             }
 
             if (msgs.isEmpty()) logger.fatal("Message bundle not found for language code 'en'");
-            
+
             return msgs;
         } catch (IOException e) {
             throw new RuntimeException(e);
