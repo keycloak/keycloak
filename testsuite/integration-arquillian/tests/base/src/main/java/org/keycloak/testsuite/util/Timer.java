@@ -41,7 +41,9 @@ public class Timer {
     }
 
     public static void printStats() {
-        System.out.println("OPERATION STATS:");
+        if (!stats.isEmpty()) {
+            System.out.println("OPERATION STATS:");
+        }
         for (String op : stats.keySet()) {
             long sum = 0;
             for (Long t : stats.get(op)) {
@@ -49,6 +51,7 @@ public class Timer {
             }
             System.out.println(MessageFormat.format("Operation {0} average time: {1,number,#} ms", op, sum / stats.get(op).size()));
         }
+        stats.clear();
     }
 
 }
