@@ -11,14 +11,14 @@
     <fileSets>
         <fileSet>
             <directory>${project.build.directory}/unpacked/jboss-eap-6.4</directory>
-            <outputDirectory>jboss-eap-6.4</outputDirectory>
+            <outputDirectory>jboss-iam-1.0</outputDirectory>
             <excludes>
                 <exclude>standalone/configuration/standalone.xml</exclude>
             </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}/unpacked/overlay</directory>
-            <outputDirectory>jboss-eap-6.4</outputDirectory>
+            <outputDirectory>jboss-iam-1.0</outputDirectory>
             <excludes>
                 <exclude>standalone/configuration/standalone-keycloak.xml</exclude>
             </excludes>
@@ -28,7 +28,7 @@
     <files>
         <file>
             <source>${project.build.directory}/unpacked/overlay/standalone/configuration/standalone-keycloak.xml</source>
-            <outputDirectory>jboss-eap-6.4/standalone/configuration</outputDirectory>
+            <outputDirectory>jboss-iam-1.0/standalone/configuration</outputDirectory>
             <destName>standalone.xml</destName>
         </file>
     </files>
