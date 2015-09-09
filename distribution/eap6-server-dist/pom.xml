@@ -13,6 +13,10 @@
     <name>Keycloak EAP 6 Server Distribution</name>
     <description/>
 
+    <properties>
+        <buildDate></buildDate>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -27,7 +31,7 @@
     </dependencies>
 
     <build>
-        <finalName>keycloak-eap6-${project.version}</finalName>
+        <finalName>iam-server-1.0-${buildDate}</finalName>
 
         <plugins>
             <plugin>
