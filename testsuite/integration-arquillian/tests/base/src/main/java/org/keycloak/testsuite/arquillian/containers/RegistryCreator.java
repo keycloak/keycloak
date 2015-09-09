@@ -47,6 +47,7 @@ import static org.keycloak.testsuite.arquillian.containers.SecurityActions.loadC
  * @author Dominik Pospisil <dpospisi@redhat.com>
  * @author Stefan Miklosovic <smikloso@redhat.com>
  * @author Tomas Kyjovsky <tkyjovsk@redhat.com>
+ * @author Vlasta Ramik <vramik@redhat.com>
  */
 public class RegistryCreator {
 
@@ -61,7 +62,10 @@ public class RegistryCreator {
 
     @Inject
     private Instance<ServiceLoader> loader;
-
+    
+    private String authContainer;
+    private String migrationContainer;
+    
     public void createRegistry(@Observes ArquillianDescriptor event) {
         ContainerRegistry reg = new Registry(injector.get());
         ServiceLoader serviceLoader = loader.get();
@@ -76,6 +80,7 @@ public class RegistryCreator {
         for (ContainerDef container : event.getContainers()) {
             if (isCreatingContainer(container, containers)) {
                 if (isEnabled(container)) {
+                    checkMultipleEnabledContainers(container);
                     reg.create(container, serviceLoader);
                 } else {
                     System.out.println("Container is disabled: " + container.getContainerName());
@@ -87,6 +92,7 @@ public class RegistryCreator {
             for (ContainerDef container : group.getGroupContainers()) {
                 if (isCreatingContainer(container, containers)) {
                     if (isEnabled(container)) {
+                        //TODO add checkMultipleEnabledContainers according to groups
                         reg.create(container, serviceLoader);
                     } else {
                         System.out.println("Container is disabled: " + container.getContainerName());
@@ -104,6 +110,28 @@ public class RegistryCreator {
         Map<String, String> props = containerDef.getContainerProperties();
         return !props.containsKey(ENABLED)
                 || (props.containsKey(ENABLED) && props.get(ENABLED).equals("true"));
+    }
+    
+    private void checkMultipleEnabledContainers(ContainerDef containerDef) {
+        String containerName = containerDef.getContainerName();
+        
+        if (containerName.startsWith("keycloak")) {
+            if (migrationContainer == null) {
+                migrationContainer = containerName;
+            } else {
+                throw new RuntimeException("There is more than one migration container "
+                        + "enabled in arquillian.xml. It has to be enabled at most one. "
+                        + "Do not activate more than one migration profile.");
+            }
+        } else if (containerName.startsWith("auth-server")) {
+            if (authContainer == null) {
+                authContainer = containerName;
+            } else {
+                throw new RuntimeException("There is more than one auth containec enabled "
+                        + "in arquillian.xml. It has to be enabled exactly one. Do not "
+                        + "activate more than one auth profile.");
+            }
+        }
     }
 
     @SuppressWarnings("rawtypes")

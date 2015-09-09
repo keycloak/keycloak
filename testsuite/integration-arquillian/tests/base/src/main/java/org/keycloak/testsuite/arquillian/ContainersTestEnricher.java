@@ -12,6 +12,7 @@ import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.annotation.SuiteScoped;
+import org.jboss.arquillian.container.spi.event.container.AfterStart;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.keycloak.admin.client.Keycloak;
@@ -24,6 +25,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 /**
  *
  * @author tkyjovsk
+ * @author vramik
  */
 public class ContainersTestEnricher {
 
@@ -32,8 +34,7 @@ public class ContainersTestEnricher {
 
     @Inject
     private Event<StopSuiteContainers> stopSuiteContainers;
-
-    private String authServerQualifier;
+    
     private String appServerQualifier;
 
     private static final String AUTH_SERVER_CONTAINER_PROPERTY = "auth.server.container";
@@ -54,6 +55,7 @@ public class ContainersTestEnricher {
     private ContainerController controller;
 
     private final boolean migrationTests = System.getProperty("migration", "false").equals("true");
+    private boolean alreadyStopped = false;
 
     public void startSuiteContainers(@Observes(precedence = 1) StartSuiteContainers event) {
         if (migrationTests) {
@@ -61,14 +63,14 @@ public class ContainersTestEnricher {
         }
     }
 
-    public void stopSuiteContainers(@Observes(precedence = -1) StartSuiteContainers event) {
-        if (migrationTests) {
+    public void stopMigrationContainer(@Observes AfterStart event) {
+        if (migrationTests && !alreadyStopped) {
             System.out.println("\n### Stopping keycloak with previous version ###\n");
-
             stopSuiteContainers.fire(new StopSuiteContainers());
         }
+        alreadyStopped = true;
     }
-
+    
     public void beforeSuite(@Observes BeforeSuite event) {
         suiteContext.set(new SuiteContext());
     }
@@ -77,16 +79,10 @@ public class ContainersTestEnricher {
         controller = containerController.get();
 
         Class testClass = event.getTestClass().getJavaClass();
-        System.out.println("\nCONTAINERS LIFECYCLE FOR: " + testClass.getSimpleName() + "\n");
-
-        authServerQualifier = getAuthServerQualifier();
         appServerQualifier = getAppServerQualifier(testClass);
 
-        System.out.println("STARTING AUTH SERVER: " + authServerQualifier + "\n");
-        controller.start(authServerQualifier);
-        System.out.println("");
         if (!controller.isStarted(appServerQualifier)) {
-            System.out.println("STARTING APP SERVER: " + appServerQualifier + "\n");
+            System.out.println("\nSTARTING APP SERVER: " + appServerQualifier + "\n");
             controller.start(appServerQualifier);
             System.out.println("");
         }

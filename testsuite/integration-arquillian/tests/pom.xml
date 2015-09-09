@@ -80,6 +80,7 @@
                             <browser>${browser}</browser>
                             <shouldDeploy>false</shouldDeploy>
                             <auth.server.container>${auth.server.container}</auth.server.container>
+                            <auth.server.undertow>true</auth.server.undertow>
                             <auth.server.port.offset>${auth.server.port.offset}</auth.server.port.offset>
                             <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>
                             <auth.server.management.port>${auth.server.management.port}</auth.server.management.port>
@@ -134,7 +135,8 @@
                     <groupId>org.jboss.arquillian.extension</groupId>
                     <artifactId>arquillian-phantom-driver</artifactId>
                 </dependency>
-<!--                <dependency>
+<!-- TODO: investigate if we need this dependency
+                <dependency>
                     <groupId>org.jboss.arquillian.graphene</groupId>
                     <artifactId>arquillian-graphene-impl</artifactId>
                     <version>1.0.0.CR3</version>
@@ -356,6 +358,7 @@
                             <configuration>
                                 <systemPropertyVariables>
                                     <auth.server.wildfly>true</auth.server.wildfly>
+                                    <auth.server.undertow>false</auth.server.undertow>
                                     <auth.server.wildfly.home>${auth.server.wildfly.home}</auth.server.wildfly.home>
                                     <adapter.test.props>${adapter.test.props}</adapter.test.props>
                                 </systemPropertyVariables>
@@ -416,6 +419,7 @@
                             <configuration>
                                 <systemPropertyVariables>
                                     <auth.server.eap6>true</auth.server.eap6>
+                                    <auth.server.undertow>false</auth.server.undertow>
                                     <auth.server.eap6.home>${auth.server.eap6.home}</auth.server.eap6.home>
                                     <adapter.test.props>${adapter.test.props}</adapter.test.props>
                                 </systemPropertyVariables>
