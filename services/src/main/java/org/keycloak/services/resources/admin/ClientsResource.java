@@ -97,23 +97,26 @@ public class ClientsResource {
 
         try {
             ClientModel clientModel = RepresentationToModel.createClient(session, realm, rep, true);
+            addClientRoles(clientModel, true);
 
-            // Add admin & management roles
-            RoleModel adminRole = clientModel.addRole(ClientRoles.CLIENT_ADMIN);
-            for (String role : ClientRoles.MANAGEMENT_ROLES) {
-                RoleModel roleModel = clientModel.addRole(role);
-                adminRole.addCompositeRole(roleModel);
-            }
-
-            // Assign current user to client admin role
-            auth.getAuth().getUser().grantRole(adminRole);
-            
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientModel.getId()).representation(rep).success();
-            
+
             return Response.created(uriInfo.getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
         }
+    }
+
+    private void addClientRoles(ClientModel client, boolean grantCurrentUser) {
+        UserModel user = auth.getAuth().getUser();
+
+        RoleModel adminRole = client.addRole(ClientRoles.CLIENT_ADMIN);
+        for (String role : ClientRoles.MANAGEMENT_ROLES) {
+            RoleModel roleModel = client.addRole(role);
+            adminRole.addCompositeRole(roleModel);
+            if (grantCurrentUser) user.grantRole(roleModel);
+        }
+        if (grantCurrentUser) user.grantRole(adminRole);
     }
 
     /**
