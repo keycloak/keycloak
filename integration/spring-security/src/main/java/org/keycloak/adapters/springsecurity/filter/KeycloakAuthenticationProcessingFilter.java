@@ -6,6 +6,7 @@ import org.keycloak.adapters.AuthOutcome;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RequestAuthenticator;
 import org.keycloak.adapters.springsecurity.AdapterDeploymentContextBean;
+import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationEntryPoint;
 import org.keycloak.adapters.springsecurity.authentication.SpringSecurityRequestAuthenticator;
 import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
@@ -22,6 +23,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
@@ -41,7 +43,7 @@ import java.io.IOException;
  * @version $Revision: 1 $
  */
 public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter implements ApplicationContextAware {
-
+    public static final String DEFAULT_LOGIN_URL = "/sso/login";
     public static final String AUTHORIZATION_HEADER = "Authorization";
 
     /**
@@ -49,7 +51,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
      * and any request with a <code>Authorization</code> header.
      */
     public static final RequestMatcher DEFAULT_REQUEST_MATCHER =
-            new OrRequestMatcher(new AntPathRequestMatcher("/sso/login"), new RequestHeaderRequestMatcher("Authorization"));
+            new OrRequestMatcher(new AntPathRequestMatcher(DEFAULT_LOGIN_URL), new RequestHeaderRequestMatcher(AUTHORIZATION_HEADER));
 
     private static final Logger log = LoggerFactory.getLogger(KeycloakAuthenticationProcessingFilter.class);
 
@@ -67,6 +69,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
      */
     public KeycloakAuthenticationProcessingFilter(AuthenticationManager authenticationManager) {
         this(authenticationManager, DEFAULT_REQUEST_MATCHER);
+        setAuthenticationFailureHandler(new SimpleUrlAuthenticationFailureHandler(DEFAULT_LOGIN_URL));
     }
 
     /**
@@ -114,21 +117,23 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
                 = new SpringSecurityRequestAuthenticator(facade, request, deployment, tokenStore, -1);
 
         AuthOutcome result = authenticator.authenticate();
-        AuthChallenge challenge = authenticator.getChallenge();
-
         log.debug("Auth outcome: {}", result);
 
-        if (challenge != null) {
-            challenge.challenge(facade);
+        if (AuthOutcome.FAILED.equals(result)) {
+            throw new KeycloakAuthenticationException("Auth outcome: " + result);
         }
-
-        if (AuthOutcome.AUTHENTICATED.equals(result)) {
+        else if (AuthOutcome.AUTHENTICATED.equals(result)) {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Assert.notNull(authentication, "Authentication SecurityContextHolder was null");
             return authenticationManager.authenticate(authentication);
         }
-
-        return null;
+        else {
+            AuthChallenge challenge = authenticator.getChallenge();
+            if (challenge != null) {
+                challenge.challenge(facade);
+            }
+            return null;
+        }
     }
 
     /**

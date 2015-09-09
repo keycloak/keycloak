@@ -7,8 +7,12 @@ import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.springsecurity.AdapterDeploymentContextBean;
+import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
 import org.keycloak.adapters.springsecurity.account.KeycloakRole;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
+import org.keycloak.enums.SslRequired;
+import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.util.KeycloakUriBuilder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.context.ApplicationContext;
@@ -18,6 +22,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
@@ -103,6 +108,24 @@ public class KeycloakAuthenticationProcessingFilterTest {
         assertFalse(filter.isBasicAuthRequest(request));
         this.setBasicAuthHeader(request);
         assertTrue(filter.isBasicAuthRequest(request));
+    }
+
+    @Test
+    public void testAttemptAuthenticationExpectRedirect() throws Exception {
+        when(keycloakDeployment.getAuthUrl()).thenReturn(KeycloakUriBuilder.fromUri("http://localhost:8080/auth"));
+        when(keycloakDeployment.getResourceName()).thenReturn("resource-name");
+        when(keycloakDeployment.getStateCookieName()).thenReturn("kc-cookie");
+        when(keycloakDeployment.getSslRequired()).thenReturn(SslRequired.NONE);
+        filter.attemptAuthentication(request, response);
+
+        verify(response).setStatus(302);
+        verify(response).setHeader(eq("Location"), startsWith("http://localhost:8080/auth"));
+    }
+
+    @Test(expected = KeycloakAuthenticationException.class)
+    public void testAttemptAuthenticationWithInvalidToken() throws Exception {
+        request.addHeader("Authorization", "Bearer xxx");
+        filter.attemptAuthentication(request, response);
     }
 
     @Test
