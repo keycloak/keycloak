@@ -40,6 +40,10 @@ public class RealmAuth {
         }
     }
 
+    public boolean hasAdmin() {
+        return auth.hasOneOfAppRole(realmAdminApp, getViewRole(resource), getManageRole(resource));
+    }
+
     public boolean hasView() {
         return auth.hasOneOfAppRole(realmAdminApp, getViewRole(resource), getManageRole(resource));
     }

@@ -59,7 +59,7 @@ import java.util.Set;
 public class ClientResource {
     protected static final Logger logger = Logger.getLogger(ClientResource.class);
     protected RealmModel realm;
-    private RealmAuth auth;
+    private ClientAuth auth;
     private AdminEventBuilder adminEvent;
     protected ClientModel client;
     protected KeycloakSession session;
@@ -76,7 +76,7 @@ public class ClientResource {
 
     public ClientResource(RealmModel realm, RealmAuth auth, ClientModel clientModel, KeycloakSession session, AdminEventBuilder adminEvent) {
         this.realm = realm;
-        this.auth = auth;
+        this.auth = new ClientAuth(auth, clientModel);
         this.client = clientModel;
         this.session = session;
         this.adminEvent = adminEvent;
@@ -86,7 +86,7 @@ public class ClientResource {
 
     @Path("protocol-mappers")
     public ProtocolMappersResource getProtocolMappers() {
-        ProtocolMappersResource mappers = new ProtocolMappersResource(client, auth, adminEvent);
+        ProtocolMappersResource mappers = new ProtocolMappersResource(client, auth.getRealmAuth(), adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(mappers);
         return mappers;
     }
@@ -135,7 +135,7 @@ public class ClientResource {
      */
     @Path("certificates/{attr}")
     public ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix) {
-        return new ClientAttributeCertificateResource(realm, auth, client, session, attributePrefix, adminEvent);
+        return new ClientAttributeCertificateResource(realm, auth.getRealmAuth(), client, session, attributePrefix, adminEvent);
     }
 
 
@@ -233,12 +233,12 @@ public class ClientResource {
      */
     @Path("scope-mappings")
     public ScopeMappedResource getScopeMappedResource() {
-        return new ScopeMappedResource(realm, auth, client, session, adminEvent);
+        return new ScopeMappedResource(realm, auth.getRealmAuth(), client, session, adminEvent);
     }
 
     @Path("roles")
     public RoleContainerResource getRoleContainerResource() {
-        return new RoleContainerResource(uriInfo, realm, auth, client, adminEvent);
+        return new RoleContainerResource(uriInfo, realm, auth.getRealmAuth(), client, adminEvent);
     }
 
     /**

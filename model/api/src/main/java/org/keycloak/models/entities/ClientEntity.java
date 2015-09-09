@@ -29,6 +29,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private boolean serviceAccountsEnabled;
     private boolean directGrantsOnly;
     private int nodeReRegistrationTimeout;
+    private boolean clientManageAuthEnabled;
 
     // We are using names of defaultRoles (not ids)
     private List<String> defaultRoles = new ArrayList<String>();
@@ -249,6 +250,14 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setRegisteredNodes(Map<String, Integer> registeredNodes) {
         this.registeredNodes = registeredNodes;
+    }
+
+    public boolean isClientManageAuthEnabled() {
+        return clientManageAuthEnabled;
+    }
+
+    public void setClientManageAuthEnabled(boolean clientManageAuthEnabled) {
+        this.clientManageAuthEnabled = clientManageAuthEnabled;
     }
 }
 

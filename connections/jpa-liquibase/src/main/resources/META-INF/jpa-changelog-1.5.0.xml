@@ -60,6 +60,11 @@
                 <constraints nullable="true"/>
             </column>
         </addColumn>
+        <addColumn tableName="CLIENT">
+            <column name="CLIENT_MANAGE_AUTH_ENABLED" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
 
     </changeSet>
 </databaseChangeLog>

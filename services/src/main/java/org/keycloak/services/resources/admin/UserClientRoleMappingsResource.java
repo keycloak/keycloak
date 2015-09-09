@@ -35,7 +35,7 @@ public class UserClientRoleMappingsResource {
     protected static final Logger logger = Logger.getLogger(UserClientRoleMappingsResource.class);
 
     protected RealmModel realm;
-    protected RealmAuth auth;
+    protected ClientAuth auth;
     protected UserModel user;
     protected ClientModel client;
     protected AdminEventBuilder adminEvent;
@@ -44,7 +44,7 @@ public class UserClientRoleMappingsResource {
     public UserClientRoleMappingsResource(UriInfo uriInfo, RealmModel realm, RealmAuth auth, UserModel user, ClientModel client, AdminEventBuilder adminEvent) {
         this.uriInfo = uriInfo;
         this.realm = realm;
-        this.auth = auth;
+        this.auth = new ClientAuth(auth, client);
         this.user = user;
         this.client = client;
         this.adminEvent = adminEvent;
@@ -59,7 +59,7 @@ public class UserClientRoleMappingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<RoleRepresentation> getClientRoleMappings() {
-        auth.requireView();
+        auth.requireDelegate();
 
         Set<RoleModel> mappings = user.getClientRoleMappings(client);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
@@ -79,7 +79,7 @@ public class UserClientRoleMappingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<RoleRepresentation> getCompositeClientRoleMappings() {
-        auth.requireView();
+        auth.requireDelegate();
 
         Set<RoleModel> roles = client.getRoles();
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
@@ -99,7 +99,7 @@ public class UserClientRoleMappingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<RoleRepresentation> getAvailableClientRoleMappings() {
-        auth.requireView();
+        auth.requireDelegate();
 
         Set<RoleModel> available = client.getRoles();
         return getAvailableRoles(user, available);
@@ -127,7 +127,7 @@ public class UserClientRoleMappingsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public void addClientRoleMapping(List<RoleRepresentation> roles) {
-        auth.requireManage();
+        auth.requireDelegate();
 
         for (RoleRepresentation role : roles) {
             RoleModel roleModel = client.getRole(role.getName());
@@ -148,7 +148,7 @@ public class UserClientRoleMappingsResource {
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     public void deleteClientRoleMapping(List<RoleRepresentation> roles) {
-        auth.requireManage();
+        auth.requireDelegate();
 
         if (roles == null) {
             Set<RoleModel> roleModels = user.getClientRoleMappings(client);

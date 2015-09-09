@@ -23,6 +23,7 @@ public class ClientRepresentation {
     protected Boolean bearerOnly;
     protected Boolean consentRequired;
     protected Boolean serviceAccountsEnabled;
+    protected Boolean clientManageAuthEnabled;
     protected Boolean directGrantsOnly;
     protected Boolean publicClient;
     protected Boolean frontchannelLogout;
@@ -151,6 +152,14 @@ public class ClientRepresentation {
 
     public void setServiceAccountsEnabled(Boolean serviceAccountsEnabled) {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
+    }
+
+    public Boolean isClientManageAuthEnabled() {
+        return clientManageAuthEnabled;
+    }
+
+    public void setClientManageAuthEnabled(Boolean clientManageAuthEnabled) {
+        this.clientManageAuthEnabled = clientManageAuthEnabled;
     }
 
     public Boolean isDirectGrantsOnly() {
