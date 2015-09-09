@@ -13,8 +13,6 @@ import org.openqa.selenium.WebDriver;
  */
 public abstract class AbstractPage {
 
-    private static final long serialVersionUID = 1L;
-
     private final Map<String, Object> uriParameters = new HashMap<>();
 
     @Drone

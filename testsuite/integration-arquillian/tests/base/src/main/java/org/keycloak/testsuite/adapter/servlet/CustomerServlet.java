@@ -22,7 +22,6 @@ import javax.servlet.annotation.WebServlet;
 @WebServlet("/customer-portal")
 public class CustomerServlet extends HttpServlet {
     private static final String LINK = "<a href=\"%s\" id=\"%s\">%s</a>";
-    private static final long serialVersionUID = 1L;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
