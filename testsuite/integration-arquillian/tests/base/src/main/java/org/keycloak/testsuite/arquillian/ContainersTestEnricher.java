@@ -79,16 +79,10 @@ public class ContainersTestEnricher {
         controller = containerController.get();
 
         Class testClass = event.getTestClass().getJavaClass();
-//        System.out.println("\nCONTAINERS LIFECYCLE FOR: " + testClass.getSimpleName() + "\n");
-
-//        authServerQualifier = getAuthServerQualifier();
         appServerQualifier = getAppServerQualifier(testClass);
 
-//        System.out.println("STARTING AUTH SERVER: " + authServerQualifier + "\n");
-//        controller.start(authServerQualifier);
-//        System.out.println("");
         if (!controller.isStarted(appServerQualifier)) {
-            System.out.println("STARTING APP SERVER: " + appServerQualifier + "\n");
+            System.out.println("\nSTARTING APP SERVER: " + appServerQualifier + "\n");
             controller.start(appServerQualifier);
             System.out.println("");
         }
