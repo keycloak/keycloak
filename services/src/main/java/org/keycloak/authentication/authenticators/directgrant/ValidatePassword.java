@@ -31,7 +31,7 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
-        if (password == null) {
+        if (password == null || password.isEmpty()) {
             if (context.getUser() != null) {
                 context.getEvent().user(context.getUser());
             }

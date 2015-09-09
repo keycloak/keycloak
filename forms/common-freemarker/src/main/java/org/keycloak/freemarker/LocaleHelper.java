@@ -18,8 +18,6 @@ public class LocaleHelper {
     public static final String UI_LOCALES_PARAM = "ui_locales";
     public static final String KC_LOCALE_PARAM = "kc_locale";
 
-    private final static Logger LOGGER = Logger.getLogger(LocaleHelper.class);
-
     public static Locale getLocale(RealmModel realm, UserModel user) {
         return getLocale(realm, user, null, null);
     }
@@ -38,8 +36,6 @@ public class LocaleHelper {
                     user.setSingleAttribute(UserModel.LOCALE, locale.toLanguageTag());
                 }
                 return locale;
-            }else{
-                LOGGER.infof("Locale %s is not supported.", localeString);
             }
         }
          
@@ -52,8 +48,6 @@ public class LocaleHelper {
                     user.setSingleAttribute(UserModel.LOCALE, locale.toLanguageTag());
                 }
                 return locale;
-            }else{
-                LOGGER.infof("Locale %s is not supported.", localeString);
             }
         }
 
@@ -64,8 +58,6 @@ public class LocaleHelper {
             if(locale != null){
 
                 return locale;
-            }else{
-                LOGGER.infof("Locale %s is not supported.", localeString);
             }
         }
 
@@ -75,8 +67,6 @@ public class LocaleHelper {
             Locale locale =  findLocale(realm.getSupportedLocales(), localeString.split(" "));
             if(locale != null){
                 return locale;
-            }else{
-                LOGGER.infof("Locale %s is not supported.", localeString);
             }
         }
 
@@ -87,8 +77,6 @@ public class LocaleHelper {
                 Locale locale =  findLocale(realm.getSupportedLocales(), localeString);
                 if(locale != null){
                     return locale;
-                }else{
-                    LOGGER.infof("Locale %s is not supported.", localeString);
                 }
             }
         }
@@ -108,8 +96,6 @@ public class LocaleHelper {
         boolean secure = realm.getSslRequired().isRequired(uriInfo.getRequestUri().getHost());
         builder.cookie(new NewCookie(LocaleHelper.LOCALE_COOKIE, locale.toLanguageTag(), path, null, null, 31536000, secure));
     }
-
-
 
     public static Locale findLocale(Set<String> supportedLocales, String ... localeStrings) {
         for(String localeString : localeStrings){

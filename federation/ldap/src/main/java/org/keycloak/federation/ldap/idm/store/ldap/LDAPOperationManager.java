@@ -327,8 +327,13 @@ public class LDAPOperationManager {
         InitialContext authCtx = null;
 
         try {
+            if (password == null || password.isEmpty()) {
+                throw new Exception("Empty password used");
+            }
+
             Hashtable<String, Object> env = new Hashtable<String, Object>(this.connectionProperties);
 
+            env.put(Context.SECURITY_AUTHENTICATION, LDAPConstants.AUTH_TYPE_SIMPLE);
             env.put(Context.SECURITY_PRINCIPAL, dn);
             env.put(Context.SECURITY_CREDENTIALS, password);
 

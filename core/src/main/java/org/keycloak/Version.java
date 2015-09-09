@@ -1,6 +1,7 @@
 package org.keycloak;
 
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.keycloak.util.Time;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +29,9 @@ public class Version {
             VERSION = props.getProperty("version");
             BUILD_TIME = props.getProperty("build-time");
             RESOURCES_VERSION = VERSION.toLowerCase();
+            if (RESOURCES_VERSION.endsWith("-snapshot")) {
+                RESOURCES_VERSION = RESOURCES_VERSION.replace("-snapshot", "-" + Time.currentTime());
+            }
         } catch (IOException e) {
             VERSION=UNKNOWN;
             BUILD_TIME=UNKNOWN;

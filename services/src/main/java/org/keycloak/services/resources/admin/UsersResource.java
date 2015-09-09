@@ -456,7 +456,7 @@ public class UsersResource {
             // Logout clientSessions for this user and client
             AuthenticationManager.backchannelUserFromClient(session, realm, user, client, uriInfo, headers);
         } else {
-            throw new NotFoundException("Consent not found for user " + id + " and client " + clientId);
+            throw new NotFoundException("Consent not found");
         }
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }

@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -148,6 +149,16 @@ public class ClientAdapter implements ClientModel {
     @Override
     public void removeRedirectUri(String redirectUri) {
         entity.getRedirectUris().remove(redirectUri);
+    }
+
+    @Override
+    public String getClientAuthenticatorType() {
+        return entity.getClientAuthenticatorType();
+    }
+
+    @Override
+    public void setClientAuthenticatorType(String clientAuthenticatorType) {
+        entity.setClientAuthenticatorType(clientAuthenticatorType);
     }
 
     @Override
@@ -532,7 +543,8 @@ public class ClientAdapter implements ClientModel {
 
         entity.getRoles().remove(role);
         entity.getDefaultRoles().remove(role);
-        em.createNativeQuery("delete from COMPOSITE_ROLE where CHILD_ROLE = :role").setParameter("role", role).executeUpdate();
+        String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
+        em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", role).executeUpdate();
         em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", role).executeUpdate();
         role.setClient(null);
         em.flush();

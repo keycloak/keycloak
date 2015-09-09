@@ -359,8 +359,25 @@ public class RepresentationToModel {
         } else {
             newRealm.setDirectGrantFlow(newRealm.getFlowByAlias(rep.getDirectGrantFlow()));
         }
+
+        // reset credentials + client flow needs to be more defensive as they were added later (in 1.5 )
+        if (rep.getResetCredentialsFlow() == null) {
+            AuthenticationFlowModel resetFlow = newRealm.getFlowByAlias(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW);
+            if (resetFlow == null) {
+                DefaultAuthenticationFlows.resetCredentialsFlow(newRealm);
+            } else {
+                newRealm.setResetCredentialsFlow(resetFlow);
+            }
+        } else {
+            newRealm.setResetCredentialsFlow(newRealm.getFlowByAlias(rep.getResetCredentialsFlow()));
+        }
         if (rep.getClientAuthenticationFlow() == null) {
-            newRealm.setClientAuthenticationFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW));
+            AuthenticationFlowModel clientFlow = newRealm.getFlowByAlias(DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW);
+            if (clientFlow == null) {
+                DefaultAuthenticationFlows.clientAuthFlow(newRealm);
+            } else {
+                newRealm.setClientAuthenticationFlow(clientFlow);
+            }
         } else {
             newRealm.setClientAuthenticationFlow(newRealm.getFlowByAlias(rep.getClientAuthenticationFlow()));
         }
@@ -571,6 +588,9 @@ public class RepresentationToModel {
         if (rep.getDirectGrantFlow() != null) {
             realm.setDirectGrantFlow(realm.getFlowByAlias(rep.getDirectGrantFlow()));
         }
+        if (rep.getResetCredentialsFlow() != null) {
+            realm.setResetCredentialsFlow(realm.getFlowByAlias(rep.getResetCredentialsFlow()));
+        }
         if (rep.getClientAuthenticationFlow() != null) {
             realm.setClientAuthenticationFlow(realm.getFlowByAlias(rep.getClientAuthenticationFlow()));
         }
@@ -693,6 +713,12 @@ public class RepresentationToModel {
             client.setNotBefore(resourceRep.getNotBefore());
         }
 
+        if (resourceRep.getClientAuthenticatorType() != null) {
+            client.setClientAuthenticatorType(resourceRep.getClientAuthenticatorType());
+        } else {
+            client.setClientAuthenticatorType(KeycloakModelUtils.getDefaultClientAuthenticatorType());
+        }
+
         client.setSecret(resourceRep.getSecret());
         if (client.getSecret() == null) {
             KeycloakModelUtils.generateSecret(client);
@@ -772,6 +798,7 @@ public class RepresentationToModel {
         if (rep.getBaseUrl() != null) resource.setBaseUrl(rep.getBaseUrl());
         if (rep.isSurrogateAuthRequired() != null) resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
         if (rep.getNodeReRegistrationTimeout() != null) resource.setNodeReRegistrationTimeout(rep.getNodeReRegistrationTimeout());
+        if (rep.getClientAuthenticatorType() != null) resource.setClientAuthenticatorType(rep.getClientAuthenticatorType());
         resource.updateClient();
 
         if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());

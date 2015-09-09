@@ -235,8 +235,8 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
-    public List<UserModel> searchForUserByUserAttributes(Map<String, String> attributes, RealmModel realm) {
-        return getDelegate().searchForUserByUserAttributes(attributes, realm);
+    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
+        return getDelegate().searchForUserByUserAttribute(attrName, attrValue, realm);
     }
 
     @Override

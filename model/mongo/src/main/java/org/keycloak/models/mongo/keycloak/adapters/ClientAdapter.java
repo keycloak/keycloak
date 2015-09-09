@@ -142,6 +142,17 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
+    public String getClientAuthenticatorType() {
+        return getMongoEntity().getClientAuthenticatorType();
+    }
+
+    @Override
+    public void setClientAuthenticatorType(String clientAuthenticatorType) {
+        getMongoEntity().setClientAuthenticatorType(clientAuthenticatorType);
+        updateMongoEntity();
+    }
+
+    @Override
     public boolean validateSecret(String secret) {
         return secret.equals(getMongoEntity().getSecret());
     }

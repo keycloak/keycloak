@@ -419,10 +419,9 @@ module.factory('AuthenticationConfigDescriptionLoader', function(Loader, Authent
 });
 
 module.factory('PerClientAuthenticationConfigDescriptionLoader', function(Loader, PerClientAuthenticationConfigDescription, $route, $q) {
-    return Loader.query(PerClientAuthenticationConfigDescription, function () {
+    return Loader.get(PerClientAuthenticationConfigDescription, function () {
         return {
-            realm: $route.current.params.realm,
-            provider: $route.current.params.provider
+            realm: $route.current.params.realm
         }
     });
 });

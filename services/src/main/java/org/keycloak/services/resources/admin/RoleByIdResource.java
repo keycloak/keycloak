@@ -71,7 +71,7 @@ public class RoleByIdResource extends RoleResource {
     protected RoleModel getRoleModel(String id) {
         RoleModel roleModel = realm.getRoleById(id);
         if (roleModel == null) {
-            throw new NotFoundException("Could not find role with id: " + id);
+            throw new NotFoundException("Could not find role with id");
         }
 
         RealmAuth.Resource r = null;
@@ -183,7 +183,7 @@ public class RoleByIdResource extends RoleResource {
         auth.requireView();
         ClientModel clientModel = realm.getClientById(client);
         if (clientModel == null) {
-            throw new NotFoundException("Could not find client: " + client);
+            throw new NotFoundException("Could not find client");
         }
         return getClientRoleComposites(clientModel, role);
     }
@@ -205,7 +205,7 @@ public class RoleByIdResource extends RoleResource {
         auth.requireView();
         ClientModel clientModel = realm.getClientById(client);
         if (clientModel == null) {
-            throw new NotFoundException("Could not find client: " + client);
+            throw new NotFoundException("Could not find client");
 
         }
         return getClientRoleComposites(clientModel, roleModel);

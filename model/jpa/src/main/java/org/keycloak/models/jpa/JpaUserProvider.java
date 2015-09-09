@@ -13,6 +13,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
+import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -400,32 +401,15 @@ public class JpaUserProvider implements UserProvider {
     }
 
     @Override
-    public List<UserModel> searchForUserByUserAttributes(Map<String, String> attributes, RealmModel realm) {
-        StringBuilder builder = new StringBuilder("select attr.user,count(attr.user) from UserAttributeEntity attr where attr.user.realmId = :realmId");
-        boolean first = true;
-        for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            String attrName = entry.getKey();
-            if (first) {
-                builder.append(" and ");
-                first = false;
-            } else {
-                builder.append(" or ");
-            }
-            builder.append(" ( attr.name like :").append(attrName);
-            builder.append(" and attr.value like :").append(attrName).append("val )");
-        }
-        builder.append(" group by attr.user having count(attr.user) = " + attributes.size());
-        Query query = em.createQuery(builder.toString());
-        query.setParameter("realmId", realm.getId());
-        for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            query.setParameter(entry.getKey(), entry.getKey());
-            query.setParameter(entry.getKey() + "val", entry.getValue());
-        }
-        List results = query.getResultList();
+    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
+        TypedQuery<UserAttributeEntity> query = em.createNamedQuery("getAttributesByNameAndValue", UserAttributeEntity.class);
+        query.setParameter("name", attrName);
+        query.setParameter("value", attrValue);
+        List<UserAttributeEntity> results = query.getResultList();
 
         List<UserModel> users = new ArrayList<UserModel>();
-        for (Object o : results) {
-            UserEntity user = (UserEntity) ((Object[])o)[0];
+        for (UserAttributeEntity attr : results) {
+            UserEntity user = attr.getUser();
             users.add(new UserAdapter(realm, em, user));
         }
         return users;

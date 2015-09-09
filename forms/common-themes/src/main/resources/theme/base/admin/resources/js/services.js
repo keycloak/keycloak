@@ -671,6 +671,7 @@ function roleControl($scope, realm, role, roles, clients,
                     }
                 }
                 $scope.selectedRealmRoles = [];
+                Notifications.success("Role added to composite.");
             });
     };
 
@@ -687,6 +688,7 @@ function roleControl($scope, realm, role, roles, clients,
                     }
                 }
                 $scope.selectedRealmMappings = [];
+                Notifications.success("Role removed from composite.");
             });
     };
 
@@ -1256,9 +1258,8 @@ module.factory('AuthenticationConfigDescription', function($resource) {
     });
 });
 module.factory('PerClientAuthenticationConfigDescription', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/authentication/per-client-config-description/:provider', {
-        realm : '@realm',
-        provider: '@provider'
+    return $resource(authUrl + '/admin/realms/:realm/authentication/per-client-config-description', {
+        realm : '@realm'
     });
 });
 

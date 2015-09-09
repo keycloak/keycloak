@@ -1,8 +1,10 @@
 package org.keycloak.adapters.authentication;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 import org.apache.http.NameValuePair;
@@ -55,8 +57,17 @@ public class ClientCredentialsProviderUtils {
     }
 
     private static void loadAuthenticators(Map<String, ClientCredentialsProvider> authenticators, ClassLoader classLoader) {
-        for (ClientCredentialsProvider authenticator : ServiceLoader.load(ClientCredentialsProvider.class, classLoader)) {
-            authenticators.put(authenticator.getId(), authenticator);
+        Iterator<ClientCredentialsProvider> iterator = ServiceLoader.load(ClientCredentialsProvider.class, classLoader).iterator();
+        while (iterator.hasNext()) {
+            try {
+                ClientCredentialsProvider authenticator = iterator.next();
+                logger.debugf("Loaded clientCredentialsProvider %s", authenticator.getId());
+                authenticators.put(authenticator.getId(), authenticator);
+            } catch (ServiceConfigurationError e) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Failed to load clientCredentialsProvider with classloader: " + classLoader, e);
+                }
+            }
         }
     }
 

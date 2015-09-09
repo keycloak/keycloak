@@ -1,8 +1,10 @@
 package org.keycloak.testsuite.forms;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
@@ -19,7 +21,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  */
 public class PassThroughClientAuthenticator extends AbstractClientAuthenticator {
 
-    public static final String PROVIDER_ID = "client-passthrough";
+    public static final String PROVIDER_ID = "testsuite-client-passthrough";
     public static String clientId = "test-app";
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
@@ -59,28 +61,13 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
     }
 
     @Override
-    public boolean requiresClient() {
-        return false;
-    }
-
-    @Override
-    public boolean configuredFor(KeycloakSession session, RealmModel realm, ClientModel client) {
-        return true;
-    }
-
-    @Override
     public String getDisplayType() {
-        return "PassThrough Client Validation";
+        return "Testsuite Dummy Client Validation";
     }
 
     @Override
     public boolean isConfigurable() {
         return false;
-    }
-
-    @Override
-    public boolean isConfigurablePerClient() {
-        return true;
     }
 
     @Override
@@ -90,7 +77,7 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
 
     @Override
     public String getHelpText() {
-        return "Automatically authenticates client 'test-app' ";
+        return "Testsuite dummy authenticator, which automatically authenticates hardcoded client (like 'test-app' )";
     }
 
     @Override
@@ -101,6 +88,17 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
     @Override
     public List<ProviderConfigProperty> getConfigPropertiesPerClient() {
         return clientConfigProperties;
+    }
+
+    @Override
+    public Map<String, Object> getAdapterConfiguration(ClientModel client) {
+        Map<String, Object> props = new HashMap<>();
+        props.put("foo", "some foo value");
+        props.put("bar", true);
+
+        Map<String, Object> config = new HashMap<>();
+        config.put("dummy", props);
+        return config;
     }
 
     @Override

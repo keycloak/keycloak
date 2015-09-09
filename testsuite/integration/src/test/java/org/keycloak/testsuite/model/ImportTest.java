@@ -7,6 +7,8 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.constants.KerberosConstants;
 import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
@@ -23,6 +25,7 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
@@ -109,6 +112,10 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals(2, appRegisteredNodes.size());
         Assert.assertTrue(10 == appRegisteredNodes.get("node1"));
         Assert.assertTrue(20 == appRegisteredNodes.get("172.10.15.20"));
+
+        // test clientAuthenticatorType
+        Assert.assertEquals(application.getClientAuthenticatorType(), "client-secret");
+        Assert.assertEquals(otherApp.getClientAuthenticatorType(), "client-jwt");
 
         // Test finding applications by ID
         Assert.assertNull(realm.getClientById("982734"));
@@ -270,6 +277,17 @@ public class ImportTest extends AbstractModelTest {
         // Assert that federation link wasn't created during import
         UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, "dummy");
         Assert.assertNull(factory.getInstance(session, null).getUserByUsername(realm, "wburke"));
+
+        // Test builtin authentication flows
+        AuthenticationFlowModel clientFlow = realm.getClientAuthenticationFlow();
+        Assert.assertEquals(DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW, clientFlow.getAlias());
+        Assert.assertNotNull(realm.getAuthenticationFlowById(clientFlow.getId()));
+        Assert.assertTrue(realm.getAuthenticationExecutions(clientFlow.getId()).size() > 0);
+
+        AuthenticationFlowModel resetFlow = realm.getResetCredentialsFlow();
+        Assert.assertEquals(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, resetFlow.getAlias());
+        Assert.assertNotNull(realm.getAuthenticationFlowById(resetFlow.getId()));
+        Assert.assertTrue(realm.getAuthenticationExecutions(resetFlow.getId()).size() > 0);
 
         // Test protocol mappers. Default application has all the builtin protocol mappers. OtherApp just gss credential
         Assert.assertNotNull(application.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, "username"));

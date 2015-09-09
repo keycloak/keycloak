@@ -163,6 +163,7 @@ public class ModelToRepresentation {
         if (realm.getBrowserFlow() != null) rep.setBrowserFlow(realm.getBrowserFlow().getAlias());
         if (realm.getRegistrationFlow() != null) rep.setRegistrationFlow(realm.getRegistrationFlow().getAlias());
         if (realm.getDirectGrantFlow() != null) rep.setDirectGrantFlow(realm.getDirectGrantFlow().getAlias());
+        if (realm.getResetCredentialsFlow() != null) rep.setResetCredentialsFlow(realm.getResetCredentialsFlow().getAlias());
         if (realm.getClientAuthenticationFlow() != null) rep.setClientAuthenticationFlow(realm.getClientAuthenticationFlow().getAlias());
 
         List<String> defaultRoles = realm.getDefaultRoles();
@@ -308,6 +309,7 @@ public class ModelToRepresentation {
         rep.setBaseUrl(clientModel.getBaseUrl());
         rep.setNotBefore(clientModel.getNotBefore());
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
+        rep.setClientAuthenticatorType(clientModel.getClientAuthenticatorType());
 
         Set<String> redirectUris = clientModel.getRedirectUris();
         if (redirectUris != null) {

@@ -2,6 +2,7 @@ package org.keycloak.migration.migrators;
 
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
@@ -30,13 +31,23 @@ public class MigrateTo1_5_0 {
             realm.setBrowserFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW));
             realm.setRegistrationFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.REGISTRATION_FLOW));
             realm.setDirectGrantFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW));
-            realm.setResetCredentialsFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW));
+
+            AuthenticationFlowModel resetFlow = realm.getFlowByAlias(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW);
+            if (resetFlow == null) {
+                DefaultAuthenticationFlows.resetCredentialsFlow(realm);
+            } else {
+                realm.setResetCredentialsFlow(resetFlow);
+            }
 
             AuthenticationFlowModel clientAuthFlow = realm.getFlowByAlias(DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW);
             if (clientAuthFlow == null) {
                 DefaultAuthenticationFlows.clientAuthFlow(realm);
             } else {
-                realm.setClientAuthenticationFlow(realm.getFlowByAlias(DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW));
+                realm.setClientAuthenticationFlow(clientAuthFlow);
+            }
+
+            for (ClientModel client : realm.getClients()) {
+                client.setClientAuthenticatorType(KeycloakModelUtils.getDefaultClientAuthenticatorType());
             }
         }
 

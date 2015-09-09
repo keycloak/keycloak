@@ -19,7 +19,7 @@ public class JpaUpdate1_2_0_CR1 extends CustomKeycloakTask {
 
         try {
             String trueValue = DataTypeFactory.getInstance().getTrueBooleanValue(database);
-            PreparedStatement statement = jdbcConnection.prepareStatement("select CLIENT.REALM_ID, CLIENT.ID CLIENT_ID from CLIENT where CLIENT.CONSENT_REQUIRED = " + trueValue);
+            PreparedStatement statement = jdbcConnection.prepareStatement("select CLIENT.REALM_ID, CLIENT.ID CLIENT_ID from " + getTableName("CLIENT") + " CLIENT where CLIENT.CONSENT_REQUIRED = " + trueValue);
 
             try {
                 ResultSet resultSet = statement.executeQuery();

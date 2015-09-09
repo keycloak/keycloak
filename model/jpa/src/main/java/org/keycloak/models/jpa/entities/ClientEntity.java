@@ -40,6 +40,8 @@ public class ClientEntity {
     private boolean enabled;
     @Column(name="SECRET")
     private String secret;
+    @Column(name="CLIENT_AUTHENTICATOR_TYPE")
+    private String clientAuthenticatorType;
     @Column(name="NOT_BEFORE")
     private int notBefore;
     @Column(name="PUBLIC_CLIENT")
@@ -171,6 +173,14 @@ public class ClientEntity {
 
     public void setRedirectUris(Set<String> redirectUris) {
         this.redirectUris = redirectUris;
+    }
+
+    public String getClientAuthenticatorType() {
+        return clientAuthenticatorType;
+    }
+
+    public void setClientAuthenticatorType(String clientAuthenticatorType) {
+        this.clientAuthenticatorType = clientAuthenticatorType;
     }
 
     public String getSecret() {

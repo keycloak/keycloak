@@ -27,6 +27,7 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -42,6 +43,8 @@ import org.openqa.selenium.WebDriver;
 
 import java.util.List;
 import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -248,6 +251,16 @@ public class FederationProvidersIntegrationTest {
     }
 
     @Test
+    public void loginLdapWithDirectGrant() throws Exception {
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "johnkeycloak", "Password1");
+        assertEquals(200, response.getStatusCode());
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+
+        response = oauth.doGrantAccessTokenRequest("password", "johnkeycloak", "");
+        assertEquals(401, response.getStatusCode());
+    }
+
+    @Test
     public void loginLdapWithEmail() {
         loginPage.open();
         loginPage.login("john@email.org", "Password1");
@@ -260,7 +273,6 @@ public class FederationProvidersIntegrationTest {
     public void loginLdapWithoutPassword() {
         loginPage.open();
         loginPage.login("john@email.org", "");
-
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
     }
 

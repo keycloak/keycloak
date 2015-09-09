@@ -921,7 +921,7 @@ public class SecretQuestionRequiredActionFactory implements RequiredActionFactor
                                                 in the location accessible to your client application
                                             </listitem>
                                             <listitem>
-                                                Uploaded in Keycloak admin console - This option is useful if you already has existing private key of your client.
+                                                Uploaded in Keycloak admin console - This option is useful if you already have existing private key of your client.
                                                 In this case, you just need to upload the public key and certificate to the Keycloak server.
                                             </listitem>
                                         </itemizedlist>
@@ -993,7 +993,8 @@ public class SecretQuestionRequiredActionFactory implements RequiredActionFactor
                             <para>
                                 Finally you need to configure admin console . You need to create new client authentication flow and define execution
                                 with your authenticator (you can also add the builtin authenticators and configure requirements etc)
-                                and finally configure Clients binding . See <link linkend="adding_authenticator">Adding Authenticator</link> for more details.
+                                and finally configure Clients binding . See <link linkend="adding_authenticator">Adding Authenticator</link> for more details. Then
+                                you need to go to Client credentials tab and choose the method for authentication your client and configure client credentials (if possible).
                             </para>
                         </listitem>
                     </varlistentry>

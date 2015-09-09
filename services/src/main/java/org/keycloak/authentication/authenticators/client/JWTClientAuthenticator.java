@@ -3,8 +3,10 @@ package org.keycloak.authentication.authenticators.client;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -41,7 +43,6 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     public static final String CERTIFICATE_ATTR = "jwt.credential.certificate";
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.REQUIRED,
             AuthenticationExecutionModel.Requirement.ALTERNATIVE,
             AuthenticationExecutionModel.Requirement.DISABLED
     };
@@ -136,16 +137,6 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     }
 
     @Override
-    public boolean requiresClient() {
-        return false;
-    }
-
-    @Override
-    public boolean configuredFor(KeycloakSession session, RealmModel realm, ClientModel client) {
-        return client.getAttribute(CERTIFICATE_ATTR) != null;
-    }
-
-    @Override
     public String getDisplayType() {
         return "Signed Jwt";
     }
@@ -153,11 +144,6 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     @Override
     public boolean isConfigurable() {
         return false;
-    }
-
-    @Override
-    public boolean isConfigurablePerClient() {
-        return true;
     }
 
     @Override
@@ -179,6 +165,21 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     public List<ProviderConfigProperty> getConfigPropertiesPerClient() {
         // This impl doesn't use generic screen in admin console, but has it's own screen. So no need to return anything here
         return Collections.emptyList();
+    }
+
+    @Override
+    public Map<String, Object> getAdapterConfiguration(ClientModel client) {
+        Map<String, Object> props = new HashMap<>();
+        props.put("client-keystore-file", "REPLACE WITH THE LOCATION OF YOUR KEYSTORE FILE");
+        props.put("client-keystore-type", "jks");
+        props.put("client-keystore-password", "REPLACE WITH THE KEYSTORE PASSWORD");
+        props.put("client-key-password", "REPLACE WITH THE KEY PASSWORD IN KEYSTORE");
+        props.put("client-key-alias", client.getClientId());
+        props.put("token-timeout", 10);
+
+        Map<String, Object> config = new HashMap<>();
+        config.put("jwt", props);
+        return config;
     }
 
     @Override

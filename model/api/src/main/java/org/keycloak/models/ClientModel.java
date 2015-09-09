@@ -75,6 +75,9 @@ public interface ClientModel extends RoleContainerModel {
 
     void setNodeReRegistrationTimeout(int timeout);
 
+    String getClientAuthenticatorType();
+    void setClientAuthenticatorType(String clientAuthenticatorType);
+
     boolean validateSecret(String secret);
     String getSecret();
     public void setSecret(String secret);

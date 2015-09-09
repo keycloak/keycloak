@@ -44,7 +44,7 @@ public abstract class RoleResource {
         for (RoleRepresentation rep : roles) {
             RoleModel composite = realm.getRoleById(rep.getId());
             if (composite == null) {
-                throw new NotFoundException("Could not find composite role: " + rep.getName());
+                throw new NotFoundException("Could not find composite role");
             }
             role.addCompositeRole(composite);
 
@@ -88,7 +88,7 @@ public abstract class RoleResource {
         for (RoleRepresentation rep : roles) {
             RoleModel composite = realm.getRoleById(rep.getId());
             if (composite == null) {
-                throw new NotFoundException("Could not find composite role: " + rep.getName());
+                throw new NotFoundException("Could not find composite role");
             }
             role.removeCompositeRole(composite);
         }

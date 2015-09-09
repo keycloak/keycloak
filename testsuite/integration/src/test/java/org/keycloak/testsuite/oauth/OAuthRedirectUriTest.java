@@ -29,6 +29,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -49,18 +50,18 @@ public class OAuthRedirectUriTest {
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            ClientModel installedApp = appRealm.addClient("test-installed");
+            ClientModel installedApp = new ClientManager(manager).createClient(appRealm, "test-installed");
             installedApp.setEnabled(true);
             installedApp.addRedirectUri(Constants.INSTALLED_APP_URN);
             installedApp.addRedirectUri(Constants.INSTALLED_APP_URL);
             installedApp.setSecret("password");
 
-            ClientModel installedApp2 = appRealm.addClient("test-installed2");
+            ClientModel installedApp2 = new ClientManager(manager).createClient(appRealm, "test-installed2");
             installedApp2.setEnabled(true);
             installedApp2.addRedirectUri(Constants.INSTALLED_APP_URL + "/myapp");
             installedApp2.setSecret("password");
 
-            ClientModel installedApp3 = appRealm.addClient("test-wildcard");
+            ClientModel installedApp3 = new ClientManager(manager).createClient(appRealm, "test-wildcard");
             installedApp3.setEnabled(true);
             installedApp3.addRedirectUri("http://example.com/foo/*");
             installedApp3.addRedirectUri("http://localhost:8081/foo/*");

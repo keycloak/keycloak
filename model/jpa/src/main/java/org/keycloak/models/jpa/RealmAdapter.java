@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.enums.SslRequired;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -973,7 +974,8 @@ public class RealmAdapter implements RealmModel {
         realm.getRoles().remove(roleEntity);
         realm.getDefaultRoles().remove(roleEntity);
 
-        em.createNativeQuery("delete from COMPOSITE_ROLE where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
+        String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
+        em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
         em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
 
         em.remove(roleEntity);
