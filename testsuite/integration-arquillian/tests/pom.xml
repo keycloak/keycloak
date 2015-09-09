@@ -134,10 +134,15 @@
                     <groupId>org.jboss.arquillian.extension</groupId>
                     <artifactId>arquillian-phantom-driver</artifactId>
                 </dependency>
-                <dependency>
+<!--                <dependency>
                     <groupId>org.jboss.arquillian.graphene</groupId>
                     <artifactId>arquillian-graphene-impl</artifactId>
                     <version>1.0.0.CR3</version>
+                </dependency>-->
+                <dependency>
+                    <groupId>org.jboss.arquillian.graphene</groupId>
+                    <artifactId>arquillian-browser-screenshooter</artifactId>
+                    <version>2.1.0.Alpha2</version>
                 </dependency>
                 
                 <dependency>
