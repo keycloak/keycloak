@@ -47,7 +47,7 @@
             <id>server-overlay</id>
             <activation>
                 <property>
-                    <name>!server-dist</name>
+                    <name>server-overlay</name>
                 </property>
             </activation>
             <properties>
@@ -114,7 +114,7 @@
             <id>server-dist</id>
             <activation>
                 <property>
-                    <name>server-dist</name>
+                    <name>!server-overlay</name>
                 </property>
             </activation>
             <properties>
