@@ -211,11 +211,6 @@ public class AuthenticationManagementResource {
             data.put("description", configured.getHelpText());
             data.put("displayName", configured.getDisplayType());
 
-            if (configured instanceof ClientAuthenticatorFactory) {
-                ClientAuthenticatorFactory configuredClient = (ClientAuthenticatorFactory) configured;
-                data.put("configurablePerClient", configuredClient.isConfigurablePerClient());
-            }
-
             providers.add(data);
         }
         return providers;
@@ -894,21 +889,30 @@ public class AuthenticationManagementResource {
     }
 
 
-    @Path("per-client-config-description/{providerId}")
+    @Path("per-client-config-description")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<ConfigPropertyRepresentation> getPerClientConfigDescription(@PathParam("providerId") String providerId) {
+    public Map<String, List<ConfigPropertyRepresentation>> getPerClientConfigDescription() {
         this.auth.requireView();
-        ConfigurableAuthenticatorFactory factory = CredentialHelper.getConfigurableAuthenticatorFactory(session, providerId);
-        ClientAuthenticatorFactory clientAuthFactory = (ClientAuthenticatorFactory) factory;
-        List<ProviderConfigProperty> perClientConfigProps = clientAuthFactory.getConfigPropertiesPerClient();
-        List<ConfigPropertyRepresentation> result = new LinkedList<>();
-        for (ProviderConfigProperty prop : perClientConfigProps) {
-            ConfigPropertyRepresentation propRep = getConfigPropertyRep(prop);
-            result.add(propRep);
+        List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(ClientAuthenticator.class);
+
+        Map<String, List<ConfigPropertyRepresentation>> toReturn = new HashMap<>();
+        for (ProviderFactory clientAuthenticatorFactory : factories) {
+            String providerId = clientAuthenticatorFactory.getId();
+            ConfigurableAuthenticatorFactory factory = CredentialHelper.getConfigurableAuthenticatorFactory(session, providerId);
+            ClientAuthenticatorFactory clientAuthFactory = (ClientAuthenticatorFactory) factory;
+            List<ProviderConfigProperty> perClientConfigProps = clientAuthFactory.getConfigPropertiesPerClient();
+            List<ConfigPropertyRepresentation> result = new LinkedList<>();
+            for (ProviderConfigProperty prop : perClientConfigProps) {
+                ConfigPropertyRepresentation propRep = getConfigPropertyRep(prop);
+                result.add(propRep);
+            }
+
+            toReturn.put(providerId, result);
         }
-        return result;
+
+        return toReturn;
     }
 
     @Path("config")

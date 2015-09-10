@@ -5,7 +5,7 @@
     <#elseif section = "header">
         ${msg("loginProfileTitle")}
     <#elseif section = "form">
-        <form id="kc-update-profile-form" class="${properties.kcFormClass!}" action="${url.loginUpdateProfileUrl}" method="post">
+        <form id="kc-update-profile-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcFormGroupClass!} ${messagesPerField.printIfExists('email',properties.kcFormGroupErrorClass!)}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="email" class="${properties.kcLabelClass!}">${msg("email")}</label>

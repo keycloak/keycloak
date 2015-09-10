@@ -24,7 +24,9 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.social.SocialIdentityProvider;
 import org.keycloak.social.SocialIdentityProviderFactory;
 import org.keycloak.testsuite.broker.provider.CustomIdentityProvider;
+import org.keycloak.testsuite.broker.provider.CustomIdentityProviderFactory;
 import org.keycloak.testsuite.broker.provider.social.CustomSocialProvider;
+import org.keycloak.testsuite.broker.provider.social.CustomSocialProviderFactory;
 
 import java.util.Set;
 
@@ -51,7 +53,7 @@ public class IdentityProviderRegistrationTest extends AbstractIdentityProviderMo
 
     @Test
     public void testCustomSocialProviderRegistration() {
-        String providerId = "custom-social-provider";
+        String providerId = CustomSocialProviderFactory.PROVIDER_ID;
 
         assertTrue(getInstalledProviders().contains(providerId));
 
@@ -74,7 +76,7 @@ public class IdentityProviderRegistrationTest extends AbstractIdentityProviderMo
 
     @Test
     public void testCustomIdentityProviderRegistration() {
-        String providerId = "custom-identity-provider";
+        String providerId = CustomIdentityProviderFactory.PROVIDER_ID;
 
         assertTrue(getInstalledProviders().contains(providerId));
 

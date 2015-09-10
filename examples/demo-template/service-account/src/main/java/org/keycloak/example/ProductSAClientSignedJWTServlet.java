@@ -7,7 +7,7 @@ public class ProductSAClientSignedJWTServlet extends ProductServiceAccountServle
 
     @Override
     protected String getAdapterConfigLocation() {
-        return "WEB-INF/keycloak-client-signed-jwt.json";
+        return "/WEB-INF/keycloak-client-signed-jwt.json";
     }
 
     @Override

@@ -219,9 +219,6 @@ public class AdapterTestStrategy extends ExternalResource {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-        loginPage.cancel();
-        System.out.println(driver.getPageSource());
-        Assert.assertTrue(driver.getPageSource().contains("Error Page"));
     }
 
     public void testServletRequestLogout() throws Exception {

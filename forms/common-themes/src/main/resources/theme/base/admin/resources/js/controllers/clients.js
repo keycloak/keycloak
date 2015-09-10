@@ -30,25 +30,31 @@ module.controller('ClientRoleListCtrl', function($scope, $location, realm, clien
     });
 });
 
-module.controller('ClientCredentialsCtrl', function($scope, $location, realm, client, clientAuthenticatorProviders, Client) {
+module.controller('ClientCredentialsCtrl', function($scope, $location, realm, client, clientAuthenticatorProviders, clientConfigProperties, Client) {
     $scope.realm = realm;
     $scope.client = angular.copy(client);
     $scope.clientAuthenticatorProviders = clientAuthenticatorProviders;
 
-    var updateConfigButtonVisibility = function() {
-        for (var i=0 ; i<clientAuthenticatorProviders.length ; i++) {
-            var authenticator = clientAuthenticatorProviders[i];
-            if ($scope.client.clientAuthenticatorType === authenticator.id) {
-                $scope.configButtonVisible = authenticator.configurablePerClient;
-            }
+    var updateCurrentPartial = function(val) {
+        $scope.clientAuthenticatorConfigPartial;
+        switch(val) {
+            case 'client-secret':
+                $scope.clientAuthenticatorConfigPartial = 'client-credentials-secret.html';
+                break;
+            case 'client-jwt':
+                $scope.clientAuthenticatorConfigPartial = 'client-credentials-jwt.html';
+                break;
+            default:
+                $scope.currentAuthenticatorConfigProperties = clientConfigProperties[val];
+                $scope.clientAuthenticatorConfigPartial = 'client-credentials-generic.html';
+                break;
         }
     };
-    updateConfigButtonVisibility();
 
-    $scope.$watch('client', function() {
-        if (!angular.equals($scope.client, client)) {
+    updateCurrentPartial(client.clientAuthenticatorType);
 
-            console.log("Update client credentials!");
+    $scope.$watch('client.clientAuthenticatorType', function() {
+        if (!angular.equals($scope.client.clientAuthenticatorType, client.clientAuthenticatorType)) {
 
             Client.update({
                 realm : realm.realm,
@@ -56,29 +62,23 @@ module.controller('ClientCredentialsCtrl', function($scope, $location, realm, cl
             }, $scope.client, function() {
                 $scope.changed = false;
                 client = angular.copy($scope.client);
-                updateConfigButtonVisibility();
+                updateCurrentPartial(client.clientAuthenticatorType)
             });
 
         }
     }, true);
 
-    $scope.configureAuthenticator = function() {
-        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/" + client.clientAuthenticatorType);
-    }
-
 });
 
-module.controller('ClientSecretCtrl', function($scope, $location, realm, client, ClientSecret, Notifications) {
-    $scope.realm = realm;
-    $scope.client = client;
-    var secret = ClientSecret.get({ realm : realm.realm, client : client.id },
+module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, Notifications) {
+    var secret = ClientSecret.get({ realm : $scope.realm.realm, client : $scope.client.id },
         function() {
             $scope.secret = secret.value;
         }
     );
 
     $scope.changePassword = function() {
-        var secret = ClientSecret.update({ realm : realm.realm, client : client.id },
+        var secret = ClientSecret.update({ realm : $scope.realm.realm, client : $scope.client.id },
             function() {
                 Notifications.success('The secret has been changed.');
                 $scope.secret = secret.value;
@@ -97,45 +97,39 @@ module.controller('ClientSecretCtrl', function($scope, $location, realm, client,
     });
 
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials");
+        $location.url("/realms/" + $scope.realm.realm + "/clients/" + $scope.client.id + "/credentials");
     };
 });
 
-module.controller('ClientSignedJWTCtrl', function($scope, $location, realm, client, ClientCertificate, Notifications) {
-
-    $scope.realm = realm;
-    $scope.client = client;
-
-    var signingKeyInfo = ClientCertificate.get({ realm : realm.realm, client : client.id, attribute: 'jwt.credential' },
+module.controller('ClientSignedJWTCtrl', function($scope, $location, ClientCertificate) {
+    var signingKeyInfo = ClientCertificate.get({ realm : $scope.realm.realm, client : $scope.client.id, attribute: 'jwt.credential' },
         function() {
             $scope.signingKeyInfo = signingKeyInfo;
         }
     );
 
     $scope.importCertificate = function() {
-        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-jwt/Signing/import/jwt.credential");
+        $location.url("/realms/" + $scope.realm.realm + "/clients/" + $scope.client.id + "/credentials/client-jwt/Signing/import/jwt.credential");
     };
 
     $scope.generateSigningKey = function() {
-        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-jwt/Signing/export/jwt.credential");
+        $location.url("/realms/" + $scope.realm.realm + "/clients/" + $scope.client.id + "/credentials/client-jwt/Signing/export/jwt.credential");
     };
 
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials");
+        $location.url("/realms/" + $scope.realm.realm + "/clients/" + $scope.client.id + "/credentials");
     };
 });
 
-module.controller('ClientGenericCredentialsCtrl', function($scope, $location, realm, client, clientConfigProperties, Client, Notifications) {
+module.controller('ClientGenericCredentialsCtrl', function($scope, $location, Client, Notifications) {
 
     console.log('ClientGenericCredentialsCtrl invoked');
 
-    $scope.realm = realm;
-    $scope.client = angular.copy(client);
-    $scope.clientConfigProperties = clientConfigProperties;
+    $scope.clientCopy = angular.copy($scope.client);
     $scope.changed = false;
 
     $scope.$watch('client', function() {
-        if (!angular.equals($scope.client, client)) {
+        if (!angular.equals($scope.client, $scope.clientCopy)) {
             $scope.changed = true;
         }
     }, true);
@@ -143,17 +137,17 @@ module.controller('ClientGenericCredentialsCtrl', function($scope, $location, re
     $scope.save = function() {
 
         Client.update({
-            realm : realm.realm,
-            client : client.id
+            realm : $scope.realm.realm,
+            client : $scope.client.id
         }, $scope.client, function() {
             $scope.changed = false;
-            client = angular.copy($scope.client);
+            $scope.clientCopy = angular.copy($scope.client);
             Notifications.success("Client authentication configuration has been saved to the client.");
         });
     };
 
     $scope.reset = function() {
-        $scope.client = angular.copy(client);
+        $scope.client = angular.copy($scope.clientCopy);
         $scope.changed = false;
     };
 });
@@ -328,7 +322,7 @@ module.controller('ClientCertificateImportCtrl', function($scope, $location, $ht
         var redirectLocation = "/realms/" + realm.realm + "/clients/" + client.id + "/saml/keys";
     } else if (callingContext == 'jwt-credentials') {
         var uploadUrl = authUrl + '/admin/realms/' + realm.realm + '/clients/' + client.id + '/certificates/' + attribute + '/upload-certificate';
-        var redirectLocation = "/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-jwt";
+        var redirectLocation = "/realms/" + realm.realm + "/clients/" + client.id + "/credentials";
     }
 
     $scope.files = [];
@@ -337,8 +331,8 @@ module.controller('ClientCertificateImportCtrl', function($scope, $location, $ht
         $scope.files = $files;
     };
 
-    $scope.clearFileSelect = function() {
-        $scope.files = null;
+    $scope.cancel = function() {
+        $location.url(redirectLocation);
     }
 
     $scope.keyFormats = [
@@ -438,7 +432,7 @@ module.controller('ClientCertificateExportCtrl', function($scope, $location, $ht
             if ($scope.jks.format == 'PKCS12') ext = ".p12";
 
             if (callingContext == 'jwt-credentials') {
-                $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-jwt");
+                $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials");
                 Notifications.success("New keypair and certificate generated successfully. Download keystore file")
             }
 
@@ -461,7 +455,7 @@ module.controller('ClientCertificateExportCtrl', function($scope, $location, $ht
     });
 
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/client-jwt");
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials");
     }
 });
 

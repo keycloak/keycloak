@@ -19,6 +19,8 @@
         </realm-public-key>
         <auth-server-url>http://localhost:8080/auth</auth-server-url>
         <ssl-required>EXTERNAL</ssl-required>
-        <credential name="secret">2769a4a2-5be0-454f-838f-f33b7755b667</credential>
+        <credential name="jwt">
+            <client-keystore-file>/tmp/keystore.jks</client-keystore-file>
+        </credential>
     </secure-deployment>
 </subsystem>

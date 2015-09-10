@@ -16,6 +16,9 @@
  */
 package org.keycloak.subsystem.wf8.extension;
 
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.dmr.ModelNode;
 import org.junit.Test;
@@ -49,12 +52,45 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
         node.get("code-url").set("http://localhost:8080/auth-server/rest/realms/demo/protocol/openid-connect/access/codes");
         node.get("ssl-required").set("external");
         node.get("expose-token").set(true);
+
+        ModelNode jwtCredential = new ModelNode();
+        jwtCredential.get("client-keystore-file").set("/tmp/keystore.jks");
+        jwtCredential.get("client-keystore-password").set("changeit");
         ModelNode credential = new ModelNode();
-        credential.get("password").set("password");
+        credential.get("jwt").set(jwtCredential);
         node.get("credentials").set(credential);
 
         System.out.println("json=" + node.toJSONString(false));
     }
+
+    @Test
+    public void testJsonFromSignedJWTCredentials() {
+        KeycloakAdapterConfigService service = KeycloakAdapterConfigService.getInstance();
+
+        PathAddress addr = PathAddress.pathAddress(PathElement.pathElement("subsystem", "keycloak"), PathElement.pathElement("secure-deployment", "foo"));
+        ModelNode deploymentOp = new ModelNode();
+        deploymentOp.get(ModelDescriptionConstants.OP_ADDR).set(addr.toModelNode());
+        ModelNode deployment = new ModelNode();
+        deployment.get("realm").set("demo");
+        deployment.get("resource").set("customer-portal");
+        service.addSecureDeployment(deploymentOp, deployment);
+
+        addCredential(addr, service, "secret", "secret1");
+        addCredential(addr, service, "jwt.client-keystore-file", "/tmp/foo.jks");
+        addCredential(addr, service, "jwt.token-timeout", "10");
+
+        System.out.println("Deployment: " + service.getJSON("foo"));
+    }
+
+    private void addCredential(PathAddress parent, KeycloakAdapterConfigService service, String key, String value) {
+        PathAddress credAddr = PathAddress.pathAddress(parent, PathElement.pathElement("credential", key));
+        ModelNode credOp = new ModelNode();
+        credOp.get(ModelDescriptionConstants.OP_ADDR).set(credAddr.toModelNode());
+        ModelNode credential = new ModelNode();
+        credential.get("value").set(value);
+        service.addCredential(credOp, credential);
+    }
+
 
     @Override
     protected String getSubsystemXml() throws IOException {

@@ -9,7 +9,7 @@ public class ProductSAClientSecretServlet extends ProductServiceAccountServlet {
 
     @Override
     protected String getAdapterConfigLocation() {
-        return "WEB-INF/keycloak-client-secret.json";
+        return "/WEB-INF/keycloak-client-secret.json";
     }
 
     @Override
