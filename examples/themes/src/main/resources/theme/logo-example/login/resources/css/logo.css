@@ -1,4 +1,6 @@
-#kc-logo-wrapper {
-    background: url("../img/red-hat-logo.png") no-repeat top right;
-    height: 45px;
+.login-pf #badge a img {
+    width:0px; 
+    height:0px; 
+    padding: 37px 154px 0px 0px;
+    background: url('../img/keycloak-logo.png') no-repeat;
 }
