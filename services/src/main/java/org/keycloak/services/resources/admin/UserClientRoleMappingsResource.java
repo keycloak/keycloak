@@ -4,13 +4,10 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.ForbiddenException;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -22,10 +19,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -128,6 +122,7 @@ public class UserClientRoleMappingsResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void addClientRoleMapping(List<RoleRepresentation> roles) {
         auth.requireDelegate();
+        EnforceRoleAssignmentPolicies(roles);
 
         for (RoleRepresentation role : roles) {
             RoleModel roleModel = client.getRole(role.getName());
@@ -149,6 +144,7 @@ public class UserClientRoleMappingsResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void deleteClientRoleMapping(List<RoleRepresentation> roles) {
         auth.requireDelegate();
+        EnforceRoleAssignmentPolicies(roles);
 
         if (roles == null) {
             Set<RoleModel> roleModels = user.getClientRoleMappings(client);
@@ -170,5 +166,15 @@ public class UserClientRoleMappingsResource {
             }
         }
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(roles).success();
+    }
+
+    private void EnforceRoleAssignmentPolicies(List<RoleRepresentation> roles) {
+        if (!auth.isAdmin()) {
+            for (RoleRepresentation role : roles) {
+                if (ClientRoles.ALL_ROLES.contains(role.getName())) {
+                    throw new ForbiddenException("You do not have permission to modify the '" + role.getName() + "' role mapping");
+                }
+            }
+        }
     }
 }

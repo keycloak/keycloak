@@ -36,6 +36,10 @@ public class ClientAuth {
         return getAuth().hasRealmRole(AdminRoles.ADMIN);
     }
 
+    public boolean isAdmin() {
+        return isClientAdmin() || isRealmAdmin();
+    }
+
     public boolean hasAppRole(ClientModel app, String role) {
         RoleModel roleModel = app.getRole(role);
         return roleModel != null && getAuth().getUser().hasRole(roleModel);
