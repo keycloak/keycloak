@@ -1,5 +1,10 @@
-.navbar-title {
-    background: url('../img/red-hat-logo.png') no-repeat;
-    height: 45px;
-    width: 150px;
+.navbar .navbar-header .navbar-brand {
+    width:154px; 
+    height:37px; 
+    margin: 5px 0px 5px 20px;
+    background: url('../img/keycloak-logo.png') no-repeat;
+}
+
+.navbar .navbar-header .navbar-brand span{
+    display:none
 }
