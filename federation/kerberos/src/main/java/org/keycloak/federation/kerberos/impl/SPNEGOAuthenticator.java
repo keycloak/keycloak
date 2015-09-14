@@ -106,6 +106,11 @@ public class SPNEGOAuthenticator {
                 logAuthDetails(gssContext);
 
                 if (gssContext.isEstablished()) {
+                    if (gssContext.getSrcName() == null) {
+                        log.warn("GSS Context accepted, but no context initiator recognized. Check your kerberos configuration and reverse DNS lookup configuration");
+                        return false;
+                    }
+
                     authenticatedKerberosPrincipal = gssContext.getSrcName().toString();
 
                     if (gssContext.getCredDelegState()) {

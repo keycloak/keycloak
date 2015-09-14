@@ -83,6 +83,10 @@
                                     <key>ldap.ldif</key>
                                     <value>kerberos-example-users.ldif</value>
                                 </systemProperty>
+                                <systemProperty>
+                                    <key>workingDirectory</key>
+                                    <value>${project.basedir}/target</value>
+                                </systemProperty>
                             </systemProperties>
                         </configuration>
                     </plugin>
