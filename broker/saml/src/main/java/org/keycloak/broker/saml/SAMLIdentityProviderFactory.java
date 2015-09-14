@@ -73,74 +73,78 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
             List<EntityDescriptorType.EDTChoiceType> choiceType = entityType.getChoiceType();
 
             if (!choiceType.isEmpty()) {
-                EntityDescriptorType.EDTChoiceType edtChoiceType = choiceType.get(0);
-                List<EntityDescriptorType.EDTDescriptorChoiceType> descriptors = edtChoiceType.getDescriptors();
+                IDPSSODescriptorType idpDescriptor = null;
 
-                if (!descriptors.isEmpty()) {
-                    EntityDescriptorType.EDTDescriptorChoiceType edtDescriptorChoiceType = descriptors.get(0);
-                    IDPSSODescriptorType idpDescriptor = edtDescriptorChoiceType.getIdpDescriptor();
+                //Metadata documents can contain multiple Descriptors (See ADFS metadata documents) such as RoleDescriptor, SPSSODescriptor, IDPSSODescriptor.
+                //So we need to loop through to find the IDPSSODescriptor.
+                for(EntityDescriptorType.EDTChoiceType edtChoiceType : entityType.getChoiceType()) {
+                    List<EntityDescriptorType.EDTDescriptorChoiceType> descriptors = edtChoiceType.getDescriptors();
 
-                    if (idpDescriptor != null) {
-                        SAMLIdentityProviderConfig samlIdentityProviderConfig = new SAMLIdentityProviderConfig();
-                        String singleSignOnServiceUrl = null;
-                        boolean postBinding = false;
-                        for (EndpointType endpoint : idpDescriptor.getSingleSignOnService()) {
-                            if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get())) {
-                                singleSignOnServiceUrl = endpoint.getLocation().toString();
-                                postBinding = true;
-                                break;
-                            } else if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get())){
-                                singleSignOnServiceUrl = endpoint.getLocation().toString();
-                            }
-                        }
-                        String singleLogoutServiceUrl = null;
-                        for (EndpointType endpoint : idpDescriptor.getSingleLogoutService()) {
-                            if (postBinding && endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get())) {
-                                singleLogoutServiceUrl = endpoint.getLocation().toString();
-                                break;
-                            } else if (!postBinding && endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get())){
-                                singleLogoutServiceUrl = endpoint.getLocation().toString();
-                                break;
-                            }
-
-                        }
-                        samlIdentityProviderConfig.setSingleLogoutServiceUrl(singleLogoutServiceUrl);
-                        samlIdentityProviderConfig.setSingleSignOnServiceUrl(singleSignOnServiceUrl);
-                        samlIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
-                        samlIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());
-                        samlIdentityProviderConfig.setPostBindingResponse(postBinding);
-                        samlIdentityProviderConfig.setPostBindingAuthnRequest(postBinding);
-
-                        List<KeyDescriptorType> keyDescriptor = idpDescriptor.getKeyDescriptor();
-                        String defaultCertificate = null;
-
-                        if (keyDescriptor != null) {
-                            for (KeyDescriptorType keyDescriptorType : keyDescriptor) {
-                                Element keyInfo = keyDescriptorType.getKeyInfo();
-                                Element x509KeyInfo = DocumentUtil.getChildElement(keyInfo, new QName("dsig", "X509Certificate"));
-
-                                if (KeyTypes.SIGNING.equals(keyDescriptorType.getUse())) {
-                                    samlIdentityProviderConfig.setSigningCertificate(x509KeyInfo.getTextContent());
-                                } else if (KeyTypes.ENCRYPTION.equals(keyDescriptorType.getUse())) {
-                                    samlIdentityProviderConfig.setEncryptionPublicKey(x509KeyInfo.getTextContent());
-                                } else if (keyDescriptorType.getUse() ==  null) {
-                                    defaultCertificate = x509KeyInfo.getTextContent();
-                                }
-                            }
-                        }
-
-                        if (defaultCertificate != null) {
-                            if (samlIdentityProviderConfig.getSigningCertificate() == null) {
-                                samlIdentityProviderConfig.setSigningCertificate(defaultCertificate);
-                            }
-
-                            if (samlIdentityProviderConfig.getEncryptionPublicKey() == null) {
-                                samlIdentityProviderConfig.setEncryptionPublicKey(defaultCertificate);
-                            }
-                        }
-
-                        return samlIdentityProviderConfig.getConfig();
+                    if(!descriptors.isEmpty() && descriptors.get(0).getIdpDescriptor() != null) {
+                        idpDescriptor = descriptors.get(0).getIdpDescriptor();
                     }
+                }
+
+                if (idpDescriptor != null) {
+                    SAMLIdentityProviderConfig samlIdentityProviderConfig = new SAMLIdentityProviderConfig();
+                    String singleSignOnServiceUrl = null;
+                    boolean postBinding = false;
+                    for (EndpointType endpoint : idpDescriptor.getSingleSignOnService()) {
+                        if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get())) {
+                            singleSignOnServiceUrl = endpoint.getLocation().toString();
+                            postBinding = true;
+                            break;
+                        } else if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get())){
+                            singleSignOnServiceUrl = endpoint.getLocation().toString();
+                        }
+                    }
+                    String singleLogoutServiceUrl = null;
+                    for (EndpointType endpoint : idpDescriptor.getSingleLogoutService()) {
+                        if (postBinding && endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get())) {
+                            singleLogoutServiceUrl = endpoint.getLocation().toString();
+                            break;
+                        } else if (!postBinding && endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get())){
+                            singleLogoutServiceUrl = endpoint.getLocation().toString();
+                            break;
+                        }
+
+                    }
+                    samlIdentityProviderConfig.setSingleLogoutServiceUrl(singleLogoutServiceUrl);
+                    samlIdentityProviderConfig.setSingleSignOnServiceUrl(singleSignOnServiceUrl);
+                    samlIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
+                    samlIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());
+                    samlIdentityProviderConfig.setPostBindingResponse(postBinding);
+                    samlIdentityProviderConfig.setPostBindingAuthnRequest(postBinding);
+
+                    List<KeyDescriptorType> keyDescriptor = idpDescriptor.getKeyDescriptor();
+                    String defaultCertificate = null;
+
+                    if (keyDescriptor != null) {
+                        for (KeyDescriptorType keyDescriptorType : keyDescriptor) {
+                            Element keyInfo = keyDescriptorType.getKeyInfo();
+                            Element x509KeyInfo = DocumentUtil.getChildElement(keyInfo, new QName("dsig", "X509Certificate"));
+
+                            if (KeyTypes.SIGNING.equals(keyDescriptorType.getUse())) {
+                                samlIdentityProviderConfig.setSigningCertificate(x509KeyInfo.getTextContent());
+                            } else if (KeyTypes.ENCRYPTION.equals(keyDescriptorType.getUse())) {
+                                samlIdentityProviderConfig.setEncryptionPublicKey(x509KeyInfo.getTextContent());
+                            } else if (keyDescriptorType.getUse() ==  null) {
+                                defaultCertificate = x509KeyInfo.getTextContent();
+                            }
+                        }
+                    }
+
+                    if (defaultCertificate != null) {
+                        if (samlIdentityProviderConfig.getSigningCertificate() == null) {
+                            samlIdentityProviderConfig.setSigningCertificate(defaultCertificate);
+                        }
+
+                        if (samlIdentityProviderConfig.getEncryptionPublicKey() == null) {
+                            samlIdentityProviderConfig.setEncryptionPublicKey(defaultCertificate);
+                        }
+                    }
+
+                    return samlIdentityProviderConfig.getConfig();
                 }
             }
         } catch (ParsingException pe) {
