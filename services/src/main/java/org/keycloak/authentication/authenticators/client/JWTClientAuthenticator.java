@@ -19,7 +19,6 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -163,7 +162,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public List<ProviderConfigProperty> getConfigPropertiesPerClient() {
-        // This impl doesn't use generic screen in admin console, but has it's own screen. So no need to return anything here
+        // This impl doesn't use generic screen in admin console, but has its own screen. So no need to return anything here
         return Collections.emptyList();
     }
 

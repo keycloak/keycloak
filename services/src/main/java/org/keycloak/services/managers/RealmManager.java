@@ -337,7 +337,7 @@ public class RealmManager implements RealmImporter {
         }
 
         // Could happen when migrating from older version and I have exported JSON file, which contains "realm-management" client but not "impersonation" client
-        // I need to postpone impersonation because it needs "realm-management" client and it's roles set
+        // I need to postpone impersonation because it needs "realm-management" client and its roles set
         if (postponeImpersonationSetup) {
             setupImpersonationService(realm);
         }

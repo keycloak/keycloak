@@ -98,7 +98,7 @@ public class UserFederationProviderResource {
     }
 
     /**
-     * get a provider
+     * Get a provider
      *
      */
     @GET
@@ -126,7 +126,7 @@ public class UserFederationProviderResource {
     }
 
     /**
-     * trigger sync of users
+     * Trigger sync of users
      *
      * @return
      */
@@ -150,7 +150,7 @@ public class UserFederationProviderResource {
     }
 
     /**
-     * List of available User Federation mapper types
+     * Get available user federation mapper types
      *
      * @return
      */
@@ -227,7 +227,7 @@ public class UserFederationProviderResource {
     }
 
     /**
-     * Create mapper
+     * Create a mapper
      *
      * @param mapper
      * @return
@@ -251,9 +251,9 @@ public class UserFederationProviderResource {
     }
 
     /**
-     * Get mapper
+     * Get a mapper
      *
-     * @param id mapperId
+     * @param id Mapper id
      * @return
      */
     @GET
@@ -268,9 +268,9 @@ public class UserFederationProviderResource {
     }
 
     /**
-     * Update mapper
+     * Update a mapper
      *
-     * @param id
+     * @param id Mapper id
      * @param rep
      */
     @PUT
@@ -291,9 +291,9 @@ public class UserFederationProviderResource {
     }
 
     /**
-     * Delete mapper with given ID
+     * Delete a mapper with a given id
      *
-     * @param id
+     * @param id Mapper id
      */
     @DELETE
     @NoCache

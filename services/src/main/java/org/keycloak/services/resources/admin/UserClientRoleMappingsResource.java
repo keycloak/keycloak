@@ -5,7 +5,6 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -18,7 +17,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
@@ -51,7 +49,7 @@ public class UserClientRoleMappingsResource {
     }
 
     /**
-     * Get client-level role mappings for this user for a specific app
+     * Get client-level role mappings for the user, and the app
      *
      * @return
      */
@@ -70,7 +68,9 @@ public class UserClientRoleMappingsResource {
     }
 
     /**
-     * Get effective client-level role mappings.  This recurses any composite roles
+     * Get effective client-level role mappings
+     *
+     * This recurses any composite roles
      *
      * @return
      */
@@ -120,9 +120,9 @@ public class UserClientRoleMappingsResource {
     }
 
     /**
-     * Add client-level roles to the user role mapping.
+     * Add client-level roles to the user role mapping
      *
-      * @param roles
+     * @param roles
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -141,7 +141,7 @@ public class UserClientRoleMappingsResource {
     }
 
     /**
-     * Delete client-level roles from user role mapping.
+     * Delete client-level roles from user role mapping
      *
      * @param roles
      */

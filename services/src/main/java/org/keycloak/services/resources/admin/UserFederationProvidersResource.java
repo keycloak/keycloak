@@ -8,8 +8,6 @@ import org.keycloak.constants.KerberosConstants;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
@@ -84,7 +82,9 @@ public class UserFederationProvidersResource {
     }
 
     /**
-     * Get List of available provider factories
+     * Get available provider factories
+     *
+     * Returns a list of available provider factories.
      *
      * @return
      */
@@ -105,7 +105,7 @@ public class UserFederationProvidersResource {
     }
 
     /**
-     * Get factory with given ID
+     * Get factory with given id
      *
      * @return
      */
@@ -159,7 +159,7 @@ public class UserFederationProvidersResource {
     }
 
     /**
-     * list configured providers
+     * Get configured providers
      *
      * @return
      */

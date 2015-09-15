@@ -118,7 +118,7 @@ public class UsersResource {
     /**
      * Update the user
      *
-     * @param id
+     * @param id User id
      * @param rep
      * @return
      */
@@ -164,7 +164,9 @@ public class UsersResource {
     }
 
     /**
-     * Create a new user.  Must be a unique username!
+     * Create a new user
+     *
+     * Username must be unique.
      *
      * @param uriInfo
      * @param rep
@@ -245,7 +247,7 @@ public class UsersResource {
     /**
      * Get represenation of the user
      *
-     * @param id user id
+     * @param id User id
      * @return
      */
     @Path("{id}")
@@ -274,6 +276,12 @@ public class UsersResource {
         return rep;
     }
 
+    /**
+     * Impersonate the user
+     *
+     * @param id User id
+     * @return
+     */
     @Path("{id}/impersonation")
     @POST
     @NoCache
@@ -314,9 +322,9 @@ public class UsersResource {
 
 
     /**
-     * List set of sessions associated with this user.
+     * Get sessions associated with the user
      *
-     * @param id
+     * @param id User id
      * @return
      */
     @Path("{id}/sessions")
@@ -339,9 +347,9 @@ public class UsersResource {
     }
 
     /**
-     * List set of social logins associated with this user.
+     * Get social logins associated with the user
      *
-     * @param id
+     * @param id User id
      * @return
      */
     @Path("{id}/federated-identity")
@@ -373,6 +381,14 @@ public class UsersResource {
         return result;
     }
 
+    /**
+     * Add a social login provider to the user
+     *
+     * @param id User id
+     * @param provider Social login provider id
+     * @param rep
+     * @return
+     */
     @Path("{id}/federated-identity/{provider}")
     @POST
     @NoCache
@@ -392,6 +408,12 @@ public class UsersResource {
         return Response.noContent().build();
     }
 
+    /**
+     * Remove a social login provider from user
+     *
+     * @param id User id
+     * @param provider Social login provider id
+     */
     @Path("{id}/federated-identity/{provider}")
     @DELETE
     @NoCache
@@ -408,9 +430,9 @@ public class UsersResource {
     }
 
     /**
-     * List set of consents granted by this user.
+     * Get consents granted by the user
      *
-     * @param id
+     * @param id User id
      * @return
      */
     @Path("{id}/consents")
@@ -435,10 +457,10 @@ public class UsersResource {
     }
 
     /**
-     * Revoke consent for particular client
+     * Revoke consent for particular client from user
      *
-     * @param id
-     * @param clientId
+     * @param id User id
+     * @param clientId Client id
      */
     @Path("{id}/consents/{client}")
     @DELETE
@@ -462,10 +484,11 @@ public class UsersResource {
     }
 
     /**
-     * Remove all user sessions associated with this user.  And, for all client that have an admin URL, tell
-     * them to invalidate the sessions for this particular user.
+     * Remove all user sessions associated with the user
      *
-     * @param id user id
+     * Also send notification to all clients that have an admin URL to invalidate the sessions for the particular user.
+     *
+     * @param id User id
      */
     @Path("{id}/logout")
     @POST
@@ -484,9 +507,9 @@ public class UsersResource {
     }
 
     /**
-     * delete this user
+     * Delete the user
      *
-     * @param id user id
+     * @param id User id
      */
     @Path("{id}")
     @DELETE
@@ -509,13 +532,17 @@ public class UsersResource {
     }
 
     /**
-     * Query list of users.  May pass in query criteria
+     * Get users
      *
-     * @param search string contained in username, first or last name, or email
+     * Returns a list of users, filtered according to query parameters
+     *
+     * @param search A String contained in username, first or last name, or email
      * @param last
      * @param first
      * @param email
      * @param username
+     * @param first Pagination offset
+     * @param maxResults Pagination size
      * @return
      */
     @GET
@@ -563,9 +590,9 @@ public class UsersResource {
     }
 
     /**
-     * Get role mappings for this user
+     * Get role mappings for the user
      *
-     * @param id user id
+     * @param id User id
      * @return
      */
     @Path("{id}/role-mappings")
@@ -614,9 +641,9 @@ public class UsersResource {
     }
 
     /**
-     * Get realm-level role mappings for this user
+     * Get realm-level role mappings for the user
      *
-     * @param id user id
+     * @param id User id
      * @return
      */
     @Path("{id}/role-mappings/realm")
@@ -640,9 +667,11 @@ public class UsersResource {
     }
 
     /**
-     * Effective realm-level role mappings for this user.  Will recurse all composite roles to get this list.
+     * Get effective realm-level role mappings for the user
      *
-     * @param id user id
+     * This will recurse all composite roles to get the result.
+     *
+     * @param id User id
      * @return
      */
     @Path("{id}/role-mappings/realm/composite")
@@ -668,9 +697,9 @@ public class UsersResource {
     }
 
     /**
-     * Realm-level roles that can be mapped to this user
+     * Get realm-level roles that can be mapped to this user
      *
-     * @param id
+     * @param id User id
      * @return
      */
     @Path("{id}/role-mappings/realm/available")
@@ -690,10 +719,10 @@ public class UsersResource {
     }
 
     /**
-     * Add realm-level role mappings
+     * Add realm-level role mappings to the user
      *
-     * @param id
-     * @param roles
+     * @param id User id
+     * @param roles Roles to add
      */
     @Path("{id}/role-mappings/realm")
     @POST
@@ -720,7 +749,7 @@ public class UsersResource {
     /**
      * Delete realm-level role mappings
      *
-     * @param id user id
+     * @param id User id
      * @param roles
      */
     @Path("{id}/role-mappings/realm")
@@ -770,12 +799,14 @@ public class UsersResource {
         return new UserClientRoleMappingsResource(uriInfo, realm, auth, user, clientModel, adminEvent);
 
     }
+
     /**
-     *  Set up a temporary password for this user.  User will have to reset this temporary password when they log
-     *  in next.
+     * Set up a temporary password for the user
      *
-     * @param id
-     * @param pass temporary password
+     * User will have to reset the temporary password next time they log in.
+     *
+     * @param id User id
+     * @param pass A Temporary password
      */
     @Path("{id}/reset-password")
     @PUT
@@ -805,9 +836,9 @@ public class UsersResource {
     }
 
     /**
+     * Remove TOTP from the user
      *
-     *
-     * @param id
+     * @param id User id
      */
     @Path("{id}/remove-totp")
     @PUT
@@ -825,13 +856,15 @@ public class UsersResource {
     }
 
     /**
-     * Send an email to the user with a link they can click to reset their password.
+     * Send a password-reset email to the user
+     *
+     * An email contains a link the user can click to reset their password.
      * The redirectUri and clientId parameters are optional. The default for the
      * redirect is the account client.
      *
-     * @param id
-     * @param redirectUri redirect uri
-     * @param clientId client id
+     * @param id User is
+     * @param redirectUri Redirect uri
+     * @param clientId Client id
      * @return
      */
     @Path("{id}/execute-actions-email")
@@ -880,13 +913,15 @@ public class UsersResource {
     }
 
     /**
-     * Send an email to the user with a link they can click to verify their email address.
+     * Send an email-verification email to the user
+     *
+     * An email contains a link the user can click to verify their email address.
      * The redirectUri and clientId parameters are optional. The default for the
      * redirect is the account client.
      *
-     * @param id
-     * @param redirectUri redirect uri
-     * @param clientId client id
+     * @param id User id
+     * @param redirectUri Redirect uri
+     * @param clientId Client id
      * @return
      */
     @Path("{id}/send-verify-email")

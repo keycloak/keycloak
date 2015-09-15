@@ -52,9 +52,9 @@ public class ClientsResource {
     }
 
     /**
-     * List of clients belonging to this realm.
+     * Get clients belonging to the realm
      *
-     * @return
+     * Returns a list of clients belonging to the realm
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -80,7 +80,9 @@ public class ClientsResource {
     }
 
     /**
-     * Create a new client.  Client client_id must be unique!
+     * Create a new client
+     *
+     * Client's client_id must be unique!
      *
      * @param uriInfo
      * @param rep

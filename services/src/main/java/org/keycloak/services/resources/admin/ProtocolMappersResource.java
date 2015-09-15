@@ -7,7 +7,6 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -39,7 +38,7 @@ public class ProtocolMappersResource {
     
     protected ClientModel client;
 
-    protected  RealmAuth auth;
+    protected RealmAuth auth;
     
     protected AdminEventBuilder adminEvent;
 
@@ -58,7 +57,7 @@ public class ProtocolMappersResource {
     }
 
     /**
-     * Map of mappers by name for a specific protocol
+     * Get mappers by name for a specific protocol
      *
      * @param protocol
      * @return
@@ -77,7 +76,7 @@ public class ProtocolMappersResource {
     }
 
     /**
-     * creates mapper
+     * Create a mapper
      *
      * @param rep
      */
@@ -93,7 +92,7 @@ public class ProtocolMappersResource {
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
     /**
-     * creates multiple mapper
+     * Create multiple mappers
      *
      */
     @Path("add-models")
@@ -110,6 +109,11 @@ public class ProtocolMappersResource {
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(reps).success();
     }
 
+    /**
+     * Get mappers
+     *
+     * @return
+     */
     @GET
     @NoCache
     @Path("models")
@@ -123,6 +127,12 @@ public class ProtocolMappersResource {
         return mappers;
     }
 
+    /**
+     * Get mapper by id
+     *
+     * @param id Mapper id
+     * @return
+     */
     @GET
     @NoCache
     @Path("models/{id}")
@@ -134,6 +144,12 @@ public class ProtocolMappersResource {
         return ModelToRepresentation.toRepresentation(model);
     }
 
+    /**
+     * Update the mapper
+     *
+     * @param id Mapper id
+     * @param rep
+     */
     @PUT
     @NoCache
     @Path("models/{id}")
@@ -147,6 +163,11 @@ public class ProtocolMappersResource {
         adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
     }
 
+    /**
+     * Delete the mapper
+     *
+     * @param id Mapper id
+     */
     @DELETE
     @NoCache
     @Path("models/{id}")

@@ -292,6 +292,7 @@
                                         <!-- List of attributes:
                                         https://github.com/asciidoctor/asciidoctorj/blob/master/asciidoctorj-core/src/main/java/org/asciidoctor/Attributes.java
                                          -->
+                                        <toc/>
                                         <generated>${project.basedir}/target/apidocs-rest/asciidoc</generated>
                                     </attributes>
                                 </configuration>
