@@ -228,14 +228,14 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     public void testLoginSSOIdleRemoveExpiredUserSessions() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
-        System.out.println("Current url: " + driver.getCurrentUrl());
+        log.info("Current url: " + driver.getCurrentUrl());
         testRealmLoginPage.form().waitForUsernameInputPresent();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        System.out.println("Current url: " + driver.getCurrentUrl());
+        log.info("Current url: " + driver.getCurrentUrl());
         assertCurrentUrl(customerPortal);
         String pageSource = driver.getPageSource();
-        System.out.println(pageSource);
+        log.info(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         RealmRepresentation demoRealmRep = testRealmResource().toRepresentation();

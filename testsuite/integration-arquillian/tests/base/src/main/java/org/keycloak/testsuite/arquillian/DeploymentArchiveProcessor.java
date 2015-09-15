@@ -4,12 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.io.IOUtils;
 import org.apache.tools.ant.DirectoryScanner;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.test.spi.TestClass;
+import org.jboss.logging.Logger;
+import org.jboss.logging.Logger.Level;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -27,7 +27,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
     public static final String REALM_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
 
-    private static final Logger log = Logger.getLogger(DeploymentArchiveProcessor.class.getName());
+    protected final Logger log = org.jboss.logging.Logger.getLogger(this.getClass());
 
     public static final String WEBXML_PATH = "/WEB-INF/web.xml";
     public static final String ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak.json";
@@ -37,13 +37,13 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
     @Override
     public void process(Archive<?> archive, TestClass testClass) {
-        System.out.println("Processing archive " + archive.getName());
+        log.info("Processing archive " + archive.getName());
 //        if (isAdapterTest(testClass)) {
         modifyAdapterConfigs(archive, testClass);
         attachKeycloakLibs(archive, testClass);
         modifyWebXml(archive, testClass);
 //        } else {
-//            System.out.println(testClass.getJavaClass().getSimpleName() + " is not an AdapterTest");
+//            log.info(testClass.getJavaClass().getSimpleName() + " is not an AdapterTest");
 //        }
     }
     
@@ -61,12 +61,12 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
     protected void modifyAdapterConfig(Archive<?> archive, String adapterConfigPath, boolean relative) {
         if (archive.contains(adapterConfigPath)) {
-            System.out.println("Modifying adapter config " + adapterConfigPath + " in " + archive.getName());
+            log.info("Modifying adapter config " + adapterConfigPath + " in " + archive.getName());
             try {
                 BaseAdapterConfig adapterConfig = loadJson(archive.get(adapterConfigPath)
                         .getAsset().openStream(), BaseAdapterConfig.class);
 
-                System.out.println(" setting " + (relative ? "" : "non-") + "relative auth-server-url");
+                log.info(" setting " + (relative ? "" : "non-") + "relative auth-server-url");
                 if (relative) {
                     adapterConfig.setAuthServerUrl("/auth");
 //                ac.setRealmKey(null); // TODO verify if realm key is required for relative scneario
@@ -79,7 +79,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                         adapterConfigPath);
 
             } catch (IOException ex) {
-                log.log(Level.SEVERE, "Cannot serialize adapter config to JSON.", ex);
+                log.log(Level.FATAL, "Cannot serialize adapter config to JSON.", ex);
             }
         }
     }
@@ -87,24 +87,24 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
     protected void attachKeycloakLibs(Archive<?> archive, TestClass testClass) {
         AdapterLibsMode adapterType = AdapterLibsMode.getByType(System.getProperty("adapter.libs.mode",
                 AdapterLibsMode.PROVIDED.getType()));
-        System.out.println("Adapter type: " + adapterType);
+        log.info("Adapter type: " + adapterType);
         if (adapterType.equals(AdapterLibsMode.BUNDLED)) {
-            System.out.println("Attaching keycloak adapter libs to " + archive.getName());
+            log.info("Attaching keycloak adapter libs to " + archive.getName());
 
             String libsLocationProperty = getAdapterLibsLocationProperty(testClass.getJavaClass());
             assert libsLocationProperty != null;
             File libsLocation = new File(System.getProperty(libsLocationProperty));
             assert libsLocation.exists();
-            System.out.println("Libs location: " + libsLocation.getPath());
+            log.info("Libs location: " + libsLocation.getPath());
 
             WebArchive war = (WebArchive) archive;
 
             for (File lib : getAdapterLibs(libsLocation)) {
-                System.out.println(" attaching: " + lib.getName());
+                log.info(" attaching: " + lib.getName());
                 war.addAsLibrary(lib);
             }
         } else {
-            System.out.println("Expecting keycloak adapter libs to be provided by the server.");
+            log.info("Expecting keycloak adapter libs to be provided by the server.");
         }
     }
 

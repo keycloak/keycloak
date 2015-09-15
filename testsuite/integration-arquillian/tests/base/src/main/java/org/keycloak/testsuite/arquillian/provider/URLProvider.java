@@ -4,17 +4,19 @@ import org.keycloak.testsuite.arquillian.TestContext;
 import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.jboss.logging.Logger;
+import org.jboss.logging.Logger.Level;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContext;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContext;
 
 public class URLProvider extends URLResourceProvider {
 
+    protected final Logger log = Logger.getLogger(this.getClass());
+    
     public static final String LOCALHOST_ADDRESS = "127.0.0.1";
     public static final String LOCALHOST_HOSTNAME = "localhost";
 
@@ -31,9 +33,9 @@ public class URLProvider extends URLResourceProvider {
                 url = fixLocalhost(url);
                 url = removeTrailingSlash(url);
             } catch (MalformedURLException ex) {
-                Logger.getLogger(URLProvider.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(URLProvider.class.getName()).log(Level.FATAL, null, ex);
             }
-            System.out.println("Fixed injected @ArquillianResource URL to: " + url);
+            log.info("Fixed injected @ArquillianResource URL to: " + url);
         }
 
         // inject context roots if annotation present

@@ -39,7 +39,7 @@ public class MultiTenant extends AbstractPageWithInjectedUrl {
 
     public void navigateToRealm(String realm) {
         URL u = getTenantRealmUrl(realm);
-        System.out.println("navigate to "+u.toExternalForm());
+        log.info("navigate to "+u.toExternalForm());
         driver.navigate().to(u.toExternalForm());
     }
 

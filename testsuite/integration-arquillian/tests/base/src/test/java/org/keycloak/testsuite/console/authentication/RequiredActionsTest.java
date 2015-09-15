@@ -35,7 +35,7 @@ import static org.keycloak.testsuite.admin.Users.setPasswordFor;
  * @author Petr Mensik
  * @author mhajas
  */
-@Ignore // FIXME still unstable
+//@Ignore // FIXME still unstable
 public class RequiredActionsTest extends AbstractConsoleTest {
 
     @Page

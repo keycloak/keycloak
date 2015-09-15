@@ -90,7 +90,7 @@
                         <properties>
                             <property>
                                 <name>listener</name>
-                                <value>org.keycloak.testsuite.util.TestConsoleLogger</value>
+                                <value>org.keycloak.testsuite.util.TestEventsLogger</value>
                             </property>
                         </properties>
                         <failIfNoTests>false</failIfNoTests>

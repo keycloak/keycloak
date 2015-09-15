@@ -1,7 +1,6 @@
 package org.keycloak.testsuite.console.page.roles;
 
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.WebElement;
@@ -46,7 +45,7 @@ public class RoleForm extends Form {
         role.setName(getName());
         role.setDescription(getDescription());
         role.setComposite(isComposite());
-        System.out.println(role.getName() + ": " + role.getDescription() + ", comp: " + role.isComposite());
+        log.info(role.getName() + ": " + role.getDescription() + ", comp: " + role.isComposite());
         return role;
     }
 

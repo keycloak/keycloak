@@ -23,7 +23,6 @@ package org.keycloak.testsuite.arquillian.containers;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import org.jboss.arquillian.config.descriptor.api.ArquillianDescriptor;
 import org.jboss.arquillian.config.descriptor.api.ContainerDef;
@@ -38,6 +37,7 @@ import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.core.spi.ServiceLoader;
 import org.jboss.arquillian.core.spi.Validate;
+import org.jboss.logging.Logger;
 import static org.keycloak.testsuite.arquillian.containers.SecurityActions.isClassPresent;
 import static org.keycloak.testsuite.arquillian.containers.SecurityActions.loadClass;
 
@@ -51,7 +51,7 @@ import static org.keycloak.testsuite.arquillian.containers.SecurityActions.loadC
  */
 public class RegistryCreator {
 
-    private Logger logger = Logger.getLogger(RegistryCreator.class.getName());
+    protected final Logger log = Logger.getLogger(this.getClass());
 
     @Inject
     @ApplicationScoped
@@ -83,7 +83,7 @@ public class RegistryCreator {
                     checkMultipleEnabledContainers(container);
                     reg.create(container, serviceLoader);
                 } else {
-                    System.out.println("Container is disabled: " + container.getContainerName());
+                    log.info("Container is disabled: " + container.getContainerName());
                 }
             }
         }
@@ -95,7 +95,7 @@ public class RegistryCreator {
                         //TODO add checkMultipleEnabledContainers according to groups
                         reg.create(container, serviceLoader);
                     } else {
-                        System.out.println("Container is disabled: " + container.getContainerName());
+                        log.info("Container is disabled: " + container.getContainerName());
                     }
                 }
             }

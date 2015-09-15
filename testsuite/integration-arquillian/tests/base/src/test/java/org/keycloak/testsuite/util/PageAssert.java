@@ -20,7 +20,7 @@ public class PageAssert {
     }
 
     public static void assertCurrentUrl(WebDriver driver, final String url) {
-        WebDriverWait wait = new WebDriverWait(driver, 5);
+        WebDriverWait wait = new WebDriverWait(driver, 10);
         ExpectedCondition<Boolean> urlStartsWith = new ExpectedCondition<Boolean>() {
 
             @Override
@@ -37,7 +37,7 @@ public class PageAssert {
     }
 
     public static void assertCurrentUrlStartsWith(WebDriver driver, final String url) {
-        WebDriverWait wait = new WebDriverWait(driver, 3);
+        WebDriverWait wait = new WebDriverWait(driver, 10);
         ExpectedCondition<Boolean> urlStartsWith = new ExpectedCondition<Boolean>() {
 
             @Override
@@ -54,7 +54,7 @@ public class PageAssert {
     }
 
     public static void assertCurrentUrlDoesntStartWith(WebDriver driver, final String url) {
-        WebDriverWait wait = new WebDriverWait(driver, 5);
+        WebDriverWait wait = new WebDriverWait(driver, 10);
         ExpectedCondition<Boolean> urlDoesntStartWith = new ExpectedCondition<Boolean>() {
 
             @Override
@@ -74,9 +74,9 @@ public class PageAssert {
     public static boolean startsWithNormalized(String str1, String str2) {
         String uri1 = normalizeUri(str1);
         String uri2 = normalizeUri(str2);
-//        System.out.println("Assert starts with (normalized):");
-//        System.out.println(" " + uri1);
-//        System.out.println(" " + uri2);
+//        log.info("Assert starts with (normalized):");
+//        log.info(" " + uri1);
+//        log.info(" " + uri2);
         return uri1.startsWith(uri2);
     }
 

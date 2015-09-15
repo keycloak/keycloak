@@ -74,4 +74,5 @@ public class TokensTest extends AbstractRealmTest {
 
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage); // assert logged out (lifespan exceeded)
     }
+    
 }

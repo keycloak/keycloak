@@ -64,7 +64,7 @@ public class IdentityProviderSettings extends AdminConsoleRealm {
         if (p == null) {
             throw new AssertionError("Provider should have been found");
         }
-        System.out.println(p.providerName);
+        log.info(p.providerName);
     }
 
     public Provider find(SocialProvider provider) {

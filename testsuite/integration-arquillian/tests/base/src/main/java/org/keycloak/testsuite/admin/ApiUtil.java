@@ -83,6 +83,7 @@ public class ApiUtil {
         System.out.println(" created user id: " + createdId);
         return createdId;
     }
+    
     public static String createUserAndResetPasswordWithAdminClient(RealmResource realm, UserRepresentation user, String password) {
         String id = createUserWithAdminClient(realm, user);
         resetUserPassword(realm.users().get(id), password, false);

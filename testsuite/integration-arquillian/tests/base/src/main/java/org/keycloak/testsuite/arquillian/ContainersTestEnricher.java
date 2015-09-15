@@ -15,6 +15,7 @@ import org.jboss.arquillian.test.spi.annotation.SuiteScoped;
 import org.jboss.arquillian.container.spi.event.container.AfterStart;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
+import org.jboss.logging.Logger;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.testsuite.arquillian.annotation.AdapterLibsLocationProperty;
@@ -29,6 +30,8 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
  */
 public class ContainersTestEnricher {
 
+    protected final Logger log = Logger.getLogger(this.getClass());
+    
     @Inject
     private Instance<ContainerController> containerController;
 
@@ -59,13 +62,13 @@ public class ContainersTestEnricher {
 
     public void startSuiteContainers(@Observes(precedence = 1) StartSuiteContainers event) {
         if (migrationTests) {
-            System.out.println("\n### Starting keycloak with previous version ###\n");
+            log.info("\n### Starting keycloak with previous version ###\n");
         }
     }
 
     public void stopMigrationContainer(@Observes AfterStart event) {
         if (migrationTests && !alreadyStopped) {
-            System.out.println("\n### Stopping keycloak with previous version ###\n");
+            log.info("\n### Stopping keycloak with previous version ###\n");
             stopSuiteContainers.fire(new StopSuiteContainers());
         }
         alreadyStopped = true;
@@ -82,9 +85,9 @@ public class ContainersTestEnricher {
         appServerQualifier = getAppServerQualifier(testClass);
 
         if (!controller.isStarted(appServerQualifier)) {
-            System.out.println("\nSTARTING APP SERVER: " + appServerQualifier + "\n");
+            log.info("\nSTARTING APP SERVER: " + appServerQualifier + "\n");
             controller.start(appServerQualifier);
-            System.out.println("");
+            log.info("");
         }
 
         initializeTestContext(testClass);

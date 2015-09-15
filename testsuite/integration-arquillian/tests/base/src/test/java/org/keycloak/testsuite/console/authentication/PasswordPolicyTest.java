@@ -31,7 +31,7 @@ import org.keycloak.testsuite.console.page.users.UserCredentials;
  * @author Petr Mensik
  * @author mhajas
  */
-@Ignore // FIXME still unstable
+//@Ignore // FIXME still unstable
 public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Page

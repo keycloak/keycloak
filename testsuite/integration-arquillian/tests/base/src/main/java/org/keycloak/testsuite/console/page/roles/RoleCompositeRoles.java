@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.keycloak.representations.idm.RoleRepresentation.Composites;
+import org.keycloak.testsuite.page.Form;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -19,7 +20,7 @@ import org.openqa.selenium.support.ui.Select;
  * @author fkiss
  * @author tkyjovsk
  */
-public class RoleCompositeRoles {
+public class RoleCompositeRoles extends Form {
 
     @FindBy(id = "available")
     protected Select availableRealmRolesSelect;

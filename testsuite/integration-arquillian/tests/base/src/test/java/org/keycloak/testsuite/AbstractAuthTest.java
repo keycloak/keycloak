@@ -73,9 +73,9 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     }
 
     public void listCookies() {
-        System.out.println("LIST OF COOKIES: ");
+        log.info("LIST OF COOKIES: ");
         for (Cookie c : driver.manage().getCookies()) {
-            System.out.println(MessageFormat.format(" {1} {2} {0}",
+            log.info(MessageFormat.format(" {1} {2} {0}",
                     c.getName(), c.getDomain(), c.getPath(), c.getValue()));
         }
     }
@@ -93,10 +93,6 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     public void assertFlashMessageError() {
         flashMessage.waitUntilPresent();
         assertTrue(flashMessage.getText(), flashMessage.isError());
-    }
-
-    private void logCurrentUrl() {
-        System.out.println("Current URL: " + driver.getCurrentUrl());
     }
 
     public RealmResource testRealmResource() {

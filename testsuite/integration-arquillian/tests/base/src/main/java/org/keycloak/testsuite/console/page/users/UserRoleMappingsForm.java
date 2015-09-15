@@ -38,8 +38,8 @@ public class UserRoleMappingsForm extends RoleCompositeRoles {
             roleNames.contains(role.getText());
             roleNames.remove(role.getText());
         }
-        System.out.println(Arrays.toString(roles));
-        System.out.println(roleNames);
+        log.info(Arrays.toString(roles));
+        log.info(roleNames);
         return roleNames.isEmpty();
     }
 

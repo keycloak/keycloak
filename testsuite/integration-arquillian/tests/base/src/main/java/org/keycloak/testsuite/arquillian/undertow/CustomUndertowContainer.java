@@ -19,6 +19,7 @@ import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.jboss.shrinkwrap.api.Archive;
@@ -30,6 +31,8 @@ import org.keycloak.services.resources.KeycloakApplication;
 
 public class CustomUndertowContainer implements DeployableContainer<CustomUndertowContainerConfiguration> {
 
+    protected final Logger log = Logger.getLogger(this.getClass());
+    
     private UndertowJaxrsServer undertow;
     private CustomUndertowContainerConfiguration configuration;
 
@@ -105,7 +108,7 @@ public class CustomUndertowContainer implements DeployableContainer<CustomUndert
 
     @Override
     public void start() throws LifecycleException {
-        System.out.println("Starting auth server on embedded Undertow.");
+        log.info("Starting auth server on embedded Undertow.");
         long start = System.currentTimeMillis();
 
         if (undertow == null) {
@@ -119,12 +122,12 @@ public class CustomUndertowContainer implements DeployableContainer<CustomUndert
 
         undertow.deploy(createAuthServerDeploymentInfo());
 
-        System.out.println("Auth server started in " + (System.currentTimeMillis() - start) + " ms\n");
+        log.info("Auth server started in " + (System.currentTimeMillis() - start) + " ms\n");
     }
 
     @Override
     public void stop() throws LifecycleException {
-        System.out.println("Stopping auth server.");
+        log.info("Stopping auth server.");
         undertow.stop();
     }
 

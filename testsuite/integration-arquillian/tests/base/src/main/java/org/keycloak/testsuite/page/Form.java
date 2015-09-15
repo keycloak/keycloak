@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.page;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.logging.Logger;
 import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -12,6 +13,8 @@ import org.openqa.selenium.support.FindBy;
  */
 public class Form {
 
+    protected final Logger log = Logger.getLogger(this.getClass());
+    
     @Drone
     protected WebDriver driver;
 

@@ -10,12 +10,12 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
-import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
@@ -40,12 +40,14 @@ import org.keycloak.testsuite.util.Timer;
 @RunAsClient
 public abstract class AbstractKeycloakTest {
 
+    protected Logger log = Logger.getLogger(this.getClass());
+
     @ArquillianResource
     protected SuiteContext suiteContext;
 
     @ArquillianResource
     protected TestContext testContext;
-
+    
     @ArquillianResource
     protected Keycloak adminClient;
 
@@ -108,7 +110,6 @@ public abstract class AbstractKeycloakTest {
     }
 
     protected void driverSettings() {
-//        driver.manage().timeouts().setScriptTimeout(3, TimeUnit.SECONDS);
         driver.manage().timeouts().implicitlyWait(3, TimeUnit.SECONDS);
         driver.manage().timeouts().setScriptTimeout(3, TimeUnit.SECONDS);
         driver.manage().window().maximize();
@@ -122,7 +123,7 @@ public abstract class AbstractKeycloakTest {
     public abstract void addTestRealms(List<RealmRepresentation> testRealms);
 
     private void addTestRealms() {
-        System.out.println("loading test realms");
+        log.debug("loading test realms");
         if (testRealmReps == null) {
             testRealmReps = new ArrayList<>();
         }
@@ -133,14 +134,14 @@ public abstract class AbstractKeycloakTest {
 
     public void importTestRealms() {
         addTestRealms();
-        System.out.println("importing test realms");
+        log.info("importing test realms");
         for (RealmRepresentation testRealm : testRealmReps) {
             importRealm(testRealm);
         }
     }
 
     public void removeTestRealms() {
-        System.out.println("removing test realms");
+        log.info("removing test realms");
         for (RealmRepresentation testRealm : testRealmReps) {
             removeRealm(testRealm);
         }
@@ -154,11 +155,11 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void importRealm(RealmRepresentation realm) {
-        System.out.println("importing realm: " + realm.getRealm());
+        log.debug("importing realm: " + realm.getRealm());
         try { // TODO - figure out a way how to do this without try-catch
             RealmResource realmResource = adminClient.realms().realm(realm.getRealm());
             RealmRepresentation rRep = realmResource.toRepresentation();
-            System.out.println(" realm already exists on server, re-importing");
+            log.debug("realm already exists on server, re-importing");
             realmResource.remove();
         } catch (NotFoundException nfe) {
             // expected when realm does not exist

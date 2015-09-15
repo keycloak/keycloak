@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.logging.Logger;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -12,6 +13,8 @@ import org.openqa.selenium.WebDriver;
  * @author tkyjovsk
  */
 public abstract class AbstractPage {
+    
+    protected final Logger log = Logger.getLogger(this.getClass());
 
     private final Map<String, Object> uriParameters = new HashMap<>();
 
@@ -20,12 +23,20 @@ public abstract class AbstractPage {
 
     private UriBuilder builder;
 
+    public WebDriver getDriver() {
+        return driver;
+    }
+
     public abstract UriBuilder createUriBuilder();
 
     public String getUriFragment() {
         return "";
     }
 
+    /**
+     *
+     * @return Instance of UriBuilder that can build URIs for a concrete page.
+     */
     public UriBuilder getUriBuilder() {
         if (builder == null) {
             builder = createUriBuilder();
@@ -50,20 +61,19 @@ public abstract class AbstractPage {
         return getUriBuilder().buildFromMap(uriParameters);
     }
 
-    public AbstractPage navigateTo() {
-        String uri = buildUri().toASCIIString();
-        System.out.println("navigating to " + uri);
-        driver.navigate().to(uri);
-        return this;
-    }
-
-    public WebDriver getDriver() {
-        return driver;
-    }
-
     @Override
     public String toString() {
         return buildUri().toASCIIString();
     }
 
+    public void navigateTo() {
+        String uri = buildUri().toASCIIString();
+        log.info("navigating to " + uri);
+        driver.navigate().to(uri);
+    }
+    
+    public boolean isCurrent() {
+        return driver.getCurrentUrl().equals(toString());
+    }
+    
 }
