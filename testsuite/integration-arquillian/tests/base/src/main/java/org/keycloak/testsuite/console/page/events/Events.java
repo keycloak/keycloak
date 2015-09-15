@@ -12,7 +12,7 @@ public class Events extends AdminConsoleRealm {
 
     @Override
     public String getUriFragment() {
-        return super.getUriFragment() + "/events";
+        return super.getUriFragment();
     }
     
     @FindBy(linkText = "Login Events")
