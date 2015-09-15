@@ -49,6 +49,9 @@ public class UserAttributesForm extends Form {
     @FindBy(className = "select2-search-choice-close")
     private List<WebElement> removeRequiredActionsList;
 
+    @FindBy(xpath = "//button[@data-ng-click='unlockUser()']")
+    private WebElement unlockUserButton;
+
     public String getId() {
         return getInputValue(idInput);
     }
@@ -91,6 +94,10 @@ public class UserAttributesForm extends Form {
 
     public void setEnabled(boolean enabled) {
         userEnabledSwitch.setOn(enabled);
+    }
+
+    public void unlockUser() {
+        unlockUserButton.click();
     }
 
     public boolean isEmailVerified() {
