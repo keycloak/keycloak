@@ -20,7 +20,6 @@ package org.keycloak.testsuite.console.realm;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.console.page.realm.SecurityDefenses;
 import org.keycloak.testsuite.console.page.users.UserAttributes;

@@ -44,7 +44,7 @@ public class AdminEventsTest extends AbstractConsoleTest {
     }
 
     @Test
-    public void clientsPageEventsTest() {
+    public void clientsAdminEventsTest() {
         newClient = AbstractClientTest.createClientRepresentation("test_client", "http://example.test/test_client/*");
         Response response = clientsPage.clientsResource().create(newClient);
         String id = ApiUtil.getCreatedId(response);
