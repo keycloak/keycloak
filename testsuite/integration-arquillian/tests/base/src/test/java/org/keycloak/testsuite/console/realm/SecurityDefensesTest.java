@@ -32,6 +32,7 @@ import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
 
 /**
  * @author Filip Kiss
@@ -79,8 +80,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
         testRealmLoginPage.form().login(testUser);
         waitForFeedbackText("Invalid username or password.");
-        Date startTime = new Date();
-        Date endTime = new Date(startTime.getTime() + secondsToWait * 1000);
+        Date endTime = new Date(new Date().getTime() + secondsToWait * 1000);
 
         testRealmLoginPage.form().login(testUser);
         waitGui().until().element(By.className("instruction"))
@@ -98,8 +98,9 @@ public class SecurityDefensesTest extends AbstractRealmTest {
             }
         }
 
+        setPasswordFor(testUser, PASSWORD);
         testRealmLoginPage.form().login(testUser);
-        waitForFeedbackText("Invalid username or password.");
+        assertCurrentUrlStartsWith(testRealmAccountPage);
     }
 
     @Test
@@ -120,8 +121,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
         testRealmLoginPage.form().login(testUser);
         testRealmLoginPage.form().login(testUser);
-        Date startTime = new Date();
-        Date endTime = new Date(startTime.getTime() + secondsToWait * 1000);
+        Date endTime = new Date(new Date().getTime() + secondsToWait * 1000);
         testRealmLoginPage.form().login(testUser);
         waitGui().until().element(By.className("instruction"))
                 .text().contains("Account is temporarily disabled, contact admin or try again later.");
@@ -129,6 +129,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
         testRealmAccountPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
+        endTime = new Date(endTime.getTime() + secondsToWait * 1000);
 
         while (new Date().compareTo(endTime) < 0) {
             try {
@@ -138,8 +139,9 @@ public class SecurityDefensesTest extends AbstractRealmTest {
             }
         }
 
+        setPasswordFor(testUser, PASSWORD);
         testRealmLoginPage.form().login(testUser);
-        waitForFeedbackText("Invalid username or password.");
+        assertCurrentUrlStartsWith(testRealmAccountPage);
     }
 
     @Test
@@ -157,15 +159,16 @@ public class SecurityDefensesTest extends AbstractRealmTest {
         setPasswordFor(testUser, PASSWORD + "-mismatch");
 
         testRealmLoginPage.form().login(testUser);
+        Date endTime = new Date(new Date().getTime() + secondsToWait * 1000);
         waitForFeedbackText("Invalid username or password.");
-        Date startTime = new Date();
 
         testRealmLoginPage.form().login(testUser);
+        endTime = new Date(endTime.getTime() + secondsToWait * 1000);
         waitGui().until().element(By.className("instruction"))
                 .text().contains("Account is temporarily disabled, contact admin or try again later.");
         testRealmAccountPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
-        Date endTime = new Date(new Date().getTime() + secondsToWait * 1000);
+        endTime = new Date(endTime.getTime() + secondsToWait * 1000);
         waitForFeedbackText("Account is temporarily disabled, contact admin or try again later.");
 
         while (new Date().compareTo(endTime) < 0) {
@@ -176,8 +179,9 @@ public class SecurityDefensesTest extends AbstractRealmTest {
             }
         }
 
+        setPasswordFor(testUser, PASSWORD);
         testRealmLoginPage.form().login(testUser);
-        waitForFeedbackText("Invalid username or password.");
+        assertCurrentUrlStartsWith(testRealmAccountPage);
     }
 
     @Test
@@ -209,8 +213,10 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
         testRealmLoginPage.form().login(testUser);
         waitForFeedbackText("Invalid username or password.");
+
+        setPasswordFor(testUser, PASSWORD);
         testRealmLoginPage.form().login(testUser);
-        waitForFeedbackText("Invalid username or password.");
+        assertCurrentUrlStartsWith(testRealmAccountPage);
     }
 
     @Test
@@ -235,8 +241,11 @@ public class SecurityDefensesTest extends AbstractRealmTest {
         userAttributesPage.form().unlockUser();
 
         testRealmAccountPage.navigateTo();
+
+        setPasswordFor(testUser, PASSWORD);
+
         testRealmLoginPage.form().login(testUser);
-        waitForFeedbackText("Invalid username or password.");
+        assertCurrentUrlStartsWith(testRealmAccountPage);
     }
 
     private void waitForFeedbackText(String text) {
