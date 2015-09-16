@@ -5,10 +5,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -65,9 +62,16 @@ public class ClientsResource {
         List<ClientRepresentation> rep = new ArrayList<>();
         List<ClientModel> clientModels = realm.getClients();
 
-        boolean view = auth.hasView();
         for (ClientModel clientModel : clientModels) {
-            if (view) {
+
+            // Check for client-wise permissions
+            boolean hasPermissions = true;
+            if (clientModel.isClientManageAuthEnabled()) {
+                ClientAuth clientAuth = new ClientAuth(auth, clientModel);
+                hasPermissions = clientAuth.canView();
+            }
+
+            if (hasPermissions) {
                 rep.add(ModelToRepresentation.toRepresentation(clientModel));
             } else {
                 ClientRepresentation client = new ClientRepresentation();
@@ -93,13 +97,26 @@ public class ClientsResource {
 
         try {
             ClientModel clientModel = RepresentationToModel.createClient(session, realm, rep, true);
-            
+            addClientRoles(clientModel, true);
+
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientModel.getId()).representation(rep).success();
-            
+
             return Response.created(uriInfo.getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
         }
+    }
+
+    private void addClientRoles(ClientModel client, boolean grantCurrentUser) {
+        UserModel user = auth.getAuth().getUser();
+
+        RoleModel adminRole = client.addRole(ClientRoles.CLIENT_ADMIN);
+        for (String role : ClientRoles.MANAGEMENT_ROLES) {
+            RoleModel roleModel = client.addRole(role);
+            adminRole.addCompositeRole(roleModel);
+            if (grantCurrentUser) user.grantRole(roleModel);
+        }
+        if (grantCurrentUser) user.grantRole(adminRole);
     }
 
     /**

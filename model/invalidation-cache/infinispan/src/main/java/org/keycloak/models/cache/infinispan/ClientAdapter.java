@@ -431,6 +431,18 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public boolean isClientManageAuthEnabled() {
+        if (updated != null) return updated.isClientManageAuthEnabled();
+        return cached.isClientManageAuthEnabled();
+    }
+
+    @Override
+    public void setClientManageAuthEnabled(boolean clientManageAuthEnabled) {
+        getDelegateForUpdate();
+        updated.setClientManageAuthEnabled(clientManageAuthEnabled);
+    }
+
+    @Override
     public RoleModel getRole(String name) {
         if (updated != null) return updated.getRole(name);
         String id = cached.getRoles().get(name);

@@ -45,6 +45,13 @@
                 </div>
                 <kc-tooltip>When enabled, client can only obtain grants from grant REST API.</kc-tooltip>
             </div>
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="clientManageAuthEnabled">Management Authorization</label>
+                <div class="col-sm-6">
+                    <input ng-model="client.clientManageAuthEnabled" name="clientManageAuthEnabled" id="clientManageAuthEnabled" onoffswitch />
+                </div>
+                <kc-tooltip>When enabled, client management is restricted to users who are mapped to the corresponding 'keycloak-client' roles.</kc-tooltip>
+            </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="protocol">Client Protocol</label>
                 <div class="col-sm-6">

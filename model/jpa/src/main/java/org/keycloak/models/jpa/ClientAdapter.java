@@ -482,6 +482,16 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public boolean isClientManageAuthEnabled() {
+        return entity.isClientManageAuthEnabled();
+    }
+
+    @Override
+    public void setClientManageAuthEnabled(boolean clientManageAuthEnabled) {
+        entity.setClientManageAuthEnabled(clientManageAuthEnabled);
+    }
+
+    @Override
     public boolean isDirectGrantsOnly() {
         return entity.isDirectGrantsOnly();
     }

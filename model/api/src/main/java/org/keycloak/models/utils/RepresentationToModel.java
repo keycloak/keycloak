@@ -692,6 +692,7 @@ public class RepresentationToModel {
         if (resourceRep.isBearerOnly() != null) client.setBearerOnly(resourceRep.isBearerOnly());
         if (resourceRep.isConsentRequired() != null) client.setConsentRequired(resourceRep.isConsentRequired());
         if (resourceRep.isServiceAccountsEnabled() != null) client.setServiceAccountsEnabled(resourceRep.isServiceAccountsEnabled());
+        if (resourceRep.isClientManageAuthEnabled() != null) client.setClientManageAuthEnabled(resourceRep.isClientManageAuthEnabled());
         if (resourceRep.isDirectGrantsOnly() != null) client.setDirectGrantsOnly(resourceRep.isDirectGrantsOnly());
         if (resourceRep.isPublicClient() != null) client.setPublicClient(resourceRep.isPublicClient());
         if (resourceRep.isFrontchannelLogout() != null) client.setFrontchannelLogout(resourceRep.isFrontchannelLogout());
@@ -788,6 +789,7 @@ public class RepresentationToModel {
         if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
         if (rep.isConsentRequired() != null) resource.setConsentRequired(rep.isConsentRequired());
         if (rep.isServiceAccountsEnabled() != null) resource.setServiceAccountsEnabled(rep.isServiceAccountsEnabled());
+        if (rep.isClientManageAuthEnabled() != null) resource.setClientManageAuthEnabled(rep.isClientManageAuthEnabled());
         if (rep.isDirectGrantsOnly() != null) resource.setDirectGrantsOnly(rep.isDirectGrantsOnly());
         if (rep.isPublicClient() != null) resource.setPublicClient(rep.isPublicClient());
         if (rep.isFullScopeAllowed() != null) resource.setFullScopeAllowed(rep.isFullScopeAllowed());

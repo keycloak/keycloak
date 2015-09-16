@@ -3,16 +3,15 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientRoles;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.ForbiddenException;
 
 import javax.ws.rs.core.UriInfo;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -30,17 +29,23 @@ public abstract class RoleResource {
     }
 
     protected void deleteRole(RoleModel role) {
+        ProcessStaticRoleRestrictions(role);
+
         if (!role.getContainer().removeRole(role)) {
             throw new NotFoundException("Role not found");
         }
     }
 
     protected void updateRole(RoleRepresentation rep, RoleModel role) {
+        ProcessStaticRoleRestrictions(role);
+
         role.setName(rep.getName());
         role.setDescription(rep.getDescription());
     }
 
     protected void addComposites(AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {
+        ProcessStaticRoleRestrictions(role);
+
         for (RoleRepresentation rep : roles) {
             RoleModel composite = realm.getRoleById(rep.getId());
             if (composite == null) {
@@ -85,12 +90,22 @@ public abstract class RoleResource {
     }
 
     protected void deleteComposites(List<RoleRepresentation> roles, RoleModel role) {
+        ProcessStaticRoleRestrictions(role);
+
         for (RoleRepresentation rep : roles) {
             RoleModel composite = realm.getRoleById(rep.getId());
             if (composite == null) {
                 throw new NotFoundException("Could not find composite role");
             }
             role.removeCompositeRole(composite);
+        }
+    }
+
+    private void ProcessStaticRoleRestrictions(RoleModel... roles) {
+        for (RoleModel role : roles) {
+            if (ClientRoles.ALL_ROLES.contains(role.getName())) {
+                throw new ForbiddenException("Cannot modify the static role '" + role.getName() + "'");
+            }
         }
     }
 }

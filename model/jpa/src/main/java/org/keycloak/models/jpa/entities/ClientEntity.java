@@ -100,6 +100,9 @@ public class ClientEntity {
     @Column(name="SERVICE_ACCOUNTS_ENABLED")
     private boolean serviceAccountsEnabled;
 
+    @Column(name="CLIENT_MANAGE_AUTH_ENABLED")
+    private boolean clientManageAuthEnabled;
+
     @Column(name="NODE_REREG_TIMEOUT")
     private int nodeReRegistrationTimeout;
 
@@ -314,6 +317,14 @@ public class ClientEntity {
 
     public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
+    }
+
+    public boolean isClientManageAuthEnabled() {
+        return clientManageAuthEnabled;
+    }
+
+    public void setClientManageAuthEnabled(boolean clientManageAuthEnabled) {
+        this.clientManageAuthEnabled = clientManageAuthEnabled;
     }
 
     public boolean isDirectGrantsOnly() {

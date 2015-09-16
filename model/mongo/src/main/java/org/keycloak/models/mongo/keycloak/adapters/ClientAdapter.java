@@ -484,6 +484,16 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
+    public boolean isClientManageAuthEnabled() {
+        return getMongoEntity().isClientManageAuthEnabled();
+    }
+
+    @Override
+    public void setClientManageAuthEnabled(boolean clientManageAuthEnabled) {
+        getMongoEntity().setClientManageAuthEnabled(clientManageAuthEnabled);
+    }
+
+    @Override
     public boolean isDirectGrantsOnly() {
         return getMongoEntity().isDirectGrantsOnly();
     }
