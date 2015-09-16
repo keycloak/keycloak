@@ -1,0 +1,3 @@
+org.keycloak.testsuite.arquillian.KeycloakArquillianExtension
+!org.jboss.arquillian.container.impl.ContainerExtension
+org.keycloak.testsuite.arquillian.containers.MultipleContainersExtension

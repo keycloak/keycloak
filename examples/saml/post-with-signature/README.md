@@ -15,74 +15,101 @@ This example demonstrates Keycloak SAML 2.0 support in conjunction with a servle
 
 Make sure you've set up the Keycloak Server
 --------------------------------------
-The Keycloak Appliance Distribution comes with a preconfigured Keycloak server (based on Wildfly).  You can use it out of
+The Keycloak Demo distribution comes with a preconfigured Keycloak server (based on Wildfly 9).  You can use it out of
 the box to run these demos.  So, if you're using this, you can head to Step 2.
 
-Alternatively, you can install the Keycloak Server onto any EAP 6.x, or Wildfly 8.x server, but there is
-a few steps you must follow.
+Alternatively, you can install the Keycloak Server onto any EAP 6.x, or Wildfly 9.x server, but there is
+a few steps you must follow. You need to obtain the latest Keycloak Overlay distribution. That distribution is used to install Keycloak onto an existing EAP / Wildfly installation
+by providing all the necessary Keycloak Server modules, and configurations.
 
-Obtain latest keycloak-war-dist-all.zip.  This distro is used to install Keycloak onto an existing JBoss installation.
-This installs the server.
-
-    $ cd ${wildfly.jboss.home}/standalone
-    $ cp -r ${keycloak-war-dist-all}/deployments .
-
-To be able to run the demos you also need to install the Keycloak client adapter. For Wildfly:
+For Wildfly 9:
 
     $ cd ${wildfly.home}
-    $ unzip ${keycloak-war-dist-all}/adapters/keycloak-wildfly-adapter-dist.zip
+    $ unzip ${keycloak-overlay.zip}
+
+For JBoss EAP 6.x:
+
+    $ cd ${jboss.eap6.home}
+    $ unzip ${keycloak-overlay-eap6.zip}
+
+
+
+To be able to run the demos you also need to install the Keycloak Adapter which extends your app server with KEYCLOAK authentication mechanism.
+
+
+For Wildfly 9:
+
+    $ cd ${wildfly.home}
+    $ unzip ${keycloak-wf9-adapter-dist.zip}
 
 For JBoss EAP 6.x
 
-    $ cd ${eap.home}
-    $ unzip ${keycloak-war-dist-all}/adapters/keycloak-eap6-adapter-dist.zip
+    $ cd ${jboss.eap6.home}
+    $ unzip ${keycloak-eap6-adapter-dist.zip}
 
 For JBoss AS 7.1.1:
 
     $ cd ${as7.home}
-    $ unzip ${keycloak-war-dist-all}/adapters/keycloak-as7-adapter-dist.zip
+    $ unzip ${keycloak-as7-adapter-dist.zip}
 
-Unzipping the adapter ZIP only installs the JAR files.  You must also add the Keycloak Subsystem to the server's
-configuration (standalone/configuration/standalone.xml).
+
+In addition to unzipping the adapter .zip we also have to add the keycloak-adapter-subsystem to the app server's configuration file.
+If you install into the same app server you installed Keycloak Overlay into then use standalone/configuration/standalone-keycloak.xml.
+Otherwise use standalone/configuration/standalone.xml.
 
     <server xmlns="urn:jboss:domain:1.4">
 
         <extensions>
-            <extension module="org.keycloak.keycloak-subsystem"/>
             ...
+            <extension module="org.keycloak.keycloak-adapter-subsystem"/>
         </extensions>
 
         <profile>
-            <subsystem xmlns="urn:jboss:domain:keycloak:1.0"/>
             ...
+            <subsystem xmlns="urn:jboss:domain:keycloak:1.1"/>
         </profile>
+        
+        ...
+    </server>
 
 
-Boot Keycloak Server
+WARNING: Note that we only target Wildfly 9, and EAP 6.4 for Keycloak Server. While you can still test examples running on AS 7.1.1, you may need to do a few additional changes in examples to point them to external Keycloak Server running on Wildfly 9 or EAP 6.4.
+Specifically, "auth-server-url" attribute in keycloak.json files has to be set to an absolute URL since examples will run on a different app server than Keycloak Server.
+
+
+Step 2: Start up the Keycloak Server
 ---------------------------------------
-Where you go to start up the Keycloak Server depends on which distro you installed.
 
-From appliance:
+The exact command to start up the server depends on the installation method chosen in Step 1.
 
-```
-$ cd keycloak/bin
-$ ./standalone.sh
-```
-
-
-From existing Wildfly/EAP6/AS7 distro
+For Keycloak Demo distribution - which includes Keycloak Server, and Keycloak Adapter:
 
 ```
-$ cd ${wildfly.jboss.home}/bin
-$ ./standalone.sh
+$ cd keycloak-demo
+$ bin/standalone.sh
 ```
 
+
+For Keycloak Server deployed to existing Wildfly 9 / EAP 6 server using Keycloak Overlay distribution:
+
+```
+$ cd ${jboss.home}
+$ bin/standalone.sh -c standalone-keycloak.xml
+```
+
+For AS 7 / EAP 6 / Wildfly server containing example applications only - without the Keycloak Server:
+
+```
+$ cd ${jboss.home}
+$ bin/standalone.sh
+```
+  
 
 Import the Test Realm
 ---------------------------------------
-Next thing you have to do is import the test realm for the demo.  Clicking on the below link will bring you to the
-create realm page in the Admin UI.  The username/password is admin/admin to login in.  Keycloak will ask you to
-create a new admin password before you can go to the create realm page.
+Next thing to do is to import the test realm for the demo.  Clicking on the below link will bring you to the
+Create Realm page in the Admin UI.  The username/password is admin/admin.  Keycloak will ask you to
+create a new admin password the first time you try to log in. You can simply re-enter admin/admin.
 
 [http://localhost:8080/auth/admin/master/console/#/create/realm](http://localhost:8080/auth/admin/master/console/#/create/realm)
 
