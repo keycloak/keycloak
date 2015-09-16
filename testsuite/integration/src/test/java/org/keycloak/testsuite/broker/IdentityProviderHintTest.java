@@ -77,6 +77,6 @@ public class IdentityProviderHintTest {
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
-        assertEquals("Could not find an identity provider with the identifier [invalid-idp-id].", this.driver.findElement(By.className("instruction")).getText());
+        assertEquals("Could not find an identity provider with the identifier.", this.driver.findElement(By.className("instruction")).getText());
     }
 }
