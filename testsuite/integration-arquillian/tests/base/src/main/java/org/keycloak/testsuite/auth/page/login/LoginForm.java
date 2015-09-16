@@ -24,8 +24,8 @@ public class LoginForm extends Form {
 
     @FindBy(name = "login")
     private WebElement loginButton;
-    @FindBy(name = "cancel")
-    private WebElement cancelButton;
+//    @FindBy(name = "cancel")
+//    private WebElement cancelButton;
 
     @FindBy(linkText = "Register")
     private WebElement registerLink;
@@ -59,11 +59,11 @@ public class LoginForm extends Form {
         loginButton.click();
     }
 
-    @Override
-    public void cancel() {
-        waitAjaxForElement(cancelButton);
-        cancelButton.click();
-    }
+//    @Override
+//    public void cancel() {
+//        waitAjaxForElement(cancelButton);
+//        cancelButton.click();
+//    }
     
     public void waitForUsernameInputPresent() {
         accountFields.waitForUsernameInputPresent();
