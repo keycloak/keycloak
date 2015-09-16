@@ -89,6 +89,12 @@ public class KeycloakLogoutHandlerTest {
     }
 
     @Test
+    public void testLogoutNullAuthentication() throws Exception {
+        keycloakLogoutHandler.logout(request, response, null);
+        verifyZeroInteractions(session);
+    }
+
+    @Test
     public void testHandleSingleSignOut() throws Exception {
         keycloakLogoutHandler.handleSingleSignOut(request, response, keycloakAuthenticationToken);
         verify(session).logout(eq(keycloakDeployment));
