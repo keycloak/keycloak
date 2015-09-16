@@ -1,5 +1,7 @@
 package org.keycloak.models.cache.entities;
 
+import org.keycloak.models.OfflineClientSessionModel;
+import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialValueModel;
@@ -7,9 +9,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.util.MultivaluedHashMap;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -33,6 +37,8 @@ public class CachedUser implements Serializable {
     private MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
     private Set<String> requiredActions = new HashSet<>();
     private Set<String> roleMappings = new HashSet<String>();
+    private Map<String, OfflineUserSessionModel> offlineUserSessions = new HashMap<>();
+    private Map<String, OfflineClientSessionModel> offlineClientSessions = new HashMap<>();
 
     public CachedUser(RealmModel realm, UserModel user) {
         this.id = user.getId();
@@ -52,6 +58,12 @@ public class CachedUser implements Serializable {
         this.requiredActions.addAll(user.getRequiredActions());
         for (RoleModel role : user.getRoleMappings()) {
             roleMappings.add(role.getId());
+        }
+        for (OfflineUserSessionModel offlineSession : user.getOfflineUserSessions()) {
+            offlineUserSessions.put(offlineSession.getUserSessionId(), offlineSession);
+        }
+        for (OfflineClientSessionModel offlineSession : user.getOfflineClientSessions()) {
+            offlineClientSessions.put(offlineSession.getClientSessionId(), offlineSession);
         }
     }
 
@@ -117,5 +129,13 @@ public class CachedUser implements Serializable {
 
     public String getServiceAccountClientLink() {
         return serviceAccountClientLink;
+    }
+
+    public Map<String, OfflineUserSessionModel> getOfflineUserSessions() {
+        return offlineUserSessions;
+    }
+
+    public Map<String, OfflineClientSessionModel> getOfflineClientSessions() {
+        return offlineClientSessions;
     }
 }

@@ -646,7 +646,7 @@ public class AccountTest {
         }
     }
 
-    // More tests (including revoke) are in OAuthGrantTest
+    // More tests (including revoke) are in OAuthGrantTest and OfflineTokenTest
     @Test
     public void applications() {
         applicationsPage.open();

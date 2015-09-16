@@ -164,6 +164,10 @@
                 url += '&kc_idp_hint=' + options.idpHint;
             }
 
+            if (options && options.scope) {
+                url += '&scope=' + options.scope;
+            }
+
             return url;
         }
 

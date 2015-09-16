@@ -164,6 +164,7 @@
             "name": "Other Application",
             "enabled": true,
             "serviceAccountsEnabled": true,
+            "offlineTokensEnabled": true,
             "clientAuthenticatorType": "client-jwt",
             "protocolMappers" : [
                 {

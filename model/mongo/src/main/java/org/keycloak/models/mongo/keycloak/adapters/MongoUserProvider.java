@@ -19,6 +19,8 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.entities.FederatedIdentityEntity;
+import org.keycloak.models.entities.OfflineClientSessionEntity;
+import org.keycloak.models.entities.OfflineUserSessionEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.utils.CredentialValidation;
@@ -399,6 +401,36 @@ public class MongoUserProvider implements UserProvider {
                 .and("clientId").is(client.getId())
                 .get();
         getMongoStore().removeEntities(MongoUserConsentEntity.class, query, false, invocationContext);
+
+        // Remove all offlineClientSessions
+        query = new QueryBuilder()
+                .and("offlineUserSessions.offlineClientSessions.clientId").is(client.getId())
+                .get();
+        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, query, invocationContext);
+        for (MongoUserEntity user : users) {
+            boolean anyRemoved = false;
+            for (OfflineUserSessionEntity userSession : user.getOfflineUserSessions()) {
+                for (OfflineClientSessionEntity clientSession : userSession.getOfflineClientSessions()) {
+                    if (clientSession.getClientId().equals(client.getId())) {
+                        userSession.getOfflineClientSessions().remove(clientSession);
+                        anyRemoved = true;
+                        break;
+                    }
+                }
+
+                // Check if it was last clientSession. Then remove userSession too
+                if (userSession.getOfflineClientSessions().size() == 0) {
+                    user.getOfflineUserSessions().remove(userSession);
+                    anyRemoved = true;
+                    break;
+                }
+            }
+
+            if (anyRemoved) {
+                getMongoStore().updateEntity(user, invocationContext);
+            }
+
+        }
     }
 
     @Override

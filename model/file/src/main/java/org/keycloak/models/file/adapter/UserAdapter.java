@@ -22,7 +22,10 @@ import org.keycloak.models.ClientModel;
 import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.OfflineClientSessionModel;
+import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -32,6 +35,8 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.CredentialEntity;
 import org.keycloak.models.entities.FederatedIdentityEntity;
+import org.keycloak.models.entities.OfflineClientSessionEntity;
+import org.keycloak.models.entities.OfflineUserSessionEntity;
 import org.keycloak.models.entities.RoleEntity;
 import org.keycloak.models.entities.UserEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -39,6 +44,7 @@ import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.util.Time;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -216,7 +222,7 @@ public class UserAdapter implements UserModel, Comparable {
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return user.getAttributes()==null ? Collections.<String, List<String>>emptyMap() : Collections.unmodifiableMap((Map)user.getAttributes());
+        return user.getAttributes()==null ? Collections.<String, List<String>>emptyMap() : Collections.unmodifiableMap((Map) user.getAttributes());
     }
 
     @Override
@@ -567,6 +573,142 @@ public class UserAdapter implements UserModel, Comparable {
         // TODO
         return false;
     }
+
+    @Override
+    public void addOfflineUserSession(OfflineUserSessionModel userSession) {
+        if (user.getOfflineUserSessions() == null) {
+            user.setOfflineUserSessions(new ArrayList<OfflineUserSessionEntity>());
+        }
+
+        if (getUserSessionEntityById(userSession.getUserSessionId()) != null) {
+            throw new ModelDuplicateException("User session already exists with id " + userSession.getUserSessionId() + " for user " + user.getUsername());
+        }
+
+        OfflineUserSessionEntity entity = new OfflineUserSessionEntity();
+        entity.setUserSessionId(userSession.getUserSessionId());
+        entity.setData(userSession.getData());
+        entity.setOfflineClientSessions(new ArrayList<OfflineClientSessionEntity>());
+        user.getOfflineUserSessions().add(entity);
+    }
+
+    @Override
+    public OfflineUserSessionModel getOfflineUserSession(String userSessionId) {
+        OfflineUserSessionEntity entity = getUserSessionEntityById(userSessionId);
+        return entity==null ? null : toModel(entity);
+    }
+
+    @Override
+    public Collection<OfflineUserSessionModel> getOfflineUserSessions() {
+        if (user.getOfflineUserSessions()==null) {
+            return Collections.emptyList();
+        } else {
+            List<OfflineUserSessionModel> result = new ArrayList<>();
+            for (OfflineUserSessionEntity entity : user.getOfflineUserSessions()) {
+                result.add(toModel(entity));
+            }
+            return result;
+        }
+    }
+
+    private OfflineUserSessionModel toModel(OfflineUserSessionEntity entity) {
+        OfflineUserSessionModel model = new OfflineUserSessionModel();
+        model.setUserSessionId(entity.getUserSessionId());
+        model.setData(entity.getData());
+        return model;
+    }
+
+    @Override
+    public boolean removeOfflineUserSession(String userSessionId) {
+        OfflineUserSessionEntity entity = getUserSessionEntityById(userSessionId);
+        if (entity != null) {
+            user.getOfflineUserSessions().remove(entity);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private OfflineUserSessionEntity getUserSessionEntityById(String userSessionId) {
+        if (user.getOfflineUserSessions() != null) {
+            for (OfflineUserSessionEntity entity : user.getOfflineUserSessions()) {
+                if (entity.getUserSessionId().equals(userSessionId)) {
+                    return entity;
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public void addOfflineClientSession(OfflineClientSessionModel clientSession) {
+        OfflineUserSessionEntity userSessionEntity = getUserSessionEntityById(clientSession.getUserSessionId());
+        if (userSessionEntity == null) {
+            throw new ModelException("OfflineUserSession with ID " + clientSession.getUserSessionId() + " doesn't exist for user " + user.getUsername());
+        }
+
+        OfflineClientSessionEntity clEntity = new OfflineClientSessionEntity();
+        clEntity.setClientSessionId(clientSession.getClientSessionId());
+        clEntity.setClientId(clientSession.getClientId());
+        clEntity.setData(clientSession.getData());
+
+        userSessionEntity.getOfflineClientSessions().add(clEntity);
+    }
+
+    @Override
+    public OfflineClientSessionModel getOfflineClientSession(String clientSessionId) {
+        if (user.getOfflineUserSessions() != null) {
+            for (OfflineUserSessionEntity userSession : user.getOfflineUserSessions()) {
+                for (OfflineClientSessionEntity clSession : userSession.getOfflineClientSessions()) {
+                    if (clSession.getClientSessionId().equals(clientSessionId)) {
+                        return toModel(clSession, userSession.getUserSessionId());
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private OfflineClientSessionModel toModel(OfflineClientSessionEntity cls, String userSessionId) {
+        OfflineClientSessionModel model = new OfflineClientSessionModel();
+        model.setClientSessionId(cls.getClientSessionId());
+        model.setClientId(cls.getClientId());
+        model.setData(cls.getData());
+        model.setUserSessionId(userSessionId);
+        return model;
+    }
+
+    @Override
+    public Collection<OfflineClientSessionModel> getOfflineClientSessions() {
+        List<OfflineClientSessionModel> result = new ArrayList<>();
+
+        if (user.getOfflineUserSessions() != null) {
+            for (OfflineUserSessionEntity userSession : user.getOfflineUserSessions()) {
+                for (OfflineClientSessionEntity clSession : userSession.getOfflineClientSessions()) {
+                    result.add(toModel(clSession, userSession.getUserSessionId()));
+                }
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public boolean removeOfflineClientSession(String clientSessionId) {
+        if (user.getOfflineUserSessions() != null) {
+            for (OfflineUserSessionEntity userSession : user.getOfflineUserSessions()) {
+                for (OfflineClientSessionEntity clSession : userSession.getOfflineClientSessions()) {
+                    if (clSession.getClientSessionId().equals(clientSessionId)) {
+                        userSession.getOfflineClientSessions().remove(clSession);
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
 
     @Override
     public boolean equals(Object o) {

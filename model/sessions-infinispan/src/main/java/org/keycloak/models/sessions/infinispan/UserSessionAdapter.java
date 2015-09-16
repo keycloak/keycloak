@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -107,6 +108,11 @@ public class UserSessionAdapter implements UserSessionModel {
             entity.getNotes().remove(name);
             update();
         }
+    }
+
+    @Override
+    public Map<String, String> getNotes() {
+        return entity.getNotes();
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -112,6 +113,15 @@ public interface UserModel {
     List<UserConsentModel> getConsents();
     void updateConsent(UserConsentModel consent);
     boolean revokeConsentForClient(String clientInternalId);
+
+    void addOfflineUserSession(OfflineUserSessionModel offlineUserSession);
+    OfflineUserSessionModel getOfflineUserSession(String userSessionId);
+    Collection<OfflineUserSessionModel> getOfflineUserSessions();
+    boolean removeOfflineUserSession(String userSessionId);
+    void addOfflineClientSession(OfflineClientSessionModel offlineClientSession);
+    OfflineClientSessionModel getOfflineClientSession(String clientSessionId);
+    Collection<OfflineClientSessionModel> getOfflineClientSessions();
+    boolean removeOfflineClientSession(String clientSessionId);
 
     public static enum RequiredAction {
         VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD

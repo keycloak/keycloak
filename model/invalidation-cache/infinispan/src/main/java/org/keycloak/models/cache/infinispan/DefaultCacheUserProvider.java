@@ -319,6 +319,7 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
 
     @Override
     public void preRemove(RealmModel realm, ClientModel client) {
+        realmInvalidations.add(realm.getId()); // easier to just invalidate whole realm
         getDelegate().preRemove(realm, client);
     }
 

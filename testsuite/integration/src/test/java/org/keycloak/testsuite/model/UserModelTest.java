@@ -4,6 +4,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OfflineClientSessionModel;
+import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
@@ -281,6 +283,59 @@ public class UserModelTest extends AbstractModelTest {
         // Assert service account removed as well
         realm = realmManager.getRealmByName("original");
         Assert.assertNull(session.users().getUserByUsername("user1", realm));
+    }
+
+    @Test
+    public void testOfflineSessionsRemoved() {
+        RealmModel realm = realmManager.createRealm("original");
+        ClientModel fooClient = realm.addClient("foo");
+        ClientModel barClient = realm.addClient("bar");
+
+        UserModel user1 = session.users().addUser(realm, "user1");
+        addOfflineUserSession(user1, "123", "something1");
+        addOfflineClientSession(user1, "456", "123", fooClient.getId(), "something2");
+        addOfflineClientSession(user1, "789", "123", barClient.getId(), "something3");
+
+        commit();
+
+        realm = realmManager.getRealmByName("original");
+        realm.removeClient(barClient.getId());
+
+        commit();
+
+        realm = realmManager.getRealmByName("original");
+        user1 = session.users().getUserByUsername("user1", realm);
+        Assert.assertEquals("something1", user1.getOfflineUserSession("123").getData());
+        Assert.assertEquals("something2", user1.getOfflineClientSession("456").getData());
+        Assert.assertNull(user1.getOfflineClientSession("789"));
+
+        realm.removeClient(fooClient.getId());
+
+        commit();
+
+        realm = realmManager.getRealmByName("original");
+        user1 = session.users().getUserByUsername("user1", realm);
+        Assert.assertNull(user1.getOfflineClientSession("456"));
+        Assert.assertNull(user1.getOfflineClientSession("789"));
+        Assert.assertNull(user1.getOfflineUserSession("123"));
+        Assert.assertEquals(0, user1.getOfflineUserSessions().size());
+        Assert.assertEquals(0, user1.getOfflineClientSessions().size());
+    }
+
+    private void addOfflineUserSession(UserModel user, String userSessionId, String data) {
+        OfflineUserSessionModel model = new OfflineUserSessionModel();
+        model.setUserSessionId(userSessionId);
+        model.setData(data);
+        user.addOfflineUserSession(model);
+    }
+
+    private void addOfflineClientSession(UserModel user, String clientSessionId, String userSessionId, String clientId, String data) {
+        OfflineClientSessionModel model = new OfflineClientSessionModel();
+        model.setClientSessionId(clientSessionId);
+        model.setUserSessionId(userSessionId);
+        model.setClientId(clientId);
+        model.setData(data);
+        user.addOfflineClientSession(model);
     }
 
     public static void assertEquals(UserModel expected, UserModel actual) {

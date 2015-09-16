@@ -180,7 +180,11 @@ public class AccessTokenTest {
         Assert.assertEquals("invalid_grant", response.getError());
         Assert.assertEquals("Incorrect redirect_uri", response.getErrorDescription());
 
-        events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_code").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID).assertEvent();
+        events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_code")
+                .removeDetail(Details.TOKEN_ID)
+                .removeDetail(Details.REFRESH_TOKEN_ID)
+                .removeDetail(Details.REFRESH_TOKEN_TYPE)
+                .assertEvent();
     }
 
     @Test
@@ -201,7 +205,13 @@ public class AccessTokenTest {
         assertNull(tokenResponse.getAccessToken());
         assertNull(tokenResponse.getRefreshToken());
 
-        events.expectCodeToToken(codeId, sessionId).removeDetail(Details.TOKEN_ID).user((String) null).session((String) null).removeDetail(Details.REFRESH_TOKEN_ID).error(Errors.INVALID_CODE).assertEvent();
+        events.expectCodeToToken(codeId, sessionId)
+                .removeDetail(Details.TOKEN_ID)
+                .user((String) null)
+                .session((String) null)
+                .removeDetail(Details.REFRESH_TOKEN_ID)
+                .removeDetail(Details.REFRESH_TOKEN_TYPE)
+                .error(Errors.INVALID_CODE).assertEvent();
 
         events.clear();
     }
@@ -230,7 +240,11 @@ public class AccessTokenTest {
         Assert.assertEquals(400, response.getStatusCode());
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, null);
-        expectedEvent.error("invalid_code").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID).user((String) null);
+        expectedEvent.error("invalid_code")
+                .removeDetail(Details.TOKEN_ID)
+                .removeDetail(Details.REFRESH_TOKEN_ID)
+                .removeDetail(Details.REFRESH_TOKEN_TYPE)
+                .user((String) null);
         expectedEvent.assertEvent();
 
         events.clear();
@@ -264,7 +278,11 @@ public class AccessTokenTest {
         Assert.assertEquals(400, response.getStatusCode());
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, null);
-        expectedEvent.error("invalid_code").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID).user((String) null);
+        expectedEvent.error("invalid_code")
+                .removeDetail(Details.TOKEN_ID)
+                .removeDetail(Details.REFRESH_TOKEN_ID)
+                .removeDetail(Details.REFRESH_TOKEN_TYPE)
+                .user((String) null);
         expectedEvent.assertEvent();
 
         events.clear();

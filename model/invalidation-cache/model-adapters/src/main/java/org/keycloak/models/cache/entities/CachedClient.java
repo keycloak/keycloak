@@ -47,6 +47,7 @@ public class CachedClient implements Serializable {
     private boolean bearerOnly;
     private boolean consentRequired;
     private boolean serviceAccountsEnabled;
+    private boolean offlineTokensEnabled;
     private Map<String, String> roles = new HashMap<String, String>();
     private int nodeReRegistrationTimeout;
     private Map<String, Integer> registeredNodes;
@@ -81,6 +82,7 @@ public class CachedClient implements Serializable {
         bearerOnly = model.isBearerOnly();
         consentRequired = model.isConsentRequired();
         serviceAccountsEnabled = model.isServiceAccountsEnabled();
+        offlineTokensEnabled = model.isOfflineTokensEnabled();
         for (RoleModel role : model.getRoles()) {
             roles.put(role.getName(), role.getId());
             cache.addCachedRole(new CachedClientRole(id, role, realm));
@@ -187,6 +189,10 @@ public class CachedClient implements Serializable {
 
     public boolean isServiceAccountsEnabled() {
         return serviceAccountsEnabled;
+    }
+
+    public boolean isOfflineTokensEnabled() {
+        return offlineTokensEnabled;
     }
 
     public Map<String, String> getRoles() {

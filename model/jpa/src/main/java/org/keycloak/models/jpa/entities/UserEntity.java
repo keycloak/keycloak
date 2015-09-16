@@ -3,9 +3,13 @@ package org.keycloak.models.jpa.entities;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
@@ -14,6 +18,8 @@ import javax.persistence.UniqueConstraint;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -82,6 +88,12 @@ public class UserEntity {
 
     @Column(name="SERVICE_ACCOUNT_CLIENT_LINK")
     protected String serviceAccountClientLink;
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    protected Collection<OfflineUserSessionEntity> offlineUserSessions = new ArrayList<>();
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    protected Collection<OfflineClientSessionEntity> offlineClientSessions = new ArrayList<>();
 
     public String getId() {
         return id;
@@ -210,6 +222,22 @@ public class UserEntity {
 
     public void setServiceAccountClientLink(String serviceAccountClientLink) {
         this.serviceAccountClientLink = serviceAccountClientLink;
+    }
+
+    public Collection<OfflineUserSessionEntity> getOfflineUserSessions() {
+        return offlineUserSessions;
+    }
+
+    public void setOfflineUserSessions(Collection<OfflineUserSessionEntity> offlineUserSessions) {
+        this.offlineUserSessions = offlineUserSessions;
+    }
+
+    public Collection<OfflineClientSessionEntity> getOfflineClientSessions() {
+        return offlineClientSessions;
+    }
+
+    public void setOfflineClientSessions(Collection<OfflineClientSessionEntity> offlineClientSessions) {
+        this.offlineClientSessions = offlineClientSessions;
     }
 
     @Override

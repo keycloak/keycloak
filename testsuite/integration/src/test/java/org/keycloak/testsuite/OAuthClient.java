@@ -76,6 +76,8 @@ public class OAuthClient {
 
     private String state = "mystate";
 
+    private String scope;
+
     private String uiLocales = null;
 
     private PublicKey realmPublicKey;
@@ -192,6 +194,9 @@ public class OAuthClient {
             if (clientSessionHost != null) {
                 parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
             }
+            if (scope != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
+            }
 
             UrlEncodedFormEntity formEntity;
             try {
@@ -217,6 +222,10 @@ public class OAuthClient {
 
             List<NameValuePair> parameters = new LinkedList<NameValuePair>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
+
+            if (scope != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
+            }
 
             UrlEncodedFormEntity formEntity;
             try {
@@ -390,6 +399,9 @@ public class OAuthClient {
         if(uiLocales != null){
             b.queryParam(LocaleHelper.UI_LOCALES_PARAM, uiLocales);
         }
+        if (scope != null) {
+            b.queryParam(OAuth2Constants.SCOPE, scope);
+        }
         return b.build(realm).toString();
     }
 
@@ -449,6 +461,11 @@ public class OAuthClient {
 
     public OAuthClient state(String state) {
         this.state = state;
+        return this;
+    }
+
+    public OAuthClient scope(String scope) {
+        this.scope = scope;
         return this;
     }
 

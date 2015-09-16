@@ -109,6 +109,9 @@ public interface ClientModel extends RoleContainerModel {
     boolean isServiceAccountsEnabled();
     void setServiceAccountsEnabled(boolean serviceAccountsEnabled);
 
+    boolean isOfflineTokensEnabled();
+    void setOfflineTokensEnabled(boolean offlineTokensEnabled);
+
     Set<RoleModel> getScopeMappings();
     void addScopeMapping(RoleModel role);
     void deleteScopeMapping(RoleModel role);

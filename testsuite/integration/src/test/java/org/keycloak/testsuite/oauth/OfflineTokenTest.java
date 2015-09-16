@@ -1,0 +1,441 @@
+package org.keycloak.testsuite.oauth;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.UriBuilder;
+
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.constants.ServiceAccountConstants;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.Event;
+import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.RefreshToken;
+import org.keycloak.services.managers.ClientManager;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.AccountApplicationsPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.rule.KeycloakRule;
+import org.keycloak.testsuite.rule.WebResource;
+import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.RefreshTokenUtil;
+import org.keycloak.util.Time;
+import org.keycloak.util.UriUtils;
+import org.openqa.selenium.WebDriver;
+
+import static org.junit.Assert.assertEquals;
+
+/**
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ */
+public class OfflineTokenTest {
+
+    @ClassRule
+    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
+
+        @Override
+        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+            // For testing
+            appRealm.setAccessTokenLifespan(10);
+            appRealm.setSsoSessionIdleTimeout(30);
+
+            ClientModel app = new ClientManager(manager).createClient(appRealm, "offline-client");
+            app.setSecret("secret1");
+            String testAppRedirectUri = appRealm.getClientByClientId("test-app").getRedirectUris().iterator().next();
+            offlineClientAppUri = UriUtils.getOrigin(testAppRedirectUri) + "/offline-client";
+            app.setRedirectUris(new HashSet<>(Arrays.asList(offlineClientAppUri)));
+            app.setManagementUrl(offlineClientAppUri);
+
+            new ClientManager(manager).enableServiceAccount(app);
+            UserModel serviceAccountUser = manager.getSession().users().getUserByUsername(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client", appRealm);
+            RoleModel customerUserRole = appRealm.getClientByClientId("test-app").getRole("customer-user");
+            serviceAccountUser.grantRole(customerUserRole);
+
+            app.setOfflineTokensEnabled(true);
+            userId = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm).getId();
+
+            URL url = getClass().getResource("/oidc/offline-client-keycloak.json");
+            keycloakRule.createApplicationDeployment()
+                    .name("offline-client").contextPath("/offline-client")
+                    .servletClass(OfflineTokenServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
+        }
+
+    });
+
+    private static String userId;
+    private static String offlineClientAppUri;
+
+    @Rule
+    public WebRule webRule = new WebRule(this);
+
+    @WebResource
+    protected WebDriver driver;
+
+    @WebResource
+    protected OAuthClient oauth;
+
+    @WebResource
+    protected LoginPage loginPage;
+
+    @WebResource
+    protected AccountApplicationsPage accountAppPage;
+
+    @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
+
+
+//    @Test
+//    public void testSleep() throws Exception {
+//        Thread.sleep(9999000);
+//    }
+
+    @Test
+    public void offlineTokenDisabledForClient() throws Exception {
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.doLogin("test-user@localhost", "password");
+
+        Event loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertEquals("invalid_client", tokenResponse.getError());
+
+        events.expectCodeToToken(codeId, sessionId)
+                .error("invalid_client")
+                .clearDetails()
+                .assertEvent();
+    }
+
+    @Test
+    public void offlineTokenBrowserFlow() throws Exception {
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("offline-client");
+        oauth.redirectUri(offlineClientAppUri);
+        oauth.doLogin("test-user@localhost", "password");
+
+        Event loginEvent = events.expectLogin()
+                .client("offline-client")
+                .detail(Details.REDIRECT_URI, offlineClientAppUri)
+                .assertEvent();
+
+        final String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "secret1");
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.verifyRefreshToken(offlineTokenString);
+
+        events.expectCodeToToken(codeId, sessionId)
+                .client("offline-client")
+                .detail(Details.REFRESH_TOKEN_TYPE, RefreshTokenUtil.TOKEN_TYPE_OFFLINE)
+                .assertEvent();
+
+        Assert.assertEquals(RefreshTokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+        Assert.assertEquals(0, offlineToken.getExpiration());
+
+        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, sessionId, userId);
+    }
+
+    private void testRefreshWithOfflineToken(AccessToken oldToken, RefreshToken offlineToken, String offlineTokenString,
+                                             final String sessionId, String userId) {
+        // Change offset to big value to ensure userSession expired
+        Time.setOffset(99999);
+        Assert.assertFalse(oldToken.isActive());
+        Assert.assertTrue(offlineToken.isActive());
+
+        // Assert userSession expired
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                manager.getSession().sessions().removeExpiredUserSessions(appRealm);
+            }
+
+        });
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                Assert.assertNull(manager.getSession().sessions().getUserSession(appRealm, sessionId));
+            }
+
+        });
+
+
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString, "secret1");
+        AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
+        Assert.assertEquals(200, response.getStatusCode());
+        Assert.assertEquals(sessionId, refreshedToken.getSessionState());
+
+        // Assert no refreshToken in the response
+        Assert.assertNull(response.getRefreshToken());
+        Assert.assertNotEquals(oldToken.getId(), refreshedToken.getId());
+
+        Assert.assertEquals(userId, refreshedToken.getSubject());
+
+        Assert.assertEquals(1, refreshedToken.getRealmAccess().getRoles().size());
+        Assert.assertTrue(refreshedToken.getRealmAccess().isUserInRole("user"));
+
+        Assert.assertEquals(1, refreshedToken.getResourceAccess("test-app").getRoles().size());
+        Assert.assertTrue(refreshedToken.getResourceAccess("test-app").isUserInRole("customer-user"));
+
+        Event refreshEvent = events.expectRefresh(offlineToken.getId(), sessionId)
+                .client("offline-client")
+                .user(userId)
+                .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
+                .detail(Details.REFRESH_TOKEN_TYPE, RefreshTokenUtil.TOKEN_TYPE_OFFLINE)
+                .assertEvent();
+        Assert.assertNotEquals(oldToken.getId(), refreshEvent.getDetails().get(Details.TOKEN_ID));
+
+        Time.setOffset(0);
+    }
+
+    @Test
+    public void offlineTokenDirectGrantFlow() throws Exception {
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("offline-client");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password");
+
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.verifyRefreshToken(offlineTokenString);
+
+        events.expectLogin()
+                .client("offline-client")
+                .user(userId)
+                .session(token.getSessionState())
+                .detail(Details.RESPONSE_TYPE, "token")
+                .detail(Details.TOKEN_ID, token.getId())
+                .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
+                .detail(Details.REFRESH_TOKEN_TYPE, RefreshTokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.USERNAME, "test-user@localhost")
+                .removeDetail(Details.CODE_ID)
+                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
+
+        Assert.assertEquals(RefreshTokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+        Assert.assertEquals(0, offlineToken.getExpiration());
+
+        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), userId);
+    }
+
+    @Test
+    public void offlineTokenServiceAccountFlow() throws Exception {
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("offline-client");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.verifyRefreshToken(offlineTokenString);
+
+        String serviceAccountUserId = keycloakRule.getUser("test",  ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client").getId();
+
+        events.expectClientLogin()
+                .client("offline-client")
+                .user(serviceAccountUserId)
+                .session(token.getSessionState())
+                .detail(Details.TOKEN_ID, token.getId())
+                .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
+                .detail(Details.REFRESH_TOKEN_TYPE, RefreshTokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client")
+                .assertEvent();
+
+        Assert.assertEquals(RefreshTokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+        Assert.assertEquals(0, offlineToken.getExpiration());
+
+        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), serviceAccountUserId);
+
+
+        // Now retrieve another offline token and verify that previous offline token is not valid anymore
+        tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+
+        AccessToken token2 = oauth.verifyToken(tokenResponse.getAccessToken());
+        String offlineTokenString2 = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken2 = oauth.verifyRefreshToken(offlineTokenString2);
+
+        events.expectClientLogin()
+                .client("offline-client")
+                .user(serviceAccountUserId)
+                .session(token2.getSessionState())
+                .detail(Details.TOKEN_ID, token2.getId())
+                .detail(Details.REFRESH_TOKEN_ID, offlineToken2.getId())
+                .detail(Details.REFRESH_TOKEN_TYPE, RefreshTokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client")
+                .assertEvent();
+
+        // Refresh with old offline token should fail
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString, "secret1");
+        Assert.assertEquals(400, response.getStatusCode());
+        Assert.assertEquals("invalid_grant", response.getError());
+
+        events.expectRefresh(offlineToken.getId(), offlineToken.getSessionState())
+                .error(Errors.INVALID_TOKEN)
+                .client("offline-client")
+                .user(serviceAccountUserId)
+                .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
+                .removeDetail(Details.TOKEN_ID)
+                .detail(Details.REFRESH_TOKEN_TYPE, RefreshTokenUtil.TOKEN_TYPE_OFFLINE)
+                .assertEvent();
+
+        // Refresh with new offline token is ok
+        testRefreshWithOfflineToken(token2, offlineToken2, offlineTokenString2, token2.getSessionState(), serviceAccountUserId);
+    }
+
+    @Test
+    public void testServlet() {
+        OfflineTokenServlet.tokenInfo = null;
+
+        String servletUri = UriBuilder.fromUri(offlineClientAppUri)
+                .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.OFFLINE_ACCESS)
+                .build().toString();
+        driver.navigate().to(servletUri);
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(offlineClientAppUri));
+
+        Assert.assertEquals(OfflineTokenServlet.tokenInfo.refreshToken.getType(), RefreshTokenUtil.TOKEN_TYPE_OFFLINE);
+        Assert.assertEquals(OfflineTokenServlet.tokenInfo.refreshToken.getExpiration(), 0);
+
+        String accessTokenId = OfflineTokenServlet.tokenInfo.accessToken.getId();
+        String refreshTokenId = OfflineTokenServlet.tokenInfo.refreshToken.getId();
+
+        // Assert access token will be refreshed, but offline token will be still the same
+        Time.setOffset(9999);
+        driver.navigate().to(offlineClientAppUri);
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(offlineClientAppUri));
+        Assert.assertEquals(OfflineTokenServlet.tokenInfo.refreshToken.getId(), refreshTokenId);
+        Assert.assertNotEquals(OfflineTokenServlet.tokenInfo.accessToken.getId(), accessTokenId);
+
+        // Ensure that logout works for webapp (even if offline token will be still valid in Keycloak DB)
+        driver.navigate().to(offlineClientAppUri + "/logout");
+        loginPage.assertCurrent();
+        driver.navigate().to(offlineClientAppUri);
+        loginPage.assertCurrent();
+
+        Time.setOffset(0);
+        events.clear();
+    }
+
+    @Test
+    public void testServletWithRevoke() {
+        // Login to servlet first with offline token
+        String servletUri = UriBuilder.fromUri(offlineClientAppUri)
+                .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.OFFLINE_ACCESS)
+                .build().toString();
+        driver.navigate().to(servletUri);
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(offlineClientAppUri));
+
+        Assert.assertEquals(OfflineTokenServlet.tokenInfo.refreshToken.getType(), RefreshTokenUtil.TOKEN_TYPE_OFFLINE);
+
+        // Assert refresh works with increased time
+        Time.setOffset(9999);
+        driver.navigate().to(offlineClientAppUri);
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(offlineClientAppUri));
+        Time.setOffset(0);
+
+        events.clear();
+
+        // Go to account service and revoke grant
+        accountAppPage.open();
+        List<String> additionalGrants = accountAppPage.getApplications().get("offline-client").getAdditionalGrants();
+        Assert.assertEquals(additionalGrants.size(), 1);
+        Assert.assertEquals(additionalGrants.get(0), "Offline Access");
+        accountAppPage.revokeGrant("offline-client");
+        Assert.assertEquals(accountAppPage.getApplications().get("offline-client").getAdditionalGrants().size(), 0);
+
+        events.expect(EventType.REVOKE_GRANT)
+                .client("account").detail(Details.REVOKED_CLIENT, "offline-client").assertEvent();
+
+        // Assert refresh doesn't work now (increase time one more time)
+        Time.setOffset(9999);
+        driver.navigate().to(offlineClientAppUri);
+        Assert.assertFalse(driver.getCurrentUrl().startsWith(offlineClientAppUri));
+        loginPage.assertCurrent();
+        Time.setOffset(0);
+    }
+
+    public static class OfflineTokenServlet extends HttpServlet {
+
+        private static TokenInfo tokenInfo;
+
+        @Override
+        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+            if (req.getRequestURI().endsWith("logout")) {
+
+                UriBuilder redirectUriBuilder = UriBuilder.fromUri(offlineClientAppUri);
+                if (req.getParameter(OAuth2Constants.SCOPE) != null) {
+                    redirectUriBuilder.queryParam(OAuth2Constants.SCOPE, req.getParameter(OAuth2Constants.SCOPE));
+                }
+                String redirectUri = redirectUriBuilder.build().toString();
+
+                String origin = UriUtils.getOrigin(req.getRequestURL().toString());
+                String serverLogoutRedirect = UriBuilder.fromUri(origin + "/auth/realms/test/protocol/openid-connect/logout")
+                        .queryParam("redirect_uri", redirectUri)
+                        .build().toString();
+
+                resp.sendRedirect(serverLogoutRedirect);
+                return;
+            }
+
+            StringBuilder response = new StringBuilder("<html><head><title>Offline token servlet</title></head><body><pre>");
+            RefreshableKeycloakSecurityContext ctx = (RefreshableKeycloakSecurityContext) req.getAttribute(KeycloakSecurityContext.class.getName());
+            String accessTokenPretty = JsonSerialization.writeValueAsPrettyString(ctx.getToken());
+            RefreshToken refreshToken = new JWSInput(ctx.getRefreshToken()).readJsonContent(RefreshToken.class);
+            String refreshTokenPretty = JsonSerialization.writeValueAsPrettyString(refreshToken);
+
+            response = response.append(accessTokenPretty)
+                    .append(refreshTokenPretty)
+                    .append("</pre></body></html>");
+            resp.getWriter().println(response.toString());
+
+            tokenInfo = new TokenInfo(ctx.getToken(), refreshToken);
+        }
+
+    }
+
+    private static class TokenInfo {
+
+        private final AccessToken accessToken;
+        private final RefreshToken refreshToken;
+
+        public TokenInfo(AccessToken accessToken, RefreshToken refreshToken) {
+            this.accessToken = accessToken;
+            this.refreshToken = refreshToken;
+        }
+    }
+}
