@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.Version;
@@ -34,8 +33,8 @@ import org.keycloak.testsuite.adapter.page.InputPortal;
 import org.keycloak.testsuite.adapter.page.ProductPortal;
 import org.keycloak.testsuite.adapter.page.SecurePortal;
 import org.keycloak.testsuite.arquillian.jira.Jira;
-import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.Time;
 
@@ -92,7 +91,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     public void testSavedPostRequest() throws InterruptedException {
         // test login to customer-portal which does a bearer request to customer-db
         inputPortal.navigateTo();
-        assertCurrentUrl(inputPortal);
+        assertCurrentUrlEquals(inputPortal);
         inputPortal.execute("hello");
 
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
@@ -127,13 +126,13 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         testRealmLoginPage.form().waitForUsernameInputPresent();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertCurrentUrl(customerPortal);
+        assertCurrentUrlEquals(customerPortal);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         // test SSO
         productPortal.navigateTo();
-        assertCurrentUrl(productPortal);
+        assertCurrentUrlEquals(productPortal);
         pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
@@ -173,19 +172,19 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         customerPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertCurrentUrl(customerPortal);
+        assertCurrentUrlEquals(customerPortal);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         // test SSO
         productPortal.navigateTo();
-        assertCurrentUrl(productPortal);
+        assertCurrentUrlEquals(productPortal);
         pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
         // back
         customerPortal.navigateTo();
-        assertCurrentUrl(customerPortal);
+        assertCurrentUrlEquals(customerPortal);
         pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
         // test logout
@@ -206,7 +205,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         testRealmLoginPage.form().waitForUsernameInputPresent();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertCurrentUrl(customerPortal);
+        assertCurrentUrlEquals(customerPortal);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
@@ -233,7 +232,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         log.info("Current url: " + driver.getCurrentUrl());
-        assertCurrentUrl(customerPortal);
+        assertCurrentUrlEquals(customerPortal);
         String pageSource = driver.getPageSource();
         log.info(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
@@ -262,7 +261,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         testRealmLoginPage.form().waitForUsernameInputPresent();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertCurrentUrl(customerPortal);
+        assertCurrentUrlEquals(customerPortal);
         String pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
@@ -372,7 +371,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         securePortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertCurrentUrl(securePortal);
+        assertCurrentUrlEquals(securePortal);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
         // test logout

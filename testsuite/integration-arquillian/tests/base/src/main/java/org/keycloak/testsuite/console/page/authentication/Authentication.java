@@ -1,7 +1,6 @@
 package org.keycloak.testsuite.console.page.authentication;
 
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
-import org.keycloak.testsuite.console.page.fragment.Navigation;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -23,7 +22,7 @@ public class Authentication extends AdminConsoleRealm {
         return super.getUriFragment() + "/authentication";
     }
 
-    public class AuthenticationTabs extends Navigation {
+    public class AuthenticationTabs {
         @FindBy(linkText = "Flows")
         private WebElement flowsTab;
         @FindBy(linkText = "Required Actions")

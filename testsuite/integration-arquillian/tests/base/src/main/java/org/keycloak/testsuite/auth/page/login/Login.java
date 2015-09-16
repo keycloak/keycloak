@@ -20,8 +20,8 @@ package org.keycloak.testsuite.auth.page.login;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementNotPresent;
+import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElementNotPresent;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 

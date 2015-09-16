@@ -5,7 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.auth.page.account.ChangePassword;
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 /**
  *

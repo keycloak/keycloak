@@ -10,8 +10,8 @@ import org.junit.Ignore;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.console.page.roles.CreateRole;
 import org.keycloak.testsuite.console.page.roles.Role;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
-import static org.keycloak.testsuite.util.SeleniumUtils.pause;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 import org.keycloak.testsuite.util.Timer;
 
 /**
@@ -37,9 +37,9 @@ public class RealmRolesTest extends AbstractRolesTest {
     }
     
     public void addRole(RoleRepresentation roleRep) {
-        assertCurrentUrl(realmRolesPage);
+        assertCurrentUrlEquals(realmRolesPage);
         realmRolesPage.table().addRole();
-        assertCurrentUrl(createRolePage);
+        assertCurrentUrlEquals(createRolePage);
         createRolePage.form().setBasicAttributes(roleRep);
         createRolePage.form().save();
         assertFlashMessageSuccess();
@@ -48,7 +48,7 @@ public class RealmRolesTest extends AbstractRolesTest {
     }
     
     public void updateRole(RoleRepresentation roleRep) {
-        assertCurrentUrl(realmRolesPage);
+        assertCurrentUrlEquals(realmRolesPage);
         realmRolesPage.table().editRole(roleRep.getName());
 //        assertCurrentUrl(role); // can't do this, role id needed as uri param
         rolePage.form().setBasicAttributes(roleRep);
@@ -95,13 +95,9 @@ public class RealmRolesTest extends AbstractRolesTest {
         // add again
         addRole(testRole);
         // delete from page
-        String urlBeforeDelete = driver.getCurrentUrl();
-        rolePage.form().delete();
-        modalDialog.cancel();
-        assertCurrentUrl(driver, urlBeforeDelete);
         rolePage.form().delete();
         modalDialog.confirmDeletion();
-        assertCurrentUrl(realmRolesPage);
+        assertCurrentUrlEquals(realmRolesPage);
     }
     
     @Test

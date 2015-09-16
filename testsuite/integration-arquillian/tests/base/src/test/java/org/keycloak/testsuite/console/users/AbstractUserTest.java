@@ -6,8 +6,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.users.CreateUser;
 import org.keycloak.testsuite.console.page.users.Users;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 /**
  *
@@ -29,7 +29,7 @@ public abstract class AbstractUserTest extends AbstractConsoleTest {
     }
 
     public void createUser(UserRepresentation user) {
-        assertCurrentUrl(usersPage);
+        assertCurrentUrlEquals(usersPage);
         usersPage.table().addUser();
         assertCurrentUrlStartsWith(createUserPage);
         createUserPage.form().setValues(user);

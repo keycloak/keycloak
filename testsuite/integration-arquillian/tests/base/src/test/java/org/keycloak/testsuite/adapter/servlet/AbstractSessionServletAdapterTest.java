@@ -21,8 +21,8 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import org.keycloak.testsuite.auth.page.account.Sessions;
 import org.keycloak.testsuite.auth.page.login.Login;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
-import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -72,7 +72,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         driver2.findElement(By.id("username")).sendKeys("bburke@redhat.com");
         driver2.findElement(By.id("password")).sendKeys("password");
         driver2.findElement(By.id("password")).submit();
-        assertCurrentUrl(driver2, sessionPortalPage.toString());
+        assertCurrentUrlEquals(driver2, sessionPortalPage);
         String pageSource = driver2.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));
         // Counter increased now
@@ -92,7 +92,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
 
         // Assert that I am still logged in browser2 and same session is still preserved
         driver2.navigate().to(sessionPortalPage.toString());
-        assertCurrentUrl(driver2, sessionPortalPage.toString());
+        assertCurrentUrlEquals(driver2, sessionPortalPage);
         pageSource = driver2.getPageSource();
         assertTrue(pageSource.contains("Counter=3"));
 

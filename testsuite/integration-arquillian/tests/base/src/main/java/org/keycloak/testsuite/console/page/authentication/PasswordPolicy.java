@@ -3,7 +3,7 @@ package org.keycloak.testsuite.console.page.authentication;
 import java.util.List;
 
 import org.jboss.arquillian.graphene.findby.ByJQuery;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;

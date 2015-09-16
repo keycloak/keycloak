@@ -25,7 +25,7 @@ import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.UserRepresentation;
 
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
+import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElementPresent;
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import org.keycloak.testsuite.auth.page.account.ContactInfoFields;
 import org.keycloak.testsuite.auth.page.account.PasswordFields;

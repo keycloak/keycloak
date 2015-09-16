@@ -5,7 +5,7 @@ import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.openqa.selenium.By;
 import org.openqa.selenium.support.ui.Select;
 
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
 
 /**
  * Created by fkiss.

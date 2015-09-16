@@ -4,7 +4,7 @@ import java.util.List;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;

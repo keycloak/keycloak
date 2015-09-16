@@ -29,8 +29,8 @@ import org.keycloak.testsuite.console.page.clients.ClientSettings;
 import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsBooleanAttributes;
 import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsListAttributes;
 import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsStringAttributes;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
-import static org.keycloak.testsuite.util.SeleniumUtils.pause;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 import org.keycloak.testsuite.util.Timer;
 
 /**
@@ -51,7 +51,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         assertFlashMessageSuccess();
 
         clientPage.backToClientsViaBreadcrumb();
-        assertCurrentUrl(clientsPage);
+        assertCurrentUrlEquals(clientsPage);
         assertEquals(1, clientsPage.table().searchClients(newClient.getClientId()).size());
 
         // read & verify
@@ -73,7 +73,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         assertFlashMessageSuccess();
 
         clientPage.backToClientsViaBreadcrumb();
-        assertCurrentUrl(clientsPage);
+        assertCurrentUrlEquals(clientsPage);
         assertEquals(1, clientsPage.table().searchClients(newClient.getClientId()).size());
     }
 
@@ -84,7 +84,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         assertFlashMessageSuccess();
 
         clientPage.backToClientsViaBreadcrumb();
-        assertCurrentUrl(clientsPage);
+        assertCurrentUrlEquals(clientsPage);
         assertEquals(1, clientsPage.table().searchClients(newClient.getClientId()).size());
     }
 

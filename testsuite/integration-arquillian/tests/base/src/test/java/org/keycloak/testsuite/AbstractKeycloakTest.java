@@ -23,7 +23,7 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
-import static org.keycloak.testsuite.util.PageAssert.*;
+import static org.keycloak.testsuite.util.URLAssert.*;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
@@ -106,10 +106,12 @@ public abstract class AbstractKeycloakTest {
 
     public void deleteAllCookiesForMasterRealm() {
         masterRealmPage.navigateTo();
+        log.debug("deleting cookies in master realm");
         driver.manage().deleteAllCookies();
     }
 
     protected void driverSettings() {
+        driver.manage().timeouts().pageLoadTimeout(5, TimeUnit.SECONDS);
         driver.manage().timeouts().implicitlyWait(3, TimeUnit.SECONDS);
         driver.manage().timeouts().setScriptTimeout(3, TimeUnit.SECONDS);
         driver.manage().window().maximize();

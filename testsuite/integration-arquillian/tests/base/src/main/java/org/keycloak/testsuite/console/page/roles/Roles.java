@@ -2,7 +2,6 @@ package org.keycloak.testsuite.console.page.roles;
 
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
-import org.keycloak.testsuite.console.page.fragment.Navigation;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -19,7 +18,7 @@ public class Roles extends AdminConsoleRealm {
         return tabs;
     }
 
-    public class RoleTabs extends Navigation {
+    public class RoleTabs {
 
         @FindBy(linkText = "Realm Roles")
         private WebElement realmRolesTab;
@@ -27,11 +26,11 @@ public class Roles extends AdminConsoleRealm {
         private WebElement defaultRolesTab;
 
         public void realmRoles() {
-            clickAndWaitForHeader(realmRolesTab);
+            realmRolesTab.click();
         }
 
         public void defaultRoles() {
-            clickAndWaitForHeader(defaultRolesTab);
+            defaultRolesTab.click();
         }
 
     }

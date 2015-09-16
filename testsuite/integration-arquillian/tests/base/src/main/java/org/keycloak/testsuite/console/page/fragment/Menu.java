@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.console.page.fragment;
 
 import java.util.List;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
 import org.openqa.selenium.By;
 
 import org.openqa.selenium.WebElement;

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.keycloak.representations.idm.ClientRepresentation;
 import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
-import static org.keycloak.testsuite.util.SeleniumUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 

@@ -11,11 +11,11 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.adapter.page.JSConsoleExample;
 import static org.keycloak.testsuite.auth.page.AuthRealm.EXAMPLE;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlDoesntStartWith;
-import static org.keycloak.testsuite.util.SeleniumUtils.pause;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampleAdapterTest {
 

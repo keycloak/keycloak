@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import org.keycloak.representations.idm.RoleRepresentation.Composites;
 import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;

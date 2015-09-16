@@ -1,7 +1,6 @@
 package org.keycloak.testsuite.console.page.realm;
 
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
-import org.keycloak.testsuite.console.page.fragment.Navigation;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -18,7 +17,7 @@ public class RealmSettings extends AdminConsoleRealm {
         return realmTabs;
     }
 
-    public class RealmTabs extends Navigation {
+    public class RealmTabs {
 
         @FindBy(linkText = "General")
         private WebElement generalSettingsTab;
@@ -38,35 +37,35 @@ public class RealmSettings extends AdminConsoleRealm {
         private WebElement defenseTab;
 
         public void general() {
-            clickAndWaitForHeader(generalSettingsTab);
+            generalSettingsTab.click();
         }
 
         public void login() {
-            clickAndWaitForHeader(loginSettingsTab);
+            loginSettingsTab.click();
         }
 
         public void keys() {
-            clickAndWaitForHeader(keysSettingsTab);
+            keysSettingsTab.click();
         }
 
         public void email() {
-            clickAndWaitForHeader(emailSettingsTab);
+            emailSettingsTab.click();
         }
 
         public void themes() {
-            clickAndWaitForHeader(themeSettingsTab);
+            themeSettingsTab.click();
         }
 
         public void cache() {
-            clickAndWaitForHeader(cacheSettingsTab);
+            cacheSettingsTab.click();
         }
 
         public void tokens() {
-            clickAndWaitForHeader(tokenSettingsTab);
+            tokenSettingsTab.click();
         }
 
         public void securityDefenses() {
-            clickAndWaitForHeader(defenseTab);
+            defenseTab.click();
         }
 
     }

@@ -15,7 +15,7 @@ import org.keycloak.testsuite.console.page.users.UserAttributes;
 import static org.keycloak.testsuite.model.RequiredUserAction.TERMS_AND_CONDITIONS;
 import static org.keycloak.testsuite.model.RequiredUserAction.UPDATE_PASSWORD;
 import static org.keycloak.testsuite.model.RequiredUserAction.UPDATE_PROFILE;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;

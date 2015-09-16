@@ -17,7 +17,6 @@
  */
 package org.keycloak.testsuite.util;
 
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static org.jboss.arquillian.graphene.Graphene.waitAjax;
@@ -28,13 +27,9 @@ import org.openqa.selenium.WebElement;
 /**
  *
  * @author Petr Mensik
+ * @author tkyjovsk
  */
-public final class SeleniumUtils {
-
-    public static void waitAjaxForElement(By element) {
-        waitAjax().until()
-                .element(element).is().present();
-    }
+public final class WaitUtils {
 
     public static void waitAjaxForElement(WebElement element) {
         waitAjax().until()
@@ -67,31 +62,11 @@ public final class SeleniumUtils {
         waitGui().until().element(element).is().not().present();
     }
 
-    public static void waitGuiForElementPresent(WebElement element, int seconds) {
-        waitGui().withTimeout(seconds, TimeUnit.SECONDS)
-                .until().element(element).is().present();
-    }
-
-    public static void waitGuiForElementNotPresent(WebElement element, int seconds) {
-        waitGui().withTimeout(seconds, TimeUnit.SECONDS)
-                .until().element(element).is().not().present();
-    }
-
-    public static void waitGuiForElementVisible(WebElement element, int seconds) {
-        waitGui().withTimeout(seconds, TimeUnit.SECONDS)
-                .until().element(element).is().visible();
-    }
-
-    public static void waitGuiForElementNotVisible(WebElement element, int seconds) {
-        waitGui().withTimeout(seconds, TimeUnit.SECONDS)
-                .until().element(element).is().not().visible();
-    }
-
     public static void pause(long millis) {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException ex) {
-            Logger.getLogger(SeleniumUtils.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(WaitUtils.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     

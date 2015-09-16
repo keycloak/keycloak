@@ -11,7 +11,7 @@ import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.clients.Client;
 import org.keycloak.testsuite.console.page.clients.Clients;
 import org.keycloak.testsuite.console.page.clients.CreateClient;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrl;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 
 /**
  *
@@ -33,19 +33,19 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
     }
 
     public void createClient(ClientRepresentation client) {
-        assertCurrentUrl(clientsPage);
+        assertCurrentUrlEquals(clientsPage);
         clientsPage.table().createClient();
         createClientPage.form().setValues(client);
         createClientPage.form().save();
     }
 
     public void deleteClientViaTable(String clientId) {
-        assertCurrentUrl(clientsPage);
+        assertCurrentUrlEquals(clientsPage);
         clientsPage.deleteClient(clientId);
     }
 
     public void deleteClientViaPage(String clientId) {
-        assertCurrentUrl(clientsPage);
+        assertCurrentUrlEquals(clientsPage);
         clientsPage.table().search(clientId);
         clientsPage.table().clickClient(clientId);
         clientPage.delete();

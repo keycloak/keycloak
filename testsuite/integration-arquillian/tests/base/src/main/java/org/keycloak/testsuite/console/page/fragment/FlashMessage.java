@@ -20,7 +20,7 @@ package org.keycloak.testsuite.console.page.fragment;
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import org.jboss.arquillian.graphene.fragment.Root;
 
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElementPresent;
+import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElementPresent;
 import org.openqa.selenium.WebElement;
 
 /**

@@ -5,7 +5,7 @@ import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-import org.keycloak.testsuite.util.SeleniumUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 
 /**

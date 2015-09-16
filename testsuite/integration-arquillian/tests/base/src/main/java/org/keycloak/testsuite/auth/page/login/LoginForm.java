@@ -6,8 +6,8 @@ import org.keycloak.testsuite.page.Form;
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import org.keycloak.testsuite.auth.page.account.AccountFields;
 import org.keycloak.testsuite.auth.page.account.PasswordFields;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElementNotPresent;
+import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElementNotPresent;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -73,7 +73,7 @@ public class LoginForm extends Form {
         waitAjaxForElement(registerLink);
     }
 
-    public void waitForRegistrationLinkNotPresent() {
+    public void waitForRegisterLinkNotPresent() {
         waitAjaxForElementNotPresent(registerLink);
     }
 

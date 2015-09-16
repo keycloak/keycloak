@@ -27,7 +27,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.fragment.DataTable;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
 import static org.openqa.selenium.By.*;
 
 /**

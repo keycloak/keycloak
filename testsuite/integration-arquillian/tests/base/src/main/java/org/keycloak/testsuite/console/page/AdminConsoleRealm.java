@@ -1,10 +1,10 @@
 package org.keycloak.testsuite.console.page;
 
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.testsuite.console.page.fragment.Navigation;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
-import org.keycloak.testsuite.util.SeleniumUtils;
+import org.keycloak.testsuite.util.WaitUtils;
+import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -39,7 +39,7 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
     private ConfigureMenu configureMenu;
 
     public ConfigureMenu configure() {
-        SeleniumUtils.waitGuiForElement(By.xpath("//div[./h2[text()='Configure']]"));
+        waitGuiForElement(By.xpath("//div[./h2[text()='Configure']]"));
         return configureMenu;
     }
 
@@ -47,7 +47,7 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
         return realmsResource().realm(getConsoleRealm());
     }
 
-    public class ConfigureMenu extends Navigation {
+    public class ConfigureMenu {
 
         @FindBy(partialLinkText = "Realm Settings")
         private WebElement realmSettingsLink;
@@ -63,27 +63,27 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
         private WebElement authenticationLink;
 
         public void realmSettings() {
-            clickAndWaitForHeader(realmSettingsLink);
+            realmSettingsLink.click();
         }
 
         public void clients() {
-            clickAndWaitForHeader(clientsLink);
+            clientsLink.click();
         }
 
         public void roles() {
-            clickAndWaitForHeader(rolesLink);
+            rolesLink.click();
         }
 
         public void identityProviders() {
-            clickAndWaitForHeader(identityProvidersLink);
+            identityProvidersLink.click();
         }
 
         public void userFederation() {
-            clickAndWaitForHeader(userFederationLink);
+            userFederationLink.click();
         }
 
         public void authentication() {
-            clickAndWaitForHeader(authenticationLink);
+            authenticationLink.click();
         }
 
     }
@@ -92,11 +92,11 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
     protected ManageMenu manageMenu;
 
     public ManageMenu manage() {
-        SeleniumUtils.waitGuiForElement(By.xpath("//div[./h2[text()='Manage']]"));
+        WaitUtils.waitGuiForElement(By.xpath("//div[./h2[text()='Manage']]"));
         return manageMenu;
     }
 
-    public class ManageMenu extends Navigation {
+    public class ManageMenu {
 
         @FindBy(partialLinkText = "Users")
         private WebElement usersLink;
@@ -106,15 +106,15 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
         private WebElement eventsLink;
 
         public void users() {
-            clickAndWaitForHeader(usersLink);
+            usersLink.click();
         }
 
         public void sessions() {
-            clickAndWaitForHeader(sessionsLink);
+            sessionsLink.click();
         }
 
         public void events() {
-            clickAndWaitForHeader(eventsLink);
+            eventsLink.click();
         }
     }
 

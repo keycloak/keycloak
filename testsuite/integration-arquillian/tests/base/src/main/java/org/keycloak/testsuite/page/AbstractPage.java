@@ -6,6 +6,7 @@ import java.util.Map;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -13,7 +14,7 @@ import org.openqa.selenium.WebDriver;
  * @author tkyjovsk
  */
 public abstract class AbstractPage {
-    
+
     protected final Logger log = Logger.getLogger(this.getClass());
 
     private final Map<String, Object> uriParameters = new HashMap<>();
@@ -68,12 +69,15 @@ public abstract class AbstractPage {
 
     public void navigateTo() {
         String uri = buildUri().toASCIIString();
+        log.debug("current URL:  " + driver.getCurrentUrl());
         log.info("navigating to " + uri);
         driver.navigate().to(uri);
+        pause(300); // this is needed for FF for some reason
+        log.info("current URL:  " + driver.getCurrentUrl());
     }
-    
+
     public boolean isCurrent() {
         return driver.getCurrentUrl().equals(toString());
     }
-    
+
 }

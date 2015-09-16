@@ -11,7 +11,7 @@ import org.junit.*;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.auth.page.account.Account;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import org.keycloak.testsuite.adapter.page.CustomerPortalExample;
 import org.keycloak.testsuite.adapter.page.DatabaseServiceExample;
 import org.keycloak.testsuite.adapter.page.ProductPortalExample;

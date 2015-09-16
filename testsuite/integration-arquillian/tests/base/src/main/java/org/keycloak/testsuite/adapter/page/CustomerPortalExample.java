@@ -5,7 +5,7 @@ import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-import org.keycloak.testsuite.util.SeleniumUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 
 /**
@@ -61,7 +61,7 @@ public class CustomerPortalExample extends AbstractPageWithInjectedUrl {
     }
 
     public void customerSession() {
-        SeleniumUtils.waitGuiForElement(customerSessionLink);
+        WaitUtils.waitGuiForElement(customerSessionLink);
         customerSessionLink.click();
     }
 
@@ -70,11 +70,11 @@ public class CustomerPortalExample extends AbstractPageWithInjectedUrl {
     }
 
     public void waitForCustomerListingHeader() {
-        SeleniumUtils.waitGuiForElementNotPresent(customerListingHeader);
+        WaitUtils.waitGuiForElementNotPresent(customerListingHeader);
     }
 
     public void waitForCustomerSessionHeader() {
-        SeleniumUtils.waitGuiForElementNotPresent(customerSessionHeader);
+        WaitUtils.waitGuiForElementNotPresent(customerSessionHeader);
     }
 
 }

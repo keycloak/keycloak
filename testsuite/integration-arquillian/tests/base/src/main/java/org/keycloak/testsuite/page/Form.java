@@ -1,8 +1,9 @@
 package org.keycloak.testsuite.page;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import static org.jboss.arquillian.graphene.Graphene.guardAjax;
 import org.jboss.logging.Logger;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -26,11 +27,12 @@ public class Form {
     private WebElement cancel;
 
     public void save() {
+//        guardAjax(save).click();
         save.click();
     }
 
     public void cancel() {
-        cancel.click();
+        guardAjax(cancel).click();
     }
 
     public static String getInputValue(WebElement input) {

@@ -3,7 +3,6 @@ package org.keycloak.testsuite.console.page.users;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.testsuite.console.page.fragment.Breadcrumb;
 import static org.keycloak.testsuite.console.page.fragment.Breadcrumb.BREADCRUMB_XPATH;
-import org.keycloak.testsuite.console.page.fragment.Navigation;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -42,7 +41,7 @@ public class User extends Users {
         return userTabs;
     }
 
-    public class UserTabs extends Navigation {
+    public class UserTabs {
 
         @FindBy(linkText = "Attributes")
         private WebElement attributesLink;
@@ -56,23 +55,23 @@ public class User extends Users {
         private WebElement sessionsLink;
 
         public void attributes() {
-            clickAndWaitForHeader(attributesLink);
+            attributesLink.click();
         }
 
         public void credentials() {
-            clickAndWaitForHeader(credentialsLink);
+            credentialsLink.click();
         }
 
         public void roleMappings() {
-            clickAndWaitForHeader(roleMappingsLink);
+            roleMappingsLink.click();
         }
 
         public void consents() {
-            clickAndWaitForHeader(consentsLink);
+            consentsLink.click();
         }
 
         public void sessions() {
-            clickAndWaitForHeader(sessionsLink);
+            sessionsLink.click();
         }
 
     }

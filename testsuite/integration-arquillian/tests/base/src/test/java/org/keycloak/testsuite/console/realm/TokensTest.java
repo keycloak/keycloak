@@ -23,8 +23,8 @@ import org.junit.Test;
 import org.keycloak.testsuite.console.page.realm.TokenSettings;
 
 import org.jboss.arquillian.graphene.page.Page;
-import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 /**
  *

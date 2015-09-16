@@ -53,6 +53,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     }
     
     public void createTestUserWithAdminClient() {
+        log.debug("creating test user");
         String id = createUserAndResetPasswordWithAdminClient(testRealmResource(), testUser, PASSWORD);
         testUser.setId(id);
     }
@@ -69,6 +70,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
     public void deleteAllCookiesForTestRealm() {
         testRealmPage.navigateTo();
+        log.debug("deleting cookies in test realm");
         driver.manage().deleteAllCookies();
     }
 

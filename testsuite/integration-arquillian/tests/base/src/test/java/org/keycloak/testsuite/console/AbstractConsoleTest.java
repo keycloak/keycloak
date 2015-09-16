@@ -28,8 +28,8 @@ import org.keycloak.testsuite.console.page.AdminConsoleRealm.ManageMenu;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
-import static org.keycloak.testsuite.util.LoginAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import org.openqa.selenium.support.FindBy;
 
 /**

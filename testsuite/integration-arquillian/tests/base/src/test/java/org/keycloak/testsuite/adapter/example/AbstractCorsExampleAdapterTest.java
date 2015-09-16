@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.PageAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 /**
  * Created by fkiss.

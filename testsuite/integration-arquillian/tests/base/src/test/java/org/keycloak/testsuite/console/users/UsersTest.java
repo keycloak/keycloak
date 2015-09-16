@@ -6,7 +6,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
-import static org.keycloak.testsuite.util.SeleniumUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 import org.keycloak.testsuite.util.Timer;
 
 /**

@@ -19,7 +19,7 @@ package org.keycloak.testsuite.console.page.fragment;
 
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import static org.keycloak.testsuite.util.SeleniumUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
@@ -37,12 +37,12 @@ public class OnOffSwitch {
     private Actions actions;
 
     public boolean isOn() {
-        waitGuiForElement(root);
+        waitAjaxForElement(root);
         return root.findElement(By.tagName("input")).isSelected();
     }
 
     private void click() {
-        waitGuiForElement(root);
+        waitAjaxForElement(root);
         actions.moveToElement(root.findElements(By.tagName("span")).get(0))
                 .click().build().perform();
     }

@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.console.page.fragment;
 
-import static org.keycloak.testsuite.util.SeleniumUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
