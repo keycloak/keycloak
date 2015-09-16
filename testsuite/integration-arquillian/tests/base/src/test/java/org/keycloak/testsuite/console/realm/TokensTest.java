@@ -52,9 +52,10 @@ public class TokensTest extends AbstractRealmTest {
 
         loginToTestRealmConsoleAs(testUser);
         TIME_UNIT.sleep(TIMEOUT + 2);
-        
+
         driver.navigate().refresh();
 
+        log.debug(driver.getCurrentUrl());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
 
@@ -62,17 +63,18 @@ public class TokensTest extends AbstractRealmTest {
     public void testLifespanOfRealmSession() throws InterruptedException {
         tokenSettingsPage.form().setSessionTimeoutLifespan(TIMEOUT, TIME_UNIT);
         tokenSettingsPage.form().save();
-        
+
         loginToTestRealmConsoleAs(testUser);
-        TIME_UNIT.sleep(TIMEOUT/2);
+        TIME_UNIT.sleep(TIMEOUT / 2);
 
         driver.navigate().refresh();
         assertCurrentUrlStartsWith(testRealmAdminConsolePage); // assert still logged in (within lifespan)
-        
-        TIME_UNIT.sleep(TIMEOUT/2 + 2);
+
+        TIME_UNIT.sleep(TIMEOUT / 2 + 2);
         driver.navigate().refresh();
 
+        log.debug(driver.getCurrentUrl());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage); // assert logged out (lifespan exceeded)
     }
-    
+
 }
