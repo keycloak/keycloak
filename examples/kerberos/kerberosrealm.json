@@ -86,7 +86,7 @@
                 "bindCredential" : "secret",
                 "kerberosRealm" : "KEYCLOAK.ORG",
                 "serverPrincipal" : "HTTP/localhost@KEYCLOAK.ORG",
-                "keyTab" : "/tmp/http.keytab"
+                "keyTab" : "http.keytab"
             }
         }
     ]
