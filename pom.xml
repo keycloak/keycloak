@@ -1319,6 +1319,42 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>distribution</id>
+            <modules>
+                <module>distribution</module>
+                <module>testsuite/integration-arquillian</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>jboss-release</id>
+            <modules>
+                <module>docbook</module>
+                <module>distribution</module>
+                <module>testsuite/integration-arquillian</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>doclint-java8-disable</id>
+            <activation>
+                <jdk>[1.8,)</jdk>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <configuration>
+                            <additionalparam>-Xdoclint:none</additionalparam>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <!-- Configure the JBoss Early Access Maven repository -->
         <profile>
             <id>jboss-earlyaccess-repository</id>
@@ -1351,64 +1387,6 @@
                     </snapshots>
                 </pluginRepository>
             </pluginRepositories>
-        </profile>
-        <profile>
-            <id>distribution</id>
-            <modules>
-                <module>distribution</module>
-                <module>testsuite/integration-arquillian</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>jboss-release</id>
-            <modules>
-                <module>docbook</module>
-                <module>distribution</module>
-                <module>testsuite/integration-arquillian</module>
-            </modules>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>aggregate</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>aggregate</goal>
-                                </goals>
-                                <configuration>
-                                    <minmemory>128m</minmemory>
-                                    <maxmemory>1024m</maxmemory>
-                                    <aggregate>true</aggregate>
-                                    <excludePackageNames>
-                                        se.unlogic.*:com.restfully.*:org.jboss.resteasy.examples.*:org.jboss.resteasy.tests.*
-                                    </excludePackageNames>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>          
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>doclint-java8-disable</id>
-            <activation>
-                <jdk>[1.8,)</jdk>
-            </activation>
-
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <configuration>
-                            <additionalparam>-Xdoclint:none</additionalparam>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>
 </project>
