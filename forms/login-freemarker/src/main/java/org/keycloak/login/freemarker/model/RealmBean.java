@@ -66,6 +66,10 @@ public class RealmBean {
         return realm.isInternationalizationEnabled();
     }
 
+    public boolean isEditUsernameAllowed() {
+        return realm.isEditUsernameAllowed();
+    }
+
     public boolean isPassword() {
         for (RequiredCredentialModel r : realm.getRequiredCredentials()) {
             if (r.getType().equals(CredentialRepresentation.PASSWORD)) {
