@@ -122,8 +122,23 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
         return expectLogin().event(event).removeDetail(Details.CONSENT).session(isUUID());
     }
 
+    public ExpectedEvent expectRequiredActionEnabledUsername(EventType event, String newUsername) {
+        return expectLogin(newUsername).event(event).removeDetail(Details.CONSENT).session(isUUID());
+    }
+
     public ExpectedEvent expectLogin() {
         return expect(EventType.LOGIN)
+                .detail(Details.CODE_ID, isCodeId())
+                //.detail(Details.USERNAME, DEFAULT_USERNAME)
+                //.detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
+                //.detail(Details.AUTH_TYPE, AuthorizationEndpoint.CODE_AUTH_TYPE)
+                .detail(Details.REDIRECT_URI, DEFAULT_REDIRECT_URI)
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
+                .session(isUUID());
+    }
+
+    public ExpectedEvent expectLogin(String username) {
+        return expect(EventType.LOGIN, username)
                 .detail(Details.CODE_ID, isCodeId())
                 //.detail(Details.USERNAME, DEFAULT_USERNAME)
                 //.detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
@@ -194,6 +209,16 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
                 .realm(DEFAULT_REALM)
                 .client(DEFAULT_CLIENT_ID)
                 .user(keycloak.getUser(DEFAULT_REALM, DEFAULT_USERNAME).getId())
+                .ipAddress(DEFAULT_IP_ADDRESS)
+                .session((String) null)
+                .event(event);
+    }
+
+    public ExpectedEvent expect(EventType event, String username) {
+        return new ExpectedEvent()
+                .realm(DEFAULT_REALM)
+                .client(DEFAULT_CLIENT_ID)
+                .user(keycloak.getUser(DEFAULT_REALM, username).getId())
                 .ipAddress(DEFAULT_IP_ADDRESS)
                 .session((String) null)
                 .event(event);

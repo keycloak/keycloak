@@ -121,7 +121,7 @@ public class RequiredActionMultipleActionsTest {
     }
 
     public String updateProfile(String sessionId) {
-        updateProfilePage.update("New first", "New last", "new@email.com");
+        updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com");
         if (sessionId != null) {

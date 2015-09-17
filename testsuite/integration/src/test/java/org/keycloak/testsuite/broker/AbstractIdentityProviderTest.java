@@ -17,7 +17,6 @@
  */
 package org.keycloak.testsuite.broker;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -452,7 +451,7 @@ public abstract class AbstractIdentityProviderTest {
         doAfterProviderAuthentication();
 
         this.updateProfilePage.assertCurrent();
-        this.updateProfilePage.update("Test", "User", "psilva@redhat.com");
+        this.updateProfilePage.update("Test", "User", "psilva@redhat.com", "psilva");
 
         WebElement element = this.driver.findElement(By.className("kc-feedback-text"));
 
@@ -461,7 +460,7 @@ public abstract class AbstractIdentityProviderTest {
         assertEquals("Email already exists.", element.getText());
 
         this.updateProfilePage.assertCurrent();
-        this.updateProfilePage.update("Test", "User", "test-user@redhat.com");
+        this.updateProfilePage.update("Test", "User", "test-user@redhat.com", "test-user");
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
 
@@ -725,7 +724,7 @@ public abstract class AbstractIdentityProviderTest {
 
             // update profile
             this.updateProfilePage.assertCurrent();
-            this.updateProfilePage.update(userFirstName, userLastName, userEmail);
+            this.updateProfilePage.update(userFirstName, userLastName, userEmail, username);
         }
 
     }
