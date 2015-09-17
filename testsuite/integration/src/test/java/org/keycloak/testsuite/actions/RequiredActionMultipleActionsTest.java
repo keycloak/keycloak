@@ -33,11 +33,8 @@ import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.*;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
@@ -83,7 +80,7 @@ public class RequiredActionMultipleActionsTest {
     protected LoginPasswordUpdatePage changePasswordPage;
 
     @WebResource
-    protected LoginUpdateProfilePage updateProfilePage;
+    protected LoginUpdateProfileEditUsernameAllowedPage updateProfilePage;
 
     @Test
     public void updateProfileAndPassword() throws Exception {

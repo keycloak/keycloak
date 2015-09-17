@@ -27,47 +27,19 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginUpdateProfilePage extends AbstractPage {
+public class LoginUpdateProfileEditUsernameAllowedPage extends LoginUpdateProfilePage {
 
-    @FindBy(id = "firstName")
-    private WebElement firstNameInput;
+    @FindBy(id = "username")
+    private WebElement usernameInput;
 
-    @FindBy(id = "lastName")
-    private WebElement lastNameInput;
-
-    @FindBy(id = "email")
-    private WebElement emailInput;
-
-    @FindBy(css = "input[type=\"submit\"]")
-    private WebElement submitButton;
-
-    @FindBy(className = "feedback-error")
-    private WebElement loginErrorMessage;
-
-    public void update(String firstName, String lastName, String email) {
-        firstNameInput.clear();
-        firstNameInput.sendKeys(firstName);
-        lastNameInput.clear();
-        lastNameInput.sendKeys(lastName);
-        emailInput.clear();
-        emailInput.sendKeys(email);
-        submitButton.click();
+    public void update(String firstName, String lastName, String email, String username) {
+        usernameInput.clear();
+        usernameInput.sendKeys(username);
+        update(firstName, lastName, email);
     }
 
-    public String getError() {
-        return loginErrorMessage != null ? loginErrorMessage.getText() : null;
-    }
-
-    public String getFirstName() {
-        return firstNameInput.getAttribute("value");
-    }
-
-    public String getLastName() {
-        return lastNameInput.getAttribute("value");
-    }
-
-    public String getEmail() {
-        return emailInput.getAttribute("value");
+    public String getUsername() {
+        return usernameInput.getAttribute("value");
     }
 
     public boolean isCurrent() {
