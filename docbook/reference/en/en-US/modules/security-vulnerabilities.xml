@@ -130,8 +130,8 @@
             A password has to match all policies. The password policies that can be configured are hash iterations, length, digits,
             lowercase, uppercase, special characters, not username, regex patterns, password history and force expired password update. 
             Force expired password update policy forces or requires password updates after specified span of time. Password history policy 
-            restricts a user from resetting his password to N old expired passwords. Multiple regex patterns, separated by comma, 
-            can be specified in regex pattern policy. If there's more than one regex added, password has to match all fully.
+            restricts a user from resetting his password to N old expired passwords. Multiple regex patterns can be specified.
+            If there's more than one regex added, password has to match all fully.
             Increasing number of Hash Iterations (n) does not worsen anything (and certainly not the cipher) and it greatly increases the 
             resistance to dictionary attacks. However the drawback to increasing n is that it has some cost (CPU usage, energy, delay) for 
             the legitimate parties. Increasing n also slightly increases the odds that a random password gives the same result as the right 

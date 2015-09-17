@@ -46,42 +46,37 @@ public class PasswordPolicy implements Serializable {
             policy = policy.trim();
 
             String name;
-            String[] args = null;
+            String arg = null;
 
             int i = policy.indexOf('(');
             if (i == -1) {
                 name = policy.trim();
             } else {
                 name = policy.substring(0, i).trim();
-                args = policy.substring(i + 1, policy.length() - 1).split(",");
-                for (int j = 0; j < args.length; j++) {
-                    args[j] = args[j].trim();
-                }
+                arg = policy.substring(i + 1, policy.length() - 1);
             }
 
             if (name.equals(Length.NAME)) {
-                list.add(new Length(args));
+                list.add(new Length(arg));
             } else if (name.equals(Digits.NAME)) {
-                list.add(new Digits(args));
+                list.add(new Digits(arg));
             } else if (name.equals(LowerCase.NAME)) {
-                list.add(new LowerCase(args));
+                list.add(new LowerCase(arg));
             } else if (name.equals(UpperCase.NAME)) {
-                list.add(new UpperCase(args));
+                list.add(new UpperCase(arg));
             } else if (name.equals(SpecialChars.NAME)) {
-                list.add(new SpecialChars(args));
+                list.add(new SpecialChars(arg));
             } else if (name.equals(NotUsername.NAME)) {
-                list.add(new NotUsername(args));
+                list.add(new NotUsername(arg));
             } else if (name.equals(HashIterations.NAME)) {
-                list.add(new HashIterations(args));
+                list.add(new HashIterations(arg));
             } else if (name.equals(RegexPatterns.NAME)) {
-                for (String regexPattern : args) {
-                    Pattern.compile(regexPattern);
-                }
-                list.add(new RegexPatterns(args));
+                Pattern.compile(arg);
+                list.add(new RegexPatterns(arg));
             } else if (name.equals(PasswordHistory.NAME)) {
-                list.add(new PasswordHistory(args));
+                list.add(new PasswordHistory(arg));
             } else if (name.equals(ForceExpiredPasswordChange.NAME)) {
-                list.add(new ForceExpiredPasswordChange(args));
+                list.add(new ForceExpiredPasswordChange(arg));
             }
         }
         return list;
@@ -182,11 +177,10 @@ public class PasswordPolicy implements Serializable {
         private static final String NAME = "hashIterations";
         private int iterations;
 
-        public HashIterations(String[] args) {
-            iterations = intArg(NAME, 1, args);
+        public HashIterations(String arg) {
+            iterations = intArg(NAME, 1, arg);
         }
         
-
         @Override
         public Error validate(String user, String password) {
             return null;
@@ -201,7 +195,7 @@ public class PasswordPolicy implements Serializable {
     private static class NotUsername implements Policy {
         private static final String NAME = "notUsername";
 
-        public NotUsername(String[] args) {
+        public NotUsername(String arg) {
         }
 
         @Override
@@ -219,8 +213,9 @@ public class PasswordPolicy implements Serializable {
         private static final String NAME = "length";
         private int min;
 
-        public Length(String[] args) {
-            min = intArg(NAME, 8, args);
+        public Length(String arg)
+        {
+            min = intArg(NAME, 8, arg);
         }
         
 
@@ -239,8 +234,9 @@ public class PasswordPolicy implements Serializable {
         private static final String NAME = "digits";
         private int min;
 
-        public Digits(String[] args) {
-            min = intArg(NAME, 1, args);
+        public Digits(String arg)
+        {
+            min = intArg(NAME, 1, arg);
         }
         
 
@@ -265,8 +261,9 @@ public class PasswordPolicy implements Serializable {
         private static final String NAME = "lowerCase";
         private int min;
 
-        public LowerCase(String[] args) {
-            min = intArg(NAME, 1, args);
+        public LowerCase(String arg)
+        {
+            min = intArg(NAME, 1, arg);
         }
         
         @Override
@@ -290,8 +287,8 @@ public class PasswordPolicy implements Serializable {
         private static final String NAME = "upperCase";
         private int min;
 
-        public UpperCase(String[] args) {
-            min = intArg(NAME, 1, args);
+        public UpperCase(String arg) {
+            min = intArg(NAME, 1, arg);
         }
 
         @Override
@@ -315,8 +312,9 @@ public class PasswordPolicy implements Serializable {
         private static final String NAME = "specialChars";
         private int min;
 
-        public SpecialChars(String[] args) {
-            min = intArg(NAME, 1, args);
+        public SpecialChars(String arg)
+        {
+            min = intArg(NAME, 1, arg);
         }
         
         @Override
@@ -337,23 +335,20 @@ public class PasswordPolicy implements Serializable {
     }
 
     private static class RegexPatterns implements Policy {
-        private static final String NAME = "regexPatterns";
-        private String regexPatterns[];
+        private static final String NAME = "regexPattern";
+        private String regexPattern;
 
-        public RegexPatterns(String[] args) {
-            regexPatterns = args;
+        public RegexPatterns(String arg)
+        {
+            regexPattern = arg;
         }
 
         @Override
         public Error validate(String username, String password) {
-            Pattern pattern = null;
-            Matcher matcher = null;
-            for (String regexPattern : regexPatterns) {
-                pattern = Pattern.compile(regexPattern);
-                matcher = pattern.matcher(password);
-                if (!matcher.matches()) {
-                    return new Error(INVALID_PASSWORD_REGEX_PATTERN, (Object) regexPatterns);
-                }
+            Pattern pattern = Pattern.compile(regexPattern);
+            Matcher matcher = pattern.matcher(password);
+            if (!matcher.matches()) {
+                return new Error(INVALID_PASSWORD_REGEX_PATTERN, (Object) regexPattern);
             }
             return null;
         }
@@ -368,8 +363,9 @@ public class PasswordPolicy implements Serializable {
         private static final String NAME = "passwordHistory";
         private int passwordHistoryPolicyValue;
 
-        public PasswordHistory(String[] args) {
-            passwordHistoryPolicyValue = intArg(NAME, 3, args);
+        public PasswordHistory(String arg)
+        {
+            passwordHistoryPolicyValue = intArg(NAME, 3, arg);
         }
         
         @Override
@@ -442,8 +438,8 @@ public class PasswordPolicy implements Serializable {
         private static final String NAME = "forceExpiredPasswordChange";
         private int daysToExpirePassword;
 
-        public ForceExpiredPasswordChange(String[] args) {
-            daysToExpirePassword = intArg(NAME, 365, args);
+        public ForceExpiredPasswordChange(String arg) {
+            daysToExpirePassword = intArg(NAME, 365, arg);
         }
 
         @Override
@@ -457,13 +453,11 @@ public class PasswordPolicy implements Serializable {
         }
     }
     
-    private static int intArg(String policy, int defaultValue, String... args) {
-        if (args == null || args.length == 0) {
+    private static int intArg(String policy, int defaultValue, String arg) {
+        if (arg == null) {
             return defaultValue;
-        } else if (args.length == 1) {
-            return Integer.parseInt(args[0]);
         } else {
-            throw new IllegalArgumentException("Invalid arguments to " + policy + ", expect no argument or single integer");
+            return Integer.parseInt(arg);
         }
     }
 
