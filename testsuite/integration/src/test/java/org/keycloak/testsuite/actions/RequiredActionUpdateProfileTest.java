@@ -108,15 +108,25 @@ public class RequiredActionUpdateProfileTest {
 
         loginPage.login("john-doh@localhost", "password");
 
+        String userId = keycloakRule.getUser("test", "john-doh@localhost").getId();
+
         updateProfilePage.assertCurrent();
 
         updateProfilePage.update("New first", "New last", "john-doh@localhost", "new");
 
-        String sessionId = events.expectRequiredActionEnabledUsername(EventType.UPDATE_PROFILE, "new").assertEvent().getSessionId();
+        String sessionId = events
+                .expectLogin()
+                .event(EventType.UPDATE_PROFILE)
+                .detail(Details.USERNAME, "john-doh@localhost")
+                .user(userId)
+                .session(AssertEvents.isUUID())
+                .removeDetail(Details.CONSENT)
+                .assertEvent()
+                .getSessionId();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin("new").session(sessionId).assertEvent();
+        events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").user(userId).session(sessionId).assertEvent();
 
         // assert user is really updated in persistent store
         UserRepresentation user = keycloakRule.getUser("test", "new");
