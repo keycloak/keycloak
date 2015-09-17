@@ -19,9 +19,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,7 +49,7 @@ public class ScopeMappedResource {
     }
 
     /**
-     * Get all scope mappings for this client
+     * Get all scope mappings for the client
      *
      * @return
      */
@@ -94,7 +92,7 @@ public class ScopeMappedResource {
     }
 
     /**
-     * Get list of realm-level roles associated with this client's scope.
+     * Get realm-level roles associated with the client's scope
      *
      * @return
      */
@@ -114,7 +112,7 @@ public class ScopeMappedResource {
     }
 
     /**
-     * Get list of realm-level roles that are available to attach to this client's scope.
+     * Get realm-level roles that are available to attach to this client's scope
      *
      * @return
      */
@@ -139,7 +137,9 @@ public class ScopeMappedResource {
     }
 
     /**
-     * Get all effective realm-level roles that are associated with this client's scope.  What this does is recurse
+     * Get effective realm-level roles associated with the client's scope
+     *
+     * What this does is recurse
      * any composite roles associated with the client's scope and adds the roles to this lists.  The method is really
      * to show a comprehensive total view of realm-level roles associated with the client.
      *

@@ -76,7 +76,7 @@
                     </td>
 
                     <td>
-                        <#if application.client.consentRequired>
+                        <#if application.client.consentRequired && application.claimsGranted?has_content>
                             <button type='submit' class='${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!}' id='revoke-${application.client.clientId}' name='clientId' value="${application.client.id}">${msg("revoke")}</button>
                         </#if>
                     </td>

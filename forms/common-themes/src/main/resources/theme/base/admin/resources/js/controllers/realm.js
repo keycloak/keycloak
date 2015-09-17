@@ -414,6 +414,14 @@ module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $htt
         if (!$scope.policy) {
             $scope.policy = [];
         }
+        if (policy.name === 'regexPattern') {
+            for (var i in $scope.allPolicies) {
+                var p = $scope.allPolicies[i];
+                if (p.name === 'regexPattern') {
+                    $scope.allPolicies[i] = { name: 'regexPattern', value: '' };
+                }
+            }
+        }
         $scope.policy.push(policy);
     }
 

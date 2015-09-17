@@ -30,39 +30,12 @@ module.controller('ClientRoleListCtrl', function($scope, $location, realm, clien
     });
 });
 
-module.controller('ClientCredentialsCtrl', function($scope, $location, realm, client, clientAuthenticatorProviders, Client) {
+module.controller('ClientCredentialsCtrl', function($scope, $location, realm, client, clientAuthenticatorProviders, clientConfigProperties, Client) {
     $scope.realm = realm;
     $scope.client = angular.copy(client);
     $scope.clientAuthenticatorProviders = clientAuthenticatorProviders;
 
-    var updateConfigButtonVisibility = function() {
-        for (var i=0 ; i<clientAuthenticatorProviders.length ; i++) {
-            var authenticator = clientAuthenticatorProviders[i];
-            if ($scope.client.clientAuthenticatorType === authenticator.id) {
-                $scope.configButtonVisible = authenticator.configurablePerClient;
-            }
-        }
-    };
-    updateConfigButtonVisibility();
-
-    $scope.$watch('client', function() {
-        if (!angular.equals($scope.client, client)) {
-
-            console.log("Update client credentials!");
-
-            Client.update({
-                realm : realm.realm,
-                client : client.id
-            }, $scope.client, function() {
-                $scope.changed = false;
-                client = angular.copy($scope.client);
-                updateConfigButtonVisibility();
-            });
-
-        }
-    }, true);
-
-    $scope.$watch('client.clientAuthenticatorType', function(val) {
+    var updateCurrentPartial = function(val) {
         $scope.clientAuthenticatorConfigPartial;
         switch(val) {
             case 'client-secret':
@@ -72,14 +45,28 @@ module.controller('ClientCredentialsCtrl', function($scope, $location, realm, cl
                 $scope.clientAuthenticatorConfigPartial = 'client-credentials-jwt.html';
                 break;
             default:
+                $scope.currentAuthenticatorConfigProperties = clientConfigProperties[val];
                 $scope.clientAuthenticatorConfigPartial = 'client-credentials-generic.html';
                 break;
         }
-    });
+    };
 
-    $scope.configureAuthenticator = function() {
-        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/credentials/" + client.clientAuthenticatorType);
-    }
+    updateCurrentPartial(client.clientAuthenticatorType);
+
+    $scope.$watch('client.clientAuthenticatorType', function() {
+        if (!angular.equals($scope.client.clientAuthenticatorType, client.clientAuthenticatorType)) {
+
+            Client.update({
+                realm : realm.realm,
+                client : client.id
+            }, $scope.client, function() {
+                $scope.changed = false;
+                client = angular.copy($scope.client);
+                updateCurrentPartial(client.clientAuthenticatorType)
+            });
+
+        }
+    }, true);
 
 });
 
@@ -134,17 +121,15 @@ module.controller('ClientSignedJWTCtrl', function($scope, $location, ClientCerti
     };
 });
 
-module.controller('ClientGenericCredentialsCtrl', function($scope, $location, realm, client, clientConfigProperties, Client, Notifications) {
+module.controller('ClientGenericCredentialsCtrl', function($scope, $location, Client, Notifications) {
 
     console.log('ClientGenericCredentialsCtrl invoked');
 
-    $scope.realm = realm;
-    $scope.client = angular.copy(client);
-    $scope.clientConfigProperties = clientConfigProperties;
+    $scope.clientCopy = angular.copy($scope.client);
     $scope.changed = false;
 
     $scope.$watch('client', function() {
-        if (!angular.equals($scope.client, client)) {
+        if (!angular.equals($scope.client, $scope.clientCopy)) {
             $scope.changed = true;
         }
     }, true);
@@ -152,17 +137,17 @@ module.controller('ClientGenericCredentialsCtrl', function($scope, $location, re
     $scope.save = function() {
 
         Client.update({
-            realm : realm.realm,
-            client : client.id
+            realm : $scope.realm.realm,
+            client : $scope.client.id
         }, $scope.client, function() {
             $scope.changed = false;
-            client = angular.copy($scope.client);
+            $scope.clientCopy = angular.copy($scope.client);
             Notifications.success("Client authentication configuration has been saved to the client.");
         });
     };
 
     $scope.reset = function() {
-        $scope.client = angular.copy(client);
+        $scope.client = angular.copy($scope.clientCopy);
         $scope.changed = false;
     };
 });

@@ -38,7 +38,7 @@ public class ServerInfoAdminResource {
     private KeycloakSession session;
 
     /**
-     * Returns a list of themes, social providers, auth providers, and event listeners available on this server
+     * Get themes, social providers, auth providers, and event listeners available on this server
      *
      * @return
      */

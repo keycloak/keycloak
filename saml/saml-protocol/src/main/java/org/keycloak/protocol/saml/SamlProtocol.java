@@ -455,8 +455,12 @@ public class SamlProtocol implements LoginProtocol {
         if (roleListMapper == null) return;
         AssertionType assertion = response.getAssertions().get(0).getAssertion();
         AttributeStatementType attributeStatement = new AttributeStatementType();
-        assertion.addStatement(attributeStatement);
         roleListMapper.mapper.mapRoles(attributeStatement, roleListMapper.model, session, userSession, clientSession);
+
+        //SAML Spec 2.7.3 AttributeStatement must contain one or more Attribute or EncryptedAttribute
+        if(attributeStatement.getAttributes().size() > 0) {
+            assertion.addStatement(attributeStatement);
+        }
     }
 
 

@@ -3,6 +3,8 @@ package org.keycloak.services.managers;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.ClientAuthenticator;
+import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.constants.ServiceAccountConstants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -156,7 +158,7 @@ public class ClientManager {
         @JsonProperty("public-client")
         protected Boolean publicClient;
         @JsonProperty("credentials")
-        protected Map<String, String> credentials;
+        protected Map<String, Object> credentials;
 
         public Boolean isUseResourceRoleMappings() {
             return useResourceRoleMappings;
@@ -174,11 +176,11 @@ public class ClientManager {
             this.resource = resource;
         }
 
-        public Map<String, String> getCredentials() {
+        public Map<String, Object> getCredentials() {
             return credentials;
         }
 
-        public void setCredentials(Map<String, String> credentials) {
+        public void setCredentials(Map<String, Object> credentials) {
             this.credentials = credentials;
         }
 
@@ -213,11 +215,9 @@ public class ClientManager {
 
         rep.setResource(clientModel.getClientId());
 
-        if (!clientModel.isBearerOnly() && !clientModel.isPublicClient()) {
-            Map<String, String> creds = new HashMap<String, String>();
-            String cred = clientModel.getSecret();
-            creds.put(CredentialRepresentation.SECRET, cred);
-            rep.setCredentials(creds);
+        if (showClientCredentialsAdapterConfig(clientModel)) {
+            Map<String, Object> adapterConfig = getClientCredentialsAdapterConfig(clientModel);
+            rep.setCredentials(adapterConfig);
         }
 
         return rep;
@@ -238,14 +238,47 @@ public class ClientManager {
         buffer.append("    <ssl-required>").append(realmModel.getSslRequired().name()).append("</ssl-required>\n");
         buffer.append("    <resource>").append(clientModel.getClientId()).append("</resource>\n");
         String cred = clientModel.getSecret();
-        if (!clientModel.isBearerOnly() && !clientModel.isPublicClient()) {
-            buffer.append("    <credential name=\"secret\">").append(cred).append("</credential>\n");
+        if (showClientCredentialsAdapterConfig(clientModel)) {
+            Map<String, Object> adapterConfig = getClientCredentialsAdapterConfig(clientModel);
+            for (Map.Entry<String, Object> entry : adapterConfig.entrySet()) {
+                buffer.append("    <credential name=\"" + entry.getKey() + "\">");
+
+                Object value = entry.getValue();
+                if (value instanceof Map) {
+                    buffer.append("\n");
+                    Map<String, Object> asMap = (Map<String, Object>) value;
+                    for (Map.Entry<String, Object> credEntry : asMap.entrySet()) {
+                        buffer.append("        <" + credEntry.getKey() + ">" + credEntry.getValue().toString() + "</" + credEntry.getKey() + ">\n");
+                    }
+                    buffer.append("    </credential>\n");
+                } else {
+                    buffer.append(value.toString()).append("</credential>\n");
+                }
+            }
         }
         if (clientModel.getRoles().size() > 0) {
             buffer.append("    <use-resource-role-mappings>true</use-resource-role-mappings>\n");
         }
         buffer.append("</secure-deployment>\n");
         return buffer.toString();
+    }
+
+    private boolean showClientCredentialsAdapterConfig(ClientModel client) {
+        if (client.isPublicClient()) {
+            return false;
+        }
+
+        if (client.isBearerOnly() && client.getNodeReRegistrationTimeout() <= 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private Map<String, Object> getClientCredentialsAdapterConfig(ClientModel client) {
+        String clientAuthenticator = client.getClientAuthenticatorType();
+        ClientAuthenticatorFactory authenticator = (ClientAuthenticatorFactory) realmManager.getSession().getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, clientAuthenticator);
+        return authenticator.getAdapterConfiguration(client);
     }
 
 }

@@ -46,7 +46,9 @@ public class SystemInfoRepresentation {
         rep.userName = System.getProperty("user.name");
         rep.userDir = System.getProperty("user.dir");
         rep.userTimezone = System.getProperty("user.timezone");
-        rep.userLocale = (new Locale(System.getProperty("user.country"), System.getProperty("user.language")).toString());
+        if (System.getProperty("user.country") != null && System.getProperty("user.language") != null) {
+            rep.userLocale = (new Locale(System.getProperty("user.country"), System.getProperty("user.language")).toString());
+        }
         return rep;
     }
 

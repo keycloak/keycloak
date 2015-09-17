@@ -35,7 +35,7 @@ public class KerberosKeytabCreator {
             System.out.println("-------------------------");
             System.out.println("Arguments missing or invalid. Required arguments are: <principalName> <passPhrase> <outputKeytabFile>");
             System.out.println("Example of usage:");
-            System.out.println("java -jar embedded-ldap/target/embedded-ldap.jar keytabCreator HTTP/localhost@KEYCLOAK.ORG httppassword /tmp/http.keytab");
+            System.out.println("java -jar embedded-ldap/target/embedded-ldap.jar keytabCreator HTTP/localhost@KEYCLOAK.ORG httppassword http.keytab");
         } else {
             final File keytabFile = new File(args[2]);
             createKeytab(args[0], args[1], keytabFile);

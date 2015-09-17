@@ -14,7 +14,7 @@
             <outputDirectory>modules/system/layers/base</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../../../forms/common-themes/src/main/resources/theme</directory>
+            <directory>../../../../forms/common-themes/src/main/resources/theme</directory>
             <outputDirectory>standalone/configuration/themes</outputDirectory>
             <includes>
                 <include>**/**</include>

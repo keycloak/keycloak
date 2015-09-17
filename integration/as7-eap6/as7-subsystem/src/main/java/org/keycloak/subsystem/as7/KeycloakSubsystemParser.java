@@ -34,7 +34,10 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The subsystem parser, which uses stax to read and write to and from xml
@@ -125,12 +128,48 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
 
     public void readCredential(XMLExtendedStreamReader reader, PathAddress parent, List<ModelNode> credentialsToAdd) throws XMLStreamException {
         String name = readNameAttribute(reader);
+
+        Map<String, String> values = new HashMap<>();
+        String textValue = null;
+        while (reader.hasNext()) {
+            int next = reader.next();
+            if (next == CHARACTERS) {
+                // text value of credential element (like for "secret" )
+                String text = reader.getText();
+                if (text == null || text.trim().isEmpty()) {
+                    continue;
+                }
+                textValue = text;
+            } else if (next == START_ELEMENT) {
+                String key = reader.getLocalName();
+                reader.next();
+                String value = reader.getText();
+                reader.next();
+
+                values.put(key, value);
+            } else if (next == END_ELEMENT) {
+                break;
+            }
+        }
+
+        if (textValue != null) {
+            ModelNode addCredential = getCredentialToAdd(parent, name, textValue);
+            credentialsToAdd.add(addCredential);
+        } else {
+            for (Map.Entry<String, String> entry : values.entrySet()) {
+                ModelNode addCredential = getCredentialToAdd(parent, name + "." + entry.getKey(), entry.getValue());
+                credentialsToAdd.add(addCredential);
+            }
+        }
+    }
+
+    private ModelNode getCredentialToAdd(PathAddress parent, String name, String value) {
         ModelNode addCredential = new ModelNode();
         addCredential.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.ADD);
         PathAddress addr = PathAddress.pathAddress(parent, PathElement.pathElement(CredentialDefinition.TAG_NAME, name));
         addCredential.get(ModelDescriptionConstants.OP_ADDR).set(addr.toModelNode());
-        addCredential.get(CredentialDefinition.VALUE.getName()).set(reader.getElementText());
-        credentialsToAdd.add(addCredential);
+        addCredential.get(CredentialDefinition.VALUE.getName()).set(value);
+        return addCredential;
     }
 
     // expects that the current tag will have one single attribute called "name"
@@ -199,11 +238,43 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
     }
 
     private void writeCredentials(XMLExtendedStreamWriter writer, ModelNode credentials) throws XMLStreamException {
+        Map<String, Object> parsed = new LinkedHashMap<>();
         for (Property credential : credentials.asPropertyList()) {
+            String credName = credential.getName();
+            String credValue = credential.getValue().get(CredentialDefinition.VALUE.getName()).asString();
+
+            if (credName.contains(".")) {
+                String[] parts = credName.split("\\.");
+                String provider = parts[0];
+                String propKey = parts[1];
+
+                Map<String, String> currentProviderMap = (Map<String, String>) parsed.get(provider);
+                if (currentProviderMap == null) {
+                    currentProviderMap = new LinkedHashMap<>();
+                    parsed.put(provider, currentProviderMap);
+                }
+                currentProviderMap.put(propKey, credValue);
+            } else {
+                parsed.put(credName, credValue);
+            }
+        }
+
+        for (Map.Entry<String, Object> entry : parsed.entrySet()) {
             writer.writeStartElement(CredentialDefinition.TAG_NAME);
-            writer.writeAttribute("name", credential.getName());
-            String credentialValue = credential.getValue().get(CredentialDefinition.VALUE.getName()).asString();
-            writeCharacters(writer, credentialValue);
+            writer.writeAttribute("name", entry.getKey());
+
+            Object value = entry.getValue();
+            if (value instanceof String) {
+                writeCharacters(writer, (String) value);
+            } else {
+                Map<String, String> credentialProps = (Map<String, String>) value;
+                for (Map.Entry<String, String> prop : credentialProps.entrySet()) {
+                    writer.writeStartElement(prop.getKey());
+                    writeCharacters(writer, prop.getValue());
+                    writer.writeEndElement();
+                }
+            }
+
             writer.writeEndElement();
         }
     }

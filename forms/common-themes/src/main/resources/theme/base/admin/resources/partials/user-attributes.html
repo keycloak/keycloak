@@ -16,7 +16,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr ng-repeat="(key, value) in (user.attributes | filter:search)">
+            <tr ng-repeat="(key, value) in user.attributes">
                 <td>{{key}}</td>
                 <td><input ng-model="user.attributes[key]" class="form-control" type="text" name="{{key}}" id="attribute-{{key}}" /></td>
                 <td class="kc-action-cell">

@@ -64,23 +64,28 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
 
         KeycloakAdapterConfigService service = KeycloakAdapterConfigService.getInstance();
 
-        // if secure-deployment configuration exists for web app, we force KEYCLOAK auth method on it
-        // otherwise we only set up KEYCLOAK auth if it's requested through web.xml auth-method
+        // otherwise
         LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
-        if (!service.isSecureDeployment(deploymentName) && (loginConfig == null || !loginConfig.getAuthMethod().equalsIgnoreCase("KEYCLOAK"))) {
-            return;
+
+        boolean hasSubsystemConfig = service.isSecureDeployment(deploymentName);
+        boolean webRequiresKC = loginConfig != null && "KEYCLOAK".equalsIgnoreCase(loginConfig.getAuthMethod());
+
+        if (hasSubsystemConfig || webRequiresKC) {
+            log.debug("Setting up KEYCLOAK auth method for WAR: " + deploymentName);
+
+            // if secure-deployment configuration exists for web app, we force KEYCLOAK auth method on it
+            if (hasSubsystemConfig) {
+                addJSONData(service.getJSON(deploymentName), warMetaData);
+                if (loginConfig != null) {
+                    loginConfig.setAuthMethod("KEYCLOAK");
+                    loginConfig.setRealmName(service.getRealmName(deploymentName));
+                } else {
+                    log.warn("Failed to set up KEYCLOAK auth method for WAR: " + deploymentName + " (loginConfig == null)");
+                }
+            }
+            addValve(webMetaData);
+            KeycloakLogger.ROOT_LOGGER.deploymentSecured(deploymentName);
         }
-
-        log.debug("Setting up KEYCLOAK auth method for WAR: " + deploymentName);
-        loginConfig.setAuthMethod("KEYCLOAK");
-
-        if (service.isSecureDeployment(deploymentName)) {
-            addJSONData(service.getJSON(deploymentName), warMetaData);
-            loginConfig.setRealmName(service.getRealmName(deploymentName));
-        }
-        addValve(webMetaData);
-
-        KeycloakLogger.ROOT_LOGGER.deploymentSecured(deploymentName);
     }
 
     private void addValve(JBossWebMetaData webMetaData) {

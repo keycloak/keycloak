@@ -44,7 +44,9 @@ public class ScopeMappedClientResource {
     }
 
     /**
-     * Get the roles associated with a client's scope for a specific client.
+     * Get the roles associated with a client's scope
+     *
+     * Returns roles for the client.
      *
      * @return
      */
@@ -63,7 +65,9 @@ public class ScopeMappedClientResource {
     }
 
     /**
-     * The available client-level roles that can be associated with the client's scope
+     * The available client-level roles
+     *
+     * Returns the roles for the client that can be associated with the client's scope
      *
      * @return
      */
@@ -79,7 +83,9 @@ public class ScopeMappedClientResource {
     }
 
     /**
-     * Get effective client roles that are associated with the client's scope for a specific client.
+     * Get effective client roles
+     *
+     * Returns the roles for the client that are associated with the client's scope.
      *
      * @return
      */

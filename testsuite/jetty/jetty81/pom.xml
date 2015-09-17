@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.5.0.Final-SNAPSHOT</version>
+        <version>1.6.0.Final-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -12,7 +12,7 @@
     <artifactId>keycloak-testsuite-jetty81</artifactId>
     <name>Keycloak Jetty 8.1.x Integration TestSuite</name>
     <properties>
-        <jetty9.version>8.1.16.v20140903</jetty9.version>
+        <jetty9.version>8.1.17.v20150415</jetty9.version>
     </properties>
     <description />
 

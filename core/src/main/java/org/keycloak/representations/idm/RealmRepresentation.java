@@ -90,6 +90,7 @@ public class RealmRepresentation {
     protected String browserFlow;
     protected String registrationFlow;
     protected String directGrantFlow;
+    protected String resetCredentialsFlow;
     protected String clientAuthenticationFlow;
 
     @Deprecated
@@ -735,6 +736,14 @@ public class RealmRepresentation {
 
     public void setDirectGrantFlow(String directGrantFlow) {
         this.directGrantFlow = directGrantFlow;
+    }
+
+    public String getResetCredentialsFlow() {
+        return resetCredentialsFlow;
+    }
+
+    public void setResetCredentialsFlow(String resetCredentialsFlow) {
+        this.resetCredentialsFlow = resetCredentialsFlow;
     }
 
     public String getClientAuthenticationFlow() {

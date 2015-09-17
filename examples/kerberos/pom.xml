@@ -5,7 +5,7 @@
     <parent>
         <artifactId>keycloak-examples-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.5.0.Final-SNAPSHOT</version>
+        <version>1.6.0.Final-SNAPSHOT</version>
     </parent>
 
     <name>Keycloak Examples - Kerberos Credential Delegation</name>
@@ -82,6 +82,10 @@
                                 <systemProperty>
                                     <key>ldap.ldif</key>
                                     <value>kerberos-example-users.ldif</value>
+                                </systemProperty>
+                                <systemProperty>
+                                    <key>workingDirectory</key>
+                                    <value>${project.basedir}/target</value>
                                 </systemProperty>
                             </systemProperties>
                         </configuration>

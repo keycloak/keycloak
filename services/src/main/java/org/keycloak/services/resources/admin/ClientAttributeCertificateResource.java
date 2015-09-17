@@ -64,6 +64,7 @@ public class ClientAttributeCertificateResource {
     }
 
     /**
+     * Get key info
      *
      * @return
      */
@@ -78,6 +79,7 @@ public class ClientAttributeCertificateResource {
     }
 
     /**
+     * Generate a new certificate with new key pair
      *
      * @return
      */
@@ -256,8 +258,9 @@ public class ClientAttributeCertificateResource {
     }
 
     /**
+     * Get a keystore file for the client, containing private key and public certificate
      *
-     * @param config
+     * @param config Keystore configuration as JSON
      * @return
      */
     @POST
@@ -288,10 +291,12 @@ public class ClientAttributeCertificateResource {
     }
 
     /**
-     * Generate new keypair and certificate and downloads private key into specified keystore format. Only generated certificate is saved in Keycloak DB, but private
-     * key is not.
+     * Generate a new keypair and certificate, and get the private key file
      *
-     * @param config
+     * Generates a keypair and certificate and serves the private key in a specified keystore format.
+     * Only generated public certificate is saved in Keycloak DB - the private key is not.
+     *
+     * @param config Keystore configuration as JSON
      * @return
      */
     @POST

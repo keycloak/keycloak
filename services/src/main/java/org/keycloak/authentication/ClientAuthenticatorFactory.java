@@ -1,7 +1,9 @@
 package org.keycloak.authentication;
 
 import java.util.List;
+import java.util.Map;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 
@@ -26,18 +28,19 @@ public interface ClientAuthenticatorFactory extends ProviderFactory<ClientAuthen
     boolean isConfigurable();
 
     /**
-     * Is this authenticator configurable per client? The configuration will be in "Clients" / "Credentials" tab in admin console
-     *
-     * @return
-     */
-    boolean isConfigurablePerClient();
-
-    /**
      * List of config properties for this client implementation. Those will be shown in admin console in clients credentials tab and can be configured per client.
      * Applicable only if "isConfigurablePerClient" is true
      *
      * @return
      */
     List<ProviderConfigProperty> getConfigPropertiesPerClient();
+
+    /**
+     * Get configuration, which needs to be used for adapter ( keycloak.json ) of particular client. Some implementations
+     * may return just template and user needs to edit the values according to his environment (For example fill the location of keystore file)
+     *
+     * @return
+     */
+    Map<String, Object> getAdapterConfiguration(ClientModel client);
 
 }

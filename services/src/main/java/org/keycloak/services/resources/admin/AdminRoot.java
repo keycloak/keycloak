@@ -77,6 +77,7 @@ public class AdminRoot {
     /**
      * Convenience path to master realm admin console
      *
+     * @exclude
      * @return
      */
     @GET
@@ -90,6 +91,7 @@ public class AdminRoot {
     /**
      * Convenience path to master realm admin console
      *
+     * @exclude
      * @return
      */
     @Path("index.{html:html}") // expression is actually "index.html" but this is a hack to get around jax-doclet bug
@@ -118,6 +120,7 @@ public class AdminRoot {
     /**
      * path to realm admin console ui
      *
+     * @exclude
      * @param name Realm name (not id!)
      * @return
      */

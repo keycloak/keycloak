@@ -119,11 +119,11 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
         public BasePostBindingBuilder(BaseSAML2BindingBuilder builder, Document document) throws ProcessingException {
             this.builder = builder;
-            if (builder.encrypt) builder.encryptDocument(document);
             this.document = document;
             if (builder.signAssertions) {
                 builder.signAssertion(document);
             }
+            if (builder.encrypt) builder.encryptDocument(document);
             if (builder.sign) {
                 builder.signDocument(document);
             }
@@ -154,8 +154,8 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
         public BaseRedirectBindingBuilder(BaseSAML2BindingBuilder builder, Document document) throws ProcessingException {
             this.builder = builder;
-            if (builder.encrypt) builder.encryptDocument(document);
             this.document = document;
+            if (builder.encrypt) builder.encryptDocument(document);
             if (builder.signAssertions) {
                 builder.signAssertion(document);
             }
@@ -332,7 +332,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         }
 
         if (sign) {
-            builder.queryParam(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, signatureAlgorithm.getJavaSignatureAlgorithm());
+            builder.queryParam(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, signatureAlgorithm.getXmlSignatureMethod());
             URI uri = builder.build();
             String rawQuery = uri.getRawQuery();
             Signature signature = signatureAlgorithm.createSignature();
