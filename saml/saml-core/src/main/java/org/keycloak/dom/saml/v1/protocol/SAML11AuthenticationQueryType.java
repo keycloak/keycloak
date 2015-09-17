@@ -31,8 +31,6 @@ import java.net.URI;
  */
 public class SAML11AuthenticationQueryType extends SAML11SubjectQueryAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected URI authenticationMethod;
 
     public URI getAuthenticationMethod() {

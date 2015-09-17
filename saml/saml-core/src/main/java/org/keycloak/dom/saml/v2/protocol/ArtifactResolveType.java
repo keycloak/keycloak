@@ -40,8 +40,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
  */
 public class ArtifactResolveType extends RequestAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected String artifact;
 
     public ArtifactResolveType(String id, XMLGregorianCalendar instant) {

@@ -53,8 +53,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
  */
 public class StatusResponseType extends CommonResponseType implements SAML2Object {
 
-    private static final long serialVersionUID = 1L;
-
     protected NameIDType issuer;
 
     protected ExtensionsType extensions;

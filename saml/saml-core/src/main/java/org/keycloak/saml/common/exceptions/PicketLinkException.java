@@ -27,8 +27,6 @@ package org.keycloak.saml.common.exceptions;
  */
 public class PicketLinkException extends RuntimeException {
 
-    private static final long serialVersionUID = 789326682407249952L;
-
     public PicketLinkException() {
         super();
     }

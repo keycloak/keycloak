@@ -38,5 +38,4 @@ import org.keycloak.dom.saml.common.CommonActionType;
  */
 public class ActionType extends CommonActionType {
 
-    private static final long serialVersionUID = 1L;
 }

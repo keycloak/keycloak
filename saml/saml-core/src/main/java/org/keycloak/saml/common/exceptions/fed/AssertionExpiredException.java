@@ -26,7 +26,6 @@ import java.security.GeneralSecurityException;
  * @since Dec 12, 2008
  */
 public class AssertionExpiredException extends GeneralSecurityException {
-    private static final long serialVersionUID = 1L;
 
     protected String id;
 

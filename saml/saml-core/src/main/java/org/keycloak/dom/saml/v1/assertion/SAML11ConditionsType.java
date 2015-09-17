@@ -36,8 +36,6 @@ import java.util.List;
  */
 public class SAML11ConditionsType extends CommonConditionsType {
 
-    private static final long serialVersionUID = 1L;
-
     public List<SAML11ConditionAbstractType> conditions = new ArrayList<SAML11ConditionAbstractType>();
 
     public void add(SAML11ConditionAbstractType condition) {

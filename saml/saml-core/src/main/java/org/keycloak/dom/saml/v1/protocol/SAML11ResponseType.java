@@ -35,8 +35,6 @@ import java.util.List;
  */
 public class SAML11ResponseType extends SAML11ResponseAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected List<SAML11AssertionType> assertions = new ArrayList<SAML11AssertionType>();
 
     protected SAML11StatusType status;

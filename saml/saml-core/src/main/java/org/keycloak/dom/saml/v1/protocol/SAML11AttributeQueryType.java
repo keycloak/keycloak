@@ -36,8 +36,6 @@ import java.util.List;
  */
 public class SAML11AttributeQueryType extends SAML11SubjectQueryAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected List<SAML11AttributeDesignatorType> attributeDesignator = new ArrayList<SAML11AttributeDesignatorType>();
 
     protected URI resource;

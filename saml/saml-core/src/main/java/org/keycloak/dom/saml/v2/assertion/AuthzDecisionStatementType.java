@@ -45,7 +45,6 @@ import java.util.List;
  */
 public class AuthzDecisionStatementType extends StatementAbstractType {
 
-    private static final long serialVersionUID = 1L;
     protected List<ActionType> action = new ArrayList<ActionType>();
     protected EvidenceType evidence;
     protected String resource;

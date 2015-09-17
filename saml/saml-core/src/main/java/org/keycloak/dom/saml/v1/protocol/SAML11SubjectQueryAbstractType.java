@@ -31,8 +31,6 @@ import org.keycloak.dom.saml.v1.assertion.SAML11SubjectType;
  */
 public class SAML11SubjectQueryAbstractType extends SAML11QueryAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected SAML11SubjectType subject;
 
     public SAML11SubjectType getSubject() {

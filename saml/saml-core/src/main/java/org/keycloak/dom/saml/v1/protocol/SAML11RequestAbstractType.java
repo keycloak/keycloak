@@ -39,8 +39,6 @@ import java.util.List;
  */
 public abstract class SAML11RequestAbstractType extends CommonRequestAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected int majorVersion = 1;
 
     protected int minorVersion = 1;

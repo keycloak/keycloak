@@ -33,8 +33,6 @@ import java.util.List;
  */
 public class SAML11AttributeStatementType extends SAML11SubjectStatementType {
 
-    private static final long serialVersionUID = 1L;
-
     protected List<SAML11AttributeType> attribute = new ArrayList<SAML11AttributeType>();
 
     public void add(SAML11AttributeType aAttribute) {

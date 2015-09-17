@@ -45,5 +45,4 @@ import org.keycloak.dom.saml.common.CommonAdviceType;
  */
 public class AdviceType extends CommonAdviceType {
 
-    private static final long serialVersionUID = 1L;
 }

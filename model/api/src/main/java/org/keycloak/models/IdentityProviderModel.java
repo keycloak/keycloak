@@ -30,7 +30,6 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
  * @author Pedro Igor
  */
 public class IdentityProviderModel implements Serializable {
-    private static final long serialVersionUID = 1L;
 
     private String internalId;
 

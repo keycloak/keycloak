@@ -9,7 +9,6 @@ import java.util.Map;
 * @version $Revision: 1 $
 */
 public class AuthenticatorConfigModel implements Serializable {
-    private static final long serialVersionUID = 1L;
 
     private String id;
     private String alias;

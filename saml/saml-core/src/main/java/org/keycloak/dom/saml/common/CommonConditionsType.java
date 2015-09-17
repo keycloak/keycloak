@@ -26,8 +26,6 @@ import java.io.Serializable;
  */
 public class CommonConditionsType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     protected XMLGregorianCalendar notBefore;
 
     protected XMLGregorianCalendar notOnOrAfter;

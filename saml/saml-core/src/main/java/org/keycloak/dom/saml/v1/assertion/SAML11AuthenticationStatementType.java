@@ -35,8 +35,6 @@ import java.util.List;
  */
 public class SAML11AuthenticationStatementType extends SAML11SubjectStatementType {
 
-    private static final long serialVersionUID = 1L;
-
     protected URI authenticationMethod;
 
     protected XMLGregorianCalendar authenticationInstant;

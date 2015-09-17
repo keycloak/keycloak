@@ -51,8 +51,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
  */
 public class ManageNameIDRequestType extends RequestAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected NameIDType nameID;
 
     protected EncryptedElementType encryptedID;

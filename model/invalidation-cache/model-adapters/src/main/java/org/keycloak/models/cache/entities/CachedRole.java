@@ -13,8 +13,6 @@ import java.util.Set;
  */
 public class CachedRole implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     final protected String id;
     final protected String name;
     final protected String realm;

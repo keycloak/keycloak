@@ -43,8 +43,6 @@ import java.util.List;
  */
 public class AssertionIDRequestType extends RequestAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected List<String> assertionIDRef = new ArrayList<String>();
 
     public AssertionIDRequestType(String id, XMLGregorianCalendar instant) {

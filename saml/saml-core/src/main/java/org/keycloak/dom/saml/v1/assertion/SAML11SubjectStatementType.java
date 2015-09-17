@@ -28,8 +28,6 @@ package org.keycloak.dom.saml.v1.assertion;
  */
 public class SAML11SubjectStatementType extends SAML11StatementAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected SAML11SubjectType subject;
 
     public SAML11SubjectStatementType() {

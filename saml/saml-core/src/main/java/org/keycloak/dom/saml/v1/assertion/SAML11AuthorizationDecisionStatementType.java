@@ -36,8 +36,6 @@ import java.util.List;
  */
 public class SAML11AuthorizationDecisionStatementType extends SAML11SubjectStatementType {
 
-    private static final long serialVersionUID = 1L;
-
     protected List<SAML11ActionType> actions = new ArrayList<SAML11ActionType>();
 
     protected SAML11EvidenceType evidence;

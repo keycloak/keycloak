@@ -44,8 +44,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
  */
 public class NameIDMappingResponseType extends StatusResponseType {
 
-    private static final long serialVersionUID = 1L;
-
     protected NameIDType nameID;
 
     protected EncryptedElementType encryptedID;

@@ -25,5 +25,4 @@ import java.io.Serializable;
  */
 public abstract class SAML11QueryAbstractType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
 }

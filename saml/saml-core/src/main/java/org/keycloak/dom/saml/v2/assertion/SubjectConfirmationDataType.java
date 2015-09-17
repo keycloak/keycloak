@@ -50,8 +50,6 @@ import java.util.Map;
  */
 public class SubjectConfirmationDataType implements Serializable {
 
-    private static final long serialVersionUID = 7695748370849965158L;
-
     protected XMLGregorianCalendar notBefore;
 
     protected XMLGregorianCalendar notOnOrAfter;
