@@ -92,7 +92,7 @@ public class ClientResource {
     }
 
     /**
-     * Update the client.
+     * Update the client
      * @param rep
      * @return
      */
@@ -116,7 +116,7 @@ public class ClientResource {
 
 
     /**
-     * Get representation of the client.
+     * Get representation of the client
      *
      * @return
      */
@@ -129,6 +129,7 @@ public class ClientResource {
     }
 
     /**
+     * Get representation of certificate resource
      *
      * @param attributePrefix
      * @return
@@ -140,7 +141,9 @@ public class ClientResource {
 
 
     /**
-     * Return keycloak.json file for this client to be used to configure the adapter of that client.
+     * Get keycloak.json file
+     *
+     * Returns a keycloak.json file to be used to configure the adapter of the specified client.
      *
      * @return
      * @throws IOException
@@ -160,7 +163,9 @@ public class ClientResource {
     }
 
     /**
-     * Return XML that can be included in the JBoss/Wildfly Keycloak subsystem to configure the adapter of that client.
+     * Get adapter configuration XML for JBoss / Wildfly Keycloak subsystem
+     *
+     * Returns XML that can be included in the JBoss / Wildfly Keycloak subsystem to configure the adapter of that client.
      *
      * @return
      * @throws IOException
@@ -177,7 +182,7 @@ public class ClientResource {
     }
 
     /**
-     * Delete this client.
+     * Delete the client
      *
      */
     @DELETE
@@ -190,7 +195,7 @@ public class ClientResource {
 
 
     /**
-     * Generates a new secret for this client
+     * Generate a new secret for the client
      *
      * @return
      */
@@ -209,7 +214,7 @@ public class ClientResource {
     }
 
     /**
-     * Get the secret of this client
+     * Get the client secret
      *
      * @return
      */
@@ -227,7 +232,7 @@ public class ClientResource {
     }
 
     /**
-     * Base path for managing the scope mappings for this client
+     * Base path for managing the scope mappings for the client
      *
      * @return
      */
@@ -242,7 +247,9 @@ public class ClientResource {
     }
 
     /**
-     * Returns set of allowed origin.  This is used for CORS requests.  Access tokens will have
+     * Get allowed origins
+     *
+     * This is used for CORS requests.  Access tokens will have
      * their allowedOrigins claim set to this value for tokens created for this client.
      *
      * @return
@@ -258,7 +265,9 @@ public class ClientResource {
     }
 
     /**
-     * Change the set of allowed origins.   This is used for CORS requests.  Access tokens will have
+     * Update allowed origins
+     *
+     * This is used for CORS requests.  Access tokens will have
      * their allowedOrigins claim set to this value for tokens created for this client.
      *
      * @param allowedOrigins
@@ -275,10 +284,12 @@ public class ClientResource {
     }
 
     /**
-     * Remove set of allowed origins from current allowed origins list.  This is used for CORS requests.  Access tokens will have
+     * Delete the specified origins from current allowed origins
+     *
+     * This is used for CORS requests.  Access tokens will have
      * their allowedOrigins claim set to this value for tokens created for this client.
      *
-     * @param allowedOrigins
+     * @param allowedOrigins List of origins to delete
      */
     @Path("allowed-origins")
     @DELETE
@@ -294,7 +305,7 @@ public class ClientResource {
     }
 
     /**
-     * Returns user dedicated to this service account
+     * Get a user dedicated to the service account
      *
      * @return
      */
@@ -319,8 +330,9 @@ public class ClientResource {
     }
 
     /**
-     * If the client has an admin URL, push the client's revocation policy to it.
+     * Push the client's revocation policy to its admin URL
      *
+     * If the client has an admin URL, push revocation policy to it.
      */
     @Path("push-revocation")
     @POST
@@ -332,7 +344,9 @@ public class ClientResource {
     }
     
     /**
-     * Number of user sessions associated with this client
+     * Get application session count
+     *
+     * Returns a number of user sessions associated with this client
      *
      * {
      *     "count": number
@@ -352,8 +366,12 @@ public class ClientResource {
     }
 
     /**
-     * Return a list of user sessions associated with this client
+     * Get user sessions for client
      *
+     * Returns a list of user sessions associated with this client
+     *
+     * @param firstResult Paging offset
+     * @param maxResults Paging size
      * @return
      */
     @Path("user-sessions")
@@ -373,6 +391,8 @@ public class ClientResource {
     }
 
     /**
+     * Logout all sessions
+     *
      * If the client has an admin URL, invalidate all sessions associated with that client directly.
      *
      */
@@ -386,6 +406,8 @@ public class ClientResource {
     }
 
     /**
+     * Logout the user by username
+     *
      * If the client has an admin URL, invalidate the sessions for a particular user directly.
      *
      */
@@ -403,6 +425,8 @@ public class ClientResource {
     }
 
     /**
+     * Register a cluster node with the client
+     *
      * Manually register cluster node to this client - usually it's not needed to call this directly as adapter should handle
      * by sending registration request to Keycloak
      *
@@ -423,7 +447,7 @@ public class ClientResource {
     }
 
     /**
-     * Unregister cluster node from this client
+     * Unregister a cluster node from the client
      *
      * @param node
      */
@@ -443,7 +467,9 @@ public class ClientResource {
     }
 
     /**
-     * Test if registered cluster nodes are available by sending 'ping' request to all of them
+     * Test if registered cluster nodes are available
+     *
+     * Tests availability by sending 'ping' request to all cluster nodes.
      *
      * @return
      */

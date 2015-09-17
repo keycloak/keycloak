@@ -13,7 +13,7 @@
             <outputDirectory>javadocs</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../../services/target/apidocs</directory>
+            <directory>../../services/target/apidocs-rest/output</directory>
             <outputDirectory>rest-api</outputDirectory>
         </fileSet>
         <fileSet>

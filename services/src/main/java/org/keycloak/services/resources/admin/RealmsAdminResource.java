@@ -73,7 +73,9 @@ public class RealmsAdminResource {
     }
 
     /**
-     * Returns a list of realms.  This list is filtered based on what realms the caller is allowed to view.
+     * Get accessible realms
+     *
+     * Returns a list of accessible realms. The list is filtered based on what realms the caller is allowed to view.
      *
      * @return
      */
@@ -107,10 +109,12 @@ public class RealmsAdminResource {
     }
 
     /**
-     * Import a realm from a full representation of that realm.  Realm name must be unique.
+     * Import a realm
+     *
+     * Imports a realm from a full representation of that realm.  Realm name must be unique.
      *
      * @param uriInfo
-     * @param rep JSON representation
+     * @param rep JSON representation of the realm
      * @return
      */
     @POST
@@ -141,7 +145,9 @@ public class RealmsAdminResource {
     }
 
     /**
-     * Upload a realm from a uploaded JSON file.  The posted represenation is expected to be a multipart/form-data encapsulation
+     * Import a realm from uploaded JSON file
+     *
+     * The posted represenation is expected to be a multipart/form-data encapsulation
      * of a JSON file.  The same format a browser would use when uploading a file.
      *
      * @param uriInfo

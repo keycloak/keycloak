@@ -12,15 +12,10 @@ import javax.ws.rs.core.Response;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.BasicAuthHelper;
@@ -147,7 +142,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
 
     @Override
     public List<ProviderConfigProperty> getConfigPropertiesPerClient() {
-        // This impl doesn't use generic screen in admin console, but has it's own screen. So no need to return anything here
+        // This impl doesn't use generic screen in admin console, but has its own screen. So no need to return anything here
         return Collections.emptyList();
     }
 
