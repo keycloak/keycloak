@@ -164,7 +164,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         public Document getDocument() {
             return document;
         }
-        public URI responseUri(String redirectUri, boolean asRequest) throws ConfigurationException, ProcessingException, IOException {
+        public URI generateURI(String redirectUri, boolean asRequest) throws ConfigurationException, ProcessingException, IOException {
             String samlParameterName = GeneralConstants.SAML_RESPONSE_KEY;
 
             if (asRequest) {
@@ -173,6 +173,23 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
             return builder.generateRedirectUri(samlParameterName, redirectUri, document);
         }
+
+        public URI requestURI(String actionUrl)  throws ConfigurationException, ProcessingException, IOException {
+            return builder.generateRedirectUri(GeneralConstants.SAML_REQUEST_KEY, actionUrl, document);
+        }
+        public URI responseURI(String actionUrl)  throws ConfigurationException, ProcessingException, IOException {
+            return builder.generateRedirectUri(GeneralConstants.SAML_RESPONSE_KEY, actionUrl, document);
+        }
+    }
+
+    public BaseRedirectBindingBuilder redirectBinding(Document document) throws ProcessingException {
+        return new BaseRedirectBindingBuilder(this, document);
+
+    }
+
+    public BasePostBindingBuilder postBinding(Document document) throws ProcessingException {
+        return new BasePostBindingBuilder(this, document);
+
     }
 
 

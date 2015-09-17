@@ -18,6 +18,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class JettyHttpFacade implements HttpFacade {
+    public final static String __J_METHOD = "org.eclipse.jetty.security.HTTP_METHOD";
     protected org.eclipse.jetty.server.Request request;
     protected HttpServletResponse response;
     protected RequestFacade requestFacade = new RequestFacade();
@@ -56,6 +57,11 @@ public class JettyHttpFacade implements HttpFacade {
                 buf.append('?').append(request.getQueryString());
             }
             return buf.toString();
+        }
+
+        @Override
+        public String getFirstParam(String param) {
+            return request.getParameter(param);
         }
 
         @Override

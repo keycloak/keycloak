@@ -29,8 +29,6 @@ public class JaxrsSAML2BindingBuilder extends BaseSAML2BindingBuilder<JaxrsSAML2
         protected Response buildResponse(Document responseDoc, String actionUrl, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
             String str = builder.buildHtmlPostResponse(responseDoc, actionUrl, asRequest);
 
-            CacheControl cacheControl = new CacheControl();
-            cacheControl.setNoCache(true);
             return Response.ok(str, MediaType.TEXT_HTML_TYPE)
                     .header("Pragma", "no-cache")
                     .header("Cache-Control", "no-cache, no-store").build();
@@ -53,7 +51,7 @@ public class JaxrsSAML2BindingBuilder extends BaseSAML2BindingBuilder<JaxrsSAML2
         }
 
         private Response response(String redirectUri, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
-            URI uri = responseUri(redirectUri, asRequest);
+            URI uri = generateURI(redirectUri, asRequest);
             if (logger.isDebugEnabled()) logger.trace("redirect-binding uri: " + uri.toString());
             CacheControl cacheControl = new CacheControl();
             cacheControl.setNoCache(true);

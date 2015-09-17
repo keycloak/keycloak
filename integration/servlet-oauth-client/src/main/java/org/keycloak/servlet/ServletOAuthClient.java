@@ -183,6 +183,11 @@ public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
             return new Request() {
 
                 @Override
+                public String getFirstParam(String param) {
+                    return servletRequest.getParameter(param);
+                }
+
+                @Override
                 public String getMethod() {
                     return servletRequest.getMethod();
                 }

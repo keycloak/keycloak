@@ -1,11 +1,10 @@
 package org.keycloak.adapters.jetty;
 
-import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.security.authentication.FormAuthenticator;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.MultiMap;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.jetty.core.AbstractJettySessionTokenStore;
+import org.keycloak.adapters.AdapterSessionStore;
+import org.keycloak.adapters.jetty.core.JettyHttpFacade;
 import org.keycloak.util.MultivaluedHashMap;
 
 import javax.servlet.http.HttpSession;
@@ -14,22 +13,21 @@ import javax.servlet.http.HttpSession;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JettySessionTokenStore extends AbstractJettySessionTokenStore {
+public class JettyAdapterSessionStore implements AdapterSessionStore {
     public static final String CACHED_FORM_PARAMETERS = "__CACHED_FORM_PARAMETERS";
     protected Request myRequest;
 
-    public JettySessionTokenStore(Request request, KeycloakDeployment deployment) {
-        super(request, deployment);
+    public JettyAdapterSessionStore(Request request) {
         this.myRequest = request; // for IDE/compilation purposes
     }
 
     protected MultiMap<String> extractFormParameters(Request base_request) {
         MultiMap<String> formParameters = new MultiMap<String>();
-        base_request.extractFormParameters(formParameters);
-        return formParameters;
+        base_request.extractParameters();
+        return base_request.getParameters();
     }
     protected void restoreFormParameters(MultiMap<String> j_post, Request base_request) {
-        base_request.setContentParameters(j_post);
+        base_request.setParameters(j_post);
     }
 
     public boolean restoreRequest() {
@@ -44,8 +42,8 @@ public class JettySessionTokenStore extends AbstractJettySessionTokenStore {
                 if (myRequest.getQueryString() != null)
                     buf.append("?").append(myRequest.getQueryString());
                 if (j_uri.equals(buf.toString())) {
-                    String method = (String)session.getAttribute(__J_METHOD);
-                    myRequest.setMethod(HttpMethod.valueOf(method.toUpperCase()), method);
+                    String method = (String)session.getAttribute(JettyHttpFacade.__J_METHOD);
+                    myRequest.setMethod(method);
                     MultivaluedHashMap<String, String> j_post = (MultivaluedHashMap<String, String>) session.getAttribute(CACHED_FORM_PARAMETERS);
                     if (j_post != null) {
                         myRequest.setContentType("application/x-www-form-urlencoded");
@@ -58,7 +56,7 @@ public class JettySessionTokenStore extends AbstractJettySessionTokenStore {
                         restoreFormParameters(map, myRequest);
                     }
                     session.removeAttribute(FormAuthenticator.__J_URI);
-                    session.removeAttribute(__J_METHOD);
+                    session.removeAttribute(JettyHttpFacade.__J_METHOD);
                     session.removeAttribute(FormAuthenticator.__J_POST);
                 }
                 return true;
@@ -77,7 +75,7 @@ public class JettySessionTokenStore extends AbstractJettySessionTokenStore {
                 if (myRequest.getQueryString() != null)
                     buf.append("?").append(myRequest.getQueryString());
                 session.setAttribute(FormAuthenticator.__J_URI, buf.toString());
-                session.setAttribute(__J_METHOD, myRequest.getMethod());
+                session.setAttribute(JettyHttpFacade.__J_METHOD, myRequest.getMethod());
 
                 if ("application/x-www-form-urlencoded".equals(myRequest.getContentType()) && "POST".equalsIgnoreCase(myRequest.getMethod())) {
                     MultiMap<String> formParameters = extractFormParameters(myRequest);

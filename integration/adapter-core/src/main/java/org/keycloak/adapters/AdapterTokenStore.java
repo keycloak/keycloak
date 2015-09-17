@@ -5,7 +5,7 @@ package org.keycloak.adapters;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface AdapterTokenStore {
+public interface AdapterTokenStore extends AdapterSessionStore {
 
     /**
      * Impl can validate if current token exists and perform refreshing if it exists and is expired
@@ -39,6 +39,4 @@ public interface AdapterTokenStore {
      */
     void refreshCallback(RefreshableKeycloakSecurityContext securityContext);
 
-    void saveRequest();
-    boolean restoreRequest();
 }

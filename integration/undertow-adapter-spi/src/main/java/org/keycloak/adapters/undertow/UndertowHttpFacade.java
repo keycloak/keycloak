@@ -21,7 +21,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public abstract class UndertowHttpFacade implements HttpFacade {
+public class UndertowHttpFacade implements HttpFacade {
     protected HttpServerExchange exchange;
     protected RequestFacade requestFacade = new RequestFacade();
     protected ResponseFacade responseFacade = new ResponseFacade();
@@ -64,6 +64,11 @@ public abstract class UndertowHttpFacade implements HttpFacade {
         public boolean isSecure() {
             String protocol = exchange.getRequestScheme();
             return protocol.equalsIgnoreCase("https");
+        }
+
+        @Override
+        public String getFirstParam(String param) {
+            throw new RuntimeException("Not implemented yet");
         }
 
         @Override

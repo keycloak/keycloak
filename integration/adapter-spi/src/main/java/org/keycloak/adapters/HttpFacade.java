@@ -33,6 +33,13 @@ public interface HttpFacade {
          */
         boolean isSecure();
 
+        /**
+         * Get first query or form param
+         *
+         * @param param
+         * @return
+         */
+        String getFirstParam(String param);
         String getQueryParamValue(String param);
         Cookie getCookie(String cookieName);
         String getHeader(String name);

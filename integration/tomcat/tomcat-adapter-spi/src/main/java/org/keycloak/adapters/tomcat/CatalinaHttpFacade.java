@@ -65,6 +65,11 @@ public class CatalinaHttpFacade implements HttpFacade {
         }
 
         @Override
+        public String getFirstParam(String param) {
+            return request.getParameter(param);
+        }
+
+        @Override
         public String getQueryParamValue(String paramName) {
             if (queryParameters == null) {
                 queryParameters = UriUtils.decodeQueryString(request.getQueryString());

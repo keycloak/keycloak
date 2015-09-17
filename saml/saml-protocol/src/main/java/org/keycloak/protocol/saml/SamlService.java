@@ -460,7 +460,7 @@ public class SamlService {
                 return;
             }
             PublicKey publicKey = SamlProtocolUtils.getSignatureValidationKey(client);
-            SamlProtocolUtils.verifyRedirectSignature(publicKey, uriInfo);
+            SamlProtocolUtils.verifyRedirectSignature(publicKey, uriInfo, GeneralConstants.SAML_REQUEST_KEY);
         }
 
 

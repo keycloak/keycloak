@@ -4,6 +4,7 @@ import org.eclipse.jetty.server.Request;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.AdapterSessionStore;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakAccount;
@@ -18,17 +19,18 @@ import javax.servlet.http.HttpSession;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class AbstractJettySessionTokenStore implements AdapterTokenStore {
-    public final static String __J_METHOD = "org.eclipse.jetty.security.HTTP_METHOD";
+public class JettySessionTokenStore implements AdapterTokenStore {
 
-    private static final Logger log = Logger.getLogger(AbstractJettySessionTokenStore.class);
+    private static final Logger log = Logger.getLogger(JettySessionTokenStore.class);
 
     private Request request;
     protected KeycloakDeployment deployment;
+    protected AdapterSessionStore sessionStore;
 
-    public AbstractJettySessionTokenStore(Request request, KeycloakDeployment deployment) {
+    public JettySessionTokenStore(Request request, KeycloakDeployment deployment, AdapterSessionStore sessionStore) {
         this.request = request;
         this.deployment = deployment;
+        this.sessionStore = sessionStore;
     }
 
     @Override
@@ -93,4 +95,14 @@ public abstract class AbstractJettySessionTokenStore implements AdapterTokenStor
         // no-op
     }
 
+    @Override
+    public void saveRequest() {
+        sessionStore.saveRequest();
+
+    }
+
+    @Override
+    public boolean restoreRequest() {
+        return sessionStore.restoreRequest();
+    }
 }

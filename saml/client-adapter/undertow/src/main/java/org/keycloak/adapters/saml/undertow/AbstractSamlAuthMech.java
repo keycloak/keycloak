@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.keycloak.adapters.undertow;
+package org.keycloak.adapters.saml.undertow;
 
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.NotificationReceiver;
@@ -24,32 +24,34 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.Headers;
 import io.undertow.util.StatusCodes;
-import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.AdapterDeploymentContext;
-import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.AuthOutcome;
 import org.keycloak.adapters.HttpFacade;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
-import org.keycloak.adapters.RequestAuthenticator;
-import org.keycloak.enums.TokenStore;
+import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.adapters.saml.SamlDeploymentContext;
+import org.keycloak.adapters.saml.SamlSessionStore;
+import org.keycloak.adapters.undertow.UndertowHttpFacade;
+import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 
 /**
  * Abstract base class for a Keycloak-enabled Undertow AuthenticationMechanism.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
-public abstract class AbstractUndertowKeycloakAuthMech implements AuthenticationMechanism {
+public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
     public static final AttachmentKey<AuthChallenge> KEYCLOAK_CHALLENGE_ATTACHMENT_KEY = AttachmentKey.create(AuthChallenge.class);
-    protected AdapterDeploymentContext deploymentContext;
+    protected SamlDeploymentContext deploymentContext;
     protected UndertowUserSessionManagement sessionManagement;
+    protected String logoutPage;
     protected String errorPage;
 
-    public AbstractUndertowKeycloakAuthMech(AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement sessionManagement, String errorPage) {
+    public AbstractSamlAuthMech(SamlDeploymentContext deploymentContext, UndertowUserSessionManagement sessionManagement,
+                                String logoutPage,
+                                String errorPage) {
         this.deploymentContext = deploymentContext;
         this.sessionManagement = sessionManagement;
         this.errorPage = errorPage;
+        this.logoutPage = logoutPage;
     }
 
     @Override
@@ -89,14 +91,10 @@ public abstract class AbstractUndertowKeycloakAuthMech implements Authentication
                 if (notification.getEventType() != SecurityNotification.EventType.LOGGED_OUT) return;
 
                 HttpServerExchange exchange = notification.getExchange();
-                UndertowHttpFacade facade = new OIDCUndertowHttpFacade(exchange);
-                KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
-                KeycloakSecurityContext ksc = exchange.getAttachment(OIDCUndertowHttpFacade.KEYCLOAK_SECURITY_CONTEXT_KEY);
-                if (ksc != null && ksc instanceof RefreshableKeycloakSecurityContext) {
-                    ((RefreshableKeycloakSecurityContext) ksc).logout(deployment);
-                }
-                AdapterTokenStore tokenStore = getTokenStore(exchange, facade, deployment, securityContext);
-                tokenStore.logout();
+                UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
+                SamlDeployment deployment = deploymentContext.resolveDeployment(facade);
+                SamlSessionStore sessionStore = getTokenStore(exchange, facade, deployment, securityContext);
+                sessionStore.logoutAccount();
             }
         };
 
@@ -106,11 +104,28 @@ public abstract class AbstractUndertowKeycloakAuthMech implements Authentication
     /**
      * Call this inside your authenticate method.
      */
-    protected AuthenticationMechanismOutcome keycloakAuthenticate(HttpServerExchange exchange, SecurityContext securityContext, RequestAuthenticator authenticator) {
+    public AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange, SecurityContext securityContext) {
+        UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
+        SamlDeployment deployment = deploymentContext.resolveDeployment(facade);
+        if (!deployment.isConfigured()) {
+            return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
+        }
+        SamlSessionStore sessionStore = getTokenStore(exchange, facade, deployment, securityContext);
+        UndertowSamlAuthenticator authenticator = new UndertowSamlAuthenticator(securityContext, facade,
+                deploymentContext.resolveDeployment(facade), sessionStore);
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
             registerNotifications(securityContext);
             return AuthenticationMechanismOutcome.AUTHENTICATED;
+        }
+        if (outcome == AuthOutcome.LOGGED_OUT) {
+            securityContext.logout();
+            if (logoutPage != null) {
+                sendRedirect(exchange, logoutPage);
+                exchange.setResponseCode(302);
+                exchange.endExchange();
+            }
+            return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
         }
         AuthChallenge challenge = authenticator.getChallenge();
         if (challenge != null) {
@@ -123,12 +138,5 @@ public abstract class AbstractUndertowKeycloakAuthMech implements Authentication
         return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
     }
 
-    protected AdapterTokenStore getTokenStore(HttpServerExchange exchange, HttpFacade facade, KeycloakDeployment deployment, SecurityContext securityContext) {
-        if (deployment.getTokenStore() == TokenStore.SESSION) {
-            return new UndertowSessionTokenStore(exchange, deployment, sessionManagement, securityContext);
-        } else {
-            return new UndertowCookieTokenStore(facade, deployment, securityContext);
-        }
-    }
-
+    protected abstract SamlSessionStore getTokenStore(HttpServerExchange exchange, HttpFacade facade, SamlDeployment deployment, SecurityContext securityContext);
 }

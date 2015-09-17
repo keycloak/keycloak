@@ -14,7 +14,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.cert.Certificate;
 
@@ -64,23 +63,23 @@ public class SamlProtocolUtils {
         return cert.getPublicKey();
     }
 
-    public static void verifyRedirectSignature(PublicKey publicKey, UriInfo uriInformation) throws VerificationException {
+    public static void verifyRedirectSignature(PublicKey publicKey, UriInfo uriInformation, String paramKey) throws VerificationException {
         MultivaluedMap<String, String> encodedParams = uriInformation.getQueryParameters(false);
-        String request = encodedParams.getFirst(GeneralConstants.SAML_REQUEST_KEY);
+        String request = encodedParams.getFirst(paramKey);
         String algorithm = encodedParams.getFirst(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
         String signature = encodedParams.getFirst(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY);
         String decodedAlgorithm = uriInformation.getQueryParameters(true).getFirst(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
 
-        if (request == null) throw new VerificationException("SAMLRequest as null");
-        if (algorithm == null) throw new VerificationException("SigAlg as null");
-        if (signature == null) throw new VerificationException("Signature as null");
+        if (request == null) throw new VerificationException("SAM was null");
+        if (algorithm == null) throw new VerificationException("SigAlg was null");
+        if (signature == null) throw new VerificationException("Signature was null");
 
         // Shibboleth doesn't sign the document for redirect binding.
         // todo maybe a flag?
 
 
         UriBuilder builder = UriBuilder.fromPath("/")
-                .queryParam(GeneralConstants.SAML_REQUEST_KEY, request);
+                .queryParam(paramKey, request);
         if (encodedParams.containsKey(GeneralConstants.RELAY_STATE)) {
             builder.queryParam(GeneralConstants.RELAY_STATE, encodedParams.getFirst(GeneralConstants.RELAY_STATE));
         }

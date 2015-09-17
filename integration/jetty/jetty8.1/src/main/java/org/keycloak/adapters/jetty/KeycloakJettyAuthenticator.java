@@ -7,6 +7,7 @@ import org.eclipse.jetty.server.UserIdentity;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.jetty.core.AbstractKeycloakJettyAuthenticator;
+import org.keycloak.adapters.jetty.core.JettySessionTokenStore;
 
 import javax.servlet.ServletRequest;
 
@@ -23,7 +24,7 @@ public class KeycloakJettyAuthenticator extends AbstractKeycloakJettyAuthenticat
 
     @Override
     public AdapterTokenStore createSessionTokenStore(Request request, KeycloakDeployment resolvedDeployment) {
-        return new JettySessionTokenStore(request, resolvedDeployment);
+        return new JettySessionTokenStore(request, resolvedDeployment, new JettyAdapterSessionStore(request));
     }
 
     @Override

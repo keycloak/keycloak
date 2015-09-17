@@ -34,6 +34,11 @@ public class JaxrsHttpFacade implements OIDCHttpFacade {
     protected class RequestFacade implements OIDCHttpFacade.Request {
 
         @Override
+        public String getFirstParam(String param) {
+            throw new RuntimeException("NOT IMPLEMENTED");
+        }
+
+        @Override
         public String getMethod() {
             return requestContext.getMethod();
         }
