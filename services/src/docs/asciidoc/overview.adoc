@@ -1,0 +1,13 @@
+= Keycloak Admin REST API
+
+== Overview
+This is a REST API reference for the Keycloak Admin
+
+=== Version information
+Version: 1
+
+=== URI scheme
+Host: localhost:8080
+BasePath: /auth
+Schemes: HTTP
+
