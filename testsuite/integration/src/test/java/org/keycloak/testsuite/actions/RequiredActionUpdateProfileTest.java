@@ -32,7 +32,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
+import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
@@ -62,7 +62,7 @@ public class RequiredActionUpdateProfileTest {
     protected LoginPage loginPage;
 
     @WebResource
-    protected LoginUpdateProfilePage updateProfilePage;
+    protected LoginUpdateProfileEditUsernameAllowedPage updateProfilePage;
 
     @Before
     public void before() {
