@@ -12,7 +12,7 @@
 	<artifactId>keycloak-jetty-core</artifactId>
 	<name>Keycloak Jetty Core Integration</name>
     <properties>
-        <jetty9.version>8.1.16.v20140903</jetty9.version>
+        <jetty9.version>8.1.17.v20150415</jetty9.version>
         <keycloak.osgi.export>
             org.keycloak.adapters.jetty.core.*
         </keycloak.osgi.export>
