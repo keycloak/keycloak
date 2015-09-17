@@ -367,7 +367,7 @@ public class SAML2BindingBuilder<T extends SAML2BindingBuilder> {
         }
 
         if (sign) {
-            builder.queryParam(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, signatureAlgorithm.getJavaSignatureAlgorithm());
+            builder.queryParam(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, signatureAlgorithm.getXmlSignatureMethod());
             URI uri = builder.build();
             String rawQuery = uri.getRawQuery();
             Signature signature = signatureAlgorithm.createSignature();

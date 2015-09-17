@@ -120,11 +120,12 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
         protected Document document;
 
         public PostBindingBuilder(Document document) throws ProcessingException {
-            if (encrypt) encryptDocument(document);
             this.document = document;
             if (signAssertions) {
                 signAssertion(document);
             }
+            //Per SAML spec 6.2 Encrypting assertions must happen after the assertions are signed
+            if (encrypt) encryptDocument(document);
             if (sign) {
                 signDocument(document);
             }
@@ -151,11 +152,12 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
         protected Document document;
 
         public RedirectBindingBuilder(Document document) throws ProcessingException {
-            if (encrypt) encryptDocument(document);
             this.document = document;
             if (signAssertions) {
                 signAssertion(document);
             }
+            //Per SAML spec 6.2 Encrypting assertions must happen after the assertions are signed
+            if (encrypt) encryptDocument(document);
         }
 
         public Document getDocument() {
@@ -340,7 +342,7 @@ public class SAML2BindingBuilder2<T extends SAML2BindingBuilder2> {
         }
 
         if (sign) {
-            builder.queryParam(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, signatureAlgorithm.getJavaSignatureAlgorithm());
+            builder.queryParam(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, signatureAlgorithm.getXmlSignatureMethod());
             URI uri = builder.build();
             String rawQuery = uri.getRawQuery();
             Signature signature = signatureAlgorithm.createSignature();

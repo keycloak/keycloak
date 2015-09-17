@@ -64,11 +64,7 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialIdentityProvider;
 import org.keycloak.util.ObjectUtil;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -128,6 +124,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     public void init() {
         this.event = new EventBuilder(realmModel, session, clientConnection).event(EventType.IDENTITY_PROVIDER_LOGIN);
+    }
+
+    @POST
+    @Path("/{provider_id}/login")
+    public Response performPostLogin(@PathParam("provider_id") String providerId, @QueryParam("code") String code) {
+        return performLogin(providerId, code);
     }
 
     @GET
