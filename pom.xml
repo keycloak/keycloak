@@ -1332,7 +1332,6 @@
             <id>distribution</id>
             <modules>
                 <module>distribution</module>
-                <module>testsuite/integration-arquillian</module>
             </modules>
         </profile>
 
@@ -1341,7 +1340,6 @@
             <modules>
                 <module>docbook</module>
                 <module>distribution</module>
-                <module>testsuite/integration-arquillian</module>
             </modules>
         </profile>
 
@@ -1362,6 +1360,14 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>arquillian-integration-tests</id>
+            <modules>
+                <module>distribution</module>
+                <module>testsuite/integration-arquillian</module>
+            </modules>
         </profile>
 
         <!-- Configure the JBoss Early Access Maven repository -->
