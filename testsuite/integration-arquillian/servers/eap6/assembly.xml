@@ -1,0 +1,29 @@
+<assembly>
+    
+    <id>auth-server-eap6</id>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>${keycloak.server.home}</directory>
+            <outputDirectory>keycloak-${project.version}</outputDirectory>
+            <excludes>
+                <exclude>**/*.sh</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${keycloak.server.home}</directory>
+            <outputDirectory>keycloak-${project.version}</outputDirectory>
+            <includes>
+                <include>**/*.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+    </fileSets>
+
+</assembly>
