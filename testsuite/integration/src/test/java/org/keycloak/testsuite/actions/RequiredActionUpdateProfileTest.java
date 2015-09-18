@@ -248,6 +248,29 @@ public class RequiredActionUpdateProfileTest {
     }
 
     @Test
+    public void updateProfileDuplicateUsername() {
+        loginPage.open();
+
+        loginPage.login("john-doh@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
+
+        updateProfilePage.assertCurrent();
+
+        // assert that form holds submitted values during validation error
+        Assert.assertEquals("New first", updateProfilePage.getFirstName());
+        Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
+        Assert.assertEquals("", updateProfilePage.getUsername());
+
+        Assert.assertEquals("Username already exists.", updateProfilePage.getError());
+
+        events.assertEmpty();
+    }
+
+    @Test
     public void updateProfileDuplicatedEmail() {
         loginPage.open();
 

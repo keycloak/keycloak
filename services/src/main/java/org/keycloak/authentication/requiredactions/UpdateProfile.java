@@ -63,7 +63,25 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         }
 
         if (realm.isEditUsernameAllowed()) {
-            user.setUsername(formData.getFirst("username"));
+            String username = formData.getFirst("username");
+            String oldUsername = user.getUsername();
+
+            boolean usernameChanged = oldUsername != null ? !oldUsername.equals(username) : username != null;
+
+            if (usernameChanged) {
+
+                if (session.users().getUserByUsername(username, realm) != null) {
+                    Response challenge = context.form()
+                            .setError(Messages.USERNAME_EXISTS)
+                            .setFormData(formData)
+                            .createResponse(UserModel.RequiredAction.UPDATE_PROFILE);
+                    context.challenge(challenge);
+                    return;
+                }
+
+                user.setUsername(username);
+            }
+
         }
 
         user.setFirstName(formData.getFirst("firstName"));
