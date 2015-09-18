@@ -28,7 +28,6 @@ import java.net.URI;
  */
 public class AuthnContextDeclRefType implements URIType, Serializable {
 
-    private static final long serialVersionUID = 1L;
     private URI value;
 
     public AuthnContextDeclRefType(URI value) {

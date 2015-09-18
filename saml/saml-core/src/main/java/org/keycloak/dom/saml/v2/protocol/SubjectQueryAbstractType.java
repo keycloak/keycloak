@@ -42,8 +42,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
  */
 public abstract class SubjectQueryAbstractType extends RequestAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected SubjectType subject;
 
     public SubjectQueryAbstractType(String id, XMLGregorianCalendar instant) {

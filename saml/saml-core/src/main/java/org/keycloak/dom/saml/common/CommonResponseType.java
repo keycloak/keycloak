@@ -28,8 +28,6 @@ import java.io.Serializable;
  */
 public class CommonResponseType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     protected String id;
 
     protected XMLGregorianCalendar issueInstant;

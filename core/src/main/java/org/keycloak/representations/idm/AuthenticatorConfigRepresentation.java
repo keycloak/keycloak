@@ -9,7 +9,6 @@ import java.util.Map;
 * @version $Revision: 1 $
 */
 public class AuthenticatorConfigRepresentation implements Serializable {
-    private static final long serialVersionUID = 1L;
 
     private String alias;
     private Map<String, String> config = new HashMap<String, String>();

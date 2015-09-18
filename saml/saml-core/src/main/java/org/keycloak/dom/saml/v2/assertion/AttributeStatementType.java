@@ -45,7 +45,6 @@ import java.util.List;
  */
 public class AttributeStatementType extends StatementAbstractType {
 
-    private static final long serialVersionUID = 1L;
     protected List<ASTChoiceType> attributes = new ArrayList<ASTChoiceType>();
 
     /**
@@ -81,7 +80,6 @@ public class AttributeStatementType extends StatementAbstractType {
 
     public static class ASTChoiceType implements Serializable {
 
-        private static final long serialVersionUID = 1L;
         private AttributeType attribute;
         private EncryptedElementType encryptedAssertion;
 

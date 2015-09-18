@@ -10,7 +10,6 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class ProtocolMapperModel implements Serializable {
-    private static final long serialVersionUID = 1L;
 
     protected String id;
     protected String name;

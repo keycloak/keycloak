@@ -50,8 +50,6 @@ import java.util.Map;
  */
 public class AttributeType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     protected List<Object> attributeValue = new ArrayList<Object>();
     protected String name;
     protected String nameFormat;

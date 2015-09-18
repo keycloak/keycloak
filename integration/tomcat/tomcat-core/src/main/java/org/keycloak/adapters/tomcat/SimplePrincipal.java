@@ -14,7 +14,6 @@ import java.security.Principal;
 public class SimplePrincipal implements Principal, Serializable {
 
     /** SimplePrincipal.java */
-    private static final long serialVersionUID = -5645357206342793145L;
 
     /** The unique identifier for this principal. */
     private final String name;

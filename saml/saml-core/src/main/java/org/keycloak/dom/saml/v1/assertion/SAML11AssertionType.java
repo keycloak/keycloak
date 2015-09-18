@@ -46,8 +46,6 @@ import java.util.List;
  */
 public class SAML11AssertionType extends CommonAssertionType {
 
-    private static final long serialVersionUID = 1L;
-
     protected int majorVersion = 1;
 
     protected int minorVersion = 1;

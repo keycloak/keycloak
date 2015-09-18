@@ -29,8 +29,6 @@ import java.io.Serializable;
  */
 public class EncryptedElementType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * <complexType name="EncryptedElementType"> <sequence> <element ref="xenc:EncryptedData"/> <element
      * ref="xenc:EncryptedKey"

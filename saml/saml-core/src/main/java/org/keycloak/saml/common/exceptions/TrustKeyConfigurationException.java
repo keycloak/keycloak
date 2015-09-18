@@ -24,7 +24,6 @@ package org.keycloak.saml.common.exceptions;
  * @since May 22, 2009
  */
 public class TrustKeyConfigurationException extends ConfigurationException {
-    private static final long serialVersionUID = 1L;
 
     public TrustKeyConfigurationException() {
         super();

@@ -54,8 +54,6 @@ import java.util.List;
  */
 public class LogoutRequestType extends RequestAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected BaseIDAbstractType baseID;
 
     protected NameIDType nameID;

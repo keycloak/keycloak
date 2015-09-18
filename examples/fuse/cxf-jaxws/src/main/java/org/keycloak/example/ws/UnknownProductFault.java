@@ -4,7 +4,6 @@ import javax.xml.ws.WebFault;
 
 @WebFault(name = "UnknownProductFault")
 public class UnknownProductFault extends Exception {
-    public static final long serialVersionUID = 20081110144906L;
 
     private org.keycloak.example.ws.types.UnknownProductFault unknownProductFault;
 

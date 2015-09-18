@@ -35,5 +35,4 @@ package org.keycloak.dom.saml.v2.assertion;
  */
 public class OneTimeUseType extends ConditionAbstractType {
 
-    private static final long serialVersionUID = 1L;
 }

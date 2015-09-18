@@ -49,8 +49,6 @@ import java.util.List;
  */
 public class AuthzDecisionQueryType extends SubjectQueryAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected List<ActionType> action = new ArrayList<ActionType>();
 
     protected EvidenceType evidence;

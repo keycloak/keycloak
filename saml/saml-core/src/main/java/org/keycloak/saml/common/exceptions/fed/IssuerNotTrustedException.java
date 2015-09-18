@@ -26,7 +26,6 @@ import java.security.GeneralSecurityException;
  * @since Jan 26, 2009
  */
 public class IssuerNotTrustedException extends GeneralSecurityException {
-    private static final long serialVersionUID = 1L;
 
     public IssuerNotTrustedException() {
         super();

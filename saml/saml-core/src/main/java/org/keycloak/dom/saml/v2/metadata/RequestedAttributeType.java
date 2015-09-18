@@ -38,8 +38,6 @@ import org.keycloak.dom.saml.v2.assertion.AttributeType;
  */
 public class RequestedAttributeType extends AttributeType {
 
-    private static final long serialVersionUID = 1L;
-
     public RequestedAttributeType(String name) {
         super(name);
     }

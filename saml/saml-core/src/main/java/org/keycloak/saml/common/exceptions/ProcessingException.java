@@ -26,7 +26,6 @@ import java.security.GeneralSecurityException;
  * @since May 22, 2009
  */
 public class ProcessingException extends GeneralSecurityException {
-    private static final long serialVersionUID = 1L;
 
     public ProcessingException() {
         super();

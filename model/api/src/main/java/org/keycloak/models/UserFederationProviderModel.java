@@ -11,7 +11,6 @@ import java.util.Map;
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
 public class UserFederationProviderModel implements Serializable {
-    private static final long serialVersionUID = 1L;
 
     private String id;
     private String providerName;

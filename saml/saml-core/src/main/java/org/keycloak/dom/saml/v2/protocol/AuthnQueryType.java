@@ -41,8 +41,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
  */
 public class AuthnQueryType extends SubjectQueryAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected RequestedAuthnContextType requestedAuthnContext;
 
     protected String sessionIndex;

@@ -30,8 +30,6 @@ import java.io.Serializable;
  */
 public class SAML11StatusCodeType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     public static final SAML11StatusCodeType SUCCESS = new SAML11StatusCodeType(new QName("samlp:Success"));
 
     protected SAML11StatusCodeType statusCode;

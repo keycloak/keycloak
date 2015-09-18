@@ -26,8 +26,7 @@ import java.security.GeneralSecurityException;
  * @since May 22, 2009
  */
 public class ConfigurationException extends GeneralSecurityException {
-    private static final long serialVersionUID = 1L;
-
+    
     public ConfigurationException() {
         super();
     }

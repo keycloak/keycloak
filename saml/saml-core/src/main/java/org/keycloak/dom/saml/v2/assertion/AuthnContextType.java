@@ -60,8 +60,6 @@ import java.util.Set;
  */
 public class AuthnContextType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     private final Set<URI> authenticatingAuthority = new LinkedHashSet<URI>();
 
     private AuthnContextTypeSequence sequence;
@@ -164,8 +162,6 @@ public class AuthnContextType implements Serializable {
      * <element ref="saml:AuthnContextDeclRef"/> </choice> </sequence>
      */
     public class AuthnContextTypeSequence implements Serializable {
-
-        private static final long serialVersionUID = 1L;
 
         private AuthnContextClassRefType classRef;
 

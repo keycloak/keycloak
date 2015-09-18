@@ -40,8 +40,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
  */
 public class ArtifactResponseType extends StatusResponseType {
 
-    private static final long serialVersionUID = 1L;
-
     protected Object any;
 
     public ArtifactResponseType(String id, XMLGregorianCalendar issueInstant) {

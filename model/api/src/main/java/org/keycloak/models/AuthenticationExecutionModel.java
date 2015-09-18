@@ -8,7 +8,6 @@ import java.io.Serializable;
 * @version $Revision: 1 $
 */
 public class AuthenticationExecutionModel implements Serializable {
-    private static final long serialVersionUID = 1L;
 
     public static class ExecutionComparator implements Comparator<AuthenticationExecutionModel> {
         public static final ExecutionComparator SINGLETON = new ExecutionComparator();

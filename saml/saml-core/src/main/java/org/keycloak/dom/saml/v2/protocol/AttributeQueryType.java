@@ -45,8 +45,6 @@ import java.util.List;
  */
 public class AttributeQueryType extends SubjectQueryAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected List<AttributeType> attribute = new ArrayList<AttributeType>();
 
     public AttributeQueryType(String id, XMLGregorianCalendar instant) {
