@@ -14,10 +14,38 @@
     <description/>
 
     <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-dependencies-server-all</artifactId>
+            <type>pom</type>
+        </dependency>
     </dependencies>
+
     <build>
         <finalName>keycloak-docs-${project.version}</finalName>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <minmemory>128m</minmemory>
+                    <maxmemory>1024m</maxmemory>
+                    <dependencySourceIncludes>
+                        <dependencySourceInclude>org.keycloak:*</dependencySourceInclude>
+                    </dependencySourceIncludes>
+                    <includeDependencySources>true</includeDependencySources>
+                    <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>aggregate-javadoc</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>javadoc</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
