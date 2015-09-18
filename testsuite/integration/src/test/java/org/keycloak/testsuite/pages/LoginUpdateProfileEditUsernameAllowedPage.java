@@ -24,9 +24,6 @@ package org.keycloak.testsuite.pages;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
 public class LoginUpdateProfileEditUsernameAllowedPage extends LoginUpdateProfilePage {
 
     @FindBy(id = "username")
