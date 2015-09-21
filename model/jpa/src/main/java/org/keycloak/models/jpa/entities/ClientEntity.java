@@ -100,6 +100,9 @@ public class ClientEntity {
     @Column(name="SERVICE_ACCOUNTS_ENABLED")
     private boolean serviceAccountsEnabled;
 
+    @Column(name="OFFLINE_TOKENS_ENABLED")
+    private boolean offlineTokensEnabled;
+
     @Column(name="NODE_REREG_TIMEOUT")
     private int nodeReRegistrationTimeout;
 
@@ -314,6 +317,14 @@ public class ClientEntity {
 
     public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
+    }
+
+    public boolean isOfflineTokensEnabled() {
+        return offlineTokensEnabled;
+    }
+
+    public void setOfflineTokensEnabled(boolean offlineTokensEnabled) {
+        this.offlineTokensEnabled = offlineTokensEnabled;
     }
 
     public boolean isDirectGrantsOnly() {

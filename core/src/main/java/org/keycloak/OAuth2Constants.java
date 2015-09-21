@@ -38,6 +38,9 @@ public interface OAuth2Constants {
     // https://tools.ietf.org/html/draft-jones-oauth-jwt-bearer-03#section-2.2
     String CLIENT_ASSERTION_TYPE_JWT = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
 
+    // http://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess
+    String OFFLINE_ACCESS = "offline_access";
+
 }
 
 

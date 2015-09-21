@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.model;
 
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -83,6 +84,53 @@ public class CacheTest {
             user.setLastName("lastName");
 
             assertNotNull(user2.getLastName());
+        } finally {
+            session.getTransaction().commit();
+            session.close();
+        }
+    }
+
+    // KEYCLOAK-1842
+    @Test
+    public void testRoleMappingsInvalidatedWhenClientRemoved() {
+        KeycloakSession session = kc.startSession();
+        try {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().addUser(realm, "joel");
+            ClientModel client = realm.addClient("foo");
+            RoleModel fooRole = client.addRole("foo-role");
+            user.grantRole(fooRole);
+        } finally {
+            session.getTransaction().commit();
+            session.close();
+        }
+
+        // Remove client
+        session = kc.startSession();
+        int grantedRolesCount;
+        try {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("joel", realm);
+            grantedRolesCount = user.getRoleMappings().size();
+
+            ClientModel client = realm.getClientByClientId("foo");
+            realm.removeClient(client.getId());
+        } finally {
+            session.getTransaction().commit();
+            session.close();
+        }
+
+        // Assert role mappings was removed from user as well
+        session = kc.startSession();
+        try {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("joel", realm);
+            Set<RoleModel> roles = user.getRoleMappings();
+            for (RoleModel role : roles) {
+                Assert.assertNotNull(role.getContainer());
+            }
+
+            Assert.assertEquals(roles.size(), grantedRolesCount - 1);
         } finally {
             session.getTransaction().commit();
             session.close();

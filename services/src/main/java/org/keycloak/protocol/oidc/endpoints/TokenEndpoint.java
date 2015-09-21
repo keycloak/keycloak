@@ -262,11 +262,14 @@ public class TokenEndpoint {
 
         AccessTokenResponse res;
         try {
-            res = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event, headers);
+            TokenManager.RefreshResult result = tokenManager.refreshAccessToken(session, uriInfo, clientConnection, realm, client, refreshToken, event, headers);
+            res = result.getResponse();
 
-            UserSessionModel userSession = session.sessions().getUserSession(realm, res.getSessionState());
-            updateClientSessions(userSession.getClientSessions());
-            updateUserSessionFromClientAuth(userSession);
+            if (!result.isOfflineToken()) {
+                UserSessionModel userSession = session.sessions().getUserSession(realm, res.getSessionState());
+                updateClientSessions(userSession.getClientSessions());
+                updateUserSessionFromClientAuth(userSession);
+            }
 
         } catch (OAuthErrorException e) {
             event.error(Errors.INVALID_TOKEN);
@@ -337,6 +340,8 @@ public class TokenEndpoint {
         clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
         clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
         clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+        clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
+
         AuthenticationFlowModel flow = realm.getDirectGrantFlow();
         String flowId = flow.getId();
         AuthenticationProcessor processor = new AuthenticationProcessor();
@@ -363,7 +368,7 @@ public class TokenEndpoint {
         updateUserSessionFromClientAuth(userSession);
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
-                .generateAccessToken(session, scope, client, user, userSession, clientSession)
+                .generateAccessToken()
                 .generateRefreshToken()
                 .generateIDToken()
                 .build();
@@ -415,6 +420,7 @@ public class TokenEndpoint {
         ClientSessionModel clientSession = sessions.createClientSession(realm, client);
         clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
         clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+        clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
 
         UserSessionModel userSession = sessions.createUserSession(realm, clientUser, clientUsername, clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null);
         event.session(userSession);
@@ -429,7 +435,7 @@ public class TokenEndpoint {
         updateUserSessionFromClientAuth(userSession);
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
-                .generateAccessToken(session, scope, client, clientUser, userSession, clientSession)
+                .generateAccessToken()
                 .generateRefreshToken()
                 .generateIDToken()
                 .build();

@@ -77,6 +77,15 @@ public class AccountApplicationsPage extends AbstractAccountPage {
                             currentEntry.addMapper(protMapper);
                         }
                         break;
+                    case 5:
+                        String additionalGrant = col.getText();
+                        if (additionalGrant.isEmpty()) break;
+                        String[] grants = additionalGrant.split(",");
+                        for (String grant : grants) {
+                            grant = grant.trim();
+                            currentEntry.addAdditionalGrant(grant);
+                        }
+                        break;
                 }
             }
         }
@@ -89,6 +98,7 @@ public class AccountApplicationsPage extends AbstractAccountPage {
         private final List<String> rolesAvailable = new ArrayList<String>();
         private final List<String> rolesGranted = new ArrayList<String>();
         private final List<String> protocolMappersGranted = new ArrayList<String>();
+        private final List<String> additionalGrants = new ArrayList<>();
 
         private void addAvailableRole(String role) {
             rolesAvailable.add(role);
@@ -102,6 +112,10 @@ public class AccountApplicationsPage extends AbstractAccountPage {
             protocolMappersGranted.add(protocolMapper);
         }
 
+        private void addAdditionalGrant(String grant) {
+            additionalGrants.add(grant);
+        }
+
         public List<String> getRolesGranted() {
             return rolesGranted;
         }
@@ -112,6 +126,10 @@ public class AccountApplicationsPage extends AbstractAccountPage {
 
         public List<String> getProtocolMappersGranted() {
             return protocolMappersGranted;
+        }
+
+        public List<String> getAdditionalGrants() {
+            return additionalGrants;
         }
     }
 }

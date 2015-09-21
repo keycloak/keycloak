@@ -3,8 +3,8 @@ package org.keycloak.protocol.oidc;
 import org.jboss.logging.Logger;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
@@ -27,11 +27,15 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.offline.OfflineUserSessionManager;
+import org.keycloak.util.RefreshTokenUtil;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.HashSet;
@@ -85,16 +89,31 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "User disabled", "User disabled");
         }
 
-        UserSessionModel userSession = session.sessions().getUserSession(realm, oldToken.getSessionState());
-        if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
-        }
+        UserSessionModel userSession = null;
         ClientSessionModel clientSession = null;
-        for (ClientSessionModel clientSessionModel : userSession.getClientSessions()) {
-            if (clientSessionModel.getId().equals(oldToken.getClientSession())) {
-                clientSession = clientSessionModel;
-                break;
+        if (RefreshTokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType())) {
+            // Check if offline tokens still allowed for the client
+            clientSession = new OfflineUserSessionManager().findOfflineClientSession(realm, user, oldToken.getClientSession(), oldToken.getSessionState());
+            if (clientSession != null) {
+                if (!clientSession.getClient().isOfflineTokensEnabled()) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline tokens not allowed for client", "Offline tokens not allowed for client");
+                }
+
+                userSession = clientSession.getUserSession();
+            }
+        } else {
+            // Find userSession regularly for online tokens
+            userSession = session.sessions().getUserSession(realm, oldToken.getSessionState());
+            if (!AuthenticationManager.isSessionValid(realm, userSession)) {
+                AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
+            }
+
+            for (ClientSessionModel clientSessionModel : userSession.getClientSessions()) {
+                if (clientSessionModel.getId().equals(oldToken.getClientSession())) {
+                    clientSession = clientSessionModel;
+                    break;
+                }
             }
         }
 
@@ -126,10 +145,12 @@ public class TokenManager {
 
     }
 
-    public AccessTokenResponse refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient, String encodedRefreshToken, EventBuilder event, HttpHeaders headers) throws OAuthErrorException {
+    public RefreshResult refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient, String encodedRefreshToken, EventBuilder event, HttpHeaders headers) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(realm, encodedRefreshToken);
 
-        event.user(refreshToken.getSubject()).session(refreshToken.getSessionState()).detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
+        event.user(refreshToken.getSubject()).session(refreshToken.getSessionState())
+                .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .detail(Details.REFRESH_TOKEN_TYPE, refreshToken.getType());
 
         TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers);
         // validate authorizedClient is same as validated client
@@ -140,11 +161,17 @@ public class TokenManager {
         int currentTime = Time.currentTime();
         validation.userSession.setLastSessionRefresh(currentTime);
 
-        AccessTokenResponse res = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)
+        AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)
                 .accessToken(validation.newToken)
-                .generateIDToken()
-                .generateRefreshToken().build();
-        return res;
+                .generateIDToken();
+
+        // Don't generate refresh token again if refresh was triggered with offline token
+        if (!refreshToken.getType().equals(RefreshTokenUtil.TOKEN_TYPE_OFFLINE)) {
+            responseBuilder.generateRefreshToken();
+        }
+
+        AccessTokenResponse res = responseBuilder.build();
+        return new RefreshResult(res, RefreshTokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType()));
     }
 
     public RefreshToken verifyRefreshToken(RealmModel realm, String encodedRefreshToken) throws OAuthErrorException {
@@ -158,7 +185,7 @@ public class TokenManager {
         } catch (Exception e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
         }
-        if (refreshToken.isExpired()) {
+        if (refreshToken.getExpiration() != 0 && refreshToken.isExpired()) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
         }
 
@@ -172,18 +199,18 @@ public class TokenManager {
         IDToken idToken = null;
         try {
             if (!RSAProvider.verify(jws, realm.getPublicKey())) {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken");
             }
             idToken = jws.readJsonContent(IDToken.class);
         } catch (IOException e) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken", e);
         }
         if (idToken.isExpired()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "IDToken expired");
         }
 
         if (idToken.getIssuedAt() < realm.getNotBefore()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale IDToken");
         }
         return idToken;
     }
@@ -250,9 +277,7 @@ public class TokenManager {
         if (client.isFullScopeAllowed()) return roleMappings;
 
         Set<RoleModel> scopeMappings = client.getScopeMappings();
-        if (client instanceof ClientModel) {
-            scopeMappings.addAll(((ClientModel) client).getRoles());
-        }
+        scopeMappings.addAll(client.getRoles());
 
         for (RoleModel role : roleMappings) {
             for (RoleModel desiredRole : scopeMappings) {
@@ -409,7 +434,9 @@ public class TokenManager {
             return this;
         }
 
-        public AccessTokenResponseBuilder generateAccessToken(KeycloakSession session, String scopeParam, ClientModel client, UserModel user, UserSessionModel userSession, ClientSessionModel clientSession) {
+        public AccessTokenResponseBuilder generateAccessToken() {
+            UserModel user = userSession.getUser();
+            String scopeParam = clientSession.getNote(OIDCLoginProtocol.SCOPE_PARAM);
             Set<RoleModel> requestedRoles = getAccess(scopeParam, client, user);
             accessToken = createClientAccessToken(session, requestedRoles, realm, client, user, userSession, clientSession);
             return this;
@@ -419,10 +446,24 @@ public class TokenManager {
             if (accessToken == null) {
                 throw new IllegalStateException("accessToken not set");
             }
-            refreshToken = new RefreshToken(accessToken);
+
+            String scopeParam = clientSession.getNote(OIDCLoginProtocol.SCOPE_PARAM);
+            boolean offlineTokenRequested = RefreshTokenUtil.isOfflineTokenRequested(scopeParam);
+            if (offlineTokenRequested) {
+                if (!clientSession.getClient().isOfflineTokensEnabled()) {
+                    event.error(Errors.INVALID_CLIENT);
+                    throw new ErrorResponseException("invalid_client", "Offline tokens not allowed for the client", Response.Status.BAD_REQUEST);
+                }
+
+                refreshToken = new RefreshToken(accessToken);
+                refreshToken.type(RefreshTokenUtil.TOKEN_TYPE_OFFLINE);
+                new OfflineUserSessionManager().persistOfflineSession(clientSession, userSession);
+            } else {
+                refreshToken = new RefreshToken(accessToken);
+                refreshToken.expiration(Time.currentTime() + realm.getSsoSessionIdleTimeout());
+            }
             refreshToken.id(KeycloakModelUtils.generateId());
             refreshToken.issuedNow();
-            refreshToken.expiration(Time.currentTime() + realm.getSsoSessionIdleTimeout());
             return this;
         }
 
@@ -459,6 +500,7 @@ public class TokenManager {
                 } else {
                     event.detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
                 }
+                event.detail(Details.REFRESH_TOKEN_TYPE, refreshToken.getType());
             }
 
             AccessTokenResponse res = new AccessTokenResponse();
@@ -486,6 +528,25 @@ public class TokenManager {
             if (client.getNotBefore() > notBefore) notBefore = client.getNotBefore();
             res.setNotBeforePolicy(notBefore);
             return res;
+        }
+    }
+
+    public class RefreshResult {
+
+        private final AccessTokenResponse response;
+        private final boolean offlineToken;
+
+        private RefreshResult(AccessTokenResponse response, boolean offlineToken) {
+            this.response = response;
+            this.offlineToken = offlineToken;
+        }
+
+        public AccessTokenResponse getResponse() {
+            return response;
+        }
+
+        public boolean isOfflineToken() {
+            return offlineToken;
         }
     }
 

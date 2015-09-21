@@ -326,6 +326,8 @@ public class ImportTest extends AbstractModelTest {
         // Test service accounts
         Assert.assertFalse(application.isServiceAccountsEnabled());
         Assert.assertTrue(otherApp.isServiceAccountsEnabled());
+        Assert.assertFalse(application.isOfflineTokensEnabled());
+        Assert.assertTrue(otherApp.isOfflineTokensEnabled());
         Assert.assertNull(session.users().getUserByServiceAccountClient(application));
         UserModel linked = session.users().getUserByServiceAccountClient(otherApp);
         Assert.assertNotNull(linked);

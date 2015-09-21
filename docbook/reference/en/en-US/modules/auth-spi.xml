@@ -898,7 +898,7 @@ public class SecretQuestionRequiredActionFactory implements RequiredActionFactor
 }
 ]]></programlisting>
 
-                                where the <literal>mysecret</literal> needs to be replaced with the real value of client secret. You can obtain it from client admin console.
+                                where the <literal>mysecret</literal> needs to be replaced with the real value of client secret. You can obtain it from admin console from client configuration.
                             </para>
                         </listitem>
                     </varlistentry>
@@ -906,7 +906,7 @@ public class SecretQuestionRequiredActionFactory implements RequiredActionFactor
                         <term>Authentication with signed JWT</term>
                         <listitem>
                             <para>
-                                This is based on the <ulink url="https://tools.ietf.org/html/draft-jones-oauth-jwt-bearer-03">JWT Bearer Token Profiles for OAuth 2.0</ulink> specification.
+                                This is based on the <ulink url="https://tools.ietf.org/html/rfc7523">JWT Bearer Token Profiles for OAuth 2.0</ulink> specification.
                                 The client/adapter generates the <ulink url="https://tools.ietf.org/html/rfc7519">JWT</ulink> and signs it with his private key.
                                 The Keycloak then verifies the signed JWT with the client's public key and authenticates client based on it.
                             </para>
