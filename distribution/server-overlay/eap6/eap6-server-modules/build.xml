@@ -62,6 +62,10 @@
         <module-def name="org.keycloak.keycloak-broker-saml">
             <maven-resource group="org.keycloak" artifact="keycloak-broker-saml"/>
         </module-def>
+		
+        <module-def name="org.keycloak.keycloak-broker-wsfed">
+            <maven-resource group="org.keycloak" artifact="keycloak-broker-wsfed"/>
+        </module-def>
 
         <module-def name="org.keycloak.keycloak-services">
             <maven-resource group="org.keycloak" artifact="keycloak-services"/>
@@ -248,6 +252,14 @@
         </module-def>
         <module-def name="org.keycloak.keycloak-saml-protocol">
             <maven-resource group="org.keycloak" artifact="keycloak-saml-protocol"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-wsfed-common">
+            <maven-resource group="org.keycloak" artifact="keycloak-wsfed-common"/>
+        </module-def>
+		
+        <module-def name="org.keycloak.keycloak-wsfed-protocol">
+            <maven-resource group="org.keycloak" artifact="keycloak-wsfed-protocol"/>
         </module-def>
 
         <!-- file -->

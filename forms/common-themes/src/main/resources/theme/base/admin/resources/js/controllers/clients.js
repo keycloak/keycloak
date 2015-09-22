@@ -746,6 +746,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
 
     $scope.realm = realm;
     $scope.create = !client.clientId;
+    $scope.wsfedJwt = false;
+    $scope.wsfedX5t = false;
     $scope.samlAuthnStatement = false;
     $scope.samlMultiValuedRoles = false;
     $scope.samlServerSignature = false;
@@ -803,6 +805,22 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
         $scope.nameIdFormat = $scope.nameIdFormats[0];
         $scope.samlAuthnStatement = true;
         $scope.samlForceNameIdFormat = false;
+    }
+
+    if ($scope.client.attributes["wsfed.jwt"]) {
+        if ($scope.client.attributes["wsfed.jwt"] == "true") {
+            $scope.wsfedJwt = true;
+        } else {
+            $scope.wsfedJwt = false;
+        }
+    }
+
+    if ($scope.client.attributes["wsfed.x5t"]) {
+        if ($scope.client.attributes["wsfed.x5t"] == "true") {
+            $scope.wsfedX5t = true;
+        } else {
+            $scope.wsfedX5t = false;
+        }
     }
 
     if ($scope.client.attributes["saml.server.signature"]) {
@@ -908,6 +926,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
             $scope.client.protocol = "openid-connect";
         } else if ($scope.protocol == "saml") {
             $scope.client.protocol = "saml";
+        } else if ($scope.protocol == "wsfed") {
+            $scope.client.protocol = "wsfed";
         }
     };
 
@@ -974,6 +994,18 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
 
         if ($scope.newWebOrigin && $scope.newWebOrigin.length > 0) {
             $scope.addWebOrigin();
+        }
+
+        if ($scope.wsfedJwt == true) {
+            $scope.client.attributes["wsfed.jwt"] = "true";
+        } else {
+            $scope.client.attributes["wsfed.jwt"] = "false";
+        }
+
+        if ($scope.wsfedX5t == true) {
+            $scope.client.attributes["wsfed.x5t"] = "true";
+        } else {
+            $scope.client.attributes["wsfed.x5t"] = "false";
         }
 
         if ($scope.samlServerSignature == true) {

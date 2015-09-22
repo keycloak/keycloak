@@ -72,6 +72,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-broker-wsfed</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-social-github</artifactId>
         </dependency>
         <dependency>
@@ -117,6 +121,16 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-protocol</artifactId>
+        </dependency>
+
+        <!-- wsfed -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-wsfed-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-wsfed-protocol</artifactId>
         </dependency>
 
         <!-- mongo -->

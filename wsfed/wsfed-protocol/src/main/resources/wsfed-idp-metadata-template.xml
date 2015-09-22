@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EntityDescriptor entityID="${idp.entityID}"
+				  xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+				  xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+				  xmlns:fed="http://docs.oasis-open.org/wsfed/federation/200706"
+				  xmlns:wsa="http://www.w3.org/2005/08/addressing">
+	<RoleDescriptor xsi:type="fed:SecurityTokenServiceType" protocolSupportEnumeration="http://docs.oasis-open.org/wsfed/federation/200706">
+		<KeyDescriptor use="signing">
+			<dsig:KeyInfo xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
+				<dsig:X509Data>
+					<dsig:X509Certificate>
+						${idp.signing.certificate}
+					</dsig:X509Certificate>
+				</dsig:X509Data>
+			</dsig:KeyInfo>
+		</KeyDescriptor>
+		<fed:SecurityTokenServiceEndpoint>
+			<wsa:EndpointReference>
+				<wsa:Address>${idp.sso.sts}</wsa:Address>
+			</wsa:EndpointReference>
+		</fed:SecurityTokenServiceEndpoint>
+		<fed:PassiveRequestorEndpoint>
+			<wsa:EndpointReference>
+				<wsa:Address>${idp.sso.passive}</wsa:Address>
+			</wsa:EndpointReference>
+		</fed:PassiveRequestorEndpoint>
+	</RoleDescriptor>
+</EntityDescriptor>

@@ -12,6 +12,7 @@
         <module name="org.keycloak.keycloak-broker-core" services="import"/>
         <module name="org.keycloak.keycloak-broker-oidc" services="import"/>
         <module name="org.keycloak.keycloak-broker-saml" services="import"/>
+        <module name="org.keycloak.keycloak-broker-wsfed" services="import"/>
         <module name="org.keycloak.keycloak-connections-http-client" services="import"/>
         <module name="org.keycloak.keycloak-connections-infinispan" services="import"/>
         <module name="org.keycloak.keycloak-connections-jpa" services="import"/>
@@ -47,6 +48,8 @@
         <module name="org.keycloak.keycloak-model-sessions-infinispan" services="import"/>
         <module name="org.keycloak.keycloak-saml-core" services="import"/>
         <module name="org.keycloak.keycloak-saml-protocol" services="import"/>
+        <module name="org.keycloak.keycloak-wsfed-common" services="import"/>
+        <module name="org.keycloak.keycloak-wsfed-protocol" services="import"/>
         <module name="org.keycloak.keycloak-services" export="true" services="import"/>
         <module name="org.keycloak.keycloak-social-core" services="import"/>
         <module name="org.keycloak.keycloak-social-facebook" services="import"/>
