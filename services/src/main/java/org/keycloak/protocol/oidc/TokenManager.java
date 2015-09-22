@@ -24,6 +24,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
+import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -217,7 +218,7 @@ public class TokenManager {
     }
 
     public AccessToken createClientAccessToken(KeycloakSession session, Set<RoleModel> requestedRoles, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession, ClientSessionModel clientSession) {
-        AccessToken token = initToken(realm, client, user, userSession, clientSession);
+        AccessToken token = initToken(realm, client, user, userSession, clientSession, session.getContext().getUri());
         for (RoleModel role : requestedRoles) {
             addComposites(token, role);
         }
@@ -380,7 +381,7 @@ public class TokenManager {
     }
 
 
-    protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user, UserSessionModel session, ClientSessionModel clientSession) {
+    protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user, UserSessionModel session, ClientSessionModel clientSession, UriInfo uriInfo) {
         AccessToken token = new AccessToken();
         if (clientSession != null) token.clientSession(clientSession.getId());
         token.id(KeycloakModelUtils.generateId());
@@ -398,7 +399,7 @@ public class TokenManager {
         }
         Set<String> allowedOrigins = client.getWebOrigins();
         if (allowedOrigins != null) {
-            token.setAllowedOrigins(allowedOrigins);
+            token.setAllowedOrigins(WebOriginsUtils.resolveValidWebOrigins(uriInfo, client));
         }
         return token;
     }

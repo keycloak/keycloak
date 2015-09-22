@@ -30,7 +30,7 @@ public class SamlAdapterTest {
             initializeSamlSecuredWar("/keycloak-saml/bad-client-signed-post", "/bad-client-sales-post-sig",  "bad-client-post-sig.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/bad-realm-signed-post", "/bad-realm-sales-post-sig",  "bad-realm-post-sig.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/encrypted-post", "/sales-post-enc",  "post-enc.war", classLoader);
-            SamlAdapterTestStrategy.uploadSP("http://localhost:8081/auth", this);
+            SamlAdapterTestStrategy.uploadSP("http://localhost:8081/auth");
             server.getServer().deploy(createDeploymentInfo("employee.war", "/employee", SamlSPFacade.class));
 
 

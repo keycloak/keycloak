@@ -306,6 +306,7 @@ public class ModelToRepresentation {
         rep.setServiceAccountsEnabled(clientModel.isServiceAccountsEnabled());
         rep.setDirectGrantsOnly(clientModel.isDirectGrantsOnly());
         rep.setSurrogateAuthRequired(clientModel.isSurrogateAuthRequired());
+        rep.setRootUrl(clientModel.getRootUrl());
         rep.setBaseUrl(clientModel.getBaseUrl());
         rep.setNotBefore(clientModel.getNotBefore());
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());

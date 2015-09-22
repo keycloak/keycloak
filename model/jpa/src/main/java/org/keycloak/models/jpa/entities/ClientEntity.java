@@ -82,6 +82,9 @@ public class ClientEntity {
     @Column(name="SURROGATE_AUTH_REQUIRED")
     private boolean surrogateAuthRequired;
 
+    @Column(name="ROOT_URL")
+    private String rootUrl;
+
     @Column(name="BASE_URL")
     private String baseUrl;
 
@@ -258,6 +261,14 @@ public class ClientEntity {
 
     public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
         this.surrogateAuthRequired = surrogateAuthRequired;
+    }
+
+    public String getRootUrl() {
+        return rootUrl;
+    }
+
+    public void setRootUrl(String rootUrl) {
+        this.rootUrl = rootUrl;
     }
 
     public String getBaseUrl() {

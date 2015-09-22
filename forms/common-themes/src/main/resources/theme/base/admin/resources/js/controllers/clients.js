@@ -564,8 +564,6 @@ module.controller('ClientRoleDetailCtrl', function($scope, realm, client, role, 
 module.controller('ClientImportCtrl', function($scope, $location, $upload, realm, serverInfo, Notifications) {
 
     $scope.realm = realm;
-    $scope.configFormats = serverInfo.clientImporters;
-    $scope.configFormat = null;
 
     $scope.files = [];
 
@@ -614,7 +612,6 @@ module.controller('ClientImportCtrl', function($scope, $location, $upload, realm
 module.controller('ClientListCtrl', function($scope, realm, clients, Client, serverInfo, $route, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.clients = clients;
-    $scope.importButton = serverInfo.clientImporters.length > 0;
 
     $scope.removeClient = function(client) {
         Dialog.confirmDelete(client.clientId, 'client', function() {
@@ -670,7 +667,7 @@ module.controller('ClientInstallationCtrl', function($scope, realm, client, Clie
     }
 });
 
-module.controller('ClientDetailCtrl', function($scope, realm, client, $route, serverInfo, Client, $location, Dialog, Notifications) {
+module.controller('ClientDetailCtrl', function($scope, realm, client, $route, serverInfo, Client, ClientDescriptionConverter, $location, $modal, Dialog, Notifications) {
     $scope.accessTypes = [
         "confidential",
         "public",
@@ -709,40 +706,45 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
     $scope.samlEncrypt = false;
     $scope.samlForcePostBinding = false;
     $scope.samlForceNameIdFormat = false;
-    if (!$scope.create) {
-        if (!client.attributes) {
-            client.attributes = {};
+
+    function updateProperties() {
+        if (!$scope.client.attributes) {
+            $scope.client.attributes = {};
         }
-        $scope.client= angular.copy(client);
         $scope.accessType = $scope.accessTypes[0];
-        if (client.bearerOnly) {
+        if ($scope.client.bearerOnly) {
             $scope.accessType = $scope.accessTypes[2];
-        } else if (client.publicClient) {
+        } else if ($scope.client.publicClient) {
             $scope.accessType = $scope.accessTypes[1];
         }
-        if (client.protocol) {
-            $scope.protocol = $scope.protocols[$scope.protocols.indexOf(client.protocol)];
+        if ($scope.client.protocol) {
+            $scope.protocol = $scope.protocols[$scope.protocols.indexOf($scope.client.protocol)];
         } else {
             $scope.protocol = $scope.protocols[0];
         }
-        if (client.attributes['saml.signature.algorithm'] == 'RSA_SHA1') {
+        if ($scope.client.attributes['saml.signature.algorithm'] == 'RSA_SHA1') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[0];
-        } else if (client.attributes['saml.signature.algorithm'] == 'RSA_SHA256') {
+        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'RSA_SHA256') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[1];
-        } else if (client.attributes['saml.signature.algorithm'] == 'RSA_SHA512') {
+        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'RSA_SHA512') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[2];
-        } else if (client.attributes['saml.signature.algorithm'] == 'DSA_SHA1') {
+        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'DSA_SHA1') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[3];
         }
-        if (client.attributes['saml_name_id_format'] == 'unspecified') {
+        if ($scope.client.attributes['saml_name_id_format'] == 'unspecified') {
             $scope.nameIdFormat = $scope.nameIdFormats[0];
-        } else if (client.attributes['saml_name_id_format'] == 'email') {
+        } else if ($scope.client.attributes['saml_name_id_format'] == 'email') {
             $scope.nameIdFormat = $scope.nameIdFormats[1];
-        } else if (client.attributes['saml_name_id_format'] == 'transient') {
+        } else if ($scope.client.attributes['saml_name_id_format'] == 'transient') {
             $scope.nameIdFormat = $scope.nameIdFormats[2];
-        } else if (client.attributes['saml_name_id_format'] == 'persistent') {
+        } else if ($scope.client.attributes['saml_name_id_format'] == 'persistent') {
             $scope.nameIdFormat = $scope.nameIdFormats[3];
         }
+    }
+
+    if (!$scope.create) {
+        $scope.client = angular.copy(client);
+        updateProperties();
     } else {
         $scope.client = { enabled: true, attributes: {}};
         $scope.client.attributes['saml_signature_canonicalization_method'] = $scope.canonicalization[0].value;
@@ -812,6 +814,29 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
             $scope.samlForcePostBinding = false;
         }
     }
+
+    $scope.importFile = function(fileContent){
+        console.debug(fileContent);
+        ClientDescriptionConverter.save({
+            realm: realm.realm
+        }, fileContent, function (data) {
+            $scope.client = data;
+            updateProperties();
+            $scope.importing = true;
+        });
+    };
+
+    $scope.viewImportDetails = function() {
+        $modal.open({
+            templateUrl: resourceUrl + '/partials/modal/view-object.html',
+            controller: 'JsonModalCtrl',
+            resolve: {
+                object: function () {
+                    return $scope.client;
+                }
+            }
+        })
+    };
 
     $scope.switchChange = function() {
         $scope.changed = true;

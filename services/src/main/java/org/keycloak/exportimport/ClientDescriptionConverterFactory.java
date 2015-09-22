@@ -8,6 +8,8 @@ import org.keycloak.provider.ProviderFactory;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface ClientImporterFactory extends ProviderFactory<ClientImporter> {
-    public String getDisplayName();
+public interface ClientDescriptionConverterFactory extends ProviderFactory<ClientDescriptionConverter> {
+
+    boolean isSupported(String description);
+
 }

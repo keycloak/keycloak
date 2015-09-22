@@ -58,7 +58,7 @@ public class LoginStatusIframeEndpoint {
             }
         }
 
-        for (String r : RedirectUtils.resolveValidRedirects(uriInfo, client.getRedirectUris())) {
+        for (String r : RedirectUtils.resolveValidRedirects(uriInfo, client.getRootUrl(), client.getRedirectUris())) {
             int i = r.indexOf('/', 8);
             if (i != -1) {
                 r = r.substring(0, i);

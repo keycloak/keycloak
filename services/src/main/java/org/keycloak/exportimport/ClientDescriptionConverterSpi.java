@@ -7,7 +7,7 @@ import org.keycloak.provider.Spi;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientImportSpi implements Spi {
+public class ClientDescriptionConverterSpi implements Spi {
 
     @Override
     public boolean isInternal() {
@@ -16,16 +16,17 @@ public class ClientImportSpi implements Spi {
 
     @Override
     public String getName() {
-        return "client-import";
+        return "client-description-converter";
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return ClientImporter.class;
+        return ClientDescriptionConverter.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return ClientImporterFactory.class;
+        return ClientDescriptionConverterFactory.class;
     }
+
 }

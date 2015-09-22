@@ -442,6 +442,16 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public String getRootUrl() {
+        return entity.getRootUrl();
+    }
+
+    @Override
+    public void setRootUrl(String url) {
+        entity.setRootUrl(url);
+    }
+
+    @Override
     public String getBaseUrl() {
         return entity.getBaseUrl();
     }

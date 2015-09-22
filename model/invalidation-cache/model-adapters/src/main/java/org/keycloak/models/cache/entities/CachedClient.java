@@ -42,6 +42,7 @@ public class CachedClient implements Serializable {
     private Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
     private boolean surrogateAuthRequired;
     private String managementUrl;
+    private String rootUrl;
     private String baseUrl;
     private List<String> defaultRoles = new LinkedList<String>();
     private boolean bearerOnly;
@@ -76,6 +77,7 @@ public class CachedClient implements Serializable {
         }
         surrogateAuthRequired = model.isSurrogateAuthRequired();
         managementUrl = model.getManagementUrl();
+        rootUrl = model.getRootUrl();
         baseUrl = model.getBaseUrl();
         defaultRoles.addAll(model.getDefaultRoles());
         bearerOnly = model.isBearerOnly();
@@ -167,6 +169,10 @@ public class CachedClient implements Serializable {
 
     public String getManagementUrl() {
         return managementUrl;
+    }
+
+    public String getRootUrl() {
+        return rootUrl;
     }
 
     public String getBaseUrl() {

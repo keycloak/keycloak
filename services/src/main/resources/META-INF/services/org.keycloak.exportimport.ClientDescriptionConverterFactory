@@ -1,0 +1,2 @@
+org.keycloak.exportimport.KeycloakClientDescriptionConverter
+org.keycloak.protocol.oidc.OIDCClientDescriptionConverter

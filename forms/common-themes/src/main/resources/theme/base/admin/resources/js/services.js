@@ -927,6 +927,13 @@ module.factory('Client', function($resource) {
     });
 });
 
+module.factory('ClientDescriptionConverter', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-description-converter', {
+        realm : '@realm'
+    });
+});
+
+
 module.factory('ClientInstallation', function($resource) {
     var url = authUrl + '/admin/realms/:realm/clients/:client/installation/json';
     return {

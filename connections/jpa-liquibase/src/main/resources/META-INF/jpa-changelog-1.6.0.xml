@@ -8,6 +8,10 @@
             </column>
         </addColumn>
 
+        <addColumn tableName="CLIENT">
+            <column name="ROOT_URL" type="VARCHAR(255)"/>
+        </addColumn>
+
         <createTable tableName="OFFLINE_USER_SESSION">
             <column name="USER_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
