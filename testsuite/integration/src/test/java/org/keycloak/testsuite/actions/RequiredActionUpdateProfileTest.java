@@ -263,7 +263,7 @@ public class RequiredActionUpdateProfileTest {
         Assert.assertEquals("New first", updateProfilePage.getFirstName());
         Assert.assertEquals("New last", updateProfilePage.getLastName());
         Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
-        Assert.assertEquals("", updateProfilePage.getUsername());
+        Assert.assertEquals("test-user@localhost", updateProfilePage.getUsername());
 
         Assert.assertEquals("Username already exists.", updateProfilePage.getError());
 
