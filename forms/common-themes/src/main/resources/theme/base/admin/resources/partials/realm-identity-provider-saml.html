@@ -135,6 +135,18 @@
                 </div>
                 <kc-tooltip> Indicates whether the identity provider expects signed a AuthnRequest.</kc-tooltip>
             </div>
+            <div class="form-group" data-ng-show="identityProvider.config.wantAuthnRequestsSigned == 'true'">
+                <label class="col-md-2 control-label" for="signatureAlgorithm">Signature Algorithm</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="signatureAlgorithm"
+                                ng-model="identityProvider.config.signatureAlgorithm"
+                                ng-options="alg for alg in signatureAlgorithms">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>The signature algorithm to use to sign documents.</kc-tooltip>
+            </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="forceAuthn">Force Authentication</label>
                 <div class="col-md-6">
