@@ -1,29 +1,22 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
-    <form class="form-horizontal" name="realmForm" novalidate>
-        <fieldset>
-            <legend><span class="text">Import Realm</span></legend>
-            <div class="form-group">
-                <label for="import-file" class="col-sm-2 control-label">Import JSON File </label>
-                <div class="col-md-6">
-                    <div class="controls kc-button-input-file" data-ng-show="!files || files.length == 0">
-                        <label for="import-file" class="btn btn-default">Select file <i class="pficon pficon-import"></i></label>
-                        <input id="import-file" type="file" class="hidden" ng-file-select="onFileSelect($files)">
-                    </div>
-                    <span class="kc-uploaded-file" data-ng-show="files.length > 0">{{files[0].name}}</span>
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-md-10 col-md-offset-2">
-                    <button type="submit" data-ng-disabled="files.length == 0" data-ng-click="uploadFile()" class="btn btn-primary">Upload</button>
-                    <button type="submit" data-ng-disabled="files.length == 0" data-ng-click="clearFileSelect()" class="btn btn-default">Cancel</button>
-                </div>
-            </div>
-        </fieldset>
-    </form>
 
     <form class="form-horizontal" name="realmForm" novalidate>
         <fieldset>
             <legend><span class="text">Create Realm</span></legend>
+            <div class="form-group">
+                <label for="name" class="col-sm-2 control-label">Import</label>
+
+                <div class="col-md-6" data-ng-hide="importing">
+                    <label for="import-file" class="btn btn-default">Select file <i class="pficon pficon-import"></i></label>
+                    <input id="import-file" type="file" class="hidden" kc-on-read-file="importFile($fileContent)">
+                </div>
+
+                <div class="col-md-6" data-ng-show="importing">
+                    <button class="btn btn-default" data-ng-click="viewImportDetails()">View details</button>
+                    <button class="btn btn-default" data-ng-click="reset()">Clear import</button>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label for="name" class="col-sm-2 control-label">Name <span class="required">*</span></label>
 
@@ -42,6 +35,7 @@
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2">
                 <button kc-save data-ng-disabled="!changed">Create</button>
+                <button kc-cancel data-ng-click="cancel()">Cancel</button>
             </div>
         </div>
     </form>
