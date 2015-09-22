@@ -56,7 +56,6 @@ public class SyncProvidersTest {
             Map<String,String> ldapConfig = ldapRule.getConfig();
             ldapConfig.put(LDAPConstants.SYNC_REGISTRATIONS, "false");
             ldapConfig.put(LDAPConstants.EDIT_MODE, UserFederationProvider.EditMode.WRITABLE.toString());
-
             ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap",
                     -1, -1, 0);
 
@@ -91,7 +90,7 @@ public class SyncProvidersTest {
         UsersSyncManager usersSyncManager = new UsersSyncManager();
 
         // wait a bit
-        sleep(1000);
+        sleep(ldapRule.getSleepTime());
 
         KeycloakSession session = keycloakRule.startSession();
         try {
@@ -125,7 +124,7 @@ public class SyncProvidersTest {
             }
 
             // wait a bit
-            sleep(1000);
+            sleep(ldapRule.getSleepTime());
 
             // Add user to LDAP and update 'user5' in LDAP
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
@@ -391,9 +390,9 @@ public class SyncProvidersTest {
     }
 
     private void assertSyncEquals(UserFederationSyncResult syncResult, int expectedAdded, int expectedUpdated, int expectedRemoved, int expectedFailed) {
-        Assert.assertEquals(syncResult.getAdded(), expectedAdded);
-        Assert.assertEquals(syncResult.getUpdated(), expectedUpdated);
-        Assert.assertEquals(syncResult.getRemoved(), expectedRemoved);
-        Assert.assertEquals(syncResult.getFailed(), expectedFailed);
+        Assert.assertEquals(expectedAdded, syncResult.getAdded());
+        Assert.assertEquals(expectedUpdated, syncResult.getUpdated());
+        Assert.assertEquals(expectedRemoved, syncResult.getRemoved());
+        Assert.assertEquals(expectedFailed, syncResult.getFailed());
     }
 }
