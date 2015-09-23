@@ -1,0 +1,61 @@
+<keycloak-saml-adapter>
+    <SP entityID="sp"
+        sslPolicy="ssl"
+        nameIDPolicyFormat="format"
+        forceAuthentication="true">
+        <Keys>
+            <Key signing="true" >
+                <KeyStore file="file" classpath="cp" password="pw">
+                    <PrivateKey alias="private alias" password="private pw"/>
+                    <Certificate alias="cert alias"/>
+                </KeyStore>
+            </Key>
+            <Key encryption="true">
+                <PrivateKeyPem>
+                    private pem
+                </PrivateKeyPem>
+                <PublicKeyPem>
+                    public pem
+                </PublicKeyPem>
+            </Key>
+        </Keys>
+        <PrincipalNameMapping policy="policy" attribute="attribute"/>
+        <RoleMapping>
+            <Attribute name="member"/>
+            <FriendlyAttribute name="memberOf"/>
+        </RoleMapping>
+        <IDP entityID="idp">
+            <SingleSignOnService signRequest="true"
+                                 validateResponseSignature="true"
+                                 signatureCanonicalizationMethod="canon"
+                                 requestBinding="post"
+                                 bindingUrl="url"
+                    />
+
+            <SingleLogoutService
+                    validateRequestSignature="true"
+                    validateResponseSignature="true"
+                    signRequest="true"
+                    signResponse="true"
+                    signatureCanonicalizationMethod="canon"
+                    requestBinding="redirect"
+                    responseBinding="post"
+                    postBindingUrl="posturl"
+                    redirectBindingUrl="redirecturl"
+                    />
+            <Keys>
+                <Key signing="true">
+                    <CertificatePem>
+                        cert pem
+                    </CertificatePem>
+                </Key>
+            </Keys>
+        </IDP>
+        <Keys>
+            <KeyStore>
+
+            </KeyStore>
+        </Keys>
+
+    </SP>
+</keycloak-saml-adapter>

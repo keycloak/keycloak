@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-saml-adapter-core</artifactId>
-    <name>Keycloak SAML Adapter Core</name>
+    <name>Keycloak SAML Client Adapter Core</name>
     <description/>
 
     <properties>

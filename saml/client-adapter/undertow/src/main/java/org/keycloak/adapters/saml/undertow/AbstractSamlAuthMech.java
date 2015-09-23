@@ -42,16 +42,13 @@ public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
     public static final AttachmentKey<AuthChallenge> KEYCLOAK_CHALLENGE_ATTACHMENT_KEY = AttachmentKey.create(AuthChallenge.class);
     protected SamlDeploymentContext deploymentContext;
     protected UndertowUserSessionManagement sessionManagement;
-    protected String logoutPage;
     protected String errorPage;
 
     public AbstractSamlAuthMech(SamlDeploymentContext deploymentContext, UndertowUserSessionManagement sessionManagement,
-                                String logoutPage,
                                 String errorPage) {
         this.deploymentContext = deploymentContext;
         this.sessionManagement = sessionManagement;
         this.errorPage = errorPage;
-        this.logoutPage = logoutPage;
     }
 
     @Override
@@ -62,7 +59,7 @@ public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
                 Integer code = servePage(exchange, errorPage);
                 return new ChallengeResult(true, code);
             }
-            UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
+            UndertowHttpFacade facade = createFacade(exchange);
             if (challenge.challenge(facade)) {
                 return new ChallengeResult(true, exchange.getResponseCode());
             }
@@ -91,7 +88,7 @@ public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
                 if (notification.getEventType() != SecurityNotification.EventType.LOGGED_OUT) return;
 
                 HttpServerExchange exchange = notification.getExchange();
-                UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
+                UndertowHttpFacade facade = createFacade(exchange);
                 SamlDeployment deployment = deploymentContext.resolveDeployment(facade);
                 SamlSessionStore sessionStore = getTokenStore(exchange, facade, deployment, securityContext);
                 sessionStore.logoutAccount();
@@ -105,7 +102,7 @@ public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
      * Call this inside your authenticate method.
      */
     public AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange, SecurityContext securityContext) {
-        UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
+        UndertowHttpFacade facade = createFacade(exchange);
         SamlDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (!deployment.isConfigured()) {
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
@@ -120,10 +117,8 @@ public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
         }
         if (outcome == AuthOutcome.LOGGED_OUT) {
             securityContext.logout();
-            if (logoutPage != null) {
-                sendRedirect(exchange, logoutPage);
-                exchange.setResponseCode(302);
-                exchange.endExchange();
+            if (deployment.getLogoutPage() != null) {
+                redirectLogout(deployment, exchange);
             }
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
         }
@@ -136,6 +131,17 @@ public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
             return AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
         }
         return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
+    }
+
+    protected void redirectLogout(SamlDeployment deployment, HttpServerExchange exchange) {
+        String page = deployment.getLogoutPage();
+        sendRedirect(exchange, page);
+        exchange.setResponseCode(302);
+        exchange.endExchange();
+    }
+
+    protected UndertowHttpFacade createFacade(HttpServerExchange exchange) {
+        return new UndertowHttpFacade(exchange);
     }
 
     protected abstract SamlSessionStore getTokenStore(HttpServerExchange exchange, HttpFacade facade, SamlDeployment deployment, SecurityContext securityContext);

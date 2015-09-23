@@ -14,26 +14,53 @@ import java.util.Set;
 public interface SamlDeployment {
     enum Binding {
         POST,
-        REDIRECT
+        REDIRECT;
+
+        public static Binding parseBinding(String val) {
+            if (val == null) return POST;
+            return Binding.valueOf(val);
+        }
     }
+
+    public interface IDP {
+        String getEntityID();
+
+        SingleSignOnService getSingleSignOnService();
+        SingleLogoutService getSingleLogoutService();
+        PublicKey getSignatureValidationKey();
+
+        public interface SingleSignOnService {
+            boolean signRequest();
+            boolean validateResponseSignature();
+            String getSignatureCanonicalizationMethod();
+            Binding getRequestBinding();
+            Binding getResponseBinding();
+            String getRequestBindingUrl();
+        }
+        public interface SingleLogoutService {
+            boolean validateRequestSignature();
+            boolean validateResponseSignature();
+            boolean signRequest();
+            boolean signResponse();
+            String getSignatureCanonicalizationMethod();
+            Binding getRequestBinding();
+            Binding getResponseBinding();
+            String getRequestBindingUrl();
+            String getResponseBindingUrl();
+        }
+    }
+
+    public IDP getIDP();
 
     public boolean isConfigured();
     SslRequired getSslRequired();
-    String getSingleSignOnServiceUrl();
-    String getSingleLogoutServiceUrl();
-    String getIssuer();
+    String getEntityID();
     String getNameIDPolicyFormat();
-    String getAssertionConsumerServiceUrl();
-    Binding getRequestBinding();
-    Binding getResponseBinding();
-    KeyPair getSigningKeyPair();
-    String getSignatureCanonicalizationMethod();
     boolean isForceAuthentication();
-    boolean isRequestsSigned();
-
-    boolean isValidateSignatures();
-    PublicKey getSignatureValidationKey();
-    PrivateKey getAssertionDecryptionKey();
+    PrivateKey getDecryptionKey();
+    KeyPair getSigningKeyPair();
+    String getAssertionConsumerServiceUrl();
+    String getLogoutPage();
 
     Set<String> getRoleAttributeNames();
     Set<String> getRoleAttributeFriendlyNames();

@@ -34,8 +34,8 @@ public class InitiateLogin implements AuthChallenge {
     @Override
     public boolean challenge(HttpFacade httpFacade) {
         try {
-            String issuerURL = deployment.getIssuer();
-            String actionUrl = deployment.getSingleSignOnServiceUrl();
+            String issuerURL = deployment.getEntityID();
+            String actionUrl = deployment.getIDP().getSingleSignOnService().getRequestBindingUrl();
             String destinationUrl = actionUrl;
             String nameIDPolicyFormat = deployment.getNameIDPolicyFormat();
 
@@ -45,28 +45,30 @@ public class InitiateLogin implements AuthChallenge {
 
             String protocolBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
 
-            if (deployment.getResponseBinding() == SamlDeployment.Binding.POST) {
+            if (deployment.getIDP().getSingleSignOnService().getResponseBinding() == SamlDeployment.Binding.POST) {
                 protocolBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
             }
 
             SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
-                    .assertionConsumerUrl(deployment.getAssertionConsumerServiceUrl())
                     .destination(destinationUrl)
                     .issuer(issuerURL)
                     .forceAuthn(deployment.isForceAuthentication())
                     .protocolBinding(protocolBinding)
                     .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat));
+            if (deployment.getAssertionConsumerServiceUrl() != null) {
+                authnRequestBuilder.assertionConsumerUrl(deployment.getAssertionConsumerServiceUrl());
+            }
             BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
 
-            if (deployment.isRequestsSigned()) {
+            if (deployment.getIDP().getSingleSignOnService().signRequest()) {
 
 
                 KeyPair keypair = deployment.getSigningKeyPair();
                 if (keypair == null) {
                     throw new RuntimeException("Signing keys not configured");
                 }
-                if (deployment.getSignatureCanonicalizationMethod() != null) {
-                    binding.canonicalizationMethod(deployment.getSignatureCanonicalizationMethod());
+                if (deployment.getIDP().getSingleSignOnService().getSignatureCanonicalizationMethod() != null) {
+                    binding.canonicalizationMethod(deployment.getIDP().getSingleSignOnService().getSignatureCanonicalizationMethod());
                 }
 
                 binding.signWith(keypair);
@@ -75,7 +77,7 @@ public class InitiateLogin implements AuthChallenge {
             sessionStore.saveRequest();
 
             Document document = authnRequestBuilder.toDocument();
-            SamlDeployment.Binding samlBinding = deployment.getRequestBinding();
+            SamlDeployment.Binding samlBinding = deployment.getIDP().getSingleSignOnService().getRequestBinding();
             SamlUtil.sendSaml(httpFacade, actionUrl, binding, document, samlBinding);
         } catch (Exception e) {
             throw new RuntimeException("Could not create authentication request.", e);

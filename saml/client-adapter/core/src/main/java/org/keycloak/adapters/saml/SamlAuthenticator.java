@@ -90,12 +90,12 @@ public abstract class SamlAuthenticator {
         SamlSession account = sessionStore.getAccount();
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
                 .assertionExpiration(30)
-                .issuer(deployment.getIssuer())
+                .issuer(deployment.getEntityID())
                 .sessionIndex(account.getSessionIndex())
                 .userPrincipal(account.getPrincipal().getSamlSubject(), account.getPrincipal().getNameIDFormat())
-                .destination(deployment.getSingleLogoutServiceUrl());
+                .destination(deployment.getIDP().getSingleLogoutService().getRequestBindingUrl());
         BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
-        if (deployment.isRequestsSigned()) {
+        if (deployment.getIDP().getSingleLogoutService().signRequest()) {
             binding.signWith(deployment.getSigningKeyPair())
                     .signDocument();
         }
@@ -103,7 +103,7 @@ public abstract class SamlAuthenticator {
         binding.relayState("logout");
 
         try {
-            SamlUtil.sendSaml(facade, deployment.getSingleLogoutServiceUrl(), binding, logoutBuilder.buildDocument(), deployment.getRequestBinding());
+            SamlUtil.sendSaml(facade, deployment.getIDP().getSingleLogoutService().getRequestBindingUrl(), binding, logoutBuilder.buildDocument(), deployment.getIDP().getSingleLogoutService().getRequestBinding());
         } catch (ProcessingException e) {
             throw new RuntimeException(e);
         } catch (ConfigurationException e) {
@@ -129,9 +129,11 @@ public abstract class SamlAuthenticator {
         if (!facade.getRequest().getURI().toString().equals(requestAbstractType.getDestination())) {
             throw new RuntimeException("destination not equal to request");
         }
-        validateSamlSignature(holder, postBinding, GeneralConstants.SAML_REQUEST_KEY);
 
         if (requestAbstractType instanceof LogoutRequestType) {
+            if (deployment.getIDP().getSingleLogoutService().validateRequestSignature()) {
+                validateSamlSignature(holder, postBinding, GeneralConstants.SAML_REQUEST_KEY);
+            }
             LogoutRequestType logout = (LogoutRequestType) requestAbstractType;
             return logoutRequest(logout, relayState);
 
@@ -147,21 +149,22 @@ public abstract class SamlAuthenticator {
             sessionStore.logoutBySsoId(request.getSessionIndex());
         }
 
-        String issuerURL = deployment.getIssuer();
+        String issuerURL = deployment.getEntityID();
         SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
         builder.logoutRequestID(request.getID());
-        builder.destination(deployment.getSingleLogoutServiceUrl());
+        builder.destination(deployment.getIDP().getSingleLogoutService().getResponseBindingUrl());
         builder.issuer(issuerURL);
         BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder().relayState(relayState);
-        if (deployment.isRequestsSigned()) {
+        if (deployment.getIDP().getSingleLogoutService().signResponse()) {
             binding.signWith(deployment.getSigningKeyPair())
                     .signDocument();
+            binding.canonicalizationMethod(deployment.getIDP().getSingleLogoutService().getSignatureCanonicalizationMethod());
         }
 
 
         try {
-            SamlUtil.sendSaml(facade, deployment.getSingleLogoutServiceUrl(), binding, builder.buildDocument(),
-                    deployment.getResponseBinding());
+            SamlUtil.sendSaml(facade, deployment.getIDP().getSingleLogoutService().getResponseBindingUrl(), binding, builder.buildDocument(),
+                    deployment.getIDP().getSingleLogoutService().getResponseBinding());
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);
         } catch (ProcessingException e) {
@@ -188,11 +191,16 @@ public abstract class SamlAuthenticator {
         if (!facade.getRequest().getURI().toString().equals(statusResponse.getDestination())) {
             throw new RuntimeException("destination not equal to request");
         }
-        validateSamlSignature(holder, postBinding, GeneralConstants.SAML_RESPONSE_KEY);
         if (statusResponse instanceof ResponseType) {
+            if (deployment.getIDP().getSingleSignOnService().validateResponseSignature()) {
+                validateSamlSignature(holder, postBinding, GeneralConstants.SAML_REQUEST_KEY);
+            }
             return handleLoginResponse((ResponseType)statusResponse);
 
         } else {
+            if (deployment.getIDP().getSingleLogoutService().validateResponseSignature()) {
+                validateSamlSignature(holder, postBinding, GeneralConstants.SAML_REQUEST_KEY);
+            }
             // todo need to check that it is actually a LogoutResponse
             return handleLogoutResponse(holder, statusResponse, relayState);
         }
@@ -200,24 +208,22 @@ public abstract class SamlAuthenticator {
     }
 
     private void validateSamlSignature(SAMLDocumentHolder holder, boolean postBinding, String paramKey) {
-        if (deployment.isValidateSignatures()) {
-            try {
-                if (postBinding) {
-                    verifyPostBindingSignature(holder.getSamlDocument(), deployment.getSignatureValidationKey());
-                } else {
-                    verifyRedirectBindingSignature(deployment.getSignatureValidationKey(), paramKey);
-                }
-            } catch (VerificationException e) {
-                log.error("validation failed", e);
-                throw new RuntimeException("invalid document signature");
+        try {
+            if (postBinding) {
+                verifyPostBindingSignature(holder.getSamlDocument(), deployment.getIDP().getSignatureValidationKey());
+            } else {
+                verifyRedirectBindingSignature(deployment.getIDP().getSignatureValidationKey(), paramKey);
             }
+        } catch (VerificationException e) {
+            log.error("validation failed", e);
+            throw new RuntimeException("invalid document signature");
         }
     }
 
     protected AuthOutcome handleLoginResponse(ResponseType responseType)  {
         AssertionType assertion = null;
         try {
-            assertion = AssertionUtil.getAssertion(responseType, deployment.getAssertionDecryptionKey());
+            assertion = AssertionUtil.getAssertion(responseType, deployment.getDecryptionKey());
             if (AssertionUtil.hasExpired(assertion)) {
                 return initiateLogin();
             }

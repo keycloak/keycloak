@@ -40,7 +40,7 @@ public class SamlPrincipal implements Serializable, Principal {
 
     @Override
     public String getName() {
-        return null;
+        return name;
     }
 
 
