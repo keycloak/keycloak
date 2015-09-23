@@ -3,18 +3,17 @@ package org.keycloak.services.offline;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.Constants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OfflineClientSessionModel;
 import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.util.JsonSerialization;
@@ -24,11 +23,11 @@ import org.keycloak.util.JsonSerialization;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OfflineUserSessionManager {
+public class OfflineTokenUtils {
 
-    protected static Logger logger = Logger.getLogger(OfflineUserSessionManager.class);
+    protected static Logger logger = Logger.getLogger(OfflineTokenUtils.class);
 
-    public void persistOfflineSession(ClientSessionModel clientSession, UserSessionModel userSession) {
+    public static void persistOfflineSession(ClientSessionModel clientSession, UserSessionModel userSession) {
         UserModel user = userSession.getUser();
         ClientModel client = clientSession.getClient();
 
@@ -61,7 +60,7 @@ public class OfflineUserSessionManager {
     }
 
     // userSessionId is provided from offline token. It's used just to verify if it match the ID from clientSession representation
-    public ClientSessionModel findOfflineClientSession(RealmModel realm, UserModel user, String clientSessionId, String userSessionId) {
+    public static ClientSessionModel findOfflineClientSession(RealmModel realm, UserModel user, String clientSessionId, String userSessionId) {
         OfflineClientSessionModel clientSession = user.getOfflineClientSession(clientSessionId);
         if (clientSession == null) {
             return null;
@@ -85,7 +84,7 @@ public class OfflineUserSessionManager {
         return clientSessionAdapter;
     }
 
-    public Set<ClientModel> findClientsWithOfflineToken(RealmModel realm, UserModel user) {
+    public static Set<ClientModel> findClientsWithOfflineToken(RealmModel realm, UserModel user) {
         Collection<OfflineClientSessionModel> clientSessions = user.getOfflineClientSessions();
         Set<ClientModel> clients = new HashSet<>();
         for (OfflineClientSessionModel clientSession : clientSessions) {
@@ -95,7 +94,7 @@ public class OfflineUserSessionManager {
         return clients;
     }
 
-    public boolean revokeOfflineToken(UserModel user, ClientModel client) {
+    public static boolean revokeOfflineToken(UserModel user, ClientModel client) {
         Collection<OfflineClientSessionModel> clientSessions = user.getOfflineClientSessions();
         boolean anyRemoved = false;
         for (OfflineClientSessionModel clientSession : clientSessions) {
@@ -114,7 +113,17 @@ public class OfflineUserSessionManager {
         return anyRemoved;
     }
 
-    private void createOfflineUserSession(UserModel user, UserSessionModel userSession) {
+    public static boolean isOfflineTokenAllowed(RealmModel realm, ClientSessionModel clientSession) {
+        RoleModel offlineAccessRole = realm.getRole(Constants.OFFLINE_ACCESS_ROLE);
+        if (offlineAccessRole == null) {
+            logger.warnf("Role '%s' not available in realm", Constants.OFFLINE_ACCESS_ROLE);
+            return false;
+        }
+
+        return clientSession.getRoles().contains(offlineAccessRole.getId());
+    }
+
+    private static void createOfflineUserSession(UserModel user, UserSessionModel userSession) {
         if (logger.isTraceEnabled()) {
             logger.tracef("Creating new offline user session. UserSessionID: '%s' , Username: '%s'", userSession.getId(), user.getUsername());
         }
@@ -138,7 +147,7 @@ public class OfflineUserSessionManager {
         }
     }
 
-    private void createOfflineClientSession(UserModel user, ClientSessionModel clientSession, UserSessionModel userSession) {
+    private static void createOfflineClientSession(UserModel user, ClientSessionModel clientSession, UserSessionModel userSession) {
         if (logger.isTraceEnabled()) {
             logger.tracef("Creating new offline token client session. ClientSessionId: '%s', UserSessionID: '%s' , Username: '%s', Client: '%s'" ,
                     clientSession.getId(), userSession.getId(), user.getUsername(), clientSession.getClient().getClientId());
@@ -165,7 +174,7 @@ public class OfflineUserSessionManager {
     }
 
     // Check if userSession has any offline clientSessions attached to it. Remove userSession if not
-    private void checkUserSessionHasClientSessions(UserModel user, String userSessionId) {
+    private static void checkUserSessionHasClientSessions(UserModel user, String userSessionId) {
         Collection<OfflineClientSessionModel> clientSessions = user.getOfflineClientSessions();
 
         for (OfflineClientSessionModel clientSession : clientSessions) {

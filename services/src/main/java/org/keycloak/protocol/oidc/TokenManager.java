@@ -2,6 +2,7 @@ package org.keycloak.protocol.oidc;
 
 import org.jboss.logging.Logger;
 import org.keycloak.ClientConnection;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -30,7 +31,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.offline.OfflineUserSessionManager;
+import org.keycloak.services.offline.OfflineTokenUtils;
 import org.keycloak.util.RefreshTokenUtil;
 import org.keycloak.util.Time;
 
@@ -38,6 +39,9 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -92,13 +96,9 @@ public class TokenManager {
         UserSessionModel userSession = null;
         ClientSessionModel clientSession = null;
         if (RefreshTokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType())) {
-            // Check if offline tokens still allowed for the client
-            clientSession = new OfflineUserSessionManager().findOfflineClientSession(realm, user, oldToken.getClientSession(), oldToken.getSessionState());
-            if (clientSession != null) {
-                if (!clientSession.getClient().isOfflineTokensEnabled()) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline tokens not allowed for client", "Offline tokens not allowed for client");
-                }
 
+            clientSession = OfflineTokenUtils.findOfflineClientSession(realm, user, oldToken.getClientSession(), oldToken.getSessionState());
+            if (clientSession != null) {
                 userSession = clientSession.getUserSession();
             }
         } else {
@@ -136,7 +136,8 @@ public class TokenManager {
 
 
         // recreate token.
-        Set<RoleModel> requestedRoles = TokenManager.getAccess(null, clientSession.getClient(), user);
+        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        Set<RoleModel> requestedRoles = TokenManager.getAccess(scopeParam, true, clientSession.getClient(), user);
         AccessToken newToken = createClientAccessToken(session, requestedRoles, realm, client, user, userSession, clientSession);
         verifyAccess(oldToken, newToken);
 
@@ -233,7 +234,8 @@ public class TokenManager {
         clientSession.setUserSession(session);
         Set<String> requestedRoles = new HashSet<String>();
         // todo scope param protocol independent
-        for (RoleModel r : TokenManager.getAccess(null, clientSession.getClient(), user)) {
+        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        for (RoleModel r : TokenManager.getAccess(scopeParam, true, clientSession.getClient(), user)) {
             requestedRoles.add(r.getId());
         }
         clientSession.setRoles(requestedRoles);
@@ -269,24 +271,60 @@ public class TokenManager {
         }
     }
 
-    public static Set<RoleModel> getAccess(String scopeParam, ClientModel client, UserModel user) {
-        // todo scopeParam is ignored until we figure out a scheme that fits with openid connect
+    public static Set<RoleModel> getAccess(String scopeParam, boolean applyScopeParam, ClientModel client, UserModel user) {
         Set<RoleModel> requestedRoles = new HashSet<RoleModel>();
 
         Set<RoleModel> roleMappings = user.getRoleMappings();
-        if (client.isFullScopeAllowed()) return roleMappings;
 
-        Set<RoleModel> scopeMappings = client.getScopeMappings();
-        scopeMappings.addAll(client.getRoles());
+        if (client.isFullScopeAllowed()) {
+            requestedRoles = roleMappings;
+        } else {
 
-        for (RoleModel role : roleMappings) {
-            for (RoleModel desiredRole : scopeMappings) {
-                Set<RoleModel> visited = new HashSet<RoleModel>();
-                applyScope(role, desiredRole, visited, requestedRoles);
+            Set<RoleModel> scopeMappings = client.getScopeMappings();
+            scopeMappings.addAll(client.getRoles());
+
+            for (RoleModel role : roleMappings) {
+                for (RoleModel desiredRole : scopeMappings) {
+                    Set<RoleModel> visited = new HashSet<RoleModel>();
+                    applyScope(role, desiredRole, visited, requestedRoles);
+                }
             }
         }
 
+        if (applyScopeParam) {
+            Collection<String> scopeParamRoles;
+            if (scopeParam != null) {
+                String[] scopes = scopeParam.split(" ");
+                scopeParamRoles = Arrays.asList(scopes);
+            } else {
+                scopeParamRoles = Collections.emptyList();
+            }
+
+            Set<RoleModel> roles = new HashSet<>();
+            for (RoleModel role : requestedRoles) {
+                String roleName = getRoleNameForScopeParam(role);
+                if (!role.isScopeParamRequired() || scopeParamRoles.contains(roleName)) {
+                    roles.add(role);
+                } else {
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("Role '%s' excluded by scope param. Client is '%s', User is '%s', Scope param is '%s' ", role.getName(), client.getClientId(), user.getUsername(), scopeParam);
+                    }
+                }
+            }
+            requestedRoles = roles;
+        }
+
         return requestedRoles;
+    }
+
+    // For now, just use "roleName" for realm roles and "clientId/roleName" for client roles
+    private static String getRoleNameForScopeParam(RoleModel role) {
+        if (role.getContainer() instanceof RealmModel) {
+            return role.getName();
+        } else {
+            ClientModel client = (ClientModel) role.getContainer();
+            return client.getClientId() + "/" + role.getName();
+        }
     }
 
     public void verifyAccess(AccessToken token, AccessToken newToken) throws OAuthErrorException {
@@ -437,7 +475,7 @@ public class TokenManager {
         public AccessTokenResponseBuilder generateAccessToken() {
             UserModel user = userSession.getUser();
             String scopeParam = clientSession.getNote(OIDCLoginProtocol.SCOPE_PARAM);
-            Set<RoleModel> requestedRoles = getAccess(scopeParam, client, user);
+            Set<RoleModel> requestedRoles = getAccess(scopeParam, true, client, user);
             accessToken = createClientAccessToken(session, requestedRoles, realm, client, user, userSession, clientSession);
             return this;
         }
@@ -450,14 +488,14 @@ public class TokenManager {
             String scopeParam = clientSession.getNote(OIDCLoginProtocol.SCOPE_PARAM);
             boolean offlineTokenRequested = RefreshTokenUtil.isOfflineTokenRequested(scopeParam);
             if (offlineTokenRequested) {
-                if (!clientSession.getClient().isOfflineTokensEnabled()) {
-                    event.error(Errors.INVALID_CLIENT);
-                    throw new ErrorResponseException("invalid_client", "Offline tokens not allowed for the client", Response.Status.BAD_REQUEST);
+                if (!OfflineTokenUtils.isOfflineTokenAllowed(realm, clientSession)) {
+                    event.error(Errors.NOT_ALLOWED);
+                    throw new ErrorResponseException("not_allowed", "Offline tokens not allowed for the user or client", Response.Status.BAD_REQUEST);
                 }
 
                 refreshToken = new RefreshToken(accessToken);
                 refreshToken.type(RefreshTokenUtil.TOKEN_TYPE_OFFLINE);
-                new OfflineUserSessionManager().persistOfflineSession(clientSession, userSession);
+                OfflineTokenUtils.persistOfflineSession(clientSession, userSession);
             } else {
                 refreshToken = new RefreshToken(accessToken);
                 refreshToken.expiration(Time.currentTime() + realm.getSsoSessionIdleTimeout());

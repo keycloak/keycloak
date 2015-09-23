@@ -9,6 +9,7 @@ public class RoleEntity extends AbstractIdentifiableEntity {
 
     private String name;
     private String description;
+    private boolean scopeParamRequired;
 
     private List<String> compositeRoleIds;
 
@@ -29,6 +30,14 @@ public class RoleEntity extends AbstractIdentifiableEntity {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isScopeParamRequired() {
+        return scopeParamRequired;
+    }
+
+    public void setScopeParamRequired(boolean scopeParamRequired) {
+        this.scopeParamRequired = scopeParamRequired;
     }
 
     public List<String> getCompositeRoleIds() {

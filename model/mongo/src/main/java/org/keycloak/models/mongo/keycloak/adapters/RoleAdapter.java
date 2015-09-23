@@ -69,6 +69,17 @@ public class RoleAdapter extends AbstractMongoAdapter<MongoRoleEntity> implement
     }
 
     @Override
+    public boolean isScopeParamRequired() {
+        return role.isScopeParamRequired();
+    }
+
+    @Override
+    public void setScopeParamRequired(boolean scopeParamRequired) {
+        role.setScopeParamRequired(scopeParamRequired);
+        updateRole();
+    }
+
+    @Override
     public boolean isComposite() {
         return role.getCompositeRoleIds() != null && role.getCompositeRoleIds().size() > 0;
     }

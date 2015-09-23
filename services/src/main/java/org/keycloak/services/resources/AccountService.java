@@ -46,7 +46,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -58,7 +57,7 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.offline.OfflineUserSessionManager;
+import org.keycloak.services.offline.OfflineTokenUtils;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.util.UriUtils;
@@ -487,7 +486,7 @@ public class AccountService extends AbstractSecuredLocalService {
         // Revoke grant in UserModel
         UserModel user = auth.getUser();
         user.revokeConsentForClient(client.getId());
-        new OfflineUserSessionManager().revokeOfflineToken(user, client);
+        OfflineTokenUtils.revokeOfflineToken(user, client);
 
         // Logout clientSessions for this user and client
         AuthenticationManager.backchannelUserFromClient(session, realm, user, client, uriInfo, headers);

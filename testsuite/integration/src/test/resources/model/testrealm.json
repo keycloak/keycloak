@@ -164,7 +164,6 @@
             "name": "Other Application",
             "enabled": true,
             "serviceAccountsEnabled": true,
-            "offlineTokensEnabled": true,
             "clientAuthenticatorType": "client-jwt",
             "protocolMappers" : [
                 {
@@ -199,7 +198,8 @@
         "application" : {
             "Application" : [
                 {
-                    "name": "app-admin"
+                    "name": "app-admin",
+                    "scopeParamRequired": true
                 },
                 {
                     "name": "app-user"
@@ -207,7 +207,8 @@
             ],
             "OtherApp" : [
                 {
-                    "name": "otherapp-admin"
+                    "name": "otherapp-admin",
+                    "scopeParamRequired": false
                 },
                 {
                     "name": "otherapp-user"

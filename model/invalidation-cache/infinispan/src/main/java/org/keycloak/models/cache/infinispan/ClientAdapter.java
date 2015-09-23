@@ -431,18 +431,6 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public boolean isOfflineTokensEnabled() {
-        if (updated != null) return updated.isOfflineTokensEnabled();
-        return cached.isOfflineTokensEnabled();
-    }
-
-    @Override
-    public void setOfflineTokensEnabled(boolean offlineTokensEnabled) {
-        getDelegateForUpdate();
-        updated.setOfflineTokensEnabled(offlineTokensEnabled);
-    }
-
-    @Override
     public RoleModel getRole(String name) {
         if (updated != null) return updated.getRole(name);
         String id = cached.getRoles().get(name);

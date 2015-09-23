@@ -26,6 +26,7 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -37,6 +38,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
@@ -74,7 +76,6 @@ public class OfflineTokenTest {
             RoleModel customerUserRole = appRealm.getClientByClientId("test-app").getRole("customer-user");
             serviceAccountUser.grantRole(customerUserRole);
 
-            app.setOfflineTokensEnabled(true);
             userId = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm).getId();
 
             URL url = getClass().getResource("/oidc/offline-client-keycloak.json");
@@ -102,6 +103,9 @@ public class OfflineTokenTest {
     protected LoginPage loginPage;
 
     @WebResource
+    protected OAuthGrantPage oauthGrantPage;
+
+    @WebResource
     protected AccountApplicationsPage accountAppPage;
 
     @Rule
@@ -115,23 +119,80 @@ public class OfflineTokenTest {
 
     @Test
     public void offlineTokenDisabledForClient() throws Exception {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.getClientByClientId("offline-client").setFullScopeAllowed(false);
+            }
+
+        });
+
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("offline-client");
+        oauth.redirectUri(offlineClientAppUri);
         oauth.doLogin("test-user@localhost", "password");
 
-        Event loginEvent = events.expectLogin().assertEvent();
+        Event loginEvent = events.expectLogin()
+                .client("offline-client")
+                .detail(Details.REDIRECT_URI, offlineClientAppUri)
+                .assertEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "secret1");
 
         assertEquals(400, tokenResponse.getStatusCode());
-        assertEquals("invalid_client", tokenResponse.getError());
+        assertEquals("not_allowed", tokenResponse.getError());
 
         events.expectCodeToToken(codeId, sessionId)
-                .error("invalid_client")
+                .client("offline-client")
+                .error("not_allowed")
+                .clearDetails()
+                .assertEvent();
+
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.getClientByClientId("offline-client").setFullScopeAllowed(true);
+            }
+
+        });
+    }
+
+    @Test
+    public void offlineTokenUserNotAllowed() throws Exception {
+        String userId = keycloakRule.getUser("test", "keycloak-user@localhost").getId();
+
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("offline-client");
+        oauth.redirectUri(offlineClientAppUri);
+        oauth.doLogin("keycloak-user@localhost", "password");
+
+        Event loginEvent = events.expectLogin()
+                .client("offline-client")
+                .user(userId)
+                .detail(Details.REDIRECT_URI, offlineClientAppUri)
+                .assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "secret1");
+
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertEquals("not_allowed", tokenResponse.getError());
+
+        events.expectCodeToToken(codeId, sessionId)
+                .client("offline-client")
+                .user(userId)
+                .error("not_allowed")
                 .clearDetails()
                 .assertEvent();
     }
@@ -206,8 +267,9 @@ public class OfflineTokenTest {
 
         Assert.assertEquals(userId, refreshedToken.getSubject());
 
-        Assert.assertEquals(1, refreshedToken.getRealmAccess().getRoles().size());
+        Assert.assertEquals(2, refreshedToken.getRealmAccess().getRoles().size());
         Assert.assertTrue(refreshedToken.getRealmAccess().isUserInRole("user"));
+        Assert.assertTrue(refreshedToken.getRealmAccess().isUserInRole(Constants.OFFLINE_ACCESS_ROLE));
 
         Assert.assertEquals(1, refreshedToken.getResourceAccess("test-app").getRoles().size());
         Assert.assertTrue(refreshedToken.getResourceAccess("test-app").isUserInRole("customer-user"));
@@ -374,7 +436,7 @@ public class OfflineTokenTest {
         accountAppPage.open();
         List<String> additionalGrants = accountAppPage.getApplications().get("offline-client").getAdditionalGrants();
         Assert.assertEquals(additionalGrants.size(), 1);
-        Assert.assertEquals(additionalGrants.get(0), "Offline Access");
+        Assert.assertEquals(additionalGrants.get(0), "Offline Token");
         accountAppPage.revokeGrant("offline-client");
         Assert.assertEquals(accountAppPage.getApplications().get("offline-client").getAdditionalGrants().size(), 0);
 
@@ -387,6 +449,55 @@ public class OfflineTokenTest {
         Assert.assertFalse(driver.getCurrentUrl().startsWith(offlineClientAppUri));
         loginPage.assertCurrent();
         Time.setOffset(0);
+    }
+
+    @Test
+    public void testServletWithConsent() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.getClientByClientId("offline-client").setConsentRequired(true);
+            }
+
+        });
+
+        // Assert grant page doesn't have 'Offline Access' role when offline token is not requested
+        driver.navigate().to(offlineClientAppUri);
+        loginPage.login("test-user@localhost", "password");
+        oauthGrantPage.assertCurrent();
+        Assert.assertFalse(driver.getPageSource().contains("Offline access"));
+        oauthGrantPage.cancel();
+
+        // Assert grant page has 'Offline Access' role now
+        String servletUri = UriBuilder.fromUri(offlineClientAppUri)
+                .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.OFFLINE_ACCESS)
+                .build().toString();
+        driver.navigate().to(servletUri);
+        loginPage.login("test-user@localhost", "password");
+        oauthGrantPage.assertCurrent();
+        Assert.assertTrue(driver.getPageSource().contains("Offline access"));
+        oauthGrantPage.accept();
+
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(offlineClientAppUri));
+        Assert.assertEquals(OfflineTokenServlet.tokenInfo.refreshToken.getType(), RefreshTokenUtil.TOKEN_TYPE_OFFLINE);
+
+        accountAppPage.open();
+        AccountApplicationsPage.AppEntry offlineClient = accountAppPage.getApplications().get("offline-client");
+        Assert.assertTrue(offlineClient.getRolesGranted().contains("Offline access"));
+        Assert.assertTrue(offlineClient.getAdditionalGrants().contains("Offline Token"));
+
+        events.clear();
+
+        // Revert change
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.getClientByClientId("offline-client").setConsentRequired(false);
+            }
+
+        });
     }
 
     public static class OfflineTokenServlet extends HttpServlet {

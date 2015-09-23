@@ -112,7 +112,7 @@ public class RealmTest extends AbstractClientTest {
     @Test
     // KEYCLOAK-1110
     public void deleteDefaultRole() {
-        RoleRepresentation role = new RoleRepresentation("test", "test");
+        RoleRepresentation role = new RoleRepresentation("test", "test", false);
         realm.roles().create(role);
 
         assertNotNull(realm.roles().get("test").toRepresentation());

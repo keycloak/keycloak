@@ -26,6 +26,7 @@ public class ImpersonationConstants {
         if (realmAdminApp.getRole(IMPERSONATION_ROLE) != null) return;
         RoleModel impersonationRole = realmAdminApp.addRole(IMPERSONATION_ROLE);
         impersonationRole.setDescription("${role_" + IMPERSONATION_ROLE + "}");
+        impersonationRole.setScopeParamRequired(false);
         adminRole.addCompositeRole(impersonationRole);
     }
 
@@ -36,6 +37,7 @@ public class ImpersonationConstants {
         if (realmAdminApp.getRole(IMPERSONATION_ROLE) != null) return;
         RoleModel impersonationRole = realmAdminApp.addRole(IMPERSONATION_ROLE);
         impersonationRole.setDescription("${role_" + IMPERSONATION_ROLE + "}");
+        impersonationRole.setScopeParamRequired(false);
         RoleModel adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
         adminRole.addCompositeRole(impersonationRole);
     }

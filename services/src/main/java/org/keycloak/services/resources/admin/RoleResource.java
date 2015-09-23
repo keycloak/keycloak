@@ -38,6 +38,7 @@ public abstract class RoleResource {
     protected void updateRole(RoleRepresentation rep, RoleModel role) {
         role.setName(rep.getName());
         role.setDescription(rep.getDescription());
+        if (rep.isScopeParamRequired() != null) role.setScopeParamRequired(rep.isScopeParamRequired());
     }
 
     protected void addComposites(AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {

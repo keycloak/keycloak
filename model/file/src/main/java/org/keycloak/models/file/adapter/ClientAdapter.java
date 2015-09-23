@@ -462,16 +462,6 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public boolean isOfflineTokensEnabled() {
-        return entity.isOfflineTokensEnabled();
-    }
-
-    @Override
-    public void setOfflineTokensEnabled(boolean offlineTokensEnabled) {
-        entity.setOfflineTokensEnabled(offlineTokensEnabled);
-    }
-
-    @Override
     public boolean isDirectGrantsOnly() {
         return entity.isDirectGrantsOnly();
     }

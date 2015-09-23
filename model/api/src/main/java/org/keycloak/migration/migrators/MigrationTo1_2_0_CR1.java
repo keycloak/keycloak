@@ -5,6 +5,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.List;
@@ -26,7 +27,9 @@ public class MigrationTo1_2_0_CR1 {
             client.setFullScopeAllowed(false);
 
             for (String role : Constants.BROKER_SERVICE_ROLES) {
-                client.addRole(role).setDescription("${role_"+ role.toLowerCase().replaceAll("_", "-") +"}");
+                RoleModel roleModel = client.addRole(role);
+                roleModel.setDescription("${role_" + role.toLowerCase().replaceAll("_", "-") + "}");
+                roleModel.setScopeParamRequired(false);
             }
         }
     }
