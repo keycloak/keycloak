@@ -44,7 +44,7 @@ public class MailServer {
                     log.info("-------------------------------------------------------");
                 }
             }
-        } catch (IOException | MessagingException ex) {
+        } catch (IOException | InterruptedException | MessagingException ex) {
             throw new RuntimeException(ex);
         }
     }
