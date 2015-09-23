@@ -21,11 +21,7 @@
  */
 package org.keycloak.testsuite.actions;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.RealmModel;
@@ -36,7 +32,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
+import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
@@ -66,7 +62,7 @@ public class RequiredActionUpdateProfileTest {
     protected LoginPage loginPage;
 
     @WebResource
-    protected LoginUpdateProfilePage updateProfilePage;
+    protected LoginUpdateProfileEditUsernameAllowedPage updateProfilePage;
 
     @Before
     public void before() {
@@ -75,6 +71,8 @@ public class RequiredActionUpdateProfileTest {
             public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
                 UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
                 user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
+                UserModel anotherUser = manager.getSession().users().getUserByEmail("john-doh@localhost", appRealm);
+                anotherUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
             }
         });
     }
@@ -87,7 +85,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "New last", "new@email.com");
+        updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
 
         String sessionId = events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent().getSessionId();
         events.expectRequiredAction(EventType.UPDATE_PROFILE).session(sessionId).assertEvent();
@@ -101,6 +99,41 @@ public class RequiredActionUpdateProfileTest {
         Assert.assertEquals("New first", user.getFirstName());
         Assert.assertEquals("New last", user.getLastName());
         Assert.assertEquals("new@email.com", user.getEmail());
+        Assert.assertEquals("test-user@localhost", user.getUsername());
+    }
+
+    @Test
+    public void updateUsername() {
+        loginPage.open();
+
+        loginPage.login("john-doh@localhost", "password");
+
+        String userId = keycloakRule.getUser("test", "john-doh@localhost").getId();
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.update("New first", "New last", "john-doh@localhost", "new");
+
+        String sessionId = events
+                .expectLogin()
+                .event(EventType.UPDATE_PROFILE)
+                .detail(Details.USERNAME, "john-doh@localhost")
+                .user(userId)
+                .session(AssertEvents.isUUID())
+                .removeDetail(Details.CONSENT)
+                .assertEvent()
+                .getSessionId();
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").user(userId).session(sessionId).assertEvent();
+
+        // assert user is really updated in persistent store
+        UserRepresentation user = keycloakRule.getUser("test", "new");
+        Assert.assertEquals("New first", user.getFirstName());
+        Assert.assertEquals("New last", user.getLastName());
+        Assert.assertEquals("john-doh@localhost", user.getEmail());
+        Assert.assertEquals("new", user.getUsername());
     }
 
     @Test
@@ -111,7 +144,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("", "New last", "new@email.com");
+        updateProfilePage.update("", "New last", "new@email.com", "new");
 
         updateProfilePage.assertCurrent();
 
@@ -133,7 +166,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "", "new@email.com");
+        updateProfilePage.update("New first", "", "new@email.com", "new");
 
         updateProfilePage.assertCurrent();
 
@@ -155,7 +188,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "New last", "");
+        updateProfilePage.update("New first", "New last", "", "new");
 
         updateProfilePage.assertCurrent();
 
@@ -177,7 +210,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "New last", "invalidemail");
+        updateProfilePage.update("New first", "New last", "invalidemail", "invalid");
 
         updateProfilePage.assertCurrent();
 
@@ -192,6 +225,52 @@ public class RequiredActionUpdateProfileTest {
     }
 
     @Test
+    public void updateProfileMissingUsername() {
+        loginPage.open();
+
+        loginPage.login("john-doh@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.update("New first", "New last", "new@email.com", "");
+
+        updateProfilePage.assertCurrent();
+
+        // assert that form holds submitted values during validation error
+        Assert.assertEquals("New first", updateProfilePage.getFirstName());
+        Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
+        Assert.assertEquals("", updateProfilePage.getUsername());
+
+        Assert.assertEquals("Please specify username.", updateProfilePage.getError());
+
+        events.assertEmpty();
+    }
+
+    @Test
+    public void updateProfileDuplicateUsername() {
+        loginPage.open();
+
+        loginPage.login("john-doh@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
+
+        updateProfilePage.assertCurrent();
+
+        // assert that form holds submitted values during validation error
+        Assert.assertEquals("New first", updateProfilePage.getFirstName());
+        Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
+        Assert.assertEquals("test-user@localhost", updateProfilePage.getUsername());
+
+        Assert.assertEquals("Username already exists.", updateProfilePage.getError());
+
+        events.assertEmpty();
+    }
+
+    @Test
     public void updateProfileDuplicatedEmail() {
         loginPage.open();
 
@@ -199,7 +278,7 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.update("New first", "New last", "keycloak-user@localhost");
+        updateProfilePage.update("New first", "New last", "keycloak-user@localhost", "test-user@localhost");
 
         updateProfilePage.assertCurrent();
 

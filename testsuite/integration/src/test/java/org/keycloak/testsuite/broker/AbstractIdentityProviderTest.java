@@ -17,7 +17,6 @@
  */
 package org.keycloak.testsuite.broker;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
