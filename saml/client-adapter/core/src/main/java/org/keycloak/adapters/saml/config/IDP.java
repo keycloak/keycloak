@@ -13,7 +13,6 @@ public class IDP implements Serializable {
     public static class SingleSignOnService implements Serializable {
         private boolean signRequest;
         private boolean validateResponseSignature;
-        private String signatureCanonicalizationMethod;
         private String requestBinding;
         private String responseBinding;
         private String bindingUrl;
@@ -32,14 +31,6 @@ public class IDP implements Serializable {
 
         public void setValidateResponseSignature(boolean validateResponseSignature) {
             this.validateResponseSignature = validateResponseSignature;
-        }
-
-        public String getSignatureCanonicalizationMethod() {
-            return signatureCanonicalizationMethod;
-        }
-
-        public void setSignatureCanonicalizationMethod(String signatureCanonicalizationMethod) {
-            this.signatureCanonicalizationMethod = signatureCanonicalizationMethod;
         }
 
         public String getRequestBinding() {
@@ -72,7 +63,6 @@ public class IDP implements Serializable {
         private boolean signResponse;
         private boolean validateRequestSignature;
         private boolean validateResponseSignature;
-        private String signatureCanonicalizationMethod;
         private String requestBinding;
         private String responseBinding;
         private String postBindingUrl;
@@ -108,14 +98,6 @@ public class IDP implements Serializable {
 
         public void setValidateResponseSignature(boolean validateResponseSignature) {
             this.validateResponseSignature = validateResponseSignature;
-        }
-
-        public String getSignatureCanonicalizationMethod() {
-            return signatureCanonicalizationMethod;
-        }
-
-        public void setSignatureCanonicalizationMethod(String signatureCanonicalizationMethod) {
-            this.signatureCanonicalizationMethod = signatureCanonicalizationMethod;
         }
 
         public String getRequestBinding() {

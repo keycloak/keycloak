@@ -625,6 +625,7 @@ public class SamlProtocol implements LoginProtocol {
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
                                          .assertionExpiration(realm.getAccessCodeLifespan())
                                          .issuer(getResponseIssuer(realm))
+                                         .sessionIndex(clientSession.getId())
                                          .userPrincipal(clientSession.getNote(SAML_NAME_ID), clientSession.getNote(SAML_NAME_ID_FORMAT))
                                          .destination(logoutUrl);
         return logoutBuilder;

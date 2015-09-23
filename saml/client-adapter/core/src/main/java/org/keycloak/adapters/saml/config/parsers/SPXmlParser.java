@@ -37,6 +37,8 @@ public class SPXmlParser extends AbstractParser {
         sp.setSslPolicy(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.SSL_POLICY_ATTR));
         sp.setLogoutPage(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.LOGOUT_PAGE_ATTR));
         sp.setNameIDPolicyFormat(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.NAME_ID_POLICY_FORMAT_ATTR));
+        sp.setSignatureCanonicalizationMethod(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.SIGNATURE_CANONICALIZATION_METHOD_ATTR));
+        sp.setSignatureAlgorithm(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.SIGNATURE_ALGORITHM_ATTR));
         sp.setForceAuthentication(StaxParserUtil.getBooleanAttributeValue(startElement, ConfigXmlConstants.FORCE_AUTHENTICATION_ATTR));
         while (xmlEventReader.hasNext()) {
             XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);

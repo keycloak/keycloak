@@ -2,6 +2,8 @@
     <SP entityID="sp"
         sslPolicy="ssl"
         nameIDPolicyFormat="format"
+        signatureAlgorithm=""
+        sgnatureCanonicalizationMethod=""
         forceAuthentication="true">
         <Keys>
             <Key signing="true" >
@@ -27,7 +29,6 @@
         <IDP entityID="idp">
             <SingleSignOnService signRequest="true"
                                  validateResponseSignature="true"
-                                 signatureCanonicalizationMethod="canon"
                                  requestBinding="post"
                                  bindingUrl="url"
                     />
@@ -37,7 +38,6 @@
                     validateResponseSignature="true"
                     signRequest="true"
                     signResponse="true"
-                    signatureCanonicalizationMethod="canon"
                     requestBinding="redirect"
                     responseBinding="post"
                     postBindingUrl="posturl"
@@ -51,11 +51,5 @@
                 </Key>
             </Keys>
         </IDP>
-        <Keys>
-            <KeyStore>
-
-            </KeyStore>
-        </Keys>
-
     </SP>
 </keycloak-saml-adapter>

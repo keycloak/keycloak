@@ -4,11 +4,13 @@ import io.undertow.security.api.SecurityContext;
 import io.undertow.security.idm.Account;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.Session;
+import io.undertow.server.session.SessionManager;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import io.undertow.servlet.spec.HttpSessionImpl;
 import io.undertow.servlet.util.SavedRequest;
 import io.undertow.util.Sessions;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.SessionIdMapper;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
@@ -17,6 +19,8 @@ import org.keycloak.util.KeycloakUriBuilder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.security.Principal;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -31,31 +35,66 @@ public class ServletSamlSessionStore implements SamlSessionStore {
     private final HttpServerExchange exchange;
     private final UndertowUserSessionManagement sessionManagement;
     private final SecurityContext securityContext;
+    private final SessionIdMapper idMapper;
 
     public ServletSamlSessionStore(HttpServerExchange exchange, UndertowUserSessionManagement sessionManagement,
-                                   SecurityContext securityContext) {
+                                   SecurityContext securityContext,
+                                   SessionIdMapper idMapper) {
         this.exchange = exchange;
         this.sessionManagement = sessionManagement;
         this.securityContext = securityContext;
+        this.idMapper = idMapper;
     }
 
     @Override
     public void logoutAccount() {
         HttpSession session = getSession(false);
         if (session != null) {
-            session.removeAttribute(SamlSession.class.getName());
+            SamlSession samlSession = (SamlSession)session.getAttribute(SamlSession.class.getName());
+            if (samlSession != null) {
+                if (samlSession.getSessionIndex() != null) {
+                    idMapper.removeSession(session.getId());
+                }
+                session.removeAttribute(SamlSession.class.getName());
+            }
             session.removeAttribute(SAML_REDIRECT_URI);
         }
     }
 
     @Override
     public void logoutByPrincipal(String principal) {
+        Set<String> sessions = idMapper.getUserSessions(principal);
+        if (sessions != null) {
+            List<String> ids = new LinkedList<>();
+            ids.addAll(sessions);
+            logoutSessionIds(ids);
+            for (String id : ids) {
+                idMapper.removeSession(id);
+            }
+        }
 
     }
 
     @Override
     public void logoutBySsoId(List<String> ssoIds) {
+        if (ssoIds == null) return;
+        List<String> sessionIds = new LinkedList<>();
+        for (String id : ssoIds) {
+             String sessionId = idMapper.getSessionFromSSO(id);
+             if (sessionId != null) {
+                 sessionIds.add(sessionId);
+                 idMapper.removeSession(sessionId);
+             }
 
+        }
+        logoutSessionIds(sessionIds);
+    }
+
+    protected void logoutSessionIds(List<String> sessionIds) {
+        if (sessionIds == null || sessionIds.isEmpty()) return;
+        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+        SessionManager sessionManager = servletRequestContext.getDeployment().getSessionManager();
+        sessionManagement.logoutHttpSessions(sessionManager, sessionIds);
     }
 
     @Override
@@ -93,6 +132,7 @@ public class ServletSamlSessionStore implements SamlSessionStore {
         HttpSession session = getSession(true);
         session.setAttribute(SamlSession.class.getName(), account);
         sessionManagement.login(servletRequestContext.getDeployment().getSessionManager());
+        idMapper.map(account.getSessionIndex(), account.getPrincipal().getSamlSubject(), session.getId());
 
     }
 

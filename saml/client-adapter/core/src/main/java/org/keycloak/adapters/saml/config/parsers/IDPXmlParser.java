@@ -72,7 +72,6 @@ public class IDPXmlParser extends AbstractParser {
         slo.setSignRequest(StaxParserUtil.getBooleanAttributeValue(element, ConfigXmlConstants.SIGN_REQUEST_ATTR));
         slo.setValidateResponseSignature(StaxParserUtil.getBooleanAttributeValue(element, ConfigXmlConstants.VALIDATE_RESPONSE_SIGNATURE_ATTR));
         slo.setValidateRequestSignature(StaxParserUtil.getBooleanAttributeValue(element, ConfigXmlConstants.VALIDATE_REQUEST_SIGNATURE_ATTR));
-        slo.setSignatureCanonicalizationMethod(StaxParserUtil.getAttributeValue(element, ConfigXmlConstants.SIGNATURE_CANONICALIZATION_METHOD_ATTR));
         slo.setRequestBinding(StaxParserUtil.getAttributeValue(element, ConfigXmlConstants.REQUEST_BINDING_ATTR));
         slo.setResponseBinding(StaxParserUtil.getAttributeValue(element, ConfigXmlConstants.RESPONSE_BINDING_ATTR));
         slo.setSignResponse(StaxParserUtil.getBooleanAttributeValue(element, ConfigXmlConstants.SIGN_RESPONSE_ATTR));
@@ -86,7 +85,6 @@ public class IDPXmlParser extends AbstractParser {
         StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
         sso.setSignRequest(StaxParserUtil.getBooleanAttributeValue(element, ConfigXmlConstants.SIGN_REQUEST_ATTR));
         sso.setValidateResponseSignature(StaxParserUtil.getBooleanAttributeValue(element, ConfigXmlConstants.VALIDATE_RESPONSE_SIGNATURE_ATTR));
-        sso.setSignatureCanonicalizationMethod(StaxParserUtil.getAttributeValue(element, ConfigXmlConstants.SIGNATURE_CANONICALIZATION_METHOD_ATTR));
         sso.setRequestBinding(StaxParserUtil.getAttributeValue(element, ConfigXmlConstants.REQUEST_BINDING_ATTR));
         sso.setResponseBinding(StaxParserUtil.getAttributeValue(element, ConfigXmlConstants.RESPONSE_BINDING_ATTR));
         sso.setBindingUrl(StaxParserUtil.getAttributeValue(element, ConfigXmlConstants.BINDING_URL_ATTR));

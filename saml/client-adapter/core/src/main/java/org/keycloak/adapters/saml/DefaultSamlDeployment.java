@@ -3,6 +3,7 @@ package org.keycloak.adapters.saml;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.config.IDP;
 import org.keycloak.enums.SslRequired;
+import org.keycloak.saml.SignatureAlgorithm;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -18,7 +19,6 @@ public class DefaultSamlDeployment implements SamlDeployment {
     public static class DefaultSingleSignOnService implements IDP.SingleSignOnService {
         private boolean signRequest;
         private boolean validateResponseSignature;
-        private String signatureCanonicalizationMethod;
         private Binding requestBinding;
         private Binding responseBinding;
         private String requestBindingUrl;
@@ -33,12 +33,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
             return validateResponseSignature;
         }
 
-        @Override
-        public String getSignatureCanonicalizationMethod() {
-            return signatureCanonicalizationMethod;
-        }
-
-        @Override
+         @Override
         public Binding getRequestBinding() {
             return requestBinding;
         }
@@ -61,10 +56,6 @@ public class DefaultSamlDeployment implements SamlDeployment {
             this.validateResponseSignature = validateResponseSignature;
         }
 
-        public void setSignatureCanonicalizationMethod(String signatureCanonicalizationMethod) {
-            this.signatureCanonicalizationMethod = signatureCanonicalizationMethod;
-        }
-
         public void setRequestBinding(Binding requestBinding) {
             this.requestBinding = requestBinding;
         }
@@ -83,7 +74,6 @@ public class DefaultSamlDeployment implements SamlDeployment {
         private boolean validateResponseSignature;
         private boolean signRequest;
         private boolean signResponse;
-        private String signatureCanonicalizationMethod;
         private Binding requestBinding;
         private Binding responseBinding;
         private String requestBindingUrl;
@@ -109,12 +99,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
             return signResponse;
         }
 
-        @Override
-        public String getSignatureCanonicalizationMethod() {
-            return signatureCanonicalizationMethod;
-        }
-
-        @Override
+         @Override
         public Binding getRequestBinding() {
             return requestBinding;
         }
@@ -148,10 +133,6 @@ public class DefaultSamlDeployment implements SamlDeployment {
 
         public void setSignResponse(boolean signResponse) {
             this.signResponse = signResponse;
-        }
-
-        public void setSignatureCanonicalizationMethod(String signatureCanonicalizationMethod) {
-            this.signatureCanonicalizationMethod = signatureCanonicalizationMethod;
         }
 
         public void setRequestBinding(Binding requestBinding) {
@@ -233,6 +214,8 @@ public class DefaultSamlDeployment implements SamlDeployment {
     private PrincipalNamePolicy principalNamePolicy = PrincipalNamePolicy.FROM_NAME_ID;
     private String principalAttributeName;
     private String logoutPage;
+    private SignatureAlgorithm signatureAlgorithm;
+    private String signatureCanonicalizationMethod;
 
 
     @Override
@@ -359,5 +342,23 @@ public class DefaultSamlDeployment implements SamlDeployment {
 
     public void setLogoutPage(String logoutPage) {
         this.logoutPage = logoutPage;
+    }
+
+     @Override
+    public String getSignatureCanonicalizationMethod() {
+        return signatureCanonicalizationMethod;
+    }
+
+    public void setSignatureCanonicalizationMethod(String signatureCanonicalizationMethod) {
+        this.signatureCanonicalizationMethod = signatureCanonicalizationMethod;
+    }
+
+    @Override
+    public SignatureAlgorithm getSignatureAlgorithm() {
+        return signatureAlgorithm;
+    }
+
+    public void setSignatureAlgorithm(SignatureAlgorithm signatureAlgorithm) {
+        this.signatureAlgorithm = signatureAlgorithm;
     }
 }

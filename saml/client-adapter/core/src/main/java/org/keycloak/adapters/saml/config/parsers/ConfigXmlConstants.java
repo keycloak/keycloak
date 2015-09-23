@@ -11,6 +11,8 @@ public class ConfigXmlConstants {
     public static final String SSL_POLICY_ATTR = "sslPolicy";
     public static final String NAME_ID_POLICY_FORMAT_ATTR = "nameIDPolicyFormat";
     public static final String FORCE_AUTHENTICATION_ATTR = "forceAuthentication";
+    public static final String SIGNATURE_ALGORITHM_ATTR = "signatureAlgorithm";
+    public static final String SIGNATURE_CANONICALIZATION_METHOD_ATTR = "signatureCanonicalizationMethod";
     public static final String LOGOUT_PAGE_ATTR = "logoutPage";
 
 
@@ -45,7 +47,6 @@ public class ConfigXmlConstants {
     public static final String SINGLE_LOGOUT_SERVICE_ELEMENT = "SingleLogoutService";
     public static final String SIGN_REQUEST_ATTR = "signRequest";
     public static final String SIGN_RESPONSE_ATTR = "signResponse";
-    public static final String SIGNATURE_CANONICALIZATION_METHOD_ATTR = "signatureCanonicalizationMethod";
     public static final String REQUEST_BINDING_ATTR = "requestBinding";
     public static final String RESPONSE_BINDING_ATTR = "responseBinding";
     public static final String BINDING_URL_ATTR = "bindingUrl";

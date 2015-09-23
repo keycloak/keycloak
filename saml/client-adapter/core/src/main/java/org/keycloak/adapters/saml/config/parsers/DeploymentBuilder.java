@@ -6,6 +6,7 @@ import org.keycloak.adapters.saml.config.Key;
 import org.keycloak.adapters.saml.config.KeycloakSamlAdapter;
 import org.keycloak.adapters.saml.config.SP;
 import org.keycloak.enums.SslRequired;
+import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.util.PemUtils;
 
@@ -40,6 +41,11 @@ public class DeploymentBuilder {
         deployment.setForceAuthentication(sp.isForceAuthentication());
         deployment.setNameIDPolicyFormat(sp.getNameIDPolicyFormat());
         deployment.setLogoutPage(sp.getLogoutPage());
+        deployment.setSignatureCanonicalizationMethod(sp.getSignatureCanonicalizationMethod());
+        deployment.setSignatureAlgorithm(SignatureAlgorithm.RSA_SHA256);
+        if (sp.getSignatureAlgorithm() != null) {
+            deployment.setSignatureAlgorithm(SignatureAlgorithm.valueOf(sp.getSignatureAlgorithm()));
+        }
         if (sp.getPrincipalNameMapping() != null) {
             SamlDeployment.PrincipalNamePolicy policy = SamlDeployment.PrincipalNamePolicy.valueOf(sp.getPrincipalNameMapping().getPolicy());
             deployment.setPrincipalNamePolicy(policy);
@@ -51,44 +57,46 @@ public class DeploymentBuilder {
             SslRequired ssl = SslRequired.valueOf(sp.getSslPolicy());
             deployment.setSslRequired(ssl);
         }
-        for (Key key : sp.getKeys()) {
-            if (key.isSigning()) {
-                PrivateKey privateKey = null;
-                PublicKey publicKey = null;
-                if (key.getKeystore() != null) {
-                    KeyStore keyStore = loadKeystore(resourceLoader, key);
-                    Certificate cert  = null;
-                    try {
-                        cert = keyStore.getCertificate(key.getKeystore().getCertificateAlias());
-                        privateKey = (PrivateKey)keyStore.getKey(key.getKeystore().getPrivateKeyAlias(), key.getKeystore().getPrivateKeyPassword().toCharArray());
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                    publicKey = cert.getPublicKey();
-                } else {
-                    if (key.getPrivateKeyPem() == null) {
-                        throw new RuntimeException("SP signing key must have a PrivateKey defined");
-                    }
-                    try {
-                        privateKey = PemUtils.decodePrivateKey(key.getPrivateKeyPem().trim());
-                        if (key.getPublicKeyPem() == null &&key.getCertificatePem() == null) {
-                            throw new RuntimeException("Sp signing key must have a PublicKey or Certificate defined");
+        if (sp.getKeys() != null) {
+            for (Key key : sp.getKeys()) {
+                if (key.isSigning()) {
+                    PrivateKey privateKey = null;
+                    PublicKey publicKey = null;
+                    if (key.getKeystore() != null) {
+                        KeyStore keyStore = loadKeystore(resourceLoader, key);
+                        Certificate cert = null;
+                        try {
+                            cert = keyStore.getCertificate(key.getKeystore().getCertificateAlias());
+                            privateKey = (PrivateKey) keyStore.getKey(key.getKeystore().getPrivateKeyAlias(), key.getKeystore().getPrivateKeyPassword().toCharArray());
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
                         }
-                        publicKey = getPublicKeyFromPem(key);
+                        publicKey = cert.getPublicKey();
+                    } else {
+                        if (key.getPrivateKeyPem() == null) {
+                            throw new RuntimeException("SP signing key must have a PrivateKey defined");
+                        }
+                        try {
+                            privateKey = PemUtils.decodePrivateKey(key.getPrivateKeyPem().trim());
+                            if (key.getPublicKeyPem() == null && key.getCertificatePem() == null) {
+                                throw new RuntimeException("Sp signing key must have a PublicKey or Certificate defined");
+                            }
+                            publicKey = getPublicKeyFromPem(key);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    KeyPair keyPair = new KeyPair(publicKey, privateKey);
+                    deployment.setSigningKeyPair(keyPair);
+
+                } else if (key.isEncryption()) {
+                    KeyStore keyStore = loadKeystore(resourceLoader, key);
+                    try {
+                        PrivateKey privateKey = (PrivateKey) keyStore.getKey(key.getKeystore().getPrivateKeyAlias(), key.getKeystore().getPrivateKeyPassword().toCharArray());
+                        deployment.setDecryptionKey(privateKey);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
-                }
-                KeyPair keyPair = new KeyPair(publicKey, privateKey);
-                deployment.setSigningKeyPair(keyPair);
-
-            } else if (key.isEncryption()) {
-                KeyStore keyStore = loadKeystore(resourceLoader, key);
-                try {
-                    PrivateKey privateKey = (PrivateKey)keyStore.getKey(key.getKeystore().getPrivateKeyAlias(), key.getKeystore().getPrivateKeyPassword().toCharArray());
-                    deployment.setDecryptionKey(privateKey);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
                 }
             }
         }
@@ -97,8 +105,9 @@ public class DeploymentBuilder {
         idp.setEntityID(sp.getIdp().getEntityID());
         sso.setRequestBinding(SamlDeployment.Binding.parseBinding(sp.getIdp().getSingleSignOnService().getRequestBinding()));
         sso.setRequestBindingUrl(sp.getIdp().getSingleSignOnService().getBindingUrl());
-        sso.setResponseBinding(SamlDeployment.Binding.parseBinding(sp.getIdp().getSingleSignOnService().getResponseBinding()));
-        sso.setSignatureCanonicalizationMethod(sp.getIdp().getSingleSignOnService().getSignatureCanonicalizationMethod());
+        if (sp.getIdp().getSingleSignOnService().getResponseBinding() != null) {
+            sso.setResponseBinding(SamlDeployment.Binding.parseBinding(sp.getIdp().getSingleSignOnService().getResponseBinding()));
+        }
         sso.setSignRequest(sp.getIdp().getSingleSignOnService().isSignRequest());
         sso.setValidateResponseSignature(sp.getIdp().getSingleSignOnService().isValidateResponseSignature());
 
@@ -106,7 +115,6 @@ public class DeploymentBuilder {
         slo.setSignResponse(sp.getIdp().getSingleLogoutService().isSignResponse());
         slo.setValidateResponseSignature(sp.getIdp().getSingleLogoutService().isValidateResponseSignature());
         slo.setValidateRequestSignature(sp.getIdp().getSingleLogoutService().isValidateRequestSignature());
-        slo.setSignatureCanonicalizationMethod(sp.getIdp().getSingleLogoutService().getSignatureCanonicalizationMethod());
         slo.setRequestBinding(SamlDeployment.Binding.parseBinding(sp.getIdp().getSingleLogoutService().getRequestBinding()));
         slo.setResponseBinding(SamlDeployment.Binding.parseBinding(sp.getIdp().getSingleLogoutService().getResponseBinding()));
         if (slo.getRequestBinding() == SamlDeployment.Binding.POST) {
@@ -119,26 +127,28 @@ public class DeploymentBuilder {
         } else {
             slo.setResponseBindingUrl(sp.getIdp().getSingleLogoutService().getRedirectBindingUrl());
         }
-        for (Key key : sp.getIdp().getKeys()) {
-            if (key.isSigning()) {
-                if (key.getKeystore() != null) {
-                    KeyStore keyStore = loadKeystore(resourceLoader, key);
-                    Certificate cert  = null;
-                    try {
-                        cert = keyStore.getCertificate(key.getKeystore().getCertificateAlias());
-                    } catch (KeyStoreException e) {
-                        throw new RuntimeException(e);
-                    }
-                    idp.setSignatureValidationKey(cert.getPublicKey());
-                } else {
-                    if (key.getPublicKeyPem() == null && key.getCertificatePem() == null) {
-                        throw new RuntimeException("IDP signing key must have a PublicKey or Certificate defined");
-                    }
-                    try {
-                        PublicKey publicKey = getPublicKeyFromPem(key);
-                        idp.setSignatureValidationKey(publicKey);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
+        if (sp.getIdp().getKeys() != null) {
+            for (Key key : sp.getIdp().getKeys()) {
+                if (key.isSigning()) {
+                    if (key.getKeystore() != null) {
+                        KeyStore keyStore = loadKeystore(resourceLoader, key);
+                        Certificate cert = null;
+                        try {
+                            cert = keyStore.getCertificate(key.getKeystore().getCertificateAlias());
+                        } catch (KeyStoreException e) {
+                            throw new RuntimeException(e);
+                        }
+                        idp.setSignatureValidationKey(cert.getPublicKey());
+                    } else {
+                        if (key.getPublicKeyPem() == null && key.getCertificatePem() == null) {
+                            throw new RuntimeException("IDP signing key must have a PublicKey or Certificate defined");
+                        }
+                        try {
+                            PublicKey publicKey = getPublicKeyFromPem(key);
+                            idp.setSignatureValidationKey(publicKey);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
             }

@@ -43,18 +43,21 @@ public class InitiateLogin implements AuthChallenge {
                 nameIDPolicyFormat =  JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get();
             }
 
-            String protocolBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
 
-            if (deployment.getIDP().getSingleSignOnService().getResponseBinding() == SamlDeployment.Binding.POST) {
-                protocolBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
-            }
 
             SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
                     .destination(destinationUrl)
                     .issuer(issuerURL)
                     .forceAuthn(deployment.isForceAuthentication())
-                    .protocolBinding(protocolBinding)
                     .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat));
+            if (deployment.getIDP().getSingleSignOnService().getResponseBinding() != null) {
+                String protocolBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
+                if (deployment.getIDP().getSingleSignOnService().getResponseBinding() == SamlDeployment.Binding.POST) {
+                    protocolBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
+                }
+                authnRequestBuilder.protocolBinding(protocolBinding);
+
+            }
             if (deployment.getAssertionConsumerServiceUrl() != null) {
                 authnRequestBuilder.assertionConsumerUrl(deployment.getAssertionConsumerServiceUrl());
             }
@@ -67,8 +70,8 @@ public class InitiateLogin implements AuthChallenge {
                 if (keypair == null) {
                     throw new RuntimeException("Signing keys not configured");
                 }
-                if (deployment.getIDP().getSingleSignOnService().getSignatureCanonicalizationMethod() != null) {
-                    binding.canonicalizationMethod(deployment.getIDP().getSingleSignOnService().getSignatureCanonicalizationMethod());
+                if (deployment.getSignatureCanonicalizationMethod() != null) {
+                    binding.canonicalizationMethod(deployment.getSignatureCanonicalizationMethod());
                 }
 
                 binding.signWith(keypair);
@@ -78,7 +81,7 @@ public class InitiateLogin implements AuthChallenge {
 
             Document document = authnRequestBuilder.toDocument();
             SamlDeployment.Binding samlBinding = deployment.getIDP().getSingleSignOnService().getRequestBinding();
-            SamlUtil.sendSaml(httpFacade, actionUrl, binding, document, samlBinding);
+            SamlUtil.sendSaml(true, httpFacade, actionUrl, binding, document, samlBinding);
         } catch (Exception e) {
             throw new RuntimeException("Could not create authentication request.", e);
         }

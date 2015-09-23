@@ -55,7 +55,6 @@ public class XmlParserTest {
         Assert.assertEquals("idp", idp.getEntityID());
         Assert.assertTrue(idp.getSingleSignOnService().isSignRequest());
         Assert.assertTrue(idp.getSingleSignOnService().isValidateResponseSignature());
-        Assert.assertEquals("canon", idp.getSingleSignOnService().getSignatureCanonicalizationMethod());
         Assert.assertEquals("post", idp.getSingleSignOnService().getRequestBinding());
         Assert.assertEquals("url", idp.getSingleSignOnService().getBindingUrl());
 
@@ -63,7 +62,6 @@ public class XmlParserTest {
         Assert.assertTrue(idp.getSingleLogoutService().isSignResponse());
         Assert.assertTrue(idp.getSingleLogoutService().isValidateRequestSignature());
         Assert.assertTrue(idp.getSingleLogoutService().isValidateResponseSignature());
-        Assert.assertEquals("canon", idp.getSingleLogoutService().getSignatureCanonicalizationMethod());
         Assert.assertEquals("redirect", idp.getSingleLogoutService().getRequestBinding());
         Assert.assertEquals("post", idp.getSingleLogoutService().getResponseBinding());
         Assert.assertEquals("posturl", idp.getSingleLogoutService().getPostBindingUrl());

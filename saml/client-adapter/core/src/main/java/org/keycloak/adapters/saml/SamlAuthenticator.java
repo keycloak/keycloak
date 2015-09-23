@@ -25,11 +25,11 @@ import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.Base64;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
-import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import org.keycloak.util.KeycloakUriBuilder;
 import org.keycloak.util.MultivaluedHashMap;
 import org.w3c.dom.Document;
@@ -103,7 +103,7 @@ public abstract class SamlAuthenticator {
         binding.relayState("logout");
 
         try {
-            SamlUtil.sendSaml(facade, deployment.getIDP().getSingleLogoutService().getRequestBindingUrl(), binding, logoutBuilder.buildDocument(), deployment.getIDP().getSingleLogoutService().getRequestBinding());
+            SamlUtil.sendSaml(true, facade, deployment.getIDP().getSingleLogoutService().getRequestBindingUrl(), binding, logoutBuilder.buildDocument(), deployment.getIDP().getSingleLogoutService().getRequestBinding());
         } catch (ProcessingException e) {
             throw new RuntimeException(e);
         } catch (ConfigurationException e) {
@@ -119,15 +119,22 @@ public abstract class SamlAuthenticator {
     protected AuthOutcome handleSamlRequest(String samlRequest, String relayState) {
         SAMLDocumentHolder holder = null;
         boolean postBinding = false;
+        String requestUri = facade.getRequest().getURI();
         if (facade.getRequest().getMethod().equalsIgnoreCase("GET")) {
+            // strip out query params
+            int index = requestUri.indexOf('?');
+            if (index > -1) {
+                requestUri = requestUri.substring(0, index);
+            }
             holder = SAMLRequestParser.parseRequestRedirectBinding(samlRequest);
         } else {
             postBinding = true;
             holder = SAMLRequestParser.parseRequestPostBinding(samlRequest);
         }
         RequestAbstractType requestAbstractType = (RequestAbstractType) holder.getSamlObject();
-        if (!facade.getRequest().getURI().toString().equals(requestAbstractType.getDestination())) {
-            throw new RuntimeException("destination not equal to request");
+        if (!requestUri.equals(requestAbstractType.getDestination().toString())) {
+            log.error("expected destination '" + requestUri + "' got '" + requestAbstractType.getDestination() + "'");
+            throw new RuntimeException("destination not equal to request.");
         }
 
         if (requestAbstractType instanceof LogoutRequestType) {
@@ -156,14 +163,15 @@ public abstract class SamlAuthenticator {
         builder.issuer(issuerURL);
         BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder().relayState(relayState);
         if (deployment.getIDP().getSingleLogoutService().signResponse()) {
-            binding.signWith(deployment.getSigningKeyPair())
+            binding.signatureAlgorithm(deployment.getSignatureAlgorithm())
+                    .signWith(deployment.getSigningKeyPair())
                     .signDocument();
-            binding.canonicalizationMethod(deployment.getIDP().getSingleLogoutService().getSignatureCanonicalizationMethod());
+            if (deployment.getSignatureCanonicalizationMethod() != null) binding.canonicalizationMethod(deployment.getSignatureCanonicalizationMethod());
         }
 
 
         try {
-            SamlUtil.sendSaml(facade, deployment.getIDP().getSingleLogoutService().getResponseBindingUrl(), binding, builder.buildDocument(),
+            SamlUtil.sendSaml(false, facade, deployment.getIDP().getSingleLogoutService().getResponseBindingUrl(), binding, builder.buildDocument(),
                     deployment.getIDP().getSingleLogoutService().getResponseBinding());
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);
@@ -180,7 +188,12 @@ public abstract class SamlAuthenticator {
     protected AuthOutcome handleSamlResponse(String samlResponse, String relayState) {
         SAMLDocumentHolder holder = null;
         boolean postBinding = false;
+        String requestUri = facade.getRequest().getURI();
         if (facade.getRequest().getMethod().equalsIgnoreCase("GET")) {
+            int index = requestUri.indexOf('?');
+            if (index > -1) {
+                requestUri = requestUri.substring(0, index);
+            }
             holder = extractRedirectBindingResponse(samlResponse);
         } else {
             postBinding = true;
@@ -188,18 +201,18 @@ public abstract class SamlAuthenticator {
         }
         StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
         // validate destination
-        if (!facade.getRequest().getURI().toString().equals(statusResponse.getDestination())) {
+        if (!requestUri.equals(statusResponse.getDestination())) {
             throw new RuntimeException("destination not equal to request");
         }
         if (statusResponse instanceof ResponseType) {
             if (deployment.getIDP().getSingleSignOnService().validateResponseSignature()) {
-                validateSamlSignature(holder, postBinding, GeneralConstants.SAML_REQUEST_KEY);
+                validateSamlSignature(holder, postBinding, GeneralConstants.SAML_RESPONSE_KEY);
             }
             return handleLoginResponse((ResponseType)statusResponse);
 
         } else {
             if (deployment.getIDP().getSingleLogoutService().validateResponseSignature()) {
-                validateSamlSignature(holder, postBinding, GeneralConstants.SAML_REQUEST_KEY);
+                validateSamlSignature(holder, postBinding, GeneralConstants.SAML_RESPONSE_KEY);
             }
             // todo need to check that it is actually a LogoutResponse
             return handleLogoutResponse(holder, statusResponse, relayState);
@@ -320,10 +333,16 @@ public abstract class SamlAuthenticator {
         sessionStore.saveAccount(account);
         completeAuthentication(account);
 
+
         // redirect to original request, it will be restored
-        facade.getResponse().setHeader("Location", sessionStore.getRedirectUri());
-        facade.getResponse().setStatus(302);
-        facade.getResponse().end();
+        String redirectUri = sessionStore.getRedirectUri();
+        if (redirectUri != null) {
+            facade.getResponse().setHeader("Location", redirectUri);
+            facade.getResponse().setStatus(302);
+            facade.getResponse().end();
+        } else {
+            log.debug("IDP initiated invocation");
+        }
 
 
         return AuthOutcome.AUTHENTICATED;
@@ -400,7 +419,9 @@ public abstract class SamlAuthenticator {
         String signature = facade.getRequest().getQueryParamValue(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY);
         String decodedAlgorithm = facade.getRequest().getQueryParamValue(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
 
-        if (request == null) throw new VerificationException("SAM was null");
+        if (request == null) {
+            throw new VerificationException("SAML Request was null");
+        }
         if (algorithm == null) throw new VerificationException("SigAlg was null");
         if (signature == null) throw new VerificationException("Signature was null");
 
@@ -417,7 +438,8 @@ public abstract class SamlAuthenticator {
         String rawQuery = builder.build().getRawQuery();
 
         try {
-            byte[] decodedSignature = RedirectBindingUtil.urlBase64Decode(signature);
+            //byte[] decodedSignature = RedirectBindingUtil.urlBase64Decode(signature);
+            byte[] decodedSignature = Base64.decode(signature);
 
             SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.getFromXmlMethod(decodedAlgorithm);
             Signature validator = signatureAlgorithm.createSignature(); // todo plugin signature alg

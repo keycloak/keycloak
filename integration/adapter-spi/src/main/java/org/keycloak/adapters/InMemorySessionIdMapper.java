@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class InMemorySessionIdMapper implements SessionIdMaper {
+public class InMemorySessionIdMapper implements SessionIdMapper {
     ConcurrentHashMap<String, String> ssoToSession = new ConcurrentHashMap<>();
     ConcurrentHashMap<String, String> sessionToSso = new ConcurrentHashMap<>();
     ConcurrentHashMap<String, Set<String>> principalToSession = new ConcurrentHashMap<>();
@@ -33,8 +33,10 @@ public class InMemorySessionIdMapper implements SessionIdMaper {
 
     @Override
     public void map(String sso, String principal, String session) {
-        ssoToSession.put(sso, session);
-        sessionToSso.put(session, sso);
+        if (sso != null) {
+            ssoToSession.put(sso, session);
+            sessionToSso.put(session, sso);
+        }
         Set<String> userSessions = principalToSession.get(principal);
         if (userSessions == null) {
             final Set<String> tmp = Collections.synchronizedSet(new HashSet<String>());

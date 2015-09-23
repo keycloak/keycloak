@@ -68,20 +68,20 @@ public class SamlBindingTest {
         public void initWars() {
              ClassLoader classLoader = SamlBindingTest.class.getClassLoader();
 
-            //initializeSamlSecuredWar("/keycloak-saml/simple-post", "/sales-post",  "post.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/simple-post", "/sales-post",  "post.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post", "/sales-post-sig",  "post-sig.war", classLoader);
-            //initializeSamlSecuredWar("/keycloak-saml/signed-post-email", "/sales-post-sig-email",  "post-sig-email.war", classLoader);
-            //initializeSamlSecuredWar("/keycloak-saml/signed-post-transient", "/sales-post-sig-transient",  "post-sig-transient.war", classLoader);
-            //initializeSamlSecuredWar("/keycloak-saml/signed-post-persistent", "/sales-post-sig-persistent",  "post-sig-persistent.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/signed-post-email", "/sales-post-sig-email",  "post-sig-email.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/signed-post-transient", "/sales-post-sig-transient",  "post-sig-transient.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/signed-post-persistent", "/sales-post-sig-persistent",  "post-sig-persistent.war", classLoader);
             //initializeSamlSecuredWar("/keycloak-saml/signed-metadata", "/sales-metadata",  "post-metadata.war", classLoader);
-            //initializeSamlSecuredWar("/keycloak-saml/signed-get", "/employee-sig",  "employee-sig.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/signed-get", "/employee-sig",  "employee-sig.war", classLoader);
             //initializeSamlSecuredWar("/saml/simple-get", "/employee",  "employee.war", classLoader);
-            //initializeSamlSecuredWar("/keycloak-saml/signed-front-get", "/employee-sig-front",  "employee-sig-front.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/signed-front-get", "/employee-sig-front",  "employee-sig-front.war", classLoader);
             //initializeSamlSecuredWar("/keycloak-saml/bad-client-signed-post", "/bad-client-sales-post-sig",  "bad-client-post-sig.war", classLoader);
             //initializeSamlSecuredWar("/keycloak-saml/bad-realm-signed-post", "/bad-realm-sales-post-sig",  "bad-realm-post-sig.war", classLoader);
             //initializeSamlSecuredWar("/keycloak-saml/encrypted-post", "/sales-post-enc",  "post-enc.war", classLoader);
             //uploadSP();
-            //server.getServer().deploy(createDeploymentInfo("employee.war", "/employee", SamlSPFacade.class));
+            server.getServer().deploy(createDeploymentInfo("employee.war", "/employee", SamlSPFacade.class));
 
 
 
@@ -411,7 +411,8 @@ public class SamlBindingTest {
         driver.navigate().to("http://localhost:8081/employee-sig?GLO=true");
         checkLoggedOut("http://localhost:8081/employee-sig/");
         driver.navigate().to("http://localhost:8081/employee-sig-front/");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+        String currentUrl = driver.getCurrentUrl();
+        Assert.assertTrue(currentUrl.startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
         driver.navigate().to("http://localhost:8081/sales-post-sig/");
         Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
 
@@ -505,6 +506,4 @@ public class SamlBindingTest {
         response.close();
         client.close();
     }
-
-
 }

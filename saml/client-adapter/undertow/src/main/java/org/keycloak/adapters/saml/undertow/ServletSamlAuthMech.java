@@ -5,6 +5,8 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import io.undertow.util.Headers;
 import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.InMemorySessionIdMapper;
+import org.keycloak.adapters.SessionIdMapper;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.saml.SamlSessionStore;
@@ -23,13 +25,14 @@ import java.io.IOException;
  * @version $Revision: 1 $
  */
 public class ServletSamlAuthMech extends AbstractSamlAuthMech {
+    private SessionIdMapper idMapper = new InMemorySessionIdMapper();
     public ServletSamlAuthMech(SamlDeploymentContext deploymentContext, UndertowUserSessionManagement sessionManagement, String errorPage) {
         super(deploymentContext, sessionManagement, errorPage);
     }
 
     @Override
     protected SamlSessionStore getTokenStore(HttpServerExchange exchange, HttpFacade facade, SamlDeployment deployment, SecurityContext securityContext) {
-        return new ServletSamlSessionStore(exchange, sessionManagement, securityContext);
+        return new ServletSamlSessionStore(exchange, sessionManagement, securityContext, idMapper);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.keycloak.adapters.saml;
 
 import org.keycloak.enums.SslRequired;
+import org.keycloak.saml.SignatureAlgorithm;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -32,7 +33,6 @@ public interface SamlDeployment {
         public interface SingleSignOnService {
             boolean signRequest();
             boolean validateResponseSignature();
-            String getSignatureCanonicalizationMethod();
             Binding getRequestBinding();
             Binding getResponseBinding();
             String getRequestBindingUrl();
@@ -42,7 +42,6 @@ public interface SamlDeployment {
             boolean validateResponseSignature();
             boolean signRequest();
             boolean signResponse();
-            String getSignatureCanonicalizationMethod();
             Binding getRequestBinding();
             Binding getResponseBinding();
             String getRequestBindingUrl();
@@ -59,6 +58,8 @@ public interface SamlDeployment {
     boolean isForceAuthentication();
     PrivateKey getDecryptionKey();
     KeyPair getSigningKeyPair();
+    String getSignatureCanonicalizationMethod();
+    SignatureAlgorithm getSignatureAlgorithm();
     String getAssertionConsumerServiceUrl();
     String getLogoutPage();
 
