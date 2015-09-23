@@ -22,6 +22,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.Select;
 
 /**
  *
@@ -40,6 +41,10 @@ public class LoginSettings extends RealmSettings {
     public LoginSettingsForm form() {
         return form;
     }
+    
+    public enum RequireSSLOption {
+        all, external, none;
+    }
 
     public class LoginSettingsForm extends Form {
 
@@ -49,20 +54,20 @@ public class LoginSettings extends RealmSettings {
         @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='registrationEmailAsUsername']]")
         private OnOffSwitch emailAsUsernameOnOffSwitch;
 
+        @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='editUsernameAllowed']]")
+        private OnOffSwitch editUsernameAllowed;
+        
         @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='resetPasswordAllowed']]")
         private OnOffSwitch resetPasswordAllowed;
         
-        @FindByJQuery("div[class='onoffswitch']:eq(2)")
+        @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='rememberMe']]")
         private OnOffSwitch rememberMeEnabled;
 
         @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='verifyEmail']]")
         private OnOffSwitch verifyEmailEnabled;
 
-        @FindByJQuery("div[class='onoffswitch']:eq(4)")
-        private OnOffSwitch directGrantApiEnabled;
-
-        @FindByJQuery("div[class='onoffswitch']:eq(5)")
-        private OnOffSwitch requireSsl;
+        @FindBy(id = "sslRequired")
+        private Select requireSsl;
 
         public boolean isRegistrationAllowed() {
             return registrationAllowed.isOn();
@@ -76,12 +81,40 @@ public class LoginSettings extends RealmSettings {
             emailAsUsernameOnOffSwitch.setOn(emailAsUsername);
         }
         
+        public boolean isEditUsernameAllowed() {
+            return editUsernameAllowed.isOn();
+        }
+        
+        public void setEditUsernameAllowed(boolean allowed) {
+            editUsernameAllowed.setOn(allowed);
+        }
+        
+        public boolean isResetPasswordAllowed() {
+            return resetPasswordAllowed.isOn();
+        }
+        
         public void setResetPasswordAllowed(boolean allowed) {
             resetPasswordAllowed.setOn(allowed);
         }
         
+        public boolean isRememberMeAllowed() {
+            return rememberMeEnabled.isOn();
+        }
+        
+        public void setRememberMeAllowed(boolean allowed) {
+            rememberMeEnabled.setOn(allowed);
+        }
+        
         public void setVerifyEmailAllowed(boolean allowed) {
             verifyEmailEnabled.setOn(allowed);
+        }
+        
+        public boolean isVerifyEmailAllowed() {
+            return verifyEmailEnabled.isOn();
+        }
+        
+        public void selectRequireSSL(RequireSSLOption option) {
+            requireSsl.selectByValue(option.name());
         }
     }
 

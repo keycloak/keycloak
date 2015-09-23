@@ -1,31 +1,72 @@
+/*
+ * JBoss, Home of Professional Open Source
+ *
+ * Copyright 2013 Red Hat, Inc. and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.testsuite.console.realm;
 
+import java.util.HashSet;
+import java.util.Set;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
+import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import org.keycloak.representations.idm.UserRepresentation;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.console.page.realm.LoginSettings;
 import org.keycloak.testsuite.auth.page.login.Registration;
+import org.keycloak.testsuite.auth.page.login.ResetCredentials;
+import org.keycloak.testsuite.auth.page.login.VerifyEmail;
+import org.keycloak.testsuite.console.page.realm.LoginSettings.RequireSSLOption;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import org.openqa.selenium.Cookie;
 
 /**
  *
  * @author tkyjovsk
+ * @author vramik
  */
 public class LoginSettingsTest extends AbstractRealmTest {
 
+    private static final String NEW_USERNAME = "newUsername";
+    
     @Page
     private LoginSettings loginSettingsPage;
-
     @Page
     private Registration testRealmRegistrationPage;
-
+    @Page
+    private ResetCredentials testRealmForgottenPasswordPage;
+    @Page
+    private VerifyEmail testRealmVerifyEmailPage;
+    @Page
+    private Account testAccountPage;
+    
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testRealmRegistrationPage.setAuthRealm(TEST);
+        testRealmForgottenPasswordPage.setAuthRealm(TEST);
+        testRealmVerifyEmailPage.setAuthRealm(TEST);
+        testAccountPage.setAuthRealm(TEST);
     }
     
     @Before
@@ -34,7 +75,7 @@ public class LoginSettingsTest extends AbstractRealmTest {
         loginSettingsPage.navigateTo();
         assertCurrentUrlEquals(loginSettingsPage);
     }
-
+    
     @Test
     public void userRegistration() {
 
@@ -46,6 +87,7 @@ public class LoginSettingsTest extends AbstractRealmTest {
         testRealmAdminConsolePage.navigateTo();
         testRealmLoginPage.form().register();
         assertCurrentUrlStartsWith(testRealmRegistrationPage);
+        testRealmRegistrationPage.waitForConfirmPasswordInputPresent();
         testRealmRegistrationPage.waitForUsernameInputPresent();
         log.info("verified registration is enabled");
 
@@ -59,6 +101,7 @@ public class LoginSettingsTest extends AbstractRealmTest {
         testRealmAdminConsolePage.navigateTo();
         testRealmLoginPage.form().register();
         assertCurrentUrlStartsWith(testRealmRegistrationPage);
+        testRealmRegistrationPage.waitForConfirmPasswordInputPresent();
         testRealmRegistrationPage.waitForUsernameInputNotPresent();
         log.info("verified email as username");
 
@@ -74,5 +117,150 @@ public class LoginSettingsTest extends AbstractRealmTest {
         testRealmLoginPage.form().waitForRegisterLinkNotPresent();
         log.info("verified regisration is disabled");
     }
+    
+    @Test
+    public void editUsername() {
+        log.info("enabling edit username");
+        loginSettingsPage.form().setEditUsernameAllowed(true);
+        loginSettingsPage.form().save();
+        log.debug("enabled");
+        
+        log.info("edit username");
+        testAccountPage.navigateTo();
+        testRealmLoginPage.form().login(testUser);
+        testAccountPage.waitForAccountLinkPresent();
+        testAccountPage.setUsername(NEW_USERNAME);
+        testAccountPage.save();
+        testAccountPage.signOut();
+        log.debug("edited");
+        
+        log.info("log in with edited username");
+        testRealmLoginPage.form().login(NEW_USERNAME, PASSWORD);
+        testAccountPage.waitForAccountLinkPresent();
+        log.debug("user is logged in with edited username");
+        
+        log.info("disabling edit username");
+        loginSettingsPage.navigateTo();
+        loginSettingsPage.form().setEditUsernameAllowed(false);
+        loginSettingsPage.form().save();
+        log.debug("disabled");
+        
+        
+    }
+    
+    @Test
+    public void resetPassword() {
+        
+        log.info("enabling reset password");
+        loginSettingsPage.form().setResetPasswordAllowed(true);
+        loginSettingsPage.form().save();
+        log.debug("enabled");
+        
+        testRealmAdminConsolePage.navigateTo();
+        testRealmLoginPage.form().forgotPassword();
+        
+        Assert.assertEquals("Enter your username or email address and we will send you instructions on how to create a new password.", 
+                testRealmForgottenPasswordPage.getInfoMessage());
+        log.info("verified reset password is enabled");
+        
+        log.info("disabling reset password");
+        loginSettingsPage.navigateTo();
+        loginSettingsPage.form().setResetPasswordAllowed(false);
+        loginSettingsPage.form().save();
+        assertFalse(loginSettingsPage.form().isResetPasswordAllowed());
+        log.debug("disabled");
+        
+        testRealmAdminConsolePage.navigateTo();
+        testRealmLoginPage.form().waitForResetPasswordLinkNotPresent();
+        log.info("verified reset password is disabled");
+    }
+    
+    @Test
+    public void rememberMe() {
+        
+        log.info("enabling remember me");
+        loginSettingsPage.form().setRememberMeAllowed(true);
+        loginSettingsPage.form().save();
+        log.debug("enabled");
+        
+        log.info("login with remember me checked");
+        testAccountPage.navigateTo();
+        testRealmLoginPage.form().rememberMe(true);
+        testRealmLoginPage.form().login(testUser);
+        
+        assertTrue("Cookie KEYCLOAK_REMEMBER_ME should be present.", getCookieNames().contains("KEYCLOAK_REMEMBER_ME"));
+        
+        log.info("verified remember me is enabled");
+        
+        log.info("disabling remember me");
+        loginSettingsPage.navigateTo();
+        loginSettingsPage.form().setRememberMeAllowed(false);
+        loginSettingsPage.form().save();
+        assertFalse(loginSettingsPage.form().isRememberMeAllowed());
+        log.debug("disabled");
+        
+        testAccountPage.navigateTo();
+        testAccountPage.signOut();
+        testRealmLoginPage.form().waitForLoginButtonPresent();
+        testRealmLoginPage.form().waitForRememberMeNotPresent();
+        log.info("verified remember me is disabled");
+        
+    }
+    
+    @Test 
+    public void verifyEmail() {
 
+        log.info("enabling verify email");
+        loginSettingsPage.form().setVerifyEmailAllowed(true);
+        loginSettingsPage.form().save();
+        log.debug("enabled");
+        
+        testAccountPage.navigateTo();
+        testRealmLoginPage.form().login(testUser);
+        Assert.assertEquals("Failed to send email, please try again later.", 
+                testRealmVerifyEmailPage.getErrorMessage());
+        
+        log.info("verified verify email is enabled");
+        
+        log.info("disabling verify email");
+        loginSettingsPage.navigateTo();
+        loginSettingsPage.form().setVerifyEmailAllowed(false);
+        loginSettingsPage.form().save();
+        assertFalse(loginSettingsPage.form().isVerifyEmailAllowed());
+        log.debug("disabled");
+        
+        log.debug("create new test user");
+        UserRepresentation newUser = createUserRepresentation("new_user", "new_user@email.test", "new", "user", true);
+        setPasswordFor(newUser, PASSWORD);
+        String id = createUserAndResetPasswordWithAdminClient(testRealmResource(), newUser, PASSWORD);
+        newUser.setId(id);
+        
+        log.info("log in as new user");
+        testAccountPage.navigateTo();        
+        testRealmLoginPage.form().login(newUser);
+        testAccountPage.waitForAccountLinkPresent();
+                
+        log.info("verified verify email is disabled");
+    }
+    
+    @Test
+    public void requireSSLAllRequests() throws InterruptedException {
+        log.info("set require ssl for all requests");
+        loginSettingsPage.form().selectRequireSSL(RequireSSLOption.all);
+        loginSettingsPage.form().save();
+        log.debug("set");
+        
+        log.info("check HTTPS required");
+        testAccountPage.navigateTo();
+        Assert.assertEquals("HTTPS required", testAccountPage.getErrorMessage());
+    }
+    
+    private Set<String> getCookieNames() {
+        Set<Cookie> cookies = driver.manage().getCookies();
+        Set<String> cookieNames = new HashSet<>();
+        for (Cookie cookie : cookies) {
+            cookieNames.add(cookie.getName());
+        }
+        return cookieNames;
+    }
 }

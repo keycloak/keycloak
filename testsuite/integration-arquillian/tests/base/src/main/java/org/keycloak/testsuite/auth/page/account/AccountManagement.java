@@ -21,6 +21,7 @@ import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.testsuite.auth.page.AuthRealm;
+import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElementPresent;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -61,6 +62,14 @@ public class AccountManagement extends AuthRealm {
     @FindByJQuery("button[value='Save']")
     private WebElement save;
 
+    @FindBy(xpath = "//div[@id='kc-error-message']/p")
+    private WebElement error;
+
+    public String getErrorMessage() {
+        waitGuiForElementPresent(error, "Error message should be visible");
+        return error.getText();
+    }
+    
     public void backToReferer() {
         backToRefererLink.click();
     }
@@ -97,4 +106,7 @@ public class AccountManagement extends AuthRealm {
         return keycloak().realm(getAuthRealm());
     }
     
+    public void waitForAccountLinkPresent() {
+        waitGuiForElementPresent(accountLink, "account link should be present");
+    }
 }
