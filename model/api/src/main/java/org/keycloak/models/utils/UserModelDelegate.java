@@ -1,12 +1,15 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.OfflineClientSessionModel;
+import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -254,5 +257,45 @@ public class UserModelDelegate implements UserModel {
     @Override
     public void setCreatedTimestamp(Long timestamp){
         delegate.setCreatedTimestamp(timestamp);
+    }
+
+    @Override
+    public void addOfflineUserSession(OfflineUserSessionModel userSession) {
+        delegate.addOfflineUserSession(userSession);
+    }
+
+    @Override
+    public OfflineUserSessionModel getOfflineUserSession(String userSessionId) {
+        return delegate.getOfflineUserSession(userSessionId);
+    }
+
+    @Override
+    public Collection<OfflineUserSessionModel> getOfflineUserSessions() {
+        return delegate.getOfflineUserSessions();
+    }
+
+    @Override
+    public boolean removeOfflineUserSession(String userSessionId) {
+        return delegate.removeOfflineUserSession(userSessionId);
+    }
+
+    @Override
+    public void addOfflineClientSession(OfflineClientSessionModel clientSession) {
+        delegate.addOfflineClientSession(clientSession);
+    }
+
+    @Override
+    public OfflineClientSessionModel getOfflineClientSession(String clientSessionId) {
+        return delegate.getOfflineClientSession(clientSessionId);
+    }
+
+    @Override
+    public Collection<OfflineClientSessionModel> getOfflineClientSessions() {
+        return delegate.getOfflineClientSessions();
+    }
+
+    @Override
+    public boolean removeOfflineClientSession(String clientSessionId) {
+        return delegate.removeOfflineClientSession(clientSessionId);
     }
 }

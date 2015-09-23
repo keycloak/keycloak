@@ -33,11 +33,8 @@ import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.*;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
@@ -83,7 +80,7 @@ public class RequiredActionMultipleActionsTest {
     protected LoginPasswordUpdatePage changePasswordPage;
 
     @WebResource
-    protected LoginUpdateProfilePage updateProfilePage;
+    protected LoginUpdateProfileEditUsernameAllowedPage updateProfilePage;
 
     @Test
     public void updateProfileAndPassword() throws Exception {
@@ -121,7 +118,7 @@ public class RequiredActionMultipleActionsTest {
     }
 
     public String updateProfile(String sessionId) {
-        updateProfilePage.update("New first", "New last", "new@email.com");
+        updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com");
         if (sessionId != null) {

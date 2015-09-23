@@ -52,7 +52,7 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         RealmModel realm = context.getRealm();
 
 
-        List<FormMessage> errors = Validation.validateUpdateProfileForm(formData);
+        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm, formData);
         if (errors != null && !errors.isEmpty()) {
             Response challenge = context.form()
                     .setErrors(errors)
@@ -60,6 +60,28 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
                     .createResponse(UserModel.RequiredAction.UPDATE_PROFILE);
             context.challenge(challenge);
             return;
+        }
+
+        if (realm.isEditUsernameAllowed()) {
+            String username = formData.getFirst("username");
+            String oldUsername = user.getUsername();
+
+            boolean usernameChanged = oldUsername != null ? !oldUsername.equals(username) : username != null;
+
+            if (usernameChanged) {
+
+                if (session.users().getUserByUsername(username, realm) != null) {
+                    Response challenge = context.form()
+                            .setError(Messages.USERNAME_EXISTS)
+                            .setFormData(formData)
+                            .createResponse(UserModel.RequiredAction.UPDATE_PROFILE);
+                    context.challenge(challenge);
+                    return;
+                }
+
+                user.setUsername(username);
+            }
+
         }
 
         user.setFirstName(formData.getFirst("firstName"));

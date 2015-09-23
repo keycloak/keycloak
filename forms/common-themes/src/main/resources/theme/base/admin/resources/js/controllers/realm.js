@@ -693,10 +693,17 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
 
             }
         ];
+        $scope.signatureAlgorithms = [
+            "RSA_SHA1",
+            "RSA_SHA256",
+            "RSA_SHA512",
+            "DSA_SHA1"
+        ];
         if (instance && instance.alias) {
 
         } else {
             $scope.identityProvider.config.nameIDPolicyFormat = $scope.nameIdFormats[0].format;
+            $scope.identityProvider.config.signatureAlgorithm = $scope.signatureAlgorithms[1];
             $scope.identityProvider.updateProfileFirstLoginMode = "off";
         }
     }

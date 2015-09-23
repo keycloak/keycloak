@@ -484,6 +484,17 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
+    public boolean isOfflineTokensEnabled() {
+        return getMongoEntity().isOfflineTokensEnabled();
+    }
+
+    @Override
+    public void setOfflineTokensEnabled(boolean offlineTokensEnabled) {
+        getMongoEntity().setOfflineTokensEnabled(offlineTokensEnabled);
+        updateMongoEntity();
+    }
+
+    @Override
     public boolean isDirectGrantsOnly() {
         return getMongoEntity().isDirectGrantsOnly();
     }

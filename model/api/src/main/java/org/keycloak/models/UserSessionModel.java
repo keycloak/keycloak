@@ -40,6 +40,7 @@ public interface UserSessionModel {
     public String getNote(String name);
     public void setNote(String name, String value);
     public void removeNote(String name);
+    public Map<String, String> getNotes();
 
     State getState();
     void setState(State state);
