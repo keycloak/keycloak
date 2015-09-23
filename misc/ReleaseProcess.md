@@ -7,30 +7,20 @@
 
 ## Release
 
-*Releasing currently requires using JDK 7 due to a bug in JAX-RS Doclets*
-
 ### Clone from GitHub
 
     # git clone https://github.com/keycloak/keycloak.git
     # cd keycloak
 
-### Update version
+### Prepare the release
 
-    # mvn versions:set -DnewVersion=$VERSION -DgenerateBackupPoms=false -Pjboss-release
+    # mvn -Pjboss-release release:prepare
 
-### Build
+### Perform the release
 
-    # mvn install install -Pdistribution
-    # mvn install -Pjboss-release -DskipTests
-
-### Tag
-
-    # git tag $VERSION
-    # git push --tags
+    # mvn -Pjboss-release release:perform
 
 ### Deploy to Nexus
-
-    # mvn deploy -DskipTests -Pjboss-release
 
 Then login to Nexus and release the maven uploads in the staging area. Artifacts will eventually be synced to Maven Central, but this can take up to 24 hours.
 
@@ -50,7 +40,6 @@ Upload all artifacts to downloads.jboss.org (see https://mojo.redhat.com/docs/DO
     # git commit -m "Updated docs to $VERSION"
     # git tag $VERSION
     # git push --tags
-
 
 ## After Release
 
