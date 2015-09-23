@@ -30,7 +30,7 @@ public class DefaultRolesTest extends AbstractRolesTest {
     @Before
     public void beforeDefaultRolesTest() {
         // create a role via admin client
-        defaultRoleRep = new RoleRepresentation("default-role", "");
+        defaultRoleRep = new RoleRepresentation("default-role", "", false);
         rolesPage.rolesResource().create(defaultRoleRep);
 
         defaultRolesPage.navigateTo();
