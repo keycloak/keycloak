@@ -5,7 +5,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -13,7 +12,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.services.offline.OfflineUserSessionManager;
+import org.keycloak.services.offline.OfflineTokenUtils;
 import org.keycloak.util.MultivaluedHashMap;
 
 /**
@@ -25,7 +24,7 @@ public class ApplicationsBean {
 
     public ApplicationsBean(RealmModel realm, UserModel user) {
 
-        Set<ClientModel> offlineClients = new OfflineUserSessionManager().findClientsWithOfflineToken(realm, user);
+        Set<ClientModel> offlineClients = OfflineTokenUtils.findClientsWithOfflineToken(realm, user);
 
         List<ClientModel> realmClients = realm.getClients();
         for (ClientModel client : realmClients) {
@@ -34,7 +33,7 @@ public class ApplicationsBean {
                 continue;
             }
 
-            Set<RoleModel> availableRoles = TokenManager.getAccess(null, client, user);
+            Set<RoleModel> availableRoles = TokenManager.getAccess(null, false, client, user);
             // Don't show applications, which user doesn't have access into (any available roles)
             if (availableRoles.isEmpty()) {
                 continue;
@@ -60,7 +59,7 @@ public class ApplicationsBean {
 
             List<String> additionalGrants = new ArrayList<>();
             if (offlineClients.contains(client)) {
-                additionalGrants.add("${offlineAccess}");
+                additionalGrants.add("${offlineToken}");
             }
 
             ApplicationEntry appEntry = new ApplicationEntry(realmRolesAvailable, resourceRolesAvailable, realmRolesGranted, resourceRolesGranted, client,

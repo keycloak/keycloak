@@ -24,7 +24,6 @@ public class ClientRepresentation {
     protected Boolean bearerOnly;
     protected Boolean consentRequired;
     protected Boolean serviceAccountsEnabled;
-    protected Boolean offlineTokensEnabled;
     protected Boolean directGrantsOnly;
     protected Boolean publicClient;
     protected Boolean frontchannelLogout;
@@ -161,14 +160,6 @@ public class ClientRepresentation {
 
     public void setServiceAccountsEnabled(Boolean serviceAccountsEnabled) {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
-    }
-
-    public Boolean isOfflineTokensEnabled() {
-        return offlineTokensEnabled;
-    }
-
-    public void setOfflineTokensEnabled(Boolean offlineTokensEnabled) {
-        this.offlineTokensEnabled = offlineTokensEnabled;
     }
 
     public Boolean isDirectGrantsOnly() {

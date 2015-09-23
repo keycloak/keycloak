@@ -117,6 +117,7 @@ public class AbstractModelTest {
         Assert.assertEquals(expected.getId(), actual.getId());
         Assert.assertEquals(expected.getName(), actual.getName());
         Assert.assertEquals(expected.getDescription(), actual.getDescription());
+        Assert.assertEquals(expected.isScopeParamRequired(), actual.isScopeParamRequired());
         Assert.assertEquals(expected.getContainer(), actual.getContainer());
         Assert.assertEquals(expected.getComposites().size(), actual.getComposites().size());
     }

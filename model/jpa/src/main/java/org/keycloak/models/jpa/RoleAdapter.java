@@ -50,6 +50,16 @@ public class RoleAdapter implements RoleModel {
     }
 
     @Override
+    public boolean isScopeParamRequired() {
+        return role.isScopeParamRequired();
+    }
+
+    @Override
+    public void setScopeParamRequired(boolean scopeParamRequired) {
+        role.setScopeParamRequired(scopeParamRequired);
+    }
+
+    @Override
     public String getId() {
         return role.getId();
     }

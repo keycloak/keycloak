@@ -17,6 +17,10 @@ public interface RoleModel {
 
     void setName(String name);
 
+    boolean isScopeParamRequired();
+
+    void setScopeParamRequired(boolean scopeParamRequired);
+
     boolean isComposite();
 
     void addCompositeRole(RoleModel role);

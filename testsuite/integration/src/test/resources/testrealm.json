@@ -26,7 +26,7 @@
                 { "type" : "password",
                   "value" : "password" }
             ],
-            "realmRoles": ["user"],
+            "realmRoles": ["user", "offline_access"],
             "clientRoles": {
                 "test-app": [ "customer-user" ],
                 "account": [ "view-profile", "manage-account" ]

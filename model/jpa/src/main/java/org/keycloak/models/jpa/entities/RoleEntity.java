@@ -37,6 +37,8 @@ public class RoleEntity {
     private String name;
     @Column(name = "DESCRIPTION")
     private String description;
+    @Column(name = "SCOPE_PARAM_REQUIRED")
+    private boolean scopeParamRequired;
 
     // hax! couldn't get constraint to work properly
     @Column(name = "REALM_ID")
@@ -91,6 +93,14 @@ public class RoleEntity {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isScopeParamRequired() {
+        return scopeParamRequired;
+    }
+
+    public void setScopeParamRequired(boolean scopeParamRequired) {
+        this.scopeParamRequired = scopeParamRequired;
     }
 
     public Collection<RoleEntity> getCompositeRoles() {

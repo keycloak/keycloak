@@ -44,7 +44,7 @@ public class ClientRolesTest extends AbstractClientTest {
     @Test
     public void testAddClientRole() {
         ClientRepresentation newClient = createClientRepresentation("test-client1", "http://example.com/*");
-        RoleRepresentation newRole = new RoleRepresentation("client-role", "");
+        RoleRepresentation newRole = new RoleRepresentation("client-role", "", false);
 
         createClient(newClient);
         assertFlashMessageSuccess();

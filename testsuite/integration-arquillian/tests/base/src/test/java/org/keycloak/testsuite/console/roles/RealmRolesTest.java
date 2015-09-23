@@ -32,7 +32,7 @@ public class RealmRolesTest extends AbstractRolesTest {
     
     @Before
     public void beforeTestAddNewRole() {
-        testRole = new RoleRepresentation("test_role", "role description");
+        testRole = new RoleRepresentation("test_role", "role description", false);
         realmRolesPage.navigateTo();
     }
     
@@ -104,7 +104,7 @@ public class RealmRolesTest extends AbstractRolesTest {
     @Ignore
     public void testAddRoleWithLongName() {
         String name = "hjewr89y1894yh98(*&*&$jhjkashd)*(&y8934h*&@#hjkahsdj";
-        addRole(new RoleRepresentation(name, ""));
+        addRole(new RoleRepresentation(name, "", false));
         assertNotNull(realmRolesPage.table().findRole(name));
     }
     
@@ -124,7 +124,7 @@ public class RealmRolesTest extends AbstractRolesTest {
         Timer.time();
         for (int i = 0; i < count; i++) {
             String roleName = String.format("%s%02d", namePrefix, i);
-            RoleRepresentation rr = new RoleRepresentation(roleName, "");
+            RoleRepresentation rr = new RoleRepresentation(roleName, "", false);
             testRealmResource().roles().create(rr);
         }
         Timer.time("create " + count + " roles");

@@ -12,6 +12,7 @@ public class RoleRepresentation {
     protected String id;
     protected String name;
     protected String description;
+    protected Boolean scopeParamRequired;
     protected boolean composite;
     protected Composites composites;
 
@@ -46,9 +47,10 @@ public class RoleRepresentation {
     public RoleRepresentation() {
     }
 
-    public RoleRepresentation(String name, String description) {
+    public RoleRepresentation(String name, String description, boolean scopeParamRequired) {
         this.name = name;
         this.description = description;
+        this.scopeParamRequired = scopeParamRequired;
     }
 
     public String getId() {
@@ -73,6 +75,14 @@ public class RoleRepresentation {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Boolean isScopeParamRequired() {
+        return scopeParamRequired;
+    }
+
+    public void setScopeParamRequired(Boolean scopeParamRequired) {
+        this.scopeParamRequired = scopeParamRequired;
     }
 
     public Composites getComposites() {
