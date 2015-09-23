@@ -193,7 +193,7 @@
 
                             <dependency>
                                 <groupId>org.hibernate.javax.persistence</groupId>
-                                <artifactId>hibernate-jpa-2.1-api</artifactId>
+                                <artifactId>${hibernate.javax.persistence.artifactId}</artifactId>
                                 <version>${hibernate.javax.persistence.version}</version>
                             </dependency>
                             <dependency>

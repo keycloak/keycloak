@@ -141,7 +141,7 @@
         </dependency>
         <dependency>
             <groupId>org.hibernate.javax.persistence</groupId>
-            <artifactId>hibernate-jpa-2.1-api</artifactId>
+            <artifactId>${hibernate.javax.persistence.artifactId}</artifactId>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
