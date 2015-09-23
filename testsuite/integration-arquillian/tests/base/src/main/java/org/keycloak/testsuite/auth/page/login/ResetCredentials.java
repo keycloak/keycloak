@@ -56,7 +56,8 @@ public class ResetCredentials extends LoginActions {
         submit();
     }
 
-    public void waitForInfoMessagePresent() {
+    public String getInfoMessage() {
         waitGuiForElementPresent(info, "Info message should be visible");
+        return info.getText();
     }
 }

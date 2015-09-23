@@ -18,14 +18,11 @@
 package org.keycloak.testsuite.auth.page.login;
 
 import org.keycloak.testsuite.auth.page.account.AccountFields;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
 
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.UserRepresentation;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElementPresent;
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import org.keycloak.testsuite.auth.page.account.ContactInfoFields;
 import org.keycloak.testsuite.auth.page.account.PasswordFields;
@@ -72,6 +69,10 @@ public class Registration extends LoginActions {
 
     public void waitForUsernameInputNotPresent() {
         accountFields.waitForUsernameInputNotPresent();
+    }
+    
+    public void waitForConfirmPasswordInputPresent() {
+        passwordFields.waitForConfirmPasswordInputPresent();
     }
 
 }

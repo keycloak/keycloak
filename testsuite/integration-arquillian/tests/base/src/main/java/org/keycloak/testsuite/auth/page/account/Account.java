@@ -54,6 +54,12 @@ public class Account extends AccountManagement {
         return lastName.getAttribute("value");
     }
 
+    public Account setUsername(String value) {
+        username.clear();
+        username.sendKeys(value);
+        return this;
+    }
+    
     public Account setEmail(String value) {
         email.clear();
         email.sendKeys(value);
@@ -71,5 +77,5 @@ public class Account extends AccountManagement {
         lastName.sendKeys(value);
         return this;
     }
-
+    
 }
