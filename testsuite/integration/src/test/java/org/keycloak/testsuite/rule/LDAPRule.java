@@ -57,4 +57,8 @@ public class LDAPRule extends ExternalResource {
     public Map<String, String> getConfig() {
         return ldapTestConfiguration.getLDAPConfig();
     }
+
+    public int getSleepTime() {
+        return ldapTestConfiguration.getSleepTime();
+    }
 }

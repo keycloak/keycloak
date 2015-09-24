@@ -68,8 +68,8 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertEquals(realmModel.getName(), "JUGGLER");
         Assert.assertArrayEquals(realmModel.getPrivateKey().getEncoded(), keyPair.getPrivate().getEncoded());
         Assert.assertArrayEquals(realmModel.getPublicKey().getEncoded(), keyPair.getPublic().getEncoded());
-        Assert.assertEquals(1, realmModel.getDefaultRoles().size());
-        Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0));
+        Assert.assertEquals(2, realmModel.getDefaultRoles().size());
+        Assert.assertTrue(realmModel.getDefaultRoles().contains("foo"));
     }
 
     @Test
@@ -94,8 +94,8 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertEquals(realmModel.getName(), "JUGGLER");
         Assert.assertArrayEquals(realmModel.getPrivateKey().getEncoded(), keyPair.getPrivate().getEncoded());
         Assert.assertArrayEquals(realmModel.getPublicKey().getEncoded(), keyPair.getPublic().getEncoded());
-        Assert.assertEquals(1, realmModel.getDefaultRoles().size());
-        Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0));
+        Assert.assertEquals(2, realmModel.getDefaultRoles().size());
+        Assert.assertTrue(realmModel.getDefaultRoles().contains("foo"));
 
         realmModel.getId();
 
@@ -444,7 +444,7 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.addRole("admin");
         realmModel.addRole("user");
         Set<RoleModel> roles = realmModel.getRoles();
-        Assert.assertEquals(3, roles.size());
+        Assert.assertEquals(4, roles.size());
         UserModel user = realmManager.getSession().users().addUser(realmModel, "bburke");
         RoleModel realmUserRole = realmModel.getRole("user");
         user.grantRole(realmUserRole);
@@ -470,7 +470,7 @@ public class AdapterTest extends AbstractModelTest {
         user.grantRole(application.getRole("user"));
 
         roles = user.getRealmRoleMappings();
-        Assert.assertEquals(roles.size(), 2);
+        Assert.assertEquals(roles.size(), 3);
         assertRolesContains(realmUserRole, roles);
         Assert.assertTrue(user.hasRole(realmUserRole));
         // Role "foo" is default realm role
@@ -485,13 +485,13 @@ public class AdapterTest extends AbstractModelTest {
         // Test that application role 'user' don't clash with realm role 'user'
         Assert.assertNotEquals(realmModel.getRole("user").getId(), application.getRole("user").getId());
 
-        Assert.assertEquals(6, user.getRoleMappings().size());
+        Assert.assertEquals(7, user.getRoleMappings().size());
 
         // Revoke some roles
         user.deleteRoleMapping(realmModel.getRole("foo"));
         user.deleteRoleMapping(appBarRole);
         roles = user.getRoleMappings();
-        Assert.assertEquals(4, roles.size());
+        Assert.assertEquals(5, roles.size());
         assertRolesContains(realmUserRole, roles);
         assertRolesContains(application.getRole("user"), roles);
         Assert.assertFalse(user.hasRole(appBarRole));

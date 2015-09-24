@@ -1,5 +1,6 @@
 package org.keycloak.account.freemarker.model;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -11,6 +12,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.services.offline.OfflineTokenUtils;
 import org.keycloak.util.MultivaluedHashMap;
 
 /**
@@ -21,6 +23,9 @@ public class ApplicationsBean {
     private List<ApplicationEntry> applications = new LinkedList<ApplicationEntry>();
 
     public ApplicationsBean(RealmModel realm, UserModel user) {
+
+        Set<ClientModel> offlineClients = OfflineTokenUtils.findClientsWithOfflineToken(realm, user);
+
         List<ClientModel> realmClients = realm.getClients();
         for (ClientModel client : realmClients) {
             // Don't show bearerOnly clients
@@ -28,7 +33,7 @@ public class ApplicationsBean {
                 continue;
             }
 
-            Set<RoleModel> availableRoles = TokenManager.getAccess(null, client, user);
+            Set<RoleModel> availableRoles = TokenManager.getAccess(null, false, client, user);
             // Don't show applications, which user doesn't have access into (any available roles)
             if (availableRoles.isEmpty()) {
                 continue;
@@ -52,7 +57,13 @@ public class ApplicationsBean {
                 }
             }
 
-            ApplicationEntry appEntry = new ApplicationEntry(realmRolesAvailable, resourceRolesAvailable, realmRolesGranted, resourceRolesGranted, client, claimsGranted);
+            List<String> additionalGrants = new ArrayList<>();
+            if (offlineClients.contains(client)) {
+                additionalGrants.add("${offlineToken}");
+            }
+
+            ApplicationEntry appEntry = new ApplicationEntry(realmRolesAvailable, resourceRolesAvailable, realmRolesGranted, resourceRolesGranted, client,
+                    claimsGranted, additionalGrants);
             applications.add(appEntry);
         }
     }
@@ -82,16 +93,18 @@ public class ApplicationsBean {
         private final MultivaluedHashMap<String, ClientRoleEntry> resourceRolesGranted;
         private final ClientModel client;
         private final List<String> claimsGranted;
+        private final List<String> additionalGrants;
 
         public ApplicationEntry(List<RoleModel> realmRolesAvailable, MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable,
                                 List<RoleModel> realmRolesGranted, MultivaluedHashMap<String, ClientRoleEntry> resourceRolesGranted,
-                                ClientModel client, List<String> claimsGranted) {
+                                ClientModel client, List<String> claimsGranted, List<String> additionalGrants) {
             this.realmRolesAvailable = realmRolesAvailable;
             this.resourceRolesAvailable = resourceRolesAvailable;
             this.realmRolesGranted = realmRolesGranted;
             this.resourceRolesGranted = resourceRolesGranted;
             this.client = client;
             this.claimsGranted = claimsGranted;
+            this.additionalGrants = additionalGrants;
         }
 
         public List<RoleModel> getRealmRolesAvailable() {
@@ -118,6 +131,9 @@ public class ApplicationsBean {
             return claimsGranted;
         }
 
+        public List<String> getAdditionalGrants() {
+            return additionalGrants;
+        }
     }
 
     // Same class used in OAuthGrantBean as well. Maybe should be merged into common-freemarker...

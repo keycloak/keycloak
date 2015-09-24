@@ -33,8 +33,6 @@ import java.util.List;
  */
 public class SAML11AudienceRestrictionCondition extends SAML11ConditionAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected List<URI> audience = new ArrayList<URI>();
 
     public void add(URI advice) {

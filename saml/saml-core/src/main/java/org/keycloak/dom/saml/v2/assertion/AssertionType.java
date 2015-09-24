@@ -43,8 +43,6 @@ import java.util.Set;
  */
 public class AssertionType extends CommonAssertionType {
 
-    private static final long serialVersionUID = 1L;
-
     private Element signature;
 
     private final String version = "2.0";

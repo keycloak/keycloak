@@ -1,5 +1,7 @@
 package org.keycloak.models;
 
+import org.keycloak.OAuth2Constants;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -16,4 +18,5 @@ public interface Constants {
     String INSTALLED_APP_URL = "http://localhost";
     String READ_TOKEN_ROLE = "read-token";
     String[] BROKER_SERVICE_ROLES = {READ_TOKEN_ROLE};
+    String OFFLINE_ACCESS_ROLE = OAuth2Constants.OFFLINE_ACCESS;
 }

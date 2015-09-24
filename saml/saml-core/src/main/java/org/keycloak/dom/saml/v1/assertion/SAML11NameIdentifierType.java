@@ -30,8 +30,6 @@ import java.net.URI;
  */
 public class SAML11NameIdentifierType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     protected String nameQualifier;
 
     protected URI format;

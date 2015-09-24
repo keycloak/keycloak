@@ -52,8 +52,6 @@ import java.net.URI;
  */
 public abstract class RequestAbstractType extends CommonRequestAbstractType implements SAML2Object {
 
-    private static final long serialVersionUID = 1L;
-
     protected NameIDType issuer;
 
     protected ExtensionsType extensions;

@@ -8,7 +8,6 @@ import java.security.Principal;
  */
 public class RolePrincipal implements Principal, Serializable {
 
-    private static final long serialVersionUID = -5538962177019315447L;
     private String roleName = null;
 
     public RolePrincipal(String roleName) {

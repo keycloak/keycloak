@@ -39,6 +39,7 @@
         <io.netty.version>4.0.26.Final</io.netty.version> 
         <xnio.netty.netty-xnio-transport.version>0.1.1.Final</xnio.netty.netty-xnio-transport.version>
         <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
+        <hibernate.javax.persistence.artifactId>hibernate-jpa-2.1-api</hibernate.javax.persistence.artifactId>
         <hibernate.entitymanager.version>4.3.10.Final</hibernate.entitymanager.version>
         <h2.version>1.4.187</h2.version>
         <mysql.version>5.1.29</mysql.version>
@@ -322,7 +323,7 @@
             </dependency>
             <dependency>
                 <groupId>org.hibernate.javax.persistence</groupId>
-                <artifactId>hibernate-jpa-2.1-api</artifactId>
+                <artifactId>${hibernate.javax.persistence.artifactId}</artifactId>
                 <version>${hibernate.javax.persistence.version}</version>
             </dependency>
             <dependency>
@@ -1255,6 +1256,15 @@
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>2.5.2</version>
+                    <configuration>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                        <tagNameFormat>@{project.version}</tagNameFormat>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <forkMode>once</forkMode>
@@ -1349,6 +1359,48 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>distribution</id>
+            <modules>
+                <module>distribution</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>jboss-release</id>
+            <modules>
+                <module>docbook</module>
+                <module>distribution</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>doclint-java8-disable</id>
+            <activation>
+                <jdk>[1.8,)</jdk>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <configuration>
+                            <additionalparam>-Xdoclint:none</additionalparam>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>arquillian-integration-tests</id>
+            <modules>
+                <module>distribution</module>
+                <module>testsuite/integration-arquillian</module>
+            </modules>
+        </profile>
+
         <!-- Configure the JBoss Early Access Maven repository -->
         <profile>
             <id>jboss-earlyaccess-repository</id>
@@ -1381,64 +1433,6 @@
                     </snapshots>
                 </pluginRepository>
             </pluginRepositories>
-        </profile>
-        <profile>
-            <id>distribution</id>
-            <modules>
-                <module>distribution</module>
-                <module>testsuite/integration-arquillian</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>jboss-release</id>
-            <modules>
-                <module>docbook</module>
-                <module>distribution</module>
-                <module>testsuite/integration-arquillian</module>
-            </modules>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>aggregate</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>aggregate</goal>
-                                </goals>
-                                <configuration>
-                                    <minmemory>128m</minmemory>
-                                    <maxmemory>1024m</maxmemory>
-                                    <aggregate>true</aggregate>
-                                    <excludePackageNames>
-                                        se.unlogic.*:com.restfully.*:org.jboss.resteasy.examples.*:org.jboss.resteasy.tests.*
-                                    </excludePackageNames>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>          
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>doclint-java8-disable</id>
-            <activation>
-                <jdk>[1.8,)</jdk>
-            </activation>
-
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <configuration>
-                            <additionalparam>-Xdoclint:none</additionalparam>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>
 </project>

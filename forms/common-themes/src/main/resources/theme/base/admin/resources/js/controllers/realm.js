@@ -155,7 +155,7 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
     }
 });
 
-module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $http, WhoAmI, $location, Dialog, Notifications, Auth) {
+module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $http, WhoAmI, $location, $route, Dialog, Notifications, Auth, $modal) {
     console.log('RealmCreateCtrl');
 
     Current.realm = null;
@@ -169,61 +169,33 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
 
     var oldCopy = angular.copy($scope.realm);
 
-    $scope.onFileSelect = function($files) {
-        $scope.files = $files;
+    $scope.importFile = function($fileContent){
+        $scope.realm = angular.copy(JSON.parse($fileContent));
+        $scope.importing = true;
     };
 
-    $scope.clearFileSelect = function() {
-        $scope.files = null;
-    }
-
-    $scope.uploadFile = function() {
-        //$files: an array of files selected, each file has name, size, and type.
-        for (var i = 0; i < $scope.files.length; i++) {
-            var $file = $scope.files[i];
-            $scope.upload = $upload.upload({
-                url: authUrl + '/admin/realms', //upload.php script, node.js route, or servlet url
-                // method: POST or PUT,
-                // headers: {'headerKey': 'headerValue'}, withCredential: true,
-                data: {myObj: ""},
-                file: $file
-                /* set file formData name for 'Content-Desposition' header. Default: 'file' */
-                //fileFormDataName: myFile,
-                /* customize how data is added to formData. See #40#issuecomment-28612000 for example */
-                //formDataAppender: function(formData, key, val){}
-            }).progress(function(evt) {
-                    console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
-                }).success(function(data, status, headers) {
-                    Realm.query(function(data) {
-                        Current.realms = data;
-
-
-                        WhoAmI.get(function(user) {
-                            Auth.user = user;
-
-                            Notifications.success("The realm has been uploaded.");
-
-                            var location = headers('Location');
-                            if (location) {
-                                $location.url("/realms/" + location.substring(location.lastIndexOf('/') + 1));
-                            } else {
-                                $location.url("/realms");
-                            }
-                        });
-                    });
-                })
-            .error(function() {
-                    Notifications.error("The realm can not be uploaded. Please verify the file.");
-
-                });
-            //.then(success, error, progress);
-        }
+    $scope.viewImportDetails = function() {
+        $modal.open({
+            templateUrl: resourceUrl + '/partials/modal/view-object.html',
+            controller: 'ObjectModalCtrl',
+            resolve: {
+                object: function () {
+                    return $scope.realm;
+                }
+            }
+        })
     };
 
     $scope.$watch('realm', function() {
         if (!angular.equals($scope.realm, oldCopy)) {
             $scope.changed = true;
         }
+    }, true);
+
+    $scope.$watch('realm.realm', function() {
+	if (create) {
+	    $scope.realm.id = $scope.realm.realm;
+	}
     }, true);
 
     $scope.save = function() {
@@ -243,10 +215,17 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
     };
 
     $scope.cancel = function() {
-        window.history.back();
+        $location.url("/");
     };
+
+    $scope.reset = function() {
+        $route.reload();
+    }
 });
 
+module.controller('ObjectModalCtrl', function($scope, object) {
+    $scope.object = object;
+});
 
 module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, WhoAmI, Auth) {
     $scope.createRealm = !realm.realm;
@@ -693,10 +672,17 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
 
             }
         ];
+        $scope.signatureAlgorithms = [
+            "RSA_SHA1",
+            "RSA_SHA256",
+            "RSA_SHA512",
+            "DSA_SHA1"
+        ];
         if (instance && instance.alias) {
 
         } else {
             $scope.identityProvider.config.nameIDPolicyFormat = $scope.nameIdFormats[0].format;
+            $scope.identityProvider.config.signatureAlgorithm = $scope.signatureAlgorithms[1];
             $scope.identityProvider.updateProfileFirstLoginMode = "off";
         }
     }

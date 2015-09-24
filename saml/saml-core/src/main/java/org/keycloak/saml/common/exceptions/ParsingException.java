@@ -28,7 +28,6 @@ import java.security.GeneralSecurityException;
  * @since May 22, 2009
  */
 public class ParsingException extends GeneralSecurityException {
-    private static final long serialVersionUID = 1L;
 
     private Location location;
 

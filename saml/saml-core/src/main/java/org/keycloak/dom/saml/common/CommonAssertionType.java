@@ -28,8 +28,6 @@ import java.io.Serializable;
  */
 public class CommonAssertionType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     protected XMLGregorianCalendar issueInstant;
 
     protected String ID;

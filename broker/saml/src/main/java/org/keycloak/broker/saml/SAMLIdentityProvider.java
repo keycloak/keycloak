@@ -37,6 +37,7 @@ import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.saml.SAML2NameIDPolicyBuilder;
+import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 
@@ -108,6 +109,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 KeyPair keypair = new KeyPair(publicKey, privateKey);
 
                 binding.signWith(keypair);
+                binding.signatureAlgorithm(getSignatureAlgorithm());
                 binding.signDocument();
             }
 
@@ -201,6 +203,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 .relayState(userSession.getId());
         if (getConfig().isWantAuthnRequestsSigned()) {
             binding.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
+                    .signatureAlgorithm(getSignatureAlgorithm())
                     .signDocument();
         }
         return binding;
@@ -250,4 +253,14 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 "</EntityDescriptor>\n";
         return Response.ok(descriptor, MediaType.APPLICATION_XML_TYPE).build();
     }
+
+    public SignatureAlgorithm getSignatureAlgorithm() {
+        String alg = getConfig().getSignatureAlgorithm();
+        if (alg != null) {
+            SignatureAlgorithm algorithm = SignatureAlgorithm.valueOf(alg);
+            if (algorithm != null) return algorithm;
+        }
+        return SignatureAlgorithm.RSA_SHA256;
+    }
+
 }

@@ -24,7 +24,6 @@ package org.keycloak.saml.common.exceptions;
  * @since May 22, 2009
  */
 public class TrustKeyProcessingException extends ProcessingException {
-    private static final long serialVersionUID = 1L;
 
     public TrustKeyProcessingException() {
         super();

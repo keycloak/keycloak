@@ -26,7 +26,6 @@ import java.security.GeneralSecurityException;
  * @since Jul 28, 2011
  */
 public class SignatureValidationException extends GeneralSecurityException {
-    private static final long serialVersionUID = 1L;
 
     public SignatureValidationException() {
     }

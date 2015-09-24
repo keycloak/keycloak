@@ -30,8 +30,6 @@ import java.util.List;
  */
 public class CommonAdviceType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     protected List<Object> advices = new ArrayList<Object>();
 
     /**

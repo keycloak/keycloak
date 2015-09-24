@@ -52,8 +52,6 @@ import java.util.List;
  */
 public class SubjectType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     protected List<SubjectConfirmationType> subjectConfirmation = new ArrayList<SubjectConfirmationType>();
 
     protected STSubType subType;
@@ -113,8 +111,6 @@ public class SubjectType implements Serializable {
     }
 
     public static class STSubType implements Serializable {
-
-        private static final long serialVersionUID = -4073731807610876524L;
 
         private BaseIDAbstractType baseID;
 

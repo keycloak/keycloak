@@ -28,8 +28,6 @@ import java.security.GeneralSecurityException;
  */
 public class WSTrustException extends GeneralSecurityException {
 
-    private static final long serialVersionUID = -232066282004315310L;
-
     /**
      * <p>
      * Creates an instance of {@code WSTrustException} using the specified error message.

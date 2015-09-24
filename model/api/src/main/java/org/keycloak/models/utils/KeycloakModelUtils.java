@@ -4,6 +4,7 @@ import org.bouncycastle.openssl.PEMWriter;
 import org.keycloak.constants.KerberosConstants;
 import org.keycloak.constants.ServiceAccountConstants;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -359,5 +360,14 @@ public final class KeycloakModelUtils {
 
     public static String toLowerCaseSafe(String str) {
         return str==null ? null : str.toLowerCase();
+    }
+
+    public static void setupOfflineTokens(RealmModel realm) {
+        if (realm.getRole(Constants.OFFLINE_ACCESS_ROLE) == null) {
+            RoleModel role = realm.addRole(Constants.OFFLINE_ACCESS_ROLE);
+            role.setDescription("${role_offline-access}");
+            role.setScopeParamRequired(true);
+            realm.addDefaultRole(Constants.OFFLINE_ACCESS_ROLE);
+        }
     }
 }

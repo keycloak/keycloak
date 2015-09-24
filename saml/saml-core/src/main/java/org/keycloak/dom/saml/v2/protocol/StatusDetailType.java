@@ -40,5 +40,4 @@ import org.keycloak.dom.saml.common.CommonStatusDetailType;
  */
 public class StatusDetailType extends CommonStatusDetailType {
 
-    private static final long serialVersionUID = 1L;
 }

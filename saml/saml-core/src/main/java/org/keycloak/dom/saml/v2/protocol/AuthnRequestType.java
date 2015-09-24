@@ -56,8 +56,6 @@ import java.net.URI;
  */
 public class AuthnRequestType extends RequestAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected SubjectType subject;
 
     protected NameIDPolicyType nameIDPolicy;

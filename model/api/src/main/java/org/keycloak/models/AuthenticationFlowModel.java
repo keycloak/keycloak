@@ -7,7 +7,6 @@ import java.io.Serializable;
  * @version $Revision: 1 $
  */
 public class AuthenticationFlowModel implements Serializable {
-    private static final long serialVersionUID = 1L;
 
     private String id;
     private String alias;

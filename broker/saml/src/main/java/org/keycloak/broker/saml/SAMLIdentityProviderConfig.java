@@ -87,6 +87,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         getConfig().put("wantAuthnRequestsSigned", String.valueOf(wantAuthnRequestsSigned));
     }
 
+    public String getSignatureAlgorithm() {
+        return getConfig().get("signatureAlgorithm");
+    }
+
+    public void setSignatureAlgorithm(String signatureAlgorithm) {
+        getConfig().put("signatureAlgorithm", signatureAlgorithm);
+    }
+
     public String getEncryptionPublicKey() {
         return getConfig().get("encryptionPublicKey");
     }

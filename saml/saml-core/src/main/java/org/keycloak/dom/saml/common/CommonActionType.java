@@ -27,8 +27,6 @@ import java.io.Serializable;
  */
 public class CommonActionType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     protected String namespace;
 
     protected String value;

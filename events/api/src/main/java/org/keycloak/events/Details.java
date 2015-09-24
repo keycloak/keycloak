@@ -20,6 +20,7 @@ public interface Details {
     String REMEMBER_ME = "remember_me";
     String TOKEN_ID = "token_id";
     String REFRESH_TOKEN_ID = "refresh_token_id";
+    String REFRESH_TOKEN_TYPE = "refresh_token_type";
     String VALIDATE_ACCESS_TOKEN = "validate_access_token";
     String UPDATED_REFRESH_TOKEN_ID = "updated_refresh_token_id";
     String NODE_HOST = "node_host";

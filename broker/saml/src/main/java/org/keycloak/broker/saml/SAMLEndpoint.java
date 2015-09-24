@@ -240,6 +240,7 @@ public class SAMLEndpoint {
                         .relayState(relayState);
             if (config.isWantAuthnRequestsSigned()) {
                 binding.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
+                        .signatureAlgorithm(provider.getSignatureAlgorithm())
                         .signDocument();
             }
             try {

@@ -47,8 +47,6 @@ import java.util.List;
  */
 public class ResponseType extends StatusResponseType {
 
-    private static final long serialVersionUID = 1L;
-
     protected List<RTChoiceType> assertions = new ArrayList<ResponseType.RTChoiceType>();
 
     public ResponseType(String id, XMLGregorianCalendar issueInstant) {

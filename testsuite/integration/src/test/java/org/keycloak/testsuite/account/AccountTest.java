@@ -646,7 +646,7 @@ public class AccountTest {
         }
     }
 
-    // More tests (including revoke) are in OAuthGrantTest
+    // More tests (including revoke) are in OAuthGrantTest and OfflineTokenTest
     @Test
     public void applications() {
         applicationsPage.open();
@@ -668,7 +668,8 @@ public class AccountTest {
         Assert.assertTrue(accountEntry.getProtocolMappersGranted().contains("Full Access"));
 
         AccountApplicationsPage.AppEntry testAppEntry = apps.get("test-app");
-        Assert.assertEquals(4, testAppEntry.getRolesAvailable().size());
+        Assert.assertEquals(5, testAppEntry.getRolesAvailable().size());
+        Assert.assertTrue(testAppEntry.getRolesAvailable().contains("Offline access"));
         Assert.assertTrue(testAppEntry.getRolesGranted().contains("Full Access"));
         Assert.assertTrue(testAppEntry.getProtocolMappersGranted().contains("Full Access"));
 

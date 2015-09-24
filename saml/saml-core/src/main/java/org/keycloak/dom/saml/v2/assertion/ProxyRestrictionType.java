@@ -45,8 +45,6 @@ import java.util.List;
  */
 public class ProxyRestrictionType extends ConditionAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected List<URI> audience = new ArrayList<URI>();
 
     protected BigInteger count;

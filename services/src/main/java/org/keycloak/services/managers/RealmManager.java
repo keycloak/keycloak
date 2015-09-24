@@ -27,6 +27,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.timer.TimerProvider;
 
 import java.util.Collections;
@@ -95,6 +96,7 @@ public class RealmManager implements RealmImporter {
         setupImpersonationService(realm);
         setupAuthenticationFlows(realm);
         setupRequiredActions(realm);
+        setupOfflineTokens(realm);
 
         return realm;
     }
@@ -105,6 +107,10 @@ public class RealmManager implements RealmImporter {
 
     protected void setupRequiredActions(RealmModel realm) {
         if (realm.getRequiredActionProviders().size() == 0) DefaultRequiredActions.addActions(realm);
+    }
+
+    protected void setupOfflineTokens(RealmModel realm) {
+        KeycloakModelUtils.setupOfflineTokens(realm);
     }
 
     protected void setupAdminConsole(RealmModel realm) {
@@ -216,12 +222,14 @@ public class RealmManager implements RealmImporter {
 
             RoleModel createRealmRole = realm.addRole(AdminRoles.CREATE_REALM);
             adminRole.addCompositeRole(createRealmRole);
-            createRealmRole.setDescription("${role_"+AdminRoles.CREATE_REALM+"}");
+            createRealmRole.setDescription("${role_" + AdminRoles.CREATE_REALM + "}");
+            createRealmRole.setScopeParamRequired(false);
         } else {
             adminRealm = model.getRealmByName(Config.getAdminRealm());
             adminRole = adminRealm.getRole(AdminRoles.ADMIN);
         }
         adminRole.setDescription("${role_"+AdminRoles.ADMIN+"}");
+        adminRole.setScopeParamRequired(false);
 
         ClientModel realmAdminApp = KeycloakModelUtils.createClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
         // No localized name for now
@@ -232,6 +240,7 @@ public class RealmManager implements RealmImporter {
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel role = realmAdminApp.addRole(r);
             role.setDescription("${role_"+r+"}");
+            role.setScopeParamRequired(false);
             adminRole.addCompositeRole(role);
         }
     }
@@ -249,12 +258,14 @@ public class RealmManager implements RealmImporter {
         }
         RoleModel adminRole = realmAdminClient.addRole(AdminRoles.REALM_ADMIN);
         adminRole.setDescription("${role_" + AdminRoles.REALM_ADMIN + "}");
+        adminRole.setScopeParamRequired(false);
         realmAdminClient.setBearerOnly(true);
         realmAdminClient.setFullScopeAllowed(false);
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel role = realmAdminClient.addRole(r);
             role.setDescription("${role_"+r+"}");
+            role.setScopeParamRequired(false);
             adminRole.addCompositeRole(role);
         }
     }
@@ -274,7 +285,9 @@ public class RealmManager implements RealmImporter {
 
             for (String role : AccountRoles.ALL) {
                 client.addDefaultRole(role);
-                client.getRole(role).setDescription("${role_"+role+"}");
+                RoleModel roleModel = client.getRole(role);
+                roleModel.setDescription("${role_" + role + "}");
+                roleModel.setScopeParamRequired(false);
             }
         }
     }
@@ -292,7 +305,9 @@ public class RealmManager implements RealmImporter {
             client.setFullScopeAllowed(false);
 
             for (String role : Constants.BROKER_SERVICE_ROLES) {
-                client.addRole(role).setDescription("${role_"+ role.toLowerCase().replaceAll("_", "-") +"}");
+                RoleModel roleModel = client.addRole(role);
+                roleModel.setDescription("${role_"+ role.toLowerCase().replaceAll("_", "-") +"}");
+                roleModel.setScopeParamRequired(false);
             }
         }
     }
@@ -329,6 +344,7 @@ public class RealmManager implements RealmImporter {
 
         if (!hasBrokerClient(rep)) setupBrokerService(realm);
         if (!hasAdminConsoleClient(rep)) setupAdminConsole(realm);
+        if (!hasRealmRole(rep, Constants.OFFLINE_ACCESS_ROLE)) setupOfflineTokens(realm);
 
         RepresentationToModel.importRealm(session, rep, realm);
 
@@ -403,6 +419,20 @@ public class RealmManager implements RealmImporter {
                 if (clientRep.getName().equals(clientId)) {
                     return true;
                 }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean hasRealmRole(RealmRepresentation rep, String roleName) {
+        if (rep.getRoles() == null || rep.getRoles().getRealm() == null) {
+            return false;
+        }
+
+        for (RoleRepresentation role : rep.getRoles().getRealm()) {
+            if (roleName.equals(role.getName())) {
+                return true;
             }
         }
 

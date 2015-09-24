@@ -20,6 +20,7 @@ public class LDAPTestConfiguration {
     private static final Logger log = Logger.getLogger(LDAPTestConfiguration.class);
 
     private String connectionPropertiesLocation;
+    private int sleepTime;
     private boolean startEmbeddedLdapLerver = true;
     private Map<String, String> config;
 
@@ -109,6 +110,7 @@ public class LDAPTestConfiguration {
         }
 
         startEmbeddedLdapLerver = Boolean.parseBoolean(p.getProperty("idm.test.ldap.start.embedded.ldap.server", "true"));
+        sleepTime = Integer.parseInt(p.getProperty("idm.test.ldap.sleepTime", "1000"));
         log.info("Start embedded server: " + startEmbeddedLdapLerver);
         log.info("Read config: " + config);
     }
@@ -123,6 +125,10 @@ public class LDAPTestConfiguration {
 
     public boolean isStartEmbeddedLdapLerver() {
         return startEmbeddedLdapLerver;
+    }
+
+    public int getSleepTime() {
+        return sleepTime;
     }
 
 }

@@ -348,4 +348,52 @@ public class UserAdapter implements UserModel {
         getDelegateForUpdate();
         return updated.revokeConsentForClient(clientId);
     }
+
+    @Override
+    public void addOfflineUserSession(OfflineUserSessionModel userSession) {
+        getDelegateForUpdate();
+        updated.addOfflineUserSession(userSession);
+    }
+
+    @Override
+    public OfflineUserSessionModel getOfflineUserSession(String userSessionId) {
+        if (updated != null) return updated.getOfflineUserSession(userSessionId);
+        return cached.getOfflineUserSessions().get(userSessionId);
+    }
+
+    @Override
+    public Collection<OfflineUserSessionModel> getOfflineUserSessions() {
+        if (updated != null) return updated.getOfflineUserSessions();
+        return cached.getOfflineUserSessions().values();
+    }
+
+    @Override
+    public boolean removeOfflineUserSession(String userSessionId) {
+        getDelegateForUpdate();
+        return updated.removeOfflineUserSession(userSessionId);
+    }
+
+    @Override
+    public void addOfflineClientSession(OfflineClientSessionModel clientSession) {
+        getDelegateForUpdate();
+        updated.addOfflineClientSession(clientSession);
+    }
+
+    @Override
+    public OfflineClientSessionModel getOfflineClientSession(String clientSessionId) {
+        if (updated != null) return updated.getOfflineClientSession(clientSessionId);
+        return cached.getOfflineClientSessions().get(clientSessionId);
+    }
+
+    @Override
+    public Collection<OfflineClientSessionModel> getOfflineClientSessions() {
+        if (updated != null) return updated.getOfflineClientSessions();
+        return cached.getOfflineClientSessions().values();
+    }
+
+    @Override
+    public boolean removeOfflineClientSession(String clientSessionId) {
+        getDelegateForUpdate();
+        return updated.removeOfflineClientSession(clientSessionId);
+    }
 }

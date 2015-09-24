@@ -108,7 +108,7 @@ public class ClientTest extends AbstractClientTest {
         response.close();
         String id = ApiUtil.getCreatedId(response);
 
-        RoleRepresentation role = new RoleRepresentation("test", "test");
+        RoleRepresentation role = new RoleRepresentation("test", "test", false);
         realm.clients().get(id).roles().create(role);
 
         rep = realm.clients().get(id).toRepresentation();

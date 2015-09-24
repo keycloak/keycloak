@@ -35,7 +35,6 @@ public class NameIDType extends BaseIDAbstractType {
      * name="SPNameQualifier" type="string" use="optional"/> </attributeGroup>
      */
 
-    private static final long serialVersionUID = 1L;
     private String value;
     private URI format;
     private String sPProvidedID;

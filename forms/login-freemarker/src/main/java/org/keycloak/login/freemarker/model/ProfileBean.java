@@ -70,6 +70,8 @@ public class ProfileBean {
 
     }
 
+    public String getUsername() { return formData != null ? formData.getFirst("username") : user.getUsername(); }
+
     public String getFirstName() {
         return formData != null ? formData.getFirst("firstName") : user.getFirstName();
     }

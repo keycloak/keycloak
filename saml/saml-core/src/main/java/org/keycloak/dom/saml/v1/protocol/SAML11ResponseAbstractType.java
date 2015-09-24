@@ -37,8 +37,6 @@ import java.net.URI;
  */
 public abstract class SAML11ResponseAbstractType extends CommonResponseType {
 
-    private static final long serialVersionUID = 1L;
-
     protected int majorVersion = 1;
 
     protected int minorVersion = 1;

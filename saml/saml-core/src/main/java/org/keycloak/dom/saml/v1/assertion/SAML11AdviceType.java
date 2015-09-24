@@ -29,5 +29,4 @@ import org.keycloak.dom.saml.common.CommonAdviceType;
  */
 public class SAML11AdviceType extends CommonAdviceType {
 
-    private static final long serialVersionUID = 1L;
 }

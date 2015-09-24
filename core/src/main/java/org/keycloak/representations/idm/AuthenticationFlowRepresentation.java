@@ -8,7 +8,6 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class AuthenticationFlowRepresentation implements Serializable {
-    private static final long serialVersionUID = 1L;
 
     private String alias;
     private String description;

@@ -39,8 +39,6 @@ import java.io.Serializable;
  */
 public class SubjectLocalityType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     protected String address;
 
     protected String dnsName;

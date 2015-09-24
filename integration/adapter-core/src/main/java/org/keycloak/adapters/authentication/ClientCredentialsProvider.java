@@ -14,7 +14,7 @@ import org.keycloak.adapters.KeycloakDeployment;
  *
  * You must specify a file
  * META-INF/services/org.keycloak.adapters.authentication.ClientCredentialsProvider in the WAR that this class is contained in (or in the JAR that is attached to the WEB-INF/lib or as jboss module
- * if you want to share the implementation among more WARs). This file must have the fully qualified class name of all your ClientAuthenticatorFactory classes
+ * if you want to share the implementation among more WARs).
  *
  * NOTE: The SPI is not finished and method signatures are still subject to change in future versions (for example to support
  * authentication with client certificate)

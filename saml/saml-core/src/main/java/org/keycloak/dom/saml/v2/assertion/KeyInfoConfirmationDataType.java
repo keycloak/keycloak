@@ -40,8 +40,6 @@ import org.w3c.dom.Element;
  */
 public class KeyInfoConfirmationDataType extends SubjectConfirmationDataType {
 
-    private static final long serialVersionUID = 2510471236717847074L;
-
     protected Element keyInfo;
 
     public Element getKeyInfo() {

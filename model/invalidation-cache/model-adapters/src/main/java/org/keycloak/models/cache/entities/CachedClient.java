@@ -21,7 +21,6 @@ import java.util.TreeMap;
  * @version $Revision: 1 $
  */
 public class CachedClient implements Serializable {
-    private static final long serialVersionUID = 1L;
 
     private String id;
     private String clientId;

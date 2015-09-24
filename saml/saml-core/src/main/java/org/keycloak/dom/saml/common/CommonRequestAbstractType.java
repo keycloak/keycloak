@@ -30,8 +30,6 @@ import java.io.Serializable;
  */
 public abstract class CommonRequestAbstractType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     protected String id;
 
     protected XMLGregorianCalendar issueInstant;

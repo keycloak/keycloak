@@ -79,7 +79,7 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals(1, creds.size());
         RequiredCredentialModel cred = creds.get(0);
         Assert.assertEquals("password", cred.getFormLabel());
-        Assert.assertEquals(2, realm.getDefaultRoles().size());
+        Assert.assertEquals(3, realm.getDefaultRoles().size());
 
         Assert.assertNotNull(realm.getRole("foo"));
         Assert.assertNotNull(realm.getRole("bar"));
@@ -131,6 +131,10 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(allRoles.contains(realm.getRole("admin")));
         Assert.assertTrue(allRoles.contains(application.getRole("app-admin")));
         Assert.assertTrue(allRoles.contains(otherApp.getRole("otherapp-admin")));
+
+        Assert.assertTrue(application.getRole("app-admin").isScopeParamRequired());
+        Assert.assertFalse(otherApp.getRole("otherapp-admin").isScopeParamRequired());
+        Assert.assertFalse(otherApp.getRole("otherapp-user").isScopeParamRequired());
 
         UserModel wburke =  session.users().getUserByUsername("wburke", realm);
         // user with creation timestamp in import

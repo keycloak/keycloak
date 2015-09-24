@@ -144,51 +144,6 @@ public class RealmsAdminResource {
         }
     }
 
-    /**
-     * Import a realm from uploaded JSON file
-     *
-     * The posted represenation is expected to be a multipart/form-data encapsulation
-     * of a JSON file.  The same format a browser would use when uploading a file.
-     *
-     * @param uriInfo
-     * @param input multipart/form data
-     * @return
-     * @throws IOException
-     */
-    @POST
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response uploadRealm(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
-        RealmManager realmManager = new RealmManager(session);
-        realmManager.setContextPath(keycloak.getContextPath());
-        if (!auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())) {
-            throw new ForbiddenException();
-        }
-        if (!auth.hasRealmRole(AdminRoles.CREATE_REALM)) {
-            throw new ForbiddenException();
-        }
-
-        Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
-        List<InputPart> inputParts = uploadForm.get("file");
-        RealmRepresentation rep = null;
-        
-        for (InputPart inputPart : inputParts) {
-            // inputPart.getBody doesn't work as content-type is wrong, and inputPart.setMediaType is not supported on AS7 (RestEasy 2.3.2.Final)
-            rep = JsonSerialization.readValue(inputPart.getBodyAsString(), RealmRepresentation.class);
-
-            RealmModel realm = realmManager.importRealm(rep);
-
-            grantPermissionsToRealmCreator(realm);
-            
-            URI location = null;
-            if (inputParts.size() == 1) {
-                location = AdminRoot.realmsUrl(uriInfo).path(realm.getName()).build();
-                return Response.created(location).build();
-            }
-        }
-        
-        return Response.noContent().build();
-    }
-
     private void grantPermissionsToRealmCreator(RealmModel realm) {
         if (auth.hasRealmRole(AdminRoles.ADMIN)) {
             return;

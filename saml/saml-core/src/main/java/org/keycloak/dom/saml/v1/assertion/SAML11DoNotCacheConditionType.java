@@ -23,5 +23,4 @@ package org.keycloak.dom.saml.v1.assertion;
  */
 public class SAML11DoNotCacheConditionType extends SAML11ConditionAbstractType {
 
-    private static final long serialVersionUID = 1L;
 }

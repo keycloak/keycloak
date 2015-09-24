@@ -134,6 +134,9 @@ public class OAuthRequestAuthenticator {
         String idpHint = getQueryParamValue(AdapterConstants.KC_IDP_HINT);
         url = UriUtils.stripQueryParam(url, AdapterConstants.KC_IDP_HINT);
 
+        String scope = getQueryParamValue(OAuth2Constants.SCOPE);
+        url = UriUtils.stripQueryParam(url, OAuth2Constants.SCOPE);
+
         KeycloakUriBuilder redirectUriBuilder = deployment.getAuthUrl().clone()
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
@@ -145,6 +148,9 @@ public class OAuthRequestAuthenticator {
         }
         if (idpHint != null && idpHint.length() > 0) {
             redirectUriBuilder.queryParam(AdapterConstants.KC_IDP_HINT,idpHint);
+        }
+        if (scope != null && scope.length() > 0) {
+            redirectUriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
         }
 
         return redirectUriBuilder.build().toString();

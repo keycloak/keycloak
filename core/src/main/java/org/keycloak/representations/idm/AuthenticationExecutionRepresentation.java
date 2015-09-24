@@ -8,7 +8,6 @@ import java.util.Comparator;
 * @version $Revision: 1 $
 */
 public class AuthenticationExecutionRepresentation implements Serializable {
-    private static final long serialVersionUID = 1L;
 
     private String authenticatorConfig;
     private String authenticator;

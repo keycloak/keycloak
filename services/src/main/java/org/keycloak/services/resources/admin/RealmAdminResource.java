@@ -111,7 +111,7 @@ public class RealmAdminResource {
      * @return
      */
     @Path("attack-detection")
-    public AttackDetectionResource getClientImporter() {
+    public AttackDetectionResource getAttackDetection() {
         AttackDetectionResource resource = new AttackDetectionResource(auth, realm, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;

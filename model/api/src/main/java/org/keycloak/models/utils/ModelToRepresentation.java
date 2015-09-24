@@ -89,6 +89,7 @@ public class ModelToRepresentation {
         rep.setId(role.getId());
         rep.setName(role.getName());
         rep.setDescription(role.getDescription());
+        rep.setScopeParamRequired(role.isScopeParamRequired());
         rep.setComposite(role.isComposite());
         return rep;
     }

@@ -50,8 +50,6 @@ import java.util.List;
  */
 public class ConditionsType extends CommonConditionsType implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     protected List<ConditionAbstractType> conditions = new ArrayList<ConditionAbstractType>();
 
     /**

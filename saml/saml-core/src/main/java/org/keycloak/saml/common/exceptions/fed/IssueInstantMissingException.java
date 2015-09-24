@@ -26,7 +26,6 @@ import java.security.GeneralSecurityException;
  * @since Jun 3, 2009
  */
 public class IssueInstantMissingException extends GeneralSecurityException {
-    private static final long serialVersionUID = 1L;
 
     public IssueInstantMissingException() {
         super();

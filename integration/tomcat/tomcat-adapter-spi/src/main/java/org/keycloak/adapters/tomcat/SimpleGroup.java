@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class SimpleGroup extends SimplePrincipal implements Group {
-    private static final long serialVersionUID = 3273437693505893786L;
     private final Set<Principal> members = new HashSet<Principal>();
 
     /**

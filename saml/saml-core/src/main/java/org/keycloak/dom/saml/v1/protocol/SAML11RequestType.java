@@ -36,8 +36,6 @@ import java.util.List;
  */
 public class SAML11RequestType extends SAML11RequestAbstractType {
 
-    private static final long serialVersionUID = 1L;
-
     protected SAML11QueryAbstractType query;
 
     protected List<String> assertionIDRef = new ArrayList<String>();

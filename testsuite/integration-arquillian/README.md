@@ -1,21 +1,61 @@
-Testing admin console with Arquillian
-=====================================
+# Keycloak Integration Testsuite with Arquillian
 
-There are currently two ways of running the tests with help of Arquillian.
+## Structure
 
-Remote mode
-----------
+```
+integration-arquillian
+│
+├──servers  (submodules enabled via profiles)
+│  ├──wildfly
+│  └──eap6
+│
+└──tests
+   ├──base
+   └──adapters  (submodules enabled via profiles, all depend on base)
+      ├──wildfly
+      ├──wildfly-relative  (needs servers/wildfly)
+      ├──wildfly8
+      ├──as7
+      ├──tomcat
+      └──karaf
 
-Just simply typle `mvn verify` and you are all set. This requires the instance of Wildfly with embedded Keycloak to be already running.
+```
 
-Managed mode
-------------
+## General Concepts
 
-You need to pass two arguments to Maven, first is location of your Wildfly server with embedded Keycloak and the other is name of the profile.
+The testsuite supports **multiple server runtimes** for the Keycloak server.
+The **default is Undertow** which is the fastest and easiest option, and runs in the same JVM as the tests.
 
-    mvn verify -Pwildfly-8-managed -DjbossHome=/your/server/location
+Other options are **Wildfly 9** and **EAP 6**. These have some additional requirements and limitations:
+1. The selected server module must be built before any tests can be run. 
+All server-side configuration is done during this build (e.g. datasource configuration).
+Once server artifact is built the tests modules can unpack it via `maven-dependency-plugin` into their working directory before running.
+2. Before the selected server module can be built the `keycloak/distribution` module also needs to be built.
 
-Browser
--------
+### Server Runtimes
 
-There are currently two supported browsers - PhantomJS and Firefox. PhantomJS is the default one, in order to use Firefox just specify `-Dbrowser=firefox` parameter in the Maven command. 
+TODO: explain why separate module, list config options, note on migration modules
+
+### Base Testsuite
+
+login flows + account management
+
+admin ui
+
+abstract adapter tests
+
+### Adapter Tests
+
+test servlets: demo, session
+
+examples
+
+## Running the Tests
+
+### Undertow
+
+### Wildfly or EAP 6
+
+### Adapters
+
+### Supported Browsers
