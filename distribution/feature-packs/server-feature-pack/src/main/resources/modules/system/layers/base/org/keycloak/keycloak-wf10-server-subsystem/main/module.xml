@@ -22,11 +22,11 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.3" name="org.keycloak.keycloak-wf9-server-subsystem">
+<module xmlns="urn:jboss:module:1.3" name="org.keycloak.keycloak-wf10-server-subsystem">
 
     <resources>
         <resource-root path="."/>
-        <artifact name="${org.keycloak:keycloak-wf9-server-subsystem}"/>
+        <artifact name="${org.keycloak:keycloak-wf10-server-subsystem}"/>
     </resources>
 
     <dependencies>

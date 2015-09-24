@@ -15,7 +15,7 @@
 
 
     <modules>
-        <module>wf9-server-overlay</module>
+        <module>wf10-server-overlay</module>
         <module>eap6</module>
     </modules>
 </project>

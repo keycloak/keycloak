@@ -24,8 +24,8 @@
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-wf9-server-subsystem</artifactId>
-    <name>Keycloak Wildfly 9 Server Subsystem</name>
+    <artifactId>keycloak-wf10-server-subsystem</artifactId>
+    <name>Keycloak Wildfly 10 Server Subsystem</name>
     <description/>
     <packaging>jar</packaging>
 

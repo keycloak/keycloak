@@ -47,7 +47,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wf9-server-subsystem</artifactId>
+            <artifactId>keycloak-wf10-server-subsystem</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wildfly</groupId>
