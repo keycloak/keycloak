@@ -36,8 +36,6 @@
         <syslog4j.version>0.9.30</syslog4j.version>
         <jboss-logging-tools.version>1.2.0.Beta1</jboss-logging-tools.version>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>1.0.4.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>
-        <io.netty.version>4.0.26.Final</io.netty.version> 
-        <xnio.netty.netty-xnio-transport.version>0.1.1.Final</xnio.netty.netty-xnio-transport.version>
         <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
         <hibernate.javax.persistence.artifactId>hibernate-jpa-2.1-api</hibernate.javax.persistence.artifactId>
         <hibernate.entitymanager.version>4.3.10.Final</hibernate.entitymanager.version>
@@ -237,16 +235,6 @@
                 <groupId>org.jboss.spec.javax.xml.bind</groupId>
                 <artifactId>jboss-jaxb-api_2.2_spec</artifactId>
                 <version>${jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-all</artifactId>
-                <version>${io.netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.xnio.netty</groupId>
-                <artifactId>netty-xnio-transport</artifactId>
-                <version>${xnio.netty.netty-xnio-transport.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
