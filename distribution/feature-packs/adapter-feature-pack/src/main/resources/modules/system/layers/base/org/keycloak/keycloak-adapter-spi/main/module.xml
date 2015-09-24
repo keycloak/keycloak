@@ -10,6 +10,13 @@
     <dependencies>
         <module name="javax.api"/>
         <module name="org.jboss.logging"/>
+        <module name="org.jboss.xnio"/>
+        <module name="io.undertow.core"/>
+        <module name="io.undertow.servlet"/>
+        <module name="javax.servlet.api"/>
+        <module name="org.bouncycastle" />
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="net.iharder.base64"/>
     </dependencies>
 
 </module>

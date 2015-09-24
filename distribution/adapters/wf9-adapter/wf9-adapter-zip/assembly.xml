@@ -14,6 +14,7 @@
                 <include>net/iharder/base64/**</include>
                 <include>org/keycloak/keycloak-core/**</include>
                 <include>org/keycloak/keycloak-adapter-core/**</include>
+                <include>org/keycloak/keycloak-adapter-spi/**</include>
                 <include>org/keycloak/keycloak-jboss-adapter-core/**</include>
                 <include>org/keycloak/keycloak-undertow-adapter/**</include>
                 <include>org/keycloak/keycloak-wildfly-adapter/**</include>
