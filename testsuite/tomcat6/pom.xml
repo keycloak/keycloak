@@ -184,11 +184,6 @@
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-chrome-driver</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-undertow</artifactId>
-            <scope>test</scope>
-        </dependency>
        <dependency>
            <groupId>org.keycloak</groupId>
            <artifactId>keycloak-testsuite-integration</artifactId>

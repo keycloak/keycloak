@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
-<server xmlns="urn:jboss:domain:3.0">
+<server xmlns="urn:jboss:domain:4.0">
 
     <extensions>
         <?EXTENSIONS?>
@@ -29,15 +29,15 @@
         </security-realms>
         <audit-log>
             <formatters>
-               <json-formatter name="json-formatter"/>
-            </formatters>        
+                <json-formatter name="json-formatter"/>
+            </formatters>
             <handlers>
-               <file-handler name="file" formatter="json-formatter" relative-to="jboss.server.data.dir" path="audit-log.log"/>
+                <file-handler name="file" formatter="json-formatter" relative-to="jboss.server.data.dir" path="audit-log.log"/>
             </handlers>
             <logger log-boot="true" log-read-only="false" enabled="false">
-               <handlers>
-                  <handler name="file"/>
-               </handlers>
+                <handlers>
+                    <handler name="file"/>
+                </handlers>
             </logger>
         </audit-log>
         <management-interfaces>
@@ -70,11 +70,7 @@
             <inet-address value="${jboss.bind.address:127.0.0.1}"/>
         </interface>
         <!-- TODO - only show this if the jacorb subsystem is added  -->
-        <interface name="unsecure">
-            <!-- Used for IIOP sockets in the standard configuration.
-                 To secure JacORB you need to setup SSL -->
-            <inet-address value="${jboss.bind.address.unsecure:127.0.0.1}"/>
-        </interface>
+        <?INTERFACES?>
     </interfaces>
 
     <socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
