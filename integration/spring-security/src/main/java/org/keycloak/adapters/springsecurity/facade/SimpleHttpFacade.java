@@ -1,9 +1,7 @@
 package org.keycloak.adapters.springsecurity.facade;
 
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.HttpFacade;
-import org.keycloak.adapters.springsecurity.facade.WrappedHttpServletRequest;
-import org.keycloak.adapters.springsecurity.facade.WrappedHttpServletResponse;
+import org.keycloak.adapters.OIDCHttpFacade;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.Assert;
@@ -13,12 +11,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Simple {@link HttpFacade} wrapping an {@link HttpServletRequest} and {@link HttpServletResponse}.
+ * Simple {@link org.keycloak.adapters.OIDCHttpFacade} wrapping an {@link HttpServletRequest} and {@link HttpServletResponse}.
  *
  * @author <a href="mailto:srossillo@smartling.com">Scott Rossillo</a>
  * @version $Revision: 1 $
  */
-public class SimpleHttpFacade implements HttpFacade {
+public class SimpleHttpFacade implements OIDCHttpFacade {
 
     private final HttpServletRequest request;
     private final HttpServletResponse response;

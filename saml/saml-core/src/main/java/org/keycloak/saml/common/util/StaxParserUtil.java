@@ -105,6 +105,23 @@ public class StaxParserUtil {
     }
 
     /**
+     * Get the Attribute value
+     *
+     * @param startElement
+     * @param tag localpart of the qname of the attribute
+     *
+     * @return false if attribute not set
+     */
+    public static boolean getBooleanAttributeValue(StartElement startElement, String tag) {
+        String result = null;
+        Attribute attr = startElement.getAttributeByName(new QName(tag));
+        if (attr != null)
+            result = getAttributeValue(attr);
+        if (result == null) return false;
+        return Boolean.valueOf(result);
+    }
+
+    /**
      * Given that the {@code XMLEventReader} is in {@code XMLStreamConstants.START_ELEMENT} mode, we parse into a DOM
      * Element
      *

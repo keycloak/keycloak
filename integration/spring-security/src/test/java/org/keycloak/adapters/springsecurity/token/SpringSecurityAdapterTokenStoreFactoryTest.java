@@ -2,10 +2,9 @@ package org.keycloak.adapters.springsecurity.token;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.adapters.AdapterTokenStore;
+import org.keycloak.adapters.AdapterSessionStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,7 +31,7 @@ public class SpringSecurityAdapterTokenStoreFactoryTest {
 
     @Test
     public void testCreateAdapterTokenStore() throws Exception {
-        AdapterTokenStore store = factory.createAdapterTokenStore(deployment, request);
+        AdapterSessionStore store = factory.createAdapterTokenStore(deployment, request);
         assertNotNull(store);
         assertTrue(store instanceof SpringSecurityTokenStore);
     }

@@ -21,15 +21,22 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.util;
 
+import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.ErrorCodes;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.exceptions.fed.IssueInstantMissingException;
 import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.common.util.StaxUtil;
+import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
+import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLAssertionWriter;
 import org.keycloak.dom.saml.v1.assertion.SAML11AssertionType;
 import org.keycloak.dom.saml.v1.assertion.SAML11AttributeStatementType;
@@ -45,13 +52,17 @@ import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType.STSubType;
+import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
+import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
@@ -509,5 +520,52 @@ public class AssertionUtil {
             }
         }
         return roles;
+    }
+
+    public static AssertionType getAssertion(ResponseType responseType, PrivateKey privateKey) throws ParsingException, ProcessingException, ConfigurationException {
+        List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
+
+        if (assertions.isEmpty()) {
+            throw new ProcessingException("No assertion from response.");
+        }
+
+        ResponseType.RTChoiceType rtChoiceType = assertions.get(0);
+        EncryptedAssertionType encryptedAssertion = rtChoiceType.getEncryptedAssertion();
+
+        if (encryptedAssertion != null) {
+            if (privateKey == null) {
+                throw new ProcessingException("Encryptd assertion and decrypt private key is null");
+            }
+            decryptAssertion(responseType, privateKey);
+
+        }
+        return responseType.getAssertions().get(0).getAssertion();
+    }
+
+    public static ResponseType decryptAssertion(ResponseType responseType, PrivateKey privateKey) throws ParsingException, ProcessingException, ConfigurationException {
+        SAML2Response saml2Response = new SAML2Response();
+
+        Document doc = saml2Response.convert(responseType);
+        Element enc = DocumentUtil.getElement(doc, new QName(JBossSAMLConstants.ENCRYPTED_ASSERTION.get()));
+
+        if (enc == null) {
+            throw new ProcessingException("No encrypted assertion found.");
+        }
+
+        String oldID = enc.getAttribute(JBossSAMLConstants.ID.get());
+        Document newDoc = DocumentUtil.createDocument();
+        Node importedNode = newDoc.importNode(enc, true);
+        newDoc.appendChild(importedNode);
+
+        Element decryptedDocumentElement = XMLEncryptionUtil.decryptElementInDocument(newDoc, privateKey);
+        SAMLParser parser = new SAMLParser();
+
+        JAXPValidationUtil.checkSchemaValidation(decryptedDocumentElement);
+        AssertionType assertion = (AssertionType) parser.parse(StaxParserUtil.getXMLEventReader(DocumentUtil
+                .getNodeAsStream(decryptedDocumentElement)));
+
+        responseType.replaceAssertion(oldID, new ResponseType.RTChoiceType(assertion));
+
+        return responseType;
     }
 }

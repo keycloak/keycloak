@@ -19,26 +19,23 @@ import java.util.logging.Logger;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class CatalinaSessionTokenStore implements AdapterTokenStore {
+public class CatalinaSessionTokenStore extends CatalinaAdapterSessionStore implements AdapterTokenStore {
 
     private static final Logger log = Logger.getLogger("" + CatalinaSessionTokenStore.class);
 
-    private Request request;
     private KeycloakDeployment deployment;
     private CatalinaUserSessionManagement sessionManagement;
     protected GenericPrincipalFactory principalFactory;
-    protected AbstractKeycloakAuthenticatorValve valve;
 
 
     public CatalinaSessionTokenStore(Request request, KeycloakDeployment deployment,
                                      CatalinaUserSessionManagement sessionManagement,
                                      GenericPrincipalFactory principalFactory,
                                      AbstractKeycloakAuthenticatorValve valve) {
-        this.request = request;
+        super(request, valve);
         this.deployment = deployment;
         this.sessionManagement = sessionManagement;
         this.principalFactory = principalFactory;
-        this.valve = valve;
     }
 
     @Override
@@ -169,17 +166,4 @@ public class CatalinaSessionTokenStore implements AdapterTokenStore {
         // no-op
     }
 
-    @Override
-    public void saveRequest() {
-        try {
-            valve.keycloakSaveRequest(request);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public boolean restoreRequest() {
-        return valve.keycloakRestoreRequest(request);
-    }
 }

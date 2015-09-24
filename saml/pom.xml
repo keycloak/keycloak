@@ -16,5 +16,6 @@
     <modules>
         <module>saml-core</module>
         <module>saml-protocol</module>
+        <module>client-adapter</module>
     </modules>
 </project>

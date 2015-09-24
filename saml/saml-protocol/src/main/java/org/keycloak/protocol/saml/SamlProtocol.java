@@ -26,6 +26,11 @@ import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.saml.mappers.SAMLAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.SAMLLoginResponseMapper;
 import org.keycloak.protocol.saml.mappers.SAMLRoleListMapper;
+import org.keycloak.saml.SAML2ErrorResponseBuilder;
+import org.keycloak.saml.SAML2LoginResponseBuilder;
+import org.keycloak.saml.SAML2LogoutRequestBuilder;
+import org.keycloak.saml.SAML2LogoutResponseBuilder;
+import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
@@ -166,15 +171,17 @@ public class SamlProtocol implements LoginProtocol {
 
     protected Response getErrorResponse(ClientSessionModel clientSession, String status) {
         SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
-                .relayState(clientSession.getNote(GeneralConstants.RELAY_STATE))
                 .destination(clientSession.getRedirectUri())
                 .issuer(getResponseIssuer(realm))
                 .status(status);
       try {
+          JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
+                  .relayState(clientSession.getNote(GeneralConstants.RELAY_STATE));
+          Document document = builder.buildDocument();
           if (isPostBinding(clientSession)) {
-              return builder.postBinding().response();
+              return binding.postBinding(document).response(clientSession.getRedirectUri());
           } else {
-              return builder.redirectBinding().response();
+              return binding.redirectBinding(document).response(clientSession.getRedirectUri());
           }
         } catch (Exception e) {
             return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);
@@ -336,7 +343,7 @@ public class SamlProtocol implements LoginProtocol {
             return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);
         }
 
-        SAML2BindingBuilder2 bindingBuilder = new SAML2BindingBuilder2();
+        JaxrsSAML2BindingBuilder bindingBuilder = new JaxrsSAML2BindingBuilder();
         bindingBuilder.relayState(relayState);
 
         if (requiresRealmSignature(client)) {
@@ -490,12 +497,14 @@ public class SamlProtocol implements LoginProtocol {
             if (isLogoutPostBindingForClient(clientSession)) {
                 String bindingUri = getLogoutServiceUrl(uriInfo, client, SAML_POST_BINDING);
                 SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(bindingUri, clientSession, client);
-                return logoutBuilder.postBinding().request(bindingUri);
+                JaxrsSAML2BindingBuilder binding = createBindingBuilder(client);
+                return binding.postBinding(logoutBuilder.buildDocument()).request(bindingUri);
             } else {
                 logger.debug("frontchannel redirect binding");
                 String bindingUri = getLogoutServiceUrl(uriInfo, client, SAML_REDIRECT_BINDING);
                 SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(bindingUri, clientSession, client);
-                return logoutBuilder.redirectBinding().request(bindingUri);
+                JaxrsSAML2BindingBuilder binding = createBindingBuilder(client);
+                return binding.redirectBinding(logoutBuilder.buildDocument()).request(bindingUri);
             }
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);
@@ -523,24 +532,25 @@ public class SamlProtocol implements LoginProtocol {
         builder.logoutRequestID(userSession.getNote(SAML_LOGOUT_REQUEST_ID));
         builder.destination(logoutBindingUri);
         builder.issuer(getResponseIssuer(realm));
-        builder.relayState(logoutRelayState);
+        JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder();
+        binding.relayState(logoutRelayState);
         String signingAlgorithm = userSession.getNote(SAML_LOGOUT_SIGNATURE_ALGORITHM);
         if (signingAlgorithm != null) {
             SignatureAlgorithm algorithm = SignatureAlgorithm.valueOf(signingAlgorithm);
             String canonicalization = userSession.getNote(SAML_LOGOUT_CANONICALIZATION);
             if (canonicalization != null) {
-                builder.canonicalizationMethod(canonicalization);
+                binding.canonicalizationMethod(canonicalization);
             }
-            builder.signatureAlgorithm(algorithm)
+            binding.signatureAlgorithm(algorithm)
                     .signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
                     .signDocument();
         }
 
         try {
             if (isLogoutPostBindingForInitiator(userSession)) {
-                return builder.postBinding().response(logoutBindingUri);
+                return binding.postBinding(builder.buildDocument()).response(logoutBindingUri);
             } else {
-                return builder.redirectBinding().response(logoutBindingUri);
+                return binding.redirectBinding(builder.buildDocument()).response(logoutBindingUri);
             }
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);
@@ -566,7 +576,8 @@ public class SamlProtocol implements LoginProtocol {
 
         String logoutRequestString = null;
         try {
-            logoutRequestString = logoutBuilder.postBinding().encoded();
+            JaxrsSAML2BindingBuilder binding = createBindingBuilder(client);
+            logoutRequestString = binding.postBinding(logoutBuilder.buildDocument()).encoded();
         } catch (Exception e) {
             logger.warn("failed to send saml logout", e);
             return;
@@ -614,26 +625,20 @@ public class SamlProtocol implements LoginProtocol {
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
                                          .assertionExpiration(realm.getAccessCodeLifespan())
                                          .issuer(getResponseIssuer(realm))
+                                         .sessionIndex(clientSession.getId())
                                          .userPrincipal(clientSession.getNote(SAML_NAME_ID), clientSession.getNote(SAML_NAME_ID_FORMAT))
                                          .destination(logoutUrl);
-        if (requiresRealmSignature(client)) {
-            logoutBuilder.signatureAlgorithm(getSignatureAlgorithm(client))
-                         .signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
-                         .signDocument();
-        }
-        /*
-        if (requiresEncryption(client)) {
-            PublicKey publicKey = null;
-            try {
-                publicKey = PemUtils.decodePublicKey(client.getAttribute(ClientModel.PUBLIC_KEY));
-            } catch (Exception e) {
-                logger.error("failed", e);
-                return;
-            }
-            logoutBuilder.encrypt(publicKey);
-        }
-        */
         return logoutBuilder;
+    }
+
+    private JaxrsSAML2BindingBuilder createBindingBuilder(ClientModel client) {
+        JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder();
+        if (requiresRealmSignature(client)) {
+            binding.signatureAlgorithm(getSignatureAlgorithm(client))
+                   .signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
+                   .signDocument();
+        }
+        return binding;
     }
 
     @Override

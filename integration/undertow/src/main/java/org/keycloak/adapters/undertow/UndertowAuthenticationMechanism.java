@@ -25,7 +25,7 @@ public class UndertowAuthenticationMechanism extends AbstractUndertowKeycloakAut
 
     @Override
     public AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange, SecurityContext securityContext) {
-        UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
+        UndertowHttpFacade facade = new OIDCUndertowHttpFacade(exchange);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (!deployment.isConfigured()) {
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;

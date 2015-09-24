@@ -11,13 +11,13 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.SecurityContext;
 
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.util.HostUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class JaxrsHttpFacade implements HttpFacade {
+public class JaxrsHttpFacade implements OIDCHttpFacade {
 
     protected final ContainerRequestContext requestContext;
     protected final SecurityContext securityContext;
@@ -31,7 +31,12 @@ public class JaxrsHttpFacade implements HttpFacade {
         this.securityContext = securityContext;
     }
 
-    protected class RequestFacade implements HttpFacade.Request {
+    protected class RequestFacade implements OIDCHttpFacade.Request {
+
+        @Override
+        public String getFirstParam(String param) {
+            throw new RuntimeException("NOT IMPLEMENTED");
+        }
 
         @Override
         public String getMethod() {
@@ -90,7 +95,7 @@ public class JaxrsHttpFacade implements HttpFacade {
         }
     }
 
-    protected class ResponseFacade implements HttpFacade.Response {
+    protected class ResponseFacade implements OIDCHttpFacade.Response {
 
         private javax.ws.rs.core.Response.ResponseBuilder responseBuilder = javax.ws.rs.core.Response.status(204);
 
