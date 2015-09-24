@@ -134,6 +134,9 @@ public class OAuthRequestAuthenticator {
         String idpHint = getQueryParamValue(AdapterConstants.KC_IDP_HINT);
         url = UriUtils.stripQueryParam(url, AdapterConstants.KC_IDP_HINT);
 
+        String skipAuthMechanisms = getQueryParamValue(AdapterConstants.SKIP_AUTH_MECHANISMS);
+        url = UriUtils.stripQueryParam(url, AdapterConstants.SKIP_AUTH_MECHANISMS);
+
         String scope = getQueryParamValue(OAuth2Constants.SCOPE);
         url = UriUtils.stripQueryParam(url, OAuth2Constants.SCOPE);
 
@@ -145,6 +148,9 @@ public class OAuthRequestAuthenticator {
                 .queryParam("login", "true");
         if(loginHint != null && loginHint.length() > 0){
             redirectUriBuilder.queryParam("login_hint",loginHint);
+        }
+        if(skipAuthMechanisms != null && skipAuthMechanisms.length() > 0){
+            redirectUriBuilder.queryParam(AdapterConstants.SKIP_AUTH_MECHANISMS, skipAuthMechanisms);
         }
         if (idpHint != null && idpHint.length() > 0) {
             redirectUriBuilder.queryParam(AdapterConstants.KC_IDP_HINT,idpHint);

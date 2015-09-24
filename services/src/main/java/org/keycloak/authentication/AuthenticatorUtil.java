@@ -1,8 +1,11 @@
 package org.keycloak.authentication;
 
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.RealmModel;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -57,5 +60,16 @@ public class AuthenticatorUtil {
             return false;
         }
         return execution.isRequired();
+    }
+
+    public static boolean isAuthenticatorSkippable(AuthenticatorFactory factory, ClientSessionModel clientSessionModel, AuthenticationExecutionModel model) {
+        if(model.isRequired()){
+            return false;
+        }
+        String note = clientSessionModel.getNote(AdapterConstants.SKIP_AUTH_MECHANISMS);
+        if(note != null){
+            return Arrays.asList(note.split(",")).contains(factory.getId());
+        }
+        return false;
     }
 }
