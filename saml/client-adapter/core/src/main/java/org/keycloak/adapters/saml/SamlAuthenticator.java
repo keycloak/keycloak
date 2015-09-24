@@ -281,7 +281,7 @@ public abstract class SamlAuthenticator {
                                     attributes.add(attr.getName(), value);
                                 }
                                 if (attr.getFriendlyName() != null) {
-                                    attributes.add(attr.getFriendlyName(), value);
+                                    friendlyAttributes.add(attr.getFriendlyName(), value);
                                 }
                             }
                         }

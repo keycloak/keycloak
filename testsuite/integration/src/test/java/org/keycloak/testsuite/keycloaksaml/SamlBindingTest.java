@@ -6,10 +6,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.Config;
-import org.keycloak.dom.saml.v2.assertion.AssertionType;
-import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
-import org.keycloak.dom.saml.v2.assertion.AttributeType;
-import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.adapters.saml.SamlPrincipal;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -26,10 +23,7 @@ import org.keycloak.protocol.saml.mappers.HardcodedRole;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.RoleNameMapper;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
-import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -52,9 +46,10 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -73,14 +68,14 @@ public class SamlBindingTest {
             initializeSamlSecuredWar("/keycloak-saml/signed-post-email", "/sales-post-sig-email",  "post-sig-email.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post-transient", "/sales-post-sig-transient",  "post-sig-transient.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post-persistent", "/sales-post-sig-persistent",  "post-sig-persistent.war", classLoader);
-            //initializeSamlSecuredWar("/keycloak-saml/signed-metadata", "/sales-metadata",  "post-metadata.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/signed-metadata", "/sales-metadata",  "post-metadata.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-get", "/employee-sig",  "employee-sig.war", classLoader);
-            //initializeSamlSecuredWar("/saml/simple-get", "/employee",  "employee.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/mappers", "/employee2",  "employee2.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-front-get", "/employee-sig-front",  "employee-sig-front.war", classLoader);
-            //initializeSamlSecuredWar("/keycloak-saml/bad-client-signed-post", "/bad-client-sales-post-sig",  "bad-client-post-sig.war", classLoader);
-            //initializeSamlSecuredWar("/keycloak-saml/bad-realm-signed-post", "/bad-realm-sales-post-sig",  "bad-realm-post-sig.war", classLoader);
-            //initializeSamlSecuredWar("/keycloak-saml/encrypted-post", "/sales-post-enc",  "post-enc.war", classLoader);
-            //uploadSP();
+            initializeSamlSecuredWar("/keycloak-saml/bad-client-signed-post", "/bad-client-sales-post-sig",  "bad-client-post-sig.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/bad-realm-signed-post", "/bad-realm-sales-post-sig",  "bad-realm-post-sig.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/encrypted-post", "/sales-post-enc",  "post-enc.war", classLoader);
+            uploadSP();
             server.getServer().deploy(createDeploymentInfo("employee.war", "/employee", SamlSPFacade.class));
 
 
@@ -89,7 +84,7 @@ public class SamlBindingTest {
 
         @Override
         public String getRealmJson() {
-            return "/saml/testsaml.json";
+            return "/keycloak-saml/testsaml.json";
         }
     };
 
@@ -235,63 +230,35 @@ public class SamlBindingTest {
 
     }
 
-
     @Test
     public void testAttributes() throws Exception {
-        // this test has a hardcoded SAMLRequest and we hack a SP face servlet to get the SAMLResponse so we can look
-        // at the assertions sent.  This is because Picketlink, AFAICT, does not give you any way to get access to
-        // the assertion.
-
         {
-            SamlSPFacade.samlResponse = null;
-            driver.navigate().to("http://localhost:8081/employee/");
+            SamlKeycloakRule.SendUsernameServlet.sentPrincipal = null;
+            SamlKeycloakRule.SendUsernameServlet.checkRoles = null;
+            driver.navigate().to("http://localhost:8081/employee2/");
             Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
-            System.out.println(driver.getCurrentUrl());
+            List<String> requiredRoles = new LinkedList<>();
+            requiredRoles.add("manager");
+            requiredRoles.add("employee");
+            requiredRoles.add("user");
+            SamlKeycloakRule.SendUsernameServlet.checkRoles = requiredRoles;
             loginPage.login("bburke", "password");
-            Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/employee/");
-            Assert.assertNotNull(SamlSPFacade.samlResponse);
-            SAML2Response saml2Response = new SAML2Response();
-            byte[] samlResponse = PostBindingUtil.base64Decode(SamlSPFacade.samlResponse);
-            ResponseType rt = saml2Response.getResponseType(new ByteArrayInputStream(samlResponse));
-            Assert.assertTrue(rt.getAssertions().size() == 1);
-            AssertionType assertion = rt.getAssertions().get(0).getAssertion();
+            Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/employee2/");
+            SamlKeycloakRule.SendUsernameServlet.checkRoles = null;
+            SamlPrincipal principal = (SamlPrincipal)SamlKeycloakRule.SendUsernameServlet.sentPrincipal;
+            Assert.assertNotNull(principal);
+            Assert.assertEquals("bburke@redhat.com", principal.getAttribute(X500SAMLProfileConstants.EMAIL.get()));
+            Assert.assertEquals("bburke@redhat.com", principal.getFriendlyAttribute("email"));
+            Assert.assertEquals("617", principal.getAttribute("phone"));
+            Assert.assertNull(principal.getFriendlyAttribute("phone"));
+            driver.navigate().to("http://localhost:8081/employee2/?GLO=true");
+            checkLoggedOut("http://localhost:8081/employee2/");
 
-            // test attributes and roles
-
-            boolean email = false;
-            boolean phone = false;
-            boolean userRole = false;
-            boolean managerRole = false;
-            for (AttributeStatementType statement : assertion.getAttributeStatements()) {
-                for (AttributeStatementType.ASTChoiceType choice : statement.getAttributes()) {
-                    AttributeType attr = choice.getAttribute();
-                    if (X500SAMLProfileConstants.EMAIL.getFriendlyName().equals(attr.getFriendlyName())) {
-                        Assert.assertEquals(X500SAMLProfileConstants.EMAIL.get(), attr.getName());
-                        Assert.assertEquals(JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.get(), attr.getNameFormat());
-                        Assert.assertEquals(attr.getAttributeValue().get(0), "bburke@redhat.com");
-                        email = true;
-                    } else if (attr.getName().equals("phone")) {
-                        Assert.assertEquals(JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC.get(), attr.getNameFormat());
-                        Assert.assertEquals(attr.getAttributeValue().get(0), "617");
-                        phone = true;
-                    } else if (attr.getName().equals("Role")) {
-                        if (attr.getAttributeValue().get(0).equals("manager")) managerRole = true;
-                        if (attr.getAttributeValue().get(0).equals("user")) userRole = true;
-                    }
-                }
-
-            }
-
-            Assert.assertTrue(email);
-            Assert.assertTrue(phone);
-            Assert.assertTrue(userRole);
-            Assert.assertTrue(managerRole);
         }
-
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                ClientModel app = appRealm.getClientByClientId("http://localhost:8081/employee/");
+                ClientModel app = appRealm.getClientByClientId("http://localhost:8081/employee2/");
                 for (ProtocolMapperModel mapper : app.getProtocolMappers()) {
                     if (mapper.getName().equals("role-list")) {
                         app.removeProtocolMapper(mapper);
@@ -311,51 +278,25 @@ public class SamlBindingTest {
         System.out.println(">>>>>>>>>> single role attribute <<<<<<<<");
 
         {
-            SamlSPFacade.samlResponse = null;
-            driver.navigate().to("http://localhost:8081/employee/");
-            System.out.println(driver.getCurrentUrl());
-            Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/employee/");
-            Assert.assertNotNull(SamlSPFacade.samlResponse);
-            SAML2Response saml2Response = new SAML2Response();
-            byte[] samlResponse = PostBindingUtil.base64Decode(SamlSPFacade.samlResponse);
-            ResponseType rt = saml2Response.getResponseType(new ByteArrayInputStream(samlResponse));
-            Assert.assertTrue(rt.getAssertions().size() == 1);
-            AssertionType assertion = rt.getAssertions().get(0).getAssertion();
+            SamlKeycloakRule.SendUsernameServlet.sentPrincipal = null;
+            SamlKeycloakRule.SendUsernameServlet.checkRoles = null;
+            driver.navigate().to("http://localhost:8081/employee2/");
+            Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+            List<String> requiredRoles = new LinkedList<>();
+            requiredRoles.add("el-jefe");
+            requiredRoles.add("user");
+            requiredRoles.add("hardcoded-role");
+            requiredRoles.add("pee-on");
+            SamlKeycloakRule.SendUsernameServlet.checkRoles = requiredRoles;
+            SamlKeycloakRule.SendUsernameServlet.checkRoles = requiredRoles;
+            loginPage.login("bburke", "password");
+            Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/employee2/");
+            SamlKeycloakRule.SendUsernameServlet.checkRoles = null;
+            SamlPrincipal principal = (SamlPrincipal)SamlKeycloakRule.SendUsernameServlet.sentPrincipal;
+            Assert.assertNotNull(principal);
+            Assert.assertEquals("hard", principal.getAttribute("hardcoded-attribute"));
 
-            // test attributes and roles
 
-            boolean userRole = false;
-            boolean managerRole = false;
-            boolean single = false;
-            boolean hardcodedRole = false;
-            boolean hardcodedAttribute = false;
-            boolean peeOn = false;
-            for (AttributeStatementType statement : assertion.getAttributeStatements()) {
-                for (AttributeStatementType.ASTChoiceType choice : statement.getAttributes()) {
-                    AttributeType attr = choice.getAttribute();
-                    if (attr.getName().equals("memberOf")) {
-                        if (single) Assert.fail("too many role attributes");
-                        single = true;
-                        for (Object value : attr.getAttributeValue()) {
-                            if (value.equals("el-jefe")) managerRole = true;
-                            if (value.equals("user")) userRole = true;
-                            if (value.equals("hardcoded-role")) hardcodedRole = true;
-                            if (value.equals("pee-on")) peeOn = true;
-                        }
-                    } else if (attr.getName().equals("hardcoded-attribute")) {
-                        hardcodedAttribute = true;
-                        Assert.assertEquals(attr.getAttributeValue().get(0), "hard");
-                    }
-                }
-
-            }
-
-            Assert.assertTrue(single);
-            Assert.assertTrue(hardcodedAttribute);
-            Assert.assertTrue(hardcodedRole);
-            Assert.assertTrue(peeOn);
-            Assert.assertTrue(userRole);
-            Assert.assertTrue(managerRole);
         }
     }
 
@@ -495,7 +436,7 @@ public class SamlBindingTest {
 
 
         MultipartFormDataOutput formData = new MultipartFormDataOutput();
-        InputStream is = SamlBindingTest.class.getResourceAsStream("/saml/sp-metadata.xml");
+        InputStream is = SamlBindingTest.class.getResourceAsStream("/keycloak-saml/sp-metadata.xml");
         Assert.assertNotNull(is);
         formData.addFormData("file", is, MediaType.APPLICATION_XML_TYPE);
 

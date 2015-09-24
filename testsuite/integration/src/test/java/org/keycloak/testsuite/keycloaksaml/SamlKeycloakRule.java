@@ -12,6 +12,7 @@ import io.undertow.servlet.api.LoginConfig;
 import io.undertow.servlet.api.SecurityConstraint;
 import io.undertow.servlet.api.ServletInfo;
 import io.undertow.servlet.api.WebResourceCollection;
+import org.junit.Assert;
 import org.keycloak.adapters.saml.undertow.SamlServletExtension;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.picketlink.identity.federation.bindings.wildfly.sp.SPServletExtension;
@@ -24,6 +25,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
 import java.security.Principal;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -32,8 +34,19 @@ import java.security.Principal;
 public abstract class SamlKeycloakRule extends AbstractKeycloakRule {
 
     public static class SendUsernameServlet extends HttpServlet {
+
+        public static Principal sentPrincipal;
+        public static List<String> checkRoles;
+
         @Override
         protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+            if (checkRoles != null) {
+                for (String role : checkRoles) {
+                    System.out.println("check role: " + role);
+                    Assert.assertTrue(req.isUserInRole(role));
+                }
+
+            }
             resp.setContentType("text/plain");
             OutputStream stream = resp.getOutputStream();
             Principal principal = req.getUserPrincipal();
@@ -47,9 +60,17 @@ public abstract class SamlKeycloakRule extends AbstractKeycloakRule {
             }
             String name = principal.getName();
             stream.write(name.getBytes());
+            sentPrincipal = principal;
+
         }
         @Override
         protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+            if (checkRoles != null) {
+                for (String role : checkRoles) {
+                    Assert.assertTrue(req.isUserInRole(role));
+                }
+
+            }
             resp.setContentType("text/plain");
             OutputStream stream = resp.getOutputStream();
             Principal principal = req.getUserPrincipal();
@@ -63,6 +84,7 @@ public abstract class SamlKeycloakRule extends AbstractKeycloakRule {
             }
             String name = principal.getName();
             stream.write(name.getBytes());
+            sentPrincipal = principal;
         }
     }
 
@@ -142,6 +164,7 @@ public abstract class SamlKeycloakRule extends AbstractKeycloakRule {
         collection.addUrlPattern("/*");
         constraint.addWebResourceCollection(collection);
         constraint.addRoleAllowed("manager");
+        constraint.addRoleAllowed("el-jefe");
         LoginConfig loginConfig = new LoginConfig("KEYCLOAK-SAML", "Test Realm");
 
         ResourceManager resourceManager = new TestResourceManager(warResourcePath);

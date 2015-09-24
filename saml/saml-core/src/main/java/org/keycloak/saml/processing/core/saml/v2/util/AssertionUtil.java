@@ -533,6 +533,9 @@ public class AssertionUtil {
         EncryptedAssertionType encryptedAssertion = rtChoiceType.getEncryptedAssertion();
 
         if (encryptedAssertion != null) {
+            if (privateKey == null) {
+                throw new ProcessingException("Encryptd assertion and decrypt private key is null");
+            }
             decryptAssertion(responseType, privateKey);
 
         }

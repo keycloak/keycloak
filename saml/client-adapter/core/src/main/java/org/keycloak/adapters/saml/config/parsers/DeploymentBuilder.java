@@ -89,7 +89,8 @@ public class DeploymentBuilder {
                     KeyPair keyPair = new KeyPair(publicKey, privateKey);
                     deployment.setSigningKeyPair(keyPair);
 
-                } else if (key.isEncryption()) {
+                }
+                if (key.isEncryption()) {
                     KeyStore keyStore = loadKeystore(resourceLoader, key);
                     try {
                         PrivateKey privateKey = (PrivateKey) keyStore.getKey(key.getKeystore().getPrivateKeyAlias(), key.getKeystore().getPrivateKeyPassword().toCharArray());

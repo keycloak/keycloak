@@ -28,7 +28,8 @@
             },
             "realmRoles": ["manager", "user"],
             "applicationRoles": {
-                "http://localhost:8081/employee/": [ "employee" ]
+                "http://localhost:8081/employee/": [ "employee" ],
+                "http://localhost:8081/employee2/": [ "employee" ]
             }
         }
     ],
@@ -219,11 +220,61 @@
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
-            "baseUrl": "http://localhost:8081/employee",
+            "baseUrl": "http://localhost:8081/employee/",
             "redirectUris": [
                 "http://localhost:8081/employee/*"
             ],
             "adminUrl": "http://localhost:8081/employee/",
+            "attributes": {
+                "saml.authnstatement": "true"
+            },
+            "protocolMappers": [
+                {
+                    "name": "email",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-property-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "email",
+                        "friendly.name": "email",
+                        "attribute.name": "urn:oid:1.2.840.113549.1.9.1",
+                        "attribute.nameformat": "URI Reference"
+                    }
+                },
+                {
+                    "name": "phone",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "phone",
+                        "attribute.name": "phone",
+                        "attribute.nameformat": "Basic"
+                    }
+                },
+                {
+                    "name": "role-list",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-role-list-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "attribute.name": "Role",
+                        "attribute.nameformat": "Basic",
+                        "single": "false"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "http://localhost:8081/employee2/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8081/employee2/",
+            "redirectUris": [
+                "http://localhost:8081/employee2/*"
+            ],
+            "adminUrl": "http://localhost:8081/employee2/",
             "attributes": {
                 "saml.authnstatement": "true"
             },
@@ -300,6 +351,12 @@
         ],
         "application" : {
             "http://localhost:8081/employee/" : [
+                {
+                    "name": "employee",
+                    "description": "Have Employee privileges"
+                }
+            ],
+            "http://localhost:8081/employee2/" : [
                 {
                     "name": "employee",
                     "description": "Have Employee privileges"
