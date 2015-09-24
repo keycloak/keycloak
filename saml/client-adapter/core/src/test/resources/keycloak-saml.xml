@@ -7,7 +7,7 @@
         forceAuthentication="true">
         <Keys>
             <Key signing="true" >
-                <KeyStore file="file" classpath="cp" password="pw">
+                <KeyStore file="file" resource="cp" password="pw">
                     <PrivateKey alias="private alias" password="private pw"/>
                     <Certificate alias="cert alias"/>
                 </KeyStore>
