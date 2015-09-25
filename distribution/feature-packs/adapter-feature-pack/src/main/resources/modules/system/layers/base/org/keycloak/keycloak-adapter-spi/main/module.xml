@@ -16,7 +16,6 @@
         <module name="javax.servlet.api"/>
         <module name="org.bouncycastle" />
         <module name="org.keycloak.keycloak-core"/>
-        <module name="net.iharder.base64"/>
     </dependencies>
 
 </module>

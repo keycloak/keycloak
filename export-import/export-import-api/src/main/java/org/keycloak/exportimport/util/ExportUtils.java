@@ -1,6 +1,6 @@
 package org.keycloak.exportimport.util;
 
-import net.iharder.Base64;
+import org.keycloak.util.Base64;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;

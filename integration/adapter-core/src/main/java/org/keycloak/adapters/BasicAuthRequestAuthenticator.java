@@ -50,7 +50,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
 
         AccessTokenResponse atr=null;        
         try {
-            String userpw=new String(net.iharder.Base64.decode(tokenString));
+            String userpw=new String(org.keycloak.util.Base64.decode(tokenString));
             String[] parts=userpw.split(":");
             
             atr = getToken(parts[0], parts[1]);
