@@ -26,6 +26,7 @@ import org.apache.tomcat.util.http.mapper.Mapper;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
@@ -41,6 +42,7 @@ import java.util.regex.Matcher;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Ignore
 public class Tomcat7Test {
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {

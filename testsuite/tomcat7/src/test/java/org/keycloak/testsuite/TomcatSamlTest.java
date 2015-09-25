@@ -21,6 +21,7 @@
  */
 package org.keycloak.testsuite;
 
+import org.apache.catalina.startup.Tomcat;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -30,7 +31,6 @@ import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.adapter.AdapterTestStrategy;
 import org.keycloak.testsuite.keycloaksaml.SamlAdapterTestStrategy;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.openqa.selenium.WebDriver;
@@ -51,28 +51,31 @@ public class TomcatSamlTest {
        }
     };
 
-    static TomcatServer tomcat = null;
+    static Tomcat tomcat = null;
 
     @BeforeClass
     public static void initTomcat() throws Exception {
-        URL dir = TomcatSamlTest.class.getResource("/keycloak-saml/testsaml.json");
-        String baseDir = new File(dir.getFile()).getParentFile().toString();
-        System.out.println("Tomcat basedir: " + baseDir);
-        tomcat = new TomcatServer(8082, baseDir);
+        tomcat = new Tomcat();
+        String baseDir = getBaseDirectory();
+        tomcat.setBaseDir(baseDir);
+        tomcat.setPort(8082);
+
         System.setProperty("app.server.base.url", "http://localhost:8082");
         System.setProperty("my.host.name", "localhost");
-        tomcat.deploySaml("/sales-post", "simple-post");
-        tomcat.deploySaml("/sales-post-sig", "signed-post");
-        tomcat.deploySaml("/sales-post-sig-email", "signed-post-email");
-        tomcat.deploySaml("/sales-post-sig-transient", "signed-post-transient");
-        tomcat.deploySaml("/sales-post-sig-persistent", "signed-post-persistent");
-        tomcat.deploySaml("/sales-metadata", "signed-metadata");
-        tomcat.deploySaml("/employee-sig", "signed-get");
-        tomcat.deploySaml("/employee2", "mappers");
-        tomcat.deploySaml("/employee-sig-front", "signed-front-get");
-        tomcat.deploySaml("/bad-client-sales-post-sig", "bad-client-signed-post");
-        tomcat.deploySaml("/bad-realm-sales-post-sig", "bad-realm-signed-post");
-        tomcat.deploySaml("/sales-post-enc", "encrypted-post");
+        URL dir = TomcatSamlTest.class.getResource("/keycloak-saml/testsaml.json");
+        File base = new File(dir.getFile()).getParentFile();
+        tomcat.addWebapp("/sales-post", new File(base, "simple-post").toString());
+        tomcat.addWebapp("/sales-post-sig", new File(base, "signed-post").toString());
+        tomcat.addWebapp("/sales-post-sig-email", new File(base, "signed-post-email").toString());
+        tomcat.addWebapp("/sales-post-sig-transient", new File(base, "signed-post-transient").toString());
+        tomcat.addWebapp("/sales-post-sig-persistent", new File(base, "signed-post-persistent").toString());
+        tomcat.addWebapp("/sales-metadata", new File(base, "signed-metadata").toString());
+        tomcat.addWebapp("/employee-sig", new File(base, "signed-get").toString());
+        tomcat.addWebapp("/employee2", new File(base, "mappers").toString());
+        tomcat.addWebapp("/employee-sig-front", new File(base, "signed-front-get").toString());
+        tomcat.addWebapp("/bad-client-sales-post-sig", new File(base, "bad-client-signed-post").toString());
+        tomcat.addWebapp("/bad-realm-sales-post-sig", new File(base, "bad-realm-signed-post").toString());
+        tomcat.addWebapp("/sales-post-enc", new File(base, "encrypted-post").toString());
         SamlAdapterTestStrategy.uploadSP("http://localhost:8081/auth", keycloakRule);
 
 
@@ -173,20 +176,21 @@ public class TomcatSamlTest {
         testStrategy.testMetadataPostSignedLoginLogout();
     }
 
-    static String getBaseDirectory() {
+    private static String getBaseDirectory() {
         String dirPath = null;
-        String relativeDirPath = "testsuite" + File.separator + "tomcat6" + File.separator + "target";
+        String relativeDirPath = "testsuite" + File.separator + "tomcat7" + File.separator + "target";
 
         if (System.getProperties().containsKey("maven.home")) {
-            dirPath = System.getProperty("user.dir").replaceFirst("testsuite.tomcat6.*", Matcher.quoteReplacement(relativeDirPath));
+            dirPath = System.getProperty("user.dir").replaceFirst("testsuite.tomcat7.*", Matcher.quoteReplacement(relativeDirPath));
         } else {
             for (String c : System.getProperty("java.class.path").split(File.pathSeparator)) {
-                if (c.contains(File.separator + "testsuite" + File.separator + "tomcat6")) {
-                    dirPath = c.replaceFirst("testsuite.tomcat6.*", Matcher.quoteReplacement(relativeDirPath));
+                if (c.contains(File.separator + "testsuite" + File.separator + "tomcat7")) {
+                    dirPath = c.replaceFirst("testsuite.tomcat7.*", Matcher.quoteReplacement(relativeDirPath));
                     break;
                 }
             }
         }
+
         String absolutePath = new File(dirPath).getAbsolutePath();
         return absolutePath;
     }
