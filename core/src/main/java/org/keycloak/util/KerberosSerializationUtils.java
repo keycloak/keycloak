@@ -12,7 +12,7 @@ import java.lang.reflect.Method;
 
 import javax.security.auth.kerberos.KerberosTicket;
 
-import net.iharder.Base64;
+import org.keycloak.util.Base64;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;

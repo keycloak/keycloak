@@ -42,10 +42,6 @@
             <maven-resource group="org.keycloak" artifact="keycloak-core"/>
         </module-def>
 
-        <module-def name="net.iharder.base64">
-            <maven-resource group="net.iharder" artifact="base64"/>
-        </module-def>
-
 
         <!-- subsystems -->
 

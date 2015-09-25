@@ -1,6 +1,6 @@
 package org.keycloak.models.utils;
 
-import net.iharder.Base64;
+import org.keycloak.util.Base64;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
