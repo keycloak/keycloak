@@ -11,7 +11,7 @@ import org.openqa.selenium.support.FindBy;
  * Created by mhajas on 8/25/15.
  */
 public class EmailSettings extends RealmSettings {
-    
+
     @Override
     public String getUriFragment() {
         return super.getUriFragment() + "/smtp-settings";

@@ -22,9 +22,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.PasswordPolicy;
+import org.keycloak.testsuite.console.page.users.UserCredentials;
 
 import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.*;
-import org.keycloak.testsuite.console.page.users.UserCredentials;
 
 /**
  * @author Petr Mensik

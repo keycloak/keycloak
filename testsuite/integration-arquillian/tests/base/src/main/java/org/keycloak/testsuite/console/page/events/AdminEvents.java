@@ -7,7 +7,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**
- *
  * @author tkyjovsk
  * @author mhajas
  */
@@ -27,6 +26,12 @@ public class AdminEvents extends Events {
 
     public class AdminEventsTable extends DataTable {
 
+        @FindBy(xpath = "//button[text()[contains(.,'Filter')]]")
+        private WebElement filterButton;
+
+        @FindBy(tagName = "form")
+        private AdminEventsTableFilterForm filterForm;
+
         public void update() {
             waitAjaxForBody();
             clickHeaderButton("Update");
@@ -37,16 +42,10 @@ public class AdminEvents extends Events {
             clickHeaderButton("Reset");
         }
 
-        @FindBy(xpath = "//button[text()[contains(.,'Filter')]]")
-        private WebElement filterButton;
-
         public void filter() {
             waitAjaxForBody();
             filterButton.click();
         }
-
-        @FindBy(tagName = "form")
-        private AdminEventsTableFilterForm filterForm;
 
         public AdminEventsTableFilterForm filterForm() {
             return filterForm;
@@ -54,45 +53,51 @@ public class AdminEvents extends Events {
 
         public class AdminEventsTableFilterForm extends Form {
 
+            @FindBy(id = "resource")
+            private WebElement resourcePathInput;
+
+            @FindBy(id = "realm")
+            private WebElement realmInput;
+
+            @FindBy(id = "client")
+            private WebElement clientInput;
+
+            @FindBy(id = "user")
+            private WebElement userInput;
+
+            @FindBy(id = "ipAddress")
+            private WebElement ipAddressInput;
+
+            @FindBy(xpath = "//div[@id='s2id_adminEnabledEventOperations']/ul")
+            private WebElement operationTypesInput;
+
+            @FindBy(xpath = "//div[@id='select2-drop']")
+            private WebElement operationTypesValues;
+
             public void addOperationType(String type) {
-                driver.findElement(By.xpath("//div[@id='s2id_adminEnabledEventOperations']/ul")).click();
-                driver.findElement(By.xpath("//div[@id='select2-drop']//div[text()[contains(.,'" + type + "')]]/..")).click();
+                operationTypesInput.click();
+                operationTypesValues.findElement(By.xpath("//div[text() = '" + type + "']")).click();
             }
 
             public void removeOperationType(String type) {
-                driver.findElement(By.xpath("//div[@id='s2id_adminEnabledEventOperations']//div[text()='" + type + "']/../a")).click();
+                operationTypesInput.findElement(By.xpath("//div[text()='" + type + "']/../a")).click();
             }
-
-            @FindBy(id = "resource")
-            private WebElement resourcePathInput;
 
             public void setResourcePathInput(String value) {
                 setInputValue(resourcePathInput, value);
             }
 
-            @FindBy(id = "realm")
-            private WebElement realmInput;
-
             public void setRealmInput(String value) {
                 setInputValue(realmInput, value);
             }
-
-            @FindBy(id = "client")
-            private WebElement clientInput;
 
             public void setClientInput(String value) {
                 setInputValue(clientInput, value);
             }
 
-            @FindBy(id = "user")
-            private WebElement userInput;
-
             public void setUserInput(String value) {
                 setInputValue(userInput, value);
             }
-
-            @FindBy(id = "ipAddress")
-            private WebElement ipAddressInput;
 
             public void setIpAddressInput(String value) {
                 setInputValue(ipAddressInput, value);

@@ -19,7 +19,6 @@ package org.keycloak.testsuite.console.authentication;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.auth.page.login.Registration;
@@ -51,49 +50,17 @@ public class RequiredActionsTest extends AbstractConsoleTest {
         super.setDefaultPageUriParameters();
         testRealmRegistrationPage.setAuthRealm("test");
     }
-    
+
     @Before
     public void beforeRequiredActionsTest() {
         requiredActionsPage.navigateTo();
     }
 
     @Test
-    public void requiredActionsTest() {
-        requiredActionsPage.clickTermsAndConditionEnabled();
-        assertFlashMessageSuccess();
-
-        requiredActionsPage.clickTermsAndConditionDefaultAction();
-        assertFlashMessageSuccess();
-
-        requiredActionsPage.clickVerifyEmailEnabled();
-        assertFlashMessageSuccess();
-
-        requiredActionsPage.clickVerifyEmailDefaultAction();
-        assertFlashMessageSuccess();
-
-        requiredActionsPage.clickUpdatePasswordEnabled();
-        assertFlashMessageSuccess();
-
-        requiredActionsPage.clickUpdatePasswordDefaultAction();
-        assertFlashMessageSuccess();
-
-        requiredActionsPage.clickConfigureTotpEnabled();
-        assertFlashMessageSuccess();
-
-        requiredActionsPage.clickConfigureTotpDefaultAction();
-        assertFlashMessageSuccess();
-
-        requiredActionsPage.clickUpdateProfileEnabled();
-        assertFlashMessageSuccess();
-
-        requiredActionsPage.clickUpdateProfileDefaultAction();
-        assertFlashMessageSuccess();
-    }
-
-    @Test
     public void termsAndConditionsDefaultActionTest() {
-        requiredActionsPage.clickTermsAndConditionEnabled();
-        requiredActionsPage.clickTermsAndConditionDefaultAction();
+        requiredActionsPage.setTermsAndConditionEnabled(true);
+        requiredActionsPage.setTermsAndConditionDefaultAction(true);
+        assertFlashMessageSuccess();
 
         allowTestRealmUserRegistration();
 
@@ -106,7 +73,8 @@ public class RequiredActionsTest extends AbstractConsoleTest {
 
     @Test
     public void configureTotpDefaultActionTest() {
-        requiredActionsPage.clickConfigureTotpDefaultAction();
+        requiredActionsPage.setConfigureTotpDefaultAction(true);
+        assertFlashMessageSuccess();
 
         allowTestRealmUserRegistration();
 

@@ -7,7 +7,7 @@ import org.openqa.selenium.support.ui.Select;
 /**
  * Created by mhajas on 8/21/15.
  */
-public class Bindings extends Authentication{
+public class Bindings extends Authentication {
 
     @Override
     public String getUriFragment() {
@@ -17,47 +17,47 @@ public class Bindings extends Authentication{
     @FindBy(id = "browser")
     private Select BrowserFlowSelect;
 
+    @FindBy(id = "registration")
+    private Select RegistrationFlowSelect;
+
+    @FindBy(id = "grant")
+    private Select DirectGrantFlowSelect;
+
+    @FindBy(id = "resetCredentials")
+    private Select ResetCredentialsSelect;
+
+    @FindBy(id = "clientAuthentication")
+    private Select ClientAuthenticationSelect;
+
+    @FindBy(xpath = "//button[text()='Save']")
+    private WebElement saveButton;
+
+    @FindBy(xpath = "//button[text()='Cancel']")
+    private WebElement cancelButton;
+
     public void changeBrowserFlowSelect(BrowserFlowSelectValues value) {
         BrowserFlowSelect.selectByVisibleText(value.getName());
     }
-
-    @FindBy(id = "registration")
-    private Select RegistrationFlowSelect;
 
     public void changeRegistrationFlowSelect(RegistrationFlowSelectValues value) {
         RegistrationFlowSelect.selectByVisibleText(value.getName());
     }
 
-    @FindBy(id = "grant")
-    private Select DirectGrantFlowSelect;
-
     public void changeDirectGrantFlowSelect(DirectGrantFlowSelectValues value) {
         DirectGrantFlowSelect.selectByVisibleText(value.getName());
     }
-
-    @FindBy(id = "resetCredentials")
-    private Select ResetCredentialsSelect;
 
     public void changeResetCredentialsSelect(ResetCredentialsSelectValues value) {
         ResetCredentialsSelect.selectByVisibleText(value.getName());
     }
 
-    @FindBy(id = "clientAuthentication")
-    private Select ClientAuthenticationSelect;
-
     public void changeClientAuthenticationSelect(ClientAuthenticationSelectValues value) {
         ClientAuthenticationSelect.selectByVisibleText(value.getName());
     }
 
-    @FindBy(xpath = "//button[text()='Save']")
-    private WebElement saveButton;
-
     public void clickSave() {
         saveButton.click();
     }
-
-    @FindBy(xpath = "//button[text()='Cancel']")
-    private WebElement cancelButton;
 
     public void clickCancel() {
         cancelButton.click();
@@ -141,7 +141,6 @@ public class Bindings extends Authentication{
             return name;
         }
     }
-
 
 
 }

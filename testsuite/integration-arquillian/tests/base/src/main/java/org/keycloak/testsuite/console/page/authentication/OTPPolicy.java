@@ -19,19 +19,19 @@ public class OTPPolicy extends Authentication {
     @FindBy(linkText = "Cancel")
     private WebElement cancelButton;
 
+    @FindBy(id = "lookAhead")
+    private WebElement lookAheadInput;
+
+    @FindBy(id = "counter")
+    private WebElement initialCounterInput;
+
     public void clickCancel() {
         cancelButton.click();
     }
 
-    @FindBy(id = "lookAhead")
-    private WebElement lookAheadInput;
-
     public void setLookAheadInputValue(String value) {
         Form.setInputValue(lookAheadInput, value);
     }
-
-    @FindBy(id = "counter")
-    private WebElement initialCounterInput;
 
     public void setInitialcounterInputValue(String value) {
         Form.setInputValue(initialCounterInput, value);

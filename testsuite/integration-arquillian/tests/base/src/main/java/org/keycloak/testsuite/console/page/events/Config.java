@@ -32,6 +32,33 @@ public class Config extends Events {
         @FindBy(xpath = "//div[@id='s2id_autogen1']/..//select")
         private Select eventListenersSelect;
 
+        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='enabled']]")
+        private OnOffSwitch SaveEvents;
+
+        @FindBy(xpath = "//div[@id='s2id_enabledEventTypes']//input")
+        private WebElement savedTypesInput;
+
+        @FindBy(xpath = "//div[@id='select2-drop']/ul")
+        private WebElement savedTypesOptions;
+
+        @FindBy(id = "expiration")
+        private WebElement expirationInput;
+
+        @FindBy(name = "expirationUnit")
+        private Select expirationUnitSelect;
+
+        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='adminEventsEnabled']]")
+        private OnOffSwitch saveAdminEvents;
+
+        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='adminEventsDetailsEnabled']]")
+        private OnOffSwitch includeRepresentation;
+
+        @FindBy(xpath = "//button[@data-ng-click='clearEvents()']")
+        private WebElement clearLoginEventsButton;
+
+        @FindBy(xpath = "//button[@data-ng-click='clearAdminEvents()']")
+        private WebElement clearAdminEventsButton;
+
         public void addEventListener(String listener) {
             eventListenersInput.click();
             eventListenersSelect.selectByVisibleText(listener);
@@ -41,18 +68,9 @@ public class Config extends Events {
             eventListenersInput.findElement(By.xpath("//div[text()='" + listener + "']/../a")).click();
         }
 
-        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='enabled']]")
-        private OnOffSwitch SaveEvents;
-
         public void setSaveEvents(boolean value) {
             SaveEvents.setOn(value);
         }
-
-        @FindBy(xpath = "//div[@id='s2id_enabledEventTypes']//input")
-        private WebElement savedTypesInput;
-
-        @FindBy(xpath = "//div[@id='select2-drop']/ul")
-        private WebElement savedTypesOptions;
 
         public void addSaveType(String type) {
             savedTypesInput.click();
@@ -64,36 +82,24 @@ public class Config extends Events {
         }
 
         public void clearLoginEvents() {
-            driver.findElement(By.xpath("//button[@data-ng-click='clearEvents()']")).click();
+            clearLoginEventsButton.click();
         }
-
-        @FindBy(id = "expiration")
-        private WebElement expirationInput;
-
-        @FindBy(name = "expirationUnit")
-        private Select expirationUnitSelect;
 
         public void setExpiration(String value, String unit) {
             expirationUnitSelect.selectByVisibleText(unit);
             Form.setInputValue(expirationInput, value);
         }
 
-        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='adminEventsEnabled']]")
-        private OnOffSwitch saveAdminEvents;
-
         public void setSaveAdminEvents(boolean value) {
             saveAdminEvents.setOn(value);
         }
-
-        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='adminEventsDetailsEnabled']]")
-        private OnOffSwitch includeRepresentation;
 
         public void setIncludeRepresentation(boolean value) {
             includeRepresentation.setOn(value);
         }
 
         public void clearAdminEvents() {
-            driver.findElement(By.xpath("//button[@data-ng-click='clearAdminEvents()']")).click();
+            clearAdminEventsButton.click();
         }
     }
 }
