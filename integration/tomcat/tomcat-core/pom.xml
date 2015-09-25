@@ -28,6 +28,14 @@
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-core</artifactId>
 		</dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-spi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-tomcat-adapter-spi</artifactId>
+        </dependency>
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-adapter-core</artifactId>
@@ -35,10 +43,6 @@
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>net.iharder</groupId>
-			<artifactId>base64</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.bouncycastle</groupId>

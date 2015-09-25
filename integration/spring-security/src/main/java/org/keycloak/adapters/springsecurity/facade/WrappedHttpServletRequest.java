@@ -33,6 +33,11 @@ class WrappedHttpServletRequest implements Request {
     }
 
     @Override
+    public String getFirstParam(String param) {
+        return request.getParameter(param);
+    }
+
+    @Override
     public String getMethod() {
         return request.getMethod();
     }

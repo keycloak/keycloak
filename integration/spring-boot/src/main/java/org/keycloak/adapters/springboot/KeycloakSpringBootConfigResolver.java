@@ -1,8 +1,8 @@
 package org.keycloak.adapters.springboot;
 
-import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
+import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
 public class KeycloakSpringBootConfigResolver implements org.keycloak.adapters.KeycloakConfigResolver {
@@ -12,7 +12,7 @@ public class KeycloakSpringBootConfigResolver implements org.keycloak.adapters.K
     private static AdapterConfig adapterConfig;
 
     @Override
-    public KeycloakDeployment resolve(HttpFacade.Request request) {
+    public KeycloakDeployment resolve(OIDCHttpFacade.Request request) {
         if (keycloakDeployment != null) {
             return keycloakDeployment;
         }

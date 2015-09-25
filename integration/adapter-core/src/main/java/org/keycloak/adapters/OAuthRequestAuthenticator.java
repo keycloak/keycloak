@@ -14,7 +14,6 @@ import org.keycloak.util.KeycloakUriBuilder;
 import org.keycloak.util.UriUtils;
 
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 
@@ -27,7 +26,7 @@ public class OAuthRequestAuthenticator {
     protected KeycloakDeployment deployment;
     protected RequestAuthenticator reqAuthenticator;
     protected int sslRedirectPort;
-    protected AdapterTokenStore tokenStore;
+    protected AdapterSessionStore tokenStore;
     protected String tokenString;
     protected String idTokenString;
     protected IDToken idToken;
@@ -37,7 +36,7 @@ public class OAuthRequestAuthenticator {
     protected String refreshToken;
     protected String strippedOauthParametersRequestUri;
 
-    public OAuthRequestAuthenticator(RequestAuthenticator requestAuthenticator, HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort, AdapterTokenStore tokenStore) {
+    public OAuthRequestAuthenticator(RequestAuthenticator requestAuthenticator, HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort, AdapterSessionStore tokenStore) {
         this.reqAuthenticator = requestAuthenticator;
         this.facade = facade;
         this.deployment = deployment;
@@ -93,12 +92,12 @@ public class OAuthRequestAuthenticator {
         return facade.getRequest().isSecure();
     }
 
-    protected HttpFacade.Cookie getCookie(String cookieName) {
+    protected OIDCHttpFacade.Cookie getCookie(String cookieName) {
         return facade.getRequest().getCookie(cookieName);
     }
 
     protected String getCookieValue(String cookieName) {
-        HttpFacade.Cookie cookie = getCookie(cookieName);
+        OIDCHttpFacade.Cookie cookie = getCookie(cookieName);
         if (cookie == null) return null;
         return cookie.getValue();
     }
@@ -204,7 +203,7 @@ public class OAuthRequestAuthenticator {
     }
 
     protected AuthChallenge checkStateCookie() {
-        HttpFacade.Cookie stateCookie = getCookie(deployment.getStateCookieName());
+        OIDCHttpFacade.Cookie stateCookie = getCookie(deployment.getStateCookieName());
 
         if (stateCookie == null) {
             log.warn("No state cookie");

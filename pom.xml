@@ -21,7 +21,6 @@
         <apacheds.version>2.0.0-M17</apacheds.version>
         <apacheds.codec.version>1.0.0-M23</apacheds.codec.version>
         <org.apache.james.apache-mime4j.version>0.6</org.apache.james.apache-mime4j.version>
-        <base64.version>2.3.8</base64.version>
         <bouncycastle.crypto.version>1.50</bouncycastle.crypto.version>
         <jackson.version>1.9.9</jackson.version>
         <apache.httpcomponents.version>4.3.6</apache.httpcomponents.version>
@@ -189,11 +188,6 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk15on</artifactId>
                 <version>${bouncycastle.crypto.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>net.iharder</groupId>
-                <artifactId>base64</artifactId>
-                <version>${base64.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.mail</groupId>
@@ -756,6 +750,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-adapter-spi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-adapter-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -782,6 +781,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-jboss-adapter-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-jetty-adapter-spi</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -856,6 +860,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-tomcat-adapter-spi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-tomcat-core-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -872,6 +881,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-tomcat8-adapter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-undertow-adapter-spi</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -952,6 +966,16 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-protocol</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-adapter-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-undertow-saml-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

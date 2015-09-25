@@ -42,12 +42,13 @@
             <maven-resource group="org.keycloak" artifact="keycloak-core"/>
         </module-def>
 
-        <module-def name="net.iharder.base64">
-            <maven-resource group="net.iharder" artifact="base64"/>
-        </module-def>
-
 
         <!-- subsystems -->
+
+        <module-def name="org.keycloak.keycloak-adapter-spi">
+            <maven-resource group="org.keycloak" artifact="keycloak-adapter-spi"/>
+            <maven-resource group="org.keycloak" artifact="keycloak-undertow-adapter-spi"/>
+        </module-def>
 
         <module-def name="org.keycloak.keycloak-adapter-core">
             <maven-resource group="org.keycloak" artifact="keycloak-adapter-core"/>

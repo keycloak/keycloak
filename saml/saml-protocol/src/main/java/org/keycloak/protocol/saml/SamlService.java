@@ -3,7 +3,6 @@ package org.keycloak.protocol.saml;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.ClientConnection;
 import org.keycloak.VerificationException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -24,10 +23,12 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.saml.SAML2LogoutResponseBuilder;
+import org.keycloak.saml.SAMLRequestParser;
+import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
@@ -389,19 +390,20 @@ public class SamlService {
             builder.logoutRequestID(logoutRequest.getID());
             builder.destination(logoutBindingUri);
             builder.issuer(RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
-            builder.relayState(logoutRelayState);
+            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
+                    .relayState(logoutRelayState);
             if (SamlProtocol.requiresRealmSignature(client)) {
                 SignatureAlgorithm algorithm = SamlProtocol.getSignatureAlgorithm(client);
-                builder.signatureAlgorithm(algorithm)
+                binding.signatureAlgorithm(algorithm)
                         .signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
                         .signDocument();
 
             }
             try {
                 if (SamlProtocol.SAML_POST_BINDING.equals(logoutBinding)) {
-                    return builder.postBinding().response(logoutBindingUri);
+                    return binding.postBinding(builder.buildDocument()).response(logoutBindingUri);
                 } else {
-                    return builder.redirectBinding().response(logoutBindingUri);
+                    return binding.redirectBinding(builder.buildDocument()).response(logoutBindingUri);
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -458,7 +460,7 @@ public class SamlService {
                 return;
             }
             PublicKey publicKey = SamlProtocolUtils.getSignatureValidationKey(client);
-            SamlProtocolUtils.verifyRedirectSignature(publicKey, uriInfo);
+            SamlProtocolUtils.verifyRedirectSignature(publicKey, uriInfo, GeneralConstants.SAML_REQUEST_KEY);
         }
 
 

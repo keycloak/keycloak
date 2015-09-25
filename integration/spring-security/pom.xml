@@ -28,6 +28,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-spi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-adapter-core</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -57,12 +61,6 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>${apache-httpcomponents.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>net.iharder</groupId>
-            <artifactId>base64</artifactId>
-            <version>${base64.version}</version>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>

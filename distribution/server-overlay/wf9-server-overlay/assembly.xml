@@ -15,7 +15,6 @@
             <includes>
                 <include>com/google/zxing/**</include>
                 <include>de/idyl/winzipaes/**</include>
-                <include>net/iharder/**</include>
                 <include>org/freemarker/**</include>
                 <include>org/keycloak/**</include>
                 <include>org/liquibase/**</include>

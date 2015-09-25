@@ -10,7 +10,6 @@ import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
-import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
@@ -24,31 +23,23 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.saml.SAML2LogoutResponseBuilder;
-import org.keycloak.protocol.saml.SAMLRequestParser;
+import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
+import org.keycloak.saml.SAML2LogoutResponseBuilder;
+import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.util.DocumentUtil;
-import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
-import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
-import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
-import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
+import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -61,9 +52,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import javax.xml.namespace.QName;
 import java.io.IOException;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -155,7 +144,7 @@ public class SAMLEndpoint {
         }
 
         protected abstract String getBindingType();
-        protected abstract void verifySignature(SAMLDocumentHolder documentHolder) throws VerificationException;
+        protected abstract void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException;
         protected abstract SAMLDocumentHolder extractRequestDocument(String samlRequest);
         protected abstract SAMLDocumentHolder extractResponseDocument(String response);
         protected PublicKey getIDPKey() {
@@ -188,7 +177,7 @@ public class SAMLEndpoint {
             }
             if (config.isValidateSignature()) {
                 try {
-                    verifySignature(holder);
+                    verifySignature(GeneralConstants.SAML_REQUEST_KEY, holder);
                 } catch (VerificationException e) {
                     logger.error("validation failed", e);
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
@@ -247,17 +236,18 @@ public class SAMLEndpoint {
             builder.logoutRequestID(request.getID());
             builder.destination(config.getSingleLogoutServiceUrl());
             builder.issuer(issuerURL);
-            builder.relayState(relayState);
+            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
+                        .relayState(relayState);
             if (config.isWantAuthnRequestsSigned()) {
-                builder.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
+                binding.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
                         .signatureAlgorithm(provider.getSignatureAlgorithm())
                         .signDocument();
             }
             try {
                 if (config.isPostBindingResponse()) {
-                    return builder.postBinding().response();
+                    return binding.postBinding(builder.buildDocument()).response(config.getSingleLogoutServiceUrl());
                 } else {
-                    return builder.redirectBinding().response();
+                    return binding.redirectBinding(builder.buildDocument()).response(config.getSingleLogoutServiceUrl());
                 }
             } catch (ConfigurationException e) {
                 throw new RuntimeException(e);
@@ -275,7 +265,7 @@ public class SAMLEndpoint {
         protected Response handleLoginResponse(String samlResponse, SAMLDocumentHolder holder, ResponseType responseType, String relayState) {
 
             try {
-                AssertionType assertion = getAssertion(responseType);
+                AssertionType assertion = AssertionUtil.getAssertion(responseType, realm.getPrivateKey());
                 SubjectType subject = assertion.getSubject();
                 SubjectType.STSubType subType = subject.getSubType();
                 NameIDType subjectNameID = (NameIDType) subType.getBaseID();
@@ -335,22 +325,6 @@ public class SAMLEndpoint {
 
 
 
-        private AssertionType getAssertion(ResponseType responseType) throws ProcessingException {
-            List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
-
-            if (assertions.isEmpty()) {
-                throw new IdentityBrokerException("No assertion from response.");
-            }
-
-            ResponseType.RTChoiceType rtChoiceType = assertions.get(0);
-            EncryptedAssertionType encryptedAssertion = rtChoiceType.getEncryptedAssertion();
-
-            if (encryptedAssertion != null) {
-                decryptAssertion(responseType, realm.getPrivateKey());
-
-            }
-            return responseType.getAssertions().get(0).getAssertion();
-        }
 
         public Response handleSamlResponse(String samlResponse, String relayState) {
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
@@ -364,7 +338,7 @@ public class SAMLEndpoint {
             }
             if (config.isValidateSignature()) {
                 try {
-                    verifySignature(holder);
+                    verifySignature(GeneralConstants.SAML_RESPONSE_KEY, holder);
                 } catch (VerificationException e) {
                     logger.error("validation failed", e);
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
@@ -407,43 +381,14 @@ public class SAMLEndpoint {
         }
 
 
-        protected ResponseType decryptAssertion(ResponseType responseType, PrivateKey privateKey) throws ProcessingException {
-            SAML2Response saml2Response = new SAML2Response();
 
-            try {
-                Document doc = saml2Response.convert(responseType);
-                Element enc = DocumentUtil.getElement(doc, new QName(JBossSAMLConstants.ENCRYPTED_ASSERTION.get()));
-
-                if (enc == null) {
-                    throw new IdentityBrokerException("No encrypted assertion found.");
-                }
-
-                String oldID = enc.getAttribute(JBossSAMLConstants.ID.get());
-                Document newDoc = DocumentUtil.createDocument();
-                Node importedNode = newDoc.importNode(enc, true);
-                newDoc.appendChild(importedNode);
-
-                Element decryptedDocumentElement = XMLEncryptionUtil.decryptElementInDocument(newDoc, privateKey);
-                SAMLParser parser = new SAMLParser();
-
-                JAXPValidationUtil.checkSchemaValidation(decryptedDocumentElement);
-                AssertionType assertion = (AssertionType) parser.parse(StaxParserUtil.getXMLEventReader(DocumentUtil
-                        .getNodeAsStream(decryptedDocumentElement)));
-
-                responseType.replaceAssertion(oldID, new ResponseType.RTChoiceType(assertion));
-
-                return responseType;
-            } catch (Exception e) {
-                throw new IdentityBrokerException("Could not decrypt assertion.", e);
-            }
-        }
 
 
     }
 
     protected class PostBinding extends Binding {
         @Override
-        protected void verifySignature(SAMLDocumentHolder documentHolder) throws VerificationException {
+        protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
             SamlProtocolUtils.verifyDocumentSignature(documentHolder.getSamlDocument(), getIDPKey());
         }
 
@@ -466,9 +411,9 @@ public class SAMLEndpoint {
 
     protected class RedirectBinding extends Binding {
         @Override
-        protected void verifySignature(SAMLDocumentHolder documentHolder) throws VerificationException {
+        protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
             PublicKey publicKey = getIDPKey();
-            SamlProtocolUtils.verifyRedirectSignature(publicKey, uriInfo);
+            SamlProtocolUtils.verifyRedirectSignature(publicKey, uriInfo, key);
         }
 
 

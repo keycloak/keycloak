@@ -5,13 +5,9 @@ import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.Manager;
-import org.apache.catalina.authenticator.Constants;
 import org.apache.catalina.authenticator.FormAuthenticator;
-import org.apache.catalina.authenticator.SavedRequest;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
-import org.apache.catalina.deploy.LoginConfig;
-import org.apache.tomcat.util.buf.ByteChunk;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.adapters.AdapterDeploymentContext;
@@ -28,15 +24,12 @@ import org.keycloak.enums.TokenStore;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Enumeration;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.keycloak.adapters.KeycloakConfigResolver;
@@ -71,7 +64,7 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
     protected void logoutInternal(Request request) {
         KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
         if (ksc != null) {
-            CatalinaHttpFacade facade = new CatalinaHttpFacade(request, null);
+            CatalinaHttpFacade facade = new OIDCCatalinaHttpFacade(request, null);
             KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
             if (ksc instanceof RefreshableKeycloakSecurityContext) {
                 ((RefreshableKeycloakSecurityContext) ksc).logout(deployment);
@@ -164,7 +157,7 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         try {
-            CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
+            CatalinaHttpFacade facade = new OIDCCatalinaHttpFacade(request, response);
             Manager sessionManager = request.getContext().getManager();
             CatalinaUserSessionManagementWrapper sessionManagementWrapper = new CatalinaUserSessionManagementWrapper(userSessionManagement, sessionManager);
             PreAuthActionsHandler handler = new PreAuthActionsHandler(sessionManagementWrapper, deploymentContext, facade);
@@ -181,7 +174,7 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
     protected abstract boolean forwardToErrorPageInternal(Request request, HttpServletResponse response, Object loginConfig) throws IOException;
 
     protected boolean authenticateInternal(Request request, HttpServletResponse response, Object loginConfig) throws IOException {
-        CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
+        CatalinaHttpFacade facade = new OIDCCatalinaHttpFacade(request, response);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (deployment == null || !deployment.isConfigured()) {
             return false;

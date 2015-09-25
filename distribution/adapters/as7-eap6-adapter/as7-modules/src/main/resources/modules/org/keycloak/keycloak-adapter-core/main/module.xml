@@ -14,7 +14,7 @@
         <module name="org.apache.httpcomponents"/>
         <module name="org.jboss.logging"/>
         <module name="org.keycloak.keycloak-core"/>
-        <module name="net.iharder.base64"/>
+        <module name="org.keycloak.keycloak-adapter-spi"/>
     </dependencies>
 
 </module>

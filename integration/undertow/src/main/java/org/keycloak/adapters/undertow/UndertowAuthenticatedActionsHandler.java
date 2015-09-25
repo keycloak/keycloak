@@ -57,7 +57,7 @@ public class UndertowAuthenticatedActionsHandler implements HttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
+        OIDCUndertowHttpFacade facade = new OIDCUndertowHttpFacade(exchange);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (deployment != null && deployment.isConfigured()) {
             AuthenticatedActionsHandler handler = new AuthenticatedActionsHandler(deployment, facade);

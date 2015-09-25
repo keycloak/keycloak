@@ -9,11 +9,11 @@ import org.keycloak.KeycloakPrincipal;
  */
 public abstract class RequestAuthenticator {
     protected static Logger log = Logger.getLogger(RequestAuthenticator.class);
-
     protected HttpFacade facade;
+    protected AuthChallenge challenge;
+
     protected KeycloakDeployment deployment;
     protected AdapterTokenStore tokenStore;
-    protected AuthChallenge challenge;
     protected int sslRedirectPort;
 
     public RequestAuthenticator(HttpFacade facade, KeycloakDeployment deployment, AdapterTokenStore tokenStore, int sslRedirectPort) {
