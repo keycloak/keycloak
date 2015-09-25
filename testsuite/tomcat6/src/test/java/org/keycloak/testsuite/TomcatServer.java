@@ -7,6 +7,7 @@ import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.Embedded;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.saml.tomcat.SamlAuthenticatorValve;
 import org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve;
 
 public class TomcatServer {
@@ -40,7 +41,7 @@ public class TomcatServer {
     public TomcatServer(int port, String appBase) {
 
         this.port = port;
-
+        Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
         server = new Embedded();
         server.setName("TomcatEmbeddedServer");
         server.setCatalinaBase(TomcatTest.getBaseDirectory());
@@ -59,6 +60,20 @@ public class TomcatServer {
         }
         StandardContext rootContext = (StandardContext) server.createContext(contextPath, appDir);
         KeycloakAuthenticatorValve valve = new KeycloakAuthenticatorValve();
+        rootContext.addValve(valve);
+        //rootContext.addLifecycleListener(valve);
+        rootContext.setDefaultWebXml("web.xml");
+        host.addChild(rootContext);
+    }
+    public void deploySaml(String contextPath, String appDir) {
+        if (contextPath == null) {
+            throw new IllegalArgumentException("Context path or appbase should not be null");
+        }
+        if (!contextPath.startsWith("/")) {
+            contextPath = "/" + contextPath;
+        }
+        StandardContext rootContext = (StandardContext) server.createContext(contextPath, appDir);
+        SamlAuthenticatorValve valve = new SamlAuthenticatorValve();
         rootContext.addValve(valve);
         //rootContext.addLifecycleListener(valve);
         rootContext.setDefaultWebXml("web.xml");

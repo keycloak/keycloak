@@ -2,7 +2,6 @@ package org.keycloak.adapters.tomcat;
 
 import org.apache.catalina.Realm;
 import org.apache.catalina.realm.GenericPrincipal;
-import org.keycloak.KeycloakSecurityContext;
 
 import javax.security.auth.Subject;
 import java.security.Principal;
@@ -20,7 +19,7 @@ import java.util.Set;
  */
 public abstract class GenericPrincipalFactory {
 
-    public GenericPrincipal createPrincipal(Realm realm, final Principal identity, final Set<String> roleSet, final KeycloakSecurityContext securityContext) {
+    public GenericPrincipal createPrincipal(Realm realm, final Principal identity, final Set<String> roleSet) {
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();
         principals.add(identity);

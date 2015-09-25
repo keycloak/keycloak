@@ -7,9 +7,9 @@ import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.HttpFacade;
-import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OAuthRequestAuthenticator;
+import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
 
@@ -41,7 +41,7 @@ public class JettyRequestAuthenticator extends RequestAuthenticator {
         principal = skp;
         final RefreshableKeycloakSecurityContext securityContext = skp.getKeycloakSecurityContext();
         final Set<String> roles = AdapterUtils.getRolesFromSecurityContext(securityContext);
-        KeycloakAccount account = new KeycloakAccount() {
+        OidcKeycloakAccount account = new OidcKeycloakAccount() {
 
             @Override
             public Principal getPrincipal() {

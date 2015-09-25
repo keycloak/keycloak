@@ -1,6 +1,6 @@
 package org.keycloak.adapters.springsecurity.account;
 
-import org.keycloak.adapters.KeycloakAccount;
+import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 
 import java.io.Serializable;
@@ -8,12 +8,12 @@ import java.security.Principal;
 import java.util.Set;
 
 /**
- * Concrete, serializable {@link KeycloakAccount} implementation.
+ * Concrete, serializable {@link org.keycloak.adapters.OidcKeycloakAccount} implementation.
  *
  * @author <a href="mailto:srossillo@smartling.com">Scott Rossillo</a>
  * @version $Revision: 1 $
  */
-public class SimpleKeycloakAccount implements KeycloakAccount, Serializable {
+public class SimpleKeycloakAccount implements OidcKeycloakAccount, Serializable {
 
     private Set<String> roles;
     private Principal principal;

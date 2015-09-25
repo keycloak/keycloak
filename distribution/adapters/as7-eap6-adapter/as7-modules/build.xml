@@ -52,6 +52,7 @@
         <module-def name="org.keycloak.keycloak-adapter-spi">
             <maven-resource group="org.keycloak" artifact="keycloak-adapter-spi"/>
             <maven-resource group="org.keycloak" artifact="keycloak-tomcat-adapter-spi"/>
+            <maven-resource group="org.keycloak" artifact="keycloak-as7-adapter-spi"/>
         </module-def>
 
         <module-def name="org.keycloak.keycloak-adapter-core">

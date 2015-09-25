@@ -7,8 +7,8 @@ import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterSessionStore;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AdapterUtils;
-import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
 
@@ -77,7 +77,7 @@ public class JettySessionTokenStore implements AdapterTokenStore {
     }
 
     @Override
-    public void saveAccountInfo(KeycloakAccount account) {
+    public void saveAccountInfo(OidcKeycloakAccount account) {
         RefreshableKeycloakSecurityContext securityContext = (RefreshableKeycloakSecurityContext) account.getKeycloakSecurityContext();
         request.getSession().setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
     }

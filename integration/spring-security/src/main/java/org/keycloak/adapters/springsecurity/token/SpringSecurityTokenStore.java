@@ -2,8 +2,8 @@ package org.keycloak.adapters.springsecurity.token;
 
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
 import org.slf4j.Logger;
@@ -58,12 +58,12 @@ public class SpringSecurityTokenStore implements AdapterTokenStore {
             return false;
         }
 
-        logger.info("Remote logged in already. Establishing state from security context.");
+        logger.debug("Remote logged in already. Establishing state from security context.");
         token = (KeycloakAuthenticationToken) context.getAuthentication();
         keycloakSecurityContext = token.getAccount().getKeycloakSecurityContext();
 
         if (!deployment.getRealm().equals(keycloakSecurityContext.getRealm())) {
-            logger.info("Account from security context is from a different realm than for the request.");
+            logger.debug("Account from security context is from a different realm than for the request.");
             logout();
             return false;
         }
@@ -79,7 +79,7 @@ public class SpringSecurityTokenStore implements AdapterTokenStore {
     }
 
     @Override
-    public void saveAccountInfo(KeycloakAccount account) {
+    public void saveAccountInfo(OidcKeycloakAccount account) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 

@@ -104,14 +104,9 @@ public abstract class SamlAuthenticator {
 
         try {
             SamlUtil.sendSaml(true, facade, deployment.getIDP().getSingleLogoutService().getRequestBindingUrl(), binding, logoutBuilder.buildDocument(), deployment.getIDP().getSingleLogoutService().getRequestBinding());
-        } catch (ProcessingException e) {
-            throw new RuntimeException(e);
-        } catch (ConfigurationException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ParsingException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            log.error("Could not send global logout SAML request", e);
+            return AuthOutcome.FAILED;
         }
         return AuthOutcome.NOT_ATTEMPTED;
     }
@@ -134,18 +129,24 @@ public abstract class SamlAuthenticator {
         RequestAbstractType requestAbstractType = (RequestAbstractType) holder.getSamlObject();
         if (!requestUri.equals(requestAbstractType.getDestination().toString())) {
             log.error("expected destination '" + requestUri + "' got '" + requestAbstractType.getDestination() + "'");
-            throw new RuntimeException("destination not equal to request.");
+            return AuthOutcome.FAILED;
         }
 
         if (requestAbstractType instanceof LogoutRequestType) {
             if (deployment.getIDP().getSingleLogoutService().validateRequestSignature()) {
-                validateSamlSignature(holder, postBinding, GeneralConstants.SAML_REQUEST_KEY);
+                try {
+                    validateSamlSignature(holder, postBinding, GeneralConstants.SAML_REQUEST_KEY);
+                } catch (VerificationException e) {
+                    log.error("Failed to verify saml request signature", e);
+                    return AuthOutcome.FAILED;
+                }
             }
             LogoutRequestType logout = (LogoutRequestType) requestAbstractType;
             return logoutRequest(logout, relayState);
 
         } else {
-            throw new RuntimeException("unknown SAML request type");
+            log.error("unknown SAML request type");
+            return AuthOutcome.FAILED;
         }
     }
 
@@ -173,12 +174,9 @@ public abstract class SamlAuthenticator {
         try {
             SamlUtil.sendSaml(false, facade, deployment.getIDP().getSingleLogoutService().getResponseBindingUrl(), binding, builder.buildDocument(),
                     deployment.getIDP().getSingleLogoutService().getResponseBinding());
-        } catch (ConfigurationException e) {
-            throw new RuntimeException(e);
-        } catch (ProcessingException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            log.error("Could not send logout response SAML request", e);
+            return AuthOutcome.FAILED;
         }
         return AuthOutcome.NOT_ATTEMPTED;
 
@@ -202,17 +200,28 @@ public abstract class SamlAuthenticator {
         StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
         // validate destination
         if (!requestUri.equals(statusResponse.getDestination())) {
-            throw new RuntimeException("destination not equal to request");
+            log.error("Request URI does not match SAML request destination");
+            return AuthOutcome.FAILED;
         }
         if (statusResponse instanceof ResponseType) {
             if (deployment.getIDP().getSingleSignOnService().validateResponseSignature()) {
-                validateSamlSignature(holder, postBinding, GeneralConstants.SAML_RESPONSE_KEY);
+                try {
+                    validateSamlSignature(holder, postBinding, GeneralConstants.SAML_RESPONSE_KEY);
+                } catch (VerificationException e) {
+                    log.error("Failed to verify saml response signature", e);
+                    return AuthOutcome.FAILED;
+                }
             }
             return handleLoginResponse((ResponseType)statusResponse);
 
         } else {
             if (deployment.getIDP().getSingleLogoutService().validateResponseSignature()) {
-                validateSamlSignature(holder, postBinding, GeneralConstants.SAML_RESPONSE_KEY);
+                try {
+                    validateSamlSignature(holder, postBinding, GeneralConstants.SAML_RESPONSE_KEY);
+                } catch (VerificationException e) {
+                    log.error("Failed to verify saml response signature", e);
+                    return AuthOutcome.FAILED;
+                }
             }
             // todo need to check that it is actually a LogoutResponse
             return handleLogoutResponse(holder, statusResponse, relayState);
@@ -220,16 +229,11 @@ public abstract class SamlAuthenticator {
 
     }
 
-    private void validateSamlSignature(SAMLDocumentHolder holder, boolean postBinding, String paramKey) {
-        try {
-            if (postBinding) {
-                verifyPostBindingSignature(holder.getSamlDocument(), deployment.getIDP().getSignatureValidationKey());
-            } else {
-                verifyRedirectBindingSignature(deployment.getIDP().getSignatureValidationKey(), paramKey);
-            }
-        } catch (VerificationException e) {
-            log.error("validation failed", e);
-            throw new RuntimeException("invalid document signature");
+    private void validateSamlSignature(SAMLDocumentHolder holder, boolean postBinding, String paramKey) throws VerificationException {
+        if (postBinding) {
+            verifyPostBindingSignature(holder.getSamlDocument(), deployment.getIDP().getSignatureValidationKey());
+        } else {
+            verifyRedirectBindingSignature(deployment.getIDP().getSignatureValidationKey(), paramKey);
         }
     }
 
@@ -240,12 +244,9 @@ public abstract class SamlAuthenticator {
             if (AssertionUtil.hasExpired(assertion)) {
                 return initiateLogin();
             }
-        } catch (ParsingException e) {
-            throw new RuntimeException(e);
-        } catch (ProcessingException e) {
-            throw new RuntimeException(e);
-        } catch (ConfigurationException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            log.error("Error extracting SAML assertion, e");
+            return AuthOutcome.FAILED;
         }
 
         SubjectType subject = assertion.getSubject();
@@ -269,6 +270,7 @@ public abstract class SamlAuthenticator {
                         if (attributeValues != null) {
                             for (Object attrValue : attributeValues) {
                                 String role = getAttributeValue(attrValue);
+                                log.info("Add role: " + role);
                                 roles.add(role);
                             }
                         }
@@ -314,22 +316,7 @@ public abstract class SamlAuthenticator {
         final SamlPrincipal principal = new SamlPrincipal(principalName, principalName, subjectNameID.getFormat().toString(), attributes, friendlyAttributes);
         String index = authn == null ? null : authn.getSessionIndex();
         final String sessionIndex = index;
-        SamlSession account = new SamlSession() {
-            @Override
-            public SamlPrincipal getPrincipal() {
-                return principal;
-            }
-
-            @Override
-            public Set<String> getRoles() {
-                return roles;
-            }
-
-            @Override
-            public String getSessionIndex() {
-                return sessionIndex;
-            }
-        };
+        SamlSession account = new SamlSession(principal, roles, sessionIndex);
         sessionStore.saveAccount(account);
         completeAuthentication(account);
 
@@ -343,7 +330,7 @@ public abstract class SamlAuthenticator {
         } else {
             log.debug("IDP initiated invocation");
         }
-
+        log.debug("AUTHENTICATED authn");
 
         return AuthOutcome.AUTHENTICATED;
     }
@@ -351,7 +338,7 @@ public abstract class SamlAuthenticator {
     protected abstract void completeAuthentication(SamlSession account);
 
     private String getAttributeValue(Object attrValue) {
-        String value;
+        String value =  null;
         if (attrValue instanceof String) {
             value = (String)attrValue;
         } else if (attrValue instanceof Node) {
@@ -360,8 +347,9 @@ public abstract class SamlAuthenticator {
         } else if (attrValue instanceof NameIDType) {
             NameIDType nameIdType = (NameIDType) attrValue;
             value = nameIdType.getValue();
-        } else
-            throw new RuntimeException("Unknown attribute value type: " + attrValue.getClass().getName());
+        } else {
+            log.warn("Unable to extract unknown SAML assertion attribute value type: " + attrValue.getClass().getName());
+        }
         return value;
     }
 

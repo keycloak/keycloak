@@ -6,6 +6,7 @@ import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.springsecurity.AdapterDeploymentContextBean;
 import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
 import org.keycloak.adapters.springsecurity.account.KeycloakRole;
@@ -67,7 +68,7 @@ public class KeycloakAuthenticationProcessingFilterTest {
     private AuthenticationFailureHandler failureHandler;
 
     @Mock
-    private KeycloakAccount keycloakAccount;
+    private OidcKeycloakAccount keycloakAccount;
 
     @Mock
     private KeycloakDeployment keycloakDeployment;

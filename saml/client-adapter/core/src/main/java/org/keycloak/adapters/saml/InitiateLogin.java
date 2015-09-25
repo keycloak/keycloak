@@ -28,7 +28,7 @@ public class InitiateLogin implements AuthChallenge {
 
     @Override
     public boolean errorPage() {
-        return true;
+        return false;
     }
 
     @Override

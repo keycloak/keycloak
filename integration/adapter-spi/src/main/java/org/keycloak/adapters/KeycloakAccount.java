@@ -1,7 +1,5 @@
 package org.keycloak.adapters;
 
-import org.keycloak.KeycloakSecurityContext;
-
 import java.security.Principal;
 import java.util.Set;
 
@@ -11,6 +9,6 @@ import java.util.Set;
  */
 public interface KeycloakAccount {
     Principal getPrincipal();
+
     Set<String> getRoles();
-    KeycloakSecurityContext getKeycloakSecurityContext();
 }

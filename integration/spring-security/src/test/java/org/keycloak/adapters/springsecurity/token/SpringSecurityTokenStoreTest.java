@@ -3,8 +3,8 @@ package org.keycloak.adapters.springsecurity.token;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
 import org.keycloak.adapters.springsecurity.account.KeycloakRole;
@@ -16,8 +16,6 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
-
-import javax.servlet.http.HttpSession;
 
 import java.security.Principal;
 import java.util.Collections;
@@ -66,7 +64,7 @@ public class SpringSecurityTokenStoreTest {
 
     @Test
     public void testSaveAccountInfo() throws Exception {
-        KeycloakAccount account = new SimpleKeycloakAccount(principal, Collections.singleton("FOO"), keycloakSecurityContext);
+        OidcKeycloakAccount account = new SimpleKeycloakAccount(principal, Collections.singleton("FOO"), keycloakSecurityContext);
         Authentication authentication;
 
         store.saveAccountInfo(account);
@@ -78,7 +76,7 @@ public class SpringSecurityTokenStoreTest {
 
     @Test(expected = IllegalStateException.class)
     public void testSaveAccountInfoInvalidAuthenticationType() throws Exception {
-        KeycloakAccount account = new SimpleKeycloakAccount(principal, Collections.singleton("FOO"), keycloakSecurityContext);
+        OidcKeycloakAccount account = new SimpleKeycloakAccount(principal, Collections.singleton("FOO"), keycloakSecurityContext);
         Authentication authentication = new PreAuthenticatedAuthenticationToken("foo", "bar", Collections.singleton(new KeycloakRole("ROLE_FOO")));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         store.saveAccountInfo(account);

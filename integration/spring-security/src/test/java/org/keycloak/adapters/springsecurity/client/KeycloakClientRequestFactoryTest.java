@@ -4,7 +4,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.KeycloakAccount;
+import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.springsecurity.account.KeycloakRole;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.mockito.Mock;
@@ -28,7 +28,7 @@ public class KeycloakClientRequestFactoryTest {
     private KeycloakClientRequestFactory factory;
 
     @Mock
-    private KeycloakAccount account;
+    private OidcKeycloakAccount account;
 
     @Mock
     private KeycloakAuthenticationToken keycloakAuthenticationToken;

@@ -2,8 +2,8 @@ package org.keycloak.adapters.springsecurity.authentication;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.springsecurity.AdapterDeploymentContextBean;
 import org.keycloak.adapters.springsecurity.account.KeycloakRole;
@@ -38,7 +38,7 @@ public class KeycloakLogoutHandlerTest {
     private AdapterDeploymentContextBean adapterDeploymentContextBean;
 
     @Mock
-    private KeycloakAccount keycloakAccount;
+    private OidcKeycloakAccount keycloakAccount;
 
     @Mock
     private KeycloakDeployment keycloakDeployment;

@@ -25,7 +25,7 @@ public interface AdapterTokenStore extends AdapterSessionStore {
      *
      * @param account
      */
-    void saveAccountInfo(KeycloakAccount account);
+    void saveAccountInfo(OidcKeycloakAccount account);
 
     /**
      * Handle logout on store side and possibly propagate logout call to Keycloak

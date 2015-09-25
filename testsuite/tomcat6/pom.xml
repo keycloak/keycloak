@@ -104,6 +104,24 @@
            <groupId>org.keycloak</groupId>
            <artifactId>keycloak-tomcat6-adapter</artifactId>
        </dependency>
+       <dependency>
+           <groupId>org.keycloak</groupId>
+           <artifactId>keycloak-tomcat6-saml-adapter</artifactId>
+           <exclusions>
+               <exclusion>
+                   <groupId>org.apache.tomcat</groupId>
+                   <artifactId>tomcat-servlet-api</artifactId>
+               </exclusion>
+               <exclusion>
+                   <groupId>org.apache.tomcat</groupId>
+                   <artifactId>tomcat-catalina</artifactId>
+               </exclusion>
+               <exclusion>
+                   <groupId>org.apache.tomcat</groupId>
+                   <artifactId>catalina</artifactId>
+               </exclusion>
+           </exclusions>
+       </dependency>
         <dependency>
             <groupId>io.undertow</groupId>
             <artifactId>undertow-servlet</artifactId>
