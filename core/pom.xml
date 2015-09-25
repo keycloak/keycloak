@@ -21,7 +21,6 @@
             org.keycloak.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
-            net.iharder;version=${base64.version},
             *;resolution:=optional
         </keycloak.osgi.import>
     </properties>
@@ -33,10 +32,6 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.iharder</groupId>
-            <artifactId>base64</artifactId>
         </dependency>
         <dependency>
             <groupId>org.codehaus.jackson</groupId>

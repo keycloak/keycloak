@@ -11,7 +11,6 @@
         <fileSet>
             <directory>${project.build.directory}/unpacked</directory>
             <includes>
-                <include>net/iharder/base64/**</include>
                 <include>org/keycloak/keycloak-core/**</include>
                 <include>org/keycloak/keycloak-adapter-core/**</include>
                 <include>org/keycloak/keycloak-adapter-spi/**</include>

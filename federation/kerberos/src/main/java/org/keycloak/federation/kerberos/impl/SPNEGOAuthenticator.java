@@ -5,7 +5,7 @@ import java.security.PrivilegedExceptionAction;
 
 import javax.security.auth.Subject;
 
-import net.iharder.Base64;
+import org.keycloak.util.Base64;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;

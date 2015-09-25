@@ -18,7 +18,6 @@
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         <module name="org.jboss.logging"/>
         <module name="org.bouncycastle" />
-        <module name="net.iharder.base64"/>
         <module name="de.idyl.winzipaes"/>
         <module name="javax.api"/>
     </dependencies>

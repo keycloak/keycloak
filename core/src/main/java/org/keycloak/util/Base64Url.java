@@ -1,7 +1,7 @@
 package org.keycloak.util;
 
 
-import net.iharder.Base64;
+import org.keycloak.util.Base64;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

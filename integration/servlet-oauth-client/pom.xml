@@ -39,11 +39,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>net.iharder</groupId>
-            <artifactId>base64</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.spec.javax.servlet</groupId>
             <artifactId>jboss-servlet-api_3.0_spec</artifactId>
             <scope>provided</scope>

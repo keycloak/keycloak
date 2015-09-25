@@ -138,6 +138,6 @@ public class JaxrsBasicAuthTest {
 
     private String encodeCredentials(String username, String password) {
         String text=username+":"+password;
-        return (net.iharder.Base64.encodeBytes(text.getBytes()));
+        return (org.keycloak.util.Base64.encodeBytes(text.getBytes()));
     }
 }
