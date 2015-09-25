@@ -42,7 +42,6 @@ import java.util.regex.Matcher;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Ignore
 public class Tomcat7Test {
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
