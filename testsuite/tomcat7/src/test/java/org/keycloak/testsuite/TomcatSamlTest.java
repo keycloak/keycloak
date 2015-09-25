@@ -86,6 +86,7 @@ public class TomcatSamlTest {
     @AfterClass
     public static void shutdownTomcat() throws Exception {
         tomcat.stop();
+        tomcat.destroy();
     }
 
     @Rule
