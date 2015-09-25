@@ -1,19 +1,16 @@
 package org.keycloak.adapters.tomcat;
 
-import org.apache.catalina.authenticator.Constants;
 import org.apache.catalina.connector.Request;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AdapterUtils;
-import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OAuthRequestAuthenticator;
+import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
-import org.keycloak.enums.TokenStore;
 
-import java.io.IOException;
 import java.security.Principal;
 import java.util.Set;
 import java.util.logging.Level;
@@ -49,7 +46,7 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
     protected void completeOAuthAuthentication(final KeycloakPrincipal<RefreshableKeycloakSecurityContext> skp) {
         final RefreshableKeycloakSecurityContext securityContext = skp.getKeycloakSecurityContext();
         final Set<String> roles = AdapterUtils.getRolesFromSecurityContext(securityContext);
-        KeycloakAccount account = new KeycloakAccount() {
+        OidcKeycloakAccount account = new OidcKeycloakAccount() {
 
             @Override
             public Principal getPrincipal() {
@@ -79,7 +76,7 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
         if (log.isLoggable(Level.FINE)) {
             log.fine("Completing bearer authentication. Bearer roles: " + roles);
         }
-        Principal generalPrincipal = principalFactory.createPrincipal(request.getContext().getRealm(), principal, roles, securityContext);
+        Principal generalPrincipal = principalFactory.createPrincipal(request.getContext().getRealm(), principal, roles);
         request.setUserPrincipal(generalPrincipal);
         request.setAuthType(method);
         request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);

@@ -21,9 +21,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AdapterUtils;
-import org.keycloak.adapters.HttpFacade;
-import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 
 import java.io.Serializable;
@@ -34,7 +33,7 @@ import java.util.Set;
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
 * @version $Revision: 1 $
 */
-public class KeycloakUndertowAccount implements Account, Serializable, KeycloakAccount {
+public class KeycloakUndertowAccount implements Account, Serializable, OidcKeycloakAccount {
     protected static Logger log = Logger.getLogger(KeycloakUndertowAccount.class);
     protected KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal;
     protected Set<String> accountRoles;

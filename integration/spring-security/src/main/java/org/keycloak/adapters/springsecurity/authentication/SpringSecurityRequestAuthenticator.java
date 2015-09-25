@@ -8,20 +8,18 @@ import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OAuthRequestAuthenticator;
+import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
 import org.keycloak.adapters.springsecurity.account.SimpleKeycloakAccount;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.security.Principal;
 import java.util.Set;
-import java.util.logging.Level;
 
 /**
  * Request authenticator adapter for Spring Security.
@@ -64,7 +62,7 @@ public class SpringSecurityRequestAuthenticator extends RequestAuthenticator {
 
         final RefreshableKeycloakSecurityContext securityContext = principal.getKeycloakSecurityContext();
         final Set<String> roles = AdapterUtils.getRolesFromSecurityContext(securityContext);
-        final KeycloakAccount account = new SimpleKeycloakAccount(principal, roles, securityContext);
+        final OidcKeycloakAccount account = new SimpleKeycloakAccount(principal, roles, securityContext);
 
         request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
         this.tokenStore.saveAccountInfo(account);

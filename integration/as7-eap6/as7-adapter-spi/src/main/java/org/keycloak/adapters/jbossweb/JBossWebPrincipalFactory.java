@@ -9,7 +9,6 @@ import org.jboss.security.SecurityContext;
 import org.jboss.security.SecurityContextAssociation;
 import org.jboss.security.SimpleGroup;
 import org.jboss.security.SimplePrincipal;
-import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
 
@@ -38,7 +37,7 @@ public class JBossWebPrincipalFactory extends GenericPrincipalFactory {
     }
 
     @Override
-    public GenericPrincipal createPrincipal(Realm realm, final Principal identity, final Set<String> roleSet, final KeycloakSecurityContext securityContext) {
+    public GenericPrincipal createPrincipal(Realm realm, final Principal identity, final Set<String> roleSet) {
         KeycloakAccount account = new KeycloakAccount() {
             @Override
             public Principal getPrincipal() {
@@ -48,11 +47,6 @@ public class JBossWebPrincipalFactory extends GenericPrincipalFactory {
             @Override
             public Set<String> getRoles() {
                 return roleSet;
-            }
-
-            @Override
-            public KeycloakSecurityContext getKeycloakSecurityContext() {
-                return securityContext;
             }
         };
         Subject subject = new Subject();

@@ -1,6 +1,7 @@
 package org.keycloak.adapters.springsecurity.token;
 
 import org.keycloak.adapters.KeycloakAccount;
+import org.keycloak.adapters.OidcKeycloakAccount;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -51,7 +52,7 @@ public class KeycloakAuthenticationToken extends AbstractAuthenticationToken imp
         return principal;
     }
 
-    public KeycloakAccount getAccount() {
-        return (KeycloakAccount) this.getDetails();
+    public OidcKeycloakAccount getAccount() {
+        return (OidcKeycloakAccount) this.getDetails();
     }
 }

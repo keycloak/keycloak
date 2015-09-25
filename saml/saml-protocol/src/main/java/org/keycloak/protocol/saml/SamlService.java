@@ -174,6 +174,7 @@ public class SamlService {
 
             if (client == null) {
                 event.event(EventType.LOGIN);
+                event.client(issuer);
                 event.error(Errors.CLIENT_NOT_FOUND);
                 return ErrorPage.error(session, Messages.UNKNOWN_LOGIN_REQUESTER);
             }

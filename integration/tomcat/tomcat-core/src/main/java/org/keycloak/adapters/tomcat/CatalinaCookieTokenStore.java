@@ -11,8 +11,8 @@ import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.CookieTokenStore;
 import org.keycloak.adapters.HttpFacade;
-import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
 
@@ -57,7 +57,7 @@ public class CatalinaCookieTokenStore implements AdapterTokenStore {
 
             securityContext.setCurrentRequestInfo(deployment, this);
             Set<String> roles = AdapterUtils.getRolesFromSecurityContext(securityContext);
-            GenericPrincipal principal = principalFactory.createPrincipal(request.getContext().getRealm(), authenticatedPrincipal, roles, securityContext);
+            GenericPrincipal principal = principalFactory.createPrincipal(request.getContext().getRealm(), authenticatedPrincipal, roles);
 
             request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
             request.setUserPrincipal(principal);
@@ -69,7 +69,7 @@ public class CatalinaCookieTokenStore implements AdapterTokenStore {
     }
 
     @Override
-    public void saveAccountInfo(KeycloakAccount account) {
+    public void saveAccountInfo(OidcKeycloakAccount account) {
         RefreshableKeycloakSecurityContext securityContext = (RefreshableKeycloakSecurityContext)account.getKeycloakSecurityContext();
         CookieTokenStore.setTokenCookie(deployment, facade, securityContext);
     }

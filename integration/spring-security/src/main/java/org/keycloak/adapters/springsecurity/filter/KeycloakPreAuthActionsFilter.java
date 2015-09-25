@@ -70,7 +70,7 @@ public class KeycloakPreAuthActionsFilter extends GenericFilterBean implements A
         HttpFacade facade = new SimpleHttpFacade((HttpServletRequest)request, (HttpServletResponse)response);
         PreAuthActionsHandler handler = new PreAuthActionsHandler(userSessionManagement, deploymentContext, facade);
         if (handler.handleRequest()) {
-            log.info("Pre-auth filter handled request: {}", ((HttpServletRequest) request).getRequestURI());
+            log.debug("Pre-auth filter handled request: {}", ((HttpServletRequest) request).getRequestURI());
         } else {
             chain.doFilter(request, response);
         }

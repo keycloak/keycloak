@@ -21,7 +21,7 @@
             "email" : "bburke@redhat.com",
             "credentials" : [
                 { "type" : "password",
-                  "value" : "password" }
+                    "value" : "password" }
             ],
             "attributes" : {
                 "phone": "617"
@@ -31,6 +31,15 @@
                 "http://localhost:8081/employee/": [ "employee" ],
                 "http://localhost:8081/employee2/": [ "employee" ]
             }
+        },
+        {
+            "username" : "unauthorized",
+            "enabled": true,
+            "email" : "unauthorized@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ]
         }
     ],
     "applications": [
