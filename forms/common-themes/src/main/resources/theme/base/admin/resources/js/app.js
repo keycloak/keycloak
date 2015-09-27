@@ -52,12 +52,18 @@ module.factory('authInterceptor', function($q, Auth) {
     };
 });
 
-module.config(function($translateProvider) {
+module.config(['$translateProvider', function($translateProvider) {
     $translateProvider.useSanitizeValueStrategy('sanitizeParameters');
-    $translateProvider.preferredLanguage('en');
-    $translateProvider.useCookieStorage();
+    
+    var locale = auth.authz.idTokenParsed.locale;
+    if (locale !== undefined) {
+        $translateProvider.preferredLanguage(locale);
+    } else {
+        $translateProvider.preferredLanguage('en');
+    }
+    
     $translateProvider.useUrlLoader('messages.json');
-});
+}]);
 
 module.config([ '$routeProvider', function($routeProvider) {
     $routeProvider

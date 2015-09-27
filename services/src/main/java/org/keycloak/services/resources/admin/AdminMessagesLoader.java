@@ -17,9 +17,6 @@
 
 package org.keycloak.services.resources.admin;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
@@ -44,7 +41,7 @@ public class AdminMessagesLoader {
         Properties messages = allMessages.get(allMessagesKey);
         if (messages != null) return messages;
 
-        Locale locale = new Locale(strLocale);
+        Locale locale = Locale.forLanguageTag(strLocale);
         messages = theme.getMessages("admin-messages", locale);
         if (messages == null) return new Properties();
 

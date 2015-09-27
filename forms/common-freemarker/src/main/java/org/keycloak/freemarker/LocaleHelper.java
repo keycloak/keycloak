@@ -1,6 +1,21 @@
+/*
+ * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * as indicated by the @author tags. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.keycloak.freemarker;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
@@ -15,7 +30,6 @@ import java.util.*;
  */
 public class LocaleHelper {
     public final static String LOCALE_COOKIE = "KEYCLOAK_LOCALE";
-    public final static String NG_LOCALE_COOKIE = "NG_TRANSLATE_LANG_KEY";
     public static final String UI_LOCALES_PARAM = "ui_locales";
     public static final String KC_LOCALE_PARAM = "kc_locale";
 
@@ -94,14 +108,12 @@ public class LocaleHelper {
                                           Locale locale,
                                           RealmModel realm,
                                           UriInfo uriInfo,
-                                          String keycloakLocaleCookiePath,
-                                          String ngTranslateLocaleCookiePath) {
+                                          String path) {
         if (locale == null) {
             return;
         }
         boolean secure = realm.getSslRequired().isRequired(uriInfo.getRequestUri().getHost());
-        builder.cookie(new NewCookie(LocaleHelper.LOCALE_COOKIE, locale.toLanguageTag(), keycloakLocaleCookiePath, null, null, 31536000, secure),
-                       new NewCookie(LocaleHelper.NG_LOCALE_COOKIE, "%22" + locale.toLanguageTag() + "%22", ngTranslateLocaleCookiePath, null, null, 31536000, secure));
+        builder.cookie(new NewCookie(LocaleHelper.LOCALE_COOKIE, locale.toLanguageTag(), path, null, null, 31536000, secure));
     }
 
     public static Locale findLocale(Set<String> supportedLocales, String ... localeStrings) {

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * as indicated by the @author tags. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
@@ -49,7 +65,9 @@ import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import org.keycloak.freemarker.LocaleHelper;
 
 /**
  * Stateless object that manages authentication
@@ -393,6 +411,9 @@ public class AuthenticationManager {
                 }
             }
         }
+
+        handleLoginLocale(realm, userSession, request, uriInfo);
+
         // refresh the cookies!
         createLoginCookie(realm, userSession.getUser(), userSession, uriInfo, clientConnection);
         if (userSession.getState() != UserSessionModel.State.LOGGED_IN) userSession.setState(UserSessionModel.State.LOGGED_IN);
@@ -404,6 +425,17 @@ public class AuthenticationManager {
         RestartLoginCookie.expireRestartCookie(realm, clientConnection, uriInfo);
         return protocol.authenticated(userSession, new ClientSessionCode(realm, clientSession));
 
+    }
+
+    // If a locale has been set on the login screen, associate that locale with the user
+    private static void handleLoginLocale(RealmModel realm, UserSessionModel userSession,
+                                          HttpRequest request, UriInfo uriInfo) {
+        Cookie localeCookie = request.getHttpHeaders().getCookies().get(LocaleHelper.LOCALE_COOKIE);
+        if (localeCookie == null) return;
+
+        UserModel user = userSession.getUser();
+        Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, request.getHttpHeaders());
+        user.setSingleAttribute(UserModel.LOCALE, locale.toLanguageTag());
     }
 
     public static Response nextActionAfterAuthentication(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession,
