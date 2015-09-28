@@ -61,13 +61,10 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
     }
 
     protected void logoutInternal(Request request) {
-        KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
-        if (ksc != null) {
-            CatalinaHttpFacade facade = new CatalinaHttpFacade(null, request);
-            SamlDeployment deployment = deploymentContext.resolveDeployment(facade);
-            SamlSessionStore tokenStore = getTokenStore(request, facade, deployment);
-            tokenStore.logoutAccount();
-        }
+        CatalinaHttpFacade facade = new CatalinaHttpFacade(null, request);
+        SamlDeployment deployment = deploymentContext.resolveDeployment(facade);
+        SamlSessionStore tokenStore = getTokenStore(request, facade, deployment);
+        tokenStore.logoutAccount();
         request.setUserPrincipal(null);
     }
 

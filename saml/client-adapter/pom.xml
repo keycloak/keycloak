@@ -17,5 +17,6 @@
         <module>core</module>
         <module>undertow</module>
         <module>tomcat</module>
+        <module>jetty</module>
     </modules>
 </project>

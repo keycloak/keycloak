@@ -43,6 +43,8 @@ import java.util.regex.Matcher;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class TomcatSamlTest {
+    @Rule
+    public SamlAdapterTestStrategy testStrategy = new SamlAdapterTestStrategy("http://localhost:8081/auth", "http://localhost:8082", keycloakRule);
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
         @Override
@@ -89,8 +91,6 @@ public class TomcatSamlTest {
         tomcat.destroy();
     }
 
-    @Rule
-    public SamlAdapterTestStrategy testStrategy = new SamlAdapterTestStrategy("http://localhost:8081/auth", "http://localhost:8082", keycloakRule);
 
     @Test
     public void testPostSimpleLoginLogout() {
