@@ -179,7 +179,7 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
     }
 
     protected boolean authenticateInternal(Request request, HttpServletResponse response, Object loginConfig) throws IOException {
-        log.info("authenticateInternal");
+        log.fine("authenticateInternal");
         CatalinaHttpFacade facade = new CatalinaHttpFacade(response, request);
         SamlDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (deployment == null || !deployment.isConfigured()) {
