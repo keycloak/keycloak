@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <artifactId>keycloak-examples-fuse-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.6.0.Final-SNAPSHOT</version>
+        <version>1.6.0.Test1</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.keycloak.example.demo</groupId>
     <artifactId>keycloak-fuse-example-features</artifactId>
     <name>Keycloak Fuse Example - Features</name>
-    <description/>
+    <description />
 
     <build>
         <resources>

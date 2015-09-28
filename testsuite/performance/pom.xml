@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.6.0.Final-SNAPSHOT</version>
+        <version>1.6.0.Test1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -237,12 +235,12 @@
                                     <targetDirectory>${project.build.directory}/jmeter/results</targetDirectory>
                                     <preserveDirectories>false</preserveDirectories>
                                     <writers>
-                                        <com.lazerycode.jmeter.analyzer.writer.SummaryTextToStdOutWriter/>
-                                        <!--<com.lazerycode.jmeter.analyzer.writer.SummaryTextToFileWriter/>-->
-                                        <com.lazerycode.jmeter.analyzer.writer.HtmlWriter/>
-                                        <!--<com.lazerycode.jmeter.analyzer.writer.DetailsToCsvWriter/>-->
-                                        <com.lazerycode.jmeter.analyzer.writer.DetailsToHtmlWriter/>
-                                        <com.lazerycode.jmeter.analyzer.writer.ChartWriter/>
+                                        <com.lazerycode.jmeter.analyzer.writer.SummaryTextToStdOutWriter />
+                                        <!--<com.lazerycode.jmeter.analyzer.writer.SummaryTextToFileWriter />-->
+                                        <com.lazerycode.jmeter.analyzer.writer.HtmlWriter />
+                                        <!--<com.lazerycode.jmeter.analyzer.writer.DetailsToCsvWriter />-->
+                                        <com.lazerycode.jmeter.analyzer.writer.DetailsToHtmlWriter />
+                                        <com.lazerycode.jmeter.analyzer.writer.ChartWriter />
                                     </writers>
 
                                 </configuration>

@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -14,7 +13,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>1.6.0.Final-SNAPSHOT</version>
+    <version>1.6.0.Test1</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -99,7 +98,8 @@
         <connection>scm:git:git://github.com/keycloak/keycloak.git</connection>
         <developerConnection>scm:git:git@github.com:keycloak/keycloak.git</developerConnection>
         <url>http://github.com/keycloak/keycloak/tree/master/</url>
-    </scm>
+      <tag>1.6.0.Test1</tag>
+  </scm>
 
     <distributionManagement>
         <repository>
