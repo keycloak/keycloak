@@ -3,7 +3,7 @@
     <parent>
         <artifactId>keycloak-timer-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.6.0.Test1</version>
+        <version>1.6.1.Final-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
