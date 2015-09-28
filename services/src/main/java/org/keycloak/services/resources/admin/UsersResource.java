@@ -792,7 +792,7 @@ public class UsersResource {
         }
 
         ClientModel clientModel = realm.getClientById(client);
-        if (client == null) {
+        if (clientModel == null) {
             throw new NotFoundException("Client not found");
         }
 
