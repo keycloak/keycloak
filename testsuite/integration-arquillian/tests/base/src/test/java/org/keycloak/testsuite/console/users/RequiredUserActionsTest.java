@@ -1,28 +1,24 @@
 package org.keycloak.testsuite.console.users;
 
-import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
-import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.console.page.authentication.RequiredActions;
 import org.keycloak.testsuite.console.page.users.UserAttributes;
-
-import static org.keycloak.testsuite.model.RequiredUserAction.TERMS_AND_CONDITIONS;
-import static org.keycloak.testsuite.model.RequiredUserAction.UPDATE_PASSWORD;
-import static org.keycloak.testsuite.model.RequiredUserAction.UPDATE_PROFILE;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
-
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import static org.jboss.arquillian.graphene.Graphene.waitGui;
+import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.model.RequiredUserAction.*;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+
 /**
- *
  * @author tkyjovsk
  * @author mhajas
  */
@@ -124,7 +120,7 @@ public class RequiredUserActionsTest extends AbstractUserTest {
     @Test
     public void termsAndConditions() {
         requiredActionsPage.navigateTo();
-        requiredActionsPage.clickTermsAndConditionEnabled();
+        requiredActionsPage.setTermsAndConditionEnabled(true);
 
         manage().users();
         usersPage.table().viewAllUsers();
@@ -140,8 +136,6 @@ public class RequiredUserActionsTest extends AbstractUserTest {
 
         driver.findElement(By.xpath("//div[@id='kc-header-wrapper' and text()[contains(.,'Terms and Conditions')]]"));
     }
-
-
 
 
 }

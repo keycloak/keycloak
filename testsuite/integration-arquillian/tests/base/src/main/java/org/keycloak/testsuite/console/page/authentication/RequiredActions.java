@@ -1,6 +1,8 @@
 package org.keycloak.testsuite.console.page.authentication;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 /**
  * @author tkyjovsk
@@ -8,48 +10,62 @@ import org.openqa.selenium.By;
  */
 public class RequiredActions extends Authentication {
 
+    public final static String ENABLED = "enabled";
+    public final static String DEFAULT_ACTION = "defaultAction";
+
+    @FindBy(tagName = "table")
+    private WebElement requiredActionTable;
+
     @Override
     public String getUriFragment() {
         return super.getUriFragment() + "/required-actions";
     }
 
-    public void clickTermsAndConditionEnabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()='Terms and Conditions']/..//input[@type='checkbox' and @ng-model='requiredAction.enabled']")).click();
+    private void setRequiredActionValue(String row, String column, boolean value) {
+        WebElement checkbox = requiredActionTable.findElement(By.xpath("//td[text()='" + row + "']/..//input[@ng-model='requiredAction." + column + "']"));
+
+        if (checkbox.isSelected() != value) {
+            checkbox.click();
+        }
     }
 
-    public void clickTermsAndConditionDefaultAction() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()='Terms and Conditions']/..//input[@type='checkbox' and @ng-model='requiredAction.defaultAction']")).click();
+    public void setTermsAndConditionEnabled(boolean value) {
+        setRequiredActionValue("Terms and Conditions", ENABLED, value);
     }
 
-    public void clickVerifyEmailEnabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()='Verify Email']/..//input[@type='checkbox' and @ng-model='requiredAction.enabled']")).click();
+    public void setTermsAndConditionDefaultAction(boolean value) {
+        setRequiredActionValue("Terms and Conditions", DEFAULT_ACTION, value);
     }
 
-    public void clickVerifyEmailDefaultAction() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()='Verify Email']/..//input[@type='checkbox' and @ng-model='requiredAction.defaultAction']")).click();
+    public void setVerifyEmailEnabled(boolean value) {
+        setRequiredActionValue("Verify Email", ENABLED, value);
     }
 
-    public void clickUpdatePasswordEnabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()='Update Password']/..//input[@type='checkbox' and @ng-model='requiredAction.enabled']")).click();
+    public void setVerifyEmailDefaultAction(boolean value) {
+        setRequiredActionValue("Verify Email", DEFAULT_ACTION, value);
     }
 
-    public void clickUpdatePasswordDefaultAction() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()='Update Password']/..//input[@type='checkbox' and @ng-model='requiredAction.defaultAction']")).click();
+    public void setUpdatePasswordEnabled(boolean value) {
+        setRequiredActionValue("Update Password", ENABLED, value);
     }
 
-    public void clickConfigureTotpEnabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()='Configure Totp']/..//input[@type='checkbox' and @ng-model='requiredAction.enabled']")).click();
+    public void setUpdatePasswordDefaultAction(boolean value) {
+        setRequiredActionValue("Update Password", DEFAULT_ACTION, value);
     }
 
-    public void clickConfigureTotpDefaultAction() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()='Configure Totp']/..//input[@type='checkbox' and @ng-model='requiredAction.defaultAction']")).click();
+    public void setConfigureTotpEnabled(boolean value) {
+        setRequiredActionValue("Configure Totp", ENABLED, value);
     }
 
-    public void clickUpdateProfileEnabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()='Update Profile']/..//input[@type='checkbox' and @ng-model='requiredAction.enabled']")).click();
+    public void setConfigureTotpDefaultAction(boolean value) {
+        setRequiredActionValue("Configure Totp", DEFAULT_ACTION, value);
     }
 
-    public void clickUpdateProfileDefaultAction() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()='Update Profile']/..//input[@type='checkbox' and @ng-model='requiredAction.defaultAction']")).click();
+    public void setUpdateProfileEnabled(boolean value) {
+        setRequiredActionValue("Update Profile", ENABLED, value);
+    }
+
+    public void setUpdateProfileDefaultAction(boolean value) {
+        setRequiredActionValue("Update Profile", DEFAULT_ACTION, value);
     }
 }
