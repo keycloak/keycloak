@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -22,9 +23,9 @@ public class ApplicationsBean {
 
     private List<ApplicationEntry> applications = new LinkedList<ApplicationEntry>();
 
-    public ApplicationsBean(RealmModel realm, UserModel user) {
+    public ApplicationsBean(KeycloakSession session, RealmModel realm, UserModel user) {
 
-        Set<ClientModel> offlineClients = OfflineTokenUtils.findClientsWithOfflineToken(realm, user);
+        Set<ClientModel> offlineClients = OfflineTokenUtils.findClientsWithOfflineToken(session, realm, user);
 
         List<ClientModel> realmClients = realm.getClients();
         for (ClientModel client : realmClients) {

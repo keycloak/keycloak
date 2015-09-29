@@ -75,7 +75,7 @@ public class OfflineClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public String getRedirectUri() {
-        return data.getRedirectUri();
+        return getData().getRedirectUri();
     }
 
     @Override
@@ -85,7 +85,7 @@ public class OfflineClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public int getTimestamp() {
-        return 0;
+        return getData().getTimestamp();
     }
 
     @Override
@@ -238,6 +238,9 @@ public class OfflineClientSessionAdapter implements ClientSessionModel {
         @JsonProperty("authenticatorStatus")
         private Map<String, ClientSessionModel.ExecutionStatus> authenticatorStatus = new HashMap<>();
 
+        @JsonProperty("timestamp")
+        private int timestamp;
+
         public String getAuthMethod() {
             return authMethod;
         }
@@ -284,6 +287,14 @@ public class OfflineClientSessionAdapter implements ClientSessionModel {
 
         public void setAuthenticatorStatus(Map<String, ClientSessionModel.ExecutionStatus> authenticatorStatus) {
             this.authenticatorStatus = authenticatorStatus;
+        }
+
+        public int getTimestamp() {
+            return timestamp;
+        }
+
+        public void setTimestamp(int timestamp) {
+            this.timestamp = timestamp;
         }
     }
 }

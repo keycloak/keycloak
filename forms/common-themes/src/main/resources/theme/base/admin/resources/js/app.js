@@ -637,6 +637,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientSessionsCtrl'
         })
+        .when('/realms/:realm/clients/:client/offline-access', {
+            templateUrl : resourceUrl + '/partials/client-offline-sessions.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                },
+                offlineSessionCount : function(ClientOfflineSessionCountLoader) {
+                    return ClientOfflineSessionCountLoader();
+                }
+            },
+            controller : 'ClientOfflineSessionsCtrl'
+        })
         .when('/realms/:realm/clients/:client/credentials', {
             templateUrl : resourceUrl + '/partials/client-credentials.html',
             resolve : {

@@ -104,13 +104,14 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
         };
     }
 
+    private boolean isRegisteredForInvalidation(RealmModel realm, String userId) {
+        return realmInvalidations.contains(realm.getId()) || userInvalidations.containsKey(userId);
+    }
+
     @Override
     public UserModel getUserById(String id, RealmModel realm) {
         if (!cache.isEnabled()) return getDelegate().getUserById(id, realm);
-        if (realmInvalidations.contains(realm.getId())) {
-            return getDelegate().getUserById(id, realm);
-        }
-        if (userInvalidations.containsKey(id)) {
+        if (isRegisteredForInvalidation(realm, id)) {
             return getDelegate().getUserById(id, realm);
         }
 
@@ -120,7 +121,7 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
             if (model == null) return null;
             if (managedUsers.containsKey(id)) return managedUsers.get(id);
             if (userInvalidations.containsKey(id)) return model;
-            cached = new CachedUser(realm, model);
+            cached = new CachedUser(this, realm, model);
             cache.addCachedUser(realm.getId(), cached);
         } else if (managedUsers.containsKey(id)) {
             return managedUsers.get(id);
@@ -145,7 +146,7 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
             if (model == null) return null;
             if (managedUsers.containsKey(model.getId())) return managedUsers.get(model.getId());
             if (userInvalidations.containsKey(model.getId())) return model;
-            cached = new CachedUser(realm, model);
+            cached = new CachedUser(this, realm, model);
             cache.addCachedUser(realm.getId(), cached);
         } else if (userInvalidations.containsKey(cached.getId())) {
             return getDelegate().getUserById(cached.getId(), realm);
@@ -172,7 +173,7 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
             UserModel model = getDelegate().getUserByEmail(email, realm);
             if (model == null) return null;
             if (userInvalidations.containsKey(model.getId())) return model;
-            cached = new CachedUser(realm, model);
+            cached = new CachedUser(this, realm, model);
             cache.addCachedUser(realm.getId(), cached);
         } else if (userInvalidations.containsKey(cached.getId())) {
             return getDelegate().getUserByEmail(email, realm);
@@ -326,5 +327,95 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     @Override
     public void preRemove(ClientModel client, ProtocolMapperModel protocolMapper) {
         getDelegate().preRemove(client, protocolMapper);
+    }
+
+    @Override
+    public void addOfflineUserSession(RealmModel realm, UserModel user, OfflineUserSessionModel offlineUserSession) {
+        registerUserInvalidation(realm, user.getId());
+        getDelegate().addOfflineUserSession(realm, user, offlineUserSession);
+    }
+
+    @Override
+    public OfflineUserSessionModel getOfflineUserSession(RealmModel realm, UserModel user, String userSessionId) {
+        if (isRegisteredForInvalidation(realm, user.getId())) {
+            return getDelegate().getOfflineUserSession(realm, user, userSessionId);
+        }
+
+        CachedUser cachedUser = cache.getCachedUser(realm.getId(), user.getId());
+        if (cachedUser == null) {
+            return getDelegate().getOfflineUserSession(realm, user, userSessionId);
+        } else {
+            return cachedUser.getOfflineUserSessions().get(userSessionId);
+        }
+    }
+
+    @Override
+    public Collection<OfflineUserSessionModel> getOfflineUserSessions(RealmModel realm, UserModel user) {
+        if (isRegisteredForInvalidation(realm, user.getId())) {
+            return getDelegate().getOfflineUserSessions(realm, user);
+        }
+
+        CachedUser cachedUser = cache.getCachedUser(realm.getId(), user.getId());
+        if (cachedUser == null) {
+            return getDelegate().getOfflineUserSessions(realm, user);
+        } else {
+            return cachedUser.getOfflineUserSessions().values();
+        }
+    }
+
+    @Override
+    public boolean removeOfflineUserSession(RealmModel realm, UserModel user, String userSessionId) {
+        registerUserInvalidation(realm, user.getId());
+        return getDelegate().removeOfflineUserSession(realm, user, userSessionId);
+    }
+
+    @Override
+    public void addOfflineClientSession(RealmModel realm, OfflineClientSessionModel offlineClientSession) {
+        registerUserInvalidation(realm, offlineClientSession.getUserId());
+        getDelegate().addOfflineClientSession(realm, offlineClientSession);
+    }
+
+    @Override
+    public OfflineClientSessionModel getOfflineClientSession(RealmModel realm, UserModel user, String clientSessionId) {
+        if (isRegisteredForInvalidation(realm, user.getId())) {
+            return getDelegate().getOfflineClientSession(realm, user, clientSessionId);
+        }
+
+        CachedUser cachedUser = cache.getCachedUser(realm.getId(), user.getId());
+        if (cachedUser == null) {
+            return getDelegate().getOfflineClientSession(realm, user, clientSessionId);
+        } else {
+            return cachedUser.getOfflineClientSessions().get(clientSessionId);
+        }
+    }
+
+    @Override
+    public Collection<OfflineClientSessionModel> getOfflineClientSessions(RealmModel realm, UserModel user) {
+        if (isRegisteredForInvalidation(realm, user.getId())) {
+            return getDelegate().getOfflineClientSessions(realm, user);
+        }
+
+        CachedUser cachedUser = cache.getCachedUser(realm.getId(), user.getId());
+        if (cachedUser == null) {
+            return getDelegate().getOfflineClientSessions(realm, user);
+        } else {
+            return cachedUser.getOfflineClientSessions().values();
+        }
+    }
+
+    @Override
+    public boolean removeOfflineClientSession(RealmModel realm, UserModel user, String clientSessionId) {
+        registerUserInvalidation(realm, user.getId());
+        return getDelegate().removeOfflineClientSession(realm, user, clientSessionId);
+    }
+
+    @Override
+    public int getOfflineClientSessionsCount(RealmModel realm, ClientModel client) {
+        return getDelegate().getOfflineClientSessionsCount(realm, client);
+    }
+
+    @Override
+    public Collection<OfflineClientSessionModel> getOfflineClientSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
+        return getDelegate().getOfflineClientSessions(realm, client, firstResult, maxResults);
     }
 }

@@ -16,7 +16,9 @@ import javax.persistence.Table;
 @NamedQueries({
         @NamedQuery(name="deleteOfflineClientSessionsByRealm", query="delete from OfflineClientSessionEntity sess where sess.user IN (select u from UserEntity u where u.realmId=:realmId)"),
         @NamedQuery(name="deleteOfflineClientSessionsByRealmAndLink", query="delete from OfflineClientSessionEntity sess where sess.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link)"),
-        @NamedQuery(name="deleteOfflineClientSessionsByClient", query="delete from OfflineClientSessionEntity sess where sess.clientId=:clientId")
+        @NamedQuery(name="deleteOfflineClientSessionsByClient", query="delete from OfflineClientSessionEntity sess where sess.clientId=:clientId"),
+        @NamedQuery(name="findOfflineClientSessionsCountByClient", query="select count(sess) from OfflineClientSessionEntity sess where sess.clientId=:clientId"),
+        @NamedQuery(name="findOfflineClientSessionsByClient", query="select sess from OfflineClientSessionEntity sess where sess.clientId=:clientId order by sess.user.username")
 })
 @Table(name="OFFLINE_CLIENT_SESSION")
 @Entity

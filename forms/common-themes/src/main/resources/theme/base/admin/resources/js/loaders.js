@@ -246,6 +246,15 @@ module.factory('ClientSessionCountLoader', function(Loader, ClientSessionCount, 
     });
 });
 
+module.factory('ClientOfflineSessionCountLoader', function(Loader, ClientOfflineSessionCount, $route, $q) {
+    return Loader.get(ClientOfflineSessionCount, function() {
+        return {
+            realm : $route.current.params.realm,
+            client : $route.current.params.client
+        }
+    });
+});
+
 module.factory('ClientClaimsLoader', function(Loader, ClientClaims, $route, $q) {
     return Loader.get(ClientClaims, function() {
         return {

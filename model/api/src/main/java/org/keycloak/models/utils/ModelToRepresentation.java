@@ -10,6 +10,8 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.OfflineClientSessionModel;
+import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -30,6 +32,8 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OfflineClientSessionRepresentation;
+import org.keycloak.representations.idm.OfflineUserSessionRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -43,6 +47,7 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.util.Time;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -506,7 +511,31 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    public static OfflineUserSessionRepresentation toRepresentation(RealmModel realm, OfflineUserSessionModel model, Collection<OfflineClientSessionModel> clientSessions) {
+        OfflineUserSessionRepresentation rep = new OfflineUserSessionRepresentation();
+        rep.setData(model.getData());
+        rep.setUserSessionId(model.getUserSessionId());
 
+        List<OfflineClientSessionRepresentation> clientSessionReps = new LinkedList<>();
+        for (OfflineClientSessionModel clsm : clientSessions) {
+            OfflineClientSessionRepresentation clrep = toRepresentation(realm, clsm);
+            clientSessionReps.add(clrep);
+        }
+        rep.setOfflineClientSessions(clientSessionReps);
+        return rep;
+    }
+
+    public static OfflineClientSessionRepresentation toRepresentation(RealmModel realm, OfflineClientSessionModel model) {
+        OfflineClientSessionRepresentation rep = new OfflineClientSessionRepresentation();
+
+        String clientInternalId = model.getClientId();
+        ClientModel client = realm.getClientById(clientInternalId);
+        rep.setClient(client.getClientId());
+
+        rep.setClientSessionId(model.getClientSessionId());
+        rep.setData(model.getData());
+        return rep;
+    }
 
 
 
