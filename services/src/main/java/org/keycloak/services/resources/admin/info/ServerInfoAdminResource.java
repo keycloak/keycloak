@@ -4,8 +4,6 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.exportimport.ClientImporter;
-import org.keycloak.exportimport.ClientImporterFactory;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
@@ -51,7 +49,6 @@ public class ServerInfoAdminResource {
         setSocialProviders(info);
         setIdentityProviders(info);
         setThemes(info);
-        setClientImporters(info);
         setProviders(info);
         setProtocolMapperTypes(info);
         setBuiltinProtocolMappers(info);
@@ -144,7 +141,7 @@ public class ServerInfoAdminResource {
             ProtocolMapper mapper = (ProtocolMapper)p;
             List<ProtocolMapperTypeRepresentation> types = info.getProtocolMapperTypes().get(mapper.getProtocol());
             if (types == null) {
-                types = new LinkedList<ProtocolMapperTypeRepresentation>();
+                types = new LinkedList<>();
                 info.getProtocolMapperTypes().put(mapper.getProtocol(), types);
             }
             ProtocolMapperTypeRepresentation rep = new ProtocolMapperTypeRepresentation();
@@ -176,17 +173,6 @@ public class ServerInfoAdminResource {
                 mappers.add(ModelToRepresentation.toRepresentation(mapper));
             }
             info.getBuiltinProtocolMappers().put(p.getId(), mappers);
-        }
-    }
-
-    private void setClientImporters(ServerInfoRepresentation info) {
-        info.setClientImporters(new LinkedList<Map<String, String>>());
-        for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(ClientImporter.class)) {
-            ClientImporterFactory factory = (ClientImporterFactory)p;
-            Map<String, String> data = new HashMap<String, String>();
-            data.put("id", factory.getId());
-            data.put("name", factory.getDisplayName());
-            info.getClientImporters().add(data);
         }
     }
 

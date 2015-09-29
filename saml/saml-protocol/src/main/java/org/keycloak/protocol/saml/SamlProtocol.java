@@ -485,7 +485,7 @@ public class SamlProtocol implements LoginProtocol {
         }
         if (logoutServiceUrl == null && client instanceof ClientModel) logoutServiceUrl = ((ClientModel)client).getManagementUrl();
         if (logoutServiceUrl == null || logoutServiceUrl.trim().equals("")) return null;
-        return ResourceAdminManager.resolveUri(uriInfo.getRequestUri(), logoutServiceUrl);
+        return ResourceAdminManager.resolveUri(uriInfo.getRequestUri(), client.getRootUrl(), logoutServiceUrl);
 
     }
 

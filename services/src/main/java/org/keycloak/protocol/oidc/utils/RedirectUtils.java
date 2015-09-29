@@ -19,22 +19,22 @@ public class RedirectUtils {
     private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
     public static String verifyRealmRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm) {
-        Set<String> validRedirects = getValidateRedirectUris(realm);
-        return verifyRedirectUri(uriInfo, redirectUri, realm, validRedirects);
+        Set<String> validRedirects = getValidateRedirectUris(uriInfo, realm);
+        return verifyRedirectUri(uriInfo, null, redirectUri, realm, validRedirects);
     }
 
     public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm, ClientModel client) {
         Set<String> validRedirects = client.getRedirectUris();
-        return verifyRedirectUri(uriInfo, redirectUri, realm, validRedirects);
+        return verifyRedirectUri(uriInfo, client.getRootUrl(), redirectUri, realm, validRedirects);
     }
 
-    public static Set<String> resolveValidRedirects(UriInfo uriInfo, Set<String> validRedirects) {
+    public static Set<String> resolveValidRedirects(UriInfo uriInfo, String rootUrl, Set<String> validRedirects) {
         // If the valid redirect URI is relative (no scheme, host, port) then use the request's scheme, host, and port
         Set<String> resolveValidRedirects = new HashSet<String>();
         for (String validRedirect : validRedirects) {
             resolveValidRedirects.add(validRedirect); // add even relative urls.
             if (validRedirect.startsWith("/")) {
-                validRedirect = relativeToAbsoluteURI(uriInfo, validRedirect);
+                validRedirect = relativeToAbsoluteURI(uriInfo, rootUrl, validRedirect);
                 logger.debugv("replacing relative valid redirect with: {0}", validRedirect);
                 resolveValidRedirects.add(validRedirect);
             }
@@ -42,17 +42,15 @@ public class RedirectUtils {
         return resolveValidRedirects;
     }
 
-    private static Set<String> getValidateRedirectUris(RealmModel realm) {
-        Set<String> redirects = new HashSet<String>();
+    private static Set<String> getValidateRedirectUris(UriInfo uriInfo, RealmModel realm) {
+        Set<String> redirects = new HashSet<>();
         for (ClientModel client : realm.getClients()) {
-            for (String redirect : client.getRedirectUris()) {
-                redirects.add(redirect);
-            }
+            redirects.addAll(resolveValidRedirects(uriInfo, client.getRootUrl(), client.getRedirectUris()));
         }
         return redirects;
     }
 
-    private static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm, Set<String> validRedirects) {
+    private static String verifyRedirectUri(UriInfo uriInfo, String rootUrl, String redirectUri, RealmModel realm, Set<String> validRedirects) {
         if (redirectUri == null) {
             if (validRedirects.size() != 1) return null;
             String validRedirect = validRedirects.iterator().next();
@@ -66,7 +64,7 @@ public class RedirectUtils {
             redirectUri = null;
         } else {
             String r = redirectUri.indexOf('?') != -1 ? redirectUri.substring(0, redirectUri.indexOf('?')) : redirectUri;
-            Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, validRedirects);
+            Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, rootUrl, validRedirects);
 
             boolean valid = matchesRedirects(resolveValidRedirects, r);
 
@@ -86,7 +84,7 @@ public class RedirectUtils {
                 valid = matchesRedirects(resolveValidRedirects, r);
             }
             if (valid && redirectUri.startsWith("/")) {
-                redirectUri = relativeToAbsoluteURI(uriInfo, redirectUri);
+                redirectUri = relativeToAbsoluteURI(uriInfo, rootUrl, redirectUri);
             }
             redirectUri = valid ? redirectUri : null;
         }
@@ -98,13 +96,16 @@ public class RedirectUtils {
         }
     }
 
-    private static String relativeToAbsoluteURI(UriInfo uriInfo, String relative) {
-        URI baseUri = uriInfo.getBaseUri();
-        String uri = baseUri.getScheme() + "://" + baseUri.getHost();
-        if (baseUri.getPort() != -1) {
-            uri += ":" + baseUri.getPort();
+    private static String relativeToAbsoluteURI(UriInfo uriInfo, String rootUrl, String relative) {
+        if (rootUrl == null) {
+            URI baseUri = uriInfo.getBaseUri();
+            String uri = baseUri.getScheme() + "://" + baseUri.getHost();
+            if (baseUri.getPort() != -1) {
+                uri += ":" + baseUri.getPort();
+            }
+            rootUrl = uri;
         }
-        relative = uri + relative;
+        relative = rootUrl + relative;
         return relative;
     }
 

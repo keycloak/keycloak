@@ -13,7 +13,8 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.exportimport.ClientImporter;
+import org.keycloak.exportimport.ClientDescriptionConverter;
+import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -25,7 +26,9 @@ import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -99,10 +102,18 @@ public class RealmAdminResource {
      *
      * @return
      */
-    @Path("client-importers/{formatId}")
-    public Object getClientImporter(@PathParam("formatId") String formatId) {
-        ClientImporter importer = session.getProvider(ClientImporter.class, formatId);
-        return importer.createJaxrsService(realm, auth);
+    @Path("client-description-converter")
+    @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN })
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    public ClientRepresentation convertClientDescription(String description) {
+        for (ProviderFactory<ClientDescriptionConverter> factory : session.getKeycloakSessionFactory().getProviderFactories(ClientDescriptionConverter.class)) {
+            if (((ClientDescriptionConverterFactory) factory).isSupported(description)) {
+                return factory.create(session).convertToInternal(description);
+            }
+        }
+
+        throw new BadRequestException("Unsupported format");
     }
 
     /**

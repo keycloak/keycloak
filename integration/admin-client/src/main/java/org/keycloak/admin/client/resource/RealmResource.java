@@ -1,13 +1,9 @@
 package org.keycloak.admin.client.resource;
 
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +23,12 @@ public interface RealmResource {
 
     @Path("clients")
     ClientsResource clients();
+
+    @Path("client-description-converter")
+    @POST
+    @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN })
+    @Produces(MediaType.APPLICATION_JSON)
+    ClientRepresentation convertClientDescription(String description);
 
     @Path("users")
     UsersResource users();

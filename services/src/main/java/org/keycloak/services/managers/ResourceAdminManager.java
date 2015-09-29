@@ -46,8 +46,8 @@ public class ResourceAdminManager {
         this.session = session;
     }
 
-    public static String resolveUri(URI requestUri, String uri) {
-        String absoluteURI = ResolveRelative.resolveRelativeUri(requestUri, uri);
+    public static String resolveUri(URI requestUri, String rootUrl, String uri) {
+        String absoluteURI = ResolveRelative.resolveRelativeUri(requestUri, rootUrl, uri);
         return StringPropertyReplacer.replaceProperties(absoluteURI);
 
    }
@@ -58,8 +58,7 @@ public class ResourceAdminManager {
             return null;
         }
 
-        // this is to support relative admin urls when keycloak and clients are deployed on the same machine
-        String absoluteURI = ResolveRelative.resolveRelativeUri(requestUri, mgmtUrl);
+        String absoluteURI = ResolveRelative.resolveRelativeUri(requestUri, client.getRootUrl(), mgmtUrl);
 
         // this is for resolving URI like "http://${jboss.host.name}:8080/..." in order to send request to same machine and avoid request to LB in cluster environment
         return StringPropertyReplacer.replaceProperties(absoluteURI);

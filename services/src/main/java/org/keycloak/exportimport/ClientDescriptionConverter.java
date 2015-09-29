@@ -1,8 +1,7 @@
 package org.keycloak.exportimport;
 
-import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
-import org.keycloak.services.resources.admin.RealmAuth;
+import org.keycloak.representations.idm.ClientRepresentation;
 
 /**
  * Provider plugin interface for importing clients from an arbitrary configuration format
@@ -10,6 +9,8 @@ import org.keycloak.services.resources.admin.RealmAuth;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface ClientImporter extends Provider {
-    public Object createJaxrsService(RealmModel realm, RealmAuth auth);
+public interface ClientDescriptionConverter extends Provider {
+
+    ClientRepresentation convertToInternal(String description);
+
 }

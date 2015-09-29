@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.keycloaksaml;
 
+import org.apache.commons.io.IOUtils;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -8,6 +9,8 @@ import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.adapters.saml.SamlPrincipal;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -24,6 +27,7 @@ import org.keycloak.protocol.saml.mappers.HardcodedRole;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.RoleNameMapper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.services.managers.RealmManager;
@@ -34,6 +38,7 @@ import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
@@ -50,6 +55,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -106,9 +113,9 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
 
     public void testPostSimpleLoginLogout() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post/");
-        Assert.assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
         loginPage.login("bburke", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post/");
         System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post?GLO=true");
@@ -117,9 +124,9 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
 
     public void testPostSimpleUnauthorized(CheckAuthError error) {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post/");
-        Assert.assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
         loginPage.login("unauthorized", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post/");
         System.out.println(driver.getPageSource());
         error.check(driver);
     }
@@ -127,7 +134,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
     public void testPostSimpleLoginLogoutIdpInitiated() {
         driver.navigate().to(AUTH_SERVER_URL + "/realms/demo/protocol/saml/clients/sales-post");
         loginPage.login("bburke", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post/");
         System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post?GLO=true");
@@ -136,9 +143,9 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
 
     public void testPostSignedLoginLogout() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig/");
-        Assert.assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
         loginPage.login("bburke", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-sig/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-sig/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig?GLO=true");
         checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-sig/");
@@ -146,9 +153,9 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
     }
     public void testPostSignedLoginLogoutTransientNameID() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig-transient/");
-        Assert.assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
         loginPage.login("bburke", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-sig-transient/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-sig-transient/");
         System.out.println(driver.getPageSource());
         Assert.assertFalse(driver.getPageSource().contains("bburke"));
         Assert.assertTrue(driver.getPageSource().contains("principal=G-"));
@@ -158,9 +165,9 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
     }
     public void testPostSignedLoginLogoutPersistentNameID() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig-persistent/");
-        Assert.assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
         loginPage.login("bburke", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-sig-persistent/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-sig-persistent/");
         System.out.println(driver.getPageSource());
         Assert.assertFalse(driver.getPageSource().contains("bburke"));
         Assert.assertTrue(driver.getPageSource().contains("principal=G-"));
@@ -170,9 +177,9 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
     }
     public void testPostSignedLoginLogoutEmailNameID() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig-email/");
-        Assert.assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
         loginPage.login("bburke", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-sig-email/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-sig-email/");
         System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getPageSource().contains("principal=bburke@redhat.com"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig-email?GLO=true");
@@ -188,8 +195,8 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
         System.out.println(driver.getCurrentUrl());
         loginPage.login("bburke", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee/");
-        Assert.assertEquals(SamlSPFacade.sentRelayState, SamlSPFacade.RELAY_STATE);
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee/");
+        assertEquals(SamlSPFacade.sentRelayState, SamlSPFacade.RELAY_STATE);
         Assert.assertNotNull(SamlSPFacade.samlResponse);
 
     }
@@ -206,13 +213,13 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
             requiredRoles.add("user");
             SendUsernameServlet.checkRoles = requiredRoles;
             loginPage.login("bburke", "password");
-            Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee2/");
+            assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee2/");
             SendUsernameServlet.checkRoles = null;
             SamlPrincipal principal = (SamlPrincipal) SendUsernameServlet.sentPrincipal;
             Assert.assertNotNull(principal);
-            Assert.assertEquals("bburke@redhat.com", principal.getAttribute(X500SAMLProfileConstants.EMAIL.get()));
-            Assert.assertEquals("bburke@redhat.com", principal.getFriendlyAttribute("email"));
-            Assert.assertEquals("617", principal.getAttribute("phone"));
+            assertEquals("bburke@redhat.com", principal.getAttribute(X500SAMLProfileConstants.EMAIL.get()));
+            assertEquals("bburke@redhat.com", principal.getFriendlyAttribute("email"));
+            assertEquals("617", principal.getAttribute("phone"));
             Assert.assertNull(principal.getFriendlyAttribute("phone"));
             driver.navigate().to(APP_SERVER_BASE_URL + "/employee2/?GLO=true");
             checkLoggedOut(APP_SERVER_BASE_URL + "/employee2/");
@@ -252,11 +259,11 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
             requiredRoles.add("pee-on");
             SendUsernameServlet.checkRoles = requiredRoles;
             loginPage.login("bburke", "password");
-            Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee2/");
+            assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee2/");
             SendUsernameServlet.checkRoles = null;
             SamlPrincipal principal = (SamlPrincipal) SendUsernameServlet.sentPrincipal;
             Assert.assertNotNull(principal);
-            Assert.assertEquals("hard", principal.getAttribute("hardcoded-attribute"));
+            assertEquals("hard", principal.getAttribute("hardcoded-attribute"));
 
 
         }
@@ -266,7 +273,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         driver.navigate().to(APP_SERVER_BASE_URL + "/employee-sig/");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
         loginPage.login("bburke", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee-sig/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee-sig/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/employee-sig?GLO=true");
         checkLoggedOut(APP_SERVER_BASE_URL + "/employee-sig/");
@@ -277,7 +284,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         driver.navigate().to(APP_SERVER_BASE_URL + "/employee-sig-front/");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
         loginPage.login("bburke", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee-sig-front/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee-sig-front/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/employee-sig-front?GLO=true");
         checkLoggedOut(APP_SERVER_BASE_URL + "/employee-sig-front/");
@@ -291,19 +298,19 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
         System.out.println("login to form");
         loginPage.login("bburke", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee-sig/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee-sig/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
 
         // visit 2nd app
         System.out.println("visit 2nd app ");
         driver.navigate().to(APP_SERVER_BASE_URL + "/employee-sig-front/");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee-sig-front/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee-sig-front/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
 
         // visit 3rd app
         System.out.println("visit 3rd app ");
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig/");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-sig/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-sig/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
 
         // logout of first app
@@ -320,9 +327,9 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
 
     public void testPostEncryptedLoginLogout() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-enc/");
-        Assert.assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
         loginPage.login("bburke", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-enc/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-enc/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-enc?GLO=true");
         checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-enc/");
@@ -330,8 +337,8 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
     }
     public void testPostBadClientSignature() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/bad-client-sales-post-sig/");
-        Assert.assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
-        Assert.assertEquals(driver.getTitle(), "We're sorry...");
+        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertEquals(driver.getTitle(), "We're sorry...");
 
     }
     public static interface CheckAuthError {
@@ -340,39 +347,19 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
 
     public void testPostBadRealmSignature(CheckAuthError error) {
         driver.navigate().to(APP_SERVER_BASE_URL + "/bad-realm-sales-post-sig/");
-        Assert.assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
         loginPage.login("bburke", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/bad-realm-sales-post-sig/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/bad-realm-sales-post-sig/");
         System.out.println(driver.getPageSource());
         error.check(driver);
     }
 
-    private static String createToken(String AUTH_SERVER_URL, AbstractKeycloakRule keycloakRule) {
-        KeycloakSession session = keycloakRule.startSession();
-        try {
-            RealmManager manager = new RealmManager(session);
-
-            RealmModel adminRealm = manager.getRealm(Config.getAdminRealm());
-            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-            TokenManager tm = new TokenManager();
-            UserModel admin = session.users().getUserByUsername("admin", adminRealm);
-            ClientSessionModel clientSession = session.sessions().createClientSession(adminRealm, adminConsole);
-            clientSession.setNote(OIDCLoginProtocol.ISSUER, AUTH_SERVER_URL + "/realms/master");
-            UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, "admin", null, "form", false, null, null);
-            AccessToken token = tm.createClientAccessToken(session, tm.getAccess(null, true, adminConsole, admin), adminRealm, adminConsole, admin, userSession, clientSession);
-            return tm.encodeToken(adminRealm, token);
-        } finally {
-            keycloakRule.stopSession(session, true);
-        }
-    }
-
-
     public void testMetadataPostSignedLoginLogout() throws Exception {
 
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-metadata/");
-        Assert.assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
         loginPage.login("bburke", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-metadata/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-metadata/");
         String pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-metadata?GLO=true");
@@ -380,30 +367,21 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
 
     }
 
-    public static void uploadSP(String AUTH_SERVER_URL, AbstractKeycloakRule keycloakRule) {
-        String token = createToken(AUTH_SERVER_URL, keycloakRule);
-        final String authHeader = "Bearer " + token;
-        ClientRequestFilter authFilter = new ClientRequestFilter() {
-            @Override
-            public void filter(ClientRequestContext requestContext) throws IOException {
-                requestContext.getHeaders().add(HttpHeaders.AUTHORIZATION, authHeader);
-            }
-        };
-        Client client = ClientBuilder.newBuilder().register(authFilter).build();
-        UriBuilder authBase = UriBuilder.fromUri(AUTH_SERVER_URL + "");
-        WebTarget adminRealms = client.target(AdminRoot.realmsUrl(authBase));
+    public static void uploadSP(String AUTH_SERVER_URL) {
+        try {
+            Keycloak keycloak = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID, null);
+            RealmResource admin = keycloak.realm("demo");
 
+            admin.toRepresentation();
 
-        MultipartFormDataOutput formData = new MultipartFormDataOutput();
-        InputStream is = SamlAdapterTestStrategy.class.getResourceAsStream("/keycloak-saml/sp-metadata.xml");
-        Assert.assertNotNull(is);
-        formData.addFormData("file", is, MediaType.APPLICATION_XML_TYPE);
+            ClientRepresentation clientRep = admin.convertClientDescription(IOUtils.toString(SamlAdapterTestStrategy.class.getResourceAsStream("/keycloak-saml/sp-metadata.xml")));
+            Response response = admin.clients().create(clientRep);
 
-        WebTarget upload = adminRealms.path("demo/client-importers/saml2-entity-descriptor/upload");
-        System.out.println(upload.getUri());
-        Response response = upload.request().post(Entity.entity(formData, MediaType.MULTIPART_FORM_DATA));
-        Assert.assertEquals(204, response.getStatus());
-        response.close();
-        client.close();
+            assertEquals(201, response.getStatus());
+
+            keycloak.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

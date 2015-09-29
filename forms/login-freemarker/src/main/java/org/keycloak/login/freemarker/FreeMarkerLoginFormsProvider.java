@@ -241,7 +241,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         if (client != null) {
-            attributes.put("client", new ClientBean(client));
+            attributes.put("client", new ClientBean(client, baseUri));
         }
 
         attributes.put("login", new LoginBean(formData));
@@ -322,7 +322,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             logger.warn("Failed to load properties", e);
         }
         if (client != null) {
-            attributes.put("client", new ClientBean(client));
+            attributes.put("client", new ClientBean(client, baseUri));
         }
 
         Properties messagesBundle;

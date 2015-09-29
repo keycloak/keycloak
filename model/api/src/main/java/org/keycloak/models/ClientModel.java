@@ -56,6 +56,10 @@ public interface ClientModel extends RoleContainerModel {
 
     void setManagementUrl(String url);
 
+    String getRootUrl();
+
+    void setRootUrl(String url);
+
     String getBaseUrl();
 
     void setBaseUrl(String url);

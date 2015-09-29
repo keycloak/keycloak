@@ -1,6 +1,9 @@
 package org.keycloak.login.freemarker.model;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.services.util.ResolveRelative;
+
+import java.net.URI;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -10,8 +13,11 @@ public class ClientBean {
 
     protected ClientModel client;
 
-    public ClientBean(ClientModel client) {
+    private URI requestUri;
+
+    public ClientBean(ClientModel client, URI requestUri) {
         this.client = client;
+        this.requestUri = requestUri;
     }
 
     public String getClientId() {
@@ -23,7 +29,7 @@ public class ClientBean {
     }
 
     public String getBaseUrl() {
-        return client.getBaseUrl();
+        return ResolveRelative.resolveRelativeUri(requestUri, client.getRootUrl(), client.getBaseUrl());
     }
 
 }

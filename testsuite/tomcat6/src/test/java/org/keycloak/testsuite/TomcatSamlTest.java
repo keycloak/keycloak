@@ -30,7 +30,6 @@ import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.adapter.AdapterTestStrategy;
 import org.keycloak.testsuite.keycloaksaml.SamlAdapterTestStrategy;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.openqa.selenium.WebDriver;
@@ -73,7 +72,7 @@ public class TomcatSamlTest {
         tomcat.deploySaml("/bad-client-sales-post-sig", "bad-client-signed-post");
         tomcat.deploySaml("/bad-realm-sales-post-sig", "bad-realm-signed-post");
         tomcat.deploySaml("/sales-post-enc", "encrypted-post");
-        SamlAdapterTestStrategy.uploadSP("http://localhost:8081/auth", keycloakRule);
+        SamlAdapterTestStrategy.uploadSP("http://localhost:8081/auth");
 
 
         tomcat.start();

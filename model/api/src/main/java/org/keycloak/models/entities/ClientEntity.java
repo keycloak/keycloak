@@ -24,6 +24,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     private boolean surrogateAuthRequired;
     private String managementUrl;
+    private String rootUrl;
     private String baseUrl;
     private boolean bearerOnly;
     private boolean consentRequired;
@@ -194,6 +195,14 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setManagementUrl(String managementUrl) {
         this.managementUrl = managementUrl;
+    }
+
+    public String getRootUrl() {
+        return rootUrl;
+    }
+
+    public void setRootUrl(String rootUrl) {
+        this.rootUrl = rootUrl;
     }
 
     public String getBaseUrl() {

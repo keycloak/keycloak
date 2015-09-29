@@ -440,6 +440,17 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
+    public void setRootUrl(String url) {
+        getMongoEntity().setRootUrl(url);
+        updateMongoEntity();
+    }
+
+    @Override
+    public String getRootUrl() {
+        return getMongoEntity().getRootUrl();
+    }
+
+    @Override
     public void setBaseUrl(String url) {
         getMongoEntity().setBaseUrl(url);
         updateMongoEntity();

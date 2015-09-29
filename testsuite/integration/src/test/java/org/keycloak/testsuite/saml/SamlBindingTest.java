@@ -1,11 +1,14 @@
 package org.keycloak.testsuite.saml;
 
+import org.apache.commons.io.IOUtils;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.Config;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -22,9 +25,11 @@ import org.keycloak.protocol.saml.mappers.HardcodedRole;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.RoleNameMapper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
@@ -55,6 +60,8 @@ import javax.ws.rs.core.UriBuilder;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -480,30 +487,21 @@ public class SamlBindingTest {
     }
 
     public static void uploadSP() {
-        String token = createToken();
-        final String authHeader = "Bearer " + token;
-        ClientRequestFilter authFilter = new ClientRequestFilter() {
-            @Override
-            public void filter(ClientRequestContext requestContext) throws IOException {
-                requestContext.getHeaders().add(HttpHeaders.AUTHORIZATION, authHeader);
-            }
-        };
-        Client client = ClientBuilder.newBuilder().register(authFilter).build();
-        UriBuilder authBase = UriBuilder.fromUri("http://localhost:8081/auth");
-        WebTarget adminRealms = client.target(AdminRoot.realmsUrl(authBase));
+        try {
+            Keycloak keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID, null);
+            RealmResource admin = keycloak.realm("demo");
 
+            admin.toRepresentation();
 
-        MultipartFormDataOutput formData = new MultipartFormDataOutput();
-        InputStream is = SamlBindingTest.class.getResourceAsStream("/saml/sp-metadata.xml");
-        Assert.assertNotNull(is);
-        formData.addFormData("file", is, MediaType.APPLICATION_XML_TYPE);
+            ClientRepresentation clientRep = admin.convertClientDescription(IOUtils.toString(SamlBindingTest.class.getResourceAsStream("/saml/sp-metadata.xml")));
+            Response response = admin.clients().create(clientRep);
 
-        WebTarget upload = adminRealms.path("demo/client-importers/saml2-entity-descriptor/upload");
-        System.out.println(upload.getUri());
-        Response response = upload.request().post(Entity.entity(formData, MediaType.MULTIPART_FORM_DATA));
-        Assert.assertEquals(204, response.getStatus());
-        response.close();
-        client.close();
+            assertEquals(201, response.getStatus());
+
+            keycloak.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
