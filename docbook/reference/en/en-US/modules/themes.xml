@@ -181,6 +181,12 @@ import=common/keycloak
                 <literal>messages/messages.properties</literal> inside your theme folder and add the following content:
             </para>
             <programlisting>username=Your Username</programlisting>
+            <para>
+                For the admin console, there is a second resource bundle named <literal>admin-messages.properties</literal>.
+                This resource bundle is converted to JSON and shipped to the console to be processed by
+                angular-translate.  It is found in the same directory as messages.properties and can be overridden
+                in the same way as described above.
+            </para>
         </section>
         <section>
             <title>Modifying HTML</title>

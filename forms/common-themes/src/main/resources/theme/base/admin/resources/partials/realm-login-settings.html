@@ -4,66 +4,66 @@
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
         <fieldset class="border-top">
             <div class="form-group">
-                <label for="registrationAllowed" class="col-md-2 control-label">User registration</label>
+                <label for="registrationAllowed" class="col-md-2 control-label">{{:: 'registrationAllowed' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="realm.registrationAllowed" name="registrationAllowed" id="registrationAllowed" onoffswitch />
+                    <input ng-model="realm.registrationAllowed" name="registrationAllowed" id="registrationAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Enable/disable the registration page. A link for registration will show on login page too.</kc-tooltip>
+                <kc-tooltip>{{:: 'registrationAllowed.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" ng-show="realm.registrationAllowed">
-                <label for="registrationEmailAsUsername" class="col-md-2 control-label">Email as username</label>
+                <label for="registrationEmailAsUsername" class="col-md-2 control-label">{{:: 'registrationEmailAsUsername' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="realm.registrationEmailAsUsername" name="registrationEmailAsUsername" id="registrationEmailAsUsername" onoffswitch />
+                    <input ng-model="realm.registrationEmailAsUsername" name="registrationEmailAsUsername" id="registrationEmailAsUsername" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>If enabled then username field is hidden from registration form and email is used as username for new user.</kc-tooltip>
+                <kc-tooltip>{{:: 'registrationEmailAsUsername.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label for="editUsernameAllowed" class="col-md-2 control-label">Edit username</label>
+                <label for="editUsernameAllowed" class="col-md-2 control-label">{{:: 'editUsernameAllowed' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="realm.editUsernameAllowed" name="editUsernameAllowed" id="editUsernameAllowed" onoffswitch />
+                    <input ng-model="realm.editUsernameAllowed" name="editUsernameAllowed" id="editUsernameAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>If enabled, the username field is editable, readonly otherwise.</kc-tooltip>
+                <kc-tooltip>{{:: 'editUsernameAllowed.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label for="resetPasswordAllowed" class="col-md-2 control-label">Forget password</label>
+                <label for="resetPasswordAllowed" class="col-md-2 control-label">{{:: 'resetPasswordAllowed' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="realm.resetPasswordAllowed" name="resetPasswordAllowed" id="resetPasswordAllowed" onoffswitch />
+                    <input ng-model="realm.resetPasswordAllowed" name="resetPasswordAllowed" id="resetPasswordAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Show a link on login page for user to click on when they have forgotten their credentials.</kc-tooltip>
+                <kc-tooltip>{{:: 'resetPasswordAllowed.tooltip' |translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="rememberMe">Remember Me</label>
+                <label class="col-md-2 control-label" for="rememberMe">{{:: 'rememberMe' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="realm.rememberMe" name="rememberMe" id="rememberMe" onoffswitch />
+                    <input ng-model="realm.rememberMe" name="rememberMe" id="rememberMe" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Show checkbox on login page to allow user to remain logged in between browser restarts until session expires.</kc-tooltip>
+                <kc-tooltip>{{:: 'rememberMe.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label for="verifyEmail" class="col-md-2 control-label">Verify email</label>
+                <label for="verifyEmail" class="col-md-2 control-label">{{:: 'verifyEmail' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="realm.verifyEmail" name="verifyEmail" id="verifyEmail" onoffswitch />
+                    <input ng-model="realm.verifyEmail" name="verifyEmail" id="verifyEmail" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Require the user to verify their email address the first time they login.</kc-tooltip>
+                <kc-tooltip>{{:: 'verifyEmail.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label for="sslRequired" class="col-md-2 control-label">Require SSL</label>
+                <label for="sslRequired" class="col-md-2 control-label">{{:: 'sslRequired' | translate}}</label>
                 <div class="col-md-2">
                     <div>
                         <select id="sslRequired" ng-model="realm.sslRequired" class="form-control">
-                            <option value="all">all requests</option>
-                            <option value="external">external requests</option>
-                            <option value="none">none</option>
+                            <option value="all">{{:: 'sslRequired.option.all' | translate}}</option>
+                            <option value="external">{{:: 'sslRequired.option.external' | translate}}</option>
+                            <option value="none">{{:: 'sslRequired.option.none' | translate}}</option>
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>Is HTTPS required?  'None' means HTTPS is not required for any client IP address. 'External requests' means localhost and private IP addresses can access without HTTPS.  'All requests' means HTTPS is required for all IP addresses.</kc-tooltip>
+                <kc-tooltip>{{:: 'sslRequired.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
 
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-10 col-md-offset-2">
-                <button kc-save  data-ng-disabled="!changed">Save</button>
-                <button kc-reset data-ng-disabled="!changed">Cancel</button>
+                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
     </form>

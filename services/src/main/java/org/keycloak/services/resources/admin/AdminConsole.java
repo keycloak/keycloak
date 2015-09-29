@@ -44,7 +44,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import javax.ws.rs.QueryParam;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -283,8 +285,7 @@ public class AdminConsole {
             map.put("resourceUrl", Urls.themeRoot(baseUri) + "/admin/" + adminTheme);
             map.put("resourceVersion", Version.RESOURCES_VERSION);
 
-            ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-            Theme theme = themeProvider.getTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
+            Theme theme = getTheme();
 
             map.put("properties", theme.getProperties());
 
@@ -296,10 +297,38 @@ public class AdminConsole {
         }
     }
 
+    private Theme getTheme() throws IOException {
+        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
+        return themeProvider.getTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
+    }
+
     @GET
     @Path("{indexhtml: index.html}") // this expression is a hack to get around jaxdoclet generation bug.  Doesn't like index.html
     public Response getIndexHtmlRedirect() {
         return Response.status(302).location(uriInfo.getRequestUriBuilder().path("../").build()).build();
     }
 
+    @GET
+    @Path("messages.json")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Properties getMessages(@QueryParam("lang") String lang) {
+        if (lang == null) {
+            logger.warn("Locale not specified for messages.json");
+            lang = "en";
+        }
+
+        try {
+            Properties msgs = AdminMessagesLoader.getMessages(getTheme(), lang);
+            if (msgs.isEmpty()) {
+                logger.warn("Message bundle not found for language code '" + lang + "'");
+                msgs = AdminMessagesLoader.getMessages(getTheme(), "en"); // fall back to en
+            }
+
+            if (msgs.isEmpty()) logger.fatal("Message bundle not found for language code 'en'");
+
+            return msgs;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * as indicated by the @author tags. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.keycloak.protocol.oidc;
 
 import org.keycloak.constants.KerberosConstants;
@@ -19,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -32,12 +49,14 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String GIVEN_NAME = "given name";
     public static final String FAMILY_NAME = "family name";
     public static final String FULL_NAME = "full name";
+    public static final String LOCALE = "locale";
     public static final String USERNAME_CONSENT_TEXT = "${username}";
     public static final String EMAIL_CONSENT_TEXT = "${email}";
     public static final String EMAIL_VERIFIED_CONSENT_TEXT = "${emailVerified}";
     public static final String GIVEN_NAME_CONSENT_TEXT = "${givenName}";
     public static final String FAMILY_NAME_CONSENT_TEXT = "${familyName}";
     public static final String FULL_NAME_CONSENT_TEXT = "${fullName}";
+    public static final String LOCALE_CONSENT_TEXT = "${locale}";
 
 
     @Override
@@ -94,6 +113,12 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                 "email_verified", "boolean",
                 false, EMAIL_VERIFIED_CONSENT_TEXT,
                 true, true);
+        builtins.add(model);
+        model = UserAttributeMapper.createClaimMapper(LOCALE,
+                "locale",
+                "locale", "String",
+                false, LOCALE_CONSENT_TEXT,
+                true, true, false);
         builtins.add(model);
 
         ProtocolMapperModel fullName = new ProtocolMapperModel();
