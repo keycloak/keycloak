@@ -843,27 +843,25 @@ All configuration options are optional. Default value for directory is <literal>
     <section>
         <title>Installing Keycloak Server as Root Context</title>
         <para>
-            The Keycloak server can be installed as the default web application.  This way, instead of referencing
-            the server as <literal>http://mydomain.com/auth</literal>, it would be 
-            <literal>http://mydomain.com/</literal>.
+            The Keycloak server can be installed as the default web application.  In doing so, the server can be referenced at <literal>http://mydomain.com/</literal> instead of <literal>http://mydomain.com/auth</literal>.
         </para>
         <para>
-            To do this, you need to add a <literal>default-web-module</literal> attribute in the Undertow subystem in standalone.xml.
+            To do this, add the <literal>default-web-module</literal> attribute in the Undertow subystem in standalone.xml.
             <programlisting><![CDATA[
-<subsystem xmlns="urn:jboss:domain:undertow:1.2">
+<subsystem xmlns="urn:jboss:domain:undertow:2.0">
             <server name="default-server">
-                <host name="default-host" alias="localhost" default-web-module="main-auth-server.war">
+                <host name="default-host" alias="localhost" default-web-module="keycloak-server.war">
                     <location name="/" handler="welcome-content"/>
                 </host>
 ]]></programlisting>
         </para>
         <para>
-            <literal>main-auth-server</literal> is the name of the Keycloak server as defined in the Keycloak subsystem.
+            <literal>keycloak-server.war</literal> is the runtime name of the Keycloak server application. Note that the WAR file does not exist as a file. If its name changes (ie. <literal>keycloak-server.war</literal>) in the future, find its new name from the Keycloak log entry with <literal>runtime-name:</literal>.
         </para>
         <para>
              <note>
-                 If you have already run your server before changing to the root context then your database
-                 will contain references to the old /auth context.  And, your clients may also have incorrect
+                 If you have run your server before altering the root context, your database
+                 will contain references to the old /auth context. Your clients may also have incorrect
                  references.  To fix this on the server side, you will need to <link linkend="export-import">export 
                  your database to json, make corrections, and then import.</link>  Client-side keycloak.json 
                  files will need to be updated manually as well.
