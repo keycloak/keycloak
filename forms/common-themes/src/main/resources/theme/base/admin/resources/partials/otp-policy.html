@@ -59,6 +59,15 @@
             <kc-tooltip>What should the initial counter value be?</kc-tooltip>
         </div>
 
+        <div class="form-group" data-ng-show="realm.otpPolicyType == 'totp'">
+            <label class="col-md-2 control-label" for="counter">OTP Token Period</label>
+            <div class="col-md-6">
+                <input class="form-control" type="text" id="period" name="period" data-ng-model="realm.otpPolicyPeriod">
+            </div>
+            <kc-tooltip>How many seconds should an OTP token be valid? Defaults to 30 seconds.</kc-tooltip>
+        </div>
+
+
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-10 col-md-offset-2">
                 <button kc-save data-ng-disabled="!changed">Save</button>
