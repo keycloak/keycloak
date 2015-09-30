@@ -29,8 +29,8 @@ import org.jboss.modules.ModuleLoader;
  */
 public class KeycloakDependencyProcessorWildFly extends KeycloakDependencyProcessor {
 
-    private static final ModuleIdentifier KEYCLOAK_WILDFLY_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-wildfly-saml-adapter");
-    private static final ModuleIdentifier KEYCLOAK_UNDERTOW_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-undertow-saml-adapter");
+    private static final ModuleIdentifier KEYCLOAK_WILDFLY_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-saml-wildfly-adapter");
+    private static final ModuleIdentifier KEYCLOAK_UNDERTOW_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-saml-undertow-adapter");
 
     @Override
     protected void addPlatformSpecificModules(ModuleSpecification moduleSpecification, ModuleLoader moduleLoader) {
