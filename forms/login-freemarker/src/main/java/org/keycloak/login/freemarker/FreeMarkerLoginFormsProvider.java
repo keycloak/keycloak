@@ -1,3 +1,19 @@
+/*
+ * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * as indicated by the @author tags. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.keycloak.login.freemarker;
 
 import org.jboss.logging.Logger;
@@ -241,7 +257,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         if (client != null) {
-            attributes.put("client", new ClientBean(client));
+            attributes.put("client", new ClientBean(client, baseUri));
         }
 
         attributes.put("login", new LoginBean(formData));
@@ -276,7 +292,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
             }
-            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, Urls.localeCookiePath(baseUri, realm.getName()));
+
+            String cookiePath = Urls.localeCookiePath(baseUri, realm.getName());
+            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, cookiePath);
+
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
@@ -322,7 +341,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             logger.warn("Failed to load properties", e);
         }
         if (client != null) {
-            attributes.put("client", new ClientBean(client));
+            attributes.put("client", new ClientBean(client, baseUri));
         }
 
         Properties messagesBundle;
@@ -374,7 +393,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
             }
-            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, Urls.localeCookiePath(baseUri, realm.getName()));
+
+            String cookiePath = Urls.localeCookiePath(baseUri, realm.getName());
+            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, cookiePath);
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
@@ -383,26 +404,32 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
 
+    @Override
     public Response createLogin() {
         return createResponse(LoginFormsPages.LOGIN);
     }
 
+    @Override
     public Response createPasswordReset() {
         return createResponse(LoginFormsPages.LOGIN_RESET_PASSWORD);
     }
 
+    @Override
     public Response createLoginTotp() {
         return createResponse(LoginFormsPages.LOGIN_TOTP);
     }
 
+    @Override
     public Response createRegistration() {
         return createResponse(LoginFormsPages.REGISTER);
     }
 
+    @Override
     public Response createInfoPage() {
         return createResponse(LoginFormsPages.INFO);
     }
 
+    @Override
     public Response createErrorPage() {
         if (status == null) {
             status = Response.Status.INTERNAL_SERVER_ERROR;
@@ -410,7 +437,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         return createResponse(LoginFormsPages.ERROR);
     }
 
-
+    @Override
     public Response createOAuthGrant(ClientSessionModel clientSession) {
         this.clientSession = clientSession;
         return createResponse(LoginFormsPages.OAUTH_GRANT);
@@ -494,11 +521,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         return this;
     }
 
+    @Override
     public FreeMarkerLoginFormsProvider setUser(UserModel user) {
         this.user = user;
         return this;
     }
 
+    @Override
     public FreeMarkerLoginFormsProvider setFormData(MultivaluedMap<String, String> formData) {
         this.formData = formData;
         return this;

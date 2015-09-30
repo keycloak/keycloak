@@ -19,9 +19,14 @@ public class Flows extends Authentication {
     @FindBy(tagName = "select")
     private Select flowSelect;
 
-    public void changeFlowSelect(FlowSelectValues value) {
-        flowSelect.selectByVisibleText(value.getName());
-    }
+    @FindBy(linkText = "New")
+    private WebElement newButton;
+
+    @FindBy(linkText = "Copy")
+    private WebElement copyButton;
+
+    @FindBy(tagName = "table")
+    private WebElement flowsTable;
 
     public enum FlowSelectValues {
 
@@ -37,13 +42,12 @@ public class Flows extends Authentication {
         public String getName() {
             return name;
         }
+
     }
 
-    @FindBy(linkText = "New")
-    private WebElement newButton;
-
-    @FindBy(linkText = "Copy")
-    private WebElement copyButton;
+    public void changeFlowSelect(FlowSelectValues value) {
+        flowSelect.selectByVisibleText(value.getName());
+    }
 
     public void clickNew() {
         newButton.click();
@@ -53,160 +57,156 @@ public class Flows extends Authentication {
         copyButton.click();
     }
 
+    private void clickRadioButton(String row, int column) {
+        flowsTable.findElement(By.xpath("//td[text()[contains(.,'" + row + "')]]/../td[" + String.valueOf(column) + "]//input[@type='radio']")).click();
+    }
+
     // Direct grant
     public void setPasswordRequired() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Password')]]/../td[2]//input[@type='radio']")).click();
+        clickRadioButton("Password", 2);
     }
 
     public void setPasswordDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Password')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton("Password", 3);
     }
 
     public void setOTPRequired() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'O T P')]]/../td[2]//input[@type='radio']")).click();
+        clickRadioButton("O T P", 2);
     }
 
     public void setOTPOptional() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'O T P')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton("O T P", 3);
     }
 
     public void setOTPDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'O T P')]]/../td[4]//input[@type='radio']")).click();
+        clickRadioButton("O T P", 4);
     }
 
     // Registration
     public void setRegistrationFormRequired() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Registration form')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton("Registration form", 3);
     }
 
     public void setRegistrationFormDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Registration form')]]/../td[4]//input[@type='radio']")).click();
+        clickRadioButton("Registration form", 4);
     }
 
     public void setRegistrationUserCreationRequired() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Registration  User  Creation')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton("Registration  User  Creation", 3);
     }
 
     public void setRegistrationUserCreationDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Registration  User  Creation')]]/../td[4]//input[@type='radio']")).click();
+        clickRadioButton("Registration  User  Creation", 4);
     }
 
     public void setProfileValidationRequired() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Profile  Validation')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton("Profile  Validation", 3);
     }
 
     public void setProfileValidationDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Profile  Validation')]]/../td[4]//input[@type='radio']")).click();
+        clickRadioButton("Profile  Validation", 4);
     }
 
     public void setPasswordValidationRequired() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Password  Validation')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton("Password  Validation", 3);
     }
 
     public void setPasswordValidationDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Password  Validation')]]/../td[4]//input[@type='radio']")).click();
+        clickRadioButton("Password  Validation", 4);
     }
 
     public void setRecaptchaRequired() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Recaptcha')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton("Recaptcha", 3);
     }
 
     public void setRecaptchaDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Recaptcha')]]/../td[4]//input[@type='radio']")).click();
+        clickRadioButton("Recaptcha", 4);
     }
 
     // Browser
     public void setCookieAlternative() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Cookie')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton("Cookie", 3);
     }
 
     public void setCookieDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Cookie')]]/../td[4]//input[@type='radio']")).click();
+        clickRadioButton("Cookie", 4);
     }
 
     public void setKerberosAlternative() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Kerberos')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton("Kerberos", 3);
     }
 
     public void setKerberosRequired() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Kerberos')]]/../td[4]//input[@type='radio']")).click();
+        clickRadioButton("Kerberos", 4);
     }
 
     public void setKerberosDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Kerberos')]]/../td[5]//input[@type='radio']")).click();
+        clickRadioButton("Kerberos", 5);
     }
 
     public void setFormsAlternative() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Forms')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton("Forms", 3);
     }
 
     public void setFormsRequired() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Forms')]]/../td[4]//input[@type='radio']")).click();
+        clickRadioButton("Forms", 4);
     }
 
     public void setFormsDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Forms')]]/../td[5]//input[@type='radio']")).click();
+        clickRadioButton("Forms", 5);
     }
 
     public void setOTPFormRequired() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,' O T P  Form')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton(" O T P  Form", 3);
     }
 
     public void setOTPFormOptional() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,' O T P  Form')]]/../td[4]//input[@type='radio']")).click();
+        clickRadioButton(" O T P  Form", 4);
     }
 
     public void setOTPFormDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,' O T P  Form')]]/../td[5]//input[@type='radio']")).click();
+        clickRadioButton(" O T P  Form", 5);
     }
 
     // Reset credentials
     public void setResetPasswordRequired() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Reset  Password')]]/../td[2]//input[@type='radio']")).click();
+        clickRadioButton("Reset  Password", 2);
     }
 
     public void setResetPasswordOptional() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Reset  Password')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton("Reset  Password", 3);
     }
 
     public void setResetPasswordDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Reset  Password')]]/../td[4]//input[@type='radio']")).click();
+        clickRadioButton("Reset  Password", 4);
     }
 
     public void setResetOTPRequired() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Reset  O T P')]]/../td[2]//input[@type='radio']")).click();
+        clickRadioButton("Reset  O T P", 2);
     }
 
     public void setResetOTPOptional() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Reset  O T P')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton("Reset  O T P", 3);
     }
 
     public void setResetOTPDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Reset  O T P')]]/../td[4]//input[@type='radio']")).click();
+        clickRadioButton("Reset  O T P", 4);
     }
 
     // Clients
-    public void setClientIdAndSecretRequired() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Client  Id and  Secret')]]/../td[2]//input[@type='radio']")).click();
-    }
-
     public void setClientIdAndSecretAlternative() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Client  Id and  Secret')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton("Client  Id and  Secret", 2);
     }
 
     public void setClientIdAndSecretDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,'Client  Id and  Secret')]]/../td[4]//input[@type='radio']")).click();
-    }
-
-    public void setSignedJwtRequired() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,' Signed  Jwt')]]/../td[2]//input[@type='radio']")).click();
+        clickRadioButton("Client  Id and  Secret", 3);
     }
 
     public void setSignedJwtAlternative() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,' Signed  Jwt')]]/../td[3]//input[@type='radio']")).click();
+        clickRadioButton(" Signed  Jwt", 2);
     }
 
     public void setSignedJwtDisabled() {
-        driver.findElement(By.xpath("//td[@class='ng-binding' and text()[contains(.,' Signed  Jwt')]]/../td[4]//input[@type='radio']")).click();
+        clickRadioButton(" Signed  Jwt", 3);
     }
 }

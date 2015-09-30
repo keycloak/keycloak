@@ -3,24 +3,24 @@
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
         <div class="form-group">
-            <label class="col-md-2 control-label" for="realmCacheEnabled">Realm Cache Enabled</label>
+            <label class="col-md-2 control-label" for="realmCacheEnabled">{{:: 'realm-cache-enabled' | translate}}</label>
             <div class="col-md-6">
-                <input ng-model="realm.realmCacheEnabled" name="realmCacheEnabled" id="realmCacheEnabled" onoffswitch />
+                <input ng-model="realm.realmCacheEnabled" name="realmCacheEnabled" id="realmCacheEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
             </div>
-             <kc-tooltip>Enable/disable cache for realm, client and role data.</kc-tooltip>
+             <kc-tooltip>{{:: 'realm-cache-enabled.tooltip' | translate}}</kc-tooltip>
          </div>
         <div class="form-group">
-            <label class="col-md-2 control-label" for="userCacheEnabled">User Cache Enabled</label>
+            <label class="col-md-2 control-label" for="userCacheEnabled">{{:: 'user-cache-enabled' | translate}}</label>
             <div class="col-md-6">
-                <input ng-model="realm.userCacheEnabled" name="userCacheEnabled" id="userCacheEnabled" onoffswitch />
+                <input ng-model="realm.userCacheEnabled" name="userCacheEnabled" id="userCacheEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
             </div>
-            <kc-tooltip>Enable/disable user and user role mapping cache.</kc-tooltip>
+            <kc-tooltip>{{:: 'user-cache-enabled.tooltip' | translate}}</kc-tooltip>
         </div>
 
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-10 col-md-offset-2">
-                <button kc-save data-ng-disabled="!changed">Save</button>
-                <button kc-reset data-ng-disabled="!changed">Cancel</button>
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
     </form>

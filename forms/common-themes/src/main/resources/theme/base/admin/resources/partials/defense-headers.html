@@ -2,31 +2,31 @@
     <kc-tabs-realm></kc-tabs-realm>
 
     <ul class="nav nav-tabs nav-tabs-pf">
-        <li class="active"><a href="#/realms/{{realm.realm}}/defense/headers">Headers</a></li>
-        <li><a href="#/realms/{{realm.realm}}/defense/brute-force">Brute Force Detection</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/defense/headers">{{:: 'headers' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/defense/brute-force">{{:: 'brute-force-detection' | translate}}</a></li>
     </ul>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
         <fieldset class="border-top">
             <div class="form-group">
-                <label class="col-md-2 control-label" for="xFrameOptions"><a href="http://tools.ietf.org/html/rfc7034">X-Frame-Options</a></label>
+                <label class="col-md-2 control-label" for="xFrameOptions"><a href="http://tools.ietf.org/html/rfc7034">{{:: 'x-frame-options' | translate}}</a></label>
                 <div class="col-sm-6">
                     <input class="form-control" id="xFrameOptions" type="text" ng-model="realm.browserSecurityHeaders.xFrameOptions">
                 </div>
-                <kc-tooltip>Click on label link for more information.  The default value prevents pages from being included via non-origin iframes.</kc-tooltip>
+                <kc-tooltip>{{:: 'click-label-for-info' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="contentSecurityPolicy"><a href="http://www.w3.org/TR/CSP/">Content-Security-Policy</a></label>
+                <label class="col-md-2 control-label" for="contentSecurityPolicy"><a href="http://www.w3.org/TR/CSP/">{{:: 'content-sec-policy' | translate}}</a></label>
                 <div class="col-sm-6">
                     <input class="form-control" id="contentSecurityPolicy" type="text" ng-model="realm.browserSecurityHeaders.contentSecurityPolicy">
                 </div>
-                <kc-tooltip>Click on label link for more information.  The default value prevents pages from being included via non-origin iframes.</kc-tooltip>
+                <kc-tooltip>{{:: 'click-label-for-info' | translate}}</kc-tooltip>
             </div>
         </fieldset>
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-10 col-md-offset-2">
-                <button kc-save  data-ng-disabled="!changed">Save</button>
-                <button kc-reset data-ng-disabled="!changed">Cancel</button>
+                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
     </form>

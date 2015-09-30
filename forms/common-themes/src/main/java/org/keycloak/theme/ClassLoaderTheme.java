@@ -100,12 +100,17 @@ public class ClassLoaderTheme implements Theme {
 
     @Override
     public Properties getMessages(Locale locale) throws IOException {
+        return getMessages("messages", locale);
+    }
+
+    @Override
+    public Properties getMessages(String baseBundlename, Locale locale) throws IOException {
         if(locale == null){
             return null;
         }
         Properties m = new Properties();
 
-        URL url = classLoader.getResource(this.messageRoot + "messages_" + locale.toString() + ".properties");
+        URL url = classLoader.getResource(this.messageRoot + baseBundlename + "_" + locale.toString() + ".properties");
         if (url != null) {
             m.load(url.openStream());
         }

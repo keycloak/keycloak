@@ -29,7 +29,26 @@ public interface Theme {
 
     public InputStream getResourceAsStream(String path) throws IOException;
 
+    /**
+     * Same as getMessages(baseBundlename, locale), but uses a default baseBundlename
+     * such as "messages".
+     *
+     * @param locale The locale of the desired message bundle.
+     * @return The localized messages from the bundle.
+     * @throws IOException If bundle can not be read.
+     */
     public Properties getMessages(Locale locale) throws IOException;
+
+    /**
+     * Retrieve localized messages from a message bundle.
+     *
+     * @param baseBundlename The base name of the bundle, such as "messages" in
+     * messages_en.properties.
+     * @param locale The locale of the desired message bundle.
+     * @return The localized messages from the bundle.
+     * @throws IOException If bundle can not be read.
+     */
+    public Properties getMessages(String baseBundlename, Locale locale) throws IOException;
 
     public Properties getProperties() throws IOException;
 

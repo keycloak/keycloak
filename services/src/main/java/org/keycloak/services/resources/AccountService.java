@@ -779,7 +779,7 @@ public class AccountService extends AbstractSecuredLocalService {
             if (referrerUri != null) {
                 referrerUri = RedirectUtils.verifyRedirectUri(uriInfo, referrerUri, realm, referrerClient);
             } else {
-                referrerUri = ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), referrerClient.getBaseUrl());
+                referrerUri = ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), client.getRootUrl(), referrerClient.getBaseUrl());
             }
 
             if (referrerUri != null) {

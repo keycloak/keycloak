@@ -346,6 +346,18 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public String getRootUrl() {
+        if (updated != null) return updated.getRootUrl();
+        return cached.getRootUrl();
+    }
+
+    @Override
+    public void setRootUrl(String url) {
+        getDelegateForUpdate();
+        updated.setRootUrl(url);
+    }
+
+    @Override
     public String getBaseUrl() {
         if (updated != null) return updated.getBaseUrl();
         return cached.getBaseUrl();

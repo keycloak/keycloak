@@ -1,3 +1,19 @@
+/*
+ * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * as indicated by the @author tags. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.keycloak.account.freemarker;
 
 import java.io.IOException;
@@ -197,7 +213,10 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             String result = freeMarker.processTemplate(attributes, Templates.getTemplate(page), theme);
             Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML).entity(result);
             BrowserSecurityHeaderSetup.headers(builder, realm);
-            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, Urls.localeCookiePath(baseUri,realm.getName()));
+
+            String keycloakLocaleCookiePath = Urls.localeCookiePath(baseUri, realm.getName());
+
+            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, keycloakLocaleCookiePath);
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
@@ -209,7 +228,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         this.passwordSet = passwordSet;
         return this;
     }
-    
+
     protected void setMessage(MessageType type, String message, Object... parameters) {
         messageType = type;
         messages = new ArrayList<>();
@@ -225,7 +244,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             return message.getMessage();
         }
     }
-  
+
     @Override
     public AccountProvider setErrors(List<FormMessage> messages) {
         this.messageType = MessageType.ERROR;
