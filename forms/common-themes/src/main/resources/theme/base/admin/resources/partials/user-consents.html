@@ -12,6 +12,7 @@
             <th>Client</th>
             <th>Granted Roles</th>
             <th>Granted Protocol Mappers</th>
+            <th>Additional Grants</th>
             <th>Action</th>
         </tr>
         </thead>
@@ -33,6 +34,11 @@
                     <span data-ng-repeat="protocolMapper in protocol">
                         <span ng-if="!$first">, </span>{{protocolMapper}}
                     </span>
+                </span>
+            </td>
+            <td>
+                <span data-ng-repeat="additionalGrant in consent.additionalGrants">
+                    <span ng-if="!$first">, </span>{{additionalGrant}}
                 </span>
             </td>
             <td class="kc-action-cell">

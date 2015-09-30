@@ -1,4 +1,4 @@
-    <chapter id="timeouts">
+<chapter id="timeouts">
     <title>Cookie settings, Session Timeouts, and Token Lifespans</title>
     <para>
         Keycloak has a bunch of fine-grain settings to manage browser cookies, user login sessions, and token lifespans.
@@ -50,6 +50,40 @@
             The <literal>Login user action lifespan</literal> is how long a user is allowed to attempt a login.  When a user tries
             to login, they may have to change their password, set up TOTP, or perform some other action before they are redirected
             back to your application as an authentnicated user.  This value is relatively short and is usually measured in minutes.
+        </para>
+    </section>
+    <section id="offline-access">
+        <title>Offline Access</title>
+        <para>
+            The Offline access is the feature described in <ulink url="http://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess">OpenID Connect specification</ulink> .
+            The idea is that during login, your client application will request Offline token instead of classic Refresh token.
+            Then the application can save this offline token in the database and can use it anytime later even if user is logged out.
+            This is useful for example if your application needs to do some "offline" actions on behalf of user even if user is not online. For example
+            periodic backup of some data every night etc.
+        </para>
+        <para>
+            Your application is responsible for persist the offline token in some storage (usually database) and then use it to
+            manually retrieve new access token from Keycloak server.
+        </para>
+        <para>
+            The difference between classic Refresh token and Offline token is, that offline token will never expire and is not subject of <literal>SSO Session Idle timeout</literal> .
+            The offline token is valid even after user logout or server restart. User can revoke the offline tokens in Account management UI. The admin
+            user can revoke offline tokens for individual users in admin console (The <literal>Consent</literal> tab of particular user) and he can
+            see all the offline tokens of all users for particular client application in the settings of the client. Revoking of all offline tokens for particular
+            client is possible by set <literal>notBefore</literal> policy for the client.
+        </para>
+        <para>
+            For requesting the offline token, user needs to be in realm role <literal>offline_access</literal> and client needs to have
+            scope for this role. If client has <literal>Full scope allowed</literal>, the scope is granted by default. Also users are automatically
+            members of the role as it's the default role.
+        </para>
+        <para>
+            The client can request offline token by adding parameter <literal>scope=offline_access</literal>
+            when sending authorization request to Keycloak. The adapter automatically adds this parameter when you use it to access secured
+            URL of your application (ie. http://localhost:8080/customer-portal/secured?scope=offline_access ).
+            The <link linkend='direct-access-grants'>Direct Access Grant</link> or <link linkend="service-accounts">Service account</link> flows also support
+            offline tokens if you include <literal>scope=offline_access</literal> in the body of the authentication request. For more details,
+            see the <literal>offline-access-app</literal> example from Keycloak demo.
         </para>
     </section>
 </chapter>

@@ -7,8 +7,11 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.OfflineClientSessionModel;
+import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -24,6 +27,8 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.services.offline.OfflineClientSessionAdapter;
+import org.keycloak.services.offline.OfflineUserSessionAdapter;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.util.JsonSerialization;
@@ -389,6 +394,65 @@ public class ClientResource {
         }
         return sessions;
     }
+
+    /**
+     * Get application offline session count
+     *
+     * Returns a number of offline user sessions associated with this client
+     *
+     * {
+     *     "count": number
+     * }
+     *
+     * @return
+     */
+    @Path("offline-session-count")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Integer> getOfflineSessionCount() {
+        auth.requireView();
+        Map<String, Integer> map = new HashMap<String, Integer>();
+        map.put("count", session.users().getOfflineClientSessionsCount(client.getRealm(), client));
+        return map;
+    }
+
+    /**
+     * Get offline sessions for client
+     *
+     * Returns a list of offline user sessions associated with this client
+     *
+     * @param firstResult Paging offset
+     * @param maxResults Paging size
+     * @return
+     */
+    @Path("offline-sessions")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<UserSessionRepresentation> getOfflineUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
+        auth.requireView();
+        firstResult = firstResult != null ? firstResult : -1;
+        maxResults = maxResults != null ? maxResults : -1;
+        List<UserSessionRepresentation> sessions = new ArrayList<UserSessionRepresentation>();
+        for (OfflineClientSessionModel offlineClientSession : session.users().getOfflineClientSessions(client.getRealm(), client, firstResult, maxResults)) {
+            UserModel user = session.users().getUserById(offlineClientSession.getUserId(), client.getRealm());
+            OfflineUserSessionModel offlineUserSession = session.users().getOfflineUserSession(client.getRealm(), user, offlineClientSession.getUserSessionId());
+            OfflineUserSessionAdapter sessionAdapter = new OfflineUserSessionAdapter(offlineUserSession, user);
+            OfflineClientSessionAdapter clientSessionAdapter = new OfflineClientSessionAdapter(offlineClientSession, client.getRealm(), client, sessionAdapter);
+
+            UserSessionRepresentation rep = new UserSessionRepresentation();
+            rep.setId(sessionAdapter.getId());
+            rep.setStart(Time.toMillis(clientSessionAdapter.getTimestamp()));
+            rep.setUsername(user.getUsername());
+            rep.setUserId(user.getId());
+            rep.setIpAddress(sessionAdapter.getIpAddress());
+
+            sessions.add(rep);
+        }
+        return sessions;
+    }
+
 
     /**
      * Logout all sessions

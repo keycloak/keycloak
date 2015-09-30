@@ -841,6 +841,20 @@ module.factory('ClientUserSessions', function($resource) {
     });
 });
 
+module.factory('ClientOfflineSessionCount', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/offline-session-count', {
+        realm : '@realm',
+        client : "@client"
+    });
+});
+
+module.factory('ClientOfflineSessions', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/offline-sessions', {
+        realm : '@realm',
+        client : "@client"
+    });
+});
+
 module.factory('ClientLogoutAll', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/clients/:client/logout-all', {
         realm : '@realm',

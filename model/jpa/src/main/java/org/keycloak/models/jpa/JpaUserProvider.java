@@ -4,6 +4,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OfflineClientSessionModel;
+import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -13,6 +15,8 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
+import org.keycloak.models.jpa.entities.OfflineClientSessionEntity;
+import org.keycloak.models.jpa.entities.OfflineUserSessionEntity;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.utils.CredentialValidation;
@@ -22,8 +26,10 @@ import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -472,5 +478,168 @@ public class JpaUserProvider implements UserProvider {
     public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel... input) {
         // Not supported yet
         return null;
+    }
+
+    @Override
+    public void addOfflineUserSession(RealmModel realm, UserModel user, OfflineUserSessionModel offlineUserSession) {
+        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
+
+        OfflineUserSessionEntity entity = new OfflineUserSessionEntity();
+        entity.setUser(userEntity);
+        entity.setUserSessionId(offlineUserSession.getUserSessionId());
+        entity.setData(offlineUserSession.getData());
+        em.persist(entity);
+        userEntity.getOfflineUserSessions().add(entity);
+        em.flush();
+    }
+
+    @Override
+    public OfflineUserSessionModel getOfflineUserSession(RealmModel realm, UserModel user, String userSessionId) {
+        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
+
+        for (OfflineUserSessionEntity entity : userEntity.getOfflineUserSessions()) {
+            if (entity.getUserSessionId().equals(userSessionId)) {
+                return toModel(entity);
+            }
+        }
+        return null;
+    }
+
+    private OfflineUserSessionModel toModel(OfflineUserSessionEntity entity) {
+        OfflineUserSessionModel model = new OfflineUserSessionModel();
+        model.setUserSessionId(entity.getUserSessionId());
+        model.setData(entity.getData());
+        return model;
+    }
+
+    @Override
+    public Collection<OfflineUserSessionModel> getOfflineUserSessions(RealmModel realm, UserModel user) {
+        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
+
+        List<OfflineUserSessionModel> result = new LinkedList<>();
+        for (OfflineUserSessionEntity entity : userEntity.getOfflineUserSessions()) {
+            result.add(toModel(entity));
+        }
+        return result;
+    }
+
+    @Override
+    public boolean removeOfflineUserSession(RealmModel realm, UserModel user, String userSessionId) {
+        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
+
+        OfflineUserSessionEntity found = null;
+        for (OfflineUserSessionEntity session : userEntity.getOfflineUserSessions()) {
+            if (session.getUserSessionId().equals(userSessionId)) {
+                found = session;
+                break;
+            }
+        }
+
+        if (found == null) {
+            return false;
+        } else {
+            userEntity.getOfflineUserSessions().remove(found);
+            em.remove(found);
+            em.flush();
+            return true;
+        }
+    }
+
+    @Override
+    public void addOfflineClientSession(RealmModel realm, OfflineClientSessionModel offlineClientSession) {
+        UserEntity userEntity = em.getReference(UserEntity.class, offlineClientSession.getUserId());
+
+        OfflineClientSessionEntity entity = new OfflineClientSessionEntity();
+        entity.setUser(userEntity);
+        entity.setClientSessionId(offlineClientSession.getClientSessionId());
+        entity.setUserSessionId(offlineClientSession.getUserSessionId());
+        entity.setClientId(offlineClientSession.getClientId());
+        entity.setData(offlineClientSession.getData());
+        em.persist(entity);
+        userEntity.getOfflineClientSessions().add(entity);
+        em.flush();
+    }
+
+    @Override
+    public OfflineClientSessionModel getOfflineClientSession(RealmModel realm, UserModel user, String clientSessionId) {
+        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
+
+        for (OfflineClientSessionEntity entity : userEntity.getOfflineClientSessions()) {
+            if (entity.getClientSessionId().equals(clientSessionId)) {
+                return toModel(entity);
+            }
+        }
+        return null;
+    }
+
+    private OfflineClientSessionModel toModel(OfflineClientSessionEntity entity) {
+        OfflineClientSessionModel model = new OfflineClientSessionModel();
+        model.setClientSessionId(entity.getClientSessionId());
+        model.setClientId(entity.getClientId());
+        model.setUserId(entity.getUser().getId());
+        model.setUserSessionId(entity.getUserSessionId());
+        model.setData(entity.getData());
+        return model;
+    }
+
+    @Override
+    public Collection<OfflineClientSessionModel> getOfflineClientSessions(RealmModel realm, UserModel user) {
+        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
+
+        List<OfflineClientSessionModel> result = new LinkedList<>();
+        for (OfflineClientSessionEntity entity : userEntity.getOfflineClientSessions()) {
+            result.add(toModel(entity));
+        }
+        return result;
+    }
+
+    @Override
+    public boolean removeOfflineClientSession(RealmModel realm, UserModel user, String clientSessionId) {
+        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
+
+        OfflineClientSessionEntity found = null;
+        for (OfflineClientSessionEntity session : userEntity.getOfflineClientSessions()) {
+            if (session.getClientSessionId().equals(clientSessionId)) {
+                found = session;
+                break;
+            }
+        }
+
+        if (found == null) {
+            return false;
+        } else {
+            userEntity.getOfflineClientSessions().remove(found);
+            em.remove(found);
+            em.flush();
+            return true;
+        }
+    }
+
+    @Override
+    public int getOfflineClientSessionsCount(RealmModel realm, ClientModel client) {
+        Query query = em.createNamedQuery("findOfflineClientSessionsCountByClient");
+        query.setParameter("clientId", client.getId());
+        Number n = (Number) query.getSingleResult();
+        return n.intValue();
+    }
+
+    @Override
+    public Collection<OfflineClientSessionModel> getOfflineClientSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
+        TypedQuery<OfflineClientSessionEntity> query = em.createNamedQuery("findOfflineClientSessionsByClient", OfflineClientSessionEntity.class);
+        query.setParameter("clientId", client.getId());
+
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != -1) {
+            query.setMaxResults(maxResults);
+        }
+
+        List<OfflineClientSessionEntity> results = query.getResultList();
+        Set<OfflineClientSessionModel> set = new HashSet<>();
+        for (OfflineClientSessionEntity entity : results) {
+            set.add(toModel(entity));
+        }
+        return set;
     }
 }

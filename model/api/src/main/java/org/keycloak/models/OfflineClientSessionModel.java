@@ -8,6 +8,7 @@ public class OfflineClientSessionModel {
     private String clientSessionId;
     private String userSessionId;
     private String clientId;
+    private String userId;
     private String data;
 
     public String getClientSessionId() {
@@ -32,6 +33,14 @@ public class OfflineClientSessionModel {
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getData() {

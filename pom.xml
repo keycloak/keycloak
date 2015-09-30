@@ -18,6 +18,10 @@
     <packaging>pom</packaging>
 
     <properties>
+        <product.name>Keycloak</product.name>
+        <product.version>${project.version}</product.version>
+        <product.build-time>${timestamp}</product.build-time>
+
         <apacheds.version>2.0.0-M17</apacheds.version>
         <apacheds.codec.version>1.0.0-M23</apacheds.codec.version>
         <org.apache.james.apache-mime4j.version>0.6</org.apache.james.apache-mime4j.version>
@@ -56,8 +60,8 @@
         <google.client.version>1.14.1-beta</google.client.version>
         <github.relaxng.version>2011.1</github.relaxng.version>
         <winzipaes.version>1.0.1</winzipaes.version>
-        <freemarker.version>2.3.20</freemarker.version>
-        <twitter4j.version>3.0.5</twitter4j.version>
+        <freemarker.version>2.3.23</freemarker.version>
+        <twitter4j.version>4.0.4</twitter4j.version>
         <selenium.version>2.35.0</selenium.version>
         <sun.istack.version>2.21</sun.istack.version>
         <sun.jaxb.version>2.2.11</sun.jaxb.version>

@@ -1,5 +1,8 @@
 package org.keycloak.exportimport.util;
 
+import org.keycloak.models.OfflineClientSessionModel;
+import org.keycloak.models.OfflineUserSessionModel;
+import org.keycloak.representations.idm.OfflineUserSessionRepresentation;
 import org.keycloak.util.Base64;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
@@ -294,6 +297,28 @@ public class ExportUtils {
                 userRep.setServiceAccountClientId(client.getClientId());
             }
         }
+
+        // Offline sessions
+        List<OfflineUserSessionRepresentation> offlineSessionReps = new LinkedList<>();
+        Collection<OfflineUserSessionModel> offlineSessions = session.users().getOfflineUserSessions(realm, user);
+        Collection<OfflineClientSessionModel> offlineClientSessions = session.users().getOfflineClientSessions(realm, user);
+
+        Map<String, List<OfflineClientSessionModel>> processed = new HashMap<>();
+        for (OfflineClientSessionModel clsm : offlineClientSessions) {
+            String userSessionId = clsm.getUserSessionId();
+            List<OfflineClientSessionModel> current = processed.get(userSessionId);
+            if (current == null) {
+                current = new LinkedList<>();
+                processed.put(userSessionId, current);
+            }
+            current.add(clsm);
+        }
+
+        for (OfflineUserSessionModel userSession : offlineSessions) {
+            OfflineUserSessionRepresentation sessionRep = ModelToRepresentation.toRepresentation(realm, userSession, processed.get(userSession.getUserSessionId()));
+            offlineSessionReps.add(sessionRep);
+        }
+        userRep.setOfflineUserSessions(offlineSessionReps);
 
         return userRep;
     }

@@ -6,6 +6,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.util.MultivaluedHashMap;
 
 import java.io.Serializable;
@@ -40,7 +41,7 @@ public class CachedUser implements Serializable {
     private Map<String, OfflineUserSessionModel> offlineUserSessions = new HashMap<>();
     private Map<String, OfflineClientSessionModel> offlineClientSessions = new HashMap<>();
 
-    public CachedUser(RealmModel realm, UserModel user) {
+    public CachedUser(CacheUserProvider cacheUserProvider, RealmModel realm, UserModel user) {
         this.id = user.getId();
         this.realm = realm.getId();
         this.username = user.getUsername();
@@ -59,10 +60,10 @@ public class CachedUser implements Serializable {
         for (RoleModel role : user.getRoleMappings()) {
             roleMappings.add(role.getId());
         }
-        for (OfflineUserSessionModel offlineSession : user.getOfflineUserSessions()) {
+        for (OfflineUserSessionModel offlineSession : cacheUserProvider.getDelegate().getOfflineUserSessions(realm, user)) {
             offlineUserSessions.put(offlineSession.getUserSessionId(), offlineSession);
         }
-        for (OfflineClientSessionModel offlineSession : user.getOfflineClientSessions()) {
+        for (OfflineClientSessionModel offlineSession : cacheUserProvider.getDelegate().getOfflineClientSessions(realm, user)) {
             offlineClientSessions.put(offlineSession.getClientSessionId(), offlineSession);
         }
     }

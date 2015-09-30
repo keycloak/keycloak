@@ -507,6 +507,54 @@ module.controller('ClientSessionsCtrl', function($scope, realm, sessionCount, cl
     };
 });
 
+module.controller('ClientOfflineSessionsCtrl', function($scope, realm, offlineSessionCount, client,
+                                                      ClientOfflineSessions) {
+    $scope.realm = realm;
+    $scope.count = offlineSessionCount.count;
+    $scope.sessions = [];
+    $scope.client = client;
+
+    $scope.page = 0;
+
+    $scope.query = {
+        realm : realm.realm,
+        client: $scope.client.id,
+        max : 5,
+        first : 0
+    }
+
+    $scope.firstPage = function() {
+        $scope.query.first = 0;
+        if ($scope.query.first < 0) {
+            $scope.query.first = 0;
+        }
+        $scope.loadUsers();
+    }
+
+    $scope.previousPage = function() {
+        $scope.query.first -= parseInt($scope.query.max);
+        if ($scope.query.first < 0) {
+            $scope.query.first = 0;
+        }
+        $scope.loadUsers();
+    }
+
+    $scope.nextPage = function() {
+        $scope.query.first += parseInt($scope.query.max);
+        $scope.loadUsers();
+    }
+
+    $scope.toDate = function(val) {
+        return new Date(val);
+    };
+
+    $scope.loadUsers = function() {
+        ClientOfflineSessions.query($scope.query, function(updated) {
+            $scope.sessions = updated;
+        })
+    };
+});
+
 module.controller('ClientRoleDetailCtrl', function($scope, realm, client, role, roles, clients,
                                                         Role, ClientRole, RoleById, RoleRealmComposites, RoleClientComposites,
                                                         $http, $location, Dialog, Notifications) {

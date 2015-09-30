@@ -216,7 +216,19 @@ An example for retrieve service account dedicated to the Client Application itse
 
 [http://localhost:8080/service-account-portal](http://localhost:8080/service-account-portal)
 
-Client authentication is done with OAuth2 Client Credentials Grant in out-of-bound request (Not Keycloak login screen displayed) 
+Client authentication is done with OAuth2 Client Credentials Grant in out-of-bound request (Not Keycloak login screen displayed) .
+
+The example also shows different methods of client authentication. There is ProductSAClientSecretServlet using traditional authentication with clientId and client_secret, 
+but there is also ProductSAClientSignedJWTServlet using client authentication with JWT signed by client private key.  
+
+Step 11: Offline Access Example
+===============================
+An example for retrieve offline token, which is then saved to the database and can be used by application anytime later. Offline token
+is valid even if user is already logged out from SSO. Server restart also won't invalidate offline token. Offline token can be revoked by the user in 
+account management or by admin in admin console.
+
+[http://localhost:8080/offline-access-portal](http://localhost:8080/offline-access-portal)
+
 
 Admin Console
 ==========================
