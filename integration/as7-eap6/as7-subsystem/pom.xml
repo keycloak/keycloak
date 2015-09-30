@@ -20,13 +20,13 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-parent</artifactId>
-        <version>1.6.0.Final-SNAPSHOT</version>
+        <version>1.6.1.Final-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
     <artifactId>keycloak-as7-subsystem</artifactId>
     <name>Keycloak AS7 Subsystem</name>
-    <description/>
+    <description />
     <packaging>jar</packaging>
 
     <build>
