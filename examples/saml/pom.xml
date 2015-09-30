@@ -25,10 +25,8 @@
         </plugins>
     </build>
     <modules>
-        <module>post-basic</module>
         <module>post-with-signature</module>
         <module>post-with-encryption</module>
-        <module>redirect-basic</module>
         <module>redirect-with-signature</module>
     </modules>
 </project>

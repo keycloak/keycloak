@@ -26,6 +26,11 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-wf9-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-examples-dist</artifactId>
             <type>zip</type>
         </dependency>
@@ -97,6 +102,23 @@
                                     <artifactId>keycloak-wf9-adapter-dist</artifactId>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked/keycloak-wf9-adapter-${project.version}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>unpack-saml-adapter</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-wf9-adapter-dist</artifactId>
+                                    <type>zip</type>
+                                    <outputDirectory>${project.build.directory}/unpacked/keycloak-saml-wf9-adapter-${project.version}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
