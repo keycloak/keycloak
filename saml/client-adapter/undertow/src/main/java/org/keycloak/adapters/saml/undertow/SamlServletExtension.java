@@ -140,7 +140,7 @@ public class SamlServletExtension implements ServletExtension {
 
         servletContext.setAttribute(SamlDeploymentContext.class.getName(), deploymentContext);
         UndertowUserSessionManagement userSessionManagement = new UndertowUserSessionManagement();
-        final ServletSamlAuthMech mech = new ServletSamlAuthMech(deploymentContext, userSessionManagement, getErrorPage(deploymentInfo));
+        final ServletSamlAuthMech mech = createAuthMech(deploymentInfo, deploymentContext, userSessionManagement);
 
 
         // setup handlers
@@ -175,6 +175,10 @@ public class SamlServletExtension implements ServletExtension {
         deploymentInfo.setServletSessionConfig(cookieConfig);
 
      }
+
+    protected ServletSamlAuthMech createAuthMech(DeploymentInfo deploymentInfo, SamlDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement) {
+        return new ServletSamlAuthMech(deploymentContext, userSessionManagement, getErrorPage(deploymentInfo));
+    }
 
     protected String getErrorPage(DeploymentInfo deploymentInfo) {
         LoginConfig loginConfig = deploymentInfo.getLoginConfig();

@@ -9,7 +9,7 @@
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>keycloak-jetty91-saml-adapter</artifactId>
+	<artifactId>keycloak-saml-jetty91-adapter</artifactId>
 	<name>Keycloak Jetty 9.1.x SAML Integration</name>
     <properties>
         <jetty9.version>9.1.5.v20140505</jetty9.version>
@@ -45,7 +45,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-jetty-saml-adapter-core</artifactId>
+            <artifactId>keycloak-saml-jetty-adapter-core</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.eclipse.jetty</groupId>

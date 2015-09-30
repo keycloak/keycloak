@@ -74,7 +74,7 @@
         </dependency>
        <dependency>
            <groupId>org.keycloak</groupId>
-           <artifactId>keycloak-tomcat7-saml-adapter</artifactId>
+           <artifactId>keycloak-saml-tomcat7-adapter</artifactId>
            <exclusions>
                <exclusion>
                    <groupId>org.apache.tomcat</groupId>

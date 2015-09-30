@@ -112,7 +112,7 @@
        </dependency>
        <dependency>
            <groupId>org.keycloak</groupId>
-           <artifactId>keycloak-jetty91-saml-adapter</artifactId>
+           <artifactId>keycloak-saml-jetty91-adapter</artifactId>
        </dependency>
        <dependency>
             <groupId>org.jboss.logging</groupId>

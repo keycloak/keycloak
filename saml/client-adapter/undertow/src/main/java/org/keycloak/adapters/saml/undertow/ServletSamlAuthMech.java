@@ -25,7 +25,7 @@ import java.io.IOException;
  * @version $Revision: 1 $
  */
 public class ServletSamlAuthMech extends AbstractSamlAuthMech {
-    private SessionIdMapper idMapper = new InMemorySessionIdMapper();
+    protected SessionIdMapper idMapper = new InMemorySessionIdMapper();
     public ServletSamlAuthMech(SamlDeploymentContext deploymentContext, UndertowUserSessionManagement sessionManagement, String errorPage) {
         super(deploymentContext, sessionManagement, errorPage);
     }

@@ -880,17 +880,17 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-tomcat6-saml-adapter</artifactId>
+                <artifactId>keycloak-saml-tomcat6-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-tomcat7-saml-adapter</artifactId>
+                <artifactId>keycloak-saml-tomcat7-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-tomcat8-saml-adapter</artifactId>
+                <artifactId>keycloak-saml-tomcat8-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -995,32 +995,42 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-tomcat-core-saml-adapter</artifactId>
+                <artifactId>keycloak-saml-tomcat-adapter-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jetty-saml-adapter-core</artifactId>
+                <artifactId>keycloak-saml-jetty-adapter-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jetty81-saml-adapter</artifactId>
+                <artifactId>keycloak-saml-jetty81-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jetty91-saml-adapter</artifactId>
+                <artifactId>keycloak-saml-jetty91-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jetty92-saml-adapter</artifactId>
+                <artifactId>keycloak-saml-wildfly-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-undertow-saml-adapter</artifactId>
+                <artifactId>keycloak-saml-wf9-subsystem</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-jetty92-adapter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-undertow-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

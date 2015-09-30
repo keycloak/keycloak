@@ -1,5 +1,7 @@
 package org.keycloak.adapters.saml;
 
+import org.keycloak.adapters.KeycloakAccount;
+
 import java.io.Serializable;
 import java.security.Principal;
 import java.util.Set;
@@ -8,7 +10,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SamlSession implements Serializable {
+public class SamlSession implements Serializable, KeycloakAccount {
     private SamlPrincipal principal;
     private Set<String> roles;
     private String sessionIndex;

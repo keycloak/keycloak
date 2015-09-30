@@ -28,7 +28,7 @@
         </dependency>
        <dependency>
            <groupId>org.keycloak</groupId>
-           <artifactId>keycloak-jetty92-saml-adapter</artifactId>
+           <artifactId>keycloak-saml-jetty92-adapter</artifactId>
        </dependency>
         <dependency>
             <groupId>log4j</groupId>
