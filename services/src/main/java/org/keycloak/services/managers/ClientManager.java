@@ -103,7 +103,7 @@ public class ClientManager {
         // Add dedicated user for this service account
         if (realmManager.getSession().users().getUserByServiceAccountClient(client) == null) {
             String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId();
-            logger.infof("Creating service account user '%s'", username);
+            logger.debugf("Creating service account user '%s'", username);
 
             // Don't use federation for service account user
             UserModel user = realmManager.getSession().userStorage().addUser(client.getRealm(), username);
