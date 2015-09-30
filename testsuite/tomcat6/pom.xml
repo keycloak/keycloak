@@ -106,7 +106,7 @@
        </dependency>
        <dependency>
            <groupId>org.keycloak</groupId>
-           <artifactId>keycloak-tomcat6-saml-adapter</artifactId>
+           <artifactId>keycloak-saml-tomcat6-adapter</artifactId>
            <exclusions>
                <exclusion>
                    <groupId>org.apache.tomcat</groupId>

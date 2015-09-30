@@ -9,7 +9,7 @@
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>keycloak-tomcat8-saml-adapter</artifactId>
+	<artifactId>keycloak-saml-tomcat8-adapter</artifactId>
 	<name>Keycloak Tomcat 8 SAML Integration</name>
     <properties>
         <tomcat.version>8.0.14</tomcat.version>
@@ -37,7 +37,7 @@
 
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-tomcat-core-saml-adapter</artifactId>
+            <artifactId>keycloak-saml-tomcat-adapter-core</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.tomcat</groupId>

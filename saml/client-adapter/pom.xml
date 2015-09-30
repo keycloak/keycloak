@@ -18,5 +18,6 @@
         <module>undertow</module>
         <module>tomcat</module>
         <module>jetty</module>
+        <module>wildfly</module>
     </modules>
 </project>
