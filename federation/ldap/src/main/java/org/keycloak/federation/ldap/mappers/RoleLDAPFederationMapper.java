@@ -106,7 +106,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
                 String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
 
                 if (roleContainer.getRole(roleName) == null) {
-                    logger.infof("Syncing role [%s] from LDAP to keycloak DB", roleName);
+                    logger.debugf("Syncing role [%s] from LDAP to keycloak DB", roleName);
                     roleContainer.addRole(roleName);
                 }
             }
@@ -208,7 +208,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         roleDn.addFirst(roleNameAttribute, roleName);
         ldapObject.setDn(roleDn);
 
-        logger.infof("Creating role [%s] to LDAP with DN [%s]", roleName, roleDn.toString());
+        logger.debugf("Creating role [%s] to LDAP with DN [%s]", roleName, roleDn.toString());
         ldapProvider.getLdapIdentityStore().add(ldapObject);
         return ldapObject;
     }

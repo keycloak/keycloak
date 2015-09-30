@@ -399,7 +399,7 @@ public class TokenEndpoint {
 
         if (clientUser == null || client.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER) == null) {
             // May need to handle bootstrap here as well
-            logger.infof("Service account user for client '%s' not found or default protocol mapper for service account not found. Creating now", client.getClientId());
+            logger.debugf("Service account user for client '%s' not found or default protocol mapper for service account not found. Creating now", client.getClientId());
             new ClientManager(new RealmManager(session)).enableServiceAccount(client);
             clientUser = session.users().getUserByServiceAccountClient(client);
         }
