@@ -14,7 +14,7 @@
 
     <artifactId>keycloak-saml-wf9-modules</artifactId>
 
-    <name>Keycloak Wildfly 9 Modules</name>
+    <name>Keycloak SAML Wildfly 9 Modules</name>
     <packaging>pom</packaging>
     <dependencies>
         <dependency>

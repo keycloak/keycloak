@@ -66,7 +66,7 @@
             <maven-resource group="org.keycloak" artifact="keycloak-saml-wildfly-adapter"/>
         </module-def>
 
-        <module-def name="org.keycloak.keycloak-wf9-subsystem">
+        <module-def name="org.keycloak.keycloak-saml-wf9-subsystem">
             <maven-resource group="org.keycloak" artifact="keycloak-saml-wf9-subsystem"/>
         </module-def>
 

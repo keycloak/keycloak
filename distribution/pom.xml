@@ -16,6 +16,7 @@
 
     <modules>
         <module>adapters</module>
+        <module>saml-adapters</module>
         <module>demo-dist</module>
         <module>docs-dist</module>
         <module>examples-dist</module>

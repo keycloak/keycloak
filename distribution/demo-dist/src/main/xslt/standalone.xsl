@@ -18,6 +18,7 @@
             <xsl:apply-templates select="node()|@*"/>
             <extension module="org.keycloak.keycloak-server-subsystem"/>
             <extension module="org.keycloak.keycloak-adapter-subsystem"/>
+            <extension module="org.keycloak.keycloak-saml-adapter-subsystem"/>
         </xsl:copy>
     </xsl:template>
 
@@ -43,6 +44,7 @@
                 <web-context>auth</web-context>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:keycloak:1.1"/>
+            <subsystem xmlns="urn:jboss:domain:keycloak-saml:1.6"/>
         </xsl:copy>
     </xsl:template>
 

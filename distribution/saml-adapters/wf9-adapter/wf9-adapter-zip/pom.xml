@@ -10,7 +10,7 @@
 
     <artifactId>keycloak-saml-wf9-adapter-dist</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak Wildfly 9 SAML Adapter Distro</name>
+    <name>Keycloak SAML Wildfly 9 Adapter Distro</name>
     <description/>
 
     <dependencies>
