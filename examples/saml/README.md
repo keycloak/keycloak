@@ -1,8 +1,8 @@
-# Keycloak SAML Quickstarts
+# Keycloak SAML + Picketlink Client Quickstarts
 
 ## Introduction
 
-These quickstarts run on JBoss Enterprise Application Platform 6 or WildFly.
+These quickstarts show using Keycloak Server's SAML support with Picketlink's SAML client adapter.  These quickstarts run on JBoss Enterprise Application Platform 6 or WildFly.
 
 We recommend using the Keycloak Appliance Distribution to test the quickstarts as it has already some things pre-set for you. 
 There is individual README.md file specific for each quickstart in the particular subdirectory with the quickstart. Here are just some general info about the requirements for your OS etc.
