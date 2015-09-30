@@ -1,0 +1,44 @@
+<keycloak-saml-adapter>
+    <SP entityID="http://localhost:8082/employee-sig/"
+        sslPolicy="EXTERNAL"
+        logoutPage="/logout.jsp"
+        nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+        forceAuthentication="false">
+        <Keys>
+            <Key signing="true" >
+                <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+                    <PrivateKey alias="http://localhost:8080/employee-sig/" password="test123"/>
+                    <Certificate alias="http://localhost:8080/employee-sig/"/>
+                </KeyStore>
+            </Key>
+        </Keys>
+        <PrincipalNameMapping policy="FROM_NAME_ID"/>
+        <RoleMapping>
+            <Attribute name="Role"/>
+        </RoleMapping>
+        <IDP entityID="idp">
+            <SingleSignOnService signRequest="true"
+                                 validateResponseSignature="true"
+                                 requestBinding="REDIRECT"
+                                 bindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"
+                    />
+
+            <SingleLogoutService
+                    validateRequestSignature="true"
+                    validateResponseSignature="true"
+                    signRequest="true"
+                    signResponse="true"
+                    requestBinding="REDIRECT"
+                    responseBinding="REDIRECT"
+                    redirectBindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"
+                    />
+            <Keys>
+                <Key signing="true">
+                    <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+                        <Certificate alias="demo"/>
+                    </KeyStore>
+                </Key>
+            </Keys>
+        </IDP>
+     </SP>
+</keycloak-saml-adapter>

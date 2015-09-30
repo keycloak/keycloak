@@ -25,6 +25,7 @@ import org.apache.catalina.startup.Tomcat;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
@@ -184,7 +185,7 @@ public class TomcatTest {
         testStrategy.testAccountManagementSessionsLogout();
     }
 
-    private static String getBaseDirectory() {
+    public static String getBaseDirectory() {
         String dirPath = null;
         String relativeDirPath = "testsuite" + File.separator + "tomcat8" + File.separator + "target";
 

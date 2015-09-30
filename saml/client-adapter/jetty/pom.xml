@@ -1,0 +1,22 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>1.6.0.Final-SNAPSHOT</version>
+        <relativePath>../../../pom.xml</relativePath>
+    </parent>
+    <name>Keycloak SAML Jetty Integration</name>
+    <description/>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>keycloak-jetty-saml-integration-pom</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>jetty-core</module>
+        <module>jetty8.1</module>
+        <module>jetty9.1</module>
+        <module>jetty9.2</module>
+    </modules>
+</project>

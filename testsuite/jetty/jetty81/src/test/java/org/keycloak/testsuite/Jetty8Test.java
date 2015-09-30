@@ -87,6 +87,7 @@ public class Jetty8Test {
     public static void shutdownJetty() throws Exception {
         server.stop();
         server.destroy();
+        Thread.sleep(1000);
     }
 
     @Rule

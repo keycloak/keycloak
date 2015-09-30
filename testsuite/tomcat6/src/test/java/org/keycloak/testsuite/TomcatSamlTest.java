@@ -167,7 +167,7 @@ public class TomcatSamlTest {
         });
     }
 
-    //@Test
+    @Test
     public void testMetadataPostSignedLoginLogout() throws Exception {
         testStrategy.testMetadataPostSignedLoginLogout();
     }

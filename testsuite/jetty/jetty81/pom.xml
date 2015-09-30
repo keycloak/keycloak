@@ -22,11 +22,11 @@
             <artifactId>keycloak-dependencies-server-all</artifactId>
             <type>pom</type>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client</artifactId>
-        </dependency>
-        <dependency>
+       <dependency>
+           <groupId>org.keycloak</groupId>
+           <artifactId>keycloak-admin-client</artifactId>
+       </dependency>
+       <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
         </dependency>
@@ -105,6 +105,10 @@
        <dependency>
            <groupId>org.keycloak</groupId>
            <artifactId>keycloak-undertow-adapter</artifactId>
+       </dependency>
+       <dependency>
+           <groupId>org.keycloak</groupId>
+           <artifactId>keycloak-jetty81-saml-adapter</artifactId>
        </dependency>
        <dependency>
            <groupId>org.keycloak</groupId>

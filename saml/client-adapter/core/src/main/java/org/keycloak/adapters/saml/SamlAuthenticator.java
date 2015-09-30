@@ -270,7 +270,7 @@ public abstract class SamlAuthenticator {
                         if (attributeValues != null) {
                             for (Object attrValue : attributeValues) {
                                 String role = getAttributeValue(attrValue);
-                                log.info("Add role: " + role);
+                                log.debugv("Add role: {0}", role);
                                 roles.add(role);
                             }
                         }
