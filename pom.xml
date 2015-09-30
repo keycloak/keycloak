@@ -60,7 +60,7 @@
         <google.client.version>1.14.1-beta</google.client.version>
         <github.relaxng.version>2011.1</github.relaxng.version>
         <winzipaes.version>1.0.1</winzipaes.version>
-        <freemarker.version>2.3.20</freemarker.version>
+        <freemarker.version>2.3.23</freemarker.version>
         <twitter4j.version>3.0.5</twitter4j.version>
         <selenium.version>2.35.0</selenium.version>
         <sun.istack.version>2.21</sun.istack.version>
