@@ -280,7 +280,7 @@ public class ResourceAdminManager {
     protected boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, int notBefore, String managementUrl) {
         PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), notBefore);
         String token = new TokenManager().encodeToken(realm, adminAction);
-        logger.infov("pushRevocation resource: {0} url: {1}", resource.getClientId(), managementUrl);
+        logger.debugv("pushRevocation resource: {0} url: {1}", resource.getClientId(), managementUrl);
         URI target = UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_PUSH_NOT_BEFORE).build();
         try {
             int status = session.getProvider(HttpClientProvider.class).postText(target.toString(), token);

@@ -111,7 +111,7 @@ public class UserFederationManager implements UserProvider {
             if (realmModel == null) return;
             UserModel deletedUser = tx.userStorage().getUserById(user.getId(), realmModel);
             tx.userStorage().removeUser(realmModel, deletedUser);
-            logger.infof("Removed invalid user '%s'", user.getUsername());
+            logger.debugf("Removed invalid user '%s'", user.getUsername());
             tx.getTransaction().commit();
         } finally {
             tx.close();
