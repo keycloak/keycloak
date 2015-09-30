@@ -37,6 +37,7 @@
         <module>third-party</module>
         <module>third-party-cdi</module>
         <module>service-account</module>
+        <module>offline-access-app</module>
     </modules>
 
     <profiles>

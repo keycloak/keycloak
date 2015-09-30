@@ -98,7 +98,7 @@ public class TokenManager {
         ClientSessionModel clientSession = null;
         if (RefreshTokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType())) {
 
-            clientSession = OfflineTokenUtils.findOfflineClientSession(realm, user, oldToken.getClientSession(), oldToken.getSessionState());
+            clientSession = OfflineTokenUtils.findOfflineClientSession(session, realm, user, oldToken.getClientSession(), oldToken.getSessionState());
             if (clientSession != null) {
                 userSession = clientSession.getUserSession();
             }
@@ -496,7 +496,7 @@ public class TokenManager {
 
                 refreshToken = new RefreshToken(accessToken);
                 refreshToken.type(RefreshTokenUtil.TOKEN_TYPE_OFFLINE);
-                OfflineTokenUtils.persistOfflineSession(clientSession, userSession);
+                OfflineTokenUtils.persistOfflineSession(session, realm, clientSession, userSession);
             } else {
                 refreshToken = new RefreshToken(accessToken);
                 refreshToken.expiration(Time.currentTime() + realm.getSsoSessionIdleTimeout());

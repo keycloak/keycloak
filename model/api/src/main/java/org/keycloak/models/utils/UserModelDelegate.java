@@ -258,44 +258,4 @@ public class UserModelDelegate implements UserModel {
     public void setCreatedTimestamp(Long timestamp){
         delegate.setCreatedTimestamp(timestamp);
     }
-
-    @Override
-    public void addOfflineUserSession(OfflineUserSessionModel userSession) {
-        delegate.addOfflineUserSession(userSession);
-    }
-
-    @Override
-    public OfflineUserSessionModel getOfflineUserSession(String userSessionId) {
-        return delegate.getOfflineUserSession(userSessionId);
-    }
-
-    @Override
-    public Collection<OfflineUserSessionModel> getOfflineUserSessions() {
-        return delegate.getOfflineUserSessions();
-    }
-
-    @Override
-    public boolean removeOfflineUserSession(String userSessionId) {
-        return delegate.removeOfflineUserSession(userSessionId);
-    }
-
-    @Override
-    public void addOfflineClientSession(OfflineClientSessionModel clientSession) {
-        delegate.addOfflineClientSession(clientSession);
-    }
-
-    @Override
-    public OfflineClientSessionModel getOfflineClientSession(String clientSessionId) {
-        return delegate.getOfflineClientSession(clientSessionId);
-    }
-
-    @Override
-    public Collection<OfflineClientSessionModel> getOfflineClientSessions() {
-        return delegate.getOfflineClientSessions();
-    }
-
-    @Override
-    public boolean removeOfflineClientSession(String clientSessionId) {
-        return delegate.removeOfflineClientSession(clientSessionId);
-    }
 }

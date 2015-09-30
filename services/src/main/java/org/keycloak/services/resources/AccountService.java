@@ -486,7 +486,7 @@ public class AccountService extends AbstractSecuredLocalService {
         // Revoke grant in UserModel
         UserModel user = auth.getUser();
         user.revokeConsentForClient(client.getId());
-        OfflineTokenUtils.revokeOfflineToken(user, client);
+        OfflineTokenUtils.revokeOfflineToken(session, realm, user, client);
 
         // Logout clientSessions for this user and client
         AuthenticationManager.backchannelUserFromClient(session, realm, user, client, uriInfo, headers);

@@ -15,6 +15,7 @@ import static org.junit.Assert.assertNotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -292,11 +293,34 @@ public class UserModelTest extends AbstractModelTest {
         ClientModel barClient = realm.addClient("bar");
 
         UserModel user1 = session.users().addUser(realm, "user1");
-        addOfflineUserSession(user1, "123", "something1");
-        addOfflineClientSession(user1, "456", "123", fooClient.getId(), "something2");
-        addOfflineClientSession(user1, "789", "123", barClient.getId(), "something3");
+        UserModel user2 = session.users().addUser(realm, "user2");
+
+        addOfflineUserSession(realm, user1, "123", "something1");
+        addOfflineClientSession(realm, user1, "456", "123", fooClient.getId(), "something2");
+        addOfflineClientSession(realm, user1, "789", "123", barClient.getId(), "something3");
+
+        addOfflineUserSession(realm, user2, "2123", "something4");
+        addOfflineClientSession(realm, user2, "2456", "2123", fooClient.getId(), "something5");
 
         commit();
+
+        // Searching by clients
+        Assert.assertEquals(2, session.users().getOfflineClientSessionsCount(realm, fooClient));
+        Assert.assertEquals(1, session.users().getOfflineClientSessionsCount(realm, barClient));
+
+        Collection<OfflineClientSessionModel> clientSessions = session.users().getOfflineClientSessions(realm, fooClient, 0, 10);
+        Assert.assertEquals(2, clientSessions.size());
+        clientSessions = session.users().getOfflineClientSessions(realm, fooClient, 0, 1);
+        OfflineClientSessionModel cls = clientSessions.iterator().next();
+        assertSessionEquals(cls, "456", "123", fooClient.getId(), user1.getId(), "something2");
+        clientSessions = session.users().getOfflineClientSessions(realm, fooClient, 1, 1);
+        cls = clientSessions.iterator().next();
+        assertSessionEquals(cls, "2456", "2123", fooClient.getId(), user2.getId(), "something5");
+
+        clientSessions = session.users().getOfflineClientSessions(realm, barClient, 0, 10);
+        Assert.assertEquals(1, clientSessions.size());
+        cls = clientSessions.iterator().next();
+        assertSessionEquals(cls, "789", "123", barClient.getId(), user1.getId(), "something3");
 
         realm = realmManager.getRealmByName("original");
         realm.removeClient(barClient.getId());
@@ -305,9 +329,9 @@ public class UserModelTest extends AbstractModelTest {
 
         realm = realmManager.getRealmByName("original");
         user1 = session.users().getUserByUsername("user1", realm);
-        Assert.assertEquals("something1", user1.getOfflineUserSession("123").getData());
-        Assert.assertEquals("something2", user1.getOfflineClientSession("456").getData());
-        Assert.assertNull(user1.getOfflineClientSession("789"));
+        Assert.assertEquals("something1", session.users().getOfflineUserSession(realm, user1, "123").getData());
+        Assert.assertEquals("something2", session.users().getOfflineClientSession(realm, user1, "456").getData());
+        Assert.assertNull(session.users().getOfflineClientSession(realm, user1, "789"));
 
         realm.removeClient(fooClient.getId());
 
@@ -315,27 +339,28 @@ public class UserModelTest extends AbstractModelTest {
 
         realm = realmManager.getRealmByName("original");
         user1 = session.users().getUserByUsername("user1", realm);
-        Assert.assertNull(user1.getOfflineClientSession("456"));
-        Assert.assertNull(user1.getOfflineClientSession("789"));
-        Assert.assertNull(user1.getOfflineUserSession("123"));
-        Assert.assertEquals(0, user1.getOfflineUserSessions().size());
-        Assert.assertEquals(0, user1.getOfflineClientSessions().size());
+        Assert.assertNull(session.users().getOfflineClientSession(realm, user1, "456"));
+        Assert.assertNull(session.users().getOfflineClientSession(realm, user1, "789"));
+        Assert.assertNull(session.users().getOfflineUserSession(realm, user1, "123"));
+        Assert.assertEquals(0, session.users().getOfflineUserSessions(realm, user1).size());
+        Assert.assertEquals(0, session.users().getOfflineClientSessions(realm, user1).size());
     }
 
-    private void addOfflineUserSession(UserModel user, String userSessionId, String data) {
+    private void addOfflineUserSession(RealmModel realm, UserModel user, String userSessionId, String data) {
         OfflineUserSessionModel model = new OfflineUserSessionModel();
         model.setUserSessionId(userSessionId);
         model.setData(data);
-        user.addOfflineUserSession(model);
+        session.users().addOfflineUserSession(realm, user, model);
     }
 
-    private void addOfflineClientSession(UserModel user, String clientSessionId, String userSessionId, String clientId, String data) {
+    private void addOfflineClientSession(RealmModel realm, UserModel user, String clientSessionId, String userSessionId, String clientId, String data) {
         OfflineClientSessionModel model = new OfflineClientSessionModel();
         model.setClientSessionId(clientSessionId);
         model.setUserSessionId(userSessionId);
+        model.setUserId(user.getId());
         model.setClientId(clientId);
         model.setData(data);
-        user.addOfflineClientSession(model);
+        session.users().addOfflineClientSession(realm, model);
     }
 
     public static void assertEquals(UserModel expected, UserModel actual) {
@@ -350,6 +375,15 @@ public class UserModelTest extends AbstractModelTest {
         Arrays.sort(actualRequiredActions);
 
         Assert.assertArrayEquals(expectedRequiredActions, actualRequiredActions);
+    }
+
+    private static void assertSessionEquals(OfflineClientSessionModel cls, String expectedClientSessionId, String expectedUserSessionId,
+                                     String expectedClientId, String expectedUserId, String expectedData) {
+        Assert.assertEquals(cls.getData(), expectedData);
+        Assert.assertEquals(cls.getClientSessionId(), expectedClientSessionId);
+        Assert.assertEquals(cls.getUserSessionId(), expectedUserSessionId);
+        Assert.assertEquals(cls.getUserId(), expectedUserId);
+        Assert.assertEquals(cls.getClientId(), expectedClientId);
     }
 
 }

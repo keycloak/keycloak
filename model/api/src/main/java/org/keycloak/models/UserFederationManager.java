@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -472,6 +473,70 @@ public class UserFederationManager implements UserProvider {
 
         // For now, validCredentials(realm, input) is not supported for local userProviders
         return (result != null) ? result : CredentialValidationOutput.failed();
+    }
+
+    @Override
+    public void addOfflineUserSession(RealmModel realm, UserModel user, OfflineUserSessionModel offlineUserSession) {
+        validateUser(realm, user);
+        if (user == null) throw new IllegalStateException("Federated user no longer valid");
+        session.userStorage().addOfflineUserSession(realm, user, offlineUserSession);
+    }
+
+    @Override
+    public OfflineUserSessionModel getOfflineUserSession(RealmModel realm, UserModel user, String userSessionId) {
+        validateUser(realm, user);
+        if (user == null) throw new IllegalStateException("Federated user no longer valid");
+        return session.userStorage().getOfflineUserSession(realm, user, userSessionId);
+    }
+
+    @Override
+    public Collection<OfflineUserSessionModel> getOfflineUserSessions(RealmModel realm, UserModel user) {
+        validateUser(realm, user);
+        if (user == null) throw new IllegalStateException("Federated user no longer valid");
+        return session.userStorage().getOfflineUserSessions(realm, user);
+    }
+
+    @Override
+    public boolean removeOfflineUserSession(RealmModel realm, UserModel user, String userSessionId) {
+        validateUser(realm, user);
+        if (user == null) throw new IllegalStateException("Federated user no longer valid");
+        return session.userStorage().removeOfflineUserSession(realm, user, userSessionId);
+    }
+
+    @Override
+    public void addOfflineClientSession(RealmModel realm, OfflineClientSessionModel offlineClientSession) {
+        session.userStorage().addOfflineClientSession(realm, offlineClientSession);
+    }
+
+    @Override
+    public OfflineClientSessionModel getOfflineClientSession(RealmModel realm, UserModel user, String clientSessionId) {
+        validateUser(realm, user);
+        if (user == null) throw new IllegalStateException("Federated user no longer valid");
+        return session.userStorage().getOfflineClientSession(realm, user, clientSessionId);
+    }
+
+    @Override
+    public Collection<OfflineClientSessionModel> getOfflineClientSessions(RealmModel realm, UserModel user) {
+        validateUser(realm, user);
+        if (user == null) throw new IllegalStateException("Federated user no longer valid");
+        return session.userStorage().getOfflineClientSessions(realm, user);
+    }
+
+    @Override
+    public boolean removeOfflineClientSession(RealmModel realm, UserModel user, String clientSessionId) {
+        validateUser(realm, user);
+        if (user == null) throw new IllegalStateException("Federated user no longer valid");
+        return session.userStorage().removeOfflineClientSession(realm, user, clientSessionId);
+    }
+
+    @Override
+    public int getOfflineClientSessionsCount(RealmModel realm, ClientModel client) {
+        return session.userStorage().getOfflineClientSessionsCount(realm, client);
+    }
+
+    @Override
+    public Collection<OfflineClientSessionModel> getOfflineClientSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
+        return session.userStorage().getOfflineClientSessions(realm, client, firstResult, maxResults);
     }
 
     @Override

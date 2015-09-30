@@ -3,6 +3,7 @@ package org.keycloak.util;
 import java.io.IOException;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.RefreshToken;
 
 /**
@@ -30,7 +31,7 @@ public class RefreshTokenUtil {
 
 
     /**
-     * Return refresh token or offline otkne
+     * Return refresh token or offline token
      *
      * @param decodedToken
      * @return
@@ -39,9 +40,9 @@ public class RefreshTokenUtil {
         return JsonSerialization.readValue(decodedToken, RefreshToken.class);
     }
 
-    private static RefreshToken getRefreshToken(String refreshToken) throws IOException {
-        byte[] decodedToken = Base64Url.decode(refreshToken);
-        return getRefreshToken(decodedToken);
+    public static RefreshToken getRefreshToken(String refreshToken) throws IOException {
+        byte[] encodedContent = new JWSInput(refreshToken).getContent();
+        return getRefreshToken(encodedContent);
     }
 
     /**

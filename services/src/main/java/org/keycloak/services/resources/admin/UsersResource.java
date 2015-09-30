@@ -66,15 +66,18 @@ import javax.ws.rs.WebApplicationException;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.offline.OfflineTokenUtils;
 import org.keycloak.services.resources.AccountService;
 
 /**
@@ -439,25 +442,44 @@ public class UsersResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserConsentRepresentation> getConsents(final @PathParam("id") String id) {
+    public List<Map<String, Object>> getConsents(final @PathParam("id") String id) {
         auth.requireView();
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
 
-        List<UserConsentModel> consents = user.getConsents();
-        List<UserConsentRepresentation> result = new ArrayList<UserConsentRepresentation>();
+        List<Map<String, Object>> result = new LinkedList<>();
 
-        for (UserConsentModel consent : consents) {
-            UserConsentRepresentation rep = ModelToRepresentation.toRepresentation(consent);
-            result.add(rep);
+        Set<ClientModel> offlineClients = OfflineTokenUtils.findClientsWithOfflineToken(session, realm, user);
+
+        for (ClientModel client : realm.getClients()) {
+            UserConsentModel consent = user.getConsentByClient(client.getId());
+            boolean hasOfflineToken = offlineClients.contains(client);
+
+            if (consent == null && !hasOfflineToken) {
+                continue;
+            }
+
+            UserConsentRepresentation rep = (consent == null) ? null : ModelToRepresentation.toRepresentation(consent);
+
+            Map<String, Object> currentRep = new HashMap<>();
+            currentRep.put("clientId", client.getClientId());
+            currentRep.put("grantedProtocolMappers", (rep==null ? Collections.emptyMap() : rep.getGrantedProtocolMappers()));
+            currentRep.put("grantedRealmRoles", (rep==null ? Collections.emptyList() : rep.getGrantedRealmRoles()));
+            currentRep.put("grantedClientRoles", (rep==null ? Collections.emptyMap() : rep.getGrantedClientRoles()));
+
+            List<String> additionalGrants = hasOfflineToken ? Arrays.asList("Offline Token") : Collections.<String>emptyList();
+            currentRep.put("additionalGrants", additionalGrants);
+
+            result.add(currentRep);
         }
+
         return result;
     }
 
     /**
-     * Revoke consent for particular client from user
+     * Revoke consent and offline tokens for particular client from user
      *
      * @param id User id
      * @param clientId Client id
@@ -473,12 +495,16 @@ public class UsersResource {
         }
 
         ClientModel client = realm.getClientByClientId(clientId);
-        boolean revoked = user.revokeConsentForClient(client.getId());
-        if (revoked) {
+        boolean revokedConsent = user.revokeConsentForClient(client.getId());
+        boolean revokedOfflineToken = OfflineTokenUtils.revokeOfflineToken(session, realm, user, client);
+
+        if (revokedConsent) {
             // Logout clientSessions for this user and client
             AuthenticationManager.backchannelUserFromClient(session, realm, user, client, uriInfo, headers);
-        } else {
-            throw new NotFoundException("Consent not found");
+        }
+
+        if (!revokedConsent && !revokedOfflineToken) {
+            throw new NotFoundException("Consent nor offline token not found");
         }
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }

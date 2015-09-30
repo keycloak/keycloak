@@ -208,9 +208,9 @@ module.controller('UserConsentsCtrl', function($scope, realm, user, userConsents
             UserConsents.query({realm: realm.realm, user: user.id}, function(updated) {
                 $scope.userConsents = updated;
             })
-            Notifications.success('Consent revoked successfully');
+            Notifications.success('Grant revoked successfully');
         }, function() {
-            Notifications.error("Consent couldn't be revoked");
+            Notifications.error("Grant couldn't be revoked");
         });
         console.log("Revoke consent " + clientId);
     }
