@@ -78,7 +78,7 @@ public class TomcatSamlTest {
         tomcat.addWebapp("/bad-client-sales-post-sig", new File(base, "bad-client-signed-post").toString());
         tomcat.addWebapp("/bad-realm-sales-post-sig", new File(base, "bad-realm-signed-post").toString());
         tomcat.addWebapp("/sales-post-enc", new File(base, "encrypted-post").toString());
-        SamlAdapterTestStrategy.uploadSP("http://localhost:8081/auth", keycloakRule);
+        SamlAdapterTestStrategy.uploadSP("http://localhost:8081/auth");
 
 
         tomcat.start();
