@@ -20,6 +20,8 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.testsuite.arquillian.annotation.AdapterLibsLocationProperty;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.util.OAuthClient;
+
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
@@ -54,6 +56,10 @@ public class ContainersTestEnricher {
     @Inject
     @ClassScoped
     private InstanceProducer<Keycloak> adminClient;
+
+    @Inject
+    @ClassScoped
+    private InstanceProducer<OAuthClient> oauthClient;
 
     private ContainerController controller;
 
@@ -92,6 +98,7 @@ public class ContainersTestEnricher {
 
         initializeTestContext(testClass);
         initializeAdminClient();
+        initializeOAuthClient();
     }
 
     private void initializeTestContext(Class testClass) {
@@ -114,6 +121,10 @@ public class ContainersTestEnricher {
         adminClient.set(Keycloak.getInstance(
                 getAuthServerContextRootFromSystemProperty() + "/auth",
                 MASTER, ADMIN, ADMIN, Constants.ADMIN_CONSOLE_CLIENT_ID));
+    }
+
+    private void initializeOAuthClient() {
+        oauthClient.set(new OAuthClient(getAuthServerContextRootFromSystemProperty() + "/auth"));
     }
 
     /**

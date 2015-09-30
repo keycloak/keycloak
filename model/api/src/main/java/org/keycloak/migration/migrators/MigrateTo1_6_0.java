@@ -70,6 +70,15 @@ public class MigrateTo1_6_0 {
             if ((adminConsoleClient != null) && !localeMapperAdded(adminConsoleClient)) {
                 adminConsoleClient.addProtocolMapper(localeMapper);
             }
+
+            ClientModel client = realm.getMasterAdminClient();
+            if (client.getRole(AdminRoles.CREATE_CLIENT) == null) {
+                RoleModel role = client.addRole(AdminRoles.CREATE_CLIENT);
+                role.setDescription("${role_" + AdminRoles.CREATE_CLIENT + "}");
+                role.setScopeParamRequired(false);
+
+                realm.getRole(AdminRoles.ADMIN).addCompositeRole(role);
+            }
         }
     }
 

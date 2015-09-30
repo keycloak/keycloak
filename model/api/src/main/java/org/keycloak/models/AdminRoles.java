@@ -13,6 +13,7 @@ public class AdminRoles {
     public static String REALM_ADMIN = "realm-admin";
 
     public static String CREATE_REALM = "create-realm";
+    public static String CREATE_CLIENT = "create-client";
 
     public static String VIEW_REALM = "view-realm";
     public static String VIEW_USERS = "view-users";
@@ -26,6 +27,6 @@ public class AdminRoles {
     public static String MANAGE_CLIENTS = "manage-clients";
     public static String MANAGE_EVENTS = "manage-events";
 
-    public static String[] ALL_REALM_ROLES = {VIEW_REALM, VIEW_USERS, VIEW_CLIENTS, VIEW_EVENTS, VIEW_IDENTITY_PROVIDERS, MANAGE_REALM, MANAGE_USERS, MANAGE_CLIENTS, MANAGE_EVENTS, MANAGE_IDENTITY_PROVIDERS};
+    public static String[] ALL_REALM_ROLES = {CREATE_CLIENT, VIEW_REALM, VIEW_USERS, VIEW_CLIENTS, VIEW_EVENTS, VIEW_IDENTITY_PROVIDERS, MANAGE_REALM, MANAGE_USERS, MANAGE_CLIENTS, MANAGE_EVENTS, MANAGE_IDENTITY_PROVIDERS};
 
 }

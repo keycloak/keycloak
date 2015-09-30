@@ -69,7 +69,16 @@ public enum EventType {
     IMPERSONATE(true),
     CUSTOM_REQUIRED_ACTION(true),
     CUSTOM_REQUIRED_ACTION_ERROR(true),
-    EXECUTE_ACTIONS(true);
+    EXECUTE_ACTIONS(true),
+
+    CLIENT_INFO(false),
+    CLIENT_INFO_ERROR(false),
+    CLIENT_REGISTER(true),
+    CLIENT_REGISTER_ERROR(true),
+    CLIENT_UPDATE(true),
+    CLIENT_UPDATE_ERROR(true),
+    CLIENT_DELETE(true),
+    CLIENT_DELETE_ERROR(true);
 
     private boolean saveByDefault;
 
