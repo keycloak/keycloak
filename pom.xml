@@ -18,6 +18,10 @@
     <packaging>pom</packaging>
 
     <properties>
+        <product.name>Keycloak</product.name>
+        <product.version>${project.version}</product.version>
+        <product.build-time>${timestamp}</product.build-time>
+
         <apacheds.version>2.0.0-M17</apacheds.version>
         <apacheds.codec.version>1.0.0-M23</apacheds.codec.version>
         <org.apache.james.apache-mime4j.version>0.6</org.apache.james.apache-mime4j.version>

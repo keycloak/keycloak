@@ -30,11 +30,6 @@
     <name>Keycloak Feature Pack: Server</name>
     <packaging>pom</packaging>
 
-    <properties>
-        <product.name>Keycloak</product.name>
-        <product.version>${project.version}</product.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
