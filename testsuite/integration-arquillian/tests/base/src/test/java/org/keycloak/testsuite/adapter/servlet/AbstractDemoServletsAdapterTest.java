@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import java.net.URI;
 import java.util.List;
@@ -349,14 +350,14 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     public void testVersion() {
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(authServerPage.createUriBuilder()).path("version");
-        Version version = target.request().get(Version.class);
+        VersionRepresentation version = target.request().get(VersionRepresentation.class);
         assertNotNull(version);
         assertNotNull(version.getVersion());
         assertNotNull(version.getBuildTime());
         assertNotEquals(version.getVersion(), Version.UNKNOWN);
         assertNotEquals(version.getBuildTime(), Version.UNKNOWN);
 
-        Version version2 = client.target(securePortal.toString()).path(AdapterConstants.K_VERSION).request().get(Version.class);
+        VersionRepresentation version2 = client.target(securePortal.toString()).path(AdapterConstants.K_VERSION).request().get(VersionRepresentation.class);
         assertNotNull(version2);
         assertNotNull(version2.getVersion());
         assertNotNull(version2.getBuildTime());
