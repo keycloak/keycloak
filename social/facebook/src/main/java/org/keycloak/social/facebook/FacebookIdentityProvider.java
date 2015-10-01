@@ -17,7 +17,7 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider imp
 
 	public static final String AUTH_URL = "https://graph.facebook.com/oauth/authorize";
 	public static final String TOKEN_URL = "https://graph.facebook.com/oauth/access_token";
-	public static final String PROFILE_URL = "https://graph.facebook.com/me";
+	public static final String PROFILE_URL = "https://graph.facebook.com/me?fields=id,name,email,first_name,last_name";
 	public static final String DEFAULT_SCOPE = "email";
 
 	public FacebookIdentityProvider(OAuth2IdentityProviderConfig config) {

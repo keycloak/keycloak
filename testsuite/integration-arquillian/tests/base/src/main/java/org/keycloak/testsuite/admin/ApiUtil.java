@@ -25,8 +25,8 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.jboss.logging.Logger;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
@@ -37,6 +37,8 @@ import org.keycloak.representations.idm.UserRepresentation;
  * Created by st on 28.05.15.
  */
 public class ApiUtil {
+    
+    private static final Logger log = Logger.getLogger(ApiUtil.class);
 
     public static String getCreatedId(Response response) {
         URI location = response.getLocation();
@@ -96,16 +98,32 @@ public class ApiUtil {
         userResource.resetPassword(newCredential);
     }
 
-    public static void assignClientRoles(UserResource userResource, String clientId, String... roles) {
-        RoleScopeResource rsr = userResource.roles().clientLevel(clientId);
-        List<String> rolesList = Arrays.asList(roles);
-        List<RoleRepresentation> realmMgmtRoles = new ArrayList<>();
-        for (RoleRepresentation rr : rsr.listAvailable()) {
-            if (rolesList.contains(rr.getName())) {
-                realmMgmtRoles.add(rr);
+    public static void assignClientRoles(RealmResource realm, String userId, String clientName, String... roles) {
+        String realmName = realm.toRepresentation().getRealm();
+        String clientId = "";
+        for (ClientRepresentation clientRepresentation : realm.clients().findAll()) {
+            if (clientRepresentation.getClientId().equals(clientName)) {
+                clientId = clientRepresentation.getId();
             }
         }
-        rsr.add(realmMgmtRoles);
+        
+        if (!clientId.isEmpty()) {
+            ClientResource clientResource = realm.clients().get(clientId);
+
+            List<RoleRepresentation> roleRepresentations = new ArrayList<>();
+            for (String roleName : roles) {
+                RoleRepresentation role = clientResource.roles().get(roleName).toRepresentation();
+                roleRepresentations.add(role);
+            }
+
+            UserResource userResource = realm.users().get(userId);
+            log.debug("assigning roles: " + Arrays.toString(roles) + " to user: \"" + 
+                    userResource.toRepresentation().getUsername() + "\" of client: \"" + 
+                    clientName + "\" in realm: \"" + realmName + "\"");
+            userResource.roles().clientLevel(clientId).add(roleRepresentations);
+        } else {
+            log.warn("client with name " + clientName + "doesn't exist in realm " + realmName);
+        }
     }
 
 }

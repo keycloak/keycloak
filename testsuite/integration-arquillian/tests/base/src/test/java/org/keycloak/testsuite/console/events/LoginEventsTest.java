@@ -21,14 +21,14 @@ import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD
 public class LoginEventsTest extends AbstractConsoleTest {
     @Page
     private LoginEvents loginEventsPage;
-
     @Page
     private Config configPage;
-
+    
     @Before
     public void beforeLoginEventsTest() {
         configPage.navigateTo();
         configPage.form().setSaveEvents(true);
+        configPage.form().waitForClearEventsButtonPresent();
         configPage.form().addSaveType("LOGIN");
         configPage.form().addSaveType("LOGIN_ERROR");
         configPage.form().addSaveType("LOGOUT");
