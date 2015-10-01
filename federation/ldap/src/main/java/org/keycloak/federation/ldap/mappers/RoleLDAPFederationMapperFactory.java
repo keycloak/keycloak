@@ -51,6 +51,12 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
                 "Object class (or classes) of the role object. It's divided by comma if more classes needed. In typical LDAP deployment it could be 'groupOfNames' . In Active Directory it's usually 'group' ",
                 ProviderConfigProperty.STRING_TYPE, null);
         configProperties.add(roleObjectClasses);
+        
+        ProviderConfigProperty ldapFilter = createConfigProperty(RoleLDAPFederationMapper.ROLES_LDAP_FILTER,
+                "LDAP Filter",
+                "LDAP Filter adds additional custom filter to the whole query.",
+                ProviderConfigProperty.STRING_TYPE, null);
+        configProperties.add(ldapFilter);
 
         List<String> modes = new LinkedList<String>();
         for (RoleLDAPFederationMapper.Mode mode : RoleLDAPFederationMapper.Mode.values()) {
