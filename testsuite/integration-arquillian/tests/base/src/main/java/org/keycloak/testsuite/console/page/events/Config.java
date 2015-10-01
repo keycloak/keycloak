@@ -2,6 +2,7 @@ package org.keycloak.testsuite.console.page.events;
 
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
+import static org.keycloak.testsuite.util.WaitUtils.*;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -100,6 +101,10 @@ public class Config extends Events {
 
         public void clearAdminEvents() {
             clearAdminEventsButton.click();
+        }
+        
+        public void waitForClearEventsButtonPresent() {
+            waitAjaxForElement(clearLoginEventsButton);
         }
     }
 }
