@@ -30,7 +30,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core</artifactId>
+            <artifactId>keycloak-common</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

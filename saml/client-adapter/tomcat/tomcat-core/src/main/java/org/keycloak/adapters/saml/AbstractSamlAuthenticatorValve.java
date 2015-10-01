@@ -7,7 +7,6 @@ import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.authenticator.FormAuthenticator;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
-import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.AuthOutcome;
 import org.keycloak.adapters.HttpFacade;
@@ -18,7 +17,6 @@ import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
 import org.keycloak.adapters.tomcat.CatalinaHttpFacade;
 import org.keycloak.adapters.tomcat.CatalinaUserSessionManagement;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
-import org.keycloak.constants.AdapterConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 
 import javax.servlet.RequestDispatcher;

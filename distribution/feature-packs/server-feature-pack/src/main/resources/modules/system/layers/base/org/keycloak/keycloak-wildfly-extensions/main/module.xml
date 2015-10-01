@@ -4,6 +4,7 @@
         <artifact name="${org.keycloak:keycloak-wildfly-extensions}"/>
     </resources>
     <dependencies>
+        <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-model-api"/>
         <module name="org.keycloak.keycloak-services"/>

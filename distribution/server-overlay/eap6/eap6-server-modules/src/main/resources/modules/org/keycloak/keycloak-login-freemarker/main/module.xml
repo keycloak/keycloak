@@ -7,6 +7,7 @@
         <!-- Insert resources here -->
     </resources>
     <dependencies>
+        <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-forms-common-freemarker"/>
         <module name="org.keycloak.keycloak-login-api"/>
         <module name="org.keycloak.keycloak-email-api"/>

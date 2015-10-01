@@ -9,6 +9,7 @@
     <dependencies>
         <module name="org.keycloak.keycloak-timer-api"/>
         <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.jboss.logging"/>
         <module name="javax.api"/>

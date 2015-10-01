@@ -11,6 +11,7 @@
         <module name="javax.ws.rs.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         <module name="org.jboss.logging"/>
+        <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.bouncycastle" />
         <module name="javax.api"/>

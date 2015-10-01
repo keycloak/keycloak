@@ -22,5 +22,8 @@ $ mvn clean install wildfly:deploy
 
 ## Access the application
 
-The application will be running at the following URL: <http://localhost:8080/sales-post-enc>.
+The application will be running at the following URL: <http://localhost:8080/sales-post-enc>.  Login with:
+
+    username: bburke
+    password: password
 

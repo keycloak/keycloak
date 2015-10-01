@@ -14,7 +14,7 @@
         <module name="org.jboss.xnio"/>
         <module name="io.undertow.core"/>
         <module name="io.undertow.servlet"/>
-        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-common"/>
     </dependencies>
 
 </module>

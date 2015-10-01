@@ -24,3 +24,8 @@ $ mvn clean install wildfly:deploy
 
 The application will be running at the following URL: <http://localhost:8080/employee-sig>.
 
+The application will be running at the following URL: <http://localhost:8080/sales-post-sig>.  Login with:
+
+    username: bburke
+    password: password
+

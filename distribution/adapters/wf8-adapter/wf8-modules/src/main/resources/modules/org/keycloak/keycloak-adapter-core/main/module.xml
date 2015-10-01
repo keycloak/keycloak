@@ -15,6 +15,7 @@
         <module name="org.jboss.logging"/>
         <module name="org.keycloak.keycloak-adapter-spi"/>
         <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-common"/>
     </dependencies>
 
 </module>

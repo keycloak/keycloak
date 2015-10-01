@@ -1,7 +1,7 @@
 package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Version;
+import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -215,7 +215,7 @@ public class PreAuthActionsHandler {
         try {
             facade.getResponse().setStatus(200);
             facade.getResponse().setHeader("Content-Type", "application/json");
-            JsonSerialization.writeValueToStream(facade.getResponse().getOutputStream(), Version.SINGLETON);
+            JsonSerialization.writeValueToStream(facade.getResponse().getOutputStream(), VersionRepresentation.SINGLETON);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
