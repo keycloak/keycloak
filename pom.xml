@@ -134,6 +134,7 @@
     </contributors>
 
     <modules>
+        <module>common</module>
         <module>core</module>
         <module>core-jaxrs</module>
         <module>connections</module>
@@ -637,6 +638,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-connections-mongo-update</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

@@ -8,7 +8,7 @@
     </resources>
     <dependencies>
         <module name="javax.api"/>
-        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-common"/>
         <module name="org.apache.httpcomponents"/>
         <module name="javax.servlet.api"/>
         <module name="org.jboss.logging"/>

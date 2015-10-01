@@ -11,6 +11,7 @@
         <module name="org.keycloak.keycloak-account-api"/>
         <module name="org.keycloak.keycloak-events-api"/>
         <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-services"/>
         <module name="org.keycloak.keycloak-social-core"/>

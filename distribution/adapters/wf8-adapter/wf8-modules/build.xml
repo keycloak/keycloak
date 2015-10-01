@@ -38,6 +38,10 @@
 
         <!-- server min dependencies -->
 
+        <module-def name="org.keycloak.keycloak-common">
+            <maven-resource group="org.keycloak" artifact="keycloak-common"/>
+        </module-def>
+
         <module-def name="org.keycloak.keycloak-core">
             <maven-resource group="org.keycloak" artifact="keycloak-core"/>
         </module-def>

@@ -4,7 +4,7 @@ import de.idyl.winzipaes.AesZipFileEncrypter;
 import de.idyl.winzipaes.impl.AESEncrypter;
 import de.idyl.winzipaes.impl.AESEncrypterBC;
 import org.jboss.logging.Logger;
-import org.keycloak.Version;
+import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.exportimport.util.MultipleStepsExportProvider;
 import org.keycloak.models.KeycloakSession;
@@ -59,7 +59,7 @@ public class ZipExportProvider extends MultipleStepsExportProvider {
     }
 
     @Override
-    protected void writeVersion(String fileName, Version version) throws IOException {
+    protected void writeVersion(String fileName, VersionRepresentation version) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         JsonSerialization.mapper.writeValue(stream, version);
         writeStream(fileName, stream);

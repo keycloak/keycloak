@@ -4,14 +4,13 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.keycloak.Version;
+import org.keycloak.representations.VersionRepresentation;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -40,8 +39,8 @@ public class ServerVersionResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Version getVersion() {
+    public VersionRepresentation getVersion() {
         Cors.add(request).allowedOrigins("*").allowedMethods("GET").auth().build(response);
-        return Version.SINGLETON;
+        return VersionRepresentation.SINGLETON;
     }
 }

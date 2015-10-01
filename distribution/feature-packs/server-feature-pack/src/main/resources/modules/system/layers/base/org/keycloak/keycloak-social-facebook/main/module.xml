@@ -7,6 +7,7 @@
         <artifact name="${org.keycloak:keycloak-social-facebook}"/>
     </resources>
     <dependencies>
+        <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-social-core"/>
         <module name="org.keycloak.keycloak-broker-core"/>

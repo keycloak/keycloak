@@ -9,6 +9,7 @@
             <module name="org.keycloak.keycloak-connections-mongo" services="import"/>
             <module name="org.keycloak.keycloak-connections-mongo-update" services="import"/>
             <module name="org.keycloak.keycloak-connections-file" services="import"/>
+            <module name="org.keycloak.keycloak-common" services="import"/>
             <module name="org.keycloak.keycloak-core" services="import"/>
             <module name="org.keycloak.keycloak-core-jaxrs" services="import"/>
             <module name="org.keycloak.keycloak-email-api" services="import"/>
@@ -60,6 +61,7 @@
             <module name="org.jboss.resteasy.resteasy-jackson2-provider"/>
 
             <!-- Exclude keycloak modules -->
+            <module name="org.keycloak.keycloak-common" />
             <module name="org.keycloak.keycloak-core" />
         </exclusions>
         <exclude-subsystems>

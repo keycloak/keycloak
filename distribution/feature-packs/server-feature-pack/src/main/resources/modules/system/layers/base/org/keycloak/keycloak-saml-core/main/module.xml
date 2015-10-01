@@ -7,6 +7,7 @@
         <artifact name="${org.keycloak:keycloak-saml-core}"/>
     </resources>
     <dependencies>
+        <module name="org.keycloak.keycloak-common"/>
         <module name="org.jboss.logging"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.apache.santuario.xmlsec">

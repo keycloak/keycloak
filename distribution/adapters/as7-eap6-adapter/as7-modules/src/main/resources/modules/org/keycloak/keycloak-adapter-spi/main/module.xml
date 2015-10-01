@@ -13,7 +13,7 @@
         <module name="javax.servlet.api"/>
         <module name="org.apache.httpcomponents"/>
         <module name="org.bouncycastle" />
-        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-common"/>
     </dependencies>
 
 </module>

@@ -10,6 +10,7 @@
         <include path="META-INF/**"/>
     </exports>
     <dependencies>
+        <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-model-api"/>
         <module name="org.jboss.logging"/>

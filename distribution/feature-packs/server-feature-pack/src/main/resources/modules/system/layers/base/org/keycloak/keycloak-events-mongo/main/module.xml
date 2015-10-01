@@ -7,6 +7,7 @@
         <artifact name="${org.keycloak:keycloak-events-mongo}"/>
     </resources>
     <dependencies>
+        <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-model-api"/>
         <module name="org.keycloak.keycloak-events-api"/>

@@ -21,6 +21,7 @@ import org.keycloak.adapters.InMemorySessionIdMapper;
 import org.keycloak.adapters.SessionIdMapper;
 import org.keycloak.adapters.jetty.core.JettyHttpFacade;
 import org.keycloak.adapters.jetty.core.JettyUserSessionManagement;
+import org.keycloak.adapters.saml.AdapterConstants;
 import org.keycloak.adapters.saml.SamlAuthenticator;
 import org.keycloak.adapters.saml.SamlConfigResolver;
 import org.keycloak.adapters.saml.SamlDeployment;
@@ -28,7 +29,6 @@ import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;
 import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
-import org.keycloak.constants.AdapterConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 
 import javax.security.auth.Subject;

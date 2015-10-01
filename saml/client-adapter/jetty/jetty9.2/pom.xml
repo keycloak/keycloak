@@ -33,7 +33,7 @@
         </dependency>
 		<dependency>
 			<groupId>org.keycloak</groupId>
-			<artifactId>keycloak-core</artifactId>
+			<artifactId>keycloak-common</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
