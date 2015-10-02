@@ -64,7 +64,6 @@ public interface SamlDeployment {
     String getLogoutPage();
 
     Set<String> getRoleAttributeNames();
-    Set<String> getRoleAttributeFriendlyNames();
 
     enum PrincipalNamePolicy {
         FROM_NAME_ID,

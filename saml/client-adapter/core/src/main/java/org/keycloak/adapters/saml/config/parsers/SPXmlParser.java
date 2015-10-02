@@ -37,8 +37,6 @@ public class SPXmlParser extends AbstractParser {
         sp.setSslPolicy(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.SSL_POLICY_ATTR));
         sp.setLogoutPage(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.LOGOUT_PAGE_ATTR));
         sp.setNameIDPolicyFormat(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.NAME_ID_POLICY_FORMAT_ATTR));
-        sp.setSignatureCanonicalizationMethod(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.SIGNATURE_CANONICALIZATION_METHOD_ATTR));
-        sp.setSignatureAlgorithm(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.SIGNATURE_ALGORITHM_ATTR));
         sp.setForceAuthentication(StaxParserUtil.getBooleanAttributeValue(startElement, ConfigXmlConstants.FORCE_AUTHENTICATION_ATTR));
         while (xmlEventReader.hasNext()) {
             XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);
@@ -91,7 +89,6 @@ public class SPXmlParser extends AbstractParser {
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
         StaxParserUtil.validate(startElement, ConfigXmlConstants.ROLE_MAPPING_ELEMENT);
         Set<String> roleAttributes = new HashSet<>();
-        Set<String> roleFriendlyAttributes = new HashSet<>();
         while (xmlEventReader.hasNext()) {
             XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);
             if (xmlEvent == null)
@@ -116,21 +113,12 @@ public class SPXmlParser extends AbstractParser {
 
                 }
                 roleAttributes.add(attributeValue);
-            } else if (tag.equals(ConfigXmlConstants.FRIENDLY_ATTRIBUTE_ELEMENT)) {
-                StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
-                String attributeValue = StaxParserUtil.getAttributeValue(element, ConfigXmlConstants.NAME_ATTR);
-                if (attributeValue == null) {
-                    throw new ParsingException("RoleMapping FriendlyAttribute element must have the name attribute set");
-
-                }
-                roleFriendlyAttributes.add(attributeValue);
             } else {
                 StaxParserUtil.bypassElementBlock(xmlEventReader, tag);
             }
 
         }
         sp.setRoleAttributes(roleAttributes);
-        sp.setRoleFriendlyAttributes(roleFriendlyAttributes);
     }
 
 
