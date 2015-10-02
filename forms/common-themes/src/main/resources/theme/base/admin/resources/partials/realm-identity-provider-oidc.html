@@ -106,7 +106,7 @@
                     <div class="form-group">
                         <label class="col-sm-2 control-label" for="backchannelSupported">Backchannel Logout</label>
                         <div class="col-sm-4">
-                            <input ng-model="identityProvider.config.backchannelSupported" id="backchannelSupported" value="'true'" onoffswitchvalue />
+                            <input ng-model="identityProvider.config.backchannelSupported" id="backchannelSupported" onoffswitchvalue />
                         </div>
                         <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="Does the external IDP support backchannel logout?" class="fa fa-info-circle"></span>
                     </div>
@@ -166,7 +166,7 @@
             <div class="form-group">
                 <label class="col-md-2 control-label" for="validateSignature">Validate Signatures</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.config.validateSignature" id="validateSignature" value="'true'" onoffswitchvalue />
+                    <input ng-model="identityProvider.config.validateSignature" id="validateSignature" onoffswitchvalue />
                 </div>
                 <kc-tooltip>Enable/disable signature validation of external IDP signatures.</kc-tooltip>
             </div>

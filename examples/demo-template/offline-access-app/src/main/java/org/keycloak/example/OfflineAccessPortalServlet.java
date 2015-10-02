@@ -3,7 +3,6 @@ package org.keycloak.example;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.security.cert.X509Certificate;
@@ -22,12 +21,10 @@ import org.keycloak.adapters.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.ServerRequest;
-import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.KeycloakUriBuilder;
-import org.keycloak.util.RefreshTokenUtil;
+import org.keycloak.util.TokenUtil;
 import org.keycloak.util.StreamUtil;
 import org.keycloak.util.Time;
 import org.keycloak.util.UriUtils;
@@ -64,7 +61,7 @@ public class OfflineAccessPortalServlet extends HttpServlet {
             refreshTokenInfo = "No token saved in database. Please login first";
             savedTokenAvailable = false;
         } else {
-            RefreshToken refreshTokenDecoded = RefreshTokenUtil.getRefreshToken(refreshToken);
+            RefreshToken refreshTokenDecoded = TokenUtil.getRefreshToken(refreshToken);
             String exp = (refreshTokenDecoded.getExpiration() == 0) ? "NEVER" : Time.toDate(refreshTokenDecoded.getExpiration()).toString();
             refreshTokenInfo = String.format("<p>Type: %s</p><p>ID: %s</p><p>Expires: %s</p>", refreshTokenDecoded.getType(), refreshTokenDecoded.getId(), exp);
             savedTokenAvailable = true;
@@ -89,8 +86,8 @@ public class OfflineAccessPortalServlet extends HttpServlet {
 
         RefreshTokenDAO.saveToken(refreshToken);
 
-        RefreshToken refreshTokenDecoded = RefreshTokenUtil.getRefreshToken(refreshToken);
-        Boolean isOfflineToken = refreshTokenDecoded.getType().equals(RefreshTokenUtil.TOKEN_TYPE_OFFLINE);
+        RefreshToken refreshTokenDecoded = TokenUtil.getRefreshToken(refreshToken);
+        Boolean isOfflineToken = refreshTokenDecoded.getType().equals(TokenUtil.TOKEN_TYPE_OFFLINE);
         req.setAttribute("isOfflineToken", isOfflineToken);
     }
 

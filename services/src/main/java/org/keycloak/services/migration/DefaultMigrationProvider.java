@@ -54,6 +54,12 @@ public class DefaultMigrationProvider implements MigrationProvider {
     }
 
     @Override
+    public List<ProtocolMapperModel> getBuiltinMappers(String protocol) {
+        LoginProtocolFactory providerFactory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, protocol);
+        return providerFactory.getBuiltinMappers();
+    }
+
+    @Override
     public void close() {
     }
 

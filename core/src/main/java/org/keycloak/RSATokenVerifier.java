@@ -3,6 +3,7 @@ package org.keycloak;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
 import java.security.PublicKey;
@@ -13,10 +14,10 @@ import java.security.PublicKey;
  */
 public class RSATokenVerifier {
     public static AccessToken verifyToken(String tokenString, PublicKey realmKey, String realmUrl) throws VerificationException {
-        return verifyToken(tokenString, realmKey, realmUrl, true);
+        return verifyToken(tokenString, realmKey, realmUrl, true, true);
     }
 
-    public static AccessToken verifyToken(String tokenString, PublicKey realmKey, String realmUrl, boolean checkActive) throws VerificationException {
+    public static AccessToken verifyToken(String tokenString, PublicKey realmKey, String realmUrl, boolean checkActive, boolean checkTokenType) throws VerificationException {
         JWSInput input = null;
         try {
             input = new JWSInput(tokenString);
@@ -41,6 +42,13 @@ public class RSATokenVerifier {
         if (!realmUrl.equals(token.getIssuer())) {
             throw new VerificationException("Token audience doesn't match domain. Token issuer is " + token.getIssuer() + ", but URL from configuration is " + realmUrl);
 
+        }
+
+        if (checkTokenType) {
+            String type = token.getType();
+            if (type == null || !type.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_BEARER)) {
+                throw new VerificationException("Token type is incorrect. Expected '" + TokenUtil.TOKEN_TYPE_BEARER + "' but was '" + type + "'");
+            }
         }
         if (checkActive && !token.isActive()) {
             throw new VerificationException("Token is not active.");

@@ -29,7 +29,7 @@
         <li ng-class="{active: path[4] == 'offline-access'}" data-ng-show="!client.bearerOnly">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/offline-access">Offline Access</a>
             <kc-tooltip>View offline sessions for this client.  Allows you to see which users retrieve offline token and when they retrieve it.
-                To revoke all tokens for the client, go to Revocation tab and set new not before value.
+                To revoke all tokens for the client, go to Revocation tab and set not before value to now.
             </kc-tooltip>
         </li>
 
