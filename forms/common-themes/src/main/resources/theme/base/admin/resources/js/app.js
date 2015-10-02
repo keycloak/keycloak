@@ -1535,12 +1535,13 @@ module.directive('onoffswitchstring', function() {
 });
 
 /**
- * Directive for presenting an ON-OFF switch for checkbox.
+ * Directive for presenting an ON-OFF switch for checkbox. The directive expects the true-value or false-value to be string like 'true' or 'false', not boolean true/false.
  * This directive provides some additional capabilities to the default onoffswitch such as:
  *
- * - Specific scope to specify the value. Instead of just true or false.
+ * - Specific scope to specify the value. Instead of just 'true' or 'false' you can use any other values. For example: true-value="'foo'" false-value="'bar'" .
+ * But 'true'/'false' are defaults if true-value and false-value are not specified
  *
- * Usage: <input ng-model="mmm" name="nnn" id="iii" onoffswitchvalue [on-text="ooo" off-text="fff"] />
+ * Usage: <input ng-model="mmm" name="nnn" id="iii" onoffswitchvalue [ true-value="'true'" false-value="'false'" on-text="ooo" off-text="fff"] />
  */
 module.directive('onoffswitchvalue', function() {
     return {
@@ -1549,7 +1550,8 @@ module.directive('onoffswitchvalue', function() {
         scope: {
             name: '@',
             id: '@',
-            value: '=',
+            trueValue: '@',
+            falseValue: '@',
             ngModel: '=',
             ngDisabled: '=',
             kcOnText: '@onText',
@@ -1557,7 +1559,7 @@ module.directive('onoffswitchvalue', function() {
         },
         // TODO - The same code acts differently when put into the templateURL. Find why and move the code there.
         //templateUrl: "templates/kc-switch.html",
-        template: "<span><div class='onoffswitch' tabindex='0'><input type='checkbox' ng-true-value='{{value}}' ng-model='ngModel' ng-disabled='ngDisabled' class='onoffswitch-checkbox' name='{{name}}' id='{{id}}'><label for='{{id}}' class='onoffswitch-label'><span class='onoffswitch-inner'><span class='onoffswitch-active'>{{kcOnText}}</span><span class='onoffswitch-inactive'>{{kcOffText}}</span></span><span class='onoffswitch-switch'></span></label></div></span>",
+        template: "<span><div class='onoffswitch' tabindex='0'><input type='checkbox' ng-true-value='{{trueValue}}' ng-false-value='{{falseValue}}' ng-model='ngModel' ng-disabled='ngDisabled' class='onoffswitch-checkbox' name='{{name}}' id='{{id}}'><label for='{{id}}' class='onoffswitch-label'><span class='onoffswitch-inner'><span class='onoffswitch-active'>{{kcOnText}}</span><span class='onoffswitch-inactive'>{{kcOffText}}</span></span><span class='onoffswitch-switch'></span></label></div></span>",
         compile: function(element, attrs) {
             /*
              We don't want to propagate basic attributes to the root element of directive. Id should be passed to the
@@ -1565,6 +1567,9 @@ module.directive('onoffswitchvalue', function() {
              */
             element.removeAttr('name');
             element.removeAttr('id');
+
+            if (!attrs.trueValue) { attrs.trueValue = "'true'"; }
+            if (!attrs.falseValue) { attrs.falseValue = "'false'"; }
 
             if (!attrs.onText) { attrs.onText = "ON"; }
             if (!attrs.offText) { attrs.offText = "OFF"; }

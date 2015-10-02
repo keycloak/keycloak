@@ -33,7 +33,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.offline.OfflineTokenUtils;
-import org.keycloak.util.RefreshTokenUtil;
+import org.keycloak.util.TokenUtil;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -96,7 +96,7 @@ public class TokenManager {
 
         UserSessionModel userSession = null;
         ClientSessionModel clientSession = null;
-        if (RefreshTokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType())) {
+        if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType())) {
 
             clientSession = OfflineTokenUtils.findOfflineClientSession(session, realm, user, oldToken.getClientSession(), oldToken.getSessionState());
             if (clientSession != null) {
@@ -168,12 +168,12 @@ public class TokenManager {
                 .generateIDToken();
 
         // Don't generate refresh token again if refresh was triggered with offline token
-        if (!refreshToken.getType().equals(RefreshTokenUtil.TOKEN_TYPE_OFFLINE)) {
+        if (!refreshToken.getType().equals(TokenUtil.TOKEN_TYPE_OFFLINE)) {
             responseBuilder.generateRefreshToken();
         }
 
         AccessTokenResponse res = responseBuilder.build();
-        return new RefreshResult(res, RefreshTokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType()));
+        return new RefreshResult(res, TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType()));
     }
 
     public RefreshToken verifyRefreshToken(RealmModel realm, String encodedRefreshToken) throws OAuthErrorException {
@@ -385,6 +385,7 @@ public class TokenManager {
         AccessToken token = new AccessToken();
         if (clientSession != null) token.clientSession(clientSession.getId());
         token.id(KeycloakModelUtils.generateId());
+        token.type(TokenUtil.TOKEN_TYPE_BEARER);
         token.subject(user.getId());
         token.audience(client.getClientId());
         token.issuedNow();
@@ -487,7 +488,7 @@ public class TokenManager {
             }
 
             String scopeParam = clientSession.getNote(OIDCLoginProtocol.SCOPE_PARAM);
-            boolean offlineTokenRequested = RefreshTokenUtil.isOfflineTokenRequested(scopeParam);
+            boolean offlineTokenRequested = TokenUtil.isOfflineTokenRequested(scopeParam);
             if (offlineTokenRequested) {
                 if (!OfflineTokenUtils.isOfflineTokenAllowed(realm, clientSession)) {
                     event.error(Errors.NOT_ALLOWED);
@@ -495,7 +496,7 @@ public class TokenManager {
                 }
 
                 refreshToken = new RefreshToken(accessToken);
-                refreshToken.type(RefreshTokenUtil.TOKEN_TYPE_OFFLINE);
+                refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
                 OfflineTokenUtils.persistOfflineSession(session, realm, clientSession, userSession);
             } else {
                 refreshToken = new RefreshToken(accessToken);
@@ -512,6 +513,7 @@ public class TokenManager {
             }
             idToken = new IDToken();
             idToken.id(KeycloakModelUtils.generateId());
+            idToken.type(TokenUtil.TOKEN_TYPE_ID);
             idToken.subject(accessToken.getSubject());
             idToken.audience(client.getClientId());
             idToken.issuedNow();

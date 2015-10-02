@@ -43,7 +43,7 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.RefreshTokenUtil;
+import org.keycloak.util.TokenUtil;
 import org.keycloak.util.Time;
 import org.keycloak.util.UriUtils;
 import org.openqa.selenium.WebDriver;
@@ -221,10 +221,10 @@ public class OfflineTokenTest {
 
         events.expectCodeToToken(codeId, sessionId)
                 .client("offline-client")
-                .detail(Details.REFRESH_TOKEN_TYPE, RefreshTokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
                 .assertEvent();
 
-        Assert.assertEquals(RefreshTokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+        Assert.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
         Assert.assertEquals(0, offlineToken.getExpiration());
 
         testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, sessionId, userId);
@@ -278,7 +278,7 @@ public class OfflineTokenTest {
                 .client("offline-client")
                 .user(userId)
                 .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
-                .detail(Details.REFRESH_TOKEN_TYPE, RefreshTokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
                 .assertEvent();
         Assert.assertNotEquals(oldToken.getId(), refreshEvent.getDetails().get(Details.TOKEN_ID));
 
@@ -302,14 +302,14 @@ public class OfflineTokenTest {
                 .detail(Details.RESPONSE_TYPE, "token")
                 .detail(Details.TOKEN_ID, token.getId())
                 .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
-                .detail(Details.REFRESH_TOKEN_TYPE, RefreshTokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
                 .detail(Details.USERNAME, "test-user@localhost")
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
 
-        Assert.assertEquals(RefreshTokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+        Assert.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
         Assert.assertEquals(0, offlineToken.getExpiration());
 
         testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), userId);
@@ -333,11 +333,11 @@ public class OfflineTokenTest {
                 .session(token.getSessionState())
                 .detail(Details.TOKEN_ID, token.getId())
                 .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
-                .detail(Details.REFRESH_TOKEN_TYPE, RefreshTokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
                 .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client")
                 .assertEvent();
 
-        Assert.assertEquals(RefreshTokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+        Assert.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
         Assert.assertEquals(0, offlineToken.getExpiration());
 
         testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), serviceAccountUserId);
@@ -356,7 +356,7 @@ public class OfflineTokenTest {
                 .session(token2.getSessionState())
                 .detail(Details.TOKEN_ID, token2.getId())
                 .detail(Details.REFRESH_TOKEN_ID, offlineToken2.getId())
-                .detail(Details.REFRESH_TOKEN_TYPE, RefreshTokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
                 .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client")
                 .assertEvent();
 
@@ -371,7 +371,7 @@ public class OfflineTokenTest {
                 .user(serviceAccountUserId)
                 .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
                 .removeDetail(Details.TOKEN_ID)
-                .detail(Details.REFRESH_TOKEN_TYPE, RefreshTokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
                 .assertEvent();
 
         // Refresh with new offline token is ok
@@ -389,7 +389,7 @@ public class OfflineTokenTest {
         loginPage.login("test-user@localhost", "password");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(offlineClientAppUri));
 
-        Assert.assertEquals(OfflineTokenServlet.tokenInfo.refreshToken.getType(), RefreshTokenUtil.TOKEN_TYPE_OFFLINE);
+        Assert.assertEquals(OfflineTokenServlet.tokenInfo.refreshToken.getType(), TokenUtil.TOKEN_TYPE_OFFLINE);
         Assert.assertEquals(OfflineTokenServlet.tokenInfo.refreshToken.getExpiration(), 0);
 
         String accessTokenId = OfflineTokenServlet.tokenInfo.accessToken.getId();
@@ -422,7 +422,7 @@ public class OfflineTokenTest {
         loginPage.login("test-user@localhost", "password");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(offlineClientAppUri));
 
-        Assert.assertEquals(OfflineTokenServlet.tokenInfo.refreshToken.getType(), RefreshTokenUtil.TOKEN_TYPE_OFFLINE);
+        Assert.assertEquals(OfflineTokenServlet.tokenInfo.refreshToken.getType(), TokenUtil.TOKEN_TYPE_OFFLINE);
 
         // Assert refresh works with increased time
         Time.setOffset(9999);
@@ -480,7 +480,7 @@ public class OfflineTokenTest {
         oauthGrantPage.accept();
 
         Assert.assertTrue(driver.getCurrentUrl().startsWith(offlineClientAppUri));
-        Assert.assertEquals(OfflineTokenServlet.tokenInfo.refreshToken.getType(), RefreshTokenUtil.TOKEN_TYPE_OFFLINE);
+        Assert.assertEquals(OfflineTokenServlet.tokenInfo.refreshToken.getType(), TokenUtil.TOKEN_TYPE_OFFLINE);
 
         accountAppPage.open();
         AccountApplicationsPage.AppEntry offlineClient = accountAppPage.getApplications().get("offline-client");

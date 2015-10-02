@@ -2,6 +2,7 @@ package org.keycloak.testsuite.adapter;
 
 import org.junit.Assert;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -44,6 +45,15 @@ public class CustomerServlet extends HttpServlet {
             Response response = target.request().get();
             Assert.assertEquals(401, response.getStatus());
             response.close();
+
+            // Assert not possible to authenticate with refresh token
+            RefreshableKeycloakSecurityContext refreshableContext = (RefreshableKeycloakSecurityContext) context;
+            response = target.request()
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + refreshableContext.getRefreshToken())
+                    .get();
+            Assert.assertEquals(401, response.getStatus());
+            response.close();
+
             String html = target.request()
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + context.getTokenString())
                                 .get(String.class);
