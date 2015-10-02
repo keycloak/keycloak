@@ -1,5 +1,6 @@
 package org.keycloak.migration;
 
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
@@ -17,5 +18,7 @@ public interface MigrationProvider extends Provider {
      * @return set of 1.2.0.Beta1 protocol mappers corresponding to given claimMask
      */
     List<ProtocolMapperRepresentation> getMappersForClaimMask(Long claimMask);
+
+    List<ProtocolMapperModel> getBuiltinMappers(String protocol);
 
 }
