@@ -119,7 +119,7 @@ public class UserInfoEndpoint {
 
         AccessToken token = null;
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()), true);
+            token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()), true, true);
         } catch (VerificationException e) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Token invalid: " + e.getMessage(), Status.FORBIDDEN);
         }

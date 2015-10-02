@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.util.Time;
+import org.keycloak.util.TokenUtil;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
@@ -71,7 +72,8 @@ public class RSAVerifierTest {
     public void initTest() {
 
         token = new AccessToken();
-        token.subject("CN=Client")
+        token.type(TokenUtil.TOKEN_TYPE_BEARER)
+                .subject("CN=Client")
                 .issuer("http://localhost:8080/auth/realm")
                 .addAccess("service").addRole("admin");
     }

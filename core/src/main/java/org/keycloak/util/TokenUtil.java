@@ -9,11 +9,15 @@ import org.keycloak.representations.RefreshToken;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class RefreshTokenUtil {
+public class TokenUtil {
 
-    public static final String TOKEN_TYPE_REFRESH = "REFRESH";
+    public static final String TOKEN_TYPE_BEARER = "Bearer";
 
-    public static final String TOKEN_TYPE_OFFLINE = "OFFLINE";
+    public static final String TOKEN_TYPE_ID = "ID";
+
+    public static final String TOKEN_TYPE_REFRESH = "Refresh";
+
+    public static final String TOKEN_TYPE_OFFLINE = "Offline";
 
     public static boolean isOfflineTokenRequested(String scopeParam) {
         if (scopeParam == null) {
