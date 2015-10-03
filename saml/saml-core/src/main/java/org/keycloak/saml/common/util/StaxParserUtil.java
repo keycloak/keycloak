@@ -27,13 +27,16 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.ErrorCodes;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Attribute;
+import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
@@ -41,7 +44,11 @@ import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stax.StAXSource;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -54,7 +61,18 @@ public class StaxParserUtil {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
-    protected static Validator validator = null;
+    public static void validate(InputStream doc, InputStream sch) throws ParsingException {
+        try {
+            XMLEventReader xmlEventReader = StaxParserUtil.getXMLEventReader(doc);
+            SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+            Schema schema = factory.newSchema(new StreamSource(sch));
+            Validator validator = schema.newValidator();
+            validator.validate(new StAXSource(xmlEventReader));
+        } catch (Exception e) {
+            throw logger.parserException(e);
+        }
+
+    }
 
     /**
      * Bypass an entire XML element block from startElement to endElement
@@ -73,6 +91,29 @@ public class StaxParserUtil {
             if (StaxParserUtil.matches(endElement, tag))
                 return;
         }
+    }
+
+    /**
+     * Advances reader if character whitespace encountered
+     *
+     * @param xmlEventReader
+     * @param xmlEvent
+     * @return
+     */
+    public static boolean wasWhitespacePeeked(XMLEventReader xmlEventReader, XMLEvent xmlEvent) {
+        if (xmlEvent.isCharacters()) {
+            Characters chars = xmlEvent.asCharacters();
+            String data = chars.getData();
+            if (data == null || data.trim().equals("")) {
+                try {
+                    xmlEventReader.nextEvent();
+                    return true;
+                } catch (XMLStreamException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -113,11 +154,23 @@ public class StaxParserUtil {
      * @return false if attribute not set
      */
     public static boolean getBooleanAttributeValue(StartElement startElement, String tag) {
+        return getBooleanAttributeValue(startElement, tag, false);
+    }
+
+    /**
+     * Get the Attribute value
+     *
+     * @param startElement
+     * @param tag localpart of the qname of the attribute
+     *
+     * @return false if attribute not set
+     */
+    public static boolean getBooleanAttributeValue(StartElement startElement, String tag, boolean defaultValue) {
         String result = null;
         Attribute attr = startElement.getAttributeByName(new QName(tag));
         if (attr != null)
             result = getAttributeValue(attr);
-        if (result == null) return false;
+        if (result == null) return defaultValue;
         return Boolean.valueOf(result);
     }
 

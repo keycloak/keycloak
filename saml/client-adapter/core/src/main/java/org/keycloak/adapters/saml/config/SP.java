@@ -41,9 +41,6 @@ public class SP implements Serializable {
     private String nameIDPolicyFormat;
     private PrincipalNameMapping principalNameMapping;
     private Set<String> roleAttributes;
-    private Set<String> roleFriendlyAttributes;
-    private String signatureAlgorithm;
-    private String signatureCanonicalizationMethod;
     private IDP idp;
 
     public String getEntityID() {
@@ -102,14 +99,6 @@ public class SP implements Serializable {
         this.roleAttributes = roleAttributes;
     }
 
-    public Set<String> getRoleFriendlyAttributes() {
-        return roleFriendlyAttributes;
-    }
-
-    public void setRoleFriendlyAttributes(Set<String> roleFriendlyAttributes) {
-        this.roleFriendlyAttributes = roleFriendlyAttributes;
-    }
-
     public IDP getIdp() {
         return idp;
     }
@@ -126,19 +115,4 @@ public class SP implements Serializable {
         this.logoutPage = logoutPage;
     }
 
-    public String getSignatureAlgorithm() {
-        return signatureAlgorithm;
-    }
-
-    public void setSignatureAlgorithm(String signatureAlgorithm) {
-        this.signatureAlgorithm = signatureAlgorithm;
-    }
-
-    public String getSignatureCanonicalizationMethod() {
-        return signatureCanonicalizationMethod;
-    }
-
-    public void setSignatureCanonicalizationMethod(String signatureCanonicalizationMethod) {
-        this.signatureCanonicalizationMethod = signatureCanonicalizationMethod;
-    }
 }

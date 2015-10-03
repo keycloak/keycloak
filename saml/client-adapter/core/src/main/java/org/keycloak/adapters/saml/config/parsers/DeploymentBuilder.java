@@ -41,10 +41,10 @@ public class DeploymentBuilder {
         deployment.setForceAuthentication(sp.isForceAuthentication());
         deployment.setNameIDPolicyFormat(sp.getNameIDPolicyFormat());
         deployment.setLogoutPage(sp.getLogoutPage());
-        deployment.setSignatureCanonicalizationMethod(sp.getSignatureCanonicalizationMethod());
+        deployment.setSignatureCanonicalizationMethod(sp.getIdp().getSignatureCanonicalizationMethod());
         deployment.setSignatureAlgorithm(SignatureAlgorithm.RSA_SHA256);
-        if (sp.getSignatureAlgorithm() != null) {
-            deployment.setSignatureAlgorithm(SignatureAlgorithm.valueOf(sp.getSignatureAlgorithm()));
+        if (sp.getIdp().getSignatureAlgorithm() != null) {
+            deployment.setSignatureAlgorithm(SignatureAlgorithm.valueOf(sp.getIdp().getSignatureAlgorithm()));
         }
         if (sp.getPrincipalNameMapping() != null) {
             SamlDeployment.PrincipalNamePolicy policy = SamlDeployment.PrincipalNamePolicy.valueOf(sp.getPrincipalNameMapping().getPolicy());
@@ -52,7 +52,6 @@ public class DeploymentBuilder {
             deployment.setPrincipalAttributeName(sp.getPrincipalNameMapping().getAttributeName());
         }
         deployment.setRoleAttributeNames(sp.getRoleAttributes());
-        deployment.setRoleFriendlyAttributeNames(sp.getRoleFriendlyAttributes());
         if (sp.getSslPolicy() != null) {
             SslRequired ssl = SslRequired.valueOf(sp.getSslPolicy());
             deployment.setSslRequired(ssl);

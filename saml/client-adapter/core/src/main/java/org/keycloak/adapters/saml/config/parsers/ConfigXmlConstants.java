@@ -39,10 +39,10 @@ public class ConfigXmlConstants {
 
     public static final String ROLE_MAPPING_ELEMENT = "RoleMapping";
     public static final String ATTRIBUTE_ELEMENT = "Attribute";
-    public static final String FRIENDLY_ATTRIBUTE_ELEMENT = "FriendlyAttribute";
     public static final String NAME_ATTR = "name";
 
     public static final String IDP_ELEMENT = "IDP";
+    public static final String SIGNATURES_REQUIRED_ATTR = "signaturesRequired";
     public static final String SINGLE_SIGN_ON_SERVICE_ELEMENT = "SingleSignOnService";
     public static final String SINGLE_LOGOUT_SERVICE_ELEMENT = "SingleLogoutService";
     public static final String SIGN_REQUEST_ATTR = "signRequest";

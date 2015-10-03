@@ -7,7 +7,15 @@ import org.keycloak.adapters.saml.config.Key;
 import org.keycloak.adapters.saml.config.KeycloakSamlAdapter;
 import org.keycloak.adapters.saml.config.SP;
 import org.keycloak.adapters.saml.config.parsers.KeycloakSamlAdapterXMLParser;
+import org.keycloak.saml.common.util.StaxParserUtil;
 
+import javax.xml.XMLConstants;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.transform.stax.StAXSource;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import java.io.InputStream;
 
 /**
@@ -15,6 +23,37 @@ import java.io.InputStream;
  * @version $Revision: 1 $
  */
 public class XmlParserTest {
+
+    @Test
+    public void testValidation() throws Exception {
+        {
+            InputStream schema = KeycloakSamlAdapterXMLParser.class.getResourceAsStream("/schema/keycloak_saml_adapter_1_6.xsd");
+            InputStream is = getClass().getResourceAsStream("/keycloak-saml.xml");
+            Assert.assertNotNull(is);
+            Assert.assertNotNull(schema);
+            StaxParserUtil.validate(is, schema);
+        }
+        {
+            InputStream sch = KeycloakSamlAdapterXMLParser.class.getResourceAsStream("/schema/keycloak_saml_adapter_1_6.xsd");
+            InputStream doc = getClass().getResourceAsStream("/keycloak-saml2.xml");
+            Assert.assertNotNull(doc);
+            Assert.assertNotNull(sch);
+            try {
+                SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+                Schema schema = factory.newSchema(new StreamSource(sch));
+                Validator validator = schema.newValidator();
+                StreamSource source = new StreamSource(doc);
+                source.setSystemId("/keycloak-saml2.xml");
+                validator.validate(source);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
+        }
+
+
+    }
 
     @Test
     public void testXmlParser() throws Exception {
@@ -48,11 +87,11 @@ public class XmlParserTest {
         Assert.assertEquals("attribute", sp.getPrincipalNameMapping().getAttributeName());
         Assert.assertTrue(sp.getRoleAttributes().size() == 1);
         Assert.assertTrue(sp.getRoleAttributes().contains("member"));
-        Assert.assertTrue(sp.getRoleFriendlyAttributes().size() == 1);
-        Assert.assertTrue(sp.getRoleFriendlyAttributes().contains("memberOf"));
 
         IDP idp = sp.getIdp();
         Assert.assertEquals("idp", idp.getEntityID());
+        Assert.assertEquals("RSA", idp.getSignatureAlgorithm());
+        Assert.assertEquals("canon", idp.getSignatureCanonicalizationMethod());
         Assert.assertTrue(idp.getSingleSignOnService().isSignRequest());
         Assert.assertTrue(idp.getSingleSignOnService().isValidateResponseSignature());
         Assert.assertEquals("post", idp.getSingleSignOnService().getRequestBinding());

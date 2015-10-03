@@ -2,6 +2,8 @@
     <SP entityID="sp"
         sslPolicy="ssl"
         nameIDPolicyFormat="format"
+        signatureAlgorithm=""
+        signatureCanonicalizationMethod=""
         forceAuthentication="true">
         <Keys>
             <Key signing="true" >
@@ -11,9 +13,9 @@
                 </KeyStore>
             </Key>
             <Key encryption="true">
-                <PrivateKeyPem>
+                <PrivateKeyPemmm>
                     private pem
-                </PrivateKeyPem>
+                </PrivateKeyPemmm>
                 <PublicKeyPem>
                     public pem
                 </PublicKeyPem>
@@ -24,8 +26,6 @@
             <Attribute name="member"/>
         </RoleMapping>
         <IDP entityID="idp"
-             signatureAlgorithm="RSA"
-             signatureCanonicalizationMethod="canon"
              signaturesRequired="true"
                 >
             <SingleSignOnService signRequest="true"
@@ -34,16 +34,6 @@
                                  bindingUrl="url"
                     />
 
-            <SingleLogoutService
-                    validateRequestSignature="true"
-                    validateResponseSignature="true"
-                    signRequest="true"
-                    signResponse="true"
-                    requestBinding="redirect"
-                    responseBinding="post"
-                    postBindingUrl="posturl"
-                    redirectBindingUrl="redirecturl"
-                    />
             <Keys>
                 <Key signing="true">
                     <CertificatePem>

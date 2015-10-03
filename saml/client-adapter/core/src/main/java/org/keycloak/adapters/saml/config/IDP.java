@@ -134,6 +134,8 @@ public class IDP implements Serializable {
     }
 
     private String entityID;
+    private String signatureAlgorithm;
+    private String signatureCanonicalizationMethod;
     private SingleSignOnService singleSignOnService;
     private SingleLogoutService singleLogoutService;
     private List<Key> keys;
@@ -169,4 +171,21 @@ public class IDP implements Serializable {
     public void setKeys(List<Key> keys) {
         this.keys = keys;
     }
+
+    public String getSignatureAlgorithm() {
+        return signatureAlgorithm;
+    }
+
+    public void setSignatureAlgorithm(String signatureAlgorithm) {
+        this.signatureAlgorithm = signatureAlgorithm;
+    }
+
+    public String getSignatureCanonicalizationMethod() {
+        return signatureCanonicalizationMethod;
+    }
+
+    public void setSignatureCanonicalizationMethod(String signatureCanonicalizationMethod) {
+        this.signatureCanonicalizationMethod = signatureCanonicalizationMethod;
+    }
+
 }

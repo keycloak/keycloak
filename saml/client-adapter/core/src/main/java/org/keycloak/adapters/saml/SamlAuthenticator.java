@@ -354,7 +354,7 @@ public abstract class SamlAuthenticator {
     }
 
     protected boolean isRole(AttributeType attribute) {
-        return deployment.getRoleAttributeNames().contains(attribute.getName()) || deployment.getRoleAttributeFriendlyNames().contains(attribute.getFriendlyName());
+        return (attribute.getName() != null && deployment.getRoleAttributeNames().contains(attribute.getName())) || (attribute.getFriendlyName() != null && deployment.getRoleAttributeNames().contains(attribute.getFriendlyName()));
     }
 
     protected AuthOutcome handleLogoutResponse(SAMLDocumentHolder holder, StatusResponseType responseType, String relayState) {

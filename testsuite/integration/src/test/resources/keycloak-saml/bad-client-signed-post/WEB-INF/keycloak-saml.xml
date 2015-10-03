@@ -16,18 +16,13 @@
         <RoleMapping>
             <Attribute name="Role"/>
         </RoleMapping>
-        <IDP entityID="idp">
-            <SingleSignOnService signRequest="true"
-                                 validateResponseSignature="true"
-                                 requestBinding="POST"
+        <IDP entityID="idp"
+             signaturesRequired="true">
+            <SingleSignOnService requestBinding="POST"
                                  bindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"
                     />
 
             <SingleLogoutService
-                    validateRequestSignature="true"
-                    validateResponseSignature="true"
-                    signRequest="true"
-                    signResponse="true"
                     requestBinding="POST"
                     responseBinding="POST"
                     postBindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"

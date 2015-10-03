@@ -210,7 +210,6 @@ public class DefaultSamlDeployment implements SamlDeployment {
     private KeyPair signingKeyPair;
     private String assertionConsumerServiceUrl;
     private Set<String> roleAttributeNames;
-    private Set<String> roleFriendlyAttributeNames;
     private PrincipalNamePolicy principalNamePolicy = PrincipalNamePolicy.FROM_NAME_ID;
     private String principalAttributeName;
     private String logoutPage;
@@ -268,12 +267,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
         return roleAttributeNames;
     }
 
-    @Override
-    public Set<String> getRoleAttributeFriendlyNames() {
-        return roleFriendlyAttributeNames;
-    }
-
-    @Override
+   @Override
     public PrincipalNamePolicy getPrincipalNamePolicy() {
         return principalNamePolicy;
     }
@@ -321,10 +315,6 @@ public class DefaultSamlDeployment implements SamlDeployment {
 
     public void setRoleAttributeNames(Set<String> roleAttributeNames) {
         this.roleAttributeNames = roleAttributeNames;
-    }
-
-    public void setRoleFriendlyAttributeNames(Set<String> roleFriendlyAttributeNames) {
-        this.roleFriendlyAttributeNames = roleFriendlyAttributeNames;
     }
 
     public void setPrincipalNamePolicy(PrincipalNamePolicy principalNamePolicy) {
