@@ -1,0 +1,40 @@
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+                         "http://www.docbook.org/xml/4.4/docbookx.dtd"
+        [
+                ]>
+
+<book>
+
+   <bookinfo>
+      <title>Keycloak SAML Client Adapter Reference Guide</title>
+      <subtitle>SAML 2.0 Client Adapters for Java Applications</subtitle>
+      <releaseinfo>&project.version;</releaseinfo>
+   </bookinfo>
+
+   <toc/>
+
+   <preface id="preface" revision="1">
+      <title>Preface</title>
+      <para>
+         In some of the example listings, what is meant to be displayed on one line does not fit
+         inside the available page width. These lines have been broken up. A '\' at the end of a
+         line means that a break has been introduced to fit in the page, with the following lines
+         indented. So:
+<programlisting>
+Let's pretend to have an extremely \
+long line that \
+does not fit
+This one is short
+</programlisting>
+         Is really:
+<programlisting>
+Let's pretend to have an extremely long line that does not fit
+This one is short
+</programlisting>
+      </para>
+   </preface>
+
+
+</book>
+
+
