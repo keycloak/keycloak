@@ -1649,6 +1649,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         RequiredActionProviderEntity auth = new RequiredActionProviderEntity();
         auth.setId(KeycloakModelUtils.generateId());
         auth.setAlias(model.getAlias());
+        auth.setName(model.getName());
         auth.setProviderId(model.getProviderId());
         auth.setConfig(model.getConfig());
         auth.setEnabled(model.isEnabled());
@@ -1679,6 +1680,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         model.setId(entity.getId());
         model.setProviderId(entity.getProviderId());
         model.setAlias(entity.getAlias());
+        model.setName(entity.getName());
         model.setEnabled(entity.isEnabled());
         model.setDefaultAction(entity.isDefaultAction());
         Map<String, String> config = new HashMap<>();
