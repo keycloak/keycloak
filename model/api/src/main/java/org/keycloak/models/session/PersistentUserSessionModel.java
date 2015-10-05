@@ -1,11 +1,13 @@
-package org.keycloak.models;
+package org.keycloak.models.session;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OfflineUserSessionModel {
+public class PersistentUserSessionModel {
 
     private String userSessionId;
+    private int lastSessionRefresh;
+
     private String data;
 
     public String getUserSessionId() {
@@ -15,6 +17,15 @@ public class OfflineUserSessionModel {
     public void setUserSessionId(String userSessionId) {
         this.userSessionId = userSessionId;
     }
+
+    public int getLastSessionRefresh() {
+        return lastSessionRefresh;
+    }
+
+    public void setLastSessionRefresh(int lastSessionRefresh) {
+        this.lastSessionRefresh = lastSessionRefresh;
+    }
+
 
     public String getData() {
         return data;

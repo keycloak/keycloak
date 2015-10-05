@@ -24,8 +24,8 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.OfflineClientSessionModel;
-import org.keycloak.models.OfflineUserSessionModel;
+import org.keycloak.models.session.PersistentClientSessionModel;
+import org.keycloak.models.session.PersistentUserSessionModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -35,8 +35,8 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.entities.FederatedIdentityEntity;
-import org.keycloak.models.entities.OfflineClientSessionEntity;
-import org.keycloak.models.entities.OfflineUserSessionEntity;
+import org.keycloak.models.entities.PersistentClientSessionEntity;
+import org.keycloak.models.entities.PersistentUserSessionEntity;
 import org.keycloak.models.entities.UserEntity;
 import org.keycloak.models.file.adapter.UserAdapter;
 import org.keycloak.models.utils.CredentialValidation;
@@ -493,189 +493,5 @@ public class FileUserProvider implements UserProvider {
     public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel... input) {
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         return null; // not supported yet
-    }
-
-    @Override
-    public void addOfflineUserSession(RealmModel realm, UserModel userModel, OfflineUserSessionModel userSession) {
-        userModel = getUserById(userModel.getId(), realm);
-        UserEntity userEntity = ((UserAdapter) userModel).getUserEntity();
-
-        if (userEntity.getOfflineUserSessions() == null) {
-            userEntity.setOfflineUserSessions(new ArrayList<OfflineUserSessionEntity>());
-        }
-
-        if (getUserSessionEntityById(userEntity, userSession.getUserSessionId()) != null) {
-            throw new ModelDuplicateException("User session already exists with id " + userSession.getUserSessionId() + " for user " + userEntity.getUsername());
-        }
-
-        OfflineUserSessionEntity entity = new OfflineUserSessionEntity();
-        entity.setUserSessionId(userSession.getUserSessionId());
-        entity.setData(userSession.getData());
-        entity.setOfflineClientSessions(new ArrayList<OfflineClientSessionEntity>());
-        userEntity.getOfflineUserSessions().add(entity);
-    }
-
-    @Override
-    public OfflineUserSessionModel getOfflineUserSession(RealmModel realm, UserModel userModel, String userSessionId) {
-        userModel = getUserById(userModel.getId(), realm);
-        UserEntity userEntity = ((UserAdapter) userModel).getUserEntity();
-
-        OfflineUserSessionEntity entity = getUserSessionEntityById(userEntity, userSessionId);
-        return entity==null ? null : toModel(entity);
-    }
-
-    @Override
-    public Collection<OfflineUserSessionModel> getOfflineUserSessions(RealmModel realm, UserModel userModel) {
-        userModel = getUserById(userModel.getId(), realm);
-        UserEntity user = ((UserAdapter) userModel).getUserEntity();
-
-        if (user.getOfflineUserSessions()==null) {
-            return Collections.emptyList();
-        } else {
-            List<OfflineUserSessionModel> result = new ArrayList<>();
-            for (OfflineUserSessionEntity entity : user.getOfflineUserSessions()) {
-                result.add(toModel(entity));
-            }
-            return result;
-        }
-    }
-
-    private OfflineUserSessionModel toModel(OfflineUserSessionEntity entity) {
-        OfflineUserSessionModel model = new OfflineUserSessionModel();
-        model.setUserSessionId(entity.getUserSessionId());
-        model.setData(entity.getData());
-        return model;
-    }
-
-    @Override
-    public boolean removeOfflineUserSession(RealmModel realm, UserModel userModel, String userSessionId) {
-        userModel = getUserById(userModel.getId(), realm);
-        UserEntity user = ((UserAdapter) userModel).getUserEntity();
-
-        OfflineUserSessionEntity entity = getUserSessionEntityById(user, userSessionId);
-        if (entity != null) {
-            user.getOfflineUserSessions().remove(entity);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private OfflineUserSessionEntity getUserSessionEntityById(UserEntity user, String userSessionId) {
-        if (user.getOfflineUserSessions() != null) {
-            for (OfflineUserSessionEntity entity : user.getOfflineUserSessions()) {
-                if (entity.getUserSessionId().equals(userSessionId)) {
-                    return entity;
-                }
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public void addOfflineClientSession(RealmModel realm, OfflineClientSessionModel clientSession) {
-        UserModel userModel = getUserById(clientSession.getUserId(), realm);
-        UserEntity user = ((UserAdapter) userModel).getUserEntity();
-
-        OfflineUserSessionEntity userSessionEntity = getUserSessionEntityById(user, clientSession.getUserSessionId());
-        if (userSessionEntity == null) {
-            throw new ModelException("OfflineUserSession with ID " + clientSession.getUserSessionId() + " doesn't exist for user " + user.getUsername());
-        }
-
-        OfflineClientSessionEntity clEntity = new OfflineClientSessionEntity();
-        clEntity.setClientSessionId(clientSession.getClientSessionId());
-        clEntity.setClientId(clientSession.getClientId());
-        clEntity.setData(clientSession.getData());
-
-        userSessionEntity.getOfflineClientSessions().add(clEntity);
-    }
-
-    @Override
-    public OfflineClientSessionModel getOfflineClientSession(RealmModel realm, UserModel userModel, String clientSessionId) {
-        userModel = getUserById(userModel.getId(), realm);
-        UserEntity user = ((UserAdapter) userModel).getUserEntity();
-
-        if (user.getOfflineUserSessions() != null) {
-            for (OfflineUserSessionEntity userSession : user.getOfflineUserSessions()) {
-                for (OfflineClientSessionEntity clSession : userSession.getOfflineClientSessions()) {
-                    if (clSession.getClientSessionId().equals(clientSessionId)) {
-                        return toModel(clSession, userSession.getUserSessionId());
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private OfflineClientSessionModel toModel(OfflineClientSessionEntity cls, String userSessionId) {
-        OfflineClientSessionModel model = new OfflineClientSessionModel();
-        model.setClientSessionId(cls.getClientSessionId());
-        model.setClientId(cls.getClientId());
-        model.setData(cls.getData());
-        model.setUserSessionId(userSessionId);
-        return model;
-    }
-
-    @Override
-    public Collection<OfflineClientSessionModel> getOfflineClientSessions(RealmModel realm, UserModel userModel) {
-        userModel = getUserById(userModel.getId(), realm);
-        UserEntity user = ((UserAdapter) userModel).getUserEntity();
-
-        List<OfflineClientSessionModel> result = new ArrayList<>();
-
-        if (user.getOfflineUserSessions() != null) {
-            for (OfflineUserSessionEntity userSession : user.getOfflineUserSessions()) {
-                for (OfflineClientSessionEntity clSession : userSession.getOfflineClientSessions()) {
-                    result.add(toModel(clSession, userSession.getUserSessionId()));
-                }
-            }
-        }
-
-        return result;
-    }
-
-    @Override
-    public boolean removeOfflineClientSession(RealmModel realm, UserModel userModel, String clientSessionId) {
-        userModel = getUserById(userModel.getId(), realm);
-        UserEntity user = ((UserAdapter) userModel).getUserEntity();
-
-        if (user.getOfflineUserSessions() != null) {
-            for (OfflineUserSessionEntity userSession : user.getOfflineUserSessions()) {
-                for (OfflineClientSessionEntity clSession : userSession.getOfflineClientSessions()) {
-                    if (clSession.getClientSessionId().equals(clientSessionId)) {
-                        userSession.getOfflineClientSessions().remove(clSession);
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    @Override
-    public int getOfflineClientSessionsCount(RealmModel realm, ClientModel client) {
-        return getOfflineClientSessions(realm, client, -1, -1).size();
-    }
-
-    @Override
-    public Collection<OfflineClientSessionModel> getOfflineClientSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
-        List<OfflineClientSessionModel> result = new LinkedList<>();
-
-        List<UserModel> users = new ArrayList<>(inMemoryModel.getUsers(realm.getId()));
-        users = sortedSubList(users, firstResult, maxResults);
-
-        for (UserModel userModel : users) {
-            UserEntity user = ((UserAdapter) userModel).getUserEntity();
-            for (OfflineUserSessionEntity userSession : user.getOfflineUserSessions()) {
-                for (OfflineClientSessionEntity clSession : userSession.getOfflineClientSessions()) {
-                    if (clSession.getClientId().equals(client.getId())) {
-                        result.add(toModel(clSession, userSession.getUserSessionId()));
-                    }
-                }
-            }
-        }
-        return result;
     }
 }

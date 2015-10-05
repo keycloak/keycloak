@@ -1,7 +1,7 @@
 package org.keycloak.exportimport.util;
 
-import org.keycloak.models.OfflineClientSessionModel;
-import org.keycloak.models.OfflineUserSessionModel;
+import org.keycloak.models.session.PersistentClientSessionModel;
+import org.keycloak.models.session.PersistentUserSessionModel;
 import org.keycloak.representations.idm.OfflineUserSessionRepresentation;
 import org.keycloak.util.Base64;
 import org.codehaus.jackson.JsonEncoding;
@@ -11,7 +11,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -298,27 +297,27 @@ public class ExportUtils {
             }
         }
 
-        // Offline sessions
-        List<OfflineUserSessionRepresentation> offlineSessionReps = new LinkedList<>();
-        Collection<OfflineUserSessionModel> offlineSessions = session.users().getOfflineUserSessions(realm, user);
-        Collection<OfflineClientSessionModel> offlineClientSessions = session.users().getOfflineClientSessions(realm, user);
-
-        Map<String, List<OfflineClientSessionModel>> processed = new HashMap<>();
-        for (OfflineClientSessionModel clsm : offlineClientSessions) {
-            String userSessionId = clsm.getUserSessionId();
-            List<OfflineClientSessionModel> current = processed.get(userSessionId);
-            if (current == null) {
-                current = new LinkedList<>();
-                processed.put(userSessionId, current);
-            }
-            current.add(clsm);
-        }
-
-        for (OfflineUserSessionModel userSession : offlineSessions) {
-            OfflineUserSessionRepresentation sessionRep = ModelToRepresentation.toRepresentation(realm, userSession, processed.get(userSession.getUserSessionId()));
-            offlineSessionReps.add(sessionRep);
-        }
-        userRep.setOfflineUserSessions(offlineSessionReps);
+//        // Offline sessions
+//        List<OfflineUserSessionRepresentation> offlineSessionReps = new LinkedList<>();
+//        Collection<PersistentUserSessionModel> offlineSessions = session.users().getOfflineUserSessions(realm, user);
+//        Collection<PersistentClientSessionModel> offlineClientSessions = session.users().getOfflineClientSessions(realm, user);
+//
+//        Map<String, List<PersistentClientSessionModel>> processed = new HashMap<>();
+//        for (PersistentClientSessionModel clsm : offlineClientSessions) {
+//            String userSessionId = clsm.getUserSessionId();
+//            List<PersistentClientSessionModel> current = processed.get(userSessionId);
+//            if (current == null) {
+//                current = new LinkedList<>();
+//                processed.put(userSessionId, current);
+//            }
+//            current.add(clsm);
+//        }
+//
+//        for (PersistentUserSessionModel userSession : offlineSessions) {
+//            OfflineUserSessionRepresentation sessionRep = ModelToRepresentation.toRepresentation(realm, userSession, processed.get(userSession.getUserSessionId()));
+//            offlineSessionReps.add(sessionRep);
+//        }
+//        userRep.setOfflineUserSessions(offlineSessionReps);
 
         return userRep;
     }

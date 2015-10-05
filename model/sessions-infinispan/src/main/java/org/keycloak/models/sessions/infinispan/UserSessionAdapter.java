@@ -31,16 +31,25 @@ public class UserSessionAdapter implements UserSessionModel {
 
     private final UserSessionEntity entity;
 
-    public UserSessionAdapter(KeycloakSession session, InfinispanUserSessionProvider provider, Cache<String, SessionEntity> cache, RealmModel realm, UserSessionEntity entity) {
+    private final boolean offline;
+
+    public UserSessionAdapter(KeycloakSession session, InfinispanUserSessionProvider provider, Cache<String, SessionEntity> cache, RealmModel realm,
+                              UserSessionEntity entity, boolean offline) {
         this.session = session;
         this.provider = provider;
         this.cache = cache;
         this.realm = realm;
         this.entity = entity;
+        this.offline = offline;
     }
 
     public String getId() {
         return entity.getId();
+    }
+
+    @Override
+    public RealmModel getRealm() {
+        return realm;
     }
 
     @Override
@@ -129,14 +138,14 @@ public class UserSessionAdapter implements UserSessionModel {
     @Override
     public List<ClientSessionModel> getClientSessions() {
         if (entity.getClientSessions() != null) {
-            List<ClientSessionEntity> clientSessions = new LinkedList<ClientSessionEntity>();
+            List<ClientSessionModel> clientSessions = new LinkedList<>();
             for (String c : entity.getClientSessions()) {
-                ClientSessionEntity clientSession = (ClientSessionEntity) cache.get(c);
+                ClientSessionModel clientSession = provider.getClientSession(realm, c, offline);
                 if (clientSession != null) {
                     clientSessions.add(clientSession);
                 }
             }
-            return provider.wrapClientSessions(realm, clientSessions);
+            return clientSessions;
         } else {
             return Collections.emptyList();
         }

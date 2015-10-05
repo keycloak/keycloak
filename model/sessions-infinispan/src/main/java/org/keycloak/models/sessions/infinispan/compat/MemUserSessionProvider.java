@@ -4,6 +4,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -38,13 +39,21 @@ public class MemUserSessionProvider implements UserSessionProvider {
     private final ConcurrentHashMap<String, ClientSessionEntity> clientSessions;
     private final ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures;
 
-    public MemUserSessionProvider(KeycloakSession session, ConcurrentHashMap<String, UserSessionEntity> userSessions, ConcurrentHashMap<String, String> userSessionsByBrokerSessionId, ConcurrentHashMap<String, Set<String>> userSessionsByBrokerUserId, ConcurrentHashMap<String, ClientSessionEntity> clientSessions, ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures) {
+    private final ConcurrentHashMap<String, UserSessionEntity> offlineUserSessions;
+    private final ConcurrentHashMap<String, ClientSessionEntity> offlineClientSessions;
+
+    public MemUserSessionProvider(KeycloakSession session, ConcurrentHashMap<String, UserSessionEntity> userSessions, ConcurrentHashMap<String, String> userSessionsByBrokerSessionId,
+                                  ConcurrentHashMap<String, Set<String>> userSessionsByBrokerUserId, ConcurrentHashMap<String, ClientSessionEntity> clientSessions,
+                                  ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures,
+                                  ConcurrentHashMap<String, UserSessionEntity> offlineUserSessions, ConcurrentHashMap<String, ClientSessionEntity> offlineClientSessions) {
         this.session = session;
         this.userSessions = userSessions;
         this.clientSessions = clientSessions;
         this.loginFailures = loginFailures;
         this.userSessionsByBrokerSessionId = userSessionsByBrokerSessionId;
         this.userSessionsByBrokerUserId = userSessionsByBrokerUserId;
+        this.offlineUserSessions = offlineUserSessions;
+        this.offlineClientSessions = offlineClientSessions;
     }
 
     @Override
@@ -189,6 +198,12 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     @Override
     public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
+        return getUserSessions(realm, client, false);
+    }
+
+    protected List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, boolean offline) {
+        ConcurrentHashMap<String, ClientSessionEntity> clientSessions = offline ? this.offlineClientSessions : this.clientSessions;
+
         List<UserSessionEntity> userSessionEntities = new LinkedList<UserSessionEntity>();
         for (ClientSessionEntity s : clientSessions.values()) {
             String realmId = realm.getId();
@@ -210,7 +225,11 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     @Override
     public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
-        List<UserSessionModel> userSessions = getUserSessions(realm, client);
+        return getUserSessions(realm, client, firstResult, maxResults, false);
+    }
+
+    protected List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults, boolean offline) {
+        List<UserSessionModel> userSessions = getUserSessions(realm, client, offline);
         if (firstResult > userSessions.size()) {
             return Collections.emptyList();
         }
@@ -221,7 +240,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     @Override
     public int getActiveUserSessions(RealmModel realm, ClientModel client) {
-        return getUserSessions(realm, client).size();
+        return getUserSessions(realm, client, false).size();
     }
 
     @Override
@@ -229,40 +248,51 @@ public class MemUserSessionProvider implements UserSessionProvider {
         UserSessionEntity entity = getUserSessionEntity(realm, session.getId());
         if (entity != null) {
             userSessions.remove(entity.getId());
-            remove(entity);
+            remove(entity, false);
         }
     }
 
     @Override
     public void removeUserSessions(RealmModel realm, UserModel user) {
-        Iterator<UserSessionEntity> itr = userSessions.values().iterator();
+        removeUserSessions(realm, user, false);
+    }
+
+    protected void removeUserSessions(RealmModel realm, UserModel user, boolean offline) {
+        Iterator<UserSessionEntity> itr = offline ? offlineUserSessions.values().iterator() : userSessions.values().iterator();
+
         while (itr.hasNext()) {
             UserSessionEntity s = itr.next();
             if (s.getRealm().equals(realm.getId()) && s.getUser().equals(user.getId())) {
                 itr.remove();
-                remove(s);
+                remove(s, offline);
             }
         }
     }
 
-    protected void remove(UserSessionEntity s) {
-        if (s.getBrokerSessionId() != null) {
-            userSessionsByBrokerSessionId.remove(s.getBrokerSessionId());
-        }
-        if (s.getBrokerUserId() != null) {
-            Set<String> set = userSessionsByBrokerUserId.get(s.getBrokerUserId());
-            if (set != null) {
-                synchronized (set) {
-                    set.remove(s.getId());
-                    // this is a race condition :(
-                    // Since it will be very rare for a user to have concurrent sessions, I'm hoping we never hit this
-                    if (set.isEmpty()) userSessionsByBrokerUserId.remove(s.getBrokerUserId());
+    protected void remove(UserSessionEntity s, boolean offline) {
+        if (offline) {
+            for (ClientSessionEntity clientSession : s.getClientSessions()) {
+                offlineClientSessions.remove(clientSession.getId());
+            }
+        } else {
+            if (s.getBrokerSessionId() != null) {
+                userSessionsByBrokerSessionId.remove(s.getBrokerSessionId());
+            }
+            if (s.getBrokerUserId() != null) {
+                Set<String> set = userSessionsByBrokerUserId.get(s.getBrokerUserId());
+                if (set != null) {
+                    synchronized (set) {
+                        set.remove(s.getId());
+                        // this is a race condition :(
+                        // Since it will be very rare for a user to have concurrent sessions, I'm hoping we never hit this
+                        if (set.isEmpty()) userSessionsByBrokerUserId.remove(s.getBrokerUserId());
+                    }
                 }
             }
+            for (ClientSessionEntity clientSession : s.getClientSessions()) {
+                clientSessions.remove(clientSession.getId());
+            }
         }
-        for (ClientSessionEntity clientSession : s.getClientSessions()) {
-           clientSessions.remove(clientSession.getId());
-       }
     }
 
     @Override
@@ -273,7 +303,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
             if (s.getRealm().equals(realm.getId()) && (s.getLastSessionRefresh() < Time.currentTime() - realm.getSsoSessionIdleTimeout() || s.getStarted() < Time.currentTime() - realm.getSsoSessionMaxLifespan())) {
                 itr.remove();
 
-                remove(s);
+                remove(s, false);
             }
         }
         int expired = Time.currentTime() - RealmInfoUtil.getDettachedClientSessionLifespan(realm);
@@ -288,16 +318,19 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSessions(RealmModel realm) {
-        Iterator<UserSessionEntity> itr = userSessions.values().iterator();
+        removeUserSessions(realm, false);
+    }
+
+    protected void removeUserSessions(RealmModel realm, boolean offline) {
+        Iterator<UserSessionEntity> itr = offline ? offlineUserSessions.values().iterator() : userSessions.values().iterator();
         while (itr.hasNext()) {
             UserSessionEntity s = itr.next();
             if (s.getRealm().equals(realm.getId())) {
                 itr.remove();
-
-                remove(s);
+                remove(s, offline);
             }
         }
-        Iterator<ClientSessionEntity> citr = clientSessions.values().iterator();
+        Iterator<ClientSessionEntity> citr = offline ? offlineClientSessions.values().iterator() : clientSessions.values().iterator();
         while (citr.hasNext()) {
             ClientSessionEntity c = citr.next();
             if (c.getSession() == null && c.getRealmId().equals(realm.getId())) {
@@ -340,15 +373,23 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void onRealmRemoved(RealmModel realm) {
-        removeUserSessions(realm);
+        removeUserSessions(realm, true);
+        removeUserSessions(realm, false);
         removeAllUserLoginFailures(realm);
     }
 
     @Override
     public void onClientRemoved(RealmModel realm, ClientModel client) {
-        for (ClientSessionEntity e : clientSessions.values()) {
+        onClientRemoved(realm, client, true);
+        onClientRemoved(realm, client, false);
+    }
+
+    private void onClientRemoved(RealmModel realm, ClientModel client, boolean offline) {
+        ConcurrentHashMap<String, ClientSessionEntity> clientSessionsMap = offline ? offlineClientSessions : clientSessions;
+
+        for (ClientSessionEntity e : clientSessionsMap.values()) {
             if (e.getRealmId().equals(realm.getId()) && e.getClientId().equals(client.getId())) {
-                clientSessions.remove(e.getId());
+                clientSessionsMap.remove(e.getId());
                 e.getSession().removeClientSession(e);
             }
         }
@@ -356,10 +397,128 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void onUserRemoved(RealmModel realm, UserModel user) {
-        removeUserSessions(realm, user);
+        removeUserSessions(realm, user, true);
+        removeUserSessions(realm, user, false);
 
         loginFailures.remove(new UsernameLoginFailureKey(realm.getId(), user.getUsername()));
         loginFailures.remove(new UsernameLoginFailureKey(realm.getId(), user.getEmail()));
+    }
+
+
+    @Override
+    public UserSessionModel createOfflineUserSession(UserSessionModel userSession) {
+        UserSessionEntity entity = new UserSessionEntity();
+        entity.setId(userSession.getId());
+        entity.setRealm(userSession.getRealm().getId());
+
+        entity.setAuthMethod(userSession.getAuthMethod());
+        entity.setBrokerSessionId(userSession.getBrokerSessionId());
+        entity.setBrokerUserId(userSession.getBrokerUserId());
+        entity.setIpAddress(userSession.getIpAddress());
+        entity.setLastSessionRefresh(userSession.getLastSessionRefresh());
+        entity.setLoginUsername(userSession.getLoginUsername());
+        if (userSession.getNotes() != null) {
+            entity.getNotes().putAll(userSession.getNotes());
+        }
+        entity.setRememberMe(userSession.isRememberMe());
+        entity.setStarted(userSession.getStarted());
+        entity.setState(userSession.getState());
+        entity.setUser(userSession.getUser().getId());
+
+        offlineUserSessions.put(userSession.getId(), entity);
+        return new UserSessionAdapter(session, this, userSession.getRealm(), entity);
+    }
+
+    @Override
+    public UserSessionModel getOfflineUserSession(RealmModel realm, String userSessionId) {
+        UserSessionEntity entity = offlineUserSessions.get(userSessionId);
+        if (entity != null && entity.getRealm().equals(realm.getId())) {
+            return new UserSessionAdapter(session, this, realm, entity);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public void removeOfflineUserSession(RealmModel realm, String userSessionId) {
+        UserSessionEntity entity = offlineUserSessions.get(userSessionId);
+        if (entity != null && entity.getRealm().equals(realm.getId())) {
+            offlineUserSessions.remove(entity);
+            remove(entity, true);
+        }
+    }
+
+    @Override
+    public ClientSessionModel createOfflineClientSession(ClientSessionModel clientSession) {
+        ClientSessionEntity entity = new ClientSessionEntity();
+        entity.setId(clientSession.getId());
+        entity.setRealmId(clientSession.getRealm().getId());
+
+        entity.setAction(clientSession.getAction());
+        entity.setAuthenticatorStatus(clientSession.getExecutionStatus());
+        entity.setAuthMethod(clientSession.getAuthMethod());
+        if (clientSession.getAuthenticatedUser() != null) {
+            entity.setAuthUserId(clientSession.getAuthenticatedUser().getId());
+        }
+        entity.setClientId(clientSession.getClient().getId());
+        if (clientSession.getNotes() != null) {
+            entity.getNotes().putAll(clientSession.getNotes());
+        }
+        entity.setProtocolMappers(clientSession.getProtocolMappers());
+        entity.setRedirectUri(clientSession.getRedirectUri());
+        entity.setRoles(clientSession.getRoles());
+        entity.setTimestamp(clientSession.getTimestamp());
+
+        if (clientSession.getUserSessionNotes() != null) {
+            entity.getUserSessionNotes().putAll(clientSession.getUserSessionNotes());
+        }
+
+        offlineClientSessions.put(clientSession.getId(), entity);
+        return new ClientSessionAdapter(session, this, clientSession.getRealm(), entity);
+    }
+
+    @Override
+    public ClientSessionModel getOfflineClientSession(RealmModel realm, String clientSessionId) {
+        ClientSessionEntity entity = offlineClientSessions.get(clientSessionId);
+        if (entity != null && entity.getRealmId().equals(realm.getId())) {
+            return new ClientSessionAdapter(session, this, realm, entity);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public List<ClientSessionModel> getOfflineClientSessions(RealmModel realm, UserModel user) {
+        List<ClientSessionModel> clientSessions = new LinkedList<>();
+        for (UserSessionEntity s : this.offlineUserSessions.values()) {
+            if (s.getRealm().equals(realm.getId()) && s.getUser().equals(user.getId())) {
+                for (ClientSessionEntity cls : s.getClientSessions()) {
+                    ClientSessionAdapter clAdapter = new ClientSessionAdapter(session, this, realm, cls);
+                    clientSessions.add(clAdapter);
+                }
+            }
+        }
+        return clientSessions;
+    }
+
+    @Override
+    public void removeOfflineClientSession(RealmModel realm, String clientSessionId) {
+        ClientSessionEntity entity = offlineClientSessions.get(clientSessionId);
+        if (entity != null && entity.getRealmId().equals(realm.getId())) {
+            offlineClientSessions.remove(entity.getId());
+            UserSessionEntity userSession = entity.getSession();
+            userSession.removeClientSession(entity);
+        }
+    }
+
+    @Override
+    public int getOfflineSessionsCount(RealmModel realm, ClientModel client) {
+        return getUserSessions(realm, client, true).size();
+    }
+
+    @Override
+    public List<UserSessionModel> getOfflineUserSessions(RealmModel realm, ClientModel client, int first, int max) {
+        return getUserSessions(realm, client, first, max, true);
     }
 
     @Override

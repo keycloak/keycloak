@@ -7,6 +7,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -18,6 +19,7 @@ import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.mapreduce.ClientSessionMapper;
+import org.keycloak.models.sessions.infinispan.mapreduce.ClientSessionsOfUserSessionMapper;
 import org.keycloak.models.sessions.infinispan.mapreduce.FirstResultReducer;
 import org.keycloak.models.sessions.infinispan.mapreduce.LargestResultReducer;
 import org.keycloak.models.sessions.infinispan.mapreduce.SessionMapper;
@@ -36,6 +38,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -46,16 +49,23 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     private final KeycloakSession session;
     private final Cache<String, SessionEntity> sessionCache;
+    private final Cache<String, SessionEntity> offlineSessionCache;
     private final Cache<LoginFailureKey, LoginFailureEntity> loginFailureCache;
     private final InfinispanKeycloakTransaction tx;
 
-    public InfinispanUserSessionProvider(KeycloakSession session, Cache<String, SessionEntity> sessionCache, Cache<LoginFailureKey, LoginFailureEntity> loginFailureCache) {
+    public InfinispanUserSessionProvider(KeycloakSession session, Cache<String, SessionEntity> sessionCache, Cache<String, SessionEntity> offlineSessionCache,
+                                         Cache<LoginFailureKey, LoginFailureEntity> loginFailureCache) {
         this.session = session;
         this.sessionCache = sessionCache;
+        this.offlineSessionCache = offlineSessionCache;
         this.loginFailureCache = loginFailureCache;
         this.tx = new InfinispanKeycloakTransaction();
 
         session.getTransaction().enlistAfterCompletion(tx);
+    }
+
+    protected Cache<String, SessionEntity> getCache(boolean offline) {
+        return offline ? offlineSessionCache : sessionCache;
     }
 
     @Override
@@ -70,7 +80,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         tx.put(sessionCache, id, entity);
 
-        return wrap(realm, entity);
+        return wrap(realm, entity, false);
     }
 
     @Override
@@ -95,29 +105,57 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         tx.put(sessionCache, id, entity);
 
-        return wrap(realm, entity);
+        return wrap(realm, entity, false);
     }
 
     @Override
     public ClientSessionModel getClientSession(RealmModel realm, String id) {
-        ClientSessionEntity entity = (ClientSessionEntity) sessionCache.get(id);
-        return wrap(realm, entity);
+        return getClientSession(realm, id, false);
+    }
+
+    protected ClientSessionModel getClientSession(RealmModel realm, String id, boolean offline) {
+        Cache<String, SessionEntity> cache = getCache(offline);
+        ClientSessionEntity entity = (ClientSessionEntity) cache.get(id);
+
+        // Chance created in this transaction
+        if (entity == null) {
+            entity = (ClientSessionEntity) tx.get(cache, id);
+        }
+
+        return wrap(realm, entity, offline);
     }
 
     @Override
     public ClientSessionModel getClientSession(String id) {
         ClientSessionEntity entity = (ClientSessionEntity) sessionCache.get(id);
+
+        // Chance created in this transaction
+        if (entity == null) {
+            entity = (ClientSessionEntity) tx.get(sessionCache, id);
+        }
+
         if (entity != null) {
             RealmModel realm = session.realms().getRealm(entity.getRealm());
-            return wrap(realm, entity);
+            return wrap(realm, entity, false);
         }
         return null;
     }
 
     @Override
     public UserSessionModel getUserSession(RealmModel realm, String id) {
-        UserSessionEntity entity = (UserSessionEntity) sessionCache.get(id);
-        return wrap(realm, entity);
+        return getUserSession(realm, id, false);
+    }
+
+    protected UserSessionAdapter getUserSession(RealmModel realm, String id, boolean offline) {
+        Cache<String, SessionEntity> cache = getCache(offline);
+        UserSessionEntity entity = (UserSessionEntity) cache.get(id);
+
+        // Chance created in this transaction
+        if (entity == null) {
+            entity = (UserSessionEntity) tx.get(cache, id);
+        }
+
+        return wrap(realm, entity, offline);
     }
 
     @Override
@@ -127,7 +165,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 .reducedWith(new FirstResultReducer())
                 .execute();
 
-        return wrapUserSessions(realm, sessions.values());
+        return wrapUserSessions(realm, sessions.values(), false);
     }
 
     @Override
@@ -137,7 +175,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 .reducedWith(new FirstResultReducer())
                 .execute();
 
-        return wrapUserSessions(realm, sessions.values());
+        return wrapUserSessions(realm, sessions.values(), false);
     }
 
     @Override
@@ -147,7 +185,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 .reducedWith(new FirstResultReducer())
                 .execute();
 
-        List<UserSessionModel> userSessionModels = wrapUserSessions(realm, sessions.values());
+        List<UserSessionModel> userSessionModels = wrapUserSessions(realm, sessions.values(), false);
         if (userSessionModels.isEmpty()) return null;
         return userSessionModels.get(0);
     }
@@ -159,7 +197,13 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
-        Map<String, Integer> map = new MapReduceTask(sessionCache)
+        return getUserSessions(realm, client, firstResult, maxResults, false);
+    }
+
+    protected List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults, boolean offline) {
+        Cache<String, SessionEntity> cache = getCache(offline);
+
+        Map<String, Integer> map = new MapReduceTask(cache)
                 .mappedWith(ClientSessionMapper.create(realm.getId()).client(client.getId()).emitUserSessionAndTimestamp())
                 .reducedWith(new LargestResultReducer())
                 .execute();
@@ -192,9 +236,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         List<UserSessionModel> userSessions = new LinkedList<UserSessionModel>();
         for (Map.Entry<String, Integer> e : sessionTimestamps) {
-            UserSessionEntity userSessionEntity = (UserSessionEntity) sessionCache.get(e.getKey());
+            UserSessionEntity userSessionEntity = (UserSessionEntity) cache.get(e.getKey());
             if (userSessionEntity != null) {
-                userSessions.add(wrap(realm, userSessionEntity));
+                userSessions.add(wrap(realm, userSessionEntity, offline));
             }
         }
 
@@ -214,13 +258,19 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 .reducedWith(new FirstResultReducer())
                 .execute();
 
-        return wrapUserSessions(realm, sessions.values());
+        return wrapUserSessions(realm, sessions.values(), false);
 
     }
 
     @Override
     public int getActiveUserSessions(RealmModel realm, ClientModel client) {
-        Map map = new MapReduceTask(sessionCache)
+        return getUserSessionsCount(realm, client, false);
+    }
+
+    protected int getUserSessionsCount(RealmModel realm, ClientModel client, boolean offline) {
+        Cache<String, SessionEntity> cache = getCache(offline);
+
+        Map map = new MapReduceTask(cache)
                 .mappedWith(ClientSessionMapper.create(realm.getId()).client(client.getId()).emitUserSessionAndTimestamp())
                 .reducedWith(new LargestResultReducer()).execute();
 
@@ -234,13 +284,19 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSessions(RealmModel realm, UserModel user) {
-        Map<String, String> sessions = new MapReduceTask(sessionCache)
+        removeUserSessions(realm, user, false);
+    }
+
+    protected void removeUserSessions(RealmModel realm, UserModel user, boolean offline) {
+        Cache<String, SessionEntity> cache = getCache(offline);
+
+        Map<String, String> sessions = new MapReduceTask(cache)
                 .mappedWith(UserSessionMapper.create(realm.getId()).user(user.getId()).emitKey())
                 .reducedWith(new FirstResultReducer())
                 .execute();
 
         for (String id : sessions.keySet()) {
-            removeUserSession(realm, id);
+            removeUserSession(realm, id, offline);
         }
     }
 
@@ -271,13 +327,19 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSessions(RealmModel realm) {
-        Map<String, String> ids = new MapReduceTask(sessionCache)
+        removeUserSessions(realm, false);
+    }
+
+    protected void removeUserSessions(RealmModel realm, boolean offline) {
+        Cache<String, SessionEntity> cache = getCache(offline);
+
+        Map<String, String> ids = new MapReduceTask(cache)
                 .mappedWith(SessionMapper.create(realm.getId()).emitKey())
                 .reducedWith(new FirstResultReducer())
                 .execute();
 
         for (String id : ids.keySet()) {
-            sessionCache.remove(id);
+            cache.remove(id);
         }
     }
 
@@ -319,25 +381,39 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void onRealmRemoved(RealmModel realm) {
-        removeUserSessions(realm);
+        removeUserSessions(realm, true);
+        removeUserSessions(realm, false);
         removeAllUserLoginFailures(realm);
     }
 
     @Override
     public void onClientRemoved(RealmModel realm, ClientModel client) {
-        Map<String, String> map = new MapReduceTask(sessionCache)
-                .mappedWith(ClientSessionMapper.create(realm.getId()).client(client.getId()).emitKey())
+        onClientRemoved(realm, client, true);
+        onClientRemoved(realm, client, false);
+    }
+
+    private void onClientRemoved(RealmModel realm, ClientModel client, boolean offline) {
+        Cache<String, SessionEntity> cache = getCache(offline);
+
+        Map<String, ClientSessionEntity> map = new MapReduceTask(cache)
+                .mappedWith(ClientSessionMapper.create(realm.getId()).client(client.getId()))
                 .reducedWith(new FirstResultReducer())
                 .execute();
 
-        for (String id : map.keySet()) {
-            tx.remove(sessionCache, id);
+        for (Map.Entry<String, ClientSessionEntity> entry : map.entrySet()) {
+
+            // detach from userSession
+            ClientSessionAdapter adapter = wrap(realm, entry.getValue(), offline);
+            adapter.setUserSession(null);
+
+            tx.remove(cache, entry.getKey());
         }
     }
 
     @Override
     public void onUserRemoved(RealmModel realm, UserModel user) {
-        removeUserSessions(realm, user);
+        removeUserSessions(realm, user, true);
+        removeUserSessions(realm, user, false);
 
         loginFailureCache.remove(new LoginFailureKey(realm.getId(), user.getUsername()));
         loginFailureCache.remove(new LoginFailureKey(realm.getId(), user.getEmail()));
@@ -347,20 +423,26 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     public void close() {
     }
 
-    void attachSession(UserSessionModel userSession, ClientSessionModel clientSession) {
-        UserSessionEntity entity = ((UserSessionAdapter) userSession).getEntity();
+    void attachSession(UserSessionAdapter userSession, ClientSessionModel clientSession) {
+        UserSessionEntity entity = userSession.getEntity();
         String clientSessionId = clientSession.getId();
         if (entity.getClientSessions() == null) {
             entity.setClientSessions(new HashSet<String>());
         }
         if (!entity.getClientSessions().contains(clientSessionId)) {
             entity.getClientSessions().add(clientSessionId);
-            tx.replace(sessionCache, entity.getId(), entity);
+            userSession.update();
         }
     }
 
     @Override
     public void removeClientSession(RealmModel realm, ClientSessionModel clientSession) {
+        removeClientSession(realm, clientSession, false);
+    }
+
+    protected void removeClientSession(RealmModel realm, ClientSessionModel clientSession, boolean offline) {
+        Cache<String, SessionEntity> cache = getCache(offline);
+
         UserSessionModel userSession = clientSession.getUserSession();
         if (userSession != null)  {
             UserSessionEntity entity = ((UserSessionAdapter) userSession).getEntity();
@@ -368,34 +450,40 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 entity.getClientSessions().remove(clientSession.getId());
 
             }
-            tx.replace(sessionCache, entity.getId(), entity);
+            tx.replace(cache, entity.getId(), entity);
         }
-        tx.remove(sessionCache, clientSession.getId());
+        tx.remove(cache, clientSession.getId());
     }
 
 
-    void dettachSession(UserSessionModel userSession, ClientSessionModel clientSession) {
-        UserSessionEntity entity = ((UserSessionAdapter) userSession).getEntity();
+    void dettachSession(UserSessionAdapter userSession, ClientSessionModel clientSession) {
+        UserSessionEntity entity = userSession.getEntity();
         String clientSessionId = clientSession.getId();
         if (entity.getClientSessions() != null && entity.getClientSessions().contains(clientSessionId)) {
             entity.getClientSessions().remove(clientSessionId);
             if (entity.getClientSessions().isEmpty()) {
                 entity.setClientSessions(null);
             }
-            tx.replace(sessionCache, entity.getId(), entity);
+            userSession.update();
         }
     }
 
     protected void removeUserSession(RealmModel realm, String userSessionId) {
-        tx.remove(sessionCache, userSessionId);
+        removeUserSession(realm, userSessionId, false);
+    }
 
-        Map<String, String> map = new MapReduceTask(sessionCache)
+    protected void removeUserSession(RealmModel realm, String userSessionId, boolean offline) {
+        Cache<String, SessionEntity> cache = getCache(offline);
+
+        tx.remove(cache, userSessionId);
+
+        Map<String, String> map = new MapReduceTask(cache)
                 .mappedWith(ClientSessionMapper.create(realm.getId()).userSession(userSessionId).emitKey())
                 .reducedWith(new FirstResultReducer())
                 .execute();
 
         for (String id : map.keySet()) {
-            tx.remove(sessionCache, id);
+            tx.remove(cache, id);
         }
     }
 
@@ -404,20 +492,22 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return tx;
     }
 
-    UserSessionModel wrap(RealmModel realm, UserSessionEntity entity) {
-        return entity != null ? new UserSessionAdapter(session, this, sessionCache, realm, entity) : null;
+    UserSessionAdapter wrap(RealmModel realm, UserSessionEntity entity, boolean offline) {
+        Cache<String, SessionEntity> cache = getCache(offline);
+        return entity != null ? new UserSessionAdapter(session, this, cache, realm, entity, offline) : null;
     }
 
-    List<UserSessionModel> wrapUserSessions(RealmModel realm, Collection<UserSessionEntity> entities) {
+    List<UserSessionModel> wrapUserSessions(RealmModel realm, Collection<UserSessionEntity> entities, boolean offline) {
         List<UserSessionModel> models = new LinkedList<UserSessionModel>();
         for (UserSessionEntity e : entities) {
-            models.add(wrap(realm, e));
+            models.add(wrap(realm, e, offline));
         }
         return models;
     }
 
-    ClientSessionModel wrap(RealmModel realm, ClientSessionEntity entity) {
-        return entity != null ? new ClientSessionAdapter(session, this, sessionCache, realm, entity) : null;
+    ClientSessionAdapter wrap(RealmModel realm, ClientSessionEntity entity, boolean offline) {
+        Cache<String, SessionEntity> cache = getCache(offline);
+        return entity != null ? new ClientSessionAdapter(session, this, cache, realm, entity, offline) : null;
     }
 
 
@@ -425,12 +515,111 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return entity != null ? new UsernameLoginFailureAdapter(this, loginFailureCache, key, entity) : null;
     }
 
-    List<ClientSessionModel> wrapClientSessions(RealmModel realm, Collection<ClientSessionEntity> entities) {
+    List<ClientSessionModel> wrapClientSessions(RealmModel realm, Collection<ClientSessionEntity> entities, boolean offline) {
         List<ClientSessionModel> models = new LinkedList<ClientSessionModel>();
         for (ClientSessionEntity e : entities) {
-            models.add(wrap(realm, e));
+            models.add(wrap(realm, e, offline));
         }
         return models;
+    }
+
+
+    @Override
+    public UserSessionModel createOfflineUserSession(UserSessionModel userSession) {
+        UserSessionEntity entity = new UserSessionEntity();
+        entity.setId(userSession.getId());
+        entity.setRealm(userSession.getRealm().getId());
+
+        entity.setAuthMethod(userSession.getAuthMethod());
+        entity.setBrokerSessionId(userSession.getBrokerSessionId());
+        entity.setBrokerUserId(userSession.getBrokerUserId());
+        entity.setIpAddress(userSession.getIpAddress());
+        entity.setLastSessionRefresh(userSession.getLastSessionRefresh());
+        entity.setLoginUsername(userSession.getLoginUsername());
+        entity.setNotes(userSession.getNotes());
+        entity.setRememberMe(userSession.isRememberMe());
+        entity.setStarted(userSession.getStarted());
+        entity.setState(userSession.getState());
+        entity.setUser(userSession.getUser().getId());
+
+        tx.put(offlineSessionCache, userSession.getId(), entity);
+        return wrap(userSession.getRealm(), entity, true);
+    }
+
+    @Override
+    public UserSessionModel getOfflineUserSession(RealmModel realm, String userSessionId) {
+        return getUserSession(realm, userSessionId, true);
+    }
+
+    @Override
+    public void removeOfflineUserSession(RealmModel realm, String userSessionId) {
+        removeUserSession(realm, userSessionId, true);
+    }
+
+    @Override
+    public ClientSessionModel createOfflineClientSession(ClientSessionModel clientSession) {
+        ClientSessionEntity entity = new ClientSessionEntity();
+        entity.setId(clientSession.getId());
+        entity.setRealm(clientSession.getRealm().getId());
+
+        entity.setAction(clientSession.getAction());
+        entity.setAuthenticatorStatus(clientSession.getExecutionStatus());
+        entity.setAuthMethod(clientSession.getAuthMethod());
+        if (clientSession.getAuthenticatedUser() != null) {
+            entity.setAuthUserId(clientSession.getAuthenticatedUser().getId());
+        }
+        entity.setClient(clientSession.getClient().getId());
+        entity.setNotes(clientSession.getNotes());
+        entity.setProtocolMappers(clientSession.getProtocolMappers());
+        entity.setRedirectUri(clientSession.getRedirectUri());
+        entity.setRoles(clientSession.getRoles());
+        entity.setTimestamp(clientSession.getTimestamp());
+        entity.setUserSessionNotes(clientSession.getUserSessionNotes());
+
+        tx.put(offlineSessionCache, clientSession.getId(), entity);
+        return wrap(clientSession.getRealm(), entity, true);
+    }
+
+    @Override
+    public ClientSessionModel getOfflineClientSession(RealmModel realm, String clientSessionId) {
+        return getClientSession(realm, clientSessionId, true);
+    }
+
+    @Override
+    public List<ClientSessionModel> getOfflineClientSessions(RealmModel realm, UserModel user) {
+        Map<String, UserSessionEntity> sessions = new MapReduceTask(offlineSessionCache)
+                .mappedWith(UserSessionMapper.create(realm.getId()).user(user.getId()))
+                .reducedWith(new FirstResultReducer())
+                .execute();
+
+        List<ClientSessionEntity> clientSessions = new LinkedList<>();
+        for (UserSessionEntity userSession : sessions.values()) {
+            Set<String> currClientSessions = userSession.getClientSessions();
+            for (String clientSessionId : currClientSessions) {
+                ClientSessionEntity cls = (ClientSessionEntity) offlineSessionCache.get(clientSessionId);
+                if (cls != null) {
+                    clientSessions.add(cls);
+                }
+            }
+        }
+
+        return wrapClientSessions(realm, clientSessions, true);
+    }
+
+    @Override
+    public void removeOfflineClientSession(RealmModel realm, String clientSessionId) {
+        ClientSessionModel clientSession = getOfflineClientSession(realm, clientSessionId);
+        removeClientSession(realm, clientSession, true);
+    }
+
+    @Override
+    public int getOfflineSessionsCount(RealmModel realm, ClientModel client) {
+        return getUserSessionsCount(realm, client, true);
+    }
+
+    @Override
+    public List<UserSessionModel> getOfflineUserSessions(RealmModel realm, ClientModel client, int first, int max) {
+        return getUserSessions(realm, client, first, max, true);
     }
 
     class InfinispanKeycloakTransaction implements KeycloakTransaction {
@@ -478,17 +667,19 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         public void put(Cache cache, Object key, Object value) {
             log.tracev("Adding cache operation: {0} on {1}", CacheOperation.ADD, key);
 
-            if (tasks.containsKey(key)) {
+            Object taskKey = getTaskKey(cache, key);
+            if (tasks.containsKey(taskKey)) {
                 throw new IllegalStateException("Can't add session: task in progress for session");
             } else {
-                tasks.put(key, new CacheTask(cache, CacheOperation.ADD, key, value));
+                tasks.put(taskKey, new CacheTask(cache, CacheOperation.ADD, key, value));
             }
         }
 
         public void replace(Cache cache, Object key, Object value) {
             log.tracev("Adding cache operation: {0} on {1}", CacheOperation.REPLACE, key);
 
-            CacheTask current = tasks.get(key);
+            Object taskKey = getTaskKey(cache, key);
+            CacheTask current = tasks.get(taskKey);
             if (current != null) {
                 switch (current.operation) {
                     case ADD:
@@ -499,14 +690,40 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                         return;
                 }
             } else {
-                tasks.put(key, new CacheTask(cache, CacheOperation.REPLACE, key, value));
+                tasks.put(taskKey, new CacheTask(cache, CacheOperation.REPLACE, key, value));
             }
         }
 
         public void remove(Cache cache, Object key) {
             log.tracev("Adding cache operation: {0} on {1}", CacheOperation.REMOVE, key);
 
-            tasks.put(key, new CacheTask(cache, CacheOperation.REMOVE, key, null));
+            Object taskKey = getTaskKey(cache, key);
+            tasks.put(taskKey, new CacheTask(cache, CacheOperation.REMOVE, key, null));
+        }
+
+        // This is for possibility to lookup for session by id, which was created in this transaction
+        public Object get(Cache cache, Object key) {
+            Object taskKey = getTaskKey(cache, key);
+            CacheTask current = tasks.get(taskKey);
+            if (current != null) {
+                switch (current.operation) {
+                    case ADD:
+                    case REPLACE:
+                        return current.value;                 }
+            }
+
+            return null;
+        }
+
+        private Object getTaskKey(Cache cache, Object key) {
+            if (key instanceof String) {
+                return new StringBuilder(cache.getName())
+                        .append("::")
+                        .append(key.toString()).toString();
+            } else {
+                // loginFailure cache
+                return key;
+            }
         }
 
         public class CacheTask {

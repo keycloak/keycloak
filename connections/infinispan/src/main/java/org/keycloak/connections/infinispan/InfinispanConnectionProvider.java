@@ -11,6 +11,7 @@ public interface InfinispanConnectionProvider extends Provider {
     static final String REALM_CACHE_NAME = "realms";
     static final String USER_CACHE_NAME = "users";
     static final String SESSION_CACHE_NAME = "sessions";
+    static final String OFFLINE_SESSION_CACHE_NAME = "offlineSessions";
     static final String LOGIN_FAILURE_CACHE_NAME = "loginFailures";
 
     <K, V> Cache<K, V> getCache(String name);

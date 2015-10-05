@@ -2,6 +2,7 @@ package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -27,6 +28,8 @@ public interface UserSessionProvider extends Provider {
     int getActiveUserSessions(RealmModel realm, ClientModel client);
     void removeUserSession(RealmModel realm, UserSessionModel session);
     void removeUserSessions(RealmModel realm, UserModel user);
+
+    // Implementation should propagate removal of expired userSessions to userSessionPersister too
     void removeExpiredUserSessions(RealmModel realm);
     void removeUserSessions(RealmModel realm);
     void removeClientSession(RealmModel realm, ClientSessionModel clientSession);
@@ -39,6 +42,22 @@ public interface UserSessionProvider extends Provider {
     void onRealmRemoved(RealmModel realm);
     void onClientRemoved(RealmModel realm, ClientModel client);
     void onUserRemoved(RealmModel realm, UserModel user);
+
+    UserSessionModel createOfflineUserSession(UserSessionModel userSession);
+    UserSessionModel getOfflineUserSession(RealmModel realm, String userSessionId);
+
+    // Removes the attached clientSessions as well
+    void removeOfflineUserSession(RealmModel realm, String userSessionId);
+
+    ClientSessionModel createOfflineClientSession(ClientSessionModel clientSession);
+    ClientSessionModel getOfflineClientSession(RealmModel realm, String clientSessionId);
+    List<ClientSessionModel> getOfflineClientSessions(RealmModel realm, UserModel user);
+
+    // Don't remove userSession even if it's last userSession
+    void removeOfflineClientSession(RealmModel realm, String clientSessionId);
+
+    int getOfflineSessionsCount(RealmModel realm, ClientModel client);
+    List<UserSessionModel> getOfflineUserSessions(RealmModel realm, ClientModel client, int first, int max);
 
     void close();
 

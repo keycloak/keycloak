@@ -3,4 +3,5 @@ org.keycloak.mappers.UserFederationMapperSpi
 org.keycloak.models.RealmSpi
 org.keycloak.models.UserSessionSpi
 org.keycloak.models.UserSpi
+org.keycloak.models.session.UserSessionPersisterSpi
 org.keycloak.migration.MigrationSpi
