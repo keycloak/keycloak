@@ -83,12 +83,12 @@ public class KeycloakApplication extends Application {
         classes.add(JsResource.class);
         classes.add(WelcomeResource.class);
 
-        new ExportImportManager().checkExportImport(this.sessionFactory, context.getContextPath());
 
         setupDefaultRealm(context.getContextPath());
 
-        importRealms(context);
         migrateModel();
+        new ExportImportManager().checkExportImport(this.sessionFactory, context.getContextPath());
+        importRealms(context);
 
         AdminRecovery.recover(sessionFactory);
 

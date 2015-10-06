@@ -1,12 +1,13 @@
 package org.keycloak.protocol;
 
-import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.AccessToken;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.provider.ProviderFactory;
 
 import java.lang.reflect.Method;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -58,5 +59,26 @@ public class ProtocolMapperUtils {
             return rtn;
 
         }
+    }
+
+    /**
+     * Find the builtin locale mapper.
+     *
+     * @param session A KeycloakSession
+     * @return The builtin locale mapper.
+     */
+    public static ProtocolMapperModel findLocaleMapper(KeycloakSession session) {
+        ProtocolMapperModel found = null;
+        for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(LoginProtocol.class)) {
+            LoginProtocolFactory factory = (LoginProtocolFactory) p;
+            for (ProtocolMapperModel mapper : factory.getBuiltinMappers()) {
+                if (mapper.getName().equals(OIDCLoginProtocolFactory.LOCALE) && mapper.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+                    found = mapper;
+                    break;
+                }
+            }
+            if (found != null) break;
+        }
+        return found;
     }
 }
