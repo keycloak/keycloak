@@ -1,7 +1,7 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
         <li>{{client.clientId}}</li>
     </ol>
 
@@ -10,12 +10,12 @@
     <form class="form" name="realmForm" novalidate>
         <fieldset>
             <div class="form-group input-select">
-                <label class="col-md-1 control-label" for="configFormats">Format Option</label>
+                <label class="col-md-1 control-label" for="configFormats">{{:: 'format-option' | translate}}</label>
                 <div class="col-md-6">
                     <div class="input-group">
                         <div>
                             <select class="form-control" id="configFormats" name="configFormats" ng-change="changeFormat()" ng-model="configFormat" ng-options="a for a in configFormats">
-                                <option value="" selected> Select a Format </option>
+                                <option value="" selected> {{:: 'select-a-format' | translate}} </option>
                             </select>
                         </div>
                     </div>
@@ -25,7 +25,7 @@
         <fieldset class="margin-top">
             <div class="form-group" ng-show="installation">
                 <div class="col-sm-12">
-                    <a class="btn btn-primary btn-lg" data-ng-click="download()" type="submit" ng-show="installation">Download</a>
+                    <a class="btn btn-primary btn-lg" data-ng-click="download()" type="submit" ng-show="installation">{{:: 'download' | translate}}</a>
                     <textarea class="form-control" rows="20" kc-select-action="click">{{installation}}</textarea>
                 </div>
             </div>
