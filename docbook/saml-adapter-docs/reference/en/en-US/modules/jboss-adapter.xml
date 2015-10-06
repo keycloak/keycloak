@@ -1,0 +1,188 @@
+<chapter id="jboss-adapter">
+    <title>JBoss/Wildfly Adapter</title>
+    <para>
+        To be able to secure WAR apps deployed on JBoss EAP 6.x or Wildfly, you must install and
+        configure the Keycloak SAML Adapter Subsystem.  You then provide a keycloak
+        config, <literal>/WEB-INF/keycloak-saml</literal> file in your WAR and change the auth-method to KEYCLOAK-SAML within web.xml.
+        Both methods are described in this section.
+    </para>
+    <section id="jboss-adapter-installation">
+        <title>Adapter Installation</title>
+    <para>
+        SAML Adapters are no longer included with the appliance or war distribution.Each adapter is a separate download on
+        the Keycloak download site.  They are also available as a maven artifact.
+    </para>
+    <para>
+        Install on Wildfly 9:
+<programlisting>
+$ cd $WILDFLY_HOME
+$ unzip keycloak-saml-wf9-adapter-dist.zip
+</programlisting>
+    </para>
+    <para>
+        Install on JBoss EAP 6.x:
+<programlisting>
+$ cd $JBOSS_HOME
+$ unzip keycloak-saml-eap6-adapter-dist.zip
+</programlisting>
+    </para>
+    <para>
+        This zip file creates new JBoss Modules specific to the Wildfly Keycloak SAML Adapter within your Wildfly distro.
+    </para>
+    <para>
+        After adding the Keycloak modules, you must then enable the Keycloak SAML Subsystem within your app server's server configuration:
+        <literal>domain.xml</literal> or <literal>standalone.xml</literal>.
+    </para>
+    <para>
+        There is a CLI script that will help you modify your server configuration.  Start the server and run the script 
+        from the server's bin directory:
+<programlisting>
+$ cd $JBOSS_HOME/bin
+$ jboss-cli.sh -c --file=adapter-install.cli
+</programlisting>
+        The script will add the extension, subsystem, and optional security-domain as described below.
+    </para>
+    <para>
+<programlisting><![CDATA[
+<server xmlns="urn:jboss:domain:1.4">
+
+    <extensions>
+        <extension module="org.keycloak.keycloak-saml-adapter-subsystem"/>
+          ...
+    </extensions>
+
+    <profile>
+        <subsystem xmlns="urn:jboss:domain:keycloak-saml:1.6"/>
+         ...
+    </profile>
+]]>
+</programlisting>
+    </para>
+        <para>
+            The keycloak security domain should be used with EJBs and other components when you need the security context created
+            in the secured web tier to be propagated to the EJBs (other EE component) you are invoking.  Otherwise
+            this configuration is optional.
+        </para>
+<programlisting><![CDATA[
+<server xmlns="urn:jboss:domain:1.4">
+ <subsystem xmlns="urn:jboss:domain:security:1.2">
+    <security-domains>
+...
+      <security-domain name="keycloak">
+         <authentication>
+           <login-module code="org.keycloak.adapters.jboss.KeycloakLoginModule"
+                         flag="required"/>
+          </authentication>
+      </security-domain>
+    </security-domains>
+]]>
+</programlisting>
+        <para>
+            For example, if you have a JAX-RS service that is an EJB within your WEB-INF/classes directory, you'll want
+            to annotate it with the @SecurityDomain annotation as follows:
+        </para>
+<programlisting><![CDATA[
+import org.jboss.ejb3.annotation.SecurityDomain;
+import org.jboss.resteasy.annotations.cache.NoCache;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ejb.EJB;
+import javax.ejb.Stateless;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import java.util.ArrayList;
+import java.util.List;
+
+@Path("customers")
+@Stateless
+@SecurityDomain("keycloak")
+public class CustomerService {
+
+    @EJB
+    CustomerDB db;
+
+    @GET
+    @Produces("application/json")
+    @NoCache
+    @RolesAllowed("db_user")
+    public List<String> getCustomers() {
+        return db.getCustomers();
+    }
+}
+]]>
+</programlisting>
+        <para>
+            We hope to improve our integration in the future so that you don't have to specify the @SecurityDomain
+            annotation when you want to propagate a keycloak security context to the EJB tier.
+        </para>
+
+    </section>
+    <section>
+        <title>Required Per WAR Configuration</title>
+        <para>
+            This section describes how to secure a WAR directly by adding config and editing files within your WAR package.
+        </para>
+        <para>
+            The first thing you must do is create
+            a <literal>keycloak-saml.xml</literal> adapter config file within the <literal>WEB-INF</literal> directory
+            of your WAR.  The format of this config file is describe in the <link linkend='adapter-config'>general adapter configuration</link>
+            section.
+        </para>
+        <para>
+            Next you must set the <literal>auth-method</literal> to <literal>KEYCLOAK-SAML</literal> in <literal>web.xml</literal>.  You also
+            have to use standard servlet security to specify role-base constraints on your URLs.  Here's an example
+            pulled from one of the examples that comes distributed with Keycloak.
+        </para>
+        <para>
+<programlisting>
+<![CDATA[
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+      version="3.0">
+
+	<module-name>customer-portal</module-name>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Admins</web-resource-name>
+            <url-pattern>/admin/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>admin</role-name>
+        </auth-constraint>
+        <user-data-constraint>
+            <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Customers</web-resource-name>
+            <url-pattern>/customers/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>user</role-name>
+        </auth-constraint>
+        <user-data-constraint>
+            <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <login-config>
+        <auth-method>KEYCLOAK-SAML</auth-method>
+        <realm-name>this is ignored currently</realm-name>
+    </login-config>
+
+    <security-role>
+        <role-name>admin</role-name>
+    </security-role>
+    <security-role>
+        <role-name>user</role-name>
+    </security-role>
+</web-app>
+]]>
+</programlisting>
+        </para>
+    </section>
+</chapter>

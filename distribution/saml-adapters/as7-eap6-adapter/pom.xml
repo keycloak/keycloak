@@ -4,21 +4,18 @@
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
         <version>1.6.0.Final-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../../../pom.xml</relativePath>
     </parent>
-    <name>Keycloak SAML Client Adapter Modules</name>
+    <name>Keycloak SAML AS7 / JBoss EAP 6 Adapter Distros</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-saml-client-adapter-pom</artifactId>
+    <artifactId>keycloak-saml-as7-eap6-adapter-dist-pom</artifactId>
     <packaging>pom</packaging>
 
     <modules>
-        <module>core</module>
-        <module>undertow</module>
-        <module>tomcat</module>
-        <module>jetty</module>
-        <module>wildfly</module>
-        <module>as7-eap6</module>
+        <module>as7-modules</module>
+        <module>as7-adapter-zip</module>
+        <module>eap6-adapter-zip</module>
     </modules>
 </project>

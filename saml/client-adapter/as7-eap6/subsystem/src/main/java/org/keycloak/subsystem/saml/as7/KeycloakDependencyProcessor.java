@@ -15,7 +15,7 @@
  * the License.
  */
 
-package org.keycloak.subsystem.adapter.saml.extension;
+package org.keycloak.subsystem.saml.as7;
 
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;

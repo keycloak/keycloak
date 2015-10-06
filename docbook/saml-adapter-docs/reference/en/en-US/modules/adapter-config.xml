@@ -1,0 +1,384 @@
+<chapter id="adapter-config">
+    <title>General Adapter Config</title>
+    <para>
+        Each SAML adapter supported by Keycloak can be configured by a simple XML text file.  This is what one might
+        look like:
+    </para>
+    <para>
+<programlisting><![CDATA[{
+  "realm" : "demo",
+  "resource" : "customer-portal",
+  "realm-public-key" : "MIGfMA0GCSqGSIb3D...31LwIDAQAB",
+  "auth-server-url" : "https://localhost:8443/auth",
+  "ssl-required" : "external",
+  "use-resource-role-mappings" : false,
+  "enable-cors" : true,
+  "cors-max-age" : 1000,
+  "cors-allowed-methods" : "POST, PUT, DELETE, GET",
+  "bearer-only" : false,
+  "enable-basic-auth" : false,
+  "expose-token" : true,
+   "credentials" : {
+      "secret" : "234234-234234-234234"
+   },
+
+   "connection-pool-size" : 20,
+   "disable-trust-manager": false,
+   "allow-any-hostname" : false,
+   "truststore" : "path/to/truststore.jks",
+   "truststore-password" : "geheim",
+   "client-keystore" : "path/to/client-keystore.jks",
+   "client-keystore-password" : "geheim",
+   "client-key-password" : "geheim"
+}]]>
+
+</programlisting>
+    </para>
+    <para>
+        Some of these configuration switches may be adapter specific and some are common across all adapters.
+        For Java adapters you can use <literal>${...}</literal> enclosure as System property replacement.
+        For example <literal>${jboss.server.config.dir}</literal>.  Also, you can obtain a template
+        for this config file from the admin console.  Go to the realm and select the application you want a template for.
+        Go to the <literal>Installation</literal> tab and this will provide you with a template that includes
+        the public key of the realm.
+    </para>
+    <para>
+        Here is a description of each item:
+    </para>
+    <para>
+        <variablelist>
+            <varlistentry>
+                <term>realm</term>
+                <listitem>
+                    <para>
+                        Name of the realm representing the users of your distributed applications and services.
+                        This is
+                        <emphasis>REQUIRED.</emphasis>
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>resource</term>
+                <listitem>
+                    <para>
+                        Username of the application. Each application has a username that is used when the
+                        application connects with the Keycloak server to turn an access code into an access token
+                        (part of the OAuth 2.0 protocol). This is
+                        <emphasis>REQUIRED.</emphasis>
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>realm-public-key</term>
+                <listitem>
+                    <para>
+                        PEM format of public key. You can obtain this from the administration console.
+                        This is
+                        <emphasis>REQUIRED.</emphasis>
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>auth-server-url</term>
+                <listitem>
+                    <para>
+                        The base URL of the Keycloak Server.  All other Keycloak pages and REST services are derived
+                        from this.  It is usually of the form <literal>https://host:port/auth</literal>
+                        This is
+                        <emphasis>REQUIRED.</emphasis>
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>ssl-required</term>
+                <listitem>
+                    <para>
+                        Ensures that all communication to and from the Keycloak server from the adapter is over HTTPS.
+                        This is <emphasis>OPTIONAL</emphasis>. The default value is
+                        <emphasis>external</emphasis>
+                        meaning that HTTPS is required by default for external requests. Valid values are 'all', 'external'
+                        and 'none'.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>use-resource-role-mappings</term>
+                <listitem>
+                    <para>
+                        If set to true, the adapter will look inside the token for application level role mappings for
+                        the
+                        user. If false, it will look at the realm level for user role mappings.
+                        This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>public-client</term>
+                <listitem>
+                    <para>
+                        If set to true, the adapter will not send credentials for the client to Keycloak.
+                        The default value is <emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>enable-cors</term>
+                <listitem>
+                    <para>
+                        This enables CORS support. It will handle CORS preflight requests. It will also look into
+                        the access token to determine valid origins.
+                        This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>cors-max-age</term>
+                <listitem>
+                    <para>
+                        If CORS is enabled, this sets the value of the
+                        <literal>Access-Control-Max-Age</literal>
+                        header.
+                        This is <emphasis>OPTIONAL</emphasis>. If not set, this header is not returned in CORS
+                        responses.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>cors-allowed-methods</term>
+                <listitem>
+                    <para>
+                        If CORS is enabled, this sets the value of the
+                        <literal>Access-Control-Allow-Methods</literal>
+                        header. This should be a comma-separated string.
+                        This is <emphasis>OPTIONAL</emphasis>. If not set, this header is not returned in CORS
+                        responses.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>cors-allowed-headers</term>
+                <listitem>
+                    <para>
+                        If CORS is enabled, this sets the value of the
+                        <literal>Access-Control-Allow-Headers</literal>
+                        header. This should be a comma-separated string.
+                        This is <emphasis>OPTIONAL</emphasis>. If not set, this header is not returned in CORS
+                        responses.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>bearer-only</term>
+                <listitem>
+                    <para>
+                        This tells the adapter to only do bearer token authentication. That is, it will not do
+                        OAuth 2.0 redirects, but only accept bearer tokens through the
+                        <literal>Authorization</literal>
+                        header.
+                        This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>enable-basic-auth</term>
+                <listitem>
+                    <para>
+                        This tells the adapter to also support basic authentication. If this option is enabled,
+                        then <emphasis>secret</emphasis> must also be provided.
+                        This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>expose-token</term>
+                <listitem>
+                    <para>
+                        If <literal>true</literal>, an authenticated browser client (via a Javascript HTTP invocation)
+                        can obtain the signed access token via the URL <literal>root/k_query_bearer_token</literal>.
+                        This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>credentials</term>
+                <listitem>
+                    <para>
+                        Specify the credentials of the application. This is an object notation where the key
+                        is the credential type and the value is the value of the credential type. Currently only
+                        <literal>password</literal>
+                        is supported.
+                        This is <emphasis>REQUIRED</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>connection-pool-size</term>
+                <listitem>
+                    <para>
+                        Adapters will make separate HTTP invocations to the Keycloak Server to turn an access code
+                        into an access token.  This config option defines how many connections to the Keycloak Server
+                        should be pooled.
+                        This is <emphasis>OPTIONAL</emphasis>.  The default value is <literal>20</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>disable-trust-manager</term>
+                <listitem>
+                    <para>
+                        If the Keycloak Server requires HTTPS and this config option is set to <literal>true</literal>
+                        you do not have to specify a truststore.  While convenient,  this setting is not recommended
+                        as you will not be verifying the host name of the Keycloak Server.
+                        This is <emphasis>OPTIONAL</emphasis>.  The default value is <literal>false</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>allow-any-hostname</term>
+                <listitem>
+                    <para>
+                        If the Keycloak Server requires HTTPS and this config option is set to <literal>true</literal>
+                        the Keycloak Server's certificate is validated via the truststore, but host name validation is
+                        not done.  This is not a recommended.  This seting may be useful in test environments
+                        This is <emphasis>OPTIONAL</emphasis>.  The default value is <literal>false</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>truststore</term>
+                <listitem>
+                    <para>
+                        This setting is for Java adapters. The value is the file path to a Java keystore file.  If
+                        you prefix the path with <literal>classpath:</literal>, then the truststore will be obtained
+                        from the deployment's classpath instead.
+                        Used for outgoing HTTPS communications to the Keycloak server. Client making HTTPS
+                        requests need a way to verify the host of the server they are talking to. This is
+                        what the trustore does. The keystore contains one or more trusted
+                        host certificates or certificate authorities. You can
+                        create this truststore by extracting the public certificate of the Keycloak server's SSL
+                        keystore.
+                        This is
+                        <emphasis>OPTIONAL</emphasis>
+                        if
+                        <literal>ssl-required</literal>
+                        is
+                        <literal>none</literal>
+                        or
+                        <literal>disable-trust-manager</literal>
+                        is <literal>true</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>truststore-password</term>
+                <listitem>
+                    <para>
+                        Password for the truststore keystore.
+                        This is
+                        <emphasis>REQUIRED</emphasis>
+                        if
+                        <literal>truststore</literal>
+                        is set.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>client-keystore</term>
+                <listitem>
+                    <para>
+                        <emphasis>Not supported yet, but we will support in future versions.</emphasis>
+
+                        This setting is for Java adapters. This is the file path to a Java keystore file.
+                        This keystore contains client certificate for two-way SSL when the adapter makes
+                        HTTPS requests to the Keycloak server.
+                        This is <emphasis>OPTIONAL</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>client-keystore-password</term>
+                <listitem>
+                    <para>
+                        <emphasis>Not supported yet, but we will support in future versions.</emphasis>
+                        Password for the client keystore.
+                        This is
+                        <emphasis>REQUIRED</emphasis>
+                        if
+                        <literal>client-keystore</literal>
+                        is set.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>client-key-password</term>
+                <listitem>
+                    <para>
+                        <emphasis>Not supported yet, but we will support in future versions.</emphasis>
+                        Password for the client's key.
+                        This is
+                        <emphasis>REQUIRED</emphasis>
+                        if
+                        <literal>client-keystore</literal>
+                        is set.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>auth-server-url-for-backend-requests</term>
+                <listitem>
+                    <para>
+                        Alternative location of auth-server-url used just for backend requests. It must be absolute URI. Useful
+                        especially in cluster (see <link linkend="relative-uri-optimization">Relative URI Optimization</link>) or if you would like to use <emphasis>https</emphasis> for browser requests
+                        but stick with <emphasis>http</emphasis> for backend requests etc.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>always-refresh-token</term>
+                <listitem>
+                    <para>
+                        If <emphasis>true</emphasis>, Keycloak will refresh token in every request. More info in <link linkend="refresh-token-each-req">Refresh token in each request</link> .
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>register-node-at-startup</term>
+                <listitem>
+                    <para>
+                        If <emphasis>true</emphasis>, then adapter will send registration request to Keycloak. It's <emphasis>false</emphasis>
+                        by default and useful just in cluster (See <link linkend="registration-app-nodes">Registration of application nodes to Keycloak</link>)
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>register-node-period</term>
+                <listitem>
+                    <para>
+                        Period for re-registration adapter to Keycloak. Useful in cluster. See <link linkend="registration-app-nodes">Registration of application nodes to Keycloak</link> for details.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>token-store</term>
+                <listitem>
+                    <para>
+                        Possible values are <emphasis>session</emphasis> and <emphasis>cookie</emphasis>. Default is <emphasis>session</emphasis>,
+                        which means that adapter stores account info in HTTP Session. Alternative <emphasis>cookie</emphasis> means storage of info in cookie.
+                        See <link linkend="stateless-token-store">Stateless token store</link> for details.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>principal-attribute</term>
+                <listitem>
+                    <para>
+                        OpenID Connection ID Token attribute to populate the UserPrincipal name with.  If token attribute is null, defaults to <literal>sub</literal>.
+                        Possible values are <literal>sub</literal>, <literal>preferred_username</literal>, <literal>email</literal>, <literal>name</literal>, <literal>nickname</literal>, <literal>given_name</literal>, <literal>family_name</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </para>
+</chapter>
