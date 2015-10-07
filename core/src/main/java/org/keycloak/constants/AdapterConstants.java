@@ -32,4 +32,7 @@ public interface AdapterConstants {
 
     // Request parameter used to specify the identifier of the identity provider that should be used to authenticate an user
     String KC_IDP_HINT = "kc_idp_hint";
+
+    // Request parameter used to specify the authenticator mechanisms which should be skipped
+    String SKIP_AUTH_MECHANISMS = "skip_auth_mechanisms";
 }

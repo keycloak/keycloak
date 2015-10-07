@@ -111,6 +111,10 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             if (factory == null) {
                 throw new RuntimeException("Unable to find factory for AuthenticatorFactory: " + model.getAuthenticator() + " did you forget to declare it in a META-INF/services file?");
             }
+            if(AuthenticatorUtil.isAuthenticatorSkippable(factory, processor.getClientSession(),model)){
+                processor.getClientSession().setExecutionStatus(model.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
+                continue;
+            }
             Authenticator authenticator = factory.create(processor.getSession());
             AuthenticationProcessor.logger.debugv("authenticator: {0}", factory.getId());
             UserModel authUser = processor.getClientSession().getAuthenticatedUser();

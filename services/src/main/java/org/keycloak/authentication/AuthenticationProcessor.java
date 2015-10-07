@@ -240,6 +240,9 @@ public class AuthenticationProcessor {
             List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(execution.getParentFlow());
             for (AuthenticationExecutionModel exe : executions) {
                 AuthenticatorFactory factory = (AuthenticatorFactory) getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, exe.getAuthenticator());
+                if(AuthenticatorUtil.isAuthenticatorSkippable(factory,getClientSession(), exe)){
+                    continue;
+                }
                 if (factory != null && factory.getReferenceCategory().equals(authenticatorCategory)) {
                     return exe.getRequirement();
                 }

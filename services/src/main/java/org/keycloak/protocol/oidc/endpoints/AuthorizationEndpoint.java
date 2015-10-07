@@ -83,6 +83,7 @@ public class AuthorizationEndpoint {
     private String prompt;
     private String nonce;
     private String idpHint;
+    private String skipAuthMechanisms;
 
     private String legacyResponseType;
 
@@ -105,6 +106,7 @@ public class AuthorizationEndpoint {
         loginHint = params.getFirst(OIDCLoginProtocol.LOGIN_HINT_PARAM);
         prompt = params.getFirst(OIDCLoginProtocol.PROMPT_PARAM);
         idpHint = params.getFirst(AdapterConstants.KC_IDP_HINT);
+        skipAuthMechanisms = params.getFirst(AdapterConstants.SKIP_AUTH_MECHANISMS);
         nonce = params.getFirst(OIDCLoginProtocol.NONCE_PARAM);
 
         checkSsl();
@@ -234,6 +236,7 @@ public class AuthorizationEndpoint {
         if (loginHint != null) clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         if (prompt != null) clientSession.setNote(OIDCLoginProtocol.PROMPT_PARAM, prompt);
         if (idpHint != null) clientSession.setNote(AdapterConstants.KC_IDP_HINT, idpHint);
+        if (skipAuthMechanisms != null) clientSession.setNote(AdapterConstants.SKIP_AUTH_MECHANISMS, skipAuthMechanisms);
     }
 
     private Response buildAuthorizationCodeAuthorizationResponse() {
