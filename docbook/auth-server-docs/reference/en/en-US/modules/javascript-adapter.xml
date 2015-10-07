@@ -209,6 +209,7 @@ new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp'
                         <listitem>redirectUri - specifies the uri to redirect to after login</listitem>
                         <listitem>prompt - can be set to 'none' to check if the user is logged in already (if not logged in, a login form is not displayed)</listitem>
                         <listitem>loginHint - used to pre-fill the username/email field on the login form</listitem>
+                        <listitem>action - if value is 'register' then user is redirected to registration page, otherwise to login page</listitem>
                     </itemizedlist>
                 </para>
             </simplesect>
@@ -244,6 +245,20 @@ new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp'
                         <listitem>redirectUri - specifies the uri to redirect to after logout</listitem>
                     </itemizedlist>
                 </para>
+            </simplesect>
+
+            <simplesect>
+                <title>register(options)</title>
+
+                <para>Redirects to registration form. It's a shortcut for doing login with option action = 'register'</para>
+                <para>Options are same as login method but 'action' is overwritten to 'register'</para>
+            </simplesect>
+
+            <simplesect>
+                <title>createRegisterUrl(options)</title>
+
+                <para>Returns the url to registration page. It's a shortcut for doing createRegisterUrl with option action = 'register'</para>
+                <para>Options are same as createLoginUrl method but 'action' is overwritten to 'register'</para>
             </simplesect>
 
             <simplesect>

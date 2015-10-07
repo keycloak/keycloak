@@ -183,6 +183,18 @@
             return url;
         }
 
+        kc.register = function (options) {
+            return adapter.register(options);
+        }
+
+        kc.createRegisterUrl = function(options) {
+            if (!options) {
+                options = {};
+            }
+            options.action = 'register';
+            return kc.createLoginUrl(options);
+        }
+
         kc.createAccountUrl = function(options) {
             var url = getRealmUrl()
                 + '/account'
@@ -760,6 +772,11 @@
                         return createPromise().promise;
                     },
 
+                    register: function(options) {
+                        window.location.href = kc.createRegisterUrl(options);
+                        return createPromise().promise;
+                    },
+
                     accountManagement : function() {
                         window.location.href = kc.createAccountUrl();
                         return createPromise().promise;
@@ -856,6 +873,16 @@
                         });
 
                         return promise.promise;
+                    },
+
+                    register : function() {
+                        var registerUrl = kc.createRegisterUrl();
+                        var ref = window.open(registerUrl, '_blank', 'location=no');
+                        ref.addEventListener('loadstart', function(event) {
+                            if (event.url.indexOf('http://localhost') == 0) {
+                                ref.close();
+                            }
+                        });
                     },
 
                     accountManagement : function() {
