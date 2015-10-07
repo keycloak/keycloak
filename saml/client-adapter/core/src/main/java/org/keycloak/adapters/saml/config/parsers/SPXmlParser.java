@@ -10,12 +10,10 @@ import org.keycloak.util.StringPropertyReplacer;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -96,7 +94,7 @@ public class SPXmlParser extends AbstractParser {
                 mapping.setAttributeName(attribute);
                 sp.setPrincipalNameMapping(mapping);
 
-            } else if (tag.equals(ConfigXmlConstants.ROLE_MAPPING_ELEMENT)) {
+            } else if (tag.equals(ConfigXmlConstants.ROLE_IDENTIFIERS_ELEMENT)) {
                 parseRoleMapping(xmlEventReader, sp);
             } else if (tag.equals(ConfigXmlConstants.IDP_ELEMENT)) {
                 IDPXmlParser parser = new IDPXmlParser();
@@ -112,7 +110,7 @@ public class SPXmlParser extends AbstractParser {
 
     protected void parseRoleMapping(XMLEventReader xmlEventReader, SP sp)  throws ParsingException {
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
-        StaxParserUtil.validate(startElement, ConfigXmlConstants.ROLE_MAPPING_ELEMENT);
+        StaxParserUtil.validate(startElement, ConfigXmlConstants.ROLE_IDENTIFIERS_ELEMENT);
         Set<String> roleAttributes = new HashSet<>();
         while (xmlEventReader.hasNext()) {
             XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);
@@ -121,7 +119,7 @@ public class SPXmlParser extends AbstractParser {
             if (xmlEvent instanceof EndElement) {
                 EndElement endElement = (EndElement) StaxParserUtil.getNextEvent(xmlEventReader);
                 String endElementName = StaxParserUtil.getEndElementName(endElement);
-                if (endElementName.equals(ConfigXmlConstants.ROLE_MAPPING_ELEMENT))
+                if (endElementName.equals(ConfigXmlConstants.ROLE_IDENTIFIERS_ELEMENT))
                     break;
                 else
                     continue;

@@ -275,8 +275,8 @@
                         <para>
                             This is the signature algorithm that the IDP expects signed documents
                             to use
-                            <emphasis>OPTIONAL.</emphasis>.  The default value is RSA_SHA1, but
-                            you can also use RSA_256, RSA_512, and DSA_SHA1.
+                            <emphasis>OPTIONAL.</emphasis>.  The default value is RSA_SHA256, but
+                            you can also use RSA_SHA1, RSA_256, RSA_512, and DSA_SHA1.
                         </para>
                     </listitem>
                 </varlistentry>

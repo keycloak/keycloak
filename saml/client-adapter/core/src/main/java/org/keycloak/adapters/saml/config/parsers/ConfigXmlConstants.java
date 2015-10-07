@@ -37,7 +37,7 @@ public class ConfigXmlConstants {
     public static final String ATTRIBUTE_ATTR = "attribute";
 
 
-    public static final String ROLE_MAPPING_ELEMENT = "RoleMapping";
+    public static final String ROLE_IDENTIFIERS_ELEMENT = "RoleIdentifiers";
     public static final String ATTRIBUTE_ELEMENT = "Attribute";
     public static final String NAME_ATTR = "name";
 
