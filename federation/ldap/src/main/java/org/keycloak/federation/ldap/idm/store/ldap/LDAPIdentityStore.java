@@ -255,7 +255,9 @@ public class LDAPIdentityStore implements IdentityStore {
         for (Condition condition : identityQuery.getConditions()) {
             applyCondition(filter, condition);
         }
-
+        if (!(identityQuery.getLdapFilter() == null || identityQuery.getLdapFilter().isEmpty())) {
+            filter.append(identityQuery.getLdapFilter());
+        }
 
         filter.insert(0, "(&");
         filter.append(getObjectClassesFilter(identityQuery.getObjectClasses()));
