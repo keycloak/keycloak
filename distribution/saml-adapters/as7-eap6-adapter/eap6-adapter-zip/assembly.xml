@@ -19,6 +19,7 @@
                 <include>org/bouncycastle/**</include>
                 <include>org/keycloak/keycloak-saml-as7-adapter/**</include>
                 <include>org/keycloak/keycloak-saml-as7-subsystem/**</include>
+                <include>org/keycloak/keycloak-saml-adapter-subsystem/**</include>
             </includes>
             <excludes>
                 <exclude>**/*.war</exclude>

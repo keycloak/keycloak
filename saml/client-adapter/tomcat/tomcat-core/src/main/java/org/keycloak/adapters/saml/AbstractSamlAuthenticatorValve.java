@@ -167,7 +167,7 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
 
 
         try {
-            disp.forward(request, response);
+            disp.forward(request.getRequest(), response);
         } catch (ServletException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {

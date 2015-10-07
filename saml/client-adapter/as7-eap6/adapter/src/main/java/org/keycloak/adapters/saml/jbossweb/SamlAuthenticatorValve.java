@@ -7,6 +7,7 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.keycloak.adapters.jbossweb.JBossWebPrincipalFactory;
 import org.keycloak.adapters.saml.AbstractSamlAuthenticatorValve;
+import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
 
 import javax.servlet.http.HttpServletResponse;
@@ -32,6 +33,10 @@ public class SamlAuthenticatorValve extends AbstractSamlAuthenticatorValve {
         return true;
     }
 
+    @Override
+    protected void forwardToLogoutPage(Request request, HttpServletResponse response, SamlDeployment deployment) {
+        super.forwardToLogoutPage(request, response, deployment);
+    }
 
     @Override
     public void start() throws LifecycleException {

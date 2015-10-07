@@ -14,6 +14,7 @@
         <module name="org.apache.httpcomponents"/>
         <module name="org.bouncycastle" />
         <module name="org.keycloak.keycloak-common"/>
+        <module name="org.picketbox"/>
     </dependencies>
 
 </module>

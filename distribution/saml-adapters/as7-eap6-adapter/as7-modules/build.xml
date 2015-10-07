@@ -41,10 +41,6 @@
         <module-def name="org.keycloak.keycloak-common">
             <maven-resource group="org.keycloak" artifact="keycloak-common"/>
         </module-def>
-        <module-def name="org.keycloak.keycloak-core">
-            <maven-resource group="org.keycloak" artifact="keycloak-core"/>
-        </module-def>
-
         <module-def name="org.bouncycastle">
             <maven-resource group="org.bouncycastle" artifact="bcprov-jdk15on"/>
             <maven-resource group="org.bouncycastle" artifact="bcpkix-jdk15on"/>
@@ -58,6 +54,10 @@
             <maven-resource group="org.keycloak" artifact="keycloak-as7-adapter-spi"/>
         </module-def>
 
+        <module-def name="org.keycloak.keycloak-saml-core">
+            <maven-resource group="org.keycloak" artifact="keycloak-saml-core"/>
+        </module-def>
+
         <module-def name="org.keycloak.keycloak-saml-adapter-core">
             <maven-resource group="org.keycloak" artifact="keycloak-saml-adapter-core"/>
         </module-def>
@@ -68,7 +68,7 @@
 
         <module-def name="org.keycloak.keycloak-saml-as7-adapter">
             <maven-resource group="org.keycloak" artifact="keycloak-saml-as7-adapter"/>
-            <maven-resource group="org.keycloak" artifact="keycloak-saml-tomcat-core-adapter"/>
+            <maven-resource group="org.keycloak" artifact="keycloak-saml-tomcat-adapter-core"/>
         </module-def>
 
         <module-def name="org.keycloak.keycloak-saml-as7-subsystem">
