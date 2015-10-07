@@ -24,10 +24,11 @@ public class WrappedHttpServletRequestTest {
     private static final String QUERY_PARM_2 = "code2";
 
     private WrappedHttpServletRequest request;
+    private MockHttpServletRequest mockHttpServletRequest;
 
     @Before
     public void setUp() throws Exception {
-        MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
+        mockHttpServletRequest = new MockHttpServletRequest();
         request = new WrappedHttpServletRequest(mockHttpServletRequest);
 
         mockHttpServletRequest.setMethod(REQUEST_METHOD);
@@ -73,6 +74,13 @@ public class WrappedHttpServletRequestTest {
     @Test
     public void testGetCookie() throws Exception {
         assertNotNull(request.getCookie(COOKIE_NAME));
+    }
+
+    @Test
+    public void testGetCookieCookiesNull() throws Exception
+    {
+        mockHttpServletRequest.setCookies(null);
+        request.getCookie(COOKIE_NAME);
     }
 
     @Test
