@@ -17,11 +17,11 @@
             <outputDirectory>rest-api</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../../docbook/target/auth-server-docs/publish/en-US</directory>
+            <directory>../../docbook/auth-server-docs/target/docbook/publish/en-US</directory>
             <outputDirectory>userguide/keycloak-server</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../../docbook/target/saml-adapter-docs/publish/en-US</directory>
+            <directory>../../docbook/saml-adapter-docs/target/docbook/publish/en-US</directory>
             <outputDirectory>userguide/saml-client-adapter</outputDirectory>
         </fileSet>
     </fileSets>

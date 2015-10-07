@@ -20,9 +20,9 @@
             </Key>
         </Keys>
         <PrincipalNameMapping policy="policy" attribute="attribute"/>
-        <RoleMapping>
+        <RoleIdentifiers>
             <Attribute name="member"/>
-        </RoleMapping>
+        </RoleIdentifiers>
         <IDP entityID="idp"
              signatureAlgorithm="RSA"
              signatureCanonicalizationMethod="canon"

@@ -6,9 +6,11 @@ import org.keycloak.adapters.saml.config.SP;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.parsers.AbstractParser;
 import org.keycloak.saml.common.util.StaxParserUtil;
+import org.keycloak.util.StringPropertyReplacer;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
@@ -23,21 +25,44 @@ import java.util.Set;
  */
 public class SPXmlParser extends AbstractParser {
 
+    public static String getAttributeValue(StartElement startElement, String tag) {
+        String str = StaxParserUtil.getAttributeValue(startElement, tag);
+        if (str != null) return StringPropertyReplacer.replaceProperties(str);
+        else return str;
+    }
+
+    public static boolean getBooleanAttributeValue(StartElement startElement, String tag, boolean defaultValue) {
+        String result = getAttributeValue(startElement, tag);
+        if (result == null) return defaultValue;
+        return Boolean.valueOf(result);
+    }
+
+    public static boolean getBooleanAttributeValue(StartElement startElement, String tag) {
+        return getBooleanAttributeValue(startElement, tag, false);
+    }
+
+    public static String getElementText(XMLEventReader xmlEventReader) throws ParsingException {
+        String result = StaxParserUtil.getElementText(xmlEventReader);
+        if (result != null) result = StringPropertyReplacer.replaceProperties(result);
+        return result;
+    }
+
+
     @Override
     public Object parse(XMLEventReader xmlEventReader) throws ParsingException {
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
         StaxParserUtil.validate(startElement, ConfigXmlConstants.SP_ELEMENT);
         SP sp = new SP();
-        String entityID = StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.ENTITY_ID_ATTR);
+        String entityID = getAttributeValue(startElement, ConfigXmlConstants.ENTITY_ID_ATTR);
         if (entityID == null) {
             throw new ParsingException("entityID must be set on SP");
 
         }
         sp.setEntityID(entityID);
-        sp.setSslPolicy(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.SSL_POLICY_ATTR));
-        sp.setLogoutPage(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.LOGOUT_PAGE_ATTR));
-        sp.setNameIDPolicyFormat(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.NAME_ID_POLICY_FORMAT_ATTR));
-        sp.setForceAuthentication(StaxParserUtil.getBooleanAttributeValue(startElement, ConfigXmlConstants.FORCE_AUTHENTICATION_ATTR));
+        sp.setSslPolicy(getAttributeValue(startElement, ConfigXmlConstants.SSL_POLICY_ATTR));
+        sp.setLogoutPage(getAttributeValue(startElement, ConfigXmlConstants.LOGOUT_PAGE_ATTR));
+        sp.setNameIDPolicyFormat(getAttributeValue(startElement, ConfigXmlConstants.NAME_ID_POLICY_FORMAT_ATTR));
+        sp.setForceAuthentication(getBooleanAttributeValue(startElement, ConfigXmlConstants.FORCE_AUTHENTICATION_ATTR));
         while (xmlEventReader.hasNext()) {
             XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);
             if (xmlEvent == null)
@@ -60,12 +85,12 @@ public class SPXmlParser extends AbstractParser {
                 sp.setKeys(keys);
             } else if (tag.equals(ConfigXmlConstants.PRINCIPAL_NAME_MAPPING_ELEMENT)) {
                 StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
-                String policy = StaxParserUtil.getAttributeValue(element, ConfigXmlConstants.POLICY_ATTR);
+                String policy = getAttributeValue(element, ConfigXmlConstants.POLICY_ATTR);
                 if (policy == null) {
                     throw new ParsingException("PrincipalNameMapping element must have the policy attribute set");
 
                 }
-                String attribute = StaxParserUtil.getAttributeValue(element, ConfigXmlConstants.ATTRIBUTE_ATTR);
+                String attribute = getAttributeValue(element, ConfigXmlConstants.ATTRIBUTE_ATTR);
                 SP.PrincipalNameMapping mapping = new SP.PrincipalNameMapping();
                 mapping.setPolicy(policy);
                 mapping.setAttributeName(attribute);
@@ -107,7 +132,7 @@ public class SPXmlParser extends AbstractParser {
             String tag = StaxParserUtil.getStartElementName(startElement);
             if (tag.equals(ConfigXmlConstants.ATTRIBUTE_ELEMENT)) {
                 StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
-                String attributeValue = StaxParserUtil.getAttributeValue(element, ConfigXmlConstants.NAME_ATTR);
+                String attributeValue = getAttributeValue(element, ConfigXmlConstants.NAME_ATTR);
                 if (attributeValue == null) {
                     throw new ParsingException("RoleMapping Attribute element must have the name attribute set");
 

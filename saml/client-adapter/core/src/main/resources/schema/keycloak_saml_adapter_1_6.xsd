@@ -25,7 +25,7 @@
         <xs:all>
             <xs:element name="Keys" type="keys-type" minOccurs="0" maxOccurs="1"/>
             <xs:element name="PrincipalNameMapping" type="principal-name-mapping-type" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="RoleMapping" type="role-mapping-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="RoleIdentifiers" type="role-identifiers-type" minOccurs="0" maxOccurs="1"/>
             <xs:element name="IDP" type="idp-type" minOccurs="1" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="entityID" type="xs:string" use="required"/>
@@ -70,7 +70,7 @@
         <xs:attribute name="policy" type="xs:string" use="required"/>
         <xs:attribute name="attribute" type="xs:string" use="optional"/>
     </xs:complexType>
-    <xs:complexType name="role-mapping-type">
+    <xs:complexType name="role-identifiers-type">
         <xs:choice minOccurs="0" maxOccurs="unbounded">
             <xs:element name="Attribute" maxOccurs="unbounded" minOccurs="0" type="attribute-type"/>
         </xs:choice>
