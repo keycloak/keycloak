@@ -54,6 +54,9 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     // See docs for Mode enum
     public static final String MODE = "mode";
+    
+    // Customized LDAP filter which is added to the whole LDAP query
+    public static final String ROLES_LDAP_FILTER = "roles.ldap.filter";
 
 
     // List of IDs of UserFederationMapperModels where syncRolesFromLDAP was already called in this KeycloakSession. This is to improve performance
@@ -128,6 +131,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         ldapQuery.addObjectClasses(roleObjectClasses);
 
         String rolesRdnAttr = getRoleNameLdapAttribute(mapperModel);
+        ldapQuery.setLdapFilter(mapperModel.getConfig().get(RoleLDAPFederationMapper.ROLES_LDAP_FILTER));
         String membershipAttr = getMembershipLdapAttribute(mapperModel);
         ldapQuery.addReturningLdapAttribute(rolesRdnAttr);
         ldapQuery.addReturningLdapAttribute(membershipAttr);
