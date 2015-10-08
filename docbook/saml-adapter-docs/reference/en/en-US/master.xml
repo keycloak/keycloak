@@ -1,6 +1,7 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
                          "http://www.docbook.org/xml/4.4/docbookx.dtd"
         [
+                <!ENTITY Overview SYSTEM "modules/overview.xml">
                 <!ENTITY AdapterConfig SYSTEM "modules/adapter-config.xml">
                 <!ENTITY JBossAdapter SYSTEM "modules/jboss-adapter.xml">
                 <!ENTITY TomcatAdapter SYSTEM "modules/tomcat-adapter.xml">
@@ -13,7 +14,7 @@
 
    <bookinfo>
       <title>Keycloak SAML Client Adapter Reference Guide</title>
-      <subtitle>SAML 2.0 Client Adapters for Java Applications</subtitle>
+      <subtitle>SAML 2.0 Client Adapters</subtitle>
       <releaseinfo>&project.version;</releaseinfo>
    </bookinfo>
 
@@ -39,6 +40,7 @@ This one is short
 </programlisting>
       </para>
    </preface>
+    &Overview;
     &AdapterConfig;
     &JBossAdapter;
     &TomcatAdapter;

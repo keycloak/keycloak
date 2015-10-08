@@ -15,6 +15,7 @@
 
     <modules>
         <module>adapter-spi</module>
+        <module>servlet-adapter-spi</module>
         <module>adapter-core</module>
         <module>jaxrs-oauth-client</module>
         <module>servlet-oauth-client</module>
