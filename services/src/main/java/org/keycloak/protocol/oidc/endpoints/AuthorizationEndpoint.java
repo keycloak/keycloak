@@ -5,6 +5,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -280,17 +281,7 @@ public class AuthorizationEndpoint {
 
         AuthenticationFlowModel flow = realm.getBrowserFlow();
         String flowId = flow.getId();
-        AuthenticationProcessor processor = new AuthenticationProcessor();
-        processor.setClientSession(clientSession)
-                .setFlowPath(LoginActionsService.AUTHENTICATE_PATH)
-                .setFlowId(flowId)
-                .setConnection(clientConnection)
-                .setEventBuilder(event)
-                .setProtector(authManager.getProtector())
-                .setRealm(realm)
-                .setSession(session)
-                .setUriInfo(uriInfo)
-                .setRequest(request);
+        AuthenticationProcessor processor = createProcessor(flowId, LoginActionsService.AUTHENTICATE_PATH);
 
         Response challenge = null;
         try {
@@ -321,18 +312,38 @@ public class AuthorizationEndpoint {
     private Response buildRegister() {
         authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
-        return session.getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode())
-                .createRegistration();
+        AuthenticationFlowModel flow = realm.getRegistrationFlow();
+        String flowId = flow.getId();
+
+        AuthenticationProcessor processor = createProcessor(flowId, LoginActionsService.REGISTRATION_PATH);
+
+        return processor.authenticate();
     }
 
     private Response buildForgotCredential() {
         authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
-        return session.getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode())
-                .setActionUri(OIDCLoginProtocolService.authUrl(uriInfo).build(realm.getName()))
-                .createPasswordReset();
+        AuthenticationFlowModel flow = realm.getResetCredentialsFlow();
+        String flowId = flow.getId();
+
+        AuthenticationProcessor processor = createProcessor(flowId, LoginActionsService.RESET_CREDENTIALS_PATH);
+
+        return processor.authenticate();
+    }
+
+    private AuthenticationProcessor createProcessor(String flowId, String flowPath) {
+        AuthenticationProcessor processor = new AuthenticationProcessor();
+        processor.setClientSession(clientSession)
+                .setFlowPath(flowPath)
+                .setFlowId(flowId)
+                .setConnection(clientConnection)
+                .setEventBuilder(event)
+                .setProtector(authManager.getProtector())
+                .setRealm(realm)
+                .setSession(session)
+                .setUriInfo(uriInfo)
+                .setRequest(request);
+        return processor;
     }
 
     private Response buildRedirectToIdentityProvider(String providerId, String accessCode) {
