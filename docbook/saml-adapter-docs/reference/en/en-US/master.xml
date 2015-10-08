@@ -1,6 +1,12 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
                          "http://www.docbook.org/xml/4.4/docbookx.dtd"
         [
+                <!ENTITY AdapterConfig SYSTEM "modules/adapter-config.xml">
+                <!ENTITY JBossAdapter SYSTEM "modules/jboss-adapter.xml">
+                <!ENTITY TomcatAdapter SYSTEM "modules/tomcat-adapter.xml">
+                <!ENTITY Jetty9Adapter SYSTEM "modules/jetty9-adapter.xml">
+                <!ENTITY Jetty8Adapter SYSTEM "modules/jetty8-adapter.xml">
+                <!ENTITY Logout SYSTEM "modules/logout.xml">
                 ]>
 
 <book>
@@ -33,6 +39,13 @@ This one is short
 </programlisting>
       </para>
    </preface>
+    &AdapterConfig;
+    &JBossAdapter;
+    &TomcatAdapter;
+    &Jetty9Adapter;
+    &Jetty8Adapter;
+    &Logout;
+
 
 
 </book>

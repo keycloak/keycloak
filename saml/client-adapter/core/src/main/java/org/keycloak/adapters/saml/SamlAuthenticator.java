@@ -292,15 +292,14 @@ public abstract class SamlAuthenticator {
                 }
             }
         }
-        if (deployment.getPrincipalNamePolicy() == SamlDeployment.PrincipalNamePolicy.FROM_ATTRIBUTE_NAME) {
+        if (deployment.getPrincipalNamePolicy() == SamlDeployment.PrincipalNamePolicy.FROM_ATTRIBUTE) {
             if (deployment.getPrincipalAttributeName() != null) {
                 String attribute = attributes.getFirst(deployment.getPrincipalAttributeName());
                 if (attribute != null) principalName = attribute;
-            }
-        } else   if (deployment.getPrincipalNamePolicy() == SamlDeployment.PrincipalNamePolicy.FROM_FRIENDLY_ATTRIBUTE_NAME) {
-            if (deployment.getPrincipalAttributeName() != null) {
-                String attribute = friendlyAttributes.getFirst(deployment.getPrincipalAttributeName());
-                if (attribute != null) principalName = attribute;
+                else {
+                    attribute = friendlyAttributes.getFirst(deployment.getPrincipalAttributeName());
+                    if (attribute != null) principalName = attribute;
+                }
             }
         }
 

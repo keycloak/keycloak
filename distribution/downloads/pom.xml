@@ -248,7 +248,106 @@
                                     <type>tar.gz</type>
                                 </artifactItem>
                             </artifactItems>
-                            <outputDirectory>target/${project.version}/adapters</outputDirectory>
+                            <outputDirectory>target/${project.version}/adapters/keycloak-oidc</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>saml-adapter-downloads</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-as7-adapter-dist</artifactId>
+                                    <type>zip</type>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-as7-adapter-dist</artifactId>
+                                    <type>tar.gz</type>
+                                </artifactItem>
+
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
+                                    <type>zip</type>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
+                                    <type>tar.gz</type>
+                                </artifactItem>
+
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-jetty81-adapter-dist</artifactId>
+                                    <type>zip</type>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-jetty81-adapter-dist</artifactId>
+                                    <type>tar.gz</type>
+                                </artifactItem>
+
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-jetty92-adapter-dist</artifactId>
+                                    <type>zip</type>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-jetty92-adapter-dist</artifactId>
+                                    <type>tar.gz</type>
+                                </artifactItem>
+
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-tomcat6-adapter-dist</artifactId>
+                                    <type>zip</type>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-tomcat6-adapter-dist</artifactId>
+                                    <type>tar.gz</type>
+                                </artifactItem>
+
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-tomcat7-adapter-dist</artifactId>
+                                    <type>zip</type>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-tomcat7-adapter-dist</artifactId>
+                                    <type>tar.gz</type>
+                                </artifactItem>
+
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-tomcat8-adapter-dist</artifactId>
+                                    <type>zip</type>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-tomcat8-adapter-dist</artifactId>
+                                    <type>tar.gz</type>
+                                </artifactItem>
+
+                               <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-wf9-adapter-dist</artifactId>
+                                    <type>zip</type>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-wf9-adapter-dist</artifactId>
+                                    <type>tar.gz</type>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>target/${project.version}/adapters/saml</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>

@@ -20,6 +20,8 @@ import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -52,6 +54,11 @@ public class DeploymentBuilder {
             deployment.setPrincipalAttributeName(sp.getPrincipalNameMapping().getAttributeName());
         }
         deployment.setRoleAttributeNames(sp.getRoleAttributes());
+        if (sp.getRoleAttributes() == null) {
+            Set<String> roles = new HashSet<>();
+            roles.add("Role");
+            deployment.setRoleAttributeNames(roles);
+        }
         if (sp.getSslPolicy() != null) {
             SslRequired ssl = SslRequired.valueOf(sp.getSslPolicy());
             deployment.setSslRequired(ssl);

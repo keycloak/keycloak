@@ -5,9 +5,9 @@
         logoutPage="/logout.jsp"
         forceAuthentication="false">
         <PrincipalNameMapping policy="FROM_NAME_ID"/>
-        <RoleMapping>
+        <RoleIdentifiers>
             <Attribute name="Role"/>
-        </RoleMapping>
+        </RoleIdentifiers>
         <IDP entityID="idp">
             <SingleSignOnService requestBinding="POST"
                                  bindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"

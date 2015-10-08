@@ -13,9 +13,9 @@
             </Key>
         </Keys>
         <PrincipalNameMapping policy="FROM_NAME_ID"/>
-        <RoleMapping>
+        <RoleIdentifiers>
             <Attribute name="Role"/>
-        </RoleMapping>
+        </RoleIdentifiers>
         <IDP entityID="idp"
              signaturesRequired="true">
         <SingleSignOnService requestBinding="POST"
