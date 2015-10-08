@@ -20,6 +20,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
@@ -50,6 +51,9 @@ public abstract class AbstractKeycloakTest {
     
     @ArquillianResource
     protected Keycloak adminClient;
+
+    @ArquillianResource
+    protected OAuthClient oauthClient;
 
     protected List<RealmRepresentation> testRealmReps;
 

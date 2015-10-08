@@ -203,6 +203,10 @@
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-client-api</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-services</artifactId>
                 </dependency>
                 <dependency>
