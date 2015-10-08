@@ -12,6 +12,6 @@ Open the Keycloak admin console, click on Add Realm, click on 'Choose a JSON fil
 
 Deploy the JS Console to Keycloak by running:
 
-    mvn install jboss-as:deploy
+    mvn install wildfly:deploy
 
 Open the console at http://localhost:8080/js-console and login with username: 'user', and password: 'password'.
