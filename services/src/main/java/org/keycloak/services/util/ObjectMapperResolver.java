@@ -1,4 +1,4 @@
-package org.keycloak;
+package org.keycloak.services.util;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
@@ -14,24 +14,18 @@ import javax.ws.rs.ext.Provider;
  * @version $Revision: 1 $
  */
 @Provider
-public class SkeletonKeyContextResolver implements ContextResolver<ObjectMapper> {
+public class ObjectMapperResolver implements ContextResolver<ObjectMapper> {
     protected ObjectMapper mapper = new ObjectMapper();
 
-    public SkeletonKeyContextResolver() {
-        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
-    }
-
-    public SkeletonKeyContextResolver(boolean indent) {
+    public ObjectMapperResolver(boolean indent) {
         mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
         if (indent) {
             mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
         }
     }
 
-
     @Override
     public ObjectMapper getContext(Class<?> type) {
-        if (type.getPackage() != null && type.getPackage().getName().startsWith(getClass().getPackage().getName())) return mapper;
-        return null;
+        return mapper;
     }
 }
