@@ -17,10 +17,10 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -28,6 +28,7 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.Urls;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.util.KeycloakUriBuilder;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.core.Context;
@@ -46,7 +47,7 @@ public class AuthorizationEndpoint {
     public static final String CODE_AUTH_TYPE = "code";
 
     private enum Action {
-        REGISTER, CODE
+        REGISTER, CODE, FORGOT_CREDENTIALS
     }
 
     @Context
@@ -118,6 +119,8 @@ public class AuthorizationEndpoint {
         switch (action) {
             case REGISTER:
                 return buildRegister();
+            case FORGOT_CREDENTIALS:
+                return buildForgotCredential();
             case CODE:
                 return buildAuthorizationCodeAuthorizationResponse();
         }
@@ -140,6 +143,17 @@ public class AuthorizationEndpoint {
 
         if (!realm.isRegistrationAllowed()) {
             throw new ErrorPageException(session, Messages.REGISTRATION_NOT_ALLOWED);
+        }
+
+        return this;
+    }
+
+    public AuthorizationEndpoint forgotCredentials() {
+        event.event(EventType.RESET_PASSWORD);
+        action = Action.FORGOT_CREDENTIALS;
+
+        if (!realm.isResetPasswordAllowed()) {
+            throw new ErrorPageException(session, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
         }
 
         return this;
@@ -309,8 +323,16 @@ public class AuthorizationEndpoint {
 
         return session.getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode())
-                .setAttribute("passwordRequired",true)
                 .createRegistration();
+    }
+
+    private Response buildForgotCredential() {
+        authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
+
+        return session.getProvider(LoginFormsProvider.class)
+                .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode())
+                .setActionUri(OIDCLoginProtocolService.authUrl(uriInfo).build(realm.getName()))
+                .createPasswordReset();
     }
 
     private Response buildRedirectToIdentityProvider(String providerId, String accessCode) {
