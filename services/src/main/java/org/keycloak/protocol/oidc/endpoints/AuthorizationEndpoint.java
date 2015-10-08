@@ -17,7 +17,6 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -46,7 +45,7 @@ public class AuthorizationEndpoint {
     public static final String CODE_AUTH_TYPE = "code";
 
     private enum Action {
-        REGISTER, CODE
+        REGISTER, CODE, FORGOT_CREDENTIALS
     }
 
     @Context
@@ -118,6 +117,8 @@ public class AuthorizationEndpoint {
         switch (action) {
             case REGISTER:
                 return buildRegister();
+            case FORGOT_CREDENTIALS:
+                return buildForgotCredential();
             case CODE:
                 return buildAuthorizationCodeAuthorizationResponse();
         }
@@ -140,6 +141,17 @@ public class AuthorizationEndpoint {
 
         if (!realm.isRegistrationAllowed()) {
             throw new ErrorPageException(session, Messages.REGISTRATION_NOT_ALLOWED);
+        }
+
+        return this;
+    }
+
+    public AuthorizationEndpoint forgotCredentials() {
+        event.event(EventType.RESET_PASSWORD);
+        action = Action.FORGOT_CREDENTIALS;
+
+        if (!realm.isResetPasswordAllowed()) {
+            throw new ErrorPageException(session, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
         }
 
         return this;
@@ -266,17 +278,7 @@ public class AuthorizationEndpoint {
 
         AuthenticationFlowModel flow = realm.getBrowserFlow();
         String flowId = flow.getId();
-        AuthenticationProcessor processor = new AuthenticationProcessor();
-        processor.setClientSession(clientSession)
-                .setFlowPath(LoginActionsService.AUTHENTICATE_PATH)
-                .setFlowId(flowId)
-                .setConnection(clientConnection)
-                .setEventBuilder(event)
-                .setProtector(authManager.getProtector())
-                .setRealm(realm)
-                .setSession(session)
-                .setUriInfo(uriInfo)
-                .setRequest(request);
+        AuthenticationProcessor processor = createProcessor(flowId, LoginActionsService.AUTHENTICATE_PATH);
 
         Response challenge = null;
         try {
@@ -307,9 +309,38 @@ public class AuthorizationEndpoint {
     private Response buildRegister() {
         authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
-        return session.getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode())
-                .createRegistration();
+        AuthenticationFlowModel flow = realm.getRegistrationFlow();
+        String flowId = flow.getId();
+
+        AuthenticationProcessor processor = createProcessor(flowId, LoginActionsService.REGISTRATION_PATH);
+
+        return processor.authenticate();
+    }
+
+    private Response buildForgotCredential() {
+        authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
+
+        AuthenticationFlowModel flow = realm.getResetCredentialsFlow();
+        String flowId = flow.getId();
+
+        AuthenticationProcessor processor = createProcessor(flowId, LoginActionsService.RESET_CREDENTIALS_PATH);
+
+        return processor.authenticate();
+    }
+
+    private AuthenticationProcessor createProcessor(String flowId, String flowPath) {
+        AuthenticationProcessor processor = new AuthenticationProcessor();
+        processor.setClientSession(clientSession)
+                .setFlowPath(flowPath)
+                .setFlowId(flowId)
+                .setConnection(clientConnection)
+                .setEventBuilder(event)
+                .setProtector(authManager.getProtector())
+                .setRealm(realm)
+                .setSession(session)
+                .setUriInfo(uriInfo)
+                .setRequest(request);
+        return processor;
     }
 
     private Response buildRedirectToIdentityProvider(String providerId, String accessCode) {

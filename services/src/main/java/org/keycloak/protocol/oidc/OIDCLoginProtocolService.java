@@ -121,6 +121,16 @@ public class OIDCLoginProtocolService {
     }
 
     /**
+     * Forgot-Credentials endpoint
+     */
+    @Path("forgot-credentials")
+    public Object forgotCredentialsPage() {
+        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(authManager, realm, event);
+        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
+        return endpoint.forgotCredentials();
+    }
+
+    /**
      * Token endpoint
      */
     @Path("token")
