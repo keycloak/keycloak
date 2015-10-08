@@ -309,6 +309,7 @@ public class AuthorizationEndpoint {
 
         return session.getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode())
+                .setAttribute("passwordRequired",true)
                 .createRegistration();
     }
 
