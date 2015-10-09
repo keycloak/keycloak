@@ -1,0 +1,55 @@
+<chapter>
+    <title>Java Servlet Filter Adapter</title>
+    <para>
+        If you want to use  SAML with a Java servlet application that doesn't have an adapter for that servlet
+        platform, you can opt to use the servlet filter adapter that Keycloak has.  This adapter works a little
+        differently than the other adapters.  You do not define security constraints in web.xml.  Instead you define
+        a filter mapping using the Keycloak servlet filter adapter to secure the url patterns you want to secure.
+    </para>
+    <warning>
+        <para>
+            Backchannel logout works a bit differently than the standard adapters.  Instead of invalidating the http session
+            it instead marks the session id as logged out.  There's just no way of arbitrarily invalidating an http session
+            based on a session id.
+        </para>
+    </warning>
+    <warning>
+        <para>
+            Backchannel logout does not currently work when you have a clustered application that uses the SAML filter.
+        </para>
+    </warning>
+    <programlisting>
+        <![CDATA[
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+      version="3.0">
+
+	<module-name>customer-portal</module-name>
+
+    <filter>
+        <filter-name>Keycloak Filter</filter-name>
+        <filter-class>org.keycloak.adapters.saml.servlet.SamlFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>Keycloak Filter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+</web-app>
+]]>
+    </programlisting>
+    <para>
+        The Keycloak filter has the same configuration parameters available as the other adapters except you must define
+        them as filter init params instead of context params.
+    </para>
+    <para>
+        To use this filter, include this maven artifact in your WAR poms
+    </para>
+    <programlisting><![CDATA[
+           <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
+                <version>&project.version;</version>
+            </dependency>
+]]></programlisting>
+</chapter>

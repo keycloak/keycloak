@@ -59,13 +59,13 @@
         <para>
             Here is the explanation of the SP element attributes
         </para>
-        <para><![CDATA[
+        <programlisting><![CDATA[
 <SP entityID="sp"
     sslPolicy="ssl"
     nameIDPolicyFormat="format"
     forceAuthentication="true">
 ...
-</SP>]]></para>
+</SP>]]></programlisting>
         <para>
             <variablelist>
                 <varlistentry>
@@ -129,7 +129,7 @@
             or you can cut and paste the keys directly within <literal>keycloak-saml.xml</literal>
             in the PEM format.
         </para>
-        <para><![CDATA[
+        <programlisting><![CDATA[
         <Keys>
             <Key signing="true" >
                 <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
@@ -139,7 +139,7 @@
             </Key>
         </Keys>
 ]]>
-        </para>
+        </programlisting>
         <para>
             The <literal>Key</literal> element has two optional attributes <literal>signing</literal>
             and <literal>encryption</literal>.  When set to true these tell the adapter what the
@@ -215,13 +215,13 @@
     </section>
     <section>
         <title>RoleIdentifiers element</title>
-        <para><![CDATA[
+        <programlisting><![CDATA[
 <RoleIdentifiers>
      <Attribute name="Role"/>
      <Attribute name="member"/>
      <Attribute name="memberOf"/>
 </RoleIdentifiers>
-]]></para>
+]]></programlisting>
         <para>
             This element is optional.  It defines which SAML attribute values in the assertion should be
             mapped to a Java EE role.  By default <literal>Role</literal> attribute values are converted
@@ -236,7 +236,7 @@
             Everything in the IDP element describes the settings for the IDP the SP is communicating
             with.
         </para>
-        <para>
+        <programlisting>
 <![CDATA[
 <IDP entityID="idp"
      signaturesRequired="true"
@@ -244,7 +244,7 @@
      signatureCanonicalizationMethod="http://www.w3.org/2001/10/xml-exc-c14n#">
 ...
 </IDP>]]>
-        </para>
+        </programlisting>
         <para>
             <variablelist>
                 <varlistentry>
@@ -300,12 +300,12 @@
             The <literal>SignleSignOnService</literal> sub element defines the
             login SAML endpoint of the IDP.
         </para>
-        <para><![CDATA[
+        <programlisting><![CDATA[
 <SingleSignOnService signRequest="true"
                      validateResponseSignature="true"
                      requestBinding="post"
                      bindingUrl="url"/>
-]]></para>
+]]></programlisting>
         <para>
             <variablelist>
                 <varlistentry>
@@ -367,7 +367,7 @@
         The <literal>SignleSignOnService</literal> sub element defines the
         login SAML endpoint of the IDP.
     </para>
-    <para><![CDATA[
+    <programlisting><![CDATA[
 <SingleLogoutService validateRequestSignature="true"
                      validateResponseSignature="true"
                      signRequest="true"
@@ -376,7 +376,7 @@
                      responseBinding="post"
                      postBindingUrl="posturl"
                      redirectBindingUrl="redirecturl">
-]]></para>
+]]></programlisting>
     <para>
         <variablelist>
             <varlistentry>
