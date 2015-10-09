@@ -21,7 +21,6 @@
         <module name="org.keycloak.keycloak-connections-file" services="import"/>
         <module name="org.keycloak.keycloak-common" services="import"/>
         <module name="org.keycloak.keycloak-core" services="import"/>
-        <module name="org.keycloak.keycloak-core-jaxrs" services="import"/>
         <module name="org.keycloak.keycloak-email-api" services="import"/>
         <module name="org.keycloak.keycloak-email-freemarker" services="import"/>
         <module name="org.keycloak.keycloak-events-api" services="import"/>

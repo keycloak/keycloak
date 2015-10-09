@@ -136,7 +136,6 @@
     <modules>
         <module>common</module>
         <module>core</module>
-        <module>core-jaxrs</module>
         <module>client-api</module>
         <module>connections</module>
         <module>dependencies</module>
@@ -654,11 +653,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-client-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-core-jaxrs</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
