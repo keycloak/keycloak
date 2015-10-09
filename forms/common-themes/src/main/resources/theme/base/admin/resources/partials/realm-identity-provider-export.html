@@ -1,6 +1,6 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2" data-ng-init="initProvider()">
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
+        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">{{:: 'identity-providers' | translate}}</a></li>
         <li>{{identityProvider.alias}}</li>
     </ol>
 
@@ -10,7 +10,7 @@
         <fieldset class="border-top">
             <div class="form-group">
                 <div class="col-sm-12">
-                    <a class="btn btn-primary" data-ng-click="download()" type="submit">Download</a>
+                    <a class="btn btn-primary" data-ng-click="download()" type="submit">{{:: 'download' | translate}}</a>
                     <textarea class="form-control" rows="20" kc-select-action="click">{{exported}}</textarea>
                 </div>
             </div>

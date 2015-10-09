@@ -1,6 +1,6 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
+        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">{{:: 'identity-providers' | translate}}</a></li>
         <li>{{identityProvider.alias}}</li>
     </ol>
 
@@ -13,22 +13,22 @@
                 <div class="form-inline">
                     <div class="form-group">
                         <div class="input-group">
-                            <input type="text" placeholder="Search..." data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                            <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
                             <div class="input-group-addon">
                                 <i class="fa fa-search" type="submit"></i>
                             </div>
                         </div>
                     </div>
                     <div class="pull-right">
-                        <a class="btn btn-primary" href="#/create/identity-provider-mappers/{{realm.realm}}/{{identityProvider.alias}}">Create</a>
+                        <a class="btn btn-primary" href="#/create/identity-provider-mappers/{{realm.realm}}/{{identityProvider.alias}}">{{:: 'create' | translate}}</a>
                     </div>
                 </div>
             </th>
         </tr>
         <tr data-ng-hide="mappers.length == 0">
-            <th>Name</th>
-            <th>Category</th>
-            <th>Type</th>
+            <th>{{:: 'name' | translate}}</th>
+            <th>{{:: 'category' | translate}}</th>
+            <th>{{:: 'type' | translate}}</th>
         </tr>
         </thead>
         <tbody>
@@ -38,7 +38,7 @@
             <td>{{mapperTypes[mapper.identityProviderMapper].name}}</td>
         </tr>
         <tr data-ng-show="mappers.length == 0">
-            <td>No mappers available</td>
+            <td>{{:: 'no-mappers-available' | translate}}</td>
         </tr>
         </tbody>
     </table>
