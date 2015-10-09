@@ -32,10 +32,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core-jaxrs</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-as7-server-subsystem</artifactId>
         </dependency>
         <dependency>
