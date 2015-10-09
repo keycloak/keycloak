@@ -26,7 +26,11 @@ public class SendUsernameServlet extends HttpServlet {
         if (checkRoles != null) {
             for (String role : checkRoles) {
                 System.out.println("check role: " + role);
-                Assert.assertTrue(req.isUserInRole(role));
+                //Assert.assertTrue(req.isUserInRole(role));
+                if (!req.isUserInRole(role)) {
+                    resp.sendError(403);
+                    return;
+                }
             }
 
         }

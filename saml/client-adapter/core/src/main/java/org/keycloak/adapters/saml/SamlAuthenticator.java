@@ -88,6 +88,9 @@ public abstract class SamlAuthenticator {
 
     protected AuthOutcome globalLogout() {
         SamlSession account = sessionStore.getAccount();
+        if (account == null) {
+            return AuthOutcome.NOT_ATTEMPTED;
+        }
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
                 .assertionExpiration(30)
                 .issuer(deployment.getEntityID())
