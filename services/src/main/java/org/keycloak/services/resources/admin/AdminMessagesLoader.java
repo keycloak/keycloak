@@ -43,9 +43,36 @@ public class AdminMessagesLoader {
 
         Locale locale = Locale.forLanguageTag(strLocale);
         messages = theme.getMessages("admin-messages", locale);
-        if (messages == null) return new Properties();
+
+        validateMessages(messages, strLocale);
 
         allMessages.put(allMessagesKey, messages);
         return messages;
+    }
+
+    private static void validateMessages(Properties messages, String strLocale) {
+        if (messages == null) throw new NullPointerException("Unable to find admin-messages bundle for locale=" + strLocale);
+
+        if (allMessages.isEmpty()) return;
+
+        Properties standardBundle = allMessages.values().iterator().next();
+        if (standardBundle.keySet().containsAll(messages.keySet()) &&
+            (messages.keySet().containsAll(standardBundle.keySet()))) {
+            return; // it all checks out
+        }
+
+        // otherwise, find the offending key
+        for (Object key : standardBundle.keySet()) {
+            if (!messages.containsKey(key)) {
+                throw new RuntimeException("Key '" + key + "' not found in admin-messages bundle for locale=" + strLocale);
+            }
+        }
+
+        for (Object key : messages.keySet()) {
+            if (!standardBundle.containsKey(key)) {
+                throw new RuntimeException("Key '" + key + "' was found in admin-messages bundle for locale=" + strLocale +
+                                           ". However, this key is not found in previously loaded bundle.");
+            }
+        }
     }
 }
