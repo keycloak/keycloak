@@ -2,12 +2,9 @@ package org.keycloak.protocol.oidc.mappers;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 
 import java.util.ArrayList;
@@ -23,14 +20,16 @@ public class OIDCAttributeMapperHelper {
     private static final Logger logger = Logger.getLogger(OIDCAttributeMapperHelper.class);
 
     public static final String TOKEN_CLAIM_NAME = "claim.name";
-    public static final String TOKEN_CLAIM_NAME_LABEL = "Token Claim Name";
-    public static final String JSON_TYPE = "Claim JSON Type";
+    public static final String TOKEN_CLAIM_NAME_LABEL = "tokenClaimName.label";
+    public static final String TOKEN_CLAIM_NAME_TOOLTIP = "tokenClaimName.tooltip";
+    public static final String JSON_TYPE = "jsonType.label";
+    public static final String JSON_TYPE_TOOLTIP = "jsonType.tooltip";
     public static final String INCLUDE_IN_ACCESS_TOKEN = "access.token.claim";
-    public static final String INCLUDE_IN_ACCESS_TOKEN_LABEL = "Add to access token";
-    public static final String INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT = "Should the claim be added to the access token?";
+    public static final String INCLUDE_IN_ACCESS_TOKEN_LABEL = "includeInAccessToken.label";
+    public static final String INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT = "includeInAccessToken.tooltip";
     public static final String INCLUDE_IN_ID_TOKEN = "id.token.claim";
-    public static final String INCLUDE_IN_ID_TOKEN_LABEL = "Add to ID token";
-    public static final String INCLUDE_IN_ID_TOKEN_HELP_TEXT = "Should the claim be added to the ID token?";
+    public static final String INCLUDE_IN_ID_TOKEN_LABEL = "includeInIdToken.label";
+    public static final String INCLUDE_IN_ID_TOKEN_HELP_TEXT = "includeInIdToken.tooltip";
 
     public static Object mapAttributeValue(ProtocolMapperModel mappingModel, Object attributeValue) {
         if (attributeValue == null) return null;
@@ -139,7 +138,7 @@ public class OIDCAttributeMapperHelper {
         property.setName(TOKEN_CLAIM_NAME);
         property.setLabel(TOKEN_CLAIM_NAME_LABEL);
         property.setType(ProviderConfigProperty.STRING_TYPE);
-        property.setHelpText("Name of the claim to insert into the token.  This can be a fully qualified name like 'address.street'.  In this case, a nested json object will be created.");
+        property.setHelpText(TOKEN_CLAIM_NAME_TOOLTIP);
         configProperties.add(property);
         property = new ProviderConfigProperty();
         property.setName(JSON_TYPE);
@@ -151,7 +150,7 @@ public class OIDCAttributeMapperHelper {
         types.add("boolean");
         property.setType(ProviderConfigProperty.LIST_TYPE);
         property.setDefaultValue(types);
-        property.setHelpText("JSON type that should be used to populate the json claim in the token.  long, int, boolean, and String are valid values.");
+        property.setHelpText(JSON_TYPE_TOOLTIP);
         configProperties.add(property);
         property = new ProviderConfigProperty();
         property.setName(INCLUDE_IN_ID_TOKEN);

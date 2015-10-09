@@ -1,6 +1,6 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2" data-ng-init="initSamlProvider()">
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
+        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">{{:: 'identity-providers' | translate}}</a></li>
         <li>{{identityProvider.alias}}</li>
     </ol>
 
@@ -9,134 +9,134 @@
     <form class="form-horizontal" name="realmForm" novalidate>
         <fieldset>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="redirectUri">Redirect URI</label>
+                <label class="col-md-2 control-label" for="redirectUri">{{:: 'redirect-uri' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" id="redirectUri" type="text" value="{{callbackUrl}}{{identityProvider.alias}}/endpoint" readonly kc-select-action="click">
                 </div>
-                <kc-tooltip>The redirect uri to use when configuring the identity provider</kc-tooltip>
+                <kc-tooltip>{{:: 'redirect-uri.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
         <fieldset>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="identifier"><span class="required">*</span> Alias</label>
+                <label class="col-md-2 control-label" for="identifier"><span class="required">*</span> {{:: 'alias' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="identifier" type="text" ng-model="identityProvider.alias" data-ng-readonly="!newIdentityProvider" required>
                 </div>
-                <kc-tooltip>The alias unique identifies an identity provider and it is also used to build the redirect uri.</kc-tooltip>
+                <kc-tooltip>{{:: 'identity-provider.alias.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="enabled">Enabled</label>
+                <label class="col-md-2 control-label" for="enabled">{{:: 'enabled' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.enabled" id="enabled" onoffswitch />
+                    <input ng-model="identityProvider.enabled" id="enabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Enable/disable this identity provider.</kc-tooltip>
+                <kc-tooltip>{{:: 'identity-provider.enabled.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="authenticateByDefault">Authenticate By Default</label>
+                <label class="col-md-2 control-label" for="authenticateByDefault">{{:: 'authenticate-by-default' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.authenticateByDefault" name="identityProvider.authenticateByDefault" id="authenticateByDefault" onoffswitch />
+                    <input ng-model="identityProvider.authenticateByDefault" name="identityProvider.authenticateByDefault" id="authenticateByDefault" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Indicates if this provider should be tried by default for authentication even before displaying login screen</kc-tooltip>
+                <kc-tooltip>{{:: 'identity-provider.authenticate-by-default.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="storeToken">Store Tokens</label>
+                <label class="col-md-2 control-label" for="storeToken">{{:: 'store-tokens' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.storeToken" id="storeToken" onoffswitch />
+                    <input ng-model="identityProvider.storeToken" id="storeToken" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Enable/disable if tokens must be stored after authenticating users.</kc-tooltip>
+                <kc-tooltip>{{:: 'identity-provider.store-tokens.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="storedTokensReadable">Stored Tokens Readable</label>
+                <label class="col-md-2 control-label" for="storedTokensReadable">{{:: 'stored-tokens-readable' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.addReadTokenRoleOnCreate" id="storedTokensReadable" onoffswitch />
+                    <input ng-model="identityProvider.addReadTokenRoleOnCreate" id="storedTokensReadable" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Enable/disable new users can read any stored tokens.  This assigns the broker.read-token role.</kc-tooltip>
+                <kc-tooltip>{{:: 'identity-provider.stored-tokens-readable.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="updateProfileFirstLoginMode">Update Profile on First Login</label>
+                <label class="col-md-2 control-label" for="updateProfileFirstLoginMode">{{:: 'update-profile-on-first-login' | translate}}</label>
                 <div class="col-md-2">
                 		<div>
                         <select id="updateProfileFirstLoginMode" ng-model="identityProvider.updateProfileFirstLoginMode" class="form-control">
-                            <option value="on">On</option>
-                            <option value="missing">On missing info</option>
-                            <option value="off">Off</option>
+                            <option value="on">{{:: 'on' | translate}}</option>
+                            <option value="missing">{{:: 'on-missing-info' | translate}}</option>
+                            <option value="off">{{:: 'off' | translate}}</option>
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>Define under which conditions must user update his profile right after the first login.</kc-tooltip>
+                <kc-tooltip>{{:: 'update-profile-on-first-login.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="trustEmail">Trust email</label>
+                <label class="col-md-2 control-label" for="trustEmail">{{:: 'trust-email' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.trustEmail" name="identityProvider.trustEmail" id="trustEmail" onoffswitch />
+                    <input ng-model="identityProvider.trustEmail" name="identityProvider.trustEmail" id="trustEmail" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>If enabled then email provided by this provider is not verified even if verification is enabled for the realm.</kc-tooltip>
+                <kc-tooltip>{{:: 'trust-email.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="guiOrder">GUI order</label>
+                <label class="col-md-2 control-label" for="guiOrder">{{:: 'gui-order' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="guiOrder" type="text" ng-model="identityProvider.config.guiOrder">
                 </div>
-                <kc-tooltip>Number defining order of the provider in GUI (eg. on Login page).</kc-tooltip>
+                <kc-tooltip>{{:: 'gui-order.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
         <fieldset>
-            <legend uncollapsed><span class="text">SAML Config</span> <kc-tooltip>SAML SP and external IDP configuration.</kc-tooltip></legend>
+            <legend uncollapsed><span class="text">{{:: 'saml-config' | translate}}</span> <kc-tooltip>{{:: 'identity-provider.saml-config.tooltip' | translate}}</kc-tooltip></legend>
 
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="singleSignOnServiceUrl"><span class="required">*</span> Single Sign-On Service Url</label>
+                <label class="col-md-2 control-label" for="singleSignOnServiceUrl"><span class="required">*</span> {{:: 'single-signon-service-url' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="singleSignOnServiceUrl" type="text" ng-model="identityProvider.config.singleSignOnServiceUrl" required>
                 </div>
-                <kc-tooltip>The Url that must be used to send authentication requests(SAML AuthnRequest).</kc-tooltip>
+                <kc-tooltip>{{:: 'saml.single-signon-service-url.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="singleSignOnServiceUrl">Single Logout Service Url</label>
+                <label class="col-md-2 control-label" for="singleSignOnServiceUrl">{{:: 'single-logout-service-url' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="singleLogoutServiceUrl" type="text" ng-model="identityProvider.config.singleLogoutServiceUrl">
                 </div>
-                <kc-tooltip>The Url that must be used to send logout requests.</kc-tooltip>
+                <kc-tooltip>{{:: 'saml.single-logout-service-url.tooltip' | translate}}</kc-tooltip>
             </div>
                     <div class="form-group">
-                        <label class="col-sm-2 control-label" for="backchannelSupported">Backchannel Logout</label>
+                        <label class="col-sm-2 control-label" for="backchannelSupported">{{:: 'backchannel-logout' | translate}}</label>
                         <div class="col-sm-4">
-                            <input ng-model="identityProvider.config.backchannelSupported" id="backchannelSupported" onoffswitchvalue />
+                            <input ng-model="identityProvider.config.backchannelSupported" id="backchannelSupported" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                         </div>
-                        <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="Does the external IDP support backchannel logout?" class="fa fa-info-circle"></span>
+                        <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="{{:: 'backchannel-logout.tooltip' | translate}}" class="fa fa-info-circle"></span>
                     </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="nameIDPolicyFormat">NameID Policy Format</label>
+                <label class="col-md-2 control-label" for="nameIDPolicyFormat">{{:: 'nameid-policy-format' | translate}}</label>
                 <div class="col-md-6">
                     <select id="nameIDPolicyFormat" ng-model="identityProvider.config.nameIDPolicyFormat"
                             ng-options="nameFormat.format as nameFormat.name for nameFormat in nameIdFormats">
                      </select>
                     <!-- <input class="form-control" id="nameIDPolicyFormat" type="text" ng-model="identityProvider.config.nameIDPolicyFormat"> -->
                 </div>
-                <kc-tooltip>Specifies the URI reference corresponding to a name identifier format. Defaults to urn:oasis:names:tc:SAML:2.0:nameid-format:persistent.</kc-tooltip>
+                <kc-tooltip>{{:: 'nameid-policy-format.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="postBindingResponse">HTTP-POST Binding Response</label>
+                <label class="col-md-2 control-label" for="postBindingResponse">{{:: 'http-post-binding-response' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.config.postBindingResponse" id="postBindingResponse" onoffswitchvalue />
+                    <input ng-model="identityProvider.config.postBindingResponse" id="postBindingResponse" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Indicates whether to respond to requests using HTTP-POST binding. If false, HTTP-REDIRECT binding will be used.</kc-tooltip>
+                <kc-tooltip>{{:: 'http-post-binding-response.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="postBindingAuthnRequest">HTTP-POST Binding for AuthnRequest</label>
+                <label class="col-md-2 control-label" for="postBindingAuthnRequest">{{:: 'http-post-binding-for-authn-request' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.config.postBindingAuthnRequest" id="postBindingAuthnRequest" onoffswitchvalue />
+                    <input ng-model="identityProvider.config.postBindingAuthnRequest" id="postBindingAuthnRequest" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Indicates whether the AuthnRequest must be sent using HTTP-POST binding. If false, HTTP-REDIRECT binding will be used.</kc-tooltip>
+                <kc-tooltip>{{:: 'http-post-binding-for-authn-request.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="wantAuthnRequestsSigned">Want AuthnRequests Signed</label>
+                <label class="col-md-2 control-label" for="wantAuthnRequestsSigned">{{:: 'want-authn-requests-signed' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.config.wantAuthnRequestsSigned" id="wantAuthnRequestsSigned" name="wantAuthnRequestsSigned" onoffswitchvalue />
+                    <input ng-model="identityProvider.config.wantAuthnRequestsSigned" id="wantAuthnRequestsSigned" name="wantAuthnRequestsSigned" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip> Indicates whether the identity provider expects signed a AuthnRequest.</kc-tooltip>
+                <kc-tooltip>{{:: 'want-authn-requests-signed.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="identityProvider.config.wantAuthnRequestsSigned == 'true'">
-                <label class="col-md-2 control-label" for="signatureAlgorithm">Signature Algorithm</label>
+                <label class="col-md-2 control-label" for="signatureAlgorithm">{{:: 'signature-algorithm' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="signatureAlgorithm"
@@ -145,47 +145,47 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>The signature algorithm to use to sign documents.</kc-tooltip>
+                <kc-tooltip>{{:: 'signature-algorithm.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="forceAuthn">Force Authentication</label>
+                <label class="col-md-2 control-label" for="forceAuthn">{{:: 'force-authentication' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.config.forceAuthn" id="forceAuthn" name="forceAuthn" onoffswitchvalue />
+                    <input ng-model="identityProvider.config.forceAuthn" id="forceAuthn" name="forceAuthn" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip> Indicates whether the identity provider must authenticate the presenter directly rather than rely on a previous security context.</kc-tooltip>
+                <kc-tooltip>{{:: 'identity-provider.force-authentication.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="validateSignature">Validate Signature</label>
+                <label class="col-md-2 control-label" for="validateSignature">{{:: 'validate-signature' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.config.validateSignature" id="validateSignature" onoffswitchvalue />
+                    <input ng-model="identityProvider.config.validateSignature" id="validateSignature" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Enable/disable signature validation of SAML responses.</kc-tooltip>
+                <kc-tooltip>{{:: 'saml.validate-signature.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-show="identityProvider.config.validateSignature == 'true'">
-                <label class="col-md-2 control-label" for="signingCertificate">Validating X509 Certificate</label>
+                <label class="col-md-2 control-label" for="signingCertificate">{{:: 'validating-x509-certificate' | translate}}</label>
                 <div class="col-md-6">
                     <textarea class="form-control" id="signingCertificate" ng-model="identityProvider.config.signingCertificate"/>
                 </div>
-                <kc-tooltip>The certificate in PEM format that must be used to check for signatures.</kc-tooltip>
+                <kc-tooltip>{{:: 'validating-x509-certificate.tooltip' | translate}}</kc-tooltip>
             </div>
          </fieldset>
         <fieldset data-ng-show="newIdentityProvider">
-            <legend uncollapsed><span class="text">Import External IDP Config</span> <kc-tooltip>Allows you to load external IDP metadata from a config file or to download it from a URL.</kc-tooltip></legend>
+            <legend uncollapsed><span class="text">{{:: 'import-external-idp-config' | translate}}</span> <kc-tooltip>{{:: 'import-external-idp-config.tooltip' | translate}}</kc-tooltip></legend>
             <div class="form-group" data-ng-show="newIdentityProvider">
-                <label class="col-md-2 control-label" for="fromUrl">Import From Url</label>
+                <label class="col-md-2 control-label" for="fromUrl">{{:: 'import-from-url' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="fromUrl" type="text" ng-model="fromUrl.data">
                 </div>
-                <kc-tooltip>Import metadata from a remote IDP SAML entity descriptor.</kc-tooltip>
+                <kc-tooltip>{{:: 'saml.import-from-url.tooltip' | translate}}</kc-tooltip>
                 <div class="col-sm-4" data-ng-show="importUrl">
-                    <button type="submit" data-ng-click="importFrom()" data-ng-show="importUrl" class="btn btn-primary">Import</button>
+                    <button type="submit" data-ng-click="importFrom()" data-ng-show="importUrl" class="btn btn-primary">{{:: 'import' | translate}}</button>
                 </div>
             </div>
             <div class="form-group" data-ng-show="newIdentityProvider">
-                <label class="col-md-2 control-label">Import From File</label>
+                <label class="col-md-2 control-label">{{:: 'import-from-file' | translate}}</label>
                 <div class="col-md-6">
                     <div class="controls kc-button-input-file" data-ng-show="!files || files.length == 0">
-                        <label for="import-file" class="btn btn-default">Select file <i class="pficon pficon-import"></i></label>
+                        <label for="import-file" class="btn btn-default">{{:: 'select-file' | translate}} <i class="pficon pficon-import"></i></label>
                         <input id="import-file" type="file" class="hidden" ng-file-select="onFileSelect($files)">
                     </div>
                 <span class="kc-uploaded-file" data-ng-show="files.length > 0">
@@ -193,15 +193,15 @@
                 </span>
                 </div>
                 <div class="col-sm-4" data-ng-show="importFile">
-                    <button type="submit" data-ng-click="uploadFile()" data-ng-show="importFile" class="btn btn-primary">Import</button>
+                    <button type="submit" data-ng-click="uploadFile()" data-ng-show="importFile" class="btn btn-primary">{{:: 'import' | translate}}</button>
                 </div>
             </div>
         </fieldset>
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2">
-                <button kc-save data-ng-disabled="!changed">Save</button>
-                <button kc-cancel data-ng-click="cancel()" data-ng-disabled="!changed">Cancel</button>
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-click="cancel()" data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
     </form>

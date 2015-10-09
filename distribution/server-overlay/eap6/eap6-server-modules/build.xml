@@ -63,10 +63,6 @@
             <maven-resource group="org.keycloak" artifact="keycloak-broker-saml"/>
         </module-def>
 
-        <module-def name="org.keycloak.keycloak-core-jaxrs">
-            <maven-resource group="org.keycloak" artifact="keycloak-core-jaxrs"/>
-        </module-def>
-
         <module-def name="org.keycloak.keycloak-services">
             <maven-resource group="org.keycloak" artifact="keycloak-services"/>
         </module-def>

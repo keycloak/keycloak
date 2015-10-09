@@ -1,18 +1,18 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
-        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/saml/keys">SAML Keys</a></li>
-        <li class="active">SAML {{keyType}} Key Export</li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/saml/keys">{{:: 'saml-keys' | translate}}</a></li>
+        <li class="active">SAML {{keyType}} {{:: 'key-export' | translate}}</li>
     </ol>
 
-    <h1>Export SAML Key {{client.clientId|capitalize}}</h1>
+    <h1>{{:: 'export-saml-key' | translate}} {{client.clientId|capitalize}}</h1>
 
     <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!access.manageRealm">
         <fieldset class="form-group col-sm-10">
             <div class="form-group">
-                <label class="col-md-2 control-label" for="downloadKeyFormat">Archive Format</label>
+                <label class="col-md-2 control-label" for="downloadKeyFormat">{{:: 'archive-format' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="downloadKeyFormat"
@@ -21,39 +21,39 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>Java keystore or PKCS12 archive format.</kc-tooltip>
+                <kc-tooltip>{{:: 'archive-format.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="keyAlias">Key Alias</label>
+                <label class="col-md-2 control-label" for="keyAlias">{{:: 'key-alias' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="text" id="keyAlias" name="keyAlias" data-ng-model="jks.keyAlias" autofocus required>
                 </div>
-                <kc-tooltip>Archive alias for your private key and certificate.</kc-tooltip>
+                <kc-tooltip>{{:: 'key-alias.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-hide="!keyInfo.privateKey">
-                <label class="col-md-2 control-label" for="keyPassword">Key Password</label>
+                <label class="col-md-2 control-label" for="keyPassword">{{:: 'key-password' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="password" id="keyPassword" name="keyPassword" data-ng-model="jks.keyPassword" autofocus required>
                 </div>
-                <kc-tooltip>Password to access the private key in the archive</kc-tooltip>
+                <kc-tooltip>{{:: 'key-password.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="realmAlias">Realm Certificate Alias</label>
+                <label class="col-md-2 control-label" for="realmAlias">{{:: 'realm-certificate-alias' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="text" id="realmAlias" name="realmAlias" data-ng-model="jks.realmAlias" autofocus required>
                 </div>
-                <kc-tooltip>Realm certificate is stored in archive too.  This is the alias to it.</kc-tooltip>
+                <kc-tooltip>{{:: 'realm-certificate-alias.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="storePassword">Store Password</label>
+                <label class="col-md-2 control-label" for="storePassword">{{:: 'store-password' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="password" id="storePassword" name="storePassword" data-ng-model="jks.storePassword" autofocus required>
                 </div>
-                <kc-tooltip>Password to access the archive itself</kc-tooltip>
+                <kc-tooltip>{{:: 'store-password.tooltip' | translate}}</kc-tooltip>
            </div>
             <div class="form-group">
                 <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
-                    <button class="btn btn-primary" type="submit" data-ng-click="download()">Download</button>
+                    <button class="btn btn-primary" type="submit" data-ng-click="download()">{{:: 'download' | translate}}</button>
                 </div>
             </div>
         </fieldset>
