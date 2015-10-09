@@ -23,6 +23,14 @@ public class InMemorySessionIdMapper implements SessionIdMapper {
     }
 
     @Override
+    public void clear() {
+        ssoToSession.clear();
+        sessionToSso.clear();
+        principalToSession.clear();
+        sessionToPrincipal.clear();
+    }
+
+    @Override
     public Set<String> getUserSessions(String principal) {
         Set<String> lookup = principalToSession.get(principal);
         if (lookup == null) return null;

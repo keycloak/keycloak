@@ -181,6 +181,11 @@ public class OAuthRequestAuthenticator {
                 public boolean errorPage() {
                     return true;
                 }
+
+                @Override
+                public int getResponseCode() {
+                    return 403;
+                }
             };
         }
         return new AuthChallenge() {
@@ -188,6 +193,11 @@ public class OAuthRequestAuthenticator {
             @Override
             public boolean errorPage() {
                 return false;
+            }
+
+            @Override
+            public int getResponseCode() {
+                return 0;
             }
 
             @Override
@@ -260,6 +270,11 @@ public class OAuthRequestAuthenticator {
             @Override
             public boolean errorPage() {
                 return true;
+            }
+
+            @Override
+            public int getResponseCode() {
+                return code;
             }
 
             @Override

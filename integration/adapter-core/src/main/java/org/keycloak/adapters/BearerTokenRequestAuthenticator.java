@@ -115,6 +115,11 @@ public class BearerTokenRequestAuthenticator {
             }
 
             @Override
+            public int getResponseCode() {
+                return 0;
+            }
+
+            @Override
             public boolean challenge(HttpFacade exchange) {
                 // do the same thing as client cert auth
                 return false;
@@ -137,6 +142,11 @@ public class BearerTokenRequestAuthenticator {
             @Override
             public boolean errorPage() {
                 return true;
+            }
+
+            @Override
+            public int getResponseCode() {
+                return 401;
             }
 
             @Override

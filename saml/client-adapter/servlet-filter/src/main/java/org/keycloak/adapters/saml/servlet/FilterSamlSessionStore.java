@@ -2,6 +2,7 @@ package org.keycloak.adapters.saml.servlet;
 
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.SessionIdMapper;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
@@ -33,8 +34,6 @@ public class FilterSamlSessionStore extends FilterSessionStore implements SamlSe
         super(request, facade, maxBuffer);
         this.idMapper = idMapper;
     }
-
-    protected boolean needRequestRestore;
 
     @Override
     public void logoutAccount() {
@@ -107,91 +106,8 @@ public class FilterSamlSessionStore extends FilterSessionStore implements SamlSe
     public HttpServletRequestWrapper getWrap() {
         HttpSession session = request.getSession(true);
         final SamlSession samlSession = (SamlSession)session.getAttribute(SamlSession.class.getName());
-        if (needRequestRestore) {
-            final String method = (String)session.getAttribute(SAVED_METHOD);
-            final byte[] body = (byte[])session.getAttribute(SAVED_BODY);
-            final MultivaluedHashMap<String, String> headers = (MultivaluedHashMap<String, String>)session.getAttribute(SAVED_HEADERS);
-            clearSavedRequest(session);
-            HttpServletRequestWrapper wrapper = new HttpServletRequestWrapper(request) {
-                @Override
-                public boolean isUserInRole(String role) {
-                    return samlSession.getRoles().contains(role);
-                }
-
-                @Override
-                public Principal getUserPrincipal() {
-                    return samlSession.getPrincipal();
-                }
-
-                @Override
-                public String getMethod() {
-                    if (needRequestRestore) {
-                        return method;
-                    } else {
-                        return super.getMethod();
-
-                    }
-                }
-
-                @Override
-                public String getHeader(String name) {
-                    if (needRequestRestore && headers != null) {
-                        return headers.getFirst(name);
-                    }
-                    return super.getHeader(name);
-                }
-
-                @Override
-                public Enumeration<String> getHeaders(String name) {
-                    if (needRequestRestore && headers != null) {
-                        List<String> values = headers.getList(name);
-                        if (values == null) return Collections.emptyEnumeration();
-                        else return Collections.enumeration(values);
-                    }
-                    return super.getHeaders(name);
-                }
-
-                @Override
-                public Enumeration<String> getHeaderNames() {
-                    if (needRequestRestore && headers != null) {
-                        return Collections.enumeration(headers.keySet());
-                    }
-                    return super.getHeaderNames();
-                }
-
-                @Override
-                public ServletInputStream getInputStream() throws IOException {
-
-                    if (needRequestRestore && body != null) {
-                        final ByteArrayInputStream is = new ByteArrayInputStream(body);
-                        return new ServletInputStream() {
-                            @Override
-                            public int read() throws IOException {
-                                return is.read();
-                            }
-                        };
-                    }
-                    return super.getInputStream();
-                }
-            };
-            return wrapper;
-        } else {
-            return new HttpServletRequestWrapper(request) {
-                @Override
-                public boolean isUserInRole(String role) {
-                    return samlSession.getRoles().contains(role);
-                }
-
-                @Override
-                public Principal getUserPrincipal() {
-                    return samlSession.getPrincipal();
-                }
-
-            };
-        }
-
-
-
+        final KeycloakAccount account = samlSession;
+        return buildWrapper(session, account);
     }
 
     @Override

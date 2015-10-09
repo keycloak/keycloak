@@ -67,6 +67,13 @@ public class ServletHttpFacade implements HttpFacade {
             return queryParameters.getFirst(param);
         }
 
+        public MultivaluedHashMap<String, String> getQueryParameters() {
+            if (queryParameters == null) {
+                queryParameters = UriUtils.decodeQueryString(request.getQueryString());
+            }
+            return queryParameters;
+        }
+
         @Override
         public Cookie getCookie(String cookieName) {
             if (request.getCookies() == null) return null;

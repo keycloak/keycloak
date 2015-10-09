@@ -9,7 +9,7 @@
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>keycloak-saml-server-filter-adapter</artifactId>
+	<artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
 	<name>Keycloak SAML Servlet Filter</name>
 	<description />
 
