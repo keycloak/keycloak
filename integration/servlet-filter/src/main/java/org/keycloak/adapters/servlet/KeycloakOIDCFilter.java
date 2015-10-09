@@ -8,6 +8,7 @@ import org.keycloak.adapters.InMemorySessionIdMapper;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
+import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.SessionIdMapper;
 import org.keycloak.adapters.UserSessionManagement;
@@ -39,6 +40,7 @@ import java.util.logging.Logger;
 public class KeycloakOIDCFilter implements Filter {
     protected AdapterDeploymentContext deploymentContext;
     protected SessionIdMapper idMapper = new InMemorySessionIdMapper();
+    protected NodesRegistrationManagement nodesRegistrationManagement;
     private final static Logger log = Logger.getLogger(""+KeycloakOIDCFilter.class);
 
     @Override
@@ -79,6 +81,7 @@ public class KeycloakOIDCFilter implements Filter {
             log.fine("Keycloak is using a per-deployment configuration.");
         }
         filterConfig.getServletContext().setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
+        nodesRegistrationManagement = new NodesRegistrationManagement();
     }
 
 
@@ -116,6 +119,7 @@ public class KeycloakOIDCFilter implements Filter {
         }
 
 
+        nodesRegistrationManagement.tryRegister(deployment);
         OIDCFilterSessionStore tokenStore = new OIDCFilterSessionStore(request, facade, 100000, deployment, idMapper);
         tokenStore.checkCurrentToken();
 
