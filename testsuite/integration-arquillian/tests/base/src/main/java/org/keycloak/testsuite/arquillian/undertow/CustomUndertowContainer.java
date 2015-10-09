@@ -6,13 +6,7 @@ import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.ServletInfo;
-
-import java.util.Collection;
-import java.util.Map;
-import javax.servlet.DispatcherType;
-
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
-
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
@@ -25,9 +19,12 @@ import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.jboss.shrinkwrap.undertow.api.UndertowWebArchive;
-import org.keycloak.services.filters.ClientConnectionFilter;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.resources.KeycloakApplication;
+
+import javax.servlet.DispatcherType;
+import java.util.Collection;
+import java.util.Map;
 
 public class CustomUndertowContainer implements DeployableContainer<CustomUndertowContainerConfiguration> {
 
@@ -51,10 +48,6 @@ public class CustomUndertowContainer implements DeployableContainer<CustomUndert
         FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
         di.addFilter(filter);
         di.addFilterUrlMapping("SessionFilter", "/*", DispatcherType.REQUEST);
-
-        FilterInfo connectionFilter = Servlets.filter("ClientConnectionFilter", ClientConnectionFilter.class);
-        di.addFilter(connectionFilter);
-        di.addFilterUrlMapping("ClientConnectionFilter", "/*", DispatcherType.REQUEST);
 
         return di;
     }
