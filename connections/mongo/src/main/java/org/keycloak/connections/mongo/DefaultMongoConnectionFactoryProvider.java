@@ -148,15 +148,25 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
      * @throws UnknownHostException
      */
     protected MongoClient createMongoClient() throws UnknownHostException {
+        operationalInfo = new LinkedHashMap<>();
+        String dbName = config.get("db", "keycloak");
+
         String uriString = config.get("uri");
         if (uriString != null) {
             MongoClientURI uri = new MongoClientURI(uriString);
             MongoClient client = new MongoClient(uri);
+
+            String hosts = String.join(", ", uri.getHosts());
+            operationalInfo.put("mongoHosts", hosts);
+            operationalInfo.put("mongoDatabaseName", dbName);
+            operationalInfo.put("mongoUser", uri.getUsername());
+            operationalInfo.put("mongoDriverVersion", client.getVersion());
+
+            logger.debugv("Initialized mongo model. host(s): %s, db: %s", uri.getHosts(), dbName);
             return client;
         } else {
             String host = config.get("host", ServerAddress.defaultHost());
             int port = config.getInt("port", ServerAddress.defaultPort());
-            String dbName = config.get("db", "keycloak");
 
             String user = config.get("user");
             String password = config.get("password");
@@ -171,7 +181,6 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
                 client = new MongoClient(new ServerAddress(host, port), clientOptions);
             }
 
-            operationalInfo = new LinkedHashMap<>();
             operationalInfo.put("mongoServerAddress", client.getAddress().toString());
             operationalInfo.put("mongoDatabaseName", dbName);
             operationalInfo.put("mongoUser", user);
