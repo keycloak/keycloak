@@ -24,6 +24,7 @@ import org.junit.Assert;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -45,6 +46,7 @@ import org.openqa.selenium.Cookie;
  * @author tkyjovsk
  * @author vramik
  */
+@Ignore
 public class LoginSettingsTest extends AbstractRealmTest {
 
     private static final String NEW_USERNAME = "newUsername";
