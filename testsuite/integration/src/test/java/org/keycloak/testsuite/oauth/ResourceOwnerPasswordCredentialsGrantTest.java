@@ -40,6 +40,9 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
             ClientModel app = new ClientManager(manager).createClient(appRealm, "resource-owner");
             app.setSecret("secret");
 
+            ClientModel app2 = new ClientManager(manager).createClient(appRealm, "resource-owner-public");
+            app2.setPublicClient(true);
+
             UserModel user = session.users().addUser(appRealm, "direct-login");
             user.setEmail("direct-login@localhost");
             user.setEnabled(true);
@@ -66,16 +69,22 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
 
     @Test
     public void grantAccessTokenUsername() throws Exception {
-        grantAccessToken("direct-login");
+        grantAccessToken("direct-login", "resource-owner");
     }
 
     @Test
     public void grantAccessTokenEmail() throws Exception {
-        grantAccessToken("direct-login@localhost");
+        grantAccessToken("direct-login@localhost", "resource-owner");
     }
 
-    private void grantAccessToken(String login) throws Exception {
-        oauth.clientId("resource-owner");
+    @Test
+    public void grantAccessTokenPublic() throws Exception {
+        grantAccessToken("direct-login", "resource-owner-public");
+    }
+
+
+    private void grantAccessToken(String login, String clientId) throws Exception {
+        oauth.clientId(clientId);
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", login, "password");
 
@@ -85,7 +94,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         RefreshToken refreshToken = oauth.verifyRefreshToken(response.getRefreshToken());
 
         events.expectLogin()
-                .client("resource-owner")
+                .client(clientId)
                 .user(userId)
                 .session(accessToken.getSessionState())
                 .detail(Details.RESPONSE_TYPE, "token")
@@ -107,7 +116,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).user(userId).client("resource-owner").assertEvent();
+        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).user(userId).client(clientId).assertEvent();
     }
 
     @Test
@@ -147,13 +156,30 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .error(Errors.INVALID_TOKEN).assertEvent();
     }
 
-
-
     @Test
     public void grantAccessTokenInvalidClientCredentials() throws Exception {
         oauth.clientId("resource-owner");
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("invalid", "test-user@localhost", "password");
+
+        assertEquals(400, response.getStatusCode());
+
+        assertEquals("unauthorized_client", response.getError());
+
+        events.expectLogin()
+                .client("resource-owner")
+                .session((String) null)
+                .clearDetails()
+                .error(Errors.INVALID_CLIENT_CREDENTIALS)
+                .user((String) null)
+                .assertEvent();
+    }
+
+    @Test
+    public void grantAccessTokenMissingClientCredentials() throws Exception {
+        oauth.clientId("resource-owner");
+
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(null, "test-user@localhost", "password");
 
         assertEquals(400, response.getStatusCode());
 
