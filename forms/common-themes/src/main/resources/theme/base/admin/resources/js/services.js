@@ -184,10 +184,6 @@ module.factory('Notifications', function($rootScope, $timeout) {
 	return notifications;
 });
 
-module.factory('WhoAmI', function($resource) {
-    return $resource(consoleBaseUrl + '/whoami');
-});
-
 module.factory('Realm', function($resource) {
 	return $resource(authUrl + '/admin/realms/:id', {
 		id : '@realm'

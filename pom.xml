@@ -894,7 +894,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-server-filter-adapter</artifactId>
+                <artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-servlet-filter-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

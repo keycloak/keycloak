@@ -212,14 +212,12 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
             if (loginConfig == null) {
                 loginConfig = request.getContext().getLoginConfig();
             }
+            challenge.challenge(facade);
             if (challenge.errorPage()) {
                 log.fine("error page");
                 if (forwardToErrorPageInternal(request, response, loginConfig))return false;
             }
-            log.fine("sending challenge");
-            challenge.challenge(facade);
         }
-        log.fine("No challenge, but failed authentication");
         return false;
     }
 

@@ -47,6 +47,7 @@
                 <!ENTITY ProtocolMappers SYSTEM "modules/protocol-mappers.xml">
                 <!ENTITY Recaptcha SYSTEM "modules/recaptcha.xml">
                 <!ENTITY AuthSPI SYSTEM "modules/auth-spi.xml">
+                <!ENTITY FilterAdapter SYSTEM "modules/servlet-filter-adapter.xml">
                 ]>
 
 <book>
@@ -105,6 +106,7 @@ This one is short
         &TomcatAdapter;
         &Jetty9Adapter;
         &Jetty8Adapter;
+        &FilterAdapter;
         &FuseAdapter;
         &JavascriptAdapter;
         &SpringBootAdapter;

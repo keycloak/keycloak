@@ -1,30 +1,8 @@
-module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $location, Notifications, ServerInfo) {
-    $scope.addMessage = function() {
-        Notifications.success("test");
-    };
-
+module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location, Notifications, ServerInfo) {
     $scope.authUrl = authUrl;
     $scope.resourceUrl = resourceUrl;
     $scope.auth = Auth;
     $scope.serverInfo = ServerInfo.get();
-
-    function hasAnyAccess() {
-        var realmAccess = Auth.user && Auth.user['realm_access'];
-        if (realmAccess) {
-            for (var p in realmAccess){
-                return true;
-            }
-            return false;
-        } else {
-            return false;
-        }
-    }
-
-    WhoAmI.get(function (data) {
-        Auth.user = data;
-        Auth.loggedIn = true;
-        Auth.hasAnyAccess = hasAnyAccess();
-    });
 
     function getAccess(role) {
         if (!Current.realm) {
@@ -155,7 +133,7 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
     }
 });
 
-module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $http, WhoAmI, $location, $route, Dialog, Notifications, Auth, $modal) {
+module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $http, $location, $route, Dialog, Notifications, Auth, $modal) {
     console.log('RealmCreateCtrl');
 
     Current.realm = null;
@@ -193,22 +171,17 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
     }, true);
 
     $scope.$watch('realm.realm', function() {
-	if (create) {
 	    $scope.realm.id = $scope.realm.realm;
-	}
     }, true);
 
     $scope.save = function() {
         var realmCopy = angular.copy($scope.realm);
         Realm.create(realmCopy, function() {
-            Realm.query(function(data) {
-                Current.realms = data;
+            Notifications.success("The realm has been created.");
 
-                WhoAmI.get(function(user) {
-                    Auth.user = user;
-
+            Auth.refreshPermissions(function() {
+                $scope.$apply(function() {
                     $location.url("/realms/" + realmCopy.realm);
-                    Notifications.success("The realm has been created.");
                 });
             });
         });
@@ -227,7 +200,7 @@ module.controller('ObjectModalCtrl', function($scope, object) {
     $scope.object = object;
 });
 
-module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, WhoAmI, Auth) {
+module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, Auth) {
     $scope.createRealm = !realm.realm;
     $scope.serverInfo = serverInfo;
 
@@ -272,11 +245,13 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
             });
 
             if (nameChanged) {
-                WhoAmI.get(function(user) {
-                    Auth.user = user;
-
-                    $location.url("/realms/" + realmCopy.realm);
-                    Notifications.success("Your changes have been saved to the realm.");
+                Auth.refreshPermissions(function() {
+                    Auth.refreshPermissions(function() {
+                        Notifications.success("Your changes have been saved to the realm.");
+                        $scope.$apply(function() {
+                            $location.url("/realms/" + realmCopy.realm);
+                        });
+                    });
                 });
             } else {
                 $location.url("/realms/" + realmCopy.realm);
@@ -1770,6 +1745,7 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
                     execution.postLevels.push(j);
                 }
             }
+            $location.url("/realms/" + realm.realm + "/authentication/flows/" + $scope.flow.alias);
         })
     };
 

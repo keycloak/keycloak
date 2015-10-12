@@ -604,6 +604,7 @@ public class AdapterTestStrategy extends ExternalResource {
         // logout sessions in account management
         accountSessionsPage.realm("demo");
         accountSessionsPage.open();
+        Assert.assertTrue(accountSessionsPage.isCurrent());
         accountSessionsPage.logoutAll();
 
         // Assert I need to login again (logout was propagated to the app)

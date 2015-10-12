@@ -17,7 +17,6 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -310,9 +309,12 @@ public class AuthorizationEndpoint {
     private Response buildRegister() {
         authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
-        return session.getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(new ClientSessionCode(realm, clientSession).getCode())
-                .createRegistration();
+        AuthenticationFlowModel flow = realm.getRegistrationFlow();
+        String flowId = flow.getId();
+
+        AuthenticationProcessor processor = createProcessor(flowId, LoginActionsService.REGISTRATION_PATH);
+
+        return processor.authenticate();
     }
 
     private Response buildForgotCredential() {

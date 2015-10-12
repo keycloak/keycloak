@@ -24,6 +24,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
@@ -52,10 +54,20 @@ public class SamlFilter implements Filter {
                 //deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
             }
         } else {
-            String path = "/WEB-INF/keycloak-saml.xml";
-            String pathParam = filterConfig.getInitParameter("keycloak.config.file");
-            if (pathParam != null) path = pathParam;
-            InputStream is = filterConfig.getServletContext().getResourceAsStream(path);
+            String fp = filterConfig.getInitParameter("keycloak.config.file");
+            InputStream is = null;
+            if (fp != null) {
+                try {
+                    is = new FileInputStream(fp);
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                String path = "/WEB-INF/keycloak-saml.xml";
+                String pathParam = filterConfig.getInitParameter("keycloak.config.path");
+                if (pathParam != null) path = pathParam;
+                is = filterConfig.getServletContext().getResourceAsStream(path);
+            }
             final SamlDeployment deployment;
             if (is == null) {
                 log.info("No adapter configuration. Keycloak is unconfigured and will deny all requests.");
@@ -124,18 +136,16 @@ public class SamlFilter implements Filter {
         AuthChallenge challenge = authenticator.getChallenge();
         if (challenge != null) {
             log.fine("challenge");
+            challenge.challenge(facade);
             if (challenge.errorPage()) {
-                response.sendError(403);
+                response.sendError(challenge.getResponseCode());
                 return;
             }
             log.fine("sending challenge");
-            challenge.challenge(facade);
-        }
-        if (outcome == AuthOutcome.FAILED) {
-            response.sendError(403);
-        } else if (!facade.isEnded()) {
-            chain.doFilter(req, res);
             return;
+        }
+        if (!facade.isEnded()) {
+            response.sendError(403);
         }
 
     }
