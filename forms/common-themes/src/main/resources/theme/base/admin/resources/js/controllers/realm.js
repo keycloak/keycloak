@@ -1745,6 +1745,7 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
                     execution.postLevels.push(j);
                 }
             }
+            $location.url("/realms/" + realm.realm + "/authentication/flows/" + $scope.flow.alias);
         })
     };
 

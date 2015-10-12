@@ -323,6 +323,14 @@ public class AuthenticationManagementResource {
         if (flow.isBuiltIn()) {
             throw new BadRequestException("Can't delete built in flow");
         }
+        List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(id);
+        for (AuthenticationExecutionModel execution : executions) {
+        	if(execution.getFlowId() != null) {
+        		AuthenticationFlowModel nonTopLevelFlow = realm.getAuthenticationFlowById(execution.getFlowId());
+        		realm.removeAuthenticationFlow(nonTopLevelFlow);
+        	}
+        	realm.removeAuthenticatorExecution(execution);
+        }
         realm.removeAuthenticationFlow(flow);
     }
 
