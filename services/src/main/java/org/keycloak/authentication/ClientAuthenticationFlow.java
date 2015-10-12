@@ -48,12 +48,9 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
 
             AuthenticationProcessor.Result context = processor.createClientAuthenticatorContext(model, authenticator, executions);
             authenticator.authenticateClient(context);
-            Response response = processResult(context);
-            if (response != null) return response;
 
             ClientModel client = processor.getClient();
             if (client != null) {
-
                 String expectedClientAuthType = client.getClientAuthenticatorType();
 
                 // Fallback to secret just in case (for backwards compatibility)
@@ -64,12 +61,16 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
 
                 // Check if client authentication matches
                 if (factory.getId().equals(expectedClientAuthType)) {
+                    Response response = processResult(context);
+                    if (response != null) return response;
+
+                    if (!context.getStatus().equals(FlowStatus.SUCCESS)) {
+                        throw new AuthenticationFlowException("Expected success, but for an unknown reason the status was " + context.getStatus(), AuthenticationFlowError.INTERNAL_ERROR);
+                    }
+
                     AuthenticationProcessor.logger.debugv("Client {0} authenticated by {1}", client.getClientId(), factory.getId());
                     processor.getEvent().detail(Details.CLIENT_AUTH_METHOD, factory.getId());
                     return null;
-                } else {
-                    throw new AuthenticationFlowException("Client " + client.getClientId() + " was authenticated by incorrect method " + factory.getId(),
-                            AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS);
                 }
             }
         }
@@ -116,7 +117,9 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
 
         if (status == FlowStatus.SUCCESS) {
             return null;
-        } else if (status == FlowStatus.FAILED) {
+        }
+
+        if (status == FlowStatus.FAILED) {
             if (result.getChallenge() != null) {
                 return sendChallenge(result, execution);
             } else {
@@ -130,11 +133,9 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             if (alternativeChallenge == null) {
                 alternativeChallenge = result.getChallenge();
             }
-            return null;
+            return sendChallenge(result, execution);
         } else if (status == FlowStatus.FAILURE_CHALLENGE) {
             return sendChallenge(result, execution);
-        } else if (status == FlowStatus.ATTEMPTED) {
-            return null;
         } else {
             AuthenticationProcessor.logger.error("Unknown result status");
             throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);

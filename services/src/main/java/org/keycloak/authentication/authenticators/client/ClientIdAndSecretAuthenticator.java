@@ -86,12 +86,12 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
             return;
         }
 
+        context.setClient(client);
+
         if (!client.isEnabled()) {
             context.failure(AuthenticationFlowError.CLIENT_DISABLED, null);
             return;
         }
-
-        context.setClient(client);
 
         // Skip client_secret validation for public client
         if (client.isPublicClient()) {
@@ -106,8 +106,8 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
         }
 
         if (client.getSecret() == null) {
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client secret setup required for client " + client.getClientId());
-            context.challenge(challengeResponse);
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Invalid client secret");
+            context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
             return;
         }
 
