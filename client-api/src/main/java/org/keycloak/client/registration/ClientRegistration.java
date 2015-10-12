@@ -231,7 +231,7 @@ public class ClientRegistration {
 
         public ClientRegistration build() {
             ClientRegistration clientRegistration = new ClientRegistration();
-            clientRegistration.clientRegistrationUrl = authServerUrl + "/realms/" + realm + "/client-registration";
+            clientRegistration.clientRegistrationUrl = authServerUrl + "/realms/" + realm + "/client-registration/default";
 
             clientRegistration.httpClient = httpClient != null ? httpClient : HttpClients.createDefault();
             clientRegistration.auth = auth;

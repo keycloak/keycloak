@@ -1,14 +1,9 @@
-package org.keycloak.services.resources;
+package org.keycloak.services.clientregistration;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.BadRequestException;
-import org.jboss.resteasy.spi.NotFoundException;
-import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.exportimport.ClientDescriptionConverter;
-import org.keycloak.exportimport.KeycloakClientDescriptionConverter;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -16,13 +11,11 @@ import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -31,52 +24,37 @@ import java.net.URI;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ClientRegistrationService {
+public class DefaultClientRegistrationProvider implements ClientRegistrationProvider {
 
-    protected static final Logger logger = Logger.getLogger(ClientRegistrationService.class);
+    private static final Logger logger = Logger.getLogger(DefaultClientRegistrationProvider.class);
 
+    private KeycloakSession session;
+    private EventBuilder event;
     private RealmModel realm;
 
-    private EventBuilder event;
-
-    @Context
-    private KeycloakSession session;
-
-    private AppAuthManager authManager = new AppAuthManager();
-
-    public ClientRegistrationService(RealmModel realm, EventBuilder event) {
-        this.realm = realm;
-        this.event = event;
+    public DefaultClientRegistrationProvider(KeycloakSession session) {
+        this.session = session;
     }
 
+
     @POST
-    @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN })
-    public Response create(String description, @QueryParam("format") String format) {
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response create(ClientRepresentation client) {
         event.event(EventType.CLIENT_REGISTER);
 
         authenticate(true, null);
 
-        if (format == null) {
-            format = KeycloakClientDescriptionConverter.ID;
-        }
-
-        ClientDescriptionConverter converter = session.getProvider(ClientDescriptionConverter.class, format);
-        if (converter == null) {
-            throw new BadRequestException("Invalid format");
-        }
-        ClientRepresentation rep = converter.convertToInternal(description);
-
         try {
-            ClientModel clientModel = RepresentationToModel.createClient(session, realm, rep, true);
-            rep = ModelToRepresentation.toRepresentation(clientModel);
+            ClientModel clientModel = RepresentationToModel.createClient(session, realm, client, true);
+            client = ModelToRepresentation.toRepresentation(clientModel);
             URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build();
 
-            logger.infov("Created client {0}", rep.getClientId());
+            logger.infov("Created client {0}", client.getClientId());
 
-            event.client(rep.getClientId()).success();
-            return Response.created(uri).entity(rep).build();
+            event.client(client.getClientId()).success();
+            return Response.created(uri).entity(client).build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
+            return ErrorResponse.exists("Client " + client.getClientId() + " already exists");
         }
     }
 
@@ -122,13 +100,19 @@ public class ClientRegistrationService {
         }
     }
 
+    @Override
+    public void close() {
+
+    }
+
+
     private ClientModel authenticate(boolean create, String clientId) {
         String authorizationHeader = session.getContext().getRequestHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         boolean bearer = authorizationHeader != null && authorizationHeader.split(" ")[0].equalsIgnoreCase("Bearer");
 
         if (bearer) {
-            AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm);
+            AuthenticationManager.AuthResult authResult = new AppAuthManager().authenticateBearerToken(session, realm);
             AccessToken.Access realmAccess = authResult.getToken().getResourceAccess(Constants.REALM_MANAGEMENT_CLIENT_ID);
             if (realmAccess != null) {
                 if (realmAccess.isUserInRole(AdminRoles.MANAGE_CLIENTS)) {
@@ -156,6 +140,16 @@ public class ClientRegistrationService {
         event.error(Errors.NOT_ALLOWED);
 
         throw new ForbiddenException();
+    }
+
+    @Override
+    public void setRealm(RealmModel realm) {
+this.realm = realm;
+    }
+
+    @Override
+    public void setEvent(EventBuilder event) {
+        this.event = event;
     }
 
 }
