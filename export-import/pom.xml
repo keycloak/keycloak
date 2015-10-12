@@ -18,7 +18,6 @@
         <module>export-import-api</module>
         <module>export-import-dir</module>
         <module>export-import-single-file</module>
-        <module>export-import-zip</module>
     </modules>
 
 </project>
