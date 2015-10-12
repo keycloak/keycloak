@@ -19,6 +19,7 @@ package org.keycloak.testsuite.console.realm;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.console.page.realm.BruteForceDetection;
@@ -38,6 +39,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
  * @author Filip Kiss
  * @author mhajas
  */
+@Ignore
 public class SecurityDefensesTest extends AbstractRealmTest {
 
     @Page
