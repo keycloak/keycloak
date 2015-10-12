@@ -329,6 +329,30 @@
                 Supported long option is <literal>maxAutoConnectRetryTime</literal>. See <ulink url="http://api.mongodb.org/java/2.11.4/com/mongodb/MongoClientOptions.html">Mongo documentation</ulink>
                 for details about those options and their default values.
             </para>
+            <para>
+                Alternatively, you can configure MongoDB using a MongoDB <ulink url="http://docs.mongodb.org/manual/reference/connection-string/">connection URI</ulink>.
+                In this case, you define all information concerning the connection and authentication within the URI, as described in the MongoDB documentation.
+                Please note that the database specified within the URI is only used for authentication. To change the database used by keycloak you have to set
+                <literal>db</literal> property as before. Therefore, a configuration like the
+                following
+                <programlisting><![CDATA[
+"connectionsMongo": {
+    "default": {
+        "uri": "mongodb://user:password@127.0.0.1/authentication",
+        "db": "keycloak"
+    }
+}
+]]></programlisting>
+                will authenticate the user against the authentication database, but store all keycloak related data in the keycloak database.
+
+            </para>
+            <section>
+                <title>MongoDB Replica Sets</title>
+                <para>
+                    In order to use a mongo replica set for Keycloak, one has to use URI based configuration, which supports the
+                    definition of replica sets out of the box: <literal>mongodb://host1:27017,host2:27017,host3:27017/</literal>.
+                </para>
+            </section>
         </section>
         
         <section>
