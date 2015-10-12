@@ -21,7 +21,6 @@
             <module name="org.keycloak.keycloak-export-import-api" services="import"/>
             <module name="org.keycloak.keycloak-export-import-dir" services="import"/>
             <module name="org.keycloak.keycloak-export-import-single-file" services="import"/>
-            <module name="org.keycloak.keycloak-export-import-zip" services="import"/>
             <module name="org.keycloak.keycloak-forms-common-freemarker" services="import"/>
             <module name="org.keycloak.keycloak-forms-common-themes" services="import"/>
             <module name="org.keycloak.keycloak-invalidation-cache-infinispan" services="import"/>

@@ -58,7 +58,6 @@
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <google.zxing.version>3.2.1</google.zxing.version>
         <github.relaxng.version>2011.1</github.relaxng.version>
-        <winzipaes.version>1.0.1</winzipaes.version>
         <freemarker.version>2.3.23</freemarker.version>
         <twitter4j.version>4.0.4</twitter4j.version>
         <selenium.version>2.35.0</selenium.version>
@@ -371,13 +370,6 @@
                 <artifactId>greenmail</artifactId>
                 <version>${greenmail.version}</version>
                 <scope>test</scope>
-            </dependency>
-
-            <!-- Encrypted ZIP -->
-            <dependency>
-                <groupId>de.idyl</groupId>
-                <artifactId>winzipaes</artifactId>
-                <version>${winzipaes.version}</version>
             </dependency>
 
             <!-- Apache DS -->
@@ -698,11 +690,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-export-import-single-file</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-export-import-zip</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
