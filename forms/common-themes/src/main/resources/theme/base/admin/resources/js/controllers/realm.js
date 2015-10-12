@@ -1711,6 +1711,10 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
         }
     }
 
+    $scope.selectFlow = function(flow) {
+        $location.url("/realms/" + realm.realm + '/authentication/flows/' + flow.alias);
+    };
+
     var setupForm = function() {
         AuthenticationFlowExecutions.query({realm: realm.realm, alias: $scope.flow.alias}, function(data) {
             $scope.executions = data;
@@ -1745,7 +1749,6 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
                     execution.postLevels.push(j);
                 }
             }
-            $location.url("/realms/" + realm.realm + "/authentication/flows/" + $scope.flow.alias);
         })
     };
 
@@ -1831,9 +1834,11 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 
     $scope.setupForm = setupForm;
 
-    setupForm();
-
-
+    if (selectedFlow == null) {
+        $scope.selectFlow(flows[0]);
+    } else {
+        setupForm();
+    }
 });
 
 module.controller('RequiredActionsCtrl', function($scope, realm, unregisteredRequiredActions,

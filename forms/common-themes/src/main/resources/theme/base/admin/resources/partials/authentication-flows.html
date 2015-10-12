@@ -10,7 +10,7 @@
                 <div class="dropdown pull-left">
                     <select class="form-control" ng-model="flow"
                             ng-options="(flow.alias|capitalize) for flow in flows"
-                            data-ng-change="setupForm()">
+                            data-ng-change="selectFlow(flow)">
                     </select>
                 </div>
                 &nbsp;&nbsp;<i class="fa fa-question-circle text-muted" tooltip-trigger="mouseover mouseout" tooltip="{{flow.description}}" tooltip-placement="right"> </i>
