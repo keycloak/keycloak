@@ -88,6 +88,9 @@ public abstract class SamlAuthenticator {
 
     protected AuthOutcome globalLogout() {
         SamlSession account = sessionStore.getAccount();
+        if (account == null) {
+            return AuthOutcome.NOT_ATTEMPTED;
+        }
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
                 .assertionExpiration(30)
                 .issuer(deployment.getEntityID())
@@ -292,15 +295,14 @@ public abstract class SamlAuthenticator {
                 }
             }
         }
-        if (deployment.getPrincipalNamePolicy() == SamlDeployment.PrincipalNamePolicy.FROM_ATTRIBUTE_NAME) {
+        if (deployment.getPrincipalNamePolicy() == SamlDeployment.PrincipalNamePolicy.FROM_ATTRIBUTE) {
             if (deployment.getPrincipalAttributeName() != null) {
                 String attribute = attributes.getFirst(deployment.getPrincipalAttributeName());
                 if (attribute != null) principalName = attribute;
-            }
-        } else   if (deployment.getPrincipalNamePolicy() == SamlDeployment.PrincipalNamePolicy.FROM_FRIENDLY_ATTRIBUTE_NAME) {
-            if (deployment.getPrincipalAttributeName() != null) {
-                String attribute = friendlyAttributes.getFirst(deployment.getPrincipalAttributeName());
-                if (attribute != null) principalName = attribute;
+                else {
+                    attribute = friendlyAttributes.getFirst(deployment.getPrincipalAttributeName());
+                    if (attribute != null) principalName = attribute;
+                }
             }
         }
 

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
@@ -44,7 +45,11 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
         String clientSecret = null;
 
         String authorizationHeader = context.getHttpRequest().getHttpHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+
+        MediaType mediaType = context.getHttpRequest().getHttpHeaders().getMediaType();
+        boolean hasFormData = mediaType != null && mediaType.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
+
+        MultivaluedMap<String, String> formData = hasFormData ? context.getHttpRequest().getDecodedFormParameters() : null;
 
         if (authorizationHeader != null) {
             String[] usernameSecret = BasicAuthHelper.parseHeader(authorizationHeader);
@@ -54,7 +59,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
             } else {
 
                 // Don't send 401 if client_id parameter was sent in request. For example IE may automatically send "Authorization: Negotiate" in XHR requests even for public clients
-                if (!formData.containsKey(OAuth2Constants.CLIENT_ID)) {
+                if (formData != null && !formData.containsKey(OAuth2Constants.CLIENT_ID)) {
                     Response challengeResponse = Response.status(Response.Status.UNAUTHORIZED).header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"" + context.getRealm().getName() + "\"").build();
                     context.challenge(challengeResponse);
                     return;
@@ -62,7 +67,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
             }
         }
 
-        if (client_id == null) {
+        if (formData != null && client_id == null) {
             client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
             clientSecret = formData.getFirst("client_secret");
         }

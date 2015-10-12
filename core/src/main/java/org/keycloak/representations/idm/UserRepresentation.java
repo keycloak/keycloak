@@ -1,13 +1,11 @@
 package org.keycloak.representations.idm;
 
-import java.util.ArrayList;
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.codehaus.jackson.annotate.JsonIgnore;
-import org.keycloak.util.MultivaluedHashMap;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -7,8 +7,6 @@ import org.keycloak.saml.common.util.StaxParserUtil;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
@@ -24,8 +22,8 @@ public class KeyXmlParser extends AbstractParser {
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
         StaxParserUtil.validate(startElement, ConfigXmlConstants.KEY_ELEMENT);
         Key key = new Key();
-        key.setSigning(StaxParserUtil.getBooleanAttributeValue(startElement, ConfigXmlConstants.SIGNING_ATTR));
-        key.setEncryption(StaxParserUtil.getBooleanAttributeValue(startElement, ConfigXmlConstants.ENCRYPTION_ATTR));
+        key.setSigning(SPXmlParser.getBooleanAttributeValue(startElement, ConfigXmlConstants.SIGNING_ATTR));
+        key.setEncryption(SPXmlParser.getBooleanAttributeValue(startElement, ConfigXmlConstants.ENCRYPTION_ATTR));
         while (xmlEventReader.hasNext()) {
             XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);
             if (xmlEvent == null)
@@ -46,13 +44,13 @@ public class KeyXmlParser extends AbstractParser {
                 key.setKeystore(parseKeyStore(xmlEventReader));
             } else if (tag.equals(ConfigXmlConstants.CERTIFICATE_PEM_ELEMENT)) {
                 StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
-                key.setCertificatePem(StaxParserUtil.getElementText(xmlEventReader));
+                key.setCertificatePem(SPXmlParser.getElementText(xmlEventReader));
             } else if (tag.equals(ConfigXmlConstants.PUBLIC_KEY_PEM_ELEMENT)) {
                 StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
-                key.setPublicKeyPem(StaxParserUtil.getElementText(xmlEventReader));
+                key.setPublicKeyPem(SPXmlParser.getElementText(xmlEventReader));
             } else if (tag.equals(ConfigXmlConstants.PRIVATE_KEY_PEM_ELEMENT)) {
                 StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
-                key.setPrivateKeyPem(StaxParserUtil.getElementText(xmlEventReader));
+                key.setPrivateKeyPem(SPXmlParser.getElementText(xmlEventReader));
             } else {
                 StaxParserUtil.bypassElementBlock(xmlEventReader, tag);
             }
@@ -65,14 +63,14 @@ public class KeyXmlParser extends AbstractParser {
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
         StaxParserUtil.validate(startElement, ConfigXmlConstants.KEYS_STORE_ELEMENT);
         Key.KeyStoreConfig keyStore = new Key.KeyStoreConfig();
-        keyStore.setType(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.TYPE_ATTR));
-        keyStore.setAlias(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.ALIAS_ATTR));
-        keyStore.setFile(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.FILE_ATTR));
-        keyStore.setResource(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.RESOURCE_ATTR));
+        keyStore.setType(SPXmlParser.getAttributeValue(startElement, ConfigXmlConstants.TYPE_ATTR));
+        keyStore.setAlias(SPXmlParser.getAttributeValue(startElement, ConfigXmlConstants.ALIAS_ATTR));
+        keyStore.setFile(SPXmlParser.getAttributeValue(startElement, ConfigXmlConstants.FILE_ATTR));
+        keyStore.setResource(SPXmlParser.getAttributeValue(startElement, ConfigXmlConstants.RESOURCE_ATTR));
         if (keyStore.getFile() == null && keyStore.getResource() == null) {
             throw new ParsingException("KeyStore element must have the url or classpath attribute set");
         }
-        keyStore.setPassword(StaxParserUtil.getAttributeValue(startElement, ConfigXmlConstants.PASSWORD_ATTR));
+        keyStore.setPassword(SPXmlParser.getAttributeValue(startElement, ConfigXmlConstants.PASSWORD_ATTR));
         if (keyStore.getPassword() == null) {
             throw new ParsingException("KeyStore element must have the password attribute set");
         }
@@ -97,19 +95,19 @@ public class KeyXmlParser extends AbstractParser {
             String tag = StaxParserUtil.getStartElementName(startElement);
             if (tag.equals(ConfigXmlConstants.CERTIFICATE_ELEMENT)) {
                 StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
-                keyStore.setCertificateAlias(StaxParserUtil.getAttributeValue(element, ConfigXmlConstants.ALIAS_ATTR));
+                keyStore.setCertificateAlias(SPXmlParser.getAttributeValue(element, ConfigXmlConstants.ALIAS_ATTR));
                 if (keyStore.getCertificateAlias() == null) {
                     throw new ParsingException("KeyStore Certificate element must have the alias attribute set");
 
                 }
             } else if (tag.equals(ConfigXmlConstants.PRIVATE_KEY_ELEMENT)) {
                 StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
-                keyStore.setPrivateKeyAlias(StaxParserUtil.getAttributeValue(element, ConfigXmlConstants.ALIAS_ATTR));
+                keyStore.setPrivateKeyAlias(SPXmlParser.getAttributeValue(element, ConfigXmlConstants.ALIAS_ATTR));
                 if (keyStore.getPrivateKeyAlias() == null) {
                     throw new ParsingException("KeyStore PrivateKey element must have the alias attribute set");
 
                 }
-                keyStore.setPrivateKeyPassword(StaxParserUtil.getAttributeValue(element, ConfigXmlConstants.PASSWORD_ATTR));
+                keyStore.setPrivateKeyPassword(SPXmlParser.getAttributeValue(element, ConfigXmlConstants.PASSWORD_ATTR));
                 if (keyStore.getPrivateKeyPassword() == null) {
                     throw new ParsingException("KeyStore PrivateKey element must have the password attribute set");
 

@@ -289,37 +289,43 @@ public class KeycloakServer {
                 .setWorkerThreads(config.getWorkerThreads())
                 .setIoThreads(config.getWorkerThreads() / 8);
 
-        server = new UndertowJaxrsServer().start(builder);
+        server = new UndertowJaxrsServer();
+        try {
+            server.start(builder);
 
-        DeploymentInfo di = server.undertowDeployment(deployment, "");
-        di.setClassLoader(getClass().getClassLoader());
-        di.setContextPath("/auth");
-        di.setDeploymentName("Keycloak");
-        di.setDefaultEncoding("UTF-8");
+            DeploymentInfo di = server.undertowDeployment(deployment, "");
+            di.setClassLoader(getClass().getClassLoader());
+            di.setContextPath("/auth");
+            di.setDeploymentName("Keycloak");
+            di.setDefaultEncoding("UTF-8");
 
-        di.setDefaultServletConfig(new DefaultServletConfig(true));
-        di.addWelcomePage("theme/keycloak/welcome/resources/index.html");
+            di.setDefaultServletConfig(new DefaultServletConfig(true));
+            di.addWelcomePage("theme/keycloak/welcome/resources/index.html");
 
-        FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
-        di.addFilter(filter);
-        di.addFilterUrlMapping("SessionFilter", "/*", DispatcherType.REQUEST);
+            FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
+            di.addFilter(filter);
+            di.addFilterUrlMapping("SessionFilter", "/*", DispatcherType.REQUEST);
 
-        FilterInfo connectionFilter = Servlets.filter("ClientConnectionFilter", ClientConnectionFilter.class);
-        di.addFilter(connectionFilter);
-        di.addFilterUrlMapping("ClientConnectionFilter", "/*", DispatcherType.REQUEST);
+            FilterInfo connectionFilter = Servlets.filter("ClientConnectionFilter", ClientConnectionFilter.class);
+            di.addFilter(connectionFilter);
+            di.addFilterUrlMapping("ClientConnectionFilter", "/*", DispatcherType.REQUEST);
 
-        server.deploy(di);
+            server.deploy(di);
 
-        sessionFactory = ((KeycloakApplication) deployment.getApplication()).getSessionFactory();
+            sessionFactory = ((KeycloakApplication) deployment.getApplication()).getSessionFactory();
 
-        setupDevConfig();
+            setupDevConfig();
 
-        if (config.getResourcesHome() != null) {
-            info("Loading resources from " + config.getResourcesHome());
+            if (config.getResourcesHome() != null) {
+                info("Loading resources from " + config.getResourcesHome());
+            }
+
+            info("Started Keycloak (http://" + config.getHost() + ":" + config.getPort() + "/auth) in "
+                    + (System.currentTimeMillis() - start) + " ms\n");
+        } catch (RuntimeException e) {
+            server.stop();
+            throw e;
         }
-
-        info("Started Keycloak (http://" + config.getHost() + ":" + config.getPort() + "/auth) in "
-                + (System.currentTimeMillis() - start) + " ms\n");
     }
 
     private void info(String message) {

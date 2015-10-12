@@ -77,6 +77,13 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
         request.setUserPrincipal(null);
     }
 
+    protected void beforeStop() {
+        if (nodesRegistrationManagement != null) {
+            nodesRegistrationManagement.stop();
+        }
+    }
+
+
     @SuppressWarnings("UseSpecificCatch")
     public void keycloakInit() {
         // Possible scenarios:
@@ -119,11 +126,6 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
         nodesRegistrationManagement = new NodesRegistrationManagement();
     }
 
-    protected void beforeStop() {
-        if (nodesRegistrationManagement != null) {
-            nodesRegistrationManagement.stop();
-        }
-    }
 
     private static InputStream getJSONFromServletContext(ServletContext servletContext) {
         String json = servletContext.getInitParameter(AdapterConstants.AUTH_DATA_PARAM_NAME);

@@ -15,6 +15,7 @@
 
     <modules>
         <module>adapter-spi</module>
+        <module>servlet-adapter-spi</module>
         <module>adapter-core</module>
         <module>jaxrs-oauth-client</module>
         <module>servlet-oauth-client</module>
@@ -25,6 +26,7 @@
         <module>undertow-adapter-spi</module>
         <module>undertow</module>
         <module>wildfly</module>
+        <module>servlet-filter</module>
         <module>js</module>
         <module>installed</module>
         <module>admin-client</module>

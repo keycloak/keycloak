@@ -7,6 +7,10 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface SessionIdMapper {
+    boolean hasSession(String id);
+
+    void clear();
+
     Set<String> getUserSessions(String principal);
 
     String getSessionFromSSO(String sso);

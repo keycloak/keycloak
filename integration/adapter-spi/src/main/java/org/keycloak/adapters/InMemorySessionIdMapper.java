@@ -18,6 +18,19 @@ public class InMemorySessionIdMapper implements SessionIdMapper {
     ConcurrentHashMap<String, String> sessionToPrincipal = new ConcurrentHashMap<>();
 
     @Override
+    public boolean hasSession(String id) {
+        return sessionToSso.containsKey(id) || sessionToPrincipal.containsKey(id);
+    }
+
+    @Override
+    public void clear() {
+        ssoToSession.clear();
+        sessionToSso.clear();
+        principalToSession.clear();
+        sessionToPrincipal.clear();
+    }
+
+    @Override
     public Set<String> getUserSessions(String principal) {
         Set<String> lookup = principalToSession.get(principal);
         if (lookup == null) return null;

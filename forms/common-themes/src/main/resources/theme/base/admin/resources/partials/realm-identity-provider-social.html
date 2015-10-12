@@ -1,6 +1,6 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2" data-ng-init="initProvider()">
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">Identity Providers</a></li>
+        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">{{:: 'identity-providers' | translate}}</a></li>
         <li>{{identityProvider.alias}}</li>
     </ol>
 
@@ -9,100 +9,100 @@
     <form class="form-horizontal" name="realmForm" novalidate>
         <fieldset>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="redirectUri">Redirect URI</label>
+                <label class="col-md-2 control-label" for="redirectUri">{{:: 'redirect-uri' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" id="redirectUri" type="text" value="{{callbackUrl}}{{identityProvider.alias}}/endpoint" readonly kc-select-action="click">
                 </div>
-                <kc-tooltip>The redirect uri to use when configuring the identity provider</kc-tooltip>
+                <kc-tooltip>{{:: 'redirect-uri.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
         <fieldset>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="clientId"><span class="required">*</span> Client ID</label>
+                <label class="col-md-2 control-label" for="clientId"><span class="required">*</span> {{:: 'client-id' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="clientId" type="text" ng-model="identityProvider.config.clientId" required>
                 </div>
-                <kc-tooltip>The client identifier registered withing the identity provider.</kc-tooltip>
+                <kc-tooltip>{{:: 'social.client-id.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="clientSecret"><span class="required">*</span> Client Secret</label>
+                <label class="col-md-2 control-label" for="clientSecret"><span class="required">*</span> {{:: 'client-secret' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="clientSecret" type="password" ng-model="identityProvider.config.clientSecret" ng-show="hidePassword" required>
                     <input class="form-control" id="clientSecret" type="text" ng-model="identityProvider.config.clientSecret" ng-show="!hidePassword" required>
-                    <a href="" ng-click="showPassword(false)" class="link" ng-show="hidePassword">Show Secret</a>
-                    <a href="" ng-click="showPassword(true);" ng-show="!hidePassword">Hide Secret</a>
+                    <a href="" ng-click="showPassword(false)" class="link" ng-show="hidePassword">{{:: 'show-secret' | translate}}</a>
+                    <a href="" ng-click="showPassword(true);" ng-show="!hidePassword">{{:: 'hide-secret' | translate}}</a>
                 </div>
-                <kc-tooltip>The client secret registered withing the identity provider.</kc-tooltip>
+                <kc-tooltip>{{:: 'social.client-secret.tooltip' | translate}}</kc-tooltip>
             </div>
             <div data-ng-include data-src="resourceUrl + '/partials/realm-identity-provider-' + identityProvider.providerId + '-ext.html'"></div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="defaultScope">Default Scopes </label>
+                <label class="col-md-2 control-label" for="defaultScope">{{:: 'default-scopes' | translate}} </label>
                 <div class="col-md-6">
                     <input class="form-control" id="defaultScope" type="text" ng-model="identityProvider.config.defaultScope">
                 </div>
-                <kc-tooltip>The scopes to be sent when asking for authorization. See documentation for possible values, separator and default value'.</kc-tooltip>
+                <kc-tooltip>{{:: 'social.default-scopes.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="enabled">Store Tokens</label>
+                <label class="col-md-2 control-label" for="enabled">{{:: 'store-tokens' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.storeToken" id="storeToken" onoffswitch />
+                    <input ng-model="identityProvider.storeToken" id="storeToken" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Enable/disable if tokens must be stored after authenticating users.</kc-tooltip>
+                <kc-tooltip>{{:: 'identity-provider.store-tokens.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="storedTokensReadable">Stored Tokens Readable</label>
+                <label class="col-md-2 control-label" for="storedTokensReadable">{{:: 'stored-tokens-readable' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.addReadTokenRoleOnCreate" id="storedTokensReadable" onoffswitch />
+                    <input ng-model="identityProvider.addReadTokenRoleOnCreate" id="storedTokensReadable" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Enable/disable new users can read any stored tokens.  This assigns the broker.read-token role.</kc-tooltip>
+                <kc-tooltip>{{:: 'identity-provider.stored-tokens-readable.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="enabled">Enabled</label>
+                <label class="col-md-2 control-label" for="enabled">{{:: 'enabled' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.enabled" id="enabled" onoffswitch />
+                    <input ng-model="identityProvider.enabled" id="enabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Enable/disable this identity provider.</kc-tooltip>
+                <kc-tooltip>{{:: 'identity-provider.enabled.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="updateProfileFirstLoginMode">Update Profile on First Login</label>
+                <label class="col-md-2 control-label" for="updateProfileFirstLoginMode">{{:: 'update-profile-on-first-login' | translate}}</label>
                 <div class="col-md-2">
                 		<div>
                         <select id="updateProfileFirstLoginMode" ng-model="identityProvider.updateProfileFirstLoginMode" class="form-control">
-                            <option value="on">On</option>
-                            <option value="missing">On missing info</option>
-                            <option value="off">Off</option>
+                            <option value="on">{{:: 'on' | translate}}</option>
+                            <option value="missing">{{:: 'on-missing-info' | translate}}</option>
+                            <option value="off">{{:: 'off' | translate}}</option>
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>Define under which conditions must user update his profile right after the first login.</kc-tooltip>
+                <kc-tooltip>{{:: 'update-profile-on-first-login.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="trustEmail">Trust email</label>
+                <label class="col-md-2 control-label" for="trustEmail">{{:: 'trust-email' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.trustEmail" name="identityProvider.trustEmail" id="trustEmail" onoffswitch />
+                    <input ng-model="identityProvider.trustEmail" name="identityProvider.trustEmail" id="trustEmail" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>If enabled then email provided by this provider is not verified even if verification is enabled for the realm.</kc-tooltip>
+                <kc-tooltip>{{:: 'trust-email.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="authenticateByDefault">Authenticate By Default</label>
+                <label class="col-md-2 control-label" for="authenticateByDefault">{{:: 'authenticate-by-default' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.authenticateByDefault" name="identityProvider.authenticateByDefault" id="authenticateByDefault" onoffswitch />
+                    <input ng-model="identityProvider.authenticateByDefault" name="identityProvider.authenticateByDefault" id="authenticateByDefault" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Indicates if this provider should be tried by default for authentication even before displaying login screen</kc-tooltip>
+                <kc-tooltip>{{:: 'identity-provider.authenticate-by-default.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="guiOrder">GUI order</label>
+                <label class="col-md-2 control-label" for="guiOrder">{{:: 'gui-order' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="guiOrder" type="text" ng-model="identityProvider.config.guiOrder">
                 </div>
-                <kc-tooltip>Number defining order of the provider in GUI (eg. on Login page).</kc-tooltip>
+                <kc-tooltip>{{:: 'gui-order.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2">
-                <button kc-save data-ng-disabled="!changed">Save</button>
-                <button kc-cancel data-ng-click="cancel()" data-ng-disabled="!changed">Cancel</button>
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-click="cancel()" data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
     </form>

@@ -13,6 +13,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
@@ -112,14 +113,14 @@ public class RealmsResource {
         return service;
     }
 
-//    @Path("{realm}/client-registration")
-//    public ClientRegistrationService getClientsService(final @PathParam("realm") String name) {
-//        RealmModel realm = init(name);
-//        EventBuilder event = new EventBuilder(realm, session, clientConnection);
-//        ClientRegistrationService service = new ClientRegistrationService(realm, event);
-//        ResteasyProviderFactory.getInstance().injectProperties(service);
-//        return service;
-//    }
+    @Path("{realm}/client-registration")
+    public ClientRegistrationService getClientsService(final @PathParam("realm") String name) {
+        RealmModel realm = init(name);
+        EventBuilder event = new EventBuilder(realm, session, clientConnection);
+        ClientRegistrationService service = new ClientRegistrationService(realm, event);
+        ResteasyProviderFactory.getInstance().injectProperties(service);
+        return service;
+    }
 
     @Path("{realm}/clients-managements")
     public ClientsManagementService getClientsManagementService(final @PathParam("realm") String name) {

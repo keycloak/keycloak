@@ -1,0 +1,10 @@
+<chapter>
+    <title>Logout</title>
+    <para>
+        There are multiple ways you can logout from a web application.  For Java EE servlet containers, you can call
+        HttpServletRequest.logout().
+        For any other browser application, you can point the browser at any url of your web application that has
+        a security constraing and pass in a query parameter GLO, i.e. <literal>http://myapp?GLO=true</literal>.
+        This will log you out if you have an SSO session with your browser.
+    </para>
+</chapter>

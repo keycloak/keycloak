@@ -1,7 +1,7 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
         <li>{{client.clientId}}</li>
     </ol>
 
@@ -10,11 +10,11 @@
     <form class="form-horizontal" name="sessionStats">
         <fieldset class="border-top">
             <div class="form-group">
-                <label class="col-md-2 control-label" for="activeSessions">Active Sessions</label>
+                <label class="col-md-2 control-label" for="activeSessions">{{:: 'active-sessions' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="text" id="activeSessions" name="activeSessions" data-ng-model="count" ng-disabled="true">
                 </div>
-                <kc-tooltip>Total number of active user sessions for this client.</kc-tooltip>
+                <kc-tooltip>{{:: 'active-sessions.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
     </form>
@@ -23,23 +23,23 @@
         <tr>
             <th class="kc-table-actions" colspan="3">
                 <div class="pull-right">
-                    <a class="btn btn-default" ng-click="loadUsers()" tooltip-placement="left" tooltip-trigger="mouseover mouseout" tooltip="Warning, this is a potentially expensive operation depending on number of active sessions.">Show Sessions</a>
+                    <a class="btn btn-default" ng-click="loadUsers()" tooltip-placement="left" tooltip-trigger="mouseover mouseout" tooltip="{{:: 'show-sessions.tooltip' | translate}}">{{:: 'show-sessions' | translate}}</a>
                 </div>
             </th>
         </tr>
         <tr data-ng-show="sessions">
-            <th>User</th>
-            <th>From IP</th>
-            <th>Session Start</th>
+            <th>{{:: 'user' | translate}}</th>
+            <th>{{:: 'from-ip' | translate}}</th>
+            <th>{{:: 'session-start' | translate}}</th>
         </tr>
         </thead>
         <tfoot data-ng-show="sessions && (sessions.length >= 5 || query.first != 0)">
         <tr>
             <td colspan="7">
                 <div class="table-nav">
-                    <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">First page</button>
-                    <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">Previous page</button>
-                    <button data-ng-click="nextPage()" class="next" ng-disabled="sessions.length < query.max">Next page</button>
+                    <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
+                    <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
+                    <button data-ng-click="nextPage()" class="next" ng-disabled="sessions.length < query.max">{{:: 'next-page' | translate}}</button>
                 </div>
             </td>
         </tr>

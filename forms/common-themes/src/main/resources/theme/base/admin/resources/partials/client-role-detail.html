@@ -1,14 +1,14 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
-        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/roles">Roles</a></li>
-        <li data-ng-show="create">Add role</li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/roles">{{:: 'roles' | translate}}</a></li>
+        <li data-ng-show="create">{{:: 'add-role' | translate}}</li>
         <li data-ng-hide="create">{{role.name}}</li>
     </ol>
 
-    <h1 data-ng-show="create">Add Role</h1>
+    <h1 data-ng-show="create">{{:: 'add-role' | translate}}</h1>
     <h1 data-ng-hide="create">{{role.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create && access.manageClients" 
     	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
 
@@ -16,7 +16,7 @@
 
         <fieldset class="border-top">
             <div class="form-group">
-                <label class="col-md-2 control-label" for="name">Role name <span class="required" data-ng-show="create">*</span></label>
+                <label class="col-md-2 control-label" for="name">{{:: 'role-name' | translate}} <span class="required" data-ng-show="create">*</span></label>
 
                 <div class="col-md-6">
                     <input class="form-control" type="text" id="name" name="name" data-ng-model="role.name" autofocus
@@ -24,7 +24,7 @@
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="description">Description </label>
+                <label class="col-md-2 control-label" for="description">{{:: 'description' | translate}} </label>
 
                 <div class="col-md-6">
                     <textarea  class="form-control" rows="5" cols="50" id="description" name="description" data-ng-model="role.description"></textarea>
@@ -33,64 +33,64 @@
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="scopeParamRequired">Scope Param Required </label>
-                <kc-tooltip>This role will be granted just if scope parameter with role name is used during authorization/token request.</kc-tooltip>
+                <label class="col-md-2 control-label" for="scopeParamRequired">{{:: 'scope-param-required' | translate}} </label>
+                <kc-tooltip>{{:: 'scope-param-required.tooltip' | translate}}</kc-tooltip>
                 <div class="col-md-6">
-                    <input ng-model="role.scopeParamRequired" name="scopeParamRequired" id="scopeParamRequired" onoffswitch />
+                    <input ng-model="role.scopeParamRequired" name="scopeParamRequired" id="scopeParamRequired" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
             </div>
             <div class="form-group clearfix block" data-ng-hide="create">
-                <label class="col-md-2 control-label" for="compositeSwitch" class="control-label">Composite Roles</label>
+                <label class="col-md-2 control-label" for="compositeSwitch" class="control-label">{{:: 'composite-roles' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="compositeSwitch" name="compositeSwitch" id="compositeSwitch" ng-disabled="compositeSwitchDisabled" onoffswitch />
+                    <input ng-model="compositeSwitch" name="compositeSwitch" id="compositeSwitch" ng-disabled="compositeSwitchDisabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>When this role is (un)assigned to a user any role associated with it will be (un)assigned implicitly.</kc-tooltip>
+                <kc-tooltip>{{:: 'composite-roles.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageClients">
-                <button kc-save>Save</button>
-                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+                <button kc-save>{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageClients">
-                <button kc-save  data-ng-disabled="!changed">Save</button>
-                <button kc-reset data-ng-disabled="!changed">Cancel</button>
+                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
 
         <fieldset data-ng-show="!create && (compositeSwitch || role.composite)">
-            <legend uncollapsed><span class="text">Composite Roles</span> </legend>
+            <legend uncollapsed><span class="text">{{:: 'composite-roles' | translate}}</span> </legend>
 
             <div class="form-group">
-                <label class="col-md-2 control-label" class="control-label">Realm Roles</label>
+                <label class="col-md-2 control-label" class="control-label">{{:: 'realm-roles' | translate}}</label>
 
                 <div class="col-md-10">
                     <div class="row">
                         <div class="col-md-4">
-                            <label class="control-label" for="available">Available Roles</label>
-                            <kc-tooltip>Realm level roles associated with this composite role.</kc-tooltip>
+                            <label class="control-label" for="available">{{:: 'available-roles' | translate}}</label>
+                            <kc-tooltip>{{:: 'composite.available-realm-roles.tooltip' | translate}}</kc-tooltip>
                             <select id="available" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedRealmRoles"
                                     ng-options="r.name for r in realmRoles">
                             </select>
                             <button ng-disabled="selectedRealmRoles.length == 0" class="btn btn-default" type="submit" ng-click="addRealmRole()">
-                                Add selected <i class="fa fa-angle-double-right"></i>
+                                {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
                             </button>
                         </div>
                         <div class="col-md-4">
-                            <label class="control-label" for="assigned">Associated Roles</label>
-                            <kc-tooltip>Realm level roles associated with this composite role.</kc-tooltip>
+                            <label class="control-label" for="assigned">{{:: 'associated-roles' | translate}}</label>
+                            <kc-tooltip>{{:: 'composite.associated-realm-roles.tooltip' | translate}}</kc-tooltip>
                             <select id="assigned" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedRealmMappings"
                                     ng-options="r.name for r in realmMappings">
                             </select>
                             <button ng-disabled="selectedRealmMappings.length == 0" class="btn btn-default" type="submit" ng-click="deleteRealmRole()">
-                                <i class="fa fa-angle-double-left"></i> Remove selected
+                                <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
                             </button>
                         </div>
                     </div>
@@ -99,37 +99,37 @@
 
             <div class="form-group" ng-show="clients.length > 0 && !create && (compositeSwitch || role.composite)">
                 <label class="col-md-2 control-label" class="control-label">
-                    <span>Client Roles</span>
+                    <span>{{:: 'client-roles' | translate}}</span>
                     <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="compositeClient" ng-options="a.clientId for a in clients" ng-disabled="false"></select>
                 </label>
 
                 <div class="col-md-10">
                     <div class="row" data-ng-hide="compositeClient">
-                        <div class="col-md-4"><span class="text-muted">Select client to view roles for client</span></div>
+                        <div class="col-md-4"><span class="text-muted">{{:: 'select-client-to-view-roles' | translate}}</span></div>
                     </div>
                     <div class="row" data-ng-show="compositeClient">
                         <div class="col-md-4">
-                            <label class="control-label" for="available-client">Available Roles</label>
-                            <kc-tooltip>Roles from this client that you can associate to this composite role.</kc-tooltip>
+                            <label class="control-label" for="available-client">{{:: 'available-roles' | translate}}</label>
+                            <kc-tooltip>{{:: 'available-roles.tooltip' | translate}}</kc-tooltip>
                             <select id="available-client" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedClientRoles"
                                     ng-options="r.name for r in clientRoles">
                             </select>
                             <button ng-disabled="selectedClientRoles.length == 0" class="btn btn-default" type="submit" ng-click="addClientRole()">
-                                Add selected <i class="fa fa-angle-double-right"></i>
+                                {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
                             </button>
                         </div>
                         <div class="col-md-4">
-                            <label class="control-label" for="assigned-client">Associated Roles</label>
-                            <kc-tooltip>Client roles associated with this composite role.</kc-tooltip>
+                            <label class="control-label" for="assigned-client">{{:: 'associated-roles' | translate}}</label>
+                            <kc-tooltip>{{:: 'client.associated-roles.tooltip' | translate}}</kc-tooltip>
                             <select id="assigned-client" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedClientMappings"
                                     ng-options="r.name for r in clientMappings">
                             </select>
                             <button ng-disabled="selectedClientMappings.length == 0" class="btn btn-default" type="submit" ng-click="deleteClientRole()">
-                                <i class="fa fa-angle-double-left"></i> Remove selected
+                                <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
                             </button>
                         </div>
                     </div>

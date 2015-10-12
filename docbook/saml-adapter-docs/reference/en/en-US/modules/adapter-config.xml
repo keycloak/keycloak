@@ -1,0 +1,475 @@
+<chapter id="adapter-config">
+    <title>General Adapter Config</title>
+    <para>
+        Each SAML adapter supported by Keycloak can be configured by a simple XML text file.  This is what one might
+        look like:
+    </para>
+    <para>
+<programlisting><![CDATA[
+<keycloak-saml-adapter>
+    <SP entityID="http://localhost:8081/sales-post-sig/"
+        sslPolicy="EXTERNAL"
+        nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+        logoutPage="/logout.jsp"
+        forceAuthentication="false">
+        <Keys>
+            <Key signing="true" >
+                <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+                    <PrivateKey alias="http://localhost:8080/sales-post-sig/" password="test123"/>
+                    <Certificate alias="http://localhost:8080/sales-post-sig/"/>
+                </KeyStore>
+            </Key>
+        </Keys>
+        <PrincipalNameMapping policy="FROM_NAME_ID"/>
+        <RoleMapping>
+            <Attribute name="Role"/>
+        </RoleMapping>
+        <IDP entityID="idp"
+             signaturesRequired="true">
+        <SingleSignOnService requestBinding="POST"
+                             bindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"
+                    />
+
+            <SingleLogoutService
+                    requestBinding="POST"
+                    responseBinding="POST"
+                    postBindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"
+                    redirectBindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"
+                    />
+            <Keys>
+                <Key signing="true">
+                    <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+                        <Certificate alias="demo"/>
+                    </KeyStore>
+                </Key>
+            </Keys>
+        </IDP>
+     </SP>
+</keycloak-saml-adapter>]]>
+
+</programlisting>
+    </para>
+    <para>
+        Some of these configuration switches may be adapter specific and some are common across all adapters.
+        For Java adapters you can use <literal>${...}</literal> enclosure as System property replacement.
+        For example <literal>${jboss.server.config.dir}</literal>.
+    </para>
+    <section>
+        <title>SP Element</title>
+        <para>
+            Here is the explanation of the SP element attributes
+        </para>
+        <programlisting><![CDATA[
+<SP entityID="sp"
+    sslPolicy="ssl"
+    nameIDPolicyFormat="format"
+    forceAuthentication="true">
+...
+</SP>]]></programlisting>
+        <para>
+            <variablelist>
+                <varlistentry>
+                    <term>entityID</term>
+                    <listitem>
+                        <para>
+                            This is the identifier for this client.  The IDP needs this value to determine
+                            who the client is that is communicating with it.
+                            <emphasis>REQUIRED.</emphasis>
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>sslPolicy</term>
+                    <listitem>
+                        <para>
+                            This is the SSL policy the adapter will enforce.  Valid values are:
+                            ALL, EXTERNAL, and NONE.  For ALL, all requests must come in via HTTPS.  For
+                            EXTERNAL, only non-private IP addresses must come over the wire via HTTPS.  For
+                            NONE, no requests are required to come over via HTTPS.  This is
+                            <emphasis>OPTIONAL.</emphasis> and defaults to EXTERNAL.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>nameIDPolicyFormat</term>
+                    <listitem>
+                        <para>
+                            SAML clients can request a specific NameID Subject format.  Fill in this value
+                            if you want a specific format.  It must be a standard SAML format identifier, i.e.
+                            <literal>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</literal>
+                            <emphasis>OPTIONAL.</emphasis>.  By default, no special format is requested.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>forceAuthentication</term>
+                    <listitem>
+                        <para>
+                            SAML clients can request that a user is re-authenticated even if
+                            they are already logged in at the IDP.  Set this to true if you
+                            want this.
+                            <emphasis>OPTIONAL.</emphasis>.  Set to <literal>false</literal> by default.
+                        </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </para>
+    </section>
+    <section id="sp_keys">
+        <title>SP Keys and Key elements</title>
+        <para>
+            If the IDP requires that the SP sign all of its requests and/or if the IDP will
+            encrypt assertions, you must define the keys used to do this.  For client signed
+            documents you must define both the private and public key or certificate that will
+            be used to sign documents.  For encryption, you only have to define the private key
+            that will be used to decrypt.
+        </para>
+        <para>
+            There are two ways to describe your keys.  Either they are stored within a Java KeyStore
+            or you can cut and paste the keys directly within <literal>keycloak-saml.xml</literal>
+            in the PEM format.
+        </para>
+        <programlisting><![CDATA[
+        <Keys>
+            <Key signing="true" >
+                <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+                    <PrivateKey alias="http://localhost:8080/sales-post-sig/" password="test123"/>
+                    <Certificate alias="http://localhost:8080/sales-post-sig/"/>
+                </KeyStore>
+            </Key>
+        </Keys>
+]]>
+        </programlisting>
+        <para>
+            The <literal>Key</literal> element has two optional attributes <literal>signing</literal>
+            and <literal>encryption</literal>.  When set to true these tell the adapter what the
+            key will be used for.  If both attributes are set to true, then the key will be used for both
+            signing documents and decrypting encrypted assertions.  You must set at least one of these
+            attributes to true.
+        </para>
+        <section id="keystore">
+            <title>KeyStore element</title>
+            <para>
+                <variablelist>
+                    <varlistentry>
+                        <term>file</term>
+                        <listitem>
+                            <para>
+                                File path to the key store.
+                                <emphasis>OPTIONAL.</emphasis>  The file or resource attribute
+                                must be set.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>resource</term>
+                        <listitem>
+                            <para>
+                                WAR resource path to the KeyStore.  This is a path used in method call to ServletContext.getResourceAsStream().
+                                <emphasis>OPTIONAL.</emphasis>  The file or resource attribute
+                                must be set.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>password</term>
+                        <listitem>
+                            <para>
+                                The password of the KeyStore
+                                <emphasis>REQUIRED.</emphasis>
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
+
+            </para>
+            <para>
+                You can and must also specify references to your private keys and certificates within
+                the Java KeyStore.  The <literal>PrivateKey</literal> and <literal>Certificate</literal>
+                elements do this.  The <literal>alias</literal> attribute defines the alias within the
+                KeyStore for the key.  For <literal>PrivateKey</literal>, a password is required to access this key
+                specify that value in the <literal>password</literal> attribute.
+            </para>
+        </section>
+        <section id="key_pems">
+            <title>Key PEMS</title>
+            <para>
+                Within the <literal>Key</literal> element you alternatively declare your keys and certificates
+                directly using the sub elements <literal>PrivateKeyPem</literal>, <literal>PublicKeyPem</literal>, and
+                <literal>CertificatePem</literal>.  The values contained in these elements must conform to the
+                PEM key format.  You usually use this option if you are generating keys using <literal>openssl</literal>
+            </para>
+        </section>
+    </section>
+    <section>
+        <title>SP PrincipalNameMapping element</title>
+        <para>
+            This element is optional.  When creating a Java Principal object that you obtain from
+            methods like HttpServletRequest.getUserPrincipal(), you can define what name that is returned
+            by the Principal.getName() method.  The <literal>policy</literal> attribute defines the
+            policy used to populate this value.  The values are <literal>FROM_NAME_ID</literal>.  This policy
+            just grabs whatever the SAML subject value is.  The other is <literal>FROM_ATTRIBUTE</literal>.  This will
+            pull the value of Principal.getName() from one of the attributes in the SAML assertion received from the server.
+            The default value is <literal>FROM_NAME_ID</literal>.
+        </para>
+    </section>
+    <section>
+        <title>RoleIdentifiers element</title>
+        <programlisting><![CDATA[
+<RoleIdentifiers>
+     <Attribute name="Role"/>
+     <Attribute name="member"/>
+     <Attribute name="memberOf"/>
+</RoleIdentifiers>
+]]></programlisting>
+        <para>
+            This element is optional.  It defines which SAML attribute values in the assertion should be
+            mapped to a Java EE role.  By default <literal>Role</literal> attribute values are converted
+            to Java EE roles.  Some IDPs send roles via a <literal>member</literal> or <literal>memberOf</literal>
+            attribute assertion.  You define one or more <literal>Attribute</literal> elements to specify
+            which SAML attributes must be converted into roles.
+        </para>
+    </section>
+    <section>
+        <title>IDP Element</title>
+        <para>
+            Everything in the IDP element describes the settings for the IDP the SP is communicating
+            with.
+        </para>
+        <programlisting>
+<![CDATA[
+<IDP entityID="idp"
+     signaturesRequired="true"
+     signatureAlgorithm="RSA_SHA1"
+     signatureCanonicalizationMethod="http://www.w3.org/2001/10/xml-exc-c14n#">
+...
+</IDP>]]>
+        </programlisting>
+        <para>
+            <variablelist>
+                <varlistentry>
+                    <term>entityID</term>
+                    <listitem>
+                        <para>
+                            This is the issuer ID of the IDP.
+                            <emphasis>REQUIRED.</emphasis>.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>signaturesRequired</term>
+                    <listitem>
+                        <para>
+                            If set to true, the client adapter will sign every document
+                            it sends to the IDP.  Also, the client will expect that the IDP
+                            will be signing an documents sent to it.  This switch sets
+                            the default for all request and response types, but you will see
+                            later that you have some fine grain control over this.
+                            <emphasis>OPTIONAL.</emphasis>
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>signatureAlgorithm</term>
+                    <listitem>
+                        <para>
+                            This is the signature algorithm that the IDP expects signed documents
+                            to use
+                            <emphasis>OPTIONAL.</emphasis>.  The default value is RSA_SHA256, but
+                            you can also use RSA_SHA1, RSA_256, RSA_512, and DSA_SHA1.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>signatureCanonicalizationMethod</term>
+                    <listitem>
+                        <para>
+                            This is the signature canonicalization method that the IDP expects signed documents
+                            to use
+                            <emphasis>OPTIONAL.</emphasis>.  The default value is <literal>http://www.w3.org/2001/10/xml-exc-c14n#</literal>
+                            and should be good for most IDPs.
+                        </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </para>
+    </section>
+    <section>
+        <title>IDP SingleSignOnService sub element</title>
+        <para>
+            The <literal>SignleSignOnService</literal> sub element defines the
+            login SAML endpoint of the IDP.
+        </para>
+        <programlisting><![CDATA[
+<SingleSignOnService signRequest="true"
+                     validateResponseSignature="true"
+                     requestBinding="post"
+                     bindingUrl="url"/>
+]]></programlisting>
+        <para>
+            <variablelist>
+                <varlistentry>
+                    <term>signRequest</term>
+                    <listitem>
+                        <para>
+                            Should the client sign authn requests?
+                            <emphasis>OPTIONAL.</emphasis>.  Defaults to whatever the
+                            IDP <literal>signaturesRequired</literal> element value is.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>validateResponseSignature</term>
+                    <listitem>
+                        <para>
+                            Should the client expect the IDP to sign the assertion response document
+                            sent back from an auhtn request?
+                            <emphasis>OPTIONAL.</emphasis> Defaults to whatever the
+                            IDP <literal>signaturesRequired</literal> element value is.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>requestBinding</term>
+                    <listitem>
+                        <para>
+                            This is the SAML binding type used for communicating with the IDP
+                            <emphasis>OPTIONAL.</emphasis>.  The default value is POST, but
+                            you can set it to REDIRECT as well.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>responseBinding</term>
+                    <listitem>
+                        <para>
+                            SAML allows the client to request what binding type it wants authn responses
+                            to use.  The values of this can be POST or REDIRECT
+                            <emphasis>OPTIONAL.</emphasis>.  The default is that the client will not request
+                            a specific binding type for responses.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>bindingUrl</term>
+                    <listitem>
+                        <para>
+                            This is the URL for the ID login service that the client will send requests to.
+                            <emphasis>REQUIRED.</emphasis>.
+                        </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </para>
+    </section>    <section>
+    <title>IDP SingleSignOnService sub element</title>
+    <para>
+        The <literal>SignleSignOnService</literal> sub element defines the
+        login SAML endpoint of the IDP.
+    </para>
+    <programlisting><![CDATA[
+<SingleLogoutService validateRequestSignature="true"
+                     validateResponseSignature="true"
+                     signRequest="true"
+                     signResponse="true"
+                     requestBinding="redirect"
+                     responseBinding="post"
+                     postBindingUrl="posturl"
+                     redirectBindingUrl="redirecturl">
+]]></programlisting>
+    <para>
+        <variablelist>
+            <varlistentry>
+                <term>signRequest</term>
+                <listitem>
+                    <para>
+                        Should the client sign logout requests it makes to the IDP?
+                        <emphasis>OPTIONAL.</emphasis>.  Defaults to whatever the
+                        IDP <literal>signaturesRequired</literal> element value is.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>signResponse</term>
+                <listitem>
+                    <para>
+                        Should the client sign logout responses it sends to the IDP requests?
+                        <emphasis>OPTIONAL.</emphasis>.  Defaults to whatever the
+                        IDP <literal>signaturesRequired</literal> element value is.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>validateRequestSignature</term>
+                <listitem>
+                    <para>
+                        Should the client expect signed logout request documents from the IDP?
+                        <emphasis>OPTIONAL.</emphasis> Defaults to whatever the
+                        IDP <literal>signaturesRequired</literal> element value is.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>validateResponseSignature</term>
+                <listitem>
+                    <para>
+                        Should the client expect signed logout response documents from the IDP?
+                        <emphasis>OPTIONAL.</emphasis> Defaults to whatever the
+                        IDP <literal>signaturesRequired</literal> element value is.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>requestBinding</term>
+                <listitem>
+                    <para>
+                        This is the SAML binding type used for communicating SAML requests to the IDP
+                        <emphasis>OPTIONAL.</emphasis>.  The default value is POST, but
+                        you can set it to REDIRECT as well.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>responseBinding</term>
+                <listitem>
+                    <para>
+                        This is the SAML binding type used for communicating SAML responses to the IDP
+                        The values of this can be POST or REDIRECT
+                        <emphasis>OPTIONAL.</emphasis>.  The default value is POST, but
+                        you can set it to REDIRECT as well.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>postBindingUrl</term>
+                <listitem>
+                    <para>
+                        This is the URL for the IDP's logout service when using the POST binding.
+                        <emphasis>REQUIRED</emphasis> if using the POST binding at all.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>redirectBindingUrl</term>
+                <listitem>
+                    <para>
+                        This is the URL for the IDP's logout service when using the REDIRECT binding.
+                        <emphasis>REQUIRED</emphasis> if using the REDIRECT binding at all.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </para>
+</section>
+    <section>
+        <title>IDP Keys subelement</title>
+        <para>
+            The Keys sub element of IDP is only used to define the certificate or
+            public key to use to verify documents signed by the IDP.  It is defined
+            in the same way as the <link linkend="sp_keys">SP's Key's element</link>.  But
+            again, you only have to define one certificate or public key reference.
+        </para>
+
+    </section>
+
+</chapter>

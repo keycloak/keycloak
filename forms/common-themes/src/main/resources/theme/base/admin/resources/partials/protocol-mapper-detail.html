@@ -1,14 +1,14 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
-        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/mappers">Mappers</a></li>
-        <li class="active" data-ng-show="create">Create Protocol Mappers</li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/mappers">{{:: 'mappers' | translate}}</a></li>
+        <li class="active" data-ng-show="create">{{:: 'create-protocol-mappers' | translate}}</li>
         <li class="active" data-ng-hide="create">{{mapper.name}}</li>
     </ol>
 
-    <h1 data-ng-show="create">Create Protocol Mapper</h1>
+    <h1 data-ng-show="create">{{:: 'create-protocol-mapper' | translate}}</h1>
     <h1 data-ng-hide="create">{{mapper.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create && access.manageRealm" 
     	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
 
@@ -16,42 +16,42 @@
 
         <fieldset>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="protocol">Protocol</label>
+                <label class="col-md-2 control-label" for="protocol">{{:: 'protocol' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="protocol" type="text" ng-model="protocol" readonly>
                 </div>
-                <kc-tooltip>Protocol.</kc-tooltip>
+                <kc-tooltip>{{:: 'protocol.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-show="!create">
-                <label class="col-md-2 control-label" for="mapperId">ID </label>
+                <label class="col-md-2 control-label" for="mapperId">{{:: 'id' | translate}} </label>
                 <div class="col-md-6">
                     <input class="form-control" id="mapperId" type="text" ng-model="mapper.id" readonly>
                 </div>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="name">Name</label>
+                <label class="col-md-2 control-label" for="name">{{:: 'name' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="name" type="text" ng-model="mapper.name" data-ng-readonly="!create">
                 </div>
-                <kc-tooltip>Name of the mapper.</kc-tooltip>
+                <kc-tooltip>{{:: 'mapper.name.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label for="consentRequired" class="col-sm-2 control-label">Consent required</label>
+                <label for="consentRequired" class="col-sm-2 control-label">{{:: 'consent-required' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="mapper.consentRequired" name="consentRequired" id="consentRequired" onoffswitch />
+                    <input ng-model="mapper.consentRequired" name="consentRequired" id="consentRequired" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>When granting temporary access, must the user consent to providing this data to the client?</kc-tooltip>
+                <kc-tooltip>{{:: 'mapper.consent-required.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="mapper.consentRequired">
-                <label class="col-md-2 control-label" for="consentText">Consent Text </label>
+                <label class="col-md-2 control-label" for="consentText">{{:: 'consent-text' | translate}} </label>
 
                 <div class="col-md-6">
                     <textarea class="form-control" rows="5" cols="50" id="consentText" name="consentText" data-ng-model="mapper.consentText"></textarea>
                 </div>
-                <kc-tooltip>Text to display on consent page</kc-tooltip>
+                <kc-tooltip>{{:: 'consent-text.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="create">
-                <label class="col-md-2 control-label" for="mapperTypeCreate">Mapper Type</label>
+                <label class="col-md-2 control-label" for="mapperTypeCreate">{{:: 'mapper-type' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="mapperTypeCreate"
@@ -63,7 +63,7 @@
                 <kc-tooltip>{{mapperType.helpText}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-hide="create">
-                <label class="col-md-2 control-label" for="mapperType">Mapper Type</label>
+                <label class="col-md-2 control-label" for="mapperType">{{:: 'mapper-type' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="mapperType" type="text" ng-model="mapperType.name" data-ng-readonly="true">
                 </div>
@@ -74,15 +74,15 @@
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageRealm">
-                <button kc-save>Save</button>
-                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+                <button kc-save>{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageRealm">
-                <button kc-save  data-ng-disabled="!changed">Save</button>
-                <button kc-reset data-ng-disabled="!changed">Cancel</button>
+                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
     </form>

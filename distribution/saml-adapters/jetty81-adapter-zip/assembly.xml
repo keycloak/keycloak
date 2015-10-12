@@ -1,0 +1,26 @@
+<assembly>
+    <id>war-dist</id>
+
+    <formats>
+        <format>zip</format>
+        <format>tar.gz</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+            <unpack>false</unpack>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+            <includes>
+                <include>org.keycloak:keycloak-saml-jetty81-adapter</include>
+            </includes>
+            <excludes>
+                <exclude>org.eclipse.jetty:jetty-server</exclude>
+                <exclude>org.eclipse.jetty:jetty-util</exclude>
+                <exclude>org.eclipse.jetty:jetty-security</exclude>
+            </excludes>
+            <outputDirectory>lib/keycloak</outputDirectory>
+        </dependencySet>
+    </dependencySets>
+</assembly>

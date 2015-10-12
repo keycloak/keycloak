@@ -14,16 +14,57 @@ var loadingTimer = -1;
 angular.element(document).ready(function () {
     var keycloakAuth = new Keycloak(configUrl);
 
+    function whoAmI(success, error) {
+        var req = new XMLHttpRequest();
+        req.open('GET', consoleBaseUrl + "/whoami", true);
+        req.setRequestHeader('Accept', 'application/json');
+        req.setRequestHeader('Authorization', 'bearer ' + keycloakAuth.token);
+
+        req.onreadystatechange = function () {
+            if (req.readyState == 4) {
+                if (req.status == 200) {
+                    var data = JSON.parse(req.responseText);
+                    success(data);
+                } else {
+                    error();
+                }
+            }
+        }
+
+        req.send();
+    }
+
+    function hasAnyAccess(user) {
+        return user && user['realm_access'];
+    }
+
     keycloakAuth.onAuthLogout = function() {
         location.reload();
     }
 
     keycloakAuth.init({ onLoad: 'login-required' }).success(function () {
         auth.authz = keycloakAuth;
-        module.factory('Auth', function() {
-            return auth;
+
+        auth.refreshPermissions = function(success, error) {
+            whoAmI(function(data) {
+                auth.user = data;
+                auth.loggedIn = true;
+                auth.hasAnyAccess = hasAnyAccess(data);
+
+                success();
+            }, function() {
+                error();
+            });
+        };
+
+        auth.refreshPermissions(function() {
+            module.factory('Auth', function() {
+                return auth;
+            });
+            angular.bootstrap(document, ["keycloak"]);
+        }, function() {
+            window.location.reload();
         });
-        angular.bootstrap(document, ["keycloak"]);
     }).error(function () {
         window.location.reload();
     });

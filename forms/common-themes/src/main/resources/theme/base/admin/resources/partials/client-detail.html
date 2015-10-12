@@ -1,8 +1,8 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
-        <li data-ng-show="create">Add Client</li>
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li data-ng-show="create">{{:: 'add-client' | translate}}</li>
         <li data-ng-hide="create">{{client.clientId}}</li>
     </ol>
 
@@ -11,56 +11,56 @@
     <form class="form-horizontal" name="clientForm" novalidate kc-read-only="!access.manageClients">
         <fieldset class="border-top">
             <div class="form-group" data-ng-show="create">
-                <label for="name" class="col-sm-2 control-label">Import</label>
+                <label for="name" class="col-sm-2 control-label">{{:: 'import' | translate}}</label>
 
                 <div class="col-md-6" data-ng-hide="importing">
-                    <label for="import-file" class="btn btn-default">Select file <i class="pficon pficon-import"></i></label>
+                    <label for="import-file" class="btn btn-default">{{:: 'select-file' | translate}} <i class="pficon pficon-import"></i></label>
                     <input id="import-file" type="file" class="hidden" kc-on-read-file="importFile($fileContent)">
                 </div>
 
                 <div class="col-md-6" data-ng-show="importing">
-                    <button class="btn btn-default" data-ng-click="viewImportDetails()">View details</button>
-                    <button class="btn btn-default" data-ng-click="reset()">Clear import</button>
+                    <button class="btn btn-default" data-ng-click="viewImportDetails()">{{:: 'view-details' | translate}}</button>
+                    <button class="btn btn-default" data-ng-click="reset()">{{:: 'clear-import' | translate}}</button>
                 </div>
             </div>
 
             <div class="form-group">
-                <label class="col-md-2 control-label" for="clientId">Client ID <span class="required" data-ng-show="create">*</span></label>
+                <label class="col-md-2 control-label" for="clientId">{{:: 'client-id' | translate}} <span class="required" data-ng-show="create">*</span></label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" id="clientId" name="clientId" data-ng-model="client.clientId" autofocus required>
                 </div>
-                <kc-tooltip>Specifies ID referenced in URI and tokens. For example 'my-client'</kc-tooltip>
+                <kc-tooltip>{{:: 'client-id.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="name">Name </label>
+                <label class="col-md-2 control-label" for="name">{{:: 'name' | translate}} </label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" id="name" name="name" data-ng-model="client.name" autofocus>
                 </div>
-                <kc-tooltip>Specifies display name of the client. For example 'My Client'. Supports keys for localized values as well. For example: ${my_client}</kc-tooltip>
+                <kc-tooltip>{{:: 'client.name.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block">
-                <label class="col-md-2 control-label" for="enabled">Enabled</label>
+                <label class="col-md-2 control-label" for="enabled">{{:: 'enabled' | translate}}</label>
                 <div class="col-sm-6">
-                    <input ng-model="client.enabled" name="enabled" id="enabled" onoffswitch />
+                    <input ng-model="client.enabled" name="enabled" id="enabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
-                <kc-tooltip>Disabled clients cannot initiate a login or have obtain access tokens.</kc-tooltip>
+                <kc-tooltip>{{:: 'client.enabled.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block">
-                <label class="col-md-2 control-label" for="consentRequired">Consent Required</label>
+                <label class="col-md-2 control-label" for="consentRequired">{{:: 'consent-required' | translate}}</label>
                 <div class="col-sm-6">
-                    <input ng-model="client.consentRequired" name="consentRequired" id="consentRequired" onoffswitch />
+                    <input ng-model="client.consentRequired" name="consentRequired" id="consentRequired" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
-                <kc-tooltip>If enabled users have to consent to client access.</kc-tooltip>
+                <kc-tooltip>{{:: 'consent-required.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block">
-                <label class="col-md-2 control-label" for="directGrantsOnly">Direct Grants Only</label>
+                <label class="col-md-2 control-label" for="directGrantsOnly">{{:: 'direct-grants-only' | translate}}</label>
                 <div class="col-sm-6">
-                    <input ng-model="client.directGrantsOnly" name="directGrantsOnly" id="directGrantsOnly" onoffswitch />
+                    <input ng-model="client.directGrantsOnly" name="directGrantsOnly" id="directGrantsOnly" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
-                <kc-tooltip>When enabled, client can only obtain grants from grant REST API.</kc-tooltip>
+                <kc-tooltip>{{:: 'direct-grants-only.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="protocol">Client Protocol</label>
+                <label class="col-md-2 control-label" for="protocol">{{:: 'client-protocol' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="protocol"
@@ -70,11 +70,10 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>'OpenID connect' allows Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server.
-                'SAML' enables web-based authentication and authorization scenarios including cross-domain single sign-on (SSO) and uses security tokens containing assertions to pass information.</kc-tooltip>
+                <kc-tooltip>{{:: 'client-protocol.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="protocol == 'openid-connect'">
-                <label class="col-md-2 control-label" for="accessType">Access Type</label>
+                <label class="col-md-2 control-label" for="accessType">{{:: 'access-type' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="accessType"
@@ -84,38 +83,38 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>'Confidential' clients require a secret to initiate login protocol.  'Public' clients do not require a secret.  'Bearer-only' clients are web services that never initiate a login.</kc-tooltip>
+                <kc-tooltip>{{:: 'access-type.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="protocol == 'openid-connect' && !client.publicClient && !client.bearerOnly">
-                <label class="col-md-2 control-label" for="serviceAccountsEnabled">Service Accounts Enabled</label>
-                <kc-tooltip>Allows you to authenticate this client to Keycloak and retrieve access token dedicated to this client.</kc-tooltip>
+                <label class="col-md-2 control-label" for="serviceAccountsEnabled">{{:: 'service-accounts-enabled' | translate}}</label>
+                <kc-tooltip>{{:: 'service-accounts-enabled.tooltip' | translate}}</kc-tooltip>
                 <div class="col-md-6">
-                    <input ng-model="client.serviceAccountsEnabled" name="serviceAccountsEnabled" id="serviceAccountsEnabled" onoffswitch />
+                    <input ng-model="client.serviceAccountsEnabled" name="serviceAccountsEnabled" id="serviceAccountsEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="samlServerSignature">Include AuthnStatement</label>
+                <label class="col-md-2 control-label" for="samlServerSignature">{{:: 'include-authnstatement' | translate}}</label>
                 <div class="col-sm-6">
-                    <input ng-model="samlAuthnStatement" ng-click="switchChange()" name="samlAuthnStatement" id="samlAuthnStatement" onoffswitch />
+                    <input ng-model="samlAuthnStatement" ng-click="switchChange()" name="samlAuthnStatement" id="samlAuthnStatement" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
-                <kc-tooltip>Should a statement specifying the method and timestamp be included in login responses?</kc-tooltip>
+                <kc-tooltip>{{:: 'include-authnstatement.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="samlServerSignature">Sign Documents</label>
+                <label class="col-md-2 control-label" for="samlServerSignature">{{:: 'sign-documents' | translate}}</label>
                 <div class="col-sm-6">
-                    <input ng-model="samlServerSignature" ng-click="switchChange()" name="samlServerSignature" id="samlServerSignature" onoffswitch />
+                    <input ng-model="samlServerSignature" ng-click="switchChange()" name="samlServerSignature" id="samlServerSignature" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
-                <kc-tooltip>Should SAML documents be signed by the realm?</kc-tooltip>
+                <kc-tooltip>{{:: 'sign-documents.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="samlAssertionSignature">Sign Assertions</label>
+                <label class="col-md-2 control-label" for="samlAssertionSignature">{{:: 'sign-assertions' | translate}}</label>
                 <div class="col-sm-6">
-                    <input ng-model="samlAssertionSignature" ng-click="switchChange()" name="samlAssertionSignature" id="samlAssertionSignature" onoffswitch />
+                    <input ng-model="samlAssertionSignature" ng-click="switchChange()" name="samlAssertionSignature" id="samlAssertionSignature" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
-                <kc-tooltip>Should assertions inside SAML documents be signed?  This setting isn't needed if document is already being signed.</kc-tooltip>
+                <kc-tooltip>{{:: 'sign-assertions.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="(samlAssertionSignature || samlServerSignature) && protocol == 'saml'">
-                <label class="col-md-2 control-label" for="signatureAlgorithm">Signature Algorithm</label>
+                <label class="col-md-2 control-label" for="signatureAlgorithm">{{:: 'signature-algorithm' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="signatureAlgorithm"
@@ -125,10 +124,10 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>The signature algorithm to use to sign documents.</kc-tooltip>
+                <kc-tooltip>{{:: 'signature-algorithm.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="(samlAssertionSignature || samlServerSignature) && protocol == 'saml'">
-                <label class="col-md-2 control-label" for="canonicalization">Canonicalization Method</label>
+                <label class="col-md-2 control-label" for="canonicalization">{{:: 'canonicalization-method' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="canonicalization"
@@ -137,45 +136,45 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>Canonicalization Method for XML signatures.</kc-tooltip>
+                <kc-tooltip>{{:: 'canonicalization-method.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="samlEncrypt">Encrypt Assertions</label>
+                <label class="col-md-2 control-label" for="samlEncrypt">{{:: 'encrypt-assertions' | translate}}</label>
                 <div class="col-sm-6">
-                    <input ng-model="samlEncrypt" ng-click="switchChange()" name="samlEncrypt" id="samlEncrypt" onoffswitch />
+                    <input ng-model="samlEncrypt" ng-click="switchChange()" name="samlEncrypt" id="samlEncrypt" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
-                <kc-tooltip>Should SAML assertions be encrypted with client's public key using AES?</kc-tooltip>
+                <kc-tooltip>{{:: 'encrypt-assertions.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="samlClientSignature">Client Signature Required</label>
+                <label class="col-md-2 control-label" for="samlClientSignature">{{:: 'client-signature-required' | translate}}</label>
                 <div class="col-sm-6">
-                    <input ng-model="samlClientSignature" ng-click="switchChange()" name="samlClientSignature" id="samlClientSignature" onoffswitch />
+                    <input ng-model="samlClientSignature" ng-click="switchChange()" name="samlClientSignature" id="samlClientSignature" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
-                <kc-tooltip>Will the client sign their saml requests and responses?  And should they be validated?</kc-tooltip>
+                <kc-tooltip>{{:: 'client-signature-required.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="samlForcePostBinding">Force POST Binding</label>
+                <label class="col-md-2 control-label" for="samlForcePostBinding">{{:: 'force-post-binding' | translate}}</label>
                 <div class="col-sm-6">
-                    <input ng-model="samlForcePostBinding" ng-click="switchChange()" name="samlForcePostBinding" id="samlForcePostBinding" onoffswitch />
+                    <input ng-model="samlForcePostBinding" ng-click="switchChange()" name="samlForcePostBinding" id="samlForcePostBinding" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
-                <kc-tooltip>Always use POST binding for responses.</kc-tooltip>
+                <kc-tooltip>{{:: 'force-post-binding.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="frontchannelLogout">Front Channel Logout</label>
+                <label class="col-md-2 control-label" for="frontchannelLogout">{{:: 'front-channel-logout' | translate}}</label>
                 <div class="col-sm-6">
-                    <input ng-model="client.frontchannelLogout" name="frontchannelLogout" id="frontchannelLogout" onoffswitch />
+                    <input ng-model="client.frontchannelLogout" name="frontchannelLogout" id="frontchannelLogout" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
-                <kc-tooltip>When true, logout requires a browser redirect to client.  When false, server performs a background invocation for logout.</kc-tooltip>
+                <kc-tooltip>{{:: 'front-channel-logout.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="samlForceNameIdFormat">Force Name ID Format</label>
+                <label class="col-md-2 control-label" for="samlForceNameIdFormat">{{:: 'force-name-id-format' | translate}}</label>
                 <div class="col-sm-6">
-                    <input ng-model="samlForceNameIdFormat" ng-click="switchChange()" name="samlForceNameIdFormat" id="samlForceNameIdFormat" onoffswitch />
+                    <input ng-model="samlForceNameIdFormat" ng-click="switchChange()" name="samlForceNameIdFormat" id="samlForceNameIdFormat" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
-                <kc-tooltip>Ignore requested NameID subject format and use admin console configured one.</kc-tooltip>
+                <kc-tooltip>{{:: 'force-name-id-format.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="samlNameIdFormat">Name ID Format</label>
+                <label class="col-md-2 control-label" for="samlNameIdFormat">{{:: 'name-id-format' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="samlNameIdFormat"
@@ -185,19 +184,19 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>The name ID format to use for the subject.</kc-tooltip>
+                <kc-tooltip>{{:: 'name-id-format.tooltip' | translate}}</kc-tooltip>
             </div>
 
             <div class="form-group" data-ng-show="!client.bearerOnly">
-                <label class="col-md-2 control-label" for="rootUrl">Root URL</label>
+                <label class="col-md-2 control-label" for="rootUrl">{{:: 'root-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" name="rootUrl" id="rootUrl" data-ng-model="client.rootUrl">
                 </div>
-                <kc-tooltip>Root URL appended to relative URLs</kc-tooltip>
+                <kc-tooltip>{{:: 'root-url.tooltip' | translate}}</kc-tooltip>
             </div>
 
             <div class="form-group clearfix block" data-ng-hide="client.bearerOnly || client.directGrantsOnly">
-                <label class="col-md-2 control-label" for="newRedirectUri"><span class="required" data-ng-show="protocol != 'saml'">*</span> Valid Redirect URIs</label>
+                <label class="col-md-2 control-label" for="newRedirectUri"><span class="required" data-ng-show="protocol != 'saml'">*</span> {{:: 'valid-redirect-uris' | translate}}</label>
 
                 <div class="col-sm-6">
                     <div class="input-group" ng-repeat="(i, redirectUri) in client.redirectUris track by $index">
@@ -215,48 +214,48 @@
                     </div>
                 </div>
 
-                <kc-tooltip>Valid URI pattern a browser can redirect to after a successful login or logout.  Simple wildcards are allowed i.e. 'http://example.com/*'.  Relative path can be specified too i.e. /my/relative/path/*.  Relative paths will generate a redirect URI using the request's host and port.  For SAML, you must set valid URI patterns if you are relying on the consumer service URL embedded with the login request.</kc-tooltip>
+                <kc-tooltip>{{:: 'valid-redirect-uris.tooltip' | translate}}</kc-tooltip>
             </div>
 
             <div class="form-group" data-ng-show="!client.bearerOnly && !create">
-                <label class="col-md-2 control-label" for="baseUrl">Base URL</label>
+                <label class="col-md-2 control-label" for="baseUrl">{{:: 'base-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" name="baseUrl" id="baseUrl" data-ng-model="client.baseUrl">
                 </div>
-                <kc-tooltip>Default URL to use when the auth server needs to redirect or link back to the client.</kc-tooltip>
+                <kc-tooltip>{{:: 'base-url.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-hide="create || protocol == 'saml'">
-                <label class="col-md-2 control-label" for="adminUrl">Admin URL</label>
+                <label class="col-md-2 control-label" for="adminUrl">{{:: 'admin-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" name="adminUrl" id="adminUrl"
                            data-ng-model="client.adminUrl">
                 </div>
-                <kc-tooltip>URL to the admin interface of the client.  Set this if the client supports the adapter REST API.  This REST API allows the auth server to push revocation policies and other adminstrative tasks.  Usually this is set to the base URL of the client.</kc-tooltip>
+                <kc-tooltip>{{:: 'admin-url.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="masterSamlUrl">Master SAML Processing URL</label>
+                <label class="col-md-2 control-label" for="masterSamlUrl">{{:: 'master-saml-processing-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" name="masterSamlUrl" id="masterSamlUrl"
                            data-ng-model="client.adminUrl">
                 </div>
-                <kc-tooltip>If configured, this URL will be used for every binding to both the SP's Assertion Consumer and Single Logout Services.  This can be individually overiden for each binding and service in the Fine Grain SAML Endpoint Configuration.</kc-tooltip>
+                <kc-tooltip>{{:: 'master-saml-processing-url.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="urlReferenceName">IDP Initiated SSO URL Name</label>
+                <label class="col-md-2 control-label" for="urlReferenceName">{{:: 'idp-sso-url-ref' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="client.attributes.saml_idp_initiated_sso_url_name" class="form-control" type="text" name="urlReferenceName" id="urlReferenceName" />
                 </div>
-                <kc-tooltip>URL fragment name to reference client when you want to do IDP Initiated SSO.  Leaving this empty will disable IDP Initiated SSO.  The URL you will reference from your browser will be: {server-root}/realms/{realm}/protocol/saml/clients/{client-url-name}</kc-tooltip>
+                <kc-tooltip>{{:: 'idp-sso-url-ref.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="idpInitiatedRelayState">IDP Initiated SSO Relay State</label>
+                <label class="col-md-2 control-label" for="idpInitiatedRelayState">{{:: 'idp-sso-relay-state' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="client.attributes.saml_idp_initiated_sso_relay_state" class="form-control" type="text" name="idpInitiatedRelayState" id="idpInitiatedRelayState" />
                 </div>
-                <kc-tooltip>Relay state you want to send with SAML request when you want to do IDP Initiated SSO.</kc-tooltip>
+                <kc-tooltip>{{:: 'idp-sso-relay-state.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="!client.bearerOnly && !create && protocol == 'openid-connect'">
-                <label class="col-md-2 control-label" for="newWebOrigin">Web Origins</label>
+                <label class="col-md-2 control-label" for="newWebOrigin">{{:: 'web-origins' | translate}}</label>
 
                 <div class="col-sm-6">
                     <div class="input-group" ng-repeat="(i, webOrigin) in client.webOrigins track by $index">
@@ -274,49 +273,49 @@
                     </div>
                 </div>
 
-                <kc-tooltip>Allowed CORS origins. To permit all origins of Valid Redirect URIs add '+'. To permit all origins add '*'.</kc-tooltip>
+                <kc-tooltip>{{:: 'web-origins.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
         <fieldset data-ng-show="protocol == 'saml'">
-            <legend collapsed><span class="text">Fine Grain SAML Endpoint Configuration</span>  <kc-tooltip>Expand this section to configure exact URLs for Assertion Consumer and Single Logout Service.</kc-tooltip></legend>
+            <legend collapsed><span class="text">{{:: 'fine-saml-endpoint-conf' | translate}}</span>  <kc-tooltip>{{:: 'fine-saml-endpoint-conf.tooltip' | translate}}</kc-tooltip></legend>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="consumerServicePost">Assertion Consumer Service POST Binding URL</label>
+                <label class="col-md-2 control-label" for="consumerServicePost">{{:: 'assertion-consumer-post-binding-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="client.attributes.saml_assertion_consumer_url_post" class="form-control" type="text" name="consumerServicePost" id="consumerServicePost" />
                 </div>
-                <kc-tooltip>SAML POST Binding URL for the client's assertion consumer service (login responses).  You can leave this blank if you do not have a URL for this binding.</kc-tooltip>
+                <kc-tooltip>{{:: 'assertion-consumer-post-binding-url.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="consumerServiceRedirect">Assertion Consumer Service Redirect Binding URL</label>
+                <label class="col-md-2 control-label" for="consumerServiceRedirect">{{:: 'assertion-consumer-redirect-binding-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="client.attributes.saml_assertion_consumer_url_redirect" class="form-control" type="text" name="consumerServiceRedirect" id="consumerServiceRedirect" />
                 </div>
-                <kc-tooltip>SAML Redirect Binding URL for the client's assertion consumer service (login responses).  You can leave this blank if you do not have a URL for this binding.</kc-tooltip>
+                <kc-tooltip>{{:: 'assertion-consumer-redirect-binding-url.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="logoutPostBinding">Logout Service POST Binding URL</label>
+                <label class="col-md-2 control-label" for="logoutPostBinding">{{:: 'logout-service-post-binding-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="client.attributes.saml_single_logout_service_url_post" class="form-control" type="text" name="logoutPostBinding" id="logoutPostBinding" />
                 </div>
-                <kc-tooltip>SAML POST Binding URL for the client's single logout service.  You can leave this blank if you are using a different binding</kc-tooltip>
+                <kc-tooltip>{{:: 'logout-service-post-binding-url.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="logoutPostBinding">Logout Service Redirect Binding URL</label>
+                <label class="col-md-2 control-label" for="logoutPostBinding">{{:: 'logout-service-redir-binding-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="client.attributes.saml_single_logout_service_url_redirect" class="form-control" type="text" name="logoutRedirectBinding" id="logoutRedirectBinding" />
                 </div>
-                <kc-tooltip>SAML Redirect Binding URL for the client's single logout service.  You can leave this blank if you are using a different binding.</kc-tooltip>
+                <kc-tooltip>{{:: 'logout-service-redir-binding-url.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageClients">
-                <button kc-save data-ng-disabled="!changed">Save</button>
-                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
             </div>
             <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageClients">
-                <button kc-save  data-ng-disabled="!changed">Save</button>
-                <button kc-reset data-ng-disabled="!changed">Cancel</button>
+                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
     </form>

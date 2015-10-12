@@ -7,6 +7,7 @@
 <div>
     <button onclick="keycloak.login()">Login</button>
     <button onclick="keycloak.logout()">Logout</button>
+    <button onclick="keycloak.register()">Register</button>
     <button onclick="refreshToken(9999)">Refresh Token</button>
     <button onclick="refreshToken(30)">Refresh Token (if <30s validity)</button>
     <button onclick="loadProfile()">Get Profile</button>
@@ -18,6 +19,7 @@
     <button onclick="output(keycloak)">Show Details</button>
     <button onclick="output(keycloak.createLoginUrl())">Show Login URL</button>
     <button onclick="output(keycloak.createLogoutUrl())">Show Logout URL</button>
+    <button onclick="output(keycloak.createRegisterUrl())">Show Register URL</button>
 </div>
 
 <h2>Result</h2>

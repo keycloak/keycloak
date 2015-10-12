@@ -47,6 +47,7 @@
                 <!ENTITY ProtocolMappers SYSTEM "modules/protocol-mappers.xml">
                 <!ENTITY Recaptcha SYSTEM "modules/recaptcha.xml">
                 <!ENTITY AuthSPI SYSTEM "modules/auth-spi.xml">
+                <!ENTITY FilterAdapter SYSTEM "modules/servlet-filter-adapter.xml">
                 ]>
 
 <book>
@@ -94,11 +95,18 @@ This one is short
             types are supported and how to configure and install them so that you can use Keycloak to secure
             your applications.
         </para>
+        <para>
+            These client adapters use an extension of the OpenID Connect protocol (a derivate of OAuth 2.0).
+            This extension provides support for clustering, backchannel logout, and other non-standard adminstrative functions.
+            The Keycloak project also provides a separate, standalone, generic, SAML client adapter.  But that is describe in a separate
+            document and has a different download.
+        </para>
         &AdapterConfig;
         &JBossAdapter;
         &TomcatAdapter;
         &Jetty9Adapter;
         &Jetty8Adapter;
+        &FilterAdapter;
         &FuseAdapter;
         &JavascriptAdapter;
         &SpringBootAdapter;

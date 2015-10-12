@@ -259,6 +259,7 @@ public abstract class AbstractSamlAuthenticator extends LoginAuthenticator {
 
         AuthChallenge challenge = authenticator.getChallenge();
         if (challenge != null) {
+            challenge.challenge(facade);
             if (challenge.errorPage() && errorPage != null) {
                 Response response = (Response)res;
                 try {
@@ -268,7 +269,6 @@ public abstract class AbstractSamlAuthenticator extends LoginAuthenticator {
                 }
 
             }
-            challenge.challenge(facade);
         }
         return Authentication.SEND_CONTINUE;
     }

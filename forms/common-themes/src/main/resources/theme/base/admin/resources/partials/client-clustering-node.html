@@ -1,13 +1,13 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/clients">Clients</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
-        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/clustering">Cluster Nodes</a></li>
-        <li data-ng-show="create">Add Node</li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/clustering">{{:: 'cluster-nodes' | translate}}</a></li>
+        <li data-ng-show="create">{{:: 'add-node' | translate}}</li>
         <li data-ng-hide="create">{{node.host|capitalize}}</li>
     </ol>
 
-    <h1 data-ng-show="create">Add Node</h1>
+    <h1 data-ng-show="create">{{:: 'add-node' | translate}}</h1>
     <h1 data-ng-hide="create">
         {{node.host|capitalize}}
         <i id="removeClient" class="pficon pficon-delete clickable" data-ng-show="access.manageClients" data-ng-click="unregisterNode()"></i>
@@ -21,14 +21,14 @@
             </div>
         </div>
         <div class="form-group">
-            <label class="col-md-2 control-label" for="lastRegistration">Last Registration</label>
+            <label class="col-md-2 control-label" for="lastRegistration">{{:: 'last-registration' | translate}}</label>
             <div class="col-sm-6">
                 <input ng-disabled="true" class="form-control" type="text" id="lastRegistration" name="lastRegistration" data-ng-model="node.lastRegistration">
             </div>
         </div>
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
-                <button data-kc-save data-ng-show="create">Save</button>
+                <button data-kc-save data-ng-show="create">{{:: 'save' | translate}}</button>
             </div>
         </div>
     </form>

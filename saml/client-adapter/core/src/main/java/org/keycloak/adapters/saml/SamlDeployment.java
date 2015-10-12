@@ -67,8 +67,7 @@ public interface SamlDeployment {
 
     enum PrincipalNamePolicy {
         FROM_NAME_ID,
-        FROM_ATTRIBUTE_NAME,
-        FROM_FRIENDLY_ATTRIBUTE_NAME
+        FROM_ATTRIBUTE
     }
     PrincipalNamePolicy getPrincipalNamePolicy();
     String getPrincipalAttributeName();

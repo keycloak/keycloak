@@ -32,6 +32,11 @@ public class InitiateLogin implements AuthChallenge {
     }
 
     @Override
+    public int getResponseCode() {
+        return 0;
+    }
+
+    @Override
     public boolean challenge(HttpFacade httpFacade) {
         try {
             String issuerURL = deployment.getEntityID();
