@@ -5,6 +5,7 @@ import org.keycloak.models.utils.RealmImporter;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
+import java.util.Locale;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -32,5 +33,7 @@ public interface KeycloakContext {
     void setConnection(ClientConnection connection);
 
     RealmImporter getRealmManager();
+
+    Locale resolveLocale(UserModel user);
 
 }

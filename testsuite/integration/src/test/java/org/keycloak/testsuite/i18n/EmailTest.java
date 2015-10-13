@@ -54,7 +54,6 @@ public class EmailTest {
             UserModel user = manager.getSession().users().addUser(appRealm, "login-test");
             user.setEmail("login@test.com");
             user.setEnabled(true);
-            user.setSingleAttribute(UserModel.LOCALE, "de");
 
             UserCredentialModel creds = new UserCredentialModel();
             creds.setType(CredentialRepresentation.PASSWORD);
@@ -86,7 +85,7 @@ public class EmailTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        Assert.assertEquals("Passwort zurückzusetzen", message.getSubject());
+        Assert.assertEquals("Reset password", message.getSubject());
 
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
@@ -105,5 +104,32 @@ public class EmailTest {
         message = greenMail.getReceivedMessages()[1];
 
         Assert.assertEquals("Reset password", message.getSubject());
+    }
+
+    @Test
+    public void restPasswordEmailGerman() throws IOException, MessagingException {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                manager.getSession().users().getUserByUsername("login-test", appRealm).setSingleAttribute(UserModel.LOCALE, "de");
+            }
+        });
+
+        loginPage.open();
+        loginPage.resetPassword();
+        resetPasswordPage.changePassword("login-test");
+
+        assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        Assert.assertEquals("Passwort zurückzusetzen", message.getSubject());
+
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                manager.getSession().users().getUserByUsername("login-test", appRealm).setSingleAttribute(UserModel.LOCALE, "en");
+            }
+        });
     }
 }

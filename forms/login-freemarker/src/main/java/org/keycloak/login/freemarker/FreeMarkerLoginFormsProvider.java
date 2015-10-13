@@ -24,7 +24,6 @@ import org.keycloak.email.EmailProvider;
 import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
-import org.keycloak.freemarker.LocaleHelper;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.freemarker.beans.AdvancedMessageFormatterMethod;
@@ -201,7 +200,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         Properties messagesBundle;
-        Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, session.getContext().getRequestHeaders());
+        Locale locale = session.getContext().resolveLocale(user);
         try {
             messagesBundle = theme.getMessages(locale);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
@@ -292,10 +291,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
             }
-
-            String cookiePath = Urls.localeCookiePath(baseUri, realm.getName());
-            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, cookiePath);
-
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
@@ -345,7 +340,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         Properties messagesBundle;
-        Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, session.getContext().getRequestHeaders());
+        Locale locale = session.getContext().resolveLocale(user);
         try {
             messagesBundle = theme.getMessages(locale);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
@@ -393,9 +388,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
             }
-
-            String cookiePath = Urls.localeCookiePath(baseUri, realm.getName());
-            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, cookiePath);
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
