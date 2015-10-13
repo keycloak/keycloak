@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import org.jboss.logging.Logger;
 import org.keycloak.freemarker.Theme;
 
 /**
@@ -34,45 +35,73 @@ import org.keycloak.freemarker.Theme;
  * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
  */
 public class AdminMessagesLoader {
-    private static final Map<String, Properties> allMessages = new HashMap<String, Properties>();
+    protected static final Logger logger = Logger.getLogger(AdminConsole.class);
+
+    //                         theme       locale   bundle
+    protected static final Map<String, Map<String, Properties>> allMessages = new HashMap<String, Map<String, Properties>>();
 
     static Properties getMessages(Theme theme, String strLocale) throws IOException {
-        String allMessagesKey = theme.getName() + "_" + strLocale;
-        Properties messages = allMessages.get(allMessagesKey);
-        if (messages != null) return messages;
+        String themeName = theme.getName();
+        Map bundlesForTheme = allMessages.get(themeName);
+        if (bundlesForTheme == null) {
+            bundlesForTheme = new HashMap<String, Properties>();
+            allMessages.put(themeName, bundlesForTheme);
+        }
 
+        return findMessagesForTheme(theme, strLocale, bundlesForTheme);
+    }
+
+
+    private static Properties findMessagesForTheme(Theme theme,
+                                                   String strLocale,
+                                                   Map<String, Properties> bundlesForTheme) throws IOException {
+        Properties messages = bundlesForTheme.get(strLocale);
+        if (messages != null) return messages; // use cached bundle
+
+        // load bundle from theme
         Locale locale = Locale.forLanguageTag(strLocale);
         messages = theme.getMessages("admin-messages", locale);
 
-        validateMessages(messages, strLocale);
+        String themeName = theme.getName();
+        if (messages == null) throw new NullPointerException(themeName + ": Unable to find admin-messages bundle for locale=" + strLocale);
 
-        allMessages.put(allMessagesKey, messages);
+        if (!bundlesForTheme.isEmpty()) {
+            // use first bundle as the standard
+            String standardLocale = bundlesForTheme.keySet().iterator().next();
+            Properties standardBundle = bundlesForTheme.get(standardLocale);
+            validateMessages(themeName, standardBundle, standardLocale, messages, strLocale);
+        }
+
+        bundlesForTheme.put(strLocale, messages);
         return messages;
     }
 
-    private static void validateMessages(Properties messages, String strLocale) {
-        if (messages == null) throw new NullPointerException("Unable to find admin-messages bundle for locale=" + strLocale);
-
-        if (allMessages.isEmpty()) return;
-
-        Properties standardBundle = allMessages.values().iterator().next();
+    private static void validateMessages(String themeName, Properties standardBundle, String standardLocale, Properties messages, String strLocale) {
         if (standardBundle.keySet().containsAll(messages.keySet()) &&
             (messages.keySet().containsAll(standardBundle.keySet()))) {
             return; // it all checks out
         }
 
-        // otherwise, find the offending key
+        // otherwise, find the offending keys
+        int warnCount = 0;
         for (Object key : standardBundle.keySet()) {
             if (!messages.containsKey(key)) {
-                throw new RuntimeException("Key '" + key + "' not found in admin-messages bundle for locale=" + strLocale);
+                logger.error(themeName + " theme: Key '" + key + "' not found in admin-messages bundle for locale=" + strLocale +
+                             ". However, this key exists in previously loaded bundle for locale=" + standardLocale);
+                warnCount++;
             }
+
+            if (warnCount > 4) return; // There could be lots of these.  Don't fill up the log.
         }
 
         for (Object key : messages.keySet()) {
             if (!standardBundle.containsKey(key)) {
-                throw new RuntimeException("Key '" + key + "' was found in admin-messages bundle for locale=" + strLocale +
-                                           ". However, this key is not found in previously loaded bundle.");
+                logger.error(themeName + " theme: Key '" + key + "' was found in admin-messages bundle for locale=" + strLocale +
+                             ". However, this key does not exist in previously loaded bundle for locale=" + standardLocale);
+                warnCount++;
             }
+
+            if (warnCount > 4) return; // There could be lots of these.  Don't fill up the log.
         }
     }
 }
