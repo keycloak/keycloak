@@ -19,6 +19,7 @@ package org.keycloak.testsuite.console.realm;
 
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.console.page.realm.TokenSettings;
 
@@ -30,6 +31,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
  *
  * @author Petr Mensik
  */
+@Ignore
 public class TokensTest extends AbstractRealmTest {
 
     @Page
