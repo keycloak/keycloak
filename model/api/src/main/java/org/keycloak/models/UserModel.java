@@ -1,6 +1,5 @@
 package org.keycloak.models;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -10,11 +9,11 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface UserModel {
-    public static final String USERNAME = "username";
-    public static final String LAST_NAME = "lastName";
-    public static final String FIRST_NAME = "firstName";
-    public static final String EMAIL = "email";
-    public static final String LOCALE = "locale";
+    String USERNAME = "username";
+    String LAST_NAME = "lastName";
+    String FIRST_NAME = "firstName";
+    String EMAIL = "email";
+    String LOCALE = "locale";
 
     String getId();
 

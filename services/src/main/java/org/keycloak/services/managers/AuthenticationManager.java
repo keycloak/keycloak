@@ -65,10 +65,8 @@ import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
-import org.keycloak.freemarker.LocaleHelper;
-import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.LocaleHelper;
 
 /**
  * Stateless object that manages authentication
@@ -413,7 +411,8 @@ public class AuthenticationManager {
             }
         }
 
-        handleLoginLocale(realm, userSession, request, uriInfo);
+        // Updates users locale if required
+        LocaleHelper.resolveLocale(session, realm, userSession.getUser());
 
         // refresh the cookies!
         createLoginCookie(realm, userSession.getUser(), userSession, uriInfo, clientConnection);
@@ -426,17 +425,6 @@ public class AuthenticationManager {
         RestartLoginCookie.expireRestartCookie(realm, clientConnection, uriInfo);
         return protocol.authenticated(userSession, new ClientSessionCode(realm, clientSession));
 
-    }
-
-    // If a locale has been set on the login screen, associate that locale with the user
-    private static void handleLoginLocale(RealmModel realm, UserSessionModel userSession,
-                                          HttpRequest request, UriInfo uriInfo) {
-        Cookie localeCookie = request.getHttpHeaders().getCookies().get(LocaleHelper.LOCALE_COOKIE);
-        if (localeCookie == null) return;
-
-        UserModel user = userSession.getUser();
-        Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, request.getHttpHeaders());
-        user.setSingleAttribute(UserModel.LOCALE, locale.toLanguageTag());
     }
 
     public static Response nextActionAfterAuthentication(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession,
