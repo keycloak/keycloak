@@ -18,10 +18,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -116,6 +113,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
     private class ValidationContextImpl extends FormContextImpl implements ValidationContext {
         FormAction action;
+        String error;
 
         private ValidationContextImpl(AuthenticationExecutionModel executionModel, FormAction action) {
             super(executionModel);
@@ -129,6 +127,10 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
         public void validationError(MultivaluedMap<String, String> formData, List<FormMessage> errors) {
             this.errors = errors;
             this.formData = formData;
+        }
+
+        public void error(String error) {
+            this.error = error;
         }
 
         @Override
@@ -145,6 +147,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
         Map<String, ClientSessionModel.ExecutionStatus> executionStatus = new HashMap<>();
         List<FormAction> requiredActions = new LinkedList<>();
         List<ValidationContextImpl> successes = new LinkedList<>();
+        List<ValidationContextImpl> errors = new LinkedList<>();
         for (AuthenticationExecutionModel formActionExecution : formActionExecutions) {
             if (!formActionExecution.isEnabled()) {
                 executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
@@ -183,10 +186,26 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
                 executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SUCCESS);
                 successes.add(result);
             } else {
-                processor.logFailure();
                 executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
-                return renderForm(result.formData, result.errors);
+                errors.add(result);
             }
+        }
+
+        if (!errors.isEmpty()) {
+            processor.logFailure();
+            List<FormMessage> messages = new LinkedList<>();
+            Set<String> fields = new HashSet<>();
+            for (ValidationContextImpl v : errors) {
+                for (FormMessage m : v.errors) {
+                    if (!fields.contains(m.getField())) {
+                        fields.add(m.getField());
+                        messages.add(m);
+                    }
+                }
+            }
+            ValidationContextImpl first = errors.get(0);
+            first.getEvent().error(first.error);
+            return renderForm(first.formData, messages);
         }
 
         for (ValidationContextImpl context : successes) {

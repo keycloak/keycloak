@@ -59,7 +59,7 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
         }
 
         if (errors.size() > 0) {
-            context.getEvent().error(Errors.INVALID_REGISTRATION);
+            context.error(Errors.INVALID_REGISTRATION);
             formData.remove(RegistrationPage.FIELD_PASSWORD);
             formData.remove(RegistrationPage.FIELD_PASSWORD_CONFIRM);
             context.validationError(formData, errors);

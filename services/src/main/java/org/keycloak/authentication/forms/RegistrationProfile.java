@@ -56,15 +56,17 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
         }
 
         String email = formData.getFirst(Validation.FIELD_EMAIL);
+        boolean emailValid = true;
         if (Validation.isBlank(email)) {
             errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.MISSING_EMAIL));
+            emailValid = false;
         } else if (!Validation.isEmailValid(email)) {
-            formData.remove(Validation.FIELD_EMAIL);
             context.getEvent().detail(Details.EMAIL, email);
             errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.INVALID_EMAIL));
+            emailValid = false;
         }
 
-        if (context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
+        if (emailValid && context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
             eventError = Errors.EMAIL_IN_USE;
             formData.remove(Validation.FIELD_EMAIL);
             context.getEvent().detail(Details.EMAIL, email);
@@ -72,7 +74,7 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
         }
 
         if (errors.size() > 0) {
-            context.getEvent().error(eventError);
+            context.error(eventError);
             context.validationError(formData, errors);
             return;
 
