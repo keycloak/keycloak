@@ -2030,16 +2030,11 @@ module.filter('capitalize', function() {
         if (!input) {
             return;
         }
-        var result = input.substring(0, 1).toUpperCase();
-        var s = input.substring(1);
-        for (var i=0; i<s.length ; i++) {
-            var c = s[i];
-            if (c.match(/[A-Z]/)) {
-                result = result.concat(" ")
-            };
-            result = result.concat(c);
+        var splittedWords = input.split(/\s+/);
+        for (var i=0; i<splittedWords.length ; i++) {
+            splittedWords[i] = splittedWords[i].charAt(0).toUpperCase() + splittedWords[i].slice(1);
         };
-        return result;
+        return splittedWords.join(" ");
     };
 });
 
