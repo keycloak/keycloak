@@ -59,7 +59,6 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
         if (Validation.isBlank(email)) {
             errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.MISSING_EMAIL));
         } else if (!Validation.isEmailValid(email)) {
-            formData.remove(Validation.FIELD_EMAIL);
             context.getEvent().detail(Details.EMAIL, email);
             errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.INVALID_EMAIL));
         }
