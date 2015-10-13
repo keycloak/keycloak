@@ -24,13 +24,13 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
-import org.keycloak.freemarker.LocaleHelper;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.freemarker.beans.MessageFormatterMethod;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.utils.LocaleHelper;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -110,7 +110,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
         try {
             ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
             Theme theme = themeProvider.getTheme(realm.getEmailTheme(), Theme.Type.EMAIL);
-            Locale locale = LocaleHelper.getLocale(realm, user);
+            Locale locale = LocaleHelper.resolveLocale(session, realm, user);
             attributes.put("locale", locale);
             Properties rb = theme.getMessages(locale);
             attributes.put("msg", new MessageFormatterMethod(locale, rb));
