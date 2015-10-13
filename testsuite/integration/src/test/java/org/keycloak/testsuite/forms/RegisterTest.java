@@ -194,16 +194,20 @@ public class RegisterTest {
     }
 
     @Test
-    @Ignore
-    public void registerUserMissingUsernameAndInvalidEmail() {
+    public void registerUserManyErrors() {
         loginPage.open();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "registerUserInvalidEmail", null, "password", "password");
+        registerPage.register(null, null, null, "registerUserManyErrors", null, "password");
 
         registerPage.assertCurrent();
-        assertEquals("Please specify username.", registerPage.getError());
+
+        System.out.println(registerPage.getError());
+
+        assertEquals("Please specify first name.\n" +
+                "Please specify last name.\n" +
+                "Please specify email.", registerPage.getError());
 
         events.expectRegister(null, "registerUserMissingUsername@email")
                 .removeDetail(Details.USERNAME)
