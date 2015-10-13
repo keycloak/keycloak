@@ -141,22 +141,6 @@
             <artifactId>mongo-java-driver</artifactId>
         </dependency>
 
-        <!-- export/import -->
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-export-import-zip</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>de.idyl</groupId>
-            <artifactId>winzipaes</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcprov-jdk16</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>

@@ -21,6 +21,8 @@ public interface ValidationContext extends FormContext {
      */
     void validationError(MultivaluedMap<String, String> formData, List<FormMessage> errors);
 
+    void error(String error);
+
     /**
      * Mark this validation as sucessful
      *
