@@ -56,9 +56,8 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
         String usernameField = RegistrationPage.FIELD_USERNAME;
         if (context.getRealm().isRegistrationEmailAsUsername()) {
-            username = email;
-            context.getEvent().detail(Details.USERNAME, username);
-            usernameField = RegistrationPage.FIELD_EMAIL;
+            context.getEvent().detail(Details.USERNAME, email);
+
             if (Validation.isBlank(email)) {
                 errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.MISSING_EMAIL));
             } else if (!Validation.isEmailValid(email)) {
@@ -66,33 +65,32 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 formData.remove(Validation.FIELD_EMAIL);
             }
             if (errors.size() > 0) {
-                context.getEvent().error(Errors.INVALID_REGISTRATION);
+                context.error(Errors.INVALID_REGISTRATION);
                 context.validationError(formData, errors);
                 return;
             }
             if (email != null && context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
-                context.getEvent().error(Errors.USERNAME_IN_USE);
+                context.error(Errors.EMAIL_IN_USE);
                 formData.remove(Validation.FIELD_EMAIL);
-                errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.USERNAME_EXISTS));
+                errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.EMAIL_EXISTS));
                 context.validationError(formData, errors);
                 return;
             }
         } else {
             if (Validation.isBlank(username)) {
-                context.getEvent().error(Errors.INVALID_REGISTRATION);
+                context.error(Errors.INVALID_REGISTRATION);
                 errors.add(new FormMessage(RegistrationPage.FIELD_USERNAME, Messages.MISSING_USERNAME));
                 context.validationError(formData, errors);
                 return;
             }
 
-        }
-        if (context.getSession().users().getUserByUsername(username, context.getRealm()) != null) {
-            context.getEvent().error(Errors.USERNAME_IN_USE);
-            errors.add(new FormMessage(usernameField, Messages.USERNAME_EXISTS));
-            formData.remove(Validation.FIELD_USERNAME);
-            formData.remove(Validation.FIELD_EMAIL);
-            context.validationError(formData, errors);
-            return;
+            if (context.getSession().users().getUserByUsername(username, context.getRealm()) != null) {
+                context.error(Errors.USERNAME_IN_USE);
+                errors.add(new FormMessage(usernameField, Messages.USERNAME_EXISTS));
+                formData.remove(Validation.FIELD_USERNAME);
+                context.validationError(formData, errors);
+                return;
+            }
 
         }
         context.success();

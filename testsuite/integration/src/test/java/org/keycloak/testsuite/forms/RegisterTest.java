@@ -84,7 +84,7 @@ public class RegisterTest {
         // assert form keeps form fields on error
         assertEquals("firstName", registerPage.getFirstName());
         assertEquals("lastName", registerPage.getLastName());
-        assertEquals("", registerPage.getEmail());
+        assertEquals("registerExistingUser@email", registerPage.getEmail());
         assertEquals("", registerPage.getUsername());
         assertEquals("", registerPage.getPassword());
         assertEquals("", registerPage.getPasswordConfirm());
@@ -199,15 +199,15 @@ public class RegisterTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register(null, null, null, "registerUserManyErrors", null, "password");
+        registerPage.register(null, null, null, null, null, null);
 
         registerPage.assertCurrent();
 
-        System.out.println(registerPage.getError());
-
-        assertEquals("Please specify first name.\n" +
+        assertEquals("Please specify username.\n" +
+                "Please specify first name.\n" +
                 "Please specify last name.\n" +
-                "Please specify email.", registerPage.getError());
+                "Please specify email.\n" +
+                "Please specify password.", registerPage.getError());
 
         events.expectRegister(null, "registerUserMissingUsername@email")
                 .removeDetail(Details.USERNAME)
@@ -290,9 +290,9 @@ public class RegisterTest {
             registerPage.registerWithEmailAsUsername("firstName", "lastName", "test-user@localhost", "password", "password");
 
             registerPage.assertCurrent();
-            assertEquals("Username already exists.", registerPage.getError());
+            assertEquals("Email already exists.", registerPage.getError());
 
-            events.expectRegister("test-user@localhost", "test-user@localhost").user((String) null).error("username_in_use").assertEvent();
+            events.expectRegister("test-user@localhost", "test-user@localhost").user((String) null).error("email_in_use").assertEvent();
         } finally {
             configureRelamRegistrationEmailAsUsername(false);
         }
