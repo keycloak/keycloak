@@ -212,7 +212,7 @@ public class ClientAuthSignedJWTTest {
         HttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT);
+        assertError(response, null, "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
@@ -224,7 +224,7 @@ public class ClientAuthSignedJWTTest {
         HttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT);
+        assertError(response, null, "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
@@ -236,7 +236,7 @@ public class ClientAuthSignedJWTTest {
         HttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, null, "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
@@ -268,7 +268,7 @@ public class ClientAuthSignedJWTTest {
         HttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, "unknown-client", "invalid_client", Errors.CLIENT_NOT_FOUND);
+        assertError(response, "unknown-client", "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test

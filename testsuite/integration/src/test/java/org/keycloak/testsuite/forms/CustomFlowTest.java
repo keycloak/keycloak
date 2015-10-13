@@ -205,7 +205,7 @@ public class CustomFlowTest {
         PassThroughClientAuthenticator.clientId = "unknown";
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user", "password");
         assertEquals(400, response.getStatusCode());
-        assertEquals("invalid_client", response.getError());
+        assertEquals("unauthorized_client", response.getError());
 
         events.expectLogin()
                 .client((String) null)
@@ -214,7 +214,7 @@ public class CustomFlowTest {
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .removeDetail(Details.CONSENT)
-                .error(Errors.CLIENT_NOT_FOUND)
+                .error(Errors.INVALID_CLIENT_CREDENTIALS)
                 .assertEvent();
     }
 
