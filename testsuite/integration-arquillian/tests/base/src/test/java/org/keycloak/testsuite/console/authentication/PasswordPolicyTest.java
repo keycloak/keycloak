@@ -19,6 +19,7 @@ package org.keycloak.testsuite.console.authentication;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.PasswordPolicy;
@@ -30,7 +31,7 @@ import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.
  * @author Petr Mensik
  * @author mhajas
  */
-//@Ignore // FIXME still unstable
+@Ignore // FIXME still unstable
 public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Page
