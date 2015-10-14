@@ -36,6 +36,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.Constants;
 import org.keycloak.testsuite.MailUtil;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
@@ -139,6 +140,64 @@ public class ResetPasswordTest {
             }
         });
     }
+
+    @Test
+    public void resetPasswordLink() throws IOException, MessagingException {
+        String username = "login-test";
+        String resetUri = Constants.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+        driver.navigate().to(resetUri);
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword(username);
+
+        loginPage.assertCurrent();
+        assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+
+        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+                .user(userId)
+                .detail(Details.REDIRECT_URI,  Constants.AUTH_SERVER_ROOT + "/realms/test/account/")
+                .client("account")
+                .detail(Details.USERNAME, username)
+                .detail(Details.EMAIL, "login@test.com")
+                .session((String)null)
+                .assertEvent();
+
+        assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String changePasswordUrl = getPasswordResetEmailLink(message);
+
+        driver.navigate().to(changePasswordUrl.trim());
+
+        updatePasswordPage.assertCurrent();
+
+        updatePasswordPage.changePassword("resetPassword", "resetPassword");
+
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_PASSWORD)
+                .detail(Details.REDIRECT_URI,  Constants.AUTH_SERVER_ROOT + "/realms/test/account/")
+                .client("account")
+                .user(userId).detail(Details.USERNAME, username).assertEvent().getSessionId();
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, username)
+                .detail(Details.REDIRECT_URI,  Constants.AUTH_SERVER_ROOT + "/realms/test/account/")
+                .client("account")
+                .session(sessionId).assertEvent();
+
+        oauth.openLogout();
+
+        events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
+
+        loginPage.open();
+
+        loginPage.login("login-test", "resetPassword");
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
 
     @Test
     public void resetPassword() throws IOException, MessagingException {
