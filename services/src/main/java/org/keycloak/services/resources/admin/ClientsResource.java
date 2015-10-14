@@ -73,6 +73,7 @@ public class ClientsResource {
                 ClientRepresentation client = new ClientRepresentation();
                 client.setId(clientModel.getId());
                 client.setClientId(clientModel.getClientId());
+                client.setDescription(clientModel.getDescription());
                 rep.add(client);
             }
         }

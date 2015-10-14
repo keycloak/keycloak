@@ -48,6 +48,7 @@ public class ClientTest extends AbstractClientTest {
     private String createClient() {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setClientId("my-app");
+        rep.setDescription("my-app description");
         rep.setEnabled(true);
         Response response = realm.clients().create(rep);
         response.close();
@@ -77,6 +78,19 @@ public class ClientTest extends AbstractClientTest {
         assertEquals(id, rep.getId());
         assertEquals("my-app", rep.getClientId());
         assertTrue(rep.isEnabled());
+    }
+
+    /**
+     * See <a href="https://issues.jboss.org/browse/KEYCLOAK-1918">KEYCLOAK-1918</a>
+     */
+    @Test
+    public void getClientDescription() {
+
+        String id = createClient();
+
+        ClientRepresentation rep = realm.clients().get(id).toRepresentation();
+        assertEquals(id, rep.getId());
+        assertEquals("my-app description", rep.getDescription());
     }
 
     @Test

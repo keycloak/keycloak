@@ -299,6 +299,7 @@ public class ModelToRepresentation {
         rep.setId(clientModel.getId());
         rep.setClientId(clientModel.getClientId());
         rep.setName(clientModel.getName());
+        rep.setDescription(clientModel.getDescription());
         rep.setEnabled(clientModel.isEnabled());
         rep.setAdminUrl(clientModel.getManagementUrl());
         rep.setPublicClient(clientModel.isPublicClient());

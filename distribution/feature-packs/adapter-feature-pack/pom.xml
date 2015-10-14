@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>feature-packs-parent</artifactId>
-        <version>1.6.0.Final-SNAPSHOT</version>
+        <version>1.6.0.KEYCLOAK-1918-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
