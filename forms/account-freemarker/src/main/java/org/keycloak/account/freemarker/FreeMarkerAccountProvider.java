@@ -51,7 +51,6 @@ import org.keycloak.events.Event;
 import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
-import org.keycloak.freemarker.LocaleHelper;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.freemarker.beans.AdvancedMessageFormatterMethod;
@@ -65,7 +64,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.services.Urls;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -130,7 +128,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             logger.warn("Failed to load properties", e);
         }
 
-        Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, headers);
+        Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle;
         try {
             messagesBundle = theme.getMessages(locale);
@@ -213,10 +211,6 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             String result = freeMarker.processTemplate(attributes, Templates.getTemplate(page), theme);
             Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML).entity(result);
             BrowserSecurityHeaderSetup.headers(builder, realm);
-
-            String keycloakLocaleCookiePath = Urls.localeCookiePath(baseUri, realm.getName());
-
-            LocaleHelper.updateLocaleCookie(builder, locale, realm, uriInfo, keycloakLocaleCookiePath);
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
