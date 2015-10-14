@@ -154,6 +154,16 @@ public class LoginTotpTest {
     }
 
     @Test
+    public void loginWithTotpCancel() throws Exception {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        loginTotpPage.assertCurrent();
+        loginTotpPage.cancel();
+        loginPage.assertCurrent();
+    }
+
+    @Test
     public void loginWithTotpInvalidPassword() throws Exception {
         loginPage.open();
         loginPage.login("test-user@localhost", "invalid");

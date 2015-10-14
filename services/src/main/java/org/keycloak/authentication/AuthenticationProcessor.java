@@ -455,6 +455,11 @@ public class AuthenticationProcessor {
         }
 
         @Override
+        public void resetFlow() {
+            this.status = FlowStatus.FLOW_RESET;
+        }
+
+        @Override
         public void fork() {
             this.status = FlowStatus.FORK;
         }

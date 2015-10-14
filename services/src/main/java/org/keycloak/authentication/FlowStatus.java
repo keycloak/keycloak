@@ -48,6 +48,13 @@ public enum FlowStatus {
      * This flow is being forked.  The current client session is being cloned, reset, and redirected to browser login.
      *
      */
-    FORK
+    FORK,
+
+    /**
+     * This flow was reset to the beginning.  An example is hitting cancel on the OTP page which will bring you back to the
+     * username password page.
+     *
+     */
+    FLOW_RESET
 
 }
