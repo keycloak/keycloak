@@ -59,17 +59,17 @@
                 (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
                 enter in a new password.
             </para>
-            <!--<para>
-                To add Keycloak to other sever configurations (standalone.xml, standalone-ha.xml, etc.) start the server with
-                the desired server-config. If you are running the server in standalone mode run:
-                <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c --file=keycloak-prepare.cli</programlisting>
-                Or if you are running in clustering (HA) mode run:
-                <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c --file=keycloak-prepare-ha.cli</programlisting>
-                After that you need to restart the server, you can do this with:
-                <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c :reload</programlisting>
-                Finally you need to run:
-                <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c --file=keycloak-install.cli</programlisting>
-            </para>-->
+            <!--<para>-->
+                <!--To add Keycloak to other sever configurations (standalone.xml, standalone-ha.xml, etc.) start the server with-->
+                <!--the desired server-config. If you are running the server in standalone mode run:-->
+                <!--<programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c &#45;&#45;file=keycloak-prepare.cli</programlisting>-->
+                <!--Or if you are running in clustering (HA) mode run:-->
+                <!--<programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c &#45;&#45;file=keycloak-prepare-ha.cli</programlisting>-->
+                <!--After that you need to restart the server, you can do this with:-->
+                <!--<programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c :reload</programlisting>-->
+                <!--Finally you need to run:-->
+                <!--<programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c &#45;&#45;file=keycloak-install.cli</programlisting>-->
+            <!--</para>-->
         </section>
         <section>
             <title>Install on existing JBoss EAP 6.4.0.GA</title>
