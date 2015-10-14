@@ -71,6 +71,15 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
+    public String getDescription() { return getMongoEntity().getDescription(); }
+
+    @Override
+    public void setDescription(String description) {
+        getMongoEntity().setDescription(description);
+        updateMongoEntity();
+    }
+
+    @Override
     public void setClientId(String clientId) {
         getMongoEntity().setClientId(clientId);
         updateMongoEntity();
