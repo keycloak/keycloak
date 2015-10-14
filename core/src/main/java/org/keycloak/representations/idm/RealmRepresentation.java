@@ -611,10 +611,14 @@ public class RealmRepresentation {
     }
 
     public Set<String> getSupportedLocales() {
-        if(supportedLocales == null){
-            supportedLocales = new HashSet<String>();
-        }
         return supportedLocales;
+    }
+
+    public void addSupportedLocales(String locale) {
+        if(supportedLocales == null){
+            supportedLocales = new HashSet<>();
+        }
+        supportedLocales.add(locale);
     }
 
     public void setSupportedLocales(Set<String> supportedLocales) {
