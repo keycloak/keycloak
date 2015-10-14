@@ -3,6 +3,7 @@ package org.keycloak.connections.mongo;
 import com.mongodb.DB;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
+import com.mongodb.MongoClientURI;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 
@@ -147,31 +148,47 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
      * @throws UnknownHostException
      */
     protected MongoClient createMongoClient() throws UnknownHostException {
-        String host = config.get("host", ServerAddress.defaultHost());
-        int port = config.getInt("port", ServerAddress.defaultPort());
+        operationalInfo = new LinkedHashMap<>();
         String dbName = config.get("db", "keycloak");
 
-        String user = config.get("user");
-        String password = config.get("password");
+        String uriString = config.get("uri");
+        if (uriString != null) {
+            MongoClientURI uri = new MongoClientURI(uriString);
+            MongoClient client = new MongoClient(uri);
 
-        MongoClientOptions clientOptions = getClientOptions();
+            String hosts = String.join(", ", uri.getHosts());
+            operationalInfo.put("mongoHosts", hosts);
+            operationalInfo.put("mongoDatabaseName", dbName);
+            operationalInfo.put("mongoUser", uri.getUsername());
+            operationalInfo.put("mongoDriverVersion", client.getVersion());
 
-        MongoClient client;
-        if (user != null && password != null) {
-            MongoCredential credential = MongoCredential.createMongoCRCredential(user, dbName, password.toCharArray());
-            client = new MongoClient(new ServerAddress(host, port), Collections.singletonList(credential), clientOptions);
+            logger.debugv("Initialized mongo model. host(s): %s, db: %s", uri.getHosts(), dbName);
+            return client;
         } else {
-            client = new MongoClient(new ServerAddress(host, port), clientOptions);
+            String host = config.get("host", ServerAddress.defaultHost());
+            int port = config.getInt("port", ServerAddress.defaultPort());
+
+            String user = config.get("user");
+            String password = config.get("password");
+
+            MongoClientOptions clientOptions = getClientOptions();
+
+            MongoClient client;
+            if (user != null && password != null) {
+                MongoCredential credential = MongoCredential.createMongoCRCredential(user, dbName, password.toCharArray());
+                client = new MongoClient(new ServerAddress(host, port), Collections.singletonList(credential), clientOptions);
+            } else {
+                client = new MongoClient(new ServerAddress(host, port), clientOptions);
+            }
+
+            operationalInfo.put("mongoServerAddress", client.getAddress().toString());
+            operationalInfo.put("mongoDatabaseName", dbName);
+            operationalInfo.put("mongoUser", user);
+            operationalInfo.put("mongoDriverVersion", client.getVersion());
+
+            logger.debugv("Initialized mongo model. host: %s, port: %d, db: %s", host, port, dbName);
+            return client;
         }
-        
-        operationalInfo = new LinkedHashMap<>();
-        operationalInfo.put("mongoServerAddress", client.getAddress().toString());
-        operationalInfo.put("mongoDatabaseName", dbName);
-        operationalInfo.put("mongoUser", user);
-        operationalInfo.put("mongoDriverVersion", client.getVersion());
-    		
-        logger.debugv("Initialized mongo model. host: %s, port: %d, db: %s", host, port, dbName);
-        return client;
     }
 
     protected MongoClientOptions getClientOptions() {
