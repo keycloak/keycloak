@@ -27,5 +27,6 @@
             <artifactId>infinispan-core</artifactId>
             <scope>provided</scope>
         </dependency>
+
     </dependencies>
 </project>

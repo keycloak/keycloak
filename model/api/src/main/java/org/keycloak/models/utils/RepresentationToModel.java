@@ -1,7 +1,7 @@
 package org.keycloak.models.utils;
 
-import org.keycloak.models.OfflineClientSessionModel;
-import org.keycloak.models.OfflineUserSessionModel;
+import org.keycloak.models.session.PersistentClientSessionModel;
+import org.keycloak.models.session.PersistentUserSessionModel;
 import org.keycloak.representations.idm.OfflineClientSessionRepresentation;
 import org.keycloak.representations.idm.OfflineUserSessionRepresentation;
 import org.keycloak.util.Base64;
@@ -985,11 +985,6 @@ public class RepresentationToModel {
                 user.addConsent(consentModel);
             }
         }
-        if (userRep.getOfflineUserSessions() != null) {
-            for (OfflineUserSessionRepresentation sessionRep : userRep.getOfflineUserSessions()) {
-                importOfflineSession(session, newRealm, user, sessionRep);
-            }
-        }
         if (userRep.getServiceAccountClientId() != null) {
             String clientId = userRep.getServiceAccountClientId();
             ClientModel client = clientMap.get(clientId);
@@ -1160,28 +1155,29 @@ public class RepresentationToModel {
         return consentModel;
     }
 
-    public static void importOfflineSession(KeycloakSession session, RealmModel newRealm, UserModel user, OfflineUserSessionRepresentation sessionRep) {
-        OfflineUserSessionModel model = new OfflineUserSessionModel();
-        model.setUserSessionId(sessionRep.getUserSessionId());
-        model.setData(sessionRep.getData());
-        session.users().addOfflineUserSession(newRealm, user, model);
-
-        for (OfflineClientSessionRepresentation csRep : sessionRep.getOfflineClientSessions()) {
-            OfflineClientSessionModel csModel = new OfflineClientSessionModel();
-            String clientId = csRep.getClient();
-            ClientModel client = newRealm.getClientByClientId(clientId);
-            if (client == null) {
-                throw new RuntimeException("Unable to find client " + clientId + " referenced from offlineClientSession of user " + user.getUsername());
-            }
-            csModel.setClientId(client.getId());
-            csModel.setUserId(user.getId());
-            csModel.setClientSessionId(csRep.getClientSessionId());
-            csModel.setUserSessionId(sessionRep.getUserSessionId());
-            csModel.setData(csRep.getData());
-
-            session.users().addOfflineClientSession(newRealm, csModel);
-        }
-    }
+    // TODO
+//    public static void importOfflineSession(KeycloakSession session, RealmModel newRealm, UserModel user, OfflineUserSessionRepresentation sessionRep) {
+//        PersistentUserSessionModel model = new PersistentUserSessionModel();
+//        model.setUserSessionId(sessionRep.getUserSessionId());
+//        model.setData(sessionRep.getData());
+//        session.users().createOfflineUserSession(newRealm, user, model);
+//
+//        for (OfflineClientSessionRepresentation csRep : sessionRep.getOfflineClientSessions()) {
+//            PersistentClientSessionModel csModel = new PersistentClientSessionModel();
+//            String clientId = csRep.getClient();
+//            ClientModel client = newRealm.getClientByClientId(clientId);
+//            if (client == null) {
+//                throw new RuntimeException("Unable to find client " + clientId + " referenced from offlineClientSession of user " + user.getUsername());
+//            }
+//            csModel.setClientId(client.getId());
+//            csModel.setUserId(user.getId());
+//            csModel.setClientSessionId(csRep.getClientSessionId());
+//            csModel.setUserSessionId(sessionRep.getUserSessionId());
+//            csModel.setData(csRep.getData());
+//
+//            session.users().createOfflineClientSession(newRealm, csModel);
+//        }
+//    }
 
     public static AuthenticationFlowModel toModel(AuthenticationFlowRepresentation rep) {
         AuthenticationFlowModel model = new AuthenticationFlowModel();

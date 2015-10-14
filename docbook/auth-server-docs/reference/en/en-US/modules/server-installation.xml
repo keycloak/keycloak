@@ -59,29 +59,22 @@
                 (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
                 enter in a new password.
             </para>
-            <para>
+            <!--<para>
                 To add Keycloak to other sever configurations (standalone.xml, standalone-ha.xml, etc.) start the server with
-                the desired server-config.  Then execute the following CLI script:
+                the desired server-config. If you are running the server in standalone mode run:
+                <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c --file=keycloak-prepare.cli</programlisting>
+                Or if you are running in clustering (HA) mode run:
+                <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c --file=keycloak-prepare-ha.cli</programlisting>
+                After that you need to restart the server, you can do this with:
+                <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c :reload</programlisting>
+                Finally you need to run:
                 <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c --file=keycloak-install.cli</programlisting>
-            </para>
+            </para>-->
         </section>
         <section>
             <title>Install on existing JBoss EAP 6.4.0.GA</title>
             <para>
                 Same procedure as WildFly 9.0.0.Final, but download <literal>keycloak-overlay-eap6-&project.version;.zip</literal> or <literal>keycloak-overlay-eap6-&project.version;.tar.gz</literal>.
-            </para>
-            <para>
-                However, for EAP, adding Keycloak to other sever configurations (standalone.xml, standalone-ha.xml, etc.) requires two CLI scripts. Start the server with
-                the desired server-config.  Then execute the following CLI scripts with a restart in between:
-                <orderedlist>
-                    <listitem>
-                        <programlisting>&lt;EAP_HOME&gt;/bin/jboss-cli.sh -c --file=keycloak-prepare.cli</programlisting>
-                    </listitem>
-                    <listitem>Restart the server with the same server-config.</listitem>
-                    <listitem>
-                        <programlisting>&lt;EAP_HOME&gt;/bin/jboss-cli.sh -c --file=keycloak-install.cli</programlisting>
-                    </listitem>
-                </orderedlist>
             </para>
         </section>
         <section>
@@ -329,6 +322,30 @@
                 Supported long option is <literal>maxAutoConnectRetryTime</literal>. See <ulink url="http://api.mongodb.org/java/2.11.4/com/mongodb/MongoClientOptions.html">Mongo documentation</ulink>
                 for details about those options and their default values.
             </para>
+            <para>
+                Alternatively, you can configure MongoDB using a MongoDB <ulink url="http://docs.mongodb.org/manual/reference/connection-string/">connection URI</ulink>.
+                In this case, you define all information concerning the connection and authentication within the URI, as described in the MongoDB documentation.
+                Please note that the database specified within the URI is only used for authentication. To change the database used by keycloak you have to set
+                <literal>db</literal> property as before. Therefore, a configuration like the
+                following
+                <programlisting><![CDATA[
+"connectionsMongo": {
+    "default": {
+        "uri": "mongodb://user:password@127.0.0.1/authentication",
+        "db": "keycloak"
+    }
+}
+]]></programlisting>
+                will authenticate the user against the authentication database, but store all keycloak related data in the keycloak database.
+
+            </para>
+            <section>
+                <title>MongoDB Replica Sets</title>
+                <para>
+                    In order to use a mongo replica set for Keycloak, one has to use URI based configuration, which supports the
+                    definition of replica sets out of the box: <literal>mongodb://host1:27017,host2:27017,host3:27017/</literal>.
+                </para>
+            </section>
         </section>
         
         <section>

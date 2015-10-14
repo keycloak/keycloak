@@ -9,6 +9,7 @@ import java.util.Map;
 public interface UserSessionModel {
 
     String getId();
+    RealmModel getRealm();
 
     /**
      * If created via a broker external login, this is an identifier that can be

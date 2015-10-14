@@ -30,7 +30,6 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.adapters.HttpClientBuilder;
-import org.keycloak.freemarker.LocaleHelper;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
@@ -87,7 +86,7 @@ public class LoginPageTest {
         //test if cookie works
         oauth.uiLocales("de");
         loginPage.open();
-        Assert.assertEquals("English", loginPage.getLanguageDropdownText());
+        Assert.assertEquals("Deutsch", loginPage.getLanguageDropdownText());
 
         driver.manage().deleteAllCookies();
         loginPage.open();
@@ -113,10 +112,8 @@ public class LoginPageTest {
         loginPage.open();
         Response response = client.target(driver.getCurrentUrl()).request().acceptLanguage("de").get();
         Assert.assertTrue(response.readEntity(String.class).contains("Anmeldung bei test"));
-        Assert.assertEquals("de", response.getCookies().get(LocaleHelper.LOCALE_COOKIE).getValue());
 
         response = client.target(driver.getCurrentUrl()).request().acceptLanguage("en").get();
         Assert.assertTrue(response.readEntity(String.class).contains("Log in to test"));
-        Assert.assertEquals("en", response.getCookies().get(LocaleHelper.LOCALE_COOKIE).getValue());
     }
 }

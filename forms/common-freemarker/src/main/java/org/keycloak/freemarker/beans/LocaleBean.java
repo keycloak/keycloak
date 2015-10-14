@@ -1,6 +1,5 @@
 package org.keycloak.freemarker.beans;
 
-import org.keycloak.freemarker.LocaleHelper;
 import org.keycloak.models.RealmModel;
 
 import javax.ws.rs.core.UriBuilder;
@@ -22,7 +21,7 @@ public class LocaleBean {
         supported = new LinkedList<>();
         for (String l : realm.getSupportedLocales()) {
             String label = messages.getProperty("locale_" + l, l);
-            String url = uriBuilder.replaceQueryParam(LocaleHelper.KC_LOCALE_PARAM, l).build().toString();
+            String url = uriBuilder.replaceQueryParam("kc_locale", l).build().toString();
             supported.add(new Locale(label, url));
         }
     }

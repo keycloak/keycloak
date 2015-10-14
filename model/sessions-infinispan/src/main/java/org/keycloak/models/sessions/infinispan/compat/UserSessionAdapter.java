@@ -40,6 +40,11 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     @Override
+    public RealmModel getRealm() {
+        return realm;
+    }
+
+    @Override
     public String getBrokerSessionId() {
         return entity.getBrokerSessionId();
     }

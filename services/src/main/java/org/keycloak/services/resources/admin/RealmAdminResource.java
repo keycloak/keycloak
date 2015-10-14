@@ -368,7 +368,16 @@ public class RealmAdminResource {
     public RealmEventsConfigRepresentation getRealmEventsConfig() {
         auth.init(RealmAuth.Resource.EVENTS).requireView();
 
-        return ModelToRepresentation.toEventsConfigReprensetation(realm);
+        RealmEventsConfigRepresentation config = ModelToRepresentation.toEventsConfigReprensetation(realm);
+        if (config.getEnabledEventTypes() == null || config.getEnabledEventTypes().isEmpty()) {
+            config.setEnabledEventTypes(new LinkedList<String>());
+            for (EventType e : EventType.values()) {
+                if (e.isSaveByDefault()) {
+                    config.getEnabledEventTypes().add(e.name());
+                }
+            }
+        }
+        return config;
     }
 
     /**

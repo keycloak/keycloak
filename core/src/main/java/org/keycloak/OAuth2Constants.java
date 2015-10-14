@@ -41,6 +41,9 @@ public interface OAuth2Constants {
     // http://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess
     String OFFLINE_ACCESS = "offline_access";
 
+    String UI_LOCALES_PARAM = "ui_locales";
+
+
 }
 
 

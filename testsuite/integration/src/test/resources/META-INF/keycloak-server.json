@@ -22,6 +22,16 @@
         "provider": "${keycloak.user.provider:jpa}"
     },
 
+    "userSessions": {
+        "infinispan": {
+            "enforceCompat": "${keycloak.connectionsInfinispan.enforceCompat:false}"
+        }
+    },
+
+    "userSessionPersister": {
+        "provider": "${keycloak.userSessionPersister.provider:jpa}"
+    },
+
     "timer": {
         "provider": "basic"
     },
@@ -67,6 +77,14 @@
             "db": "${keycloak.connectionsMongo.db:keycloak}",
             "databaseSchema": "${keycloak.connectionsMongo.databaseSchema:update}",
             "connectionsPerHost": "${keycloak.connectionsMongo.connectionsPerHost:100}"
+        }
+    },
+
+    "connectionsInfinispan": {
+        "default": {
+            "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
+            "async": "${keycloak.connectionsInfinispan.async:true}",
+            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:2}"
         }
     }
 }

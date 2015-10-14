@@ -33,42 +33,24 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.RequiredActionProviderModel;
-import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.Urls;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.util.Time;
 
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-
+import javax.ws.rs.core.*;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
-import org.keycloak.freemarker.LocaleHelper;
-import org.keycloak.util.TokenUtil;
 
 /**
  * Stateless object that manages authentication
@@ -413,7 +395,8 @@ public class AuthenticationManager {
             }
         }
 
-        handleLoginLocale(realm, userSession, request, uriInfo);
+        // Updates users locale if required
+        session.getContext().resolveLocale(userSession.getUser());
 
         // refresh the cookies!
         createLoginCookie(realm, userSession.getUser(), userSession, uriInfo, clientConnection);
@@ -426,17 +409,6 @@ public class AuthenticationManager {
         RestartLoginCookie.expireRestartCookie(realm, clientConnection, uriInfo);
         return protocol.authenticated(userSession, new ClientSessionCode(realm, clientSession));
 
-    }
-
-    // If a locale has been set on the login screen, associate that locale with the user
-    private static void handleLoginLocale(RealmModel realm, UserSessionModel userSession,
-                                          HttpRequest request, UriInfo uriInfo) {
-        Cookie localeCookie = request.getHttpHeaders().getCookies().get(LocaleHelper.LOCALE_COOKIE);
-        if (localeCookie == null) return;
-
-        UserModel user = userSession.getUser();
-        Locale locale = LocaleHelper.getLocale(realm, user, uriInfo, request.getHttpHeaders());
-        user.setSingleAttribute(UserModel.LOCALE, locale.toLanguageTag());
     }
 
     public static Response nextActionAfterAuthentication(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession,

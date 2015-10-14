@@ -26,13 +26,16 @@ public class ClientSessionAdapter implements ClientSessionModel {
     private Cache<String, SessionEntity> cache;
     private RealmModel realm;
     private ClientSessionEntity entity;
+    private boolean offline;
 
-    public ClientSessionAdapter(KeycloakSession session, InfinispanUserSessionProvider provider, Cache<String, SessionEntity> cache, RealmModel realm, ClientSessionEntity entity) {
+    public ClientSessionAdapter(KeycloakSession session, InfinispanUserSessionProvider provider, Cache<String, SessionEntity> cache, RealmModel realm,
+                                ClientSessionEntity entity, boolean offline) {
         this.session = session;
         this.provider = provider;
         this.cache = cache;
         this.realm = realm;
         this.entity = entity;
+        this.offline = offline;
     }
 
     @Override
@@ -51,8 +54,8 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
-    public UserSessionModel getUserSession() {
-        return entity.getUserSession() != null ? provider.getUserSession(realm, entity.getUserSession()) : null;
+    public UserSessionAdapter getUserSession() {
+        return entity.getUserSession() != null ? provider.getUserSession(realm, entity.getUserSession(), offline) : null;
     }
 
     @Override
@@ -63,14 +66,15 @@ public class ClientSessionAdapter implements ClientSessionModel {
             }
             entity.setUserSession(null);
         } else {
+            UserSessionAdapter userSessionAdapter = (UserSessionAdapter) userSession;
             if (entity.getUserSession() != null) {
                 if (entity.getUserSession().equals(userSession.getId())) {
                     return;
                 } else {
-                    provider.dettachSession(userSession, this);
+                    provider.dettachSession(userSessionAdapter, this);
                 }
             } else {
-                provider.attachSession(userSession, this);
+                provider.attachSession(userSessionAdapter, this);
             }
 
             entity.setUserSession(userSession.getId());
@@ -113,7 +117,8 @@ public class ClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public Set<String> getRoles() {
-        return entity.getRoles();
+        if (entity.getRoles() == null || entity.getRoles().isEmpty()) return Collections.emptySet();
+        return new HashSet<>(entity.getRoles());
     }
 
     @Override
@@ -124,7 +129,8 @@ public class ClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public Set<String> getProtocolMappers() {
-        return entity.getProtocolMappers();
+        if (entity.getProtocolMappers() == null || entity.getProtocolMappers().isEmpty()) return Collections.emptySet();
+        return new HashSet<>(entity.getProtocolMappers());
     }
 
     @Override

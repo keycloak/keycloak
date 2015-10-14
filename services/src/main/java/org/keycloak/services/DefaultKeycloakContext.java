@@ -2,16 +2,15 @@ package org.keycloak.services;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ClientConnection;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.services.util.LocaleHelper;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
+import java.util.Locale;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -86,5 +85,10 @@ public class DefaultKeycloakContext implements KeycloakContext {
         RealmManager manager = new RealmManager(session);
         manager.setContextPath(getContextPath());
         return manager;
+    }
+
+    @Override
+    public Locale resolveLocale(UserModel user) {
+        return LocaleHelper.getLocale(session, realm, user);
     }
 }
