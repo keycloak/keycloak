@@ -158,7 +158,15 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             MongoClientURI uri = new MongoClientURI(uriString);
             MongoClient client = new MongoClient(uri);
 
-            String hosts = String.join(", ", uri.getHosts());
+            StringBuilder hostsBuilder = new StringBuilder();
+            for (int i=0 ; i<uri.getHosts().size() ; i++) {
+                if (i!=0) {
+                    hostsBuilder.append(", ");
+                }
+                hostsBuilder.append(uri.getHosts().get(i));
+            }
+            String hosts = hostsBuilder.toString();
+
             operationalInfo.put("mongoHosts", hosts);
             operationalInfo.put("mongoDatabaseName", dbName);
             operationalInfo.put("mongoUser", uri.getUsername());
