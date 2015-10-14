@@ -54,6 +54,7 @@
             <module name="org.jboss.resteasy.resteasy-jaxrs"/>
 
             <module name="org.jboss.msc"/>
+            <module name="org.infinispan"/>
         </dependencies>
         <exclusions>
             <module name="org.jboss.resteasy.resteasy-jackson2-provider"/>

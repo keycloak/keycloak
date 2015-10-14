@@ -20,13 +20,13 @@
                 <include>**/**</include>
             </includes>
         </fileSet>
-        <!--<fileSet>
+        <fileSet>
             <directory>cli</directory>
             <includes>
                 <include>*.cli</include>
             </includes>
             <outputDirectory>bin</outputDirectory>
-        </fileSet>-->
+        </fileSet>
     </fileSets>
 
     <files>

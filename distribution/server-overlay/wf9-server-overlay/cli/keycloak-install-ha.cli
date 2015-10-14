@@ -5,3 +5,6 @@
 /subsystem=infinispan/cache-container=keycloak/invalidation-cache=users:add(mode="SYNC")
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=sessions:add(mode="SYNC",owners="1")
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=loginFailures:add(mode="SYNC",owners="1")
+/extension=org.keycloak.keycloak-server-subsystem/:add(module=org.keycloak.keycloak-server-subsystem)
+/subsystem=keycloak-server:add(web-context=auth)
+:shutdown(restart=true)
