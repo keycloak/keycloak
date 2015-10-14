@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.email.freemarker.beans.EventBean;
+import org.keycloak.email.freemarker.beans.ProfileBean;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.freemarker.FreeMarkerException;
@@ -63,6 +64,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
     @Override
     public void sendEvent(Event event) throws EmailException {
         Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("user", new ProfileBean(user));
         attributes.put("event", new EventBean(event));
 
         send(toCamelCase(event.getType()) + "Subject", "event-" + event.getType().toString().toLowerCase() + ".ftl", attributes);
@@ -71,6 +73,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
     @Override
     public void sendPasswordReset(String link, long expirationInMinutes) throws EmailException {
         Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("user", new ProfileBean(user));
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
 
@@ -83,6 +86,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
     @Override
     public void sendExecuteActions(String link, long expirationInMinutes) throws EmailException {
         Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("user", new ProfileBean(user));
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
 
@@ -96,6 +100,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
     @Override
     public void sendVerifyEmail(String link, long expirationInMinutes) throws EmailException {
         Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("user", new ProfileBean(user));
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
 
