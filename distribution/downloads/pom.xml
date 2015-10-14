@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>distribution-pom</artifactId>
-        <version>1.6.0.Final-SNAPSHOT</version>
+        <version>1.6.0.KEYCLOAK-1963-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-dist-downloads</artifactId>
