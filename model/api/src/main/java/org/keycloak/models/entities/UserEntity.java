@@ -28,7 +28,6 @@ public class UserEntity extends AbstractIdentifiableEntity {
     private List<FederatedIdentityEntity> federatedIdentities;
     private String federationLink;
     private String serviceAccountClientLink;
-    private List<OfflineUserSessionEntity> offlineUserSessions;
 
     public String getUsername() {
         return username;
@@ -157,14 +156,6 @@ public class UserEntity extends AbstractIdentifiableEntity {
 
     public void setServiceAccountClientLink(String serviceAccountClientLink) {
         this.serviceAccountClientLink = serviceAccountClientLink;
-    }
-
-    public List<OfflineUserSessionEntity> getOfflineUserSessions() {
-        return offlineUserSessions;
-    }
-
-    public void setOfflineUserSessions(List<OfflineUserSessionEntity> offlineUserSessions) {
-        this.offlineUserSessions = offlineUserSessions;
     }
 }
 

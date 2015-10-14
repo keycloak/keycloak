@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.model;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -400,6 +401,19 @@ public class UserSessionProviderTest {
         assertPaginatedSession(realm, realm.getClientByClientId("test-app"), 30, 10, 0);
     }
 
+    @Test
+    public void testCreateAndGetInSameTransaction() {
+        UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
+        ClientSessionModel clientSession = createClientSession(realm.getClientByClientId("test-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
+
+        Assert.assertNotNull(session.sessions().getUserSession(realm, userSession.getId()));
+        Assert.assertNotNull(session.sessions().getClientSession(realm, clientSession.getId()));
+
+        Assert.assertEquals(userSession.getId(), clientSession.getUserSession().getId());
+        Assert.assertEquals(1, userSession.getClientSessions().size());
+        Assert.assertEquals(clientSession.getId(), userSession.getClientSessions().get(0).getId());
+    }
+
     private void assertPaginatedSession(RealmModel realm, ClientModel client, int start, int max, int expectedSize) {
         List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, client, start, max);
         String[] actualIps = new String[sessions.size()];
@@ -515,7 +529,7 @@ public class UserSessionProviderTest {
         realm = session.realms().getRealm("test");
     }
 
-    public void assertSessions(List<UserSessionModel> actualSessions, UserSessionModel... expectedSessions) {
+    public static void assertSessions(List<UserSessionModel> actualSessions, UserSessionModel... expectedSessions) {
         String[] expected = new String[expectedSessions.length];
         for (int i = 0; i < expected.length; i++) {
             expected[i] = expectedSessions[i].getId();
@@ -532,7 +546,7 @@ public class UserSessionProviderTest {
         assertArrayEquals(expected, actual);
     }
 
-    public void assertSession(UserSessionModel session, UserModel user, String ipAddress, int started, int lastRefresh, String... clients) {
+    public static void assertSession(UserSessionModel session, UserModel user, String ipAddress, int started, int lastRefresh, String... clients) {
         assertEquals(user.getId(), session.getUser().getId());
         assertEquals(ipAddress, session.getIpAddress());
         assertEquals(user.getUsername(), session.getLoginUsername());

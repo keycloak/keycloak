@@ -77,7 +77,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.services.managers.BruteForceProtector;
-import org.keycloak.services.offline.OfflineTokenUtils;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.AccountService;
 
 /**
@@ -451,7 +451,7 @@ public class UsersResource {
 
         List<Map<String, Object>> result = new LinkedList<>();
 
-        Set<ClientModel> offlineClients = OfflineTokenUtils.findClientsWithOfflineToken(session, realm, user);
+        Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
 
         for (ClientModel client : realm.getClients()) {
             UserConsentModel consent = user.getConsentByClient(client.getId());
@@ -496,7 +496,7 @@ public class UsersResource {
 
         ClientModel client = realm.getClientByClientId(clientId);
         boolean revokedConsent = user.revokeConsentForClient(client.getId());
-        boolean revokedOfflineToken = OfflineTokenUtils.revokeOfflineToken(session, realm, user, client);
+        boolean revokedOfflineToken = new UserSessionManager(session).revokeOfflineToken(user, client);
 
         if (revokedConsent) {
             // Logout clientSessions for this user and client

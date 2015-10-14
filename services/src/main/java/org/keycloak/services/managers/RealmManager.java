@@ -19,6 +19,7 @@ package org.keycloak.services.managers;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.enums.SslRequired;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
@@ -195,6 +196,11 @@ public class RealmManager implements RealmImporter {
             UserSessionProvider sessions = session.sessions();
             if (sessions != null) {
                 sessions.onRealmRemoved(realm);
+            }
+
+            UserSessionPersisterProvider sessionsPersister = session.getProvider(UserSessionPersisterProvider.class);
+            if (sessionsPersister != null) {
+                sessionsPersister.onRealmRemoved(realm);
             }
 
             // Remove all periodic syncs for configured federation providers

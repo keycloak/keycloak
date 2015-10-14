@@ -22,10 +22,7 @@ import org.keycloak.models.ClientModel;
 import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
 import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.OfflineClientSessionModel;
-import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -35,8 +32,6 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.CredentialEntity;
 import org.keycloak.models.entities.FederatedIdentityEntity;
-import org.keycloak.models.entities.OfflineClientSessionEntity;
-import org.keycloak.models.entities.OfflineUserSessionEntity;
 import org.keycloak.models.entities.RoleEntity;
 import org.keycloak.models.entities.UserEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -44,7 +39,6 @@ import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.util.Time;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -52,8 +46,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
 /**
  * UserModel for JSON persistence.

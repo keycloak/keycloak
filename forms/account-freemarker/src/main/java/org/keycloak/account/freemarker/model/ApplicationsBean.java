@@ -13,7 +13,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.services.offline.OfflineTokenUtils;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.util.MultivaluedHashMap;
 
 /**
@@ -25,7 +25,7 @@ public class ApplicationsBean {
 
     public ApplicationsBean(KeycloakSession session, RealmModel realm, UserModel user) {
 
-        Set<ClientModel> offlineClients = OfflineTokenUtils.findClientsWithOfflineToken(session, realm, user);
+        Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
 
         List<ClientModel> realmClients = realm.getClients();
         for (ClientModel client : realmClients) {

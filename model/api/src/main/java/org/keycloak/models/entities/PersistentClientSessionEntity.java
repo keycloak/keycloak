@@ -3,7 +3,7 @@ package org.keycloak.models.entities;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OfflineClientSessionEntity {
+public class PersistentClientSessionEntity {
 
     private String clientSessionId;
     private String clientId;

@@ -36,6 +36,8 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             "org.keycloak.models.mongo.keycloak.entities.MongoClientEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoMigrationModelEntity",
+            "org.keycloak.models.mongo.keycloak.entities.MongoOnlineUserSessionEntity",
+            "org.keycloak.models.mongo.keycloak.entities.MongoOfflineUserSessionEntity",
             "org.keycloak.models.entities.IdentityProviderEntity",
             "org.keycloak.models.entities.ClientIdentityProviderMappingEntity",
             "org.keycloak.models.entities.RequiredCredentialEntity",
@@ -49,8 +51,8 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             "org.keycloak.models.entities.AuthenticationFlowEntity",
             "org.keycloak.models.entities.AuthenticatorConfigEntity",
             "org.keycloak.models.entities.RequiredActionProviderEntity",
-            "org.keycloak.models.entities.OfflineUserSessionEntity",
-            "org.keycloak.models.entities.OfflineClientSessionEntity",
+            "org.keycloak.models.entities.PersistentUserSessionEntity",
+            "org.keycloak.models.entities.PersistentClientSessionEntity",
     };
 
     private static final Logger logger = Logger.getLogger(DefaultMongoConnectionFactoryProvider.class);
@@ -156,7 +158,15 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             MongoClientURI uri = new MongoClientURI(uriString);
             MongoClient client = new MongoClient(uri);
 
-            String hosts = String.join(", ", uri.getHosts());
+            StringBuilder hostsBuilder = new StringBuilder();
+            for (int i=0 ; i<uri.getHosts().size() ; i++) {
+                if (i!=0) {
+                    hostsBuilder.append(", ");
+                }
+                hostsBuilder.append(uri.getHosts().get(i));
+            }
+            String hosts = hostsBuilder.toString();
+
             operationalInfo.put("mongoHosts", hosts);
             operationalInfo.put("mongoDatabaseName", dbName);
             operationalInfo.put("mongoUser", uri.getUsername());

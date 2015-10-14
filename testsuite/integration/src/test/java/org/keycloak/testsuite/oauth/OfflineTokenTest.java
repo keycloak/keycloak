@@ -343,7 +343,7 @@ public class OfflineTokenTest {
         testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), serviceAccountUserId);
 
 
-        // Now retrieve another offline token and verify that previous offline token is not valid anymore
+        // Now retrieve another offline token and verify that previous offline token is still valid
         tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
 
         AccessToken token2 = oauth.verifyToken(tokenResponse.getAccessToken());
@@ -360,21 +360,8 @@ public class OfflineTokenTest {
                 .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client")
                 .assertEvent();
 
-        // Refresh with old offline token should fail
-        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString, "secret1");
-        Assert.assertEquals(400, response.getStatusCode());
-        Assert.assertEquals("invalid_grant", response.getError());
-
-        events.expectRefresh(offlineToken.getId(), offlineToken.getSessionState())
-                .error(Errors.INVALID_TOKEN)
-                .client("offline-client")
-                .user(serviceAccountUserId)
-                .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
-                .removeDetail(Details.TOKEN_ID)
-                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
-                .assertEvent();
-
-        // Refresh with new offline token is ok
+        // Refresh with both offline tokens is fine
+        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), serviceAccountUserId);
         testRefreshWithOfflineToken(token2, offlineToken2, offlineTokenString2, token2.getSessionState(), serviceAccountUserId);
     }
 

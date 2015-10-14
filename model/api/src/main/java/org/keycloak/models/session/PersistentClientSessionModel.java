@@ -1,9 +1,9 @@
-package org.keycloak.models;
+package org.keycloak.models.session;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OfflineClientSessionModel {
+public class PersistentClientSessionModel {
 
     private String clientSessionId;
     private String userSessionId;
