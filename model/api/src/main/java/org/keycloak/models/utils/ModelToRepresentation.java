@@ -144,6 +144,7 @@ public class ModelToRepresentation {
         rep.setVerifyEmail(realm.isVerifyEmail());
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
+        rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());
         rep.setAccessTokenLifespan(realm.getAccessTokenLifespan());
         rep.setSsoSessionIdleTimeout(realm.getSsoSessionIdleTimeout());
         rep.setSsoSessionMaxLifespan(realm.getSsoSessionMaxLifespan());

@@ -10,6 +10,7 @@ public class RealmRepresentation {
     protected String id;
     protected String realm;
     protected Integer notBefore;
+    protected Boolean revokeRefreshToken;
     protected Integer accessTokenLifespan;
     protected Integer ssoSessionIdleTimeout;
     protected Integer ssoSessionMaxLifespan;
@@ -164,6 +165,14 @@ public class RealmRepresentation {
 
     public void setSslRequired(String sslRequired) {
         this.sslRequired = sslRequired;
+    }
+
+    public Boolean getRevokeRefreshToken() {
+        return revokeRefreshToken;
+    }
+
+    public void setRevokeRefreshToken(Boolean revokeRefreshToken) {
+        this.revokeRefreshToken = revokeRefreshToken;
     }
 
     public Integer getAccessTokenLifespan() {
