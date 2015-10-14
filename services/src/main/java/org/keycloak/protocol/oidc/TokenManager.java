@@ -98,9 +98,17 @@ public class TokenManager {
         ClientSessionModel clientSession = null;
         if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType())) {
 
-            clientSession = new UserSessionManager(session).findOfflineClientSession(realm, oldToken.getClientSession(), oldToken.getSessionState());
+            UserSessionManager sessionManager = new UserSessionManager(session);
+            clientSession = sessionManager.findOfflineClientSession(realm, oldToken.getClientSession(), oldToken.getSessionState());
             if (clientSession != null) {
                 userSession = clientSession.getUserSession();
+
+                // Revoke timeouted offline userSession
+                if (userSession.getLastSessionRefresh() < Time.currentTime() - realm.getOfflineSessionIdleTimeout()) {
+                    sessionManager.revokeOfflineUserSession(userSession);
+                    userSession = null;
+                    clientSession = null;
+                }
             }
         } else {
             // Find userSession regularly for online tokens
@@ -172,16 +180,12 @@ public class TokenManager {
 
         validation.userSession.setLastSessionRefresh(currentTime);
 
-        AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)
+        AccessTokenResponse res = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)
                 .accessToken(validation.newToken)
-                .generateIDToken();
+                .generateIDToken()
+                .generateRefreshToken()
+                .build();
 
-        // Don't generate refresh token again if refresh was triggered with offline token
-        if (!refreshToken.getType().equals(TokenUtil.TOKEN_TYPE_OFFLINE)) {
-            responseBuilder.generateRefreshToken();
-        }
-
-        AccessTokenResponse res = responseBuilder.build();
         return new RefreshResult(res, TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType()));
     }
 
@@ -507,7 +511,7 @@ public class TokenManager {
 
                 refreshToken = new RefreshToken(accessToken);
                 refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
-                sessionManager.persistOfflineSession(clientSession, userSession);
+                sessionManager.createOrUpdateOfflineSession(clientSession, userSession);
             } else {
                 refreshToken = new RefreshToken(accessToken);
                 refreshToken.expiration(Time.currentTime() + realm.getSsoSessionIdleTimeout());

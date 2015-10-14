@@ -912,6 +912,12 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         $scope.realm.ssoSessionMaxLifespan = TimeUnit.convert($scope.realm.ssoSessionMaxLifespan, from, to);
     });
 
+    $scope.realm.offlineSessionIdleTimeoutUnit = TimeUnit.autoUnit(realm.offlineSessionIdleTimeout);
+    $scope.realm.offlineSessionIdleTimeout = TimeUnit.toUnit(realm.offlineSessionIdleTimeout, $scope.realm.offlineSessionIdleTimeoutUnit);
+    $scope.$watch('realm.offlineSessionIdleTimeoutUnit', function(to, from) {
+        $scope.realm.offlineSessionIdleTimeout = TimeUnit.convert($scope.realm.offlineSessionIdleTimeout, from, to);
+    });
+
     $scope.realm.accessCodeLifespanUnit = TimeUnit.autoUnit(realm.accessCodeLifespan);
     $scope.realm.accessCodeLifespan = TimeUnit.toUnit(realm.accessCodeLifespan, $scope.realm.accessCodeLifespanUnit);
     $scope.$watch('realm.accessCodeLifespanUnit', function(to, from) {
@@ -943,6 +949,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         var realmCopy = angular.copy($scope.realm);
         delete realmCopy["accessTokenLifespanUnit"];
         delete realmCopy["ssoSessionMaxLifespanUnit"];
+        delete realmCopy["offlineSessionIdleTimeoutUnit"];
         delete realmCopy["accessCodeLifespanUnit"];
         delete realmCopy["ssoSessionIdleTimeoutUnit"];
         delete realmCopy["accessCodeLifespanUserActionUnit"];
@@ -951,6 +958,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         realmCopy.accessTokenLifespan = TimeUnit.toSeconds($scope.realm.accessTokenLifespan, $scope.realm.accessTokenLifespanUnit)
         realmCopy.ssoSessionIdleTimeout = TimeUnit.toSeconds($scope.realm.ssoSessionIdleTimeout, $scope.realm.ssoSessionIdleTimeoutUnit)
         realmCopy.ssoSessionMaxLifespan = TimeUnit.toSeconds($scope.realm.ssoSessionMaxLifespan, $scope.realm.ssoSessionMaxLifespanUnit)
+        realmCopy.offlineSessionIdleTimeout = TimeUnit.toSeconds($scope.realm.offlineSessionIdleTimeout, $scope.realm.offlineSessionIdleTimeoutUnit)
         realmCopy.accessCodeLifespan = TimeUnit.toSeconds($scope.realm.accessCodeLifespan, $scope.realm.accessCodeLifespanUnit)
         realmCopy.accessCodeLifespanUserAction = TimeUnit.toSeconds($scope.realm.accessCodeLifespanUserAction, $scope.realm.accessCodeLifespanUserActionUnit)
         realmCopy.accessCodeLifespanLogin = TimeUnit.toSeconds($scope.realm.accessCodeLifespanLogin, $scope.realm.accessCodeLifespanLoginUnit)

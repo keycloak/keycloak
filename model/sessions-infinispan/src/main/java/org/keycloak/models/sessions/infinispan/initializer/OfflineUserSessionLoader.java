@@ -29,7 +29,7 @@ public class OfflineUserSessionLoader implements SessionLoader {
 
         for (UserSessionModel persistentSession : sessions) {
 
-            // Update and persist lastSessionRefresh time
+            // Update and persist lastSessionRefresh time TODO: Do bulk DB update instead?
             persistentSession.setLastSessionRefresh(currentTime);
             persister.updateUserSession(persistentSession, true);
 

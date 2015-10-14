@@ -227,10 +227,27 @@ public class OfflineTokenTest {
         Assert.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
         Assert.assertEquals(0, offlineToken.getExpiration());
 
-        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, sessionId, userId);
+        String newRefreshTokenString = testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, sessionId, userId);
+
+        // Change offset to very big value to ensure offline session expires
+        Time.setOffset(3000000);
+
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(newRefreshTokenString, "secret1");
+        Assert.assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_grant", response.getError());
+
+        events.expectRefresh(offlineToken.getId(), sessionId)
+                .client("offline-client")
+                .error(Errors.INVALID_TOKEN)
+                .user(userId)
+                .clearDetails()
+                .assertEvent();
+
+
+        Time.setOffset(0);
     }
 
-    private void testRefreshWithOfflineToken(AccessToken oldToken, RefreshToken offlineToken, String offlineTokenString,
+    private String testRefreshWithOfflineToken(AccessToken oldToken, RefreshToken offlineToken, String offlineTokenString,
                                              final String sessionId, String userId) {
         // Change offset to big value to ensure userSession expired
         Time.setOffset(99999);
@@ -261,8 +278,9 @@ public class OfflineTokenTest {
         Assert.assertEquals(200, response.getStatusCode());
         Assert.assertEquals(sessionId, refreshedToken.getSessionState());
 
-        // Assert no refreshToken in the response
-        Assert.assertNull(response.getRefreshToken());
+        // Assert new refreshToken in the response
+        String newRefreshToken = response.getRefreshToken();
+        Assert.assertNotNull(newRefreshToken);
         Assert.assertNotEquals(oldToken.getId(), refreshedToken.getId());
 
         Assert.assertEquals(userId, refreshedToken.getSubject());
@@ -283,6 +301,7 @@ public class OfflineTokenTest {
         Assert.assertNotEquals(oldToken.getId(), refreshEvent.getDetails().get(Details.TOKEN_ID));
 
         Time.setOffset(0);
+        return newRefreshToken;
     }
 
     @Test
@@ -382,11 +401,11 @@ public class OfflineTokenTest {
         String accessTokenId = OfflineTokenServlet.tokenInfo.accessToken.getId();
         String refreshTokenId = OfflineTokenServlet.tokenInfo.refreshToken.getId();
 
-        // Assert access token will be refreshed, but offline token will be still the same
+        // Assert access token and offline token are refreshed
         Time.setOffset(9999);
         driver.navigate().to(offlineClientAppUri);
         Assert.assertTrue(driver.getCurrentUrl().startsWith(offlineClientAppUri));
-        Assert.assertEquals(OfflineTokenServlet.tokenInfo.refreshToken.getId(), refreshTokenId);
+        Assert.assertNotEquals(OfflineTokenServlet.tokenInfo.refreshToken.getId(), refreshTokenId);
         Assert.assertNotEquals(OfflineTokenServlet.tokenInfo.accessToken.getId(), accessTokenId);
 
         // Ensure that logout works for webapp (even if offline token will be still valid in Keycloak DB)

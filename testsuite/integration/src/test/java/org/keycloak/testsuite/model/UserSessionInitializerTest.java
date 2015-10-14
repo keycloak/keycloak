@@ -68,7 +68,7 @@ public class UserSessionInitializerTest {
         for (UserSessionModel origSession : origSessions) {
             UserSessionModel userSession = session.sessions().getUserSession(realm, origSession.getId());
             for (ClientSessionModel clientSession : userSession.getClientSessions()) {
-                sessionManager.persistOfflineSession(clientSession, userSession);
+                sessionManager.createOrUpdateOfflineSession(clientSession, userSession);
             }
         }
 

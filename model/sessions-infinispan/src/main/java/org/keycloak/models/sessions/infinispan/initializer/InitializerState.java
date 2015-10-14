@@ -15,6 +15,7 @@ public class InitializerState extends SessionEntity {
 
     private int sessionsCount;
     private List<Boolean> segments = new ArrayList<>();
+    private int lowestUnfinishedSegment = 0;
 
 
     public void init(int sessionsCount, int sessionsPerSegment) {
@@ -31,18 +32,21 @@ public class InitializerState extends SessionEntity {
         for (int i=0 ; i<segmentsCount ; i++) {
             segments.add(false);
         }
+
+        updateLowestUnfinishedSegment();
     }
 
     // Return true just if computation is entirely finished (all segments are true)
     public boolean isFinished() {
-        return getNextUnfinishedSegmentFromIndex(0) == -1;
+        return lowestUnfinishedSegment == -1;
     }
 
     // Return next un-finished segments. It can return "segmentCount" segments or less
     public List<Integer> getUnfinishedSegments(int segmentCount) {
         List<Integer> result = new ArrayList<>();
-        boolean remaining = true;
-        int next=0;
+        int next = lowestUnfinishedSegment;
+        boolean remaining = lowestUnfinishedSegment != -1;
+
         while (remaining && result.size() < segmentCount) {
             next = getNextUnfinishedSegmentFromIndex(next);
             if (next == -1) {
@@ -58,6 +62,11 @@ public class InitializerState extends SessionEntity {
 
     public void markSegmentFinished(int index) {
         segments.set(index, true);
+        updateLowestUnfinishedSegment();
+    }
+
+    private void updateLowestUnfinishedSegment() {
+        this.lowestUnfinishedSegment = getNextUnfinishedSegmentFromIndex(lowestUnfinishedSegment);
     }
 
     private int getNextUnfinishedSegmentFromIndex(int index) {

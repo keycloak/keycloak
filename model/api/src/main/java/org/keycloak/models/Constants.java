@@ -19,4 +19,7 @@ public interface Constants {
     String READ_TOKEN_ROLE = "read-token";
     String[] BROKER_SERVICE_ROLES = {READ_TOKEN_ROLE};
     String OFFLINE_ACCESS_ROLE = OAuth2Constants.OFFLINE_ACCESS;
+
+    // 30 days
+    int DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT = 2592000;
 }

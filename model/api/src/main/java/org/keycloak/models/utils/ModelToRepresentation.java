@@ -148,6 +148,7 @@ public class ModelToRepresentation {
         rep.setAccessTokenLifespan(realm.getAccessTokenLifespan());
         rep.setSsoSessionIdleTimeout(realm.getSsoSessionIdleTimeout());
         rep.setSsoSessionMaxLifespan(realm.getSsoSessionMaxLifespan());
+        rep.setOfflineSessionIdleTimeout(realm.getOfflineSessionIdleTimeout());
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
         rep.setAccessCodeLifespanLogin(realm.getAccessCodeLifespanLogin());

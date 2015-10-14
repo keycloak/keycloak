@@ -49,6 +49,23 @@
         </div>
 
         <div class="form-group">
+            <label class="col-md-2 control-label" for="offlineSessionIdleTimeout">{{:: 'offline-session-idle' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1"
+                       max="31536000" data-ng-model="realm.offlineSessionIdleTimeout"
+                       id="offlineSessionIdleTimeout" name="offlineSessionIdleTimeout"/>
+                <select class="form-control" name="offlineSessionIdleTimeoutUnit" data-ng-model="realm.offlineSessionIdleTimeoutUnit">
+                    <option data-ng-selected="!realm.offlineSessionIdleTimeoutUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'offline-session-idle.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
             <label class="col-md-2 control-label" for="accessTokenLifespan">{{:: 'access-token-lifespan' | translate}}</label>
 
             <div class="col-md-6 time-selector">

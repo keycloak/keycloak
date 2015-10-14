@@ -13,6 +13,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
@@ -302,8 +303,11 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeExpiredUserSessions(RealmModel realm) {
+        UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+
         int expired = Time.currentTime() - realm.getSsoSessionMaxLifespan();
         int expiredRefresh = Time.currentTime() - realm.getSsoSessionIdleTimeout();
+        int expiredOffline = Time.currentTime() - realm.getOfflineSessionIdleTimeout();
         int expiredDettachedClientSession = Time.currentTime() - RealmInfoUtil.getDettachedClientSessionLifespan(realm);
 
         Map<String, String> map = new MapReduceTask(sessionCache)
@@ -323,6 +327,29 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         for (String id : map.keySet()) {
             tx.remove(sessionCache, id);
         }
+
+        // Remove expired offline user sessions
+        map = new MapReduceTask(offlineSessionCache)
+                .mappedWith(UserSessionMapper.create(realm.getId()).expired(null, expiredOffline).emitKey())
+                .reducedWith(new FirstResultReducer())
+                .execute();
+
+        for (String id : map.keySet()) {
+            tx.remove(offlineSessionCache, id);
+            // propagate to persister
+            persister.removeUserSession(id, true);
+        }
+
+        // Remove offline client sessions of expired offline user sessions
+        map = new MapReduceTask(offlineSessionCache)
+                .mappedWith(new ClientSessionsOfUserSessionMapper(realm.getId(), new HashSet<>(map.keySet())).emitKey())
+                .reducedWith(new FirstResultReducer())
+                .execute();
+
+        for (String id : map.keySet()) {
+            tx.remove(offlineSessionCache, id);
+        }
+
     }
 
     @Override
@@ -477,6 +504,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         tx.remove(cache, userSessionId);
 
+        // TODO: We can retrieve it from userSessionEntity directly
         Map<String, String> map = new MapReduceTask(cache)
                 .mappedWith(ClientSessionMapper.create(realm.getId()).userSession(userSessionId).emitKey())
                 .reducedWith(new FirstResultReducer())
@@ -534,13 +562,16 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setBrokerSessionId(userSession.getBrokerSessionId());
         entity.setBrokerUserId(userSession.getBrokerUserId());
         entity.setIpAddress(userSession.getIpAddress());
-        entity.setLastSessionRefresh(userSession.getLastSessionRefresh());
         entity.setLoginUsername(userSession.getLoginUsername());
         entity.setNotes(userSession.getNotes());
         entity.setRememberMe(userSession.isRememberMe());
-        entity.setStarted(userSession.getStarted());
         entity.setState(userSession.getState());
         entity.setUser(userSession.getUser().getId());
+
+        // started and lastSessionRefresh set to current time
+        int currentTime = Time.currentTime();
+        entity.setStarted(currentTime);
+        entity.setLastSessionRefresh(currentTime);
 
         tx.put(offlineSessionCache, userSession.getId(), entity);
         return wrap(userSession.getRealm(), entity, true);

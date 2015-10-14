@@ -498,6 +498,24 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'UserConsentsCtrl'
         })
+        .when('/realms/:realm/users/:user/offline-sessions/:client', {
+            templateUrl : resourceUrl + '/partials/user-offline-sessions.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                },
+                offlineSessions : function(UserOfflineSessionsLoader) {
+                    return UserOfflineSessionsLoader();
+                }
+            },
+            controller : 'UserOfflineSessionsCtrl'
+        })
         .when('/realms/:realm/users', {
             templateUrl : resourceUrl + '/partials/user-list.html',
             resolve : {
