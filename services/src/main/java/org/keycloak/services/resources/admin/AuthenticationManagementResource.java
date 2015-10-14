@@ -22,6 +22,7 @@ import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.utils.CredentialHelper;
 
 import javax.ws.rs.Consumes;
@@ -277,7 +278,7 @@ public class AuthenticationManagementResource {
         this.auth.requireManage();
 
         if (realm.getFlowByAlias(model.getAlias()) != null) {
-            return Response.status(Response.Status.CONFLICT).build();
+            return ErrorResponse.exists("Flow " + model.getAlias() + " already exists");
         }
 
         realm.addAuthenticationFlow(model);
