@@ -14,6 +14,7 @@ import java.util.List;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
+ * @author <a href="mailto:tom@tutorials.de">Thomas Darimont</a>
  */
 public interface ClientsResource {
 
@@ -28,6 +29,6 @@ public interface ClientsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<ClientRepresentation> findAll();
 
-
-
+    @Path("/by-client-id/{clientId}")
+    ClientResource getByClientId(@PathParam("clientId") String clientId);
 }

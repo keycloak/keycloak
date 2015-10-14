@@ -2,6 +2,7 @@ package org.keycloak.testsuite.admin;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
@@ -28,11 +29,15 @@ import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:tom@tutorials.de">Thomas Darimont</a>
  */
 public class ClientTest extends AbstractClientTest {
 
     @Rule
     public WebRule webRule = new WebRule(this);
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @WebResource
     protected WebDriver driver;
@@ -77,6 +82,32 @@ public class ClientTest extends AbstractClientTest {
         assertEquals(id, rep.getId());
         assertEquals("my-app", rep.getClientId());
         assertTrue(rep.isEnabled());
+    }
+
+    /**
+     * See <a href="https://issues.jboss.org/browse/KEYCLOAK-1963">KEYCLOAK-1963</a>
+     */
+    @Test
+    public void getClientByClientId_withKnownClient() {
+
+        String id = createClient();
+
+        ClientRepresentation rep = realm.clients().getByClientId("my-app").toRepresentation();
+
+        assertEquals(id, rep.getId());
+        assertEquals("my-app", rep.getClientId());
+        assertTrue(rep.isEnabled());
+    }
+
+    /**
+     * See <a href="https://issues.jboss.org/browse/KEYCLOAK-1963">KEYCLOAK-1963</a>
+     */
+    @Test
+    public void getClientByClientId_withUnknownClient() {
+
+        expectedException.expect(NotFoundException.class);
+
+        realm.clients().getByClientId("does-not-exist").toRepresentation();
     }
 
     @Test
