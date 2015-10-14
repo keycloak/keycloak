@@ -1,18 +1,37 @@
 package org.keycloak.testsuite.admin;
 
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.forms.ResetPasswordTest;
+import org.keycloak.testsuite.pages.LoginPasswordResetPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.rule.GreenMailRule;
+import org.keycloak.testsuite.rule.KeycloakRule;
+import org.keycloak.testsuite.rule.WebResource;
+import org.keycloak.testsuite.rule.WebRule;
+import org.openqa.selenium.WebDriver;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,6 +45,31 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class UserTest extends AbstractClientTest {
+
+    @Rule
+    public WebRule webRule = new WebRule(this);
+
+    @Rule
+    public GreenMailRule greenMail = new GreenMailRule();
+
+    @WebResource
+    protected LoginPasswordUpdatePage passwordUpdatePage;
+
+    @WebResource
+    protected WebDriver driver;
+
+    @Before
+    public void before() {
+        super.before();
+
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                RealmModel testRealm = manager.getRealm(REALM_NAME);
+                greenMail.configureRealm(testRealm);
+            }
+        });
+    }
 
     public String createUser() {
         return createUser("user1", "user1@localhost");
@@ -395,6 +439,40 @@ public class UserTest extends AbstractClientTest {
             Assert.assertEquals("invalidClientId not enabled", error.getErrorMessage());
         }
     }
+
+    @Test
+    public void sendResetPasswordEmailSuccess() throws IOException, MessagingException {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+        Response response = realm.users().create(userRep);
+        String id = ApiUtil.getCreatedId(response);
+        response.close();
+        UserResource user = realm.users().get(id);
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+        user.executeActionsEmail("account", actions);
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String link = ResetPasswordTest.getPasswordResetEmailLink(message);
+
+        driver.navigate().to(link);
+
+        assertTrue(passwordUpdatePage.isCurrent());
+
+        passwordUpdatePage.changePassword("new-pass", "new-pass");
+
+        assertEquals("Your account has been updated.", driver.getTitle());
+
+        driver.navigate().to(link);
+
+        assertEquals("We're sorry...", driver.getTitle());
+    }
+
 
     @Test
     public void sendVerifyEmail() {
