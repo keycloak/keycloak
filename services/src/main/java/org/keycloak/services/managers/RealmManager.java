@@ -210,10 +210,10 @@ public class RealmManager implements RealmImporter {
         realm.setEventsEnabled(rep.isEventsEnabled());
         realm.setEventsExpiration(rep.getEventsExpiration() != null ? rep.getEventsExpiration() : 0);
         if (rep.getEventsListeners() != null) {
-            realm.setEventsListeners(new HashSet<String>(rep.getEventsListeners()));
+            realm.setEventsListeners(new HashSet<>(rep.getEventsListeners()));
         }
         if(rep.getEnabledEventTypes() != null) {
-            realm.setEnabledEventTypes(new HashSet<String>(rep.getEnabledEventTypes()));
+            realm.setEnabledEventTypes(new HashSet<>(rep.getEnabledEventTypes()));
         }
 
         realm.setAdminEventsEnabled(rep.isAdminEventsEnabled());

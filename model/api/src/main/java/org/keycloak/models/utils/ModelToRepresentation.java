@@ -250,11 +250,11 @@ public class ModelToRepresentation {
         }
 
         if (realm.getEventsListeners() != null) {
-            rep.setEventsListeners(new LinkedList<String>(realm.getEventsListeners()));
+            rep.setEventsListeners(new LinkedList<>(realm.getEventsListeners()));
         }
         
         if(realm.getEnabledEventTypes() != null) {
-            rep.setEnabledEventTypes(new LinkedList<String>(realm.getEnabledEventTypes()));
+            rep.setEnabledEventTypes(new LinkedList<>(realm.getEnabledEventTypes()));
         }
         
         rep.setAdminEventsEnabled(realm.isAdminEventsEnabled());
