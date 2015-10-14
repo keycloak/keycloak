@@ -32,6 +32,7 @@ import java.util.List;
  * Base resource class for managing a realm's clients.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:tom@tutorials.de">Thomas Darimont</a>
  * @version $Revision: 1 $
  */
 public class ClientsResource {
@@ -112,10 +113,33 @@ public class ClientsResource {
      */
     @Path("{id}")
     public ClientResource getClient(final @PathParam("id") String id) {
+
         ClientModel clientModel = realm.getClientById(id);
         if (clientModel == null) {
             throw new NotFoundException("Could not find client");
         }
+
+        return selectPreparedClientResourceFor(clientModel);
+    }
+
+    /**
+     * Base path for managing a specific client by client-id.
+     *
+     * @param clientId  client-id of client
+     * @return
+     */
+    @Path("/by-client-id/{clientId}")
+    public ClientResource getClientByClientId(final @PathParam("clientId") String clientId){
+
+        ClientModel clientModel = realm.getClientByClientId(clientId);
+        if (clientModel == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
+        return selectPreparedClientResourceFor(clientModel);
+    }
+
+    private ClientResource selectPreparedClientResourceFor(ClientModel clientModel) {
 
         session.getContext().setClient(clientModel);
 
@@ -123,5 +147,4 @@ public class ClientsResource {
         ResteasyProviderFactory.getInstance().injectProperties(clientResource);
         return clientResource;
     }
-
 }
