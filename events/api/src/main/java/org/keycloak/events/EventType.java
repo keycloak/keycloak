@@ -70,6 +70,7 @@ public enum EventType {
     CUSTOM_REQUIRED_ACTION(true),
     CUSTOM_REQUIRED_ACTION_ERROR(true),
     EXECUTE_ACTIONS(true),
+    EXECUTE_ACTIONS_ERROR(true),
 
     CLIENT_INFO(false),
     CLIENT_INFO_ERROR(false),

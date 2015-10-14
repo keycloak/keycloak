@@ -24,10 +24,13 @@ package org.keycloak.testsuite.rule;
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetup;
 import org.junit.rules.ExternalResource;
+import org.keycloak.models.RealmModel;
 
 import javax.mail.internet.MimeMessage;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.SocketException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -61,6 +64,14 @@ public class GreenMailRule extends ExternalResource {
 
             greenMail.stop();
         }
+    }
+
+    public void configureRealm(RealmModel realm) {
+        Map<String, String> config = new HashMap<>();
+        config.put("from", "auto@keycloak.org");
+        config.put("host", "localhost");
+        config.put("port", "3025");
+        realm.setSmtpConfig(config);
     }
 
     public MimeMessage[] getReceivedMessages() {
