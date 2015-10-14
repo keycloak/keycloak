@@ -10,6 +10,7 @@
 
         <addColumn tableName="CLIENT">
             <column name="ROOT_URL" type="VARCHAR(255)"/>
+            <column name="DESCRIPTION" type="VARCHAR(255)"/>
         </addColumn>
 
         <createTable tableName="OFFLINE_USER_SESSION">

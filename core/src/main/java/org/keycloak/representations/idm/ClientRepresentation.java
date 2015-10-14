@@ -11,6 +11,7 @@ public class ClientRepresentation {
     protected String id;
     protected String clientId;
     protected String name;
+    protected String description;
     protected String rootUrl;
     protected String adminUrl;
     protected String baseUrl;
@@ -49,6 +50,14 @@ public class ClientRepresentation {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getClientId() {
