@@ -886,11 +886,15 @@ public class UsersResource {
      * The redirectUri and clientId parameters are optional. The default for the
      * redirect is the account client.
      *
+     * This endpoint has been deprecated.  Please use the execute-actions-email passing a list with
+     * UPDATE_PASSWORD within it.
+     *
      * @param id
      * @param redirectUri redirect uri
      * @param clientId client id
      * @return
      */
+    @Deprecated
     @Path("{id}/reset-password-email")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)

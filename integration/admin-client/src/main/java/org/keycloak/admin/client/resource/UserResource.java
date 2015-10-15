@@ -46,12 +46,22 @@ public interface UserResource {
     @Path("reset-password")
     public void resetPassword(CredentialRepresentation credentialRepresentation);
 
+    /**
+     * Use executeActionsEmail and pass in the UPDATE_PASSWORD required action
+     *
+     */
     @PUT
     @Path("reset-password-email")
+    @Deprecated
     public void resetPasswordEmail();
 
+    /**
+     * Use executeActionsEmail and pass in the UPDATE_PASSWORD required action
+     *
+     */
     @PUT
     @Path("reset-password-email")
+    @Deprecated
     public void resetPasswordEmail(@QueryParam("client_id") String clientId);
 
     @PUT
