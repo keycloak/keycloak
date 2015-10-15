@@ -200,6 +200,10 @@ public class KeycloakServer {
             }
         });
 
+        if (System.getProperties().containsKey("startInfinispanCLI")) {
+            new InfinispanCLI(keycloak).start();
+        }
+
         return keycloak;
     }
 

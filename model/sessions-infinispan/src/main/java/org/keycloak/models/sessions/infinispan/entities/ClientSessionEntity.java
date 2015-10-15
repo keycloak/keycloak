@@ -22,8 +22,6 @@ public class ClientSessionEntity extends SessionEntity {
 
     private String redirectUri;
 
-    private String state;
-
     private int timestamp;
 
     private String action;
@@ -67,14 +65,6 @@ public class ClientSessionEntity extends SessionEntity {
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
     }
 
     public int getTimestamp() {

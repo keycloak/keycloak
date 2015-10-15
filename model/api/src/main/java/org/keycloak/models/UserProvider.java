@@ -56,17 +56,5 @@ public interface UserProvider extends Provider {
     boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input);
     CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel... input);
 
-    void addOfflineUserSession(RealmModel realm, UserModel user, OfflineUserSessionModel offlineUserSession);
-    OfflineUserSessionModel getOfflineUserSession(RealmModel realm, UserModel user, String userSessionId);
-    Collection<OfflineUserSessionModel> getOfflineUserSessions(RealmModel realm, UserModel user);
-    boolean removeOfflineUserSession(RealmModel realm, UserModel user, String userSessionId);
-    void addOfflineClientSession(RealmModel realm, OfflineClientSessionModel offlineClientSession);
-    OfflineClientSessionModel getOfflineClientSession(RealmModel realm, UserModel user, String clientSessionId);
-    Collection<OfflineClientSessionModel> getOfflineClientSessions(RealmModel realm, UserModel user);
-    boolean removeOfflineClientSession(RealmModel realm, UserModel user, String clientSessionId);
-
-    int getOfflineClientSessionsCount(RealmModel realm, ClientModel client);
-    Collection<OfflineClientSessionModel> getOfflineClientSessions(RealmModel realm, ClientModel client, int first, int max);
-
     void close();
 }

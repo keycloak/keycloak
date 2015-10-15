@@ -34,6 +34,8 @@ public class ClientEntity {
     private String id;
     @Column(name = "NAME")
     private String name;
+    @Column(name = "DESCRIPTION")
+    private String description;
     @Column(name = "CLIENT_ID")
     private String clientId;
     @Column(name="ENABLED")
@@ -141,6 +143,14 @@ public class ClientEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public boolean isEnabled() {

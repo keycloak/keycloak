@@ -26,8 +26,12 @@ public class MemUserSessionProviderFactory {
     private final ConcurrentHashMap<String, String> userSessionsByBrokerSessionId = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Set<String>> userSessionsByBrokerUserId = new ConcurrentHashMap<>();
 
+    private ConcurrentHashMap<String, UserSessionEntity> offlineUserSessions = new ConcurrentHashMap<String, UserSessionEntity>();
+    private ConcurrentHashMap<String, ClientSessionEntity> offlineClientSessions = new ConcurrentHashMap<String, ClientSessionEntity>();
+
     public UserSessionProvider create(KeycloakSession session) {
-        return new MemUserSessionProvider(session, userSessions, userSessionsByBrokerSessionId, userSessionsByBrokerUserId, clientSessions, loginFailures);
+        return new MemUserSessionProvider(session, userSessions, userSessionsByBrokerSessionId, userSessionsByBrokerUserId, clientSessions, loginFailures,
+                offlineUserSessions, offlineClientSessions);
     }
 
     public void close() {

@@ -8,12 +8,11 @@
     <para>
         You can export/import your database either to:
         <itemizedlist>
-            <listitem>Encrypted ZIP file on local filesystem</listitem>
             <listitem>Directory on local filesystem</listitem>
             <listitem>Single JSON file on your filesystem</listitem>
         </itemizedlist>
 
-        When importing using the "dir" or "zip" strategies, note that the files need to follow the naming convention specified below.
+        When importing using the "dir" strategy, note that the files need to follow the naming convention specified below.
         If you are importing files which were previously exported, the files already follow this convention.
         <itemizedlist>
             <listitem>{REALM_NAME}-realm.json, such as "acme-roadrunner-affairs-realm.json" for the realm named "acme-roadrunner-affairs"</listitem>
@@ -21,25 +20,9 @@
         </itemizedlist>
     </para>
     <para>
-        Encrypted ZIP is recommended as export contains many sensitive informations like passwords of your users (even if they are hashed),
-        but also their email addresses, and especially private keys of the realms. Directory and Single JSON file are useful especially
-        for testing as data in the files are not protected. On the other hand, it's useful if you want to look at all your data in JSON
-        files directly.
-    </para>
-    <para>
-        If you import to ZIP or Directory, you can specify also the number of users to be stored in each JSON file. So if you have
+        If you import to Directory, you can specify also the number of users to be stored in each JSON file. So if you have
         very large amount of users in your database, you likely don't want to import them into single file as the file might be very big.
         Processing of each file is done in separate transaction as exporting/importing all users at once could also lead to memory issues.
-    </para>
-    <para>
-        So to export the content of your Keycloak database into encrypted ZIP, you can execute Keycloak server with the System properties like:
-        <programlisting><![CDATA[
-bin/standalone.sh -Dkeycloak.migration.action=export
--Dkeycloak.migration.provider=zip -Dkeycloak.migration.zipFile=<FILE TO EXPORT TO>
--Dkeycloak.migration.zipPassword=<PASSWORD TO DECRYPT EXPORT>
-]]></programlisting>
-        Then you can move or copy the encrypted ZIP file into second environment and you can trigger import from it into Keycloak server with the same command but use
-        <literal>-Dkeycloak.migration.action=import</literal> instead of <literal>export</literal> .
     </para>
     <para>
         To export into unencrypted directory you can use:
@@ -80,7 +63,7 @@ bin/standalone.sh -Dkeycloak.migration.action=import
                 <term>-Dkeycloak.migration.usersExportStrategy</term>
                 <listitem>
                     <para>
-                        can be used to specify for ZIP or Directory providers to specify where to import users.
+                        can be used to specify for Directory providers to specify where to import users.
                         Possible values are:
                         <itemizedlist>
                             <listitem>DIFFERENT_FILES - Users will be exported into more different files according to maximum number of users per file. This is default value</listitem>

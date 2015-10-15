@@ -32,7 +32,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.offline.OfflineTokenUtils;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.util.Time;
 
@@ -98,7 +98,7 @@ public class TokenManager {
         ClientSessionModel clientSession = null;
         if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType())) {
 
-            clientSession = OfflineTokenUtils.findOfflineClientSession(session, realm, user, oldToken.getClientSession(), oldToken.getSessionState());
+            clientSession = new UserSessionManager(session).findOfflineClientSession(realm, oldToken.getClientSession(), oldToken.getSessionState());
             if (clientSession != null) {
                 userSession = clientSession.getUserSession();
             }
@@ -161,6 +161,15 @@ public class TokenManager {
         }
 
         int currentTime = Time.currentTime();
+
+        if (realm.isRevokeRefreshToken() && !refreshToken.getType().equals(TokenUtil.TOKEN_TYPE_OFFLINE)) {
+            if (refreshToken.getIssuedAt() < validation.clientSession.getTimestamp()) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
+            }
+
+            validation.clientSession.setTimestamp(currentTime);
+        }
+
         validation.userSession.setLastSessionRefresh(currentTime);
 
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)
@@ -490,14 +499,15 @@ public class TokenManager {
             String scopeParam = clientSession.getNote(OIDCLoginProtocol.SCOPE_PARAM);
             boolean offlineTokenRequested = TokenUtil.isOfflineTokenRequested(scopeParam);
             if (offlineTokenRequested) {
-                if (!OfflineTokenUtils.isOfflineTokenAllowed(realm, clientSession)) {
+                UserSessionManager sessionManager = new UserSessionManager(session);
+                if (!sessionManager.isOfflineTokenAllowed(clientSession)) {
                     event.error(Errors.NOT_ALLOWED);
                     throw new ErrorResponseException("not_allowed", "Offline tokens not allowed for the user or client", Response.Status.BAD_REQUEST);
                 }
 
                 refreshToken = new RefreshToken(accessToken);
                 refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
-                OfflineTokenUtils.persistOfflineSession(session, realm, clientSession, userSession);
+                sessionManager.persistOfflineSession(clientSession, userSession);
             } else {
                 refreshToken = new RefreshToken(accessToken);
                 refreshToken.expiration(Time.currentTime() + realm.getSsoSessionIdleTimeout());

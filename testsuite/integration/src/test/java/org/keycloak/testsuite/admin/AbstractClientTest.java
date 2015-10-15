@@ -13,6 +13,8 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
+import org.keycloak.testsuite.rule.WebResource;
+import org.openqa.selenium.WebDriver;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,6 +43,7 @@ public abstract class AbstractClientTest {
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 RealmModel testRealm = manager.createRealm(REALM_NAME);
                 testRealm.setEnabled(true);
+                testRealm.setAccessCodeLifespanUserAction(600);
                 KeycloakModelUtils.generateRealmKeys(testRealm);
             }
         });

@@ -91,11 +91,17 @@ public interface RealmModel extends RoleContainerModel {
 
     void setResetPasswordAllowed(boolean resetPasswordAllowed);
 
+    boolean isRevokeRefreshToken();
+    void setRevokeRefreshToken(boolean revokeRefreshToken);
+
     int getSsoSessionIdleTimeout();
     void setSsoSessionIdleTimeout(int seconds);
 
     int getSsoSessionMaxLifespan();
     void setSsoSessionMaxLifespan(int seconds);
+
+//    int getOfflineSessionIdleTimeout();
+//    void setOfflineSessionIdleTimeout(int seconds);
 
     int getAccessTokenLifespan();
 
@@ -285,6 +291,10 @@ public interface RealmModel extends RoleContainerModel {
     boolean isEventsEnabled();
 
     void setEventsEnabled(boolean enabled);
+
+//    boolean isPersistUserSessions();
+//
+//    void setPersistUserSessions();
 
     long getEventsExpiration();
 

@@ -1,15 +1,12 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.OfflineClientSessionModel;
-import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

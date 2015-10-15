@@ -24,6 +24,7 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.ClientConnection;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionContextResult;
@@ -40,6 +41,7 @@ import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
@@ -52,10 +54,14 @@ import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -341,10 +347,43 @@ public class LoginActionsService {
         return resetCredentials(code, execution);
     }
 
+    /**
+     * Endpoint for executing reset credentials flow.  If code is null, a client session is created with the account
+     * service as the client.  Successful reset sends you to the account page.  Note, account service must be enabled.
+     *
+     * @param code
+     * @param execution
+     * @return
+     */
     @Path(RESET_CREDENTIALS_PATH)
     @GET
     public Response resetCredentialsGET(@QueryParam("code") String code,
                                          @QueryParam("execution") String execution) {
+        // we allow applications to link to reset credentials without going through OAuth or SAML handshakes
+        //
+        if (code == null) {
+            if (!realm.isResetPasswordAllowed()) {
+                event.event(EventType.RESET_PASSWORD);
+                event.error(Errors.NOT_ALLOWED);
+                return ErrorPage.error(session, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
+
+            }
+            // set up the account service as the endpoint to call.
+            ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
+            clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+            clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
+            //clientSession.setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
+            clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            String redirectUri = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
+            clientSession.setRedirectUri(redirectUri);
+            clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+            clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
+            clientSession.setNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
+            clientSession.setNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUri);
+            clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+            return processResetCredentials(null, clientSession, null);
+        }
         return resetCredentials(code, execution);
     }
 
@@ -356,6 +395,13 @@ public class LoginActionsService {
         }
         final ClientSessionCode clientCode = checks.clientCode;
         final ClientSessionModel clientSession = clientCode.getClientSession();
+
+        if (!realm.isResetPasswordAllowed()) {
+            event.client(clientCode.getClientSession().getClient());
+            event.error(Errors.NOT_ALLOWED);
+            return ErrorPage.error(session, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
+
+        }
 
         return processResetCredentials(execution, clientSession, null);
     }
@@ -573,7 +619,7 @@ public class LoginActionsService {
                 return checks.response;
             }
             ClientSessionModel clientSession = checks.clientCode.getClientSession();
-            clientSession.setNote("END_AFTER_REQUIRED_ACTIONS", "true");
+            clientSession.setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
             clientSession.setNote(ClientSessionModel.Action.EXECUTE_ACTIONS.name(), "true");
             return AuthenticationManager.nextActionAfterAuthentication(session, clientSession.getUserSession(), clientSession, clientConnection, request, uriInfo, event);
         } else {

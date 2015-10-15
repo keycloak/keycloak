@@ -278,15 +278,6 @@
             <maven-resource group="org.mongodb" artifact="mongo-java-driver"/>
         </module-def>
 
-        <!-- export/import -->
-
-        <module-def name="org.keycloak.keycloak-export-import-zip">
-            <maven-resource group="org.keycloak" artifact="keycloak-export-import-zip"/>
-        </module-def>
-        <module-def name="de.idyl.winzipaes">
-            <maven-resource group="de.idyl" artifact="winzipaes"/>
-        </module-def>
-
         <module-def name="org.liquibase">
             <maven-resource group="org.liquibase" artifact="liquibase-core"/>
         </module-def>

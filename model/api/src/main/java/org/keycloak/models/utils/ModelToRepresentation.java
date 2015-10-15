@@ -10,8 +10,8 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.OfflineClientSessionModel;
-import org.keycloak.models.OfflineUserSessionModel;
+import org.keycloak.models.session.PersistentClientSessionModel;
+import org.keycloak.models.session.PersistentUserSessionModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -144,6 +144,7 @@ public class ModelToRepresentation {
         rep.setVerifyEmail(realm.isVerifyEmail());
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
+        rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());
         rep.setAccessTokenLifespan(realm.getAccessTokenLifespan());
         rep.setSsoSessionIdleTimeout(realm.getSsoSessionIdleTimeout());
         rep.setSsoSessionMaxLifespan(realm.getSsoSessionMaxLifespan());
@@ -250,11 +251,11 @@ public class ModelToRepresentation {
         }
 
         if (realm.getEventsListeners() != null) {
-            rep.setEventsListeners(new LinkedList<String>(realm.getEventsListeners()));
+            rep.setEventsListeners(new LinkedList<>(realm.getEventsListeners()));
         }
         
         if(realm.getEnabledEventTypes() != null) {
-            rep.setEnabledEventTypes(new LinkedList<String>(realm.getEnabledEventTypes()));
+            rep.setEnabledEventTypes(new LinkedList<>(realm.getEnabledEventTypes()));
         }
         
         rep.setAdminEventsEnabled(realm.isAdminEventsEnabled());
@@ -299,6 +300,7 @@ public class ModelToRepresentation {
         rep.setId(clientModel.getId());
         rep.setClientId(clientModel.getClientId());
         rep.setName(clientModel.getName());
+        rep.setDescription(clientModel.getDescription());
         rep.setEnabled(clientModel.isEnabled());
         rep.setAdminUrl(clientModel.getManagementUrl());
         rep.setPublicClient(clientModel.isPublicClient());
@@ -511,13 +513,13 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static OfflineUserSessionRepresentation toRepresentation(RealmModel realm, OfflineUserSessionModel model, Collection<OfflineClientSessionModel> clientSessions) {
+    public static OfflineUserSessionRepresentation toRepresentation(RealmModel realm, PersistentUserSessionModel model, Collection<PersistentClientSessionModel> clientSessions) {
         OfflineUserSessionRepresentation rep = new OfflineUserSessionRepresentation();
         rep.setData(model.getData());
         rep.setUserSessionId(model.getUserSessionId());
 
         List<OfflineClientSessionRepresentation> clientSessionReps = new LinkedList<>();
-        for (OfflineClientSessionModel clsm : clientSessions) {
+        for (PersistentClientSessionModel clsm : clientSessions) {
             OfflineClientSessionRepresentation clrep = toRepresentation(realm, clsm);
             clientSessionReps.add(clrep);
         }
@@ -525,7 +527,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static OfflineClientSessionRepresentation toRepresentation(RealmModel realm, OfflineClientSessionModel model) {
+    public static OfflineClientSessionRepresentation toRepresentation(RealmModel realm, PersistentClientSessionModel model) {
         OfflineClientSessionRepresentation rep = new OfflineClientSessionRepresentation();
 
         String clientInternalId = model.getClientId();

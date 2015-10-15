@@ -10,7 +10,6 @@ import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.dir.DirExportProvider;
 import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
-import org.keycloak.exportimport.zip.ZipExportProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -215,30 +214,6 @@ public class ExportImportTest {
         } finally {
             keycloakRule.stopSession(session, true);
         }
-    }
-
-    @Test
-    public void testZipFullExportImport() throws Throwable {
-        ExportImportConfig.setProvider(ZipExportProviderFactory.PROVIDER_ID);
-        String zipFilePath = getExportImportTestDirectory() + File.separator + "export-full.zip";
-        new File(zipFilePath).delete();
-        ExportImportConfig.setZipFile(zipFilePath);
-        ExportImportConfig.setZipPassword("encPassword");
-        ExportImportConfig.setUsersPerFile(ExportImportConfig.DEFAULT_USERS_PER_FILE);
-
-        testFullExportImport();
-    }
-
-    @Test
-    public void testZipRealmExportImport() throws Throwable {
-        ExportImportConfig.setProvider(ZipExportProviderFactory.PROVIDER_ID);
-        String zipFilePath = getExportImportTestDirectory() + File.separator + "export-realm.zip";
-        new File(zipFilePath).delete();
-        ExportImportConfig.setZipFile(zipFilePath);
-        ExportImportConfig.setZipPassword("encPassword");
-        ExportImportConfig.setUsersPerFile(3);
-
-        testRealmExportImport();
     }
 
     private void testFullExportImport() {

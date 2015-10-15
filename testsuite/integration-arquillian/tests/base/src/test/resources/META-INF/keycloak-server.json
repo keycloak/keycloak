@@ -22,6 +22,10 @@
         "provider": "${keycloak.user.provider:jpa}"
     },
 
+    "userSessionPersister": {
+        "provider": "${keycloak.userSessionPersister.provider:jpa}"
+    },
+
     "userSessions": {
         "provider" : "${keycloak.userSessions.provider:infinispan}"
     },

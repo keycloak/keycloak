@@ -11,10 +11,7 @@ import org.junit.Test;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.managers.ClientManager;
@@ -24,6 +21,7 @@ import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.util.Time;
 import org.openqa.selenium.WebDriver;
 
 import static org.junit.Assert.assertEquals;
@@ -39,6 +37,9 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             ClientModel app = new ClientManager(manager).createClient(appRealm, "resource-owner");
             app.setSecret("secret");
+
+            ClientModel app2 = new ClientManager(manager).createClient(appRealm, "resource-owner-public");
+            app2.setPublicClient(true);
 
             UserModel user = session.users().addUser(appRealm, "direct-login");
             user.setEmail("direct-login@localhost");
@@ -66,16 +67,22 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
 
     @Test
     public void grantAccessTokenUsername() throws Exception {
-        grantAccessToken("direct-login");
+        grantAccessToken("direct-login", "resource-owner");
     }
 
     @Test
     public void grantAccessTokenEmail() throws Exception {
-        grantAccessToken("direct-login@localhost");
+        grantAccessToken("direct-login@localhost", "resource-owner");
     }
 
-    private void grantAccessToken(String login) throws Exception {
-        oauth.clientId("resource-owner");
+    @Test
+    public void grantAccessTokenPublic() throws Exception {
+        grantAccessToken("direct-login", "resource-owner-public");
+    }
+
+
+    private void grantAccessToken(String login, String clientId) throws Exception {
+        oauth.clientId(clientId);
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", login, "password");
 
@@ -85,7 +92,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         RefreshToken refreshToken = oauth.verifyRefreshToken(response.getRefreshToken());
 
         events.expectLogin()
-                .client("resource-owner")
+                .client(clientId)
                 .user(userId)
                 .session(accessToken.getSessionState())
                 .detail(Details.RESPONSE_TYPE, "token")
@@ -107,7 +114,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).user(userId).client("resource-owner").assertEvent();
+        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).user(userId).client(clientId).assertEvent();
     }
 
     @Test
@@ -147,13 +154,30 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .error(Errors.INVALID_TOKEN).assertEvent();
     }
 
-
-
     @Test
     public void grantAccessTokenInvalidClientCredentials() throws Exception {
         oauth.clientId("resource-owner");
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("invalid", "test-user@localhost", "password");
+
+        assertEquals(400, response.getStatusCode());
+
+        assertEquals("unauthorized_client", response.getError());
+
+        events.expectLogin()
+                .client("resource-owner")
+                .session((String) null)
+                .clearDetails()
+                .error(Errors.INVALID_CLIENT_CREDENTIALS)
+                .user((String) null)
+                .assertEvent();
+    }
+
+    @Test
+    public void grantAccessTokenMissingClientCredentials() throws Exception {
+        oauth.clientId("resource-owner");
+
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(null, "test-user@localhost", "password");
 
         assertEquals(400, response.getStatusCode());
 
@@ -207,7 +231,47 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
 
     }
 
+    @Test
+    public void grantAccessTokenExpiredPassword() throws Exception {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setPasswordPolicy(new PasswordPolicy("forceExpiredPasswordChange(1)"));
+            }
+        });
 
+        try {
+            Time.setOffset(60 * 60 * 48);
+
+            oauth.clientId("resource-owner");
+
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "password");
+
+            assertEquals(400, response.getStatusCode());
+
+            assertEquals("invalid_grant", response.getError());
+            assertEquals("Account is not fully set up", response.getErrorDescription());
+
+            events.expectLogin()
+                    .client("resource-owner")
+                    .session((String) null)
+                    .clearDetails()
+                    .error(Errors.RESOLVE_REQUIRED_ACTIONS)
+                    .user((String) null)
+                    .assertEvent();
+        } finally {
+            Time.setOffset(0);
+
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setPasswordPolicy(new PasswordPolicy(""));
+                    UserModel user = manager.getSession().users().getUserByEmail("test-user@localhost", appRealm);
+                    user.removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                }
+            });
+        }
+    }
 
 
     @Test

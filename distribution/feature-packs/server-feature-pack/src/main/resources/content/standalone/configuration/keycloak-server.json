@@ -22,6 +22,10 @@
         "provider": "jpa"
     },
 
+    "userSessionPersister": {
+        "provider": "jpa"
+    },
+
     "timer": {
         "provider": "basic"
     },
