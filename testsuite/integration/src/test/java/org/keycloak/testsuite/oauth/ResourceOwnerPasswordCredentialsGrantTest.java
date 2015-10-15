@@ -11,10 +11,7 @@ import org.junit.Test;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.managers.ClientManager;
@@ -24,6 +21,7 @@ import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.util.Time;
 import org.openqa.selenium.WebDriver;
 
 import static org.junit.Assert.assertEquals;
@@ -233,7 +231,47 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
 
     }
 
+    @Test
+    public void grantAccessTokenExpiredPassword() throws Exception {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setPasswordPolicy(new PasswordPolicy("forceExpiredPasswordChange(1)"));
+            }
+        });
 
+        try {
+            Time.setOffset(60 * 60 * 48);
+
+            oauth.clientId("resource-owner");
+
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "password");
+
+            assertEquals(400, response.getStatusCode());
+
+            assertEquals("invalid_grant", response.getError());
+            assertEquals("Account is not fully set up", response.getErrorDescription());
+
+            events.expectLogin()
+                    .client("resource-owner")
+                    .session((String) null)
+                    .clearDetails()
+                    .error(Errors.RESOLVE_REQUIRED_ACTIONS)
+                    .user((String) null)
+                    .assertEvent();
+        } finally {
+            Time.setOffset(0);
+
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setPasswordPolicy(new PasswordPolicy(""));
+                    UserModel user = manager.getSession().users().getUserByEmail("test-user@localhost", appRealm);
+                    user.removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                }
+            });
+        }
+    }
 
 
     @Test
