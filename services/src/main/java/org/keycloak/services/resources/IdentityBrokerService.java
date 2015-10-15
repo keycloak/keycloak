@@ -322,8 +322,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             LOGGER.debugf("Performing local authentication for user [%s].", federatedUser);
         }
 
-        return AuthenticationManager.nextActionAfterAuthentication(this.session, userSession, clientSession, this.clientConnection, this.request,
-                this.uriInfo, event);
+        return AuthenticationProcessor.createRequiredActionRedirect(realmModel, clientSession, uriInfo);
     }
 
     @Override

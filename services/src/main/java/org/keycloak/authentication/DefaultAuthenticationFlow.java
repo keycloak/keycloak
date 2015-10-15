@@ -1,14 +1,19 @@
 package org.keycloak.authentication;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.util.Time;
 import org.omg.PortableInterceptor.SUCCESSFUL;
 
 import static org.keycloak.authentication.FlowStatus.*;
 
 import javax.ws.rs.core.Response;
+import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 
@@ -64,7 +69,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 AuthenticationProcessor.Result result = processor.createAuthenticatorContext(model, authenticator, executions);
                 authenticator.action(result);
                 Response response = processResult(result);
-                if (response == null) return processFlow();
+                if (response == null) {
+                    if (result.status == SUCCESS && processor.isBrowserFlow()) {
+                         // redirect to a non-action URL so browser refresh works without reposting.
+                         return processor.createSuccessRedirect();
+                    } else {
+                        return processFlow();
+                    }
+                }
                 else return response;
             }
         }

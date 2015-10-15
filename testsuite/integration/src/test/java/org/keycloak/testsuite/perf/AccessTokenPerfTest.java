@@ -172,6 +172,14 @@ public class AccessTokenPerfTest {
             URI uri = null;
             Assert.assertEquals(302, response.getStatus());
             uri = response.getLocation();
+            if (response.getStatus() == 302) {
+                while (uri.toString().contains("login-actions/")) {
+                    response = client.target(uri).request().get();
+                    Assert.assertEquals(302, response.getStatus());
+                    uri = response.getLocation();
+                }
+            }
+
             for (String header : response.getHeaders().keySet()) {
                 for (Object value : response.getHeaders().get(header)) {
                     System.out.println(header + ": " + value);

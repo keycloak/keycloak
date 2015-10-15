@@ -98,7 +98,8 @@ public interface ClientSessionModel {
         SOCIAL_CALLBACK,
         LOGGED_OUT,
         RESET_CREDENTIALS,
-        EXECUTE_ACTIONS
+        EXECUTE_ACTIONS,
+        REQUIRED_ACTIONS
     }
 
     public enum ExecutionStatus {
