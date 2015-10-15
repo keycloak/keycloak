@@ -290,6 +290,8 @@
 
         <module-def name="org.keycloak.keycloak-server-subsystem"/>
 
+        <module-def name="org.keycloak.keycloak-server-subsystem.infinispan"/>
+
         <module-def name="org.keycloak.keycloak-wildfly-extensions">
             <maven-resource group="org.keycloak" artifact="keycloak-wildfly-extensions"/>
         </module-def>
