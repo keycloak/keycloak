@@ -12,6 +12,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -93,13 +94,6 @@ public class RequiredActionContextResult implements RequiredActionContext {
     }
 
     @Override
-    public String generateAccessCode(String action) {
-        ClientSessionCode code = new ClientSessionCode(getRealm(), getClientSession());
-        code.setAction(action);
-        return code.getCode();
-    }
-
-    @Override
     public Status getStatus() {
         return status;
     }
@@ -136,15 +130,23 @@ public class RequiredActionContextResult implements RequiredActionContext {
     }
 
     @Override
+    public String generateCode() {
+        ClientSessionCode accessCode = new ClientSessionCode(getRealm(), getClientSession());
+        clientSession.setTimestamp(Time.currentTime());
+        return accessCode.getCode();
+    }
+
+
+    @Override
     public URI getActionUrl() {
-        String accessCode = generateAccessCode(factory.getId());
+        String accessCode = generateCode();
         return getActionUrl(accessCode);
 
     }
 
     @Override
     public LoginFormsProvider form() {
-        String accessCode = generateAccessCode(factory.getId());
+        String accessCode = generateCode();
         URI action = getActionUrl(accessCode);
         LoginFormsProvider provider = getSession().getProvider(LoginFormsProvider.class)
                 .setUser(getUser())

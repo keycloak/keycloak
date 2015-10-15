@@ -86,7 +86,7 @@ public interface RequiredActionContext {
      *
      * @return
      */
-    String generateAccessCode(String action);
+    String generateCode();
 
     Status getStatus();
 

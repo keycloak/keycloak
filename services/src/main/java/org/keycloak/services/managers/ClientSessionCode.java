@@ -73,8 +73,12 @@ public class ClientSessionCode {
     }
 
     public static ParseResult parseResult(String code, KeycloakSession session, RealmModel realm) {
+        ParseResult result = new ParseResult();
+        if (code == null) {
+            result.illegalHash = true;
+            return result;
+        }
         try {
-            ParseResult result = new ParseResult();
             String[] parts = code.split("\\.");
             String id = parts[1];
 
@@ -93,7 +97,8 @@ public class ClientSessionCode {
             result.code = new ClientSessionCode(realm, clientSession);
             return result;
         } catch (RuntimeException e) {
-            return null;
+            result.illegalHash = true;
+            return result;
         }
     }
 

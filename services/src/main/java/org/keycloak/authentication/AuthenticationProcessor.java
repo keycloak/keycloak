@@ -55,6 +55,7 @@ public class AuthenticationProcessor {
     protected HttpRequest request;
     protected String flowId;
     protected String flowPath;
+    protected boolean browserFlow;
     /**
      * This could be an error message forwarded from another authenticator
      */
@@ -71,6 +72,15 @@ public class AuthenticationProcessor {
     protected Map<String, String> clientAuthAttributes = new HashMap<>();
 
     public AuthenticationProcessor() {
+    }
+
+    public boolean isBrowserFlow() {
+        return browserFlow;
+    }
+
+    public AuthenticationProcessor setBrowserFlow(boolean browserFlow) {
+        this.browserFlow = browserFlow;
+        return this;
     }
 
     public RealmModel getRealm() {
@@ -455,6 +465,11 @@ public class AuthenticationProcessor {
         }
 
         @Override
+        public void resetFlow() {
+            this.status = FlowStatus.FLOW_RESET;
+        }
+
+        @Override
         public void fork() {
             this.status = FlowStatus.FORK;
         }
@@ -640,6 +655,31 @@ public class AuthenticationProcessor {
         }
     }
 
+    public Response createSuccessRedirect() {
+        // redirect to non-action url so browser refresh button works without reposting past data
+        String code = generateCode();
+
+        URI redirect = LoginActionsService.loginActionsBaseUrl(getUriInfo())
+                .path(flowPath)
+                .queryParam(OAuth2Constants.CODE, code).build(getRealm().getName());
+        return Response.status(302).location(redirect).build();
+
+    }
+
+    public static Response createRequiredActionRedirect(RealmModel realm, ClientSessionModel clientSession, UriInfo uriInfo) {
+
+        // redirect to non-action url so browser refresh button works without reposting past data
+        ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
+        accessCode.setAction(ClientSessionModel.Action.REQUIRED_ACTIONS.name());
+        clientSession.setTimestamp(Time.currentTime());
+
+        URI redirect = LoginActionsService.loginActionsBaseUrl(uriInfo)
+                .path(LoginActionsService.REQUIRED_ACTION)
+                .queryParam(OAuth2Constants.CODE, accessCode.getCode()).build(realm.getName());
+        return Response.status(302).location(redirect).build();
+
+    }
+
     public static void resetFlow(ClientSessionModel clientSession) {
         clientSession.setTimestamp(Time.currentTime());
         clientSession.setAuthenticatedUser(null);
@@ -773,7 +813,8 @@ public class AuthenticationProcessor {
 
     protected Response authenticationComplete() {
         attachSession();
-        return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, connection, request, uriInfo, event);
+        return createRequiredActionRedirect(realm, clientSession, uriInfo);
+        //return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, connection, request, uriInfo, event);
 
     }
 

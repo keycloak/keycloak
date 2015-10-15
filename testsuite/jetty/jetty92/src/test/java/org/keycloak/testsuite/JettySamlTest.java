@@ -96,8 +96,11 @@ public class JettySamlTest {
 
     @AfterClass
     public static void shutdownJetty() throws Exception {
-        server.stop();
-        server.destroy();
+        try {
+            server.stop();
+            server.destroy();
+            Thread.sleep(100);
+        } catch (Exception e) {}
     }
 
     @Test

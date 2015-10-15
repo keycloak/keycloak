@@ -68,6 +68,7 @@ public class AuthenticationManager {
     public static final String KEYCLOAK_SESSION_COOKIE = "KEYCLOAK_SESSION";
     public static final String KEYCLOAK_REMEMBER_ME = "KEYCLOAK_REMEMBER_ME";
     public static final String KEYCLOAK_LOGOUT_PROTOCOL = "KEYCLOAK_LOGOUT_PROTOCOL";
+    public static final String CURRENT_REQUIRED_ACTION = "CURRENT_REQUIRED_ACTION";
 
     protected BruteForceProtector protector;
 
@@ -525,6 +526,7 @@ public class AuthenticationManager {
                 return protocol.consentDenied(context.getClientSession());
             }
             else if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
+                clientSession.setNote(CURRENT_REQUIRED_ACTION, model.getProviderId());
                 return context.getChallenge();
             }
             else if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {

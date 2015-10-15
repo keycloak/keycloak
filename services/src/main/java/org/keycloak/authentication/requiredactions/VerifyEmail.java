@@ -36,9 +36,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     }
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        // if this is EXECUTE_ACTIONS we know that the email sent is valid so we can verify it automatically
-        if (context.getClientSession().getNote(ClientSessionModel.Action.EXECUTE_ACTIONS.name()) != null) {
-            context.getUser().setEmailVerified(true);
+        if (context.getUser().isEmailVerified()) {
             context.success();
             return;
         }
@@ -52,7 +50,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         LoginActionsService.createActionCookie(context.getRealm(), context.getUriInfo(), context.getConnection(), context.getUserSession().getId());
 
         LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(context.generateAccessCode(UserModel.RequiredAction.VERIFY_EMAIL.name()))
+                .setClientSessionCode(context.generateCode())
                 .setUser(context.getUser());
         Response challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
         context.challenge(challenge);

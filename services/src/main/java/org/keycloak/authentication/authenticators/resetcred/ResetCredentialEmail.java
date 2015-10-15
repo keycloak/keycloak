@@ -105,6 +105,8 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
             context.failure(AuthenticationFlowError.INTERNAL_ERROR, challenge);
             return;
         }
+        // We now know email is valid, so set it to valid.
+        context.getUser().setEmailVerified(true);
         context.success();
     }
 
