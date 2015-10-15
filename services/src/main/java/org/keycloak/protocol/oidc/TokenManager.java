@@ -172,14 +172,16 @@ public class TokenManager {
 
         int currentTime = Time.currentTime();
 
-        if (realm.isRevokeRefreshToken() && !refreshToken.getType().equals(TokenUtil.TOKEN_TYPE_OFFLINE)) {
-            if (refreshToken.getIssuedAt() < validation.clientSession.getTimestamp()) {
+        if (realm.isRevokeRefreshToken()) {
+            int serverStartupTime = (int)(session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
+
+            if (refreshToken.getIssuedAt() < validation.clientSession.getTimestamp() && (serverStartupTime != validation.clientSession.getTimestamp())) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
             }
 
-            validation.clientSession.setTimestamp(currentTime);
         }
 
+        validation.clientSession.setTimestamp(currentTime);
         validation.userSession.setLastSessionRefresh(currentTime);
 
         AccessTokenResponse res = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)

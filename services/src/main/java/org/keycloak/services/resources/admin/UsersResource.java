@@ -79,6 +79,7 @@ import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.AccountService;
+import org.keycloak.util.Time;
 
 /**
  * Base resource for managing users
@@ -373,6 +374,15 @@ public class UsersResource {
         List<UserSessionRepresentation> reps = new ArrayList<UserSessionRepresentation>();
         for (UserSessionModel session : sessions) {
             UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(session);
+
+            // Update lastSessionRefresh with the timestamp from clientSession
+            for (ClientSessionModel clientSession : session.getClientSessions()) {
+                if (clientId.equals(clientSession.getClient().getId())) {
+                    rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
+                    break;
+                }
+            }
+
             reps.add(rep);
         }
         return reps;

@@ -26,8 +26,8 @@ public class InitializerState extends SessionEntity {
             segmentsCount = segmentsCount + 1;
         }
 
-        // TODO: trace
-        log.info(String.format("sessionsCount: %d, sessionsPerSegment: %d, segmentsCount: %d", sessionsCount, sessionsPerSegment, segmentsCount));
+        // TODO: debug
+        log.infof("sessionsCount: %d, sessionsPerSegment: %d, segmentsCount: %d", sessionsCount, sessionsPerSegment, segmentsCount);
 
         for (int i=0 ; i<segmentsCount ; i++) {
             segments.add(false);
@@ -81,36 +81,23 @@ public class InitializerState extends SessionEntity {
         return -1;
     }
 
-    public String printState(boolean includeSegments) {
+    public String printState() {
         int finished = 0;
         int nonFinished = 0;
-        List<Integer> finishedList = new ArrayList<>();
-        List<Integer> nonFinishedList = new ArrayList<>();
 
         int size = segments.size();
         for (int i=0 ; i<size ; i++) {
             Boolean done = segments.get(i);
             if (done) {
                 finished++;
-                if (includeSegments) {
-                    finishedList.add(i);
-                }
             } else {
                 nonFinished++;
-                if (includeSegments) {
-                    nonFinishedList.add(i);
-                }
             }
         }
 
         StringBuilder strBuilder = new StringBuilder("sessionsCount: " + sessionsCount)
                 .append(", finished segments count: " + finished)
                 .append(", non-finished segments count: " + nonFinished);
-
-        if (includeSegments) {
-            strBuilder.append(", finished segments: " + finishedList)
-                    .append(", non-finished segments: " + nonFinishedList);
-        }
 
         return strBuilder.toString();
     }

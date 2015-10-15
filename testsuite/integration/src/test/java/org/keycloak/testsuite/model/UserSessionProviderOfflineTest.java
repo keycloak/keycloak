@@ -327,11 +327,18 @@ public class UserSessionProviderOfflineTest {
             Assert.assertNotNull(session.sessions().getOfflineClientSession(realm, clientSession.getId()));
         }
 
+        UserSessionModel session1 = session.sessions().getOfflineUserSession(realm, origSessions[1].getId());
+        Assert.assertEquals(1, session1.getClientSessions().size());
+        ClientSessionModel cls1 = session1.getClientSessions().get(0);
+
         // sessions are in persister too
         Assert.assertEquals(3, persister.getUserSessionsCount(true));
 
         // Set lastSessionRefresh to session[0] to 0
         session0.setLastSessionRefresh(0);
+
+        // Set timestamp to cls1 to 0
+        cls1.setTimestamp(0);
 
         resetSession();
 
@@ -339,18 +346,23 @@ public class UserSessionProviderOfflineTest {
 
         resetSession();
 
-        // assert sessions not found now
+        // assert session0 not found now
         Assert.assertNull(session.sessions().getOfflineUserSession(realm, origSessions[0].getId()));
         for (String clientSession : clientSessions) {
             Assert.assertNull(session.sessions().getOfflineClientSession(realm, origSessions[0].getId()));
             offlineSessions.remove(clientSession);
         }
 
-        // Assert other offline sessions still found
+        // Assert cls1 not found too
         for (Map.Entry<String, String> entry : offlineSessions.entrySet()) {
-            Assert.assertTrue(sessionManager.findOfflineClientSession(realm, entry.getKey(), entry.getValue()) != null);
+            String userSessionId = entry.getValue();
+            if (userSessionId.equals(session1.getId())) {
+                Assert.assertFalse(sessionManager.findOfflineClientSession(realm, entry.getKey(), userSessionId) != null);
+            } else {
+                Assert.assertTrue(sessionManager.findOfflineClientSession(realm, entry.getKey(), userSessionId) != null);
+            }
         }
-        Assert.assertEquals(2, persister.getUserSessionsCount(true));
+        Assert.assertEquals(1, persister.getUserSessionsCount(true));
 
         // Expire everything and assert nothing found
         Time.setOffset(3000000);

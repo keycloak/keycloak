@@ -82,8 +82,8 @@ public class InfinispanUserSessionInitializer {
 
 
     private boolean isFinished() {
-        InitializerState stateEntity = (InitializerState) cache.get(stateKey);
-        return stateEntity != null && stateEntity.isFinished();
+        InitializerState state = (InitializerState) cache.get(stateKey);
+        return state != null && state.isFinished();
     }
 
 
@@ -91,6 +91,16 @@ public class InfinispanUserSessionInitializer {
         InitializerState state = (InitializerState) cache.get(stateKey);
         if (state == null) {
             final int[] count = new int[1];
+
+            // Rather use separate transactions for update and counting
+
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+                @Override
+                public void run(KeycloakSession session) {
+                    sessionLoader.init(session);
+                }
+
+            });
 
             KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
                 @Override
@@ -133,7 +143,7 @@ public class InfinispanUserSessionInitializer {
     }
 
 
-    // Just coordinator is supposed to run this
+    // Just coordinator will run this
     private void startLoading() {
         InitializerState state = getOrCreateInitializerState();
 
@@ -196,7 +206,7 @@ public class InfinispanUserSessionInitializer {
                 saveStateToCache(state);
 
                 // TODO
-                log.info("New initializer state pushed. The state is: " + state.printState(false));
+                log.info("New initializer state pushed. The state is: " + state.printState());
             }
         } finally {
             distributedExecutorService.shutdown();
@@ -225,7 +235,7 @@ public class InfinispanUserSessionInitializer {
         @ViewChanged
         public void viewChanged(ViewChangedEvent event) {
             boolean isCoordinator = isCoordinator();
-            // TODO:
+            // TODO: debug
             log.info("View Changed: is coordinator: " + isCoordinator);
 
             if (isCoordinator) {
