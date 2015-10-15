@@ -55,6 +55,7 @@ public class CachedRealm implements Serializable {
     private int failureFactor;
     //--- end brute force settings
 
+    private boolean revokeRefreshToken;
     private int ssoSessionIdleTimeout;
     private int ssoSessionMaxLifespan;
     private int accessTokenLifespan;
@@ -136,6 +137,7 @@ public class CachedRealm implements Serializable {
         failureFactor = model.getFailureFactor();
         //--- end brute force settings
 
+        revokeRefreshToken = model.isRevokeRefreshToken();
         ssoSessionIdleTimeout = model.getSsoSessionIdleTimeout();
         ssoSessionMaxLifespan = model.getSsoSessionMaxLifespan();
         accessTokenLifespan = model.getAccessTokenLifespan();
@@ -311,6 +313,10 @@ public class CachedRealm implements Serializable {
 
     public boolean isEditUsernameAllowed() {
         return editUsernameAllowed;
+    }
+
+    public boolean isRevokeRefreshToken() {
+        return revokeRefreshToken;
     }
 
     public int getSsoSessionIdleTimeout() {
