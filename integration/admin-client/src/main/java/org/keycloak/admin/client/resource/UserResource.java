@@ -47,6 +47,14 @@ public interface UserResource {
     public void resetPassword(CredentialRepresentation credentialRepresentation);
 
     @PUT
+    @Path("reset-password-email")
+    public void resetPasswordEmail();
+
+    @PUT
+    @Path("reset-password-email")
+    public void resetPasswordEmail(@QueryParam("client_id") String clientId);
+
+    @PUT
     @Path("execute-actions-email")
     public void executeActionsEmail(List<String> actions);
 

@@ -882,15 +882,38 @@ public class UsersResource {
     }
 
     /**
-     * Send a password-reset email to the user
+     * Send an email to the user with a link they can click to reset their password.
+     * The redirectUri and clientId parameters are optional. The default for the
+     * redirect is the account client.
      *
-     * An email contains a link the user can click to reset their password.
+     * @param id
+     * @param redirectUri redirect uri
+     * @param clientId client id
+     * @return
+     */
+    @Path("{id}/reset-password-email")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response resetPasswordEmail(@PathParam("id") String id,
+                                        @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
+                                        @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+        return executeActionsEmail(id, redirectUri, clientId, actions);
+    }
+
+
+    /**
+     * Send a update account email to the user
+     *
+     * An email contains a link the user can click to perform a set of required actions.
      * The redirectUri and clientId parameters are optional. The default for the
      * redirect is the account client.
      *
      * @param id User is
      * @param redirectUri Redirect uri
      * @param clientId Client id
+     * @param actions required actions the user needs to complete
      * @return
      */
     @Path("{id}/execute-actions-email")
