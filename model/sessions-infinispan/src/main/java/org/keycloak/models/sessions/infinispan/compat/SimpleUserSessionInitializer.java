@@ -22,11 +22,23 @@ public class SimpleUserSessionInitializer {
     }
 
     public void loadPersistentSessions() {
+        // Rather use separate transactions for update and loading
+
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+
+            @Override
+            public void run(KeycloakSession session) {
+                sessionLoader.init(session);
+            }
+
+        });
+
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
             @Override
             public void run(KeycloakSession session) {
                 int count = sessionLoader.getSessionsCount(session);
+
                 for (int i=0 ; i<=count ; i+=sessionsPerSegment) {
                     sessionLoader.loadSessions(session, i, sessionsPerSegment);
                 }

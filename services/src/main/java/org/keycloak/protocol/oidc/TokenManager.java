@@ -44,6 +44,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -98,9 +100,17 @@ public class TokenManager {
         ClientSessionModel clientSession = null;
         if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType())) {
 
-            clientSession = new UserSessionManager(session).findOfflineClientSession(realm, oldToken.getClientSession(), oldToken.getSessionState());
+            UserSessionManager sessionManager = new UserSessionManager(session);
+            clientSession = sessionManager.findOfflineClientSession(realm, oldToken.getClientSession(), oldToken.getSessionState());
             if (clientSession != null) {
                 userSession = clientSession.getUserSession();
+
+                // Revoke timeouted offline userSession
+                if (userSession.getLastSessionRefresh() < Time.currentTime() - realm.getOfflineSessionIdleTimeout()) {
+                    sessionManager.revokeOfflineUserSession(userSession);
+                    userSession = null;
+                    clientSession = null;
+                }
             }
         } else {
             // Find userSession regularly for online tokens
@@ -162,26 +172,24 @@ public class TokenManager {
 
         int currentTime = Time.currentTime();
 
-        if (realm.isRevokeRefreshToken() && !refreshToken.getType().equals(TokenUtil.TOKEN_TYPE_OFFLINE)) {
-            if (refreshToken.getIssuedAt() < validation.clientSession.getTimestamp()) {
+        if (realm.isRevokeRefreshToken()) {
+            int serverStartupTime = (int)(session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
+
+            if (refreshToken.getIssuedAt() < validation.clientSession.getTimestamp() && (serverStartupTime != validation.clientSession.getTimestamp())) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
             }
 
-            validation.clientSession.setTimestamp(currentTime);
         }
 
+        validation.clientSession.setTimestamp(currentTime);
         validation.userSession.setLastSessionRefresh(currentTime);
 
-        AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)
+        AccessTokenResponse res = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)
                 .accessToken(validation.newToken)
-                .generateIDToken();
+                .generateIDToken()
+                .generateRefreshToken()
+                .build();
 
-        // Don't generate refresh token again if refresh was triggered with offline token
-        if (!refreshToken.getType().equals(TokenUtil.TOKEN_TYPE_OFFLINE)) {
-            responseBuilder.generateRefreshToken();
-        }
-
-        AccessTokenResponse res = responseBuilder.build();
         return new RefreshResult(res, TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType()));
     }
 
@@ -321,6 +329,21 @@ public class TokenManager {
                     }
                 }
             }
+
+            // Add all roles specified in scope parameter directly into requestedRoles, even if they are available just through composite role
+            List<RoleModel> scopeRoles = new LinkedList<>();
+            for (String scopeParamPart : scopeParamRoles) {
+                RoleModel scopeParamRole = getRoleFromScopeParam(client.getRealm(), scopeParamPart);
+                if (scopeParamRole != null) {
+                    for (RoleModel role : roles) {
+                        if (role.hasRole(scopeParamRole)) {
+                            scopeRoles.add(scopeParamRole);
+                        }
+                    }
+                }
+            }
+
+            roles.addAll(scopeRoles);
             requestedRoles = roles;
         }
 
@@ -334,6 +357,17 @@ public class TokenManager {
         } else {
             ClientModel client = (ClientModel) role.getContainer();
             return client.getClientId() + "/" + role.getName();
+        }
+    }
+
+    // For now, just use "roleName" for realm roles and "clientId/roleName" for client roles
+    private static RoleModel getRoleFromScopeParam(RealmModel realm, String scopeParamRole) {
+        String[] parts = scopeParamRole.split("/");
+        if (parts.length == 1) {
+            return realm.getRole(parts[0]);
+        } else {
+            ClientModel roleClient = realm.getClientByClientId(parts[0]);
+            return roleClient!=null ? roleClient.getRole(parts[1]) : null;
         }
     }
 
@@ -507,7 +541,7 @@ public class TokenManager {
 
                 refreshToken = new RefreshToken(accessToken);
                 refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
-                sessionManager.persistOfflineSession(clientSession, userSession);
+                sessionManager.createOrUpdateOfflineSession(clientSession, userSession);
             } else {
                 refreshToken = new RefreshToken(accessToken);
                 refreshToken.expiration(Time.currentTime() + realm.getSsoSessionIdleTimeout());

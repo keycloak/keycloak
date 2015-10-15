@@ -30,6 +30,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.managers.ClientManager;
@@ -227,10 +228,27 @@ public class OfflineTokenTest {
         Assert.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
         Assert.assertEquals(0, offlineToken.getExpiration());
 
-        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, sessionId, userId);
+        String newRefreshTokenString = testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, sessionId, userId);
+
+        // Change offset to very big value to ensure offline session expires
+        Time.setOffset(3000000);
+
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(newRefreshTokenString, "secret1");
+        Assert.assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_grant", response.getError());
+
+        events.expectRefresh(offlineToken.getId(), sessionId)
+                .client("offline-client")
+                .error(Errors.INVALID_TOKEN)
+                .user(userId)
+                .clearDetails()
+                .assertEvent();
+
+
+        Time.setOffset(0);
     }
 
-    private void testRefreshWithOfflineToken(AccessToken oldToken, RefreshToken offlineToken, String offlineTokenString,
+    private String testRefreshWithOfflineToken(AccessToken oldToken, RefreshToken offlineToken, String offlineTokenString,
                                              final String sessionId, String userId) {
         // Change offset to big value to ensure userSession expired
         Time.setOffset(99999);
@@ -261,13 +279,13 @@ public class OfflineTokenTest {
         Assert.assertEquals(200, response.getStatusCode());
         Assert.assertEquals(sessionId, refreshedToken.getSessionState());
 
-        // Assert no refreshToken in the response
-        Assert.assertNull(response.getRefreshToken());
+        // Assert new refreshToken in the response
+        String newRefreshToken = response.getRefreshToken();
+        Assert.assertNotNull(newRefreshToken);
         Assert.assertNotEquals(oldToken.getId(), refreshedToken.getId());
 
         Assert.assertEquals(userId, refreshedToken.getSubject());
 
-        Assert.assertEquals(2, refreshedToken.getRealmAccess().getRoles().size());
         Assert.assertTrue(refreshedToken.getRealmAccess().isUserInRole("user"));
         Assert.assertTrue(refreshedToken.getRealmAccess().isUserInRole(Constants.OFFLINE_ACCESS_ROLE));
 
@@ -283,6 +301,7 @@ public class OfflineTokenTest {
         Assert.assertNotEquals(oldToken.getId(), refreshEvent.getDetails().get(Details.TOKEN_ID));
 
         Time.setOffset(0);
+        return newRefreshToken;
     }
 
     @Test
@@ -313,6 +332,71 @@ public class OfflineTokenTest {
         Assert.assertEquals(0, offlineToken.getExpiration());
 
         testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), userId);
+
+        // Assert same token can be refreshed again
+        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), userId);
+    }
+
+    @Test
+    public void offlineTokenDirectGrantFlowWithRefreshTokensRevoked() throws Exception {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setRevokeRefreshToken(true);
+            }
+
+        });
+
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("offline-client");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password");
+
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.verifyRefreshToken(offlineTokenString);
+
+        events.expectLogin()
+                .client("offline-client")
+                .user(userId)
+                .session(token.getSessionState())
+                .detail(Details.RESPONSE_TYPE, "token")
+                .detail(Details.TOKEN_ID, token.getId())
+                .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.USERNAME, "test-user@localhost")
+                .removeDetail(Details.CODE_ID)
+                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
+
+        Assert.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+        Assert.assertEquals(0, offlineToken.getExpiration());
+
+        String offlineTokenString2 = testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), userId);
+        RefreshToken offlineToken2 = oauth.verifyRefreshToken(offlineTokenString2);
+
+        // Assert second refresh with same refresh token will fail
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString, "secret1");
+        Assert.assertEquals(400, response.getStatusCode());
+        events.expectRefresh(offlineToken.getId(), token.getSessionState())
+                .client("offline-client")
+                .error(Errors.INVALID_TOKEN)
+                .user(userId)
+                .clearDetails()
+                .assertEvent();
+
+        // Refresh with new refreshToken is successful now
+        testRefreshWithOfflineToken(token, offlineToken2, offlineTokenString2, token.getSessionState(), userId);
+
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setRevokeRefreshToken(false);
+            }
+
+        });
     }
 
     @Test
@@ -366,6 +450,54 @@ public class OfflineTokenTest {
     }
 
     @Test
+    public void offlineTokenAllowedWithCompositeRole() throws Exception {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                ClientModel offlineClient = appRealm.getClientByClientId("offline-client");
+                UserModel testUser = session.users().getUserByUsername("test-user@localhost", appRealm);
+                RoleModel offlineAccess = appRealm.getRole(Constants.OFFLINE_ACCESS_ROLE);
+
+                // Test access
+                Assert.assertFalse(TokenManager.getAccess(null, true, offlineClient, testUser).contains(offlineAccess));
+                Assert.assertTrue(TokenManager.getAccess(OAuth2Constants.OFFLINE_ACCESS, true, offlineClient, testUser).contains(offlineAccess));
+
+                // Grant offline_access role indirectly through composite role
+                RoleModel composite = appRealm.addRole("composite");
+                composite.addCompositeRole(offlineAccess);
+
+                testUser.deleteRoleMapping(offlineAccess);
+                testUser.grantRole(composite);
+
+                // Test access
+                Assert.assertFalse(TokenManager.getAccess(null, true, offlineClient, testUser).contains(offlineAccess));
+                Assert.assertTrue(TokenManager.getAccess(OAuth2Constants.OFFLINE_ACCESS, true, offlineClient, testUser).contains(offlineAccess));
+            }
+
+        });
+
+        // Integration test
+        offlineTokenDirectGrantFlow();
+
+        // Revert changes
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                RoleModel composite = appRealm.getRole("composite");
+                RoleModel offlineAccess = appRealm.getRole(Constants.OFFLINE_ACCESS_ROLE);
+                UserModel testUser = session.users().getUserByUsername("test-user@localhost", appRealm);
+
+                testUser.deleteRoleMapping(composite);
+                appRealm.removeRole(composite);
+                testUser.grantRole(offlineAccess);
+            }
+
+        });
+    }
+
+    @Test
     public void testServlet() {
         OfflineTokenServlet.tokenInfo = null;
 
@@ -382,11 +514,11 @@ public class OfflineTokenTest {
         String accessTokenId = OfflineTokenServlet.tokenInfo.accessToken.getId();
         String refreshTokenId = OfflineTokenServlet.tokenInfo.refreshToken.getId();
 
-        // Assert access token will be refreshed, but offline token will be still the same
+        // Assert access token and offline token are refreshed
         Time.setOffset(9999);
         driver.navigate().to(offlineClientAppUri);
         Assert.assertTrue(driver.getCurrentUrl().startsWith(offlineClientAppUri));
-        Assert.assertEquals(OfflineTokenServlet.tokenInfo.refreshToken.getId(), refreshTokenId);
+        Assert.assertNotEquals(OfflineTokenServlet.tokenInfo.refreshToken.getId(), refreshTokenId);
         Assert.assertNotEquals(OfflineTokenServlet.tokenInfo.accessToken.getId(), accessTokenId);
 
         // Ensure that logout works for webapp (even if offline token will be still valid in Keycloak DB)

@@ -26,7 +26,8 @@ import org.keycloak.models.jpa.entities.UserEntity;
         @NamedQuery(name="deleteUserSessionsByUser", query="delete from PersistentUserSessionEntity sess where sess.userId=:userId"),
         @NamedQuery(name="deleteDetachedUserSessions", query="delete from PersistentUserSessionEntity sess where sess.userSessionId NOT IN (select c.userSessionId from PersistentClientSessionEntity c)"),
         @NamedQuery(name="findUserSessionsCount", query="select count(sess) from PersistentUserSessionEntity sess where offline=:offline"),
-        @NamedQuery(name="findUserSessions", query="select sess from PersistentUserSessionEntity sess where offline=:offline order by sess.userSessionId")
+        @NamedQuery(name="findUserSessions", query="select sess from PersistentUserSessionEntity sess where offline=:offline order by sess.userSessionId"),
+        @NamedQuery(name="updateUserSessionsTimestamps", query="update PersistentUserSessionEntity c set lastSessionRefresh=:lastSessionRefresh"),
 
 })
 @Table(name="OFFLINE_USER_SESSION")

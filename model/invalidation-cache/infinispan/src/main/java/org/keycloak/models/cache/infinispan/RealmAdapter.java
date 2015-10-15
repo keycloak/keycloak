@@ -276,6 +276,19 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public int getOfflineSessionIdleTimeout() {
+        if (updated != null) return updated.getOfflineSessionIdleTimeout();
+        return cached.getOfflineSessionIdleTimeout();
+    }
+
+
+    @Override
+    public void setOfflineSessionIdleTimeout(int seconds) {
+        getDelegateForUpdate();
+        updated.setOfflineSessionIdleTimeout(seconds);
+    }
+
+    @Override
     public int getAccessTokenLifespan() {
         if (updated != null) return updated.getAccessTokenLifespan();
         return cached.getAccessTokenLifespan();

@@ -47,6 +47,8 @@ public class MigrateTo1_6_0 {
 
         List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
+            realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
+
             if (realm.getRole(Constants.OFFLINE_ACCESS_ROLE) == null) {
                 for (RoleModel realmRole : realm.getRoles()) {
                     realmRole.setScopeParamRequired(false);

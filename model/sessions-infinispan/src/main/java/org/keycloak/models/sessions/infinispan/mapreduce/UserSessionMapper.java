@@ -26,9 +26,9 @@ public class UserSessionMapper implements Mapper<String, SessionEntity, String, 
 
     private String user;
 
-    private Long expired;
+    private Integer expired;
 
-    private Long expiredRefresh;
+    private Integer expiredRefresh;
 
     private String brokerSessionId;
     private String brokerUserId;
@@ -47,7 +47,7 @@ public class UserSessionMapper implements Mapper<String, SessionEntity, String, 
         return this;
     }
 
-    public UserSessionMapper expired(long expired, long expiredRefresh) {
+    public UserSessionMapper expired(Integer expired, Integer expiredRefresh) {
         this.expired = expired;
         this.expiredRefresh = expiredRefresh;
         return this;
@@ -83,6 +83,10 @@ public class UserSessionMapper implements Mapper<String, SessionEntity, String, 
         if (brokerUserId != null && !brokerUserId.equals(entity.getBrokerUserId())) return;
 
         if (expired != null && expiredRefresh != null && entity.getStarted() > expired && entity.getLastSessionRefresh() > expiredRefresh) {
+            return;
+        }
+
+        if (expired == null && expiredRefresh != null && entity.getLastSessionRefresh() > expiredRefresh) {
             return;
         }
 

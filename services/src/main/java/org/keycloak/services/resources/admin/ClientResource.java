@@ -7,6 +7,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -433,6 +434,15 @@ public class ClientResource {
         List<UserSessionModel> userSessions = session.sessions().getOfflineUserSessions(client.getRealm(), client, firstResult, maxResults);
         for (UserSessionModel userSession : userSessions) {
             UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
+
+            // Update lastSessionRefresh with the timestamp from clientSession
+            for (ClientSessionModel clientSession : userSession.getClientSessions()) {
+                if (client.getId().equals(clientSession.getClient().getId())) {
+                    rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
+                    break;
+                }
+            }
+
             sessions.add(rep);
         }
         return sessions;

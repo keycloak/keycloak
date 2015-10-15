@@ -58,6 +58,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         PersistentClientSessionEntity entity = new PersistentClientSessionEntity();
         entity.setClientSessionId(clientSession.getId());
         entity.setClientId(clientSession.getClient().getId());
+        entity.setTimestamp(clientSession.getTimestamp());
         entity.setOffline(offline);
         entity.setUserSessionId(clientSession.getUserSession().getId());
         entity.setData(model.getData());
@@ -128,26 +129,32 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public void onRealmRemoved(RealmModel realm) {
-        em.createNamedQuery("deleteClientSessionsByRealm").setParameter("realmId", realm.getId()).executeUpdate();
-        em.createNamedQuery("deleteUserSessionsByRealm").setParameter("realmId", realm.getId()).executeUpdate();
+        int num = em.createNamedQuery("deleteClientSessionsByRealm").setParameter("realmId", realm.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteUserSessionsByRealm").setParameter("realmId", realm.getId()).executeUpdate();
     }
 
     @Override
     public void onClientRemoved(RealmModel realm, ClientModel client) {
-        em.createNamedQuery("deleteClientSessionsByClient").setParameter("clientId", client.getId()).executeUpdate();
-        em.createNamedQuery("deleteDetachedUserSessions").executeUpdate();
+        int num = em.createNamedQuery("deleteClientSessionsByClient").setParameter("clientId", client.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteDetachedUserSessions").executeUpdate();
     }
 
     @Override
     public void onUserRemoved(RealmModel realm, UserModel user) {
-        em.createNamedQuery("deleteClientSessionsByUser").setParameter("userId", user.getId()).executeUpdate();
-        em.createNamedQuery("deleteUserSessionsByUser").setParameter("userId", user.getId()).executeUpdate();
+        int num = em.createNamedQuery("deleteClientSessionsByUser").setParameter("userId", user.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteUserSessionsByUser").setParameter("userId", user.getId()).executeUpdate();
     }
 
     @Override
     public void clearDetachedUserSessions() {
-        em.createNamedQuery("deleteDetachedClientSessions").executeUpdate();
-        em.createNamedQuery("deleteDetachedUserSessions").executeUpdate();
+        int num = em.createNamedQuery("deleteDetachedClientSessions").executeUpdate();
+        num = em.createNamedQuery("deleteDetachedUserSessions").executeUpdate();
+    }
+
+    @Override
+    public void updateAllTimestamps(int time) {
+        int num = em.createNamedQuery("updateClientSessionsTimestamps").setParameter("timestamp", time).executeUpdate();
+        num = em.createNamedQuery("updateUserSessionsTimestamps").setParameter("lastSessionRefresh", time).executeUpdate();
     }
 
     @Override
@@ -220,6 +227,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         model.setClientId(entity.getClientId());
         model.setUserSessionId(userSession.getId());
         model.setUserId(userSession.getUser().getId());
+        model.setTimestamp(entity.getTimestamp());
         model.setData(entity.getData());
         return new PersistentClientSessionAdapter(model, realm, client, userSession);
     }

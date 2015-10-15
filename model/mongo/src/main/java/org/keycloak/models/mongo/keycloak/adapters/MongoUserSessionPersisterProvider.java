@@ -45,10 +45,6 @@ public class MongoUserSessionPersisterProvider implements UserSessionPersisterPr
         return invocationContext.getMongoStore();
     }
 
-    private Class<? extends PersistentUserSessionEntity> getClazz(boolean offline) {
-        return offline ? MongoOfflineUserSessionEntity.class : MongoOnlineUserSessionEntity.class;
-    }
-
     private MongoUserSessionEntity loadUserSession(String userSessionId, boolean offline) {
         Class<? extends MongoUserSessionEntity> clazz = offline ? MongoOfflineUserSessionEntity.class : MongoOnlineUserSessionEntity.class;
         return getMongoStore().loadEntity(clazz, userSessionId, invocationContext);
@@ -221,6 +217,41 @@ public class MongoUserSessionPersisterProvider implements UserSessionPersisterPr
     }
 
     @Override
+    public void updateAllTimestamps(int time) {
+        // 1) Update timestamp of clientSessions
+
+        DBObject timestampSubquery = new QueryBuilder()
+                .and("timestamp").notEquals(time).get();
+
+        DBObject query = new QueryBuilder()
+                .and("clientSessions").elemMatch(timestampSubquery).get();
+
+
+        DBObject update = new QueryBuilder()
+                .and("$set").is(new BasicDBObject("clientSessions.$.timestamp", time)).get();
+
+        // Not sure how to do in single query :/
+        int countModified = 1;
+        while (countModified > 0) {
+            countModified = getMongoStore().updateEntities(MongoOfflineUserSessionEntity.class, query, update, invocationContext);
+        }
+
+        countModified = 1;
+        while (countModified > 0) {
+            countModified = getMongoStore().updateEntities(MongoOnlineUserSessionEntity.class, query, update, invocationContext);
+        }
+
+        // 2) update lastSessionRefresh of userSessions
+        query = new QueryBuilder().get();
+
+        update = new QueryBuilder()
+                .and("$set").is(new BasicDBObject("lastSessionRefresh", time)).get();
+
+        getMongoStore().updateEntities(MongoOfflineUserSessionEntity.class, query, update, invocationContext);
+        getMongoStore().updateEntities(MongoOnlineUserSessionEntity.class, query, update, invocationContext);
+    }
+
+    @Override
     public List<UserSessionModel> loadUserSessions(int firstResult, int maxResults, boolean offline) {
         DBObject query = new QueryBuilder()
                 .get();
@@ -232,13 +263,13 @@ public class MongoUserSessionPersisterProvider implements UserSessionPersisterPr
 
         List<UserSessionModel> results = new LinkedList<>();
         for (MongoUserSessionEntity entity : entities) {
-            PersistentUserSessionAdapter userSession = toAdapter(entity, offline);
+            PersistentUserSessionAdapter userSession = toAdapter(entity);
             results.add(userSession);
         }
         return results;
     }
 
-    private PersistentUserSessionAdapter toAdapter(PersistentUserSessionEntity entity, boolean offline) {
+    private PersistentUserSessionAdapter toAdapter(PersistentUserSessionEntity entity) {
         RealmModel realm = session.realms().getRealm(entity.getRealmId());
         UserModel user = session.users().getUserById(entity.getUserId(), realm);
 
@@ -250,14 +281,14 @@ public class MongoUserSessionPersisterProvider implements UserSessionPersisterPr
         List<ClientSessionModel> clientSessions = new LinkedList<>();
         PersistentUserSessionAdapter userSessionAdapter = new PersistentUserSessionAdapter(model, realm, user, clientSessions);
         for (PersistentClientSessionEntity clientSessEntity : entity.getClientSessions()) {
-            PersistentClientSessionAdapter clientSessAdapter = toAdapter(realm, userSessionAdapter, offline, clientSessEntity);
+            PersistentClientSessionAdapter clientSessAdapter = toAdapter(realm, userSessionAdapter, clientSessEntity);
             clientSessions.add(clientSessAdapter);
         }
 
         return userSessionAdapter;
     }
 
-    private PersistentClientSessionAdapter toAdapter(RealmModel realm, PersistentUserSessionAdapter userSession, boolean offline, PersistentClientSessionEntity entity) {
+    private PersistentClientSessionAdapter toAdapter(RealmModel realm, PersistentUserSessionAdapter userSession, PersistentClientSessionEntity entity) {
         ClientModel client = realm.getClientById(entity.getClientId());
 
         PersistentClientSessionModel model = new PersistentClientSessionModel();
@@ -265,6 +296,7 @@ public class MongoUserSessionPersisterProvider implements UserSessionPersisterPr
         model.setClientId(entity.getClientId());
         model.setUserSessionId(userSession.getId());
         model.setUserId(userSession.getUser().getId());
+        model.setTimestamp(entity.getTimestamp());
         model.setData(entity.getData());
         return new PersistentClientSessionAdapter(model, realm, client, userSession);
     }

@@ -2,6 +2,7 @@ package org.keycloak.testsuite.model;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,6 +18,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
@@ -36,6 +38,7 @@ public class UserSessionProviderOfflineTest {
     private KeycloakSession session;
     private RealmModel realm;
     private UserSessionManager sessionManager;
+    private UserSessionPersisterProvider persister;
 
     @Before
     public void before() {
@@ -44,6 +47,7 @@ public class UserSessionProviderOfflineTest {
         session.users().addUser(realm, "user1").setEmail("user1@localhost");
         session.users().addUser(realm, "user2").setEmail("user2@localhost");
         sessionManager = new UserSessionManager(session);
+        persister = session.getProvider(UserSessionPersisterProvider.class);
     }
 
     @After
@@ -157,7 +161,7 @@ public class UserSessionProviderOfflineTest {
         fooRealm = session.realms().getRealm("foo");
         userSession = session.sessions().getUserSession(fooRealm, userSession.getId());
         clientSession = session.sessions().getClientSession(fooRealm, clientSession.getId());
-        sessionManager.persistOfflineSession(userSession.getClientSessions().get(0), userSession);
+        sessionManager.createOrUpdateOfflineSession(userSession.getClientSessions().get(0), userSession);
 
         resetSession();
 
@@ -291,13 +295,97 @@ public class UserSessionProviderOfflineTest {
 
     }
 
+    @Test
+    public void testExpired() {
+        // Create some online sessions in infinispan
+        int started = Time.currentTime();
+        UserSessionModel[] origSessions = createSessions();
+
+        resetSession();
+
+        Map<String, String> offlineSessions = new HashMap<>();
+
+        // Persist 3 created userSessions and clientSessions as offline
+        ClientModel testApp = realm.getClientByClientId("test-app");
+        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, testApp);
+        for (UserSessionModel userSession : userSessions) {
+            offlineSessions.putAll(createOfflineSessionIncludeClientSessions(userSession));
+        }
+
+        resetSession();
+
+        // Assert all previously saved offline sessions found
+        for (Map.Entry<String, String> entry : offlineSessions.entrySet()) {
+            Assert.assertTrue(sessionManager.findOfflineClientSession(realm, entry.getKey(), entry.getValue()) != null);
+        }
+
+        UserSessionModel session0 = session.sessions().getOfflineUserSession(realm, origSessions[0].getId());
+        Assert.assertNotNull(session0);
+        List<String> clientSessions = new LinkedList<>();
+        for (ClientSessionModel clientSession : session0.getClientSessions()) {
+            clientSessions.add(clientSession.getId());
+            Assert.assertNotNull(session.sessions().getOfflineClientSession(realm, clientSession.getId()));
+        }
+
+        UserSessionModel session1 = session.sessions().getOfflineUserSession(realm, origSessions[1].getId());
+        Assert.assertEquals(1, session1.getClientSessions().size());
+        ClientSessionModel cls1 = session1.getClientSessions().get(0);
+
+        // sessions are in persister too
+        Assert.assertEquals(3, persister.getUserSessionsCount(true));
+
+        // Set lastSessionRefresh to session[0] to 0
+        session0.setLastSessionRefresh(0);
+
+        // Set timestamp to cls1 to 0
+        cls1.setTimestamp(0);
+
+        resetSession();
+
+        session.sessions().removeExpiredUserSessions(realm);
+
+        resetSession();
+
+        // assert session0 not found now
+        Assert.assertNull(session.sessions().getOfflineUserSession(realm, origSessions[0].getId()));
+        for (String clientSession : clientSessions) {
+            Assert.assertNull(session.sessions().getOfflineClientSession(realm, origSessions[0].getId()));
+            offlineSessions.remove(clientSession);
+        }
+
+        // Assert cls1 not found too
+        for (Map.Entry<String, String> entry : offlineSessions.entrySet()) {
+            String userSessionId = entry.getValue();
+            if (userSessionId.equals(session1.getId())) {
+                Assert.assertFalse(sessionManager.findOfflineClientSession(realm, entry.getKey(), userSessionId) != null);
+            } else {
+                Assert.assertTrue(sessionManager.findOfflineClientSession(realm, entry.getKey(), userSessionId) != null);
+            }
+        }
+        Assert.assertEquals(1, persister.getUserSessionsCount(true));
+
+        // Expire everything and assert nothing found
+        Time.setOffset(3000000);
+        try {
+            session.sessions().removeExpiredUserSessions(realm);
+
+            resetSession();
+
+            for (Map.Entry<String, String> entry : offlineSessions.entrySet()) {
+                Assert.assertTrue(sessionManager.findOfflineClientSession(realm, entry.getKey(), entry.getValue()) == null);
+            }
+            Assert.assertEquals(0, persister.getUserSessionsCount(true));
+
+        } finally {
+            Time.setOffset(0);
+        }
+    }
+
     private Map<String, String> createOfflineSessionIncludeClientSessions(UserSessionModel userSession) {
         Map<String, String> offlineSessions = new HashMap<>();
 
-        UserSessionModel offlineUserSession = session.sessions().createOfflineUserSession(userSession);
         for (ClientSessionModel clientSession : userSession.getClientSessions()) {
-            ClientSessionModel offlineClientSession = session.sessions().createOfflineClientSession(clientSession);
-            offlineClientSession.setUserSession(offlineUserSession);
+            sessionManager.createOrUpdateOfflineSession(clientSession, userSession);
             offlineSessions.put(clientSession.getId(), userSession.getId());
         }
         return offlineSessions;
@@ -310,6 +398,7 @@ public class UserSessionProviderOfflineTest {
         session = kc.startSession();
         realm = session.realms().getRealm("test");
         sessionManager = new UserSessionManager(session);
+        persister = session.getProvider(UserSessionPersisterProvider.class);
     }
 
     private ClientSessionModel createClientSession(ClientModel client, UserSessionModel userSession, String redirect, String state, Set<String> roles, Set<String> protocolMappers) {

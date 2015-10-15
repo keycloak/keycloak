@@ -10,6 +10,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.compat.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.compat.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.compat.entities.UsernameLoginFailureEntity;
@@ -297,6 +298,8 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeExpiredUserSessions(RealmModel realm) {
+        UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+
         Iterator<UserSessionEntity> itr = userSessions.values().iterator();
         while (itr.hasNext()) {
             UserSessionEntity s = itr.next();
@@ -312,6 +315,31 @@ public class MemUserSessionProvider implements UserSessionProvider {
             ClientSessionEntity c = citr.next();
             if (c.getSession() == null && c.getRealmId().equals(realm.getId()) && c.getTimestamp() < expired) {
                 citr.remove();
+            }
+        }
+
+        // Remove expired offline user sessions
+        itr = offlineUserSessions.values().iterator();
+        while (itr.hasNext()) {
+            UserSessionEntity s = itr.next();
+            if (s.getRealm().equals(realm.getId()) && (s.getLastSessionRefresh() < Time.currentTime() - realm.getOfflineSessionIdleTimeout())) {
+                itr.remove();
+                remove(s, true);
+
+                // propagate to persister
+                persister.removeUserSession(s.getId(), true);
+            }
+        }
+
+        // Remove expired offline client sessions
+        citr = offlineClientSessions.values().iterator();
+        while (citr.hasNext()) {
+            ClientSessionEntity s = citr.next();
+            if (s.getRealmId().equals(realm.getId()) && (s.getTimestamp() < Time.currentTime() - realm.getOfflineSessionIdleTimeout())) {
+                citr.remove();
+
+                // propagate to persister
+                persister.removeClientSession(s.getId(), true);
             }
         }
     }
@@ -407,6 +435,18 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     @Override
     public UserSessionModel createOfflineUserSession(UserSessionModel userSession) {
+        UserSessionAdapter importedUserSession = importUserSession(userSession, true);
+
+        // started and lastSessionRefresh set to current time
+        int currentTime = Time.currentTime();
+        importedUserSession.getEntity().setStarted(currentTime);
+        importedUserSession.setLastSessionRefresh(currentTime);
+
+        return importedUserSession;
+    }
+
+    @Override
+    public UserSessionAdapter importUserSession(UserSessionModel userSession, boolean offline) {
         UserSessionEntity entity = new UserSessionEntity();
         entity.setId(userSession.getId());
         entity.setRealm(userSession.getRealm().getId());
@@ -415,17 +455,19 @@ public class MemUserSessionProvider implements UserSessionProvider {
         entity.setBrokerSessionId(userSession.getBrokerSessionId());
         entity.setBrokerUserId(userSession.getBrokerUserId());
         entity.setIpAddress(userSession.getIpAddress());
-        entity.setLastSessionRefresh(userSession.getLastSessionRefresh());
         entity.setLoginUsername(userSession.getLoginUsername());
         if (userSession.getNotes() != null) {
             entity.getNotes().putAll(userSession.getNotes());
         }
         entity.setRememberMe(userSession.isRememberMe());
-        entity.setStarted(userSession.getStarted());
         entity.setState(userSession.getState());
         entity.setUser(userSession.getUser().getId());
 
-        offlineUserSessions.put(userSession.getId(), entity);
+        entity.setStarted(userSession.getStarted());
+        entity.setLastSessionRefresh(userSession.getLastSessionRefresh());
+
+        ConcurrentHashMap<String, UserSessionEntity> sessionsMap = offline ? offlineUserSessions : userSessions;
+        sessionsMap.put(userSession.getId(), entity);
         return new UserSessionAdapter(session, this, userSession.getRealm(), entity);
     }
 
@@ -450,6 +492,17 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     @Override
     public ClientSessionModel createOfflineClientSession(ClientSessionModel clientSession) {
+        ClientSessionAdapter offlineClientSession = importClientSession(clientSession, true);
+
+        // update timestamp to current time
+        offlineClientSession.setTimestamp(Time.currentTime());
+
+        return offlineClientSession;
+    }
+
+    @Override
+    public ClientSessionAdapter importClientSession(ClientSessionModel clientSession, boolean offline) {
+
         ClientSessionEntity entity = new ClientSessionEntity();
         entity.setId(clientSession.getId());
         entity.setRealmId(clientSession.getRealm().getId());
@@ -473,7 +526,8 @@ public class MemUserSessionProvider implements UserSessionProvider {
             entity.getUserSessionNotes().putAll(clientSession.getUserSessionNotes());
         }
 
-        offlineClientSessions.put(clientSession.getId(), entity);
+        ConcurrentHashMap<String, ClientSessionEntity> clientSessionsMap = offline ? offlineClientSessions : clientSessions;
+        clientSessionsMap.put(clientSession.getId(), entity);
         return new ClientSessionAdapter(session, this, clientSession.getRealm(), entity);
     }
 

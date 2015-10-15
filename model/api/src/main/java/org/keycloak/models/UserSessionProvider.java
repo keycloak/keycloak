@@ -59,6 +59,10 @@ public interface UserSessionProvider extends Provider {
     int getOfflineSessionsCount(RealmModel realm, ClientModel client);
     List<UserSessionModel> getOfflineUserSessions(RealmModel realm, ClientModel client, int first, int max);
 
+    // Triggered by persister during pre-load
+    UserSessionModel importUserSession(UserSessionModel persistentUserSession, boolean offline);
+    ClientSessionModel importClientSession(ClientSessionModel persistentClientSession, boolean offline);
+
     void close();
 
 }
