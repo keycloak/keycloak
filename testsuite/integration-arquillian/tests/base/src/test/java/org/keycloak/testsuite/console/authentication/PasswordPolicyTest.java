@@ -19,7 +19,6 @@ package org.keycloak.testsuite.console.authentication;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
@@ -33,7 +32,7 @@ import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.
  * @author Petr Mensik
  * @author mhajas
  */
-@Ignore // FIXME still unstable
+//@Ignore // FIXME still unstable
 public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Page
@@ -62,7 +61,7 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
         assertFlashMessageDanger();
         passwordPolicyPage.removePolicy(HASH_ITERATIONS);
 
-        passwordPolicyPage.addPolicy(REGEX_PATTERN, "^[A-Z]{8,5}");
+        passwordPolicyPage.addPolicy(REGEX_PATTERN, "([");
         assertFlashMessageDanger();
     }
 
@@ -157,12 +156,6 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
         realm.setPasswordPolicy("regexPattern(^[A-Z]+#[a-z]{8}$) and ");
         System.out.println(realm.getPasswordPolicy());
         testRealmResource().update(realm);
-
-       /* try {
-            Thread.sleep(45000000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }*/
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("invalidPassword");
