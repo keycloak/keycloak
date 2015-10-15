@@ -10,6 +10,7 @@
 
         <addColumn tableName="CLIENT">
             <column name="ROOT_URL" type="VARCHAR(255)"/>
+            <column name="DESCRIPTION" type="VARCHAR(255)"/>
         </addColumn>
 
         <createTable tableName="OFFLINE_USER_SESSION">
@@ -47,5 +48,11 @@
 
         <addPrimaryKey columnNames="USER_SESSION_ID, OFFLINE" constraintName="CONSTRAINT_OFFLINE_US_SES_PK" tableName="OFFLINE_USER_SESSION"/>
         <addPrimaryKey columnNames="CLIENT_SESSION_ID, OFFLINE" constraintName="CONSTRAINT_OFFLINE_CL_SES_PK" tableName="OFFLINE_CLIENT_SESSION"/>
+
+        <addColumn tableName="REALM">
+            <column name="REVOKE_REFRESH_TOKEN" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>

@@ -322,6 +322,18 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public String getDescription() {
+        if (updated != null) return updated.getDescription();
+        return cached.getDescription();
+    }
+
+    @Override
+    public void setDescription(String description) {
+        getDelegateForUpdate();
+        updated.setDescription(description);
+    }
+
+    @Override
     public boolean isSurrogateAuthRequired() {
         if (updated != null) return updated.isSurrogateAuthRequired();
         return cached.isSurrogateAuthRequired();

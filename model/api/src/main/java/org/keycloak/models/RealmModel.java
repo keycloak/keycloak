@@ -91,6 +91,9 @@ public interface RealmModel extends RoleContainerModel {
 
     void setResetPasswordAllowed(boolean resetPasswordAllowed);
 
+    boolean isRevokeRefreshToken();
+    void setRevokeRefreshToken(boolean revokeRefreshToken);
+
     int getSsoSessionIdleTimeout();
     void setSsoSessionIdleTimeout(int seconds);
 

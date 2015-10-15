@@ -144,6 +144,7 @@ public class ModelToRepresentation {
         rep.setVerifyEmail(realm.isVerifyEmail());
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
+        rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());
         rep.setAccessTokenLifespan(realm.getAccessTokenLifespan());
         rep.setSsoSessionIdleTimeout(realm.getSsoSessionIdleTimeout());
         rep.setSsoSessionMaxLifespan(realm.getSsoSessionMaxLifespan());
@@ -299,6 +300,7 @@ public class ModelToRepresentation {
         rep.setId(clientModel.getId());
         rep.setClientId(clientModel.getClientId());
         rep.setName(clientModel.getName());
+        rep.setDescription(clientModel.getDescription());
         rep.setEnabled(clientModel.isEnabled());
         rep.setAdminUrl(clientModel.getManagementUrl());
         rep.setPublicClient(clientModel.isPublicClient());

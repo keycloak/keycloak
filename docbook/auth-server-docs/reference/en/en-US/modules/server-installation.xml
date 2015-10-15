@@ -43,7 +43,7 @@
 
 
         <section id="overlay_install">
-            <title>Install on existing WildFly 9.0.0.Final</title>
+            <title>Install on existing WildFly 9.0.1.Final</title>
             <para>
                 Keycloak can be installed into an existing WildFly 9.0.0.Final server. To do this download
                 <literal>keycloak-overlay-&project.version;.zip</literal> or <literal>keycloak-overlay-&project.version;.tar.gz</literal>.
@@ -59,22 +59,23 @@
                 (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
                 enter in a new password.
             </para>
-            <!--<para>
+            <para>
                 To add Keycloak to other sever configurations (standalone.xml, standalone-ha.xml, etc.) start the server with
                 the desired server-config. If you are running the server in standalone mode run:
-                <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c --file=keycloak-prepare.cli</programlisting>
-                Or if you are running in clustering (HA) mode run:
-                <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c --file=keycloak-prepare-ha.cli</programlisting>
-                After that you need to restart the server, you can do this with:
+                <programlisting>cd &lt;WILDFLY_HOME&gt;/bin
+                    ./jboss-cli.sh -c --file=keycloak-install.cli</programlisting>
+                Or if you are running in clustering (HA) mode (by having used -c standalone-ha.xml) then run:
+                <programlisting>cd &lt;WILDFLY_HOME&gt;/bin
+                    ./jboss-cli.sh -c --file=keycloak-install-ha.cli</programlisting>
+                You may see exceptions in the server log, but after restarting the server they should be gone.
+                You can restart the server with:
                 <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c :reload</programlisting>
-                Finally you need to run:
-                <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c --file=keycloak-install.cli</programlisting>
-            </para>-->
+            </para>
         </section>
         <section>
             <title>Install on existing JBoss EAP 6.4.0.GA</title>
             <para>
-                Same procedure as WildFly 9.0.0.Final, but download <literal>keycloak-overlay-eap6-&project.version;.zip</literal> or <literal>keycloak-overlay-eap6-&project.version;.tar.gz</literal>.
+                Same procedure as WildFly 9.0.1.Final, but download <literal>keycloak-overlay-eap6-&project.version;.zip</literal> or <literal>keycloak-overlay-eap6-&project.version;.tar.gz</literal>.
             </para>
         </section>
         <section>

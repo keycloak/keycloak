@@ -76,6 +76,8 @@ public class RealmEntity {
     @Column(name="EDIT_USERNAME_ALLOWED")
     protected boolean editUsernameAllowed;
 
+    @Column(name="REVOKE_REFRESH_TOKEN")
+    private boolean revokeRefreshToken;
     @Column(name="SSO_IDLE_TIMEOUT")
     private int ssoSessionIdleTimeout;
     @Column(name="SSO_MAX_LIFESPAN")
@@ -286,6 +288,14 @@ public class RealmEntity {
 
     public void setEditUsernameAllowed(boolean editUsernameAllowed) {
         this.editUsernameAllowed = editUsernameAllowed;
+    }
+
+    public boolean isRevokeRefreshToken() {
+        return revokeRefreshToken;
+    }
+
+    public void setRevokeRefreshToken(boolean revokeRefreshToken) {
+        this.revokeRefreshToken = revokeRefreshToken;
     }
 
     public int getSsoSessionIdleTimeout() {

@@ -326,6 +326,16 @@ public class RealmAdapter implements RealmModel {
 
 
     @Override
+    public boolean isRevokeRefreshToken() {
+        return realm.isRevokeRefreshToken();
+    }
+
+    @Override
+    public void setRevokeRefreshToken(boolean revokeRefreshToken) {
+        realm.setRevokeRefreshToken(revokeRefreshToken);
+    }
+
+    @Override
     public int getSsoSessionIdleTimeout() {
         return realm.getSsoSessionIdleTimeout();
     }

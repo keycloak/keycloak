@@ -25,6 +25,7 @@ public class CachedClient implements Serializable {
     private String id;
     private String clientId;
     private String name;
+    private String description;
     private String realm;
     private Set<String> redirectUris = new HashSet<String>();
     private boolean enabled;
@@ -58,6 +59,7 @@ public class CachedClient implements Serializable {
         secret = model.getSecret();
         clientId = model.getClientId();
         name = model.getName();
+        description = model.getDescription();
         this.realm = realm.getId();
         enabled = model.isEnabled();
         protocol = model.getProtocol();
@@ -102,6 +104,10 @@ public class CachedClient implements Serializable {
     public String getName() {
         return name;
     }
+
+    public String getDescription() { return description; }
+
+    public void setDescription(String description) { this.description = description; }
 
     public String getRealm() {
         return realm;
