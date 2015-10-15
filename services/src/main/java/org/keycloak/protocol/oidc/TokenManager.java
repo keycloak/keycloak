@@ -44,6 +44,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -325,6 +327,21 @@ public class TokenManager {
                     }
                 }
             }
+
+            // Add all roles specified in scope parameter directly into requestedRoles, even if they are available just through composite role
+            List<RoleModel> scopeRoles = new LinkedList<>();
+            for (String scopeParamPart : scopeParamRoles) {
+                RoleModel scopeParamRole = getRoleFromScopeParam(client.getRealm(), scopeParamPart);
+                if (scopeParamRole != null) {
+                    for (RoleModel role : roles) {
+                        if (role.hasRole(scopeParamRole)) {
+                            scopeRoles.add(scopeParamRole);
+                        }
+                    }
+                }
+            }
+
+            roles.addAll(scopeRoles);
             requestedRoles = roles;
         }
 
@@ -338,6 +355,17 @@ public class TokenManager {
         } else {
             ClientModel client = (ClientModel) role.getContainer();
             return client.getClientId() + "/" + role.getName();
+        }
+    }
+
+    // For now, just use "roleName" for realm roles and "clientId/roleName" for client roles
+    private static RoleModel getRoleFromScopeParam(RealmModel realm, String scopeParamRole) {
+        String[] parts = scopeParamRole.split("/");
+        if (parts.length == 1) {
+            return realm.getRole(parts[0]);
+        } else {
+            ClientModel roleClient = realm.getClientByClientId(parts[0]);
+            return roleClient!=null ? roleClient.getRole(parts[1]) : null;
         }
     }
 

@@ -30,6 +30,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.managers.ClientManager;
@@ -285,7 +286,6 @@ public class OfflineTokenTest {
 
         Assert.assertEquals(userId, refreshedToken.getSubject());
 
-        Assert.assertEquals(2, refreshedToken.getRealmAccess().getRoles().size());
         Assert.assertTrue(refreshedToken.getRealmAccess().isUserInRole("user"));
         Assert.assertTrue(refreshedToken.getRealmAccess().isUserInRole(Constants.OFFLINE_ACCESS_ROLE));
 
@@ -382,6 +382,54 @@ public class OfflineTokenTest {
         // Refresh with both offline tokens is fine
         testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), serviceAccountUserId);
         testRefreshWithOfflineToken(token2, offlineToken2, offlineTokenString2, token2.getSessionState(), serviceAccountUserId);
+    }
+
+    @Test
+    public void offlineTokenAllowedWithCompositeRole() throws Exception {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                ClientModel offlineClient = appRealm.getClientByClientId("offline-client");
+                UserModel testUser = session.users().getUserByUsername("test-user@localhost", appRealm);
+                RoleModel offlineAccess = appRealm.getRole(Constants.OFFLINE_ACCESS_ROLE);
+
+                // Test access
+                Assert.assertFalse(TokenManager.getAccess(null, true, offlineClient, testUser).contains(offlineAccess));
+                Assert.assertTrue(TokenManager.getAccess(OAuth2Constants.OFFLINE_ACCESS, true, offlineClient, testUser).contains(offlineAccess));
+
+                // Grant offline_access role indirectly through composite role
+                RoleModel composite = appRealm.addRole("composite");
+                composite.addCompositeRole(offlineAccess);
+
+                testUser.deleteRoleMapping(offlineAccess);
+                testUser.grantRole(composite);
+
+                // Test access
+                Assert.assertFalse(TokenManager.getAccess(null, true, offlineClient, testUser).contains(offlineAccess));
+                Assert.assertTrue(TokenManager.getAccess(OAuth2Constants.OFFLINE_ACCESS, true, offlineClient, testUser).contains(offlineAccess));
+            }
+
+        });
+
+        // Integration test
+        offlineTokenDirectGrantFlow();
+
+        // Revert changes
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                RoleModel composite = appRealm.getRole("composite");
+                RoleModel offlineAccess = appRealm.getRole(Constants.OFFLINE_ACCESS_ROLE);
+                UserModel testUser = session.users().getUserByUsername("test-user@localhost", appRealm);
+
+                testUser.deleteRoleMapping(composite);
+                appRealm.removeRole(composite);
+                testUser.grantRole(offlineAccess);
+            }
+
+        });
     }
 
     @Test
