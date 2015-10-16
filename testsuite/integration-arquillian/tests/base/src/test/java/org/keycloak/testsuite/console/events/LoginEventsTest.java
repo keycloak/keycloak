@@ -3,6 +3,7 @@ package org.keycloak.testsuite.console.events;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.events.Config;
@@ -10,6 +11,7 @@ import org.keycloak.testsuite.console.page.events.LoginEvents;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -26,13 +28,12 @@ public class LoginEventsTest extends AbstractConsoleTest {
     
     @Before
     public void beforeLoginEventsTest() {
-        configPage.navigateTo();
-        configPage.form().setSaveEvents(true);
-        configPage.form().waitForClearEventsButtonPresent();
-        configPage.form().addSaveType("LOGIN");
-        configPage.form().addSaveType("LOGIN_ERROR");
-        configPage.form().addSaveType("LOGOUT");
-        configPage.form().save();
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+
+        realm.setEventsEnabled(true);
+        realm.setEnabledEventTypes(Arrays.asList("LOGIN", "LOGIN_ERROR", "LOGOUT"));
+
+        testRealmResource().update(realm);
     }
 
     @Test
