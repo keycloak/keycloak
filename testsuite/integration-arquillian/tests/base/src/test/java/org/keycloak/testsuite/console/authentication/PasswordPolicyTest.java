@@ -32,7 +32,6 @@ import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.
  * @author Petr Mensik
  * @author mhajas
  */
-//@Ignore // FIXME still unstable
 public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Page
@@ -67,7 +66,6 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Test
     public void testLengthPolicy() {
-
         RealmRepresentation realm = testRealmResource().toRepresentation();
         realm.setPasswordPolicy("length(8) and ");
         testRealmResource().update(realm);
@@ -154,7 +152,6 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
     public void testRegexPatternsPolicy() {
         RealmRepresentation realm = testRealmResource().toRepresentation();
         realm.setPasswordPolicy("regexPattern(^[A-Z]+#[a-z]{8}$) and ");
-        System.out.println(realm.getPasswordPolicy());
         testRealmResource().update(realm);
 
         testUserCredentialsPage.navigateTo();
