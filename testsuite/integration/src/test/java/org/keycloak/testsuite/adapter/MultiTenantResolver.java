@@ -17,7 +17,7 @@
 package org.keycloak.testsuite.adapter;
 
 import java.io.InputStream;
-import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;

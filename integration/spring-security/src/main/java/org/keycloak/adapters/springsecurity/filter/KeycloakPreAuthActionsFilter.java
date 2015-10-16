@@ -1,18 +1,15 @@
 package org.keycloak.adapters.springsecurity.filter;
 
 import org.keycloak.adapters.AdapterDeploymentContext;
-import org.keycloak.adapters.HttpFacade;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.KeycloakDeploymentBuilder;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
-import org.keycloak.adapters.UserSessionManagement;
+import org.keycloak.adapters.spi.UserSessionManagement;
 import org.keycloak.adapters.springsecurity.AdapterDeploymentContextBean;
 import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.filter.GenericFilterBean;
@@ -24,8 +21,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
 
 /**
  * Exposes a Keycloak adapter {@link PreAuthActionsHandler} as a Spring Security filter.

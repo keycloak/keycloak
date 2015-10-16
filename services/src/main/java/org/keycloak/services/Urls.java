@@ -22,7 +22,7 @@
 package org.keycloak.services;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.Version;
+import org.keycloak.common.Version;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.resources.AccountService;

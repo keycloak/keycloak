@@ -17,8 +17,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.ietf.jgss.GSSCredential;
 import org.keycloak.KeycloakPrincipal;
-import org.keycloak.constants.KerberosConstants;
-import org.keycloak.util.KerberosSerializationUtils;
+import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.KerberosSerializationUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

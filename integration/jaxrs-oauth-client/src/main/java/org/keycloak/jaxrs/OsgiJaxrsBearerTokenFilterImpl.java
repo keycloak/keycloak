@@ -10,7 +10,7 @@ import javax.ws.rs.Priorities;
 import javax.ws.rs.container.PreMatching;
 
 import org.keycloak.adapters.KeycloakConfigResolver;
-import org.keycloak.constants.GenericConstants;
+import org.keycloak.common.constants.GenericConstants;
 import org.osgi.framework.BundleContext;
 
 /**

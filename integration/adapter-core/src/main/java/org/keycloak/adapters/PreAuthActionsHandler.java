@@ -1,6 +1,8 @@
 package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.spi.UserSessionManagement;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jws.JWSInput;
@@ -10,7 +12,7 @@ import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.StreamUtil;
+import org.keycloak.common.util.StreamUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

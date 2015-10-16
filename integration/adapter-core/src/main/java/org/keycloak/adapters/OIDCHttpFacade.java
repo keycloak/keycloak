@@ -1,6 +1,7 @@
 package org.keycloak.adapters;
 
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.spi.HttpFacade;
 
 /**
  * Bridge between core adapter and HTTP Engine

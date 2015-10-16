@@ -42,7 +42,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.PemUtils;
+import org.keycloak.common.util.PemUtils;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

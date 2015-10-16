@@ -2,13 +2,13 @@ package org.keycloak.adapters.servlet;
 
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.HttpFacade;
-import org.keycloak.adapters.KeycloakAccount;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.spi.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
-import org.keycloak.adapters.SessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapper;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;

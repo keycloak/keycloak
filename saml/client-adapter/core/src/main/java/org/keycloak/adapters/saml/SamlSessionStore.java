@@ -1,6 +1,6 @@
 package org.keycloak.adapters.saml;
 
-import org.keycloak.adapters.AdapterSessionStore;
+import org.keycloak.adapters.spi.AdapterSessionStore;
 
 import java.util.List;
 

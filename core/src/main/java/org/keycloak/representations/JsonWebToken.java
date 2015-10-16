@@ -8,7 +8,7 @@ import org.codehaus.jackson.map.annotate.JsonDeserialize;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.keycloak.json.StringOrArrayDeserializer;
 import org.keycloak.json.StringOrArraySerializer;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import java.io.Serializable;
 import java.util.HashMap;

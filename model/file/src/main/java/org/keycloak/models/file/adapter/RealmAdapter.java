@@ -17,7 +17,7 @@
 package org.keycloak.models.file.adapter;
 
 import org.keycloak.connections.file.InMemoryModel;
-import org.keycloak.enums.SslRequired;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;

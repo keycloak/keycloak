@@ -2,7 +2,7 @@ package org.keycloak.jose.jws;
 
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.util.Base64Url;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
 
 import javax.crypto.SecretKey;

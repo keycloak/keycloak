@@ -16,7 +16,7 @@
  */
 package org.keycloak.adapters;
 
-import org.keycloak.adapters.HttpFacade.Request;
+import org.keycloak.adapters.spi.HttpFacade.Request;
 
 /**
  * On multi-tenant scenarios, Keycloak will defer the resolution of a

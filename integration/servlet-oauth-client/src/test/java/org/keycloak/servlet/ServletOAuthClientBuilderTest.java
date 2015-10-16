@@ -2,7 +2,7 @@ package org.keycloak.servlet;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.enums.RelativeUrlsUsed;
+import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
 import static org.junit.Assert.assertEquals;

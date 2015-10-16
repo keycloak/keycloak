@@ -3,7 +3,7 @@
 <%@ page import="org.keycloak.constants.ServiceUrlConstants" %>
 <%@ page import="org.keycloak.example.CustomerDatabaseClient" %>
 <%@ page import="org.keycloak.representations.IDToken" %>
-<%@ page import="org.keycloak.util.HostUtils" %>
+<%@ page import="org.keycloak.common.util.HostUtils" %>
 <html>
   <head>
     <title>Customer Session Page</title>

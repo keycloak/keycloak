@@ -15,7 +15,7 @@ import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.UserManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import java.util.Arrays;
 import java.util.HashSet;

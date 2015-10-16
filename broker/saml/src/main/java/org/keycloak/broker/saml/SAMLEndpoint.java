@@ -1,8 +1,8 @@
 package org.keycloak.broker.saml;
 
 import org.jboss.logging.Logger;
-import org.keycloak.ClientConnection;
-import org.keycloak.VerificationException;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.VerificationException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;

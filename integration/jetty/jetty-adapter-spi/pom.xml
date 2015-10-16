@@ -14,7 +14,7 @@
     <properties>
         <jetty9.version>8.1.16.v20140903</jetty9.version>
         <keycloak.osgi.export>
-            org.keycloak.adapters.jetty.core.*
+            org.keycloak.adapters.jetty.spi.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             org.eclipse.jetty.*;version="[8.1,10)";resolution:=optional,

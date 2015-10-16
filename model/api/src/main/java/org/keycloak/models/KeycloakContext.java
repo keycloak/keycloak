@@ -1,6 +1,6 @@
 package org.keycloak.models;
 
-import org.keycloak.ClientConnection;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.models.utils.RealmImporter;
 
 import javax.ws.rs.core.HttpHeaders;

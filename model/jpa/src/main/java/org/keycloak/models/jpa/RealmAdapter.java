@@ -1,7 +1,7 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.connections.jpa.util.JpaUtils;
-import org.keycloak.enums.SslRequired;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;

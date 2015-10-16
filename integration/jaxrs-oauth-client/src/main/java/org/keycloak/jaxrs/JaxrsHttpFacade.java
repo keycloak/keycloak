@@ -12,7 +12,7 @@ import javax.ws.rs.core.SecurityContext;
 
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.OIDCHttpFacade;
-import org.keycloak.util.HostUtils;
+import org.keycloak.common.util.HostUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

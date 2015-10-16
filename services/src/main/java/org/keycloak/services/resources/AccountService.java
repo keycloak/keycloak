@@ -60,7 +60,7 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.util.UriUtils;
+import org.keycloak.common.util.UriUtils;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;

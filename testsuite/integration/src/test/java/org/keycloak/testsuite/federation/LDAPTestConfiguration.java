@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.jboss.logging.Logger;
-import org.keycloak.constants.KerberosConstants;
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserFederationProvider;
 

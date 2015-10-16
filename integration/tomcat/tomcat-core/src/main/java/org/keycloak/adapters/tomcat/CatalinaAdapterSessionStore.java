@@ -1,7 +1,7 @@
 package org.keycloak.adapters.tomcat;
 
 import org.apache.catalina.connector.Request;
-import org.keycloak.adapters.AdapterSessionStore;
+import org.keycloak.adapters.spi.AdapterSessionStore;
 
 import java.io.IOException;
 

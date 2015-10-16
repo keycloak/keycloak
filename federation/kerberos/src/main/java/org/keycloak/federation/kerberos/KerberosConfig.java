@@ -1,6 +1,6 @@
 package org.keycloak.federation.kerberos;
 
-import org.keycloak.constants.KerberosConstants;
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;

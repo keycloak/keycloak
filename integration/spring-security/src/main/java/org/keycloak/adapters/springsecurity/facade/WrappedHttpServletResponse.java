@@ -1,6 +1,6 @@
 package org.keycloak.adapters.springsecurity.facade;
 
-import org.keycloak.adapters.HttpFacade.Response;
+import org.keycloak.adapters.spi.HttpFacade.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,7 +8,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**

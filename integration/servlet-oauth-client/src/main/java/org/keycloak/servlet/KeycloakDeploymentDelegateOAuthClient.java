@@ -4,9 +4,7 @@ import java.util.Map;
 
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.constants.ServiceUrlConstants;
-import org.keycloak.enums.RelativeUrlsUsed;
-import org.keycloak.util.KeycloakUriBuilder;
+import org.keycloak.common.enums.RelativeUrlsUsed;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

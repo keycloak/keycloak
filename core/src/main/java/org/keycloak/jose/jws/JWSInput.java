@@ -1,8 +1,7 @@
 package org.keycloak.jose.jws;
 
-import org.keycloak.util.Base64Url;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
-import static org.keycloak.jose.jws.Algorithm.*;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;

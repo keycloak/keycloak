@@ -9,11 +9,10 @@ import org.jboss.security.SecurityContextAssociation;
 import org.jboss.security.SimpleGroup;
 import org.jboss.security.SimplePrincipal;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.undertow.KeycloakUndertowAccount;
 import org.keycloak.adapters.undertow.ServletRequestAuthenticator;
-import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 
 import javax.security.auth.Subject;
 import java.security.Principal;

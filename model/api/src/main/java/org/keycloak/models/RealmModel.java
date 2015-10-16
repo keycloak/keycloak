@@ -1,6 +1,6 @@
 package org.keycloak.models;
 
-import org.keycloak.enums.SslRequired;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.provider.ProviderEvent;
 
 import java.security.Key;

@@ -1,7 +1,7 @@
 package org.keycloak.services;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.ClientConnection;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.services.managers.RealmManager;

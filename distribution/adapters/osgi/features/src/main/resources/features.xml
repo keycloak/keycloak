@@ -12,6 +12,7 @@
         <bundle dependency="true">mvn:org.jboss.logging/jboss-logging/${jboss.logging.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-common/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-core/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-adapter-core/${project.version}</bundle>
     </feature>
 
@@ -26,6 +27,7 @@
         <details>The keycloak Jetty8 adapter</details>
         <feature>keycloak-adapter-core</feature>
         <feature version="[8.1,9)">jetty</feature>
+        <bundle>mvn:org.keycloak/keycloak-jetty-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty-core/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty81-adapter/${project.version}</bundle>
     </feature>

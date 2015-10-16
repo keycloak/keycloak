@@ -3,13 +3,14 @@ package org.keycloak.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.util.Map;
 import java.util.Properties;
 
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.io.IOContext;
 import org.codehaus.jackson.map.MappingJsonFactory;
 import org.codehaus.jackson.util.JsonParserDelegate;
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.SystemEnvProperties;
 
 /**
  * Provides replacing of system properties for parsed values

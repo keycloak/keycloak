@@ -2,7 +2,7 @@ package org.keycloak.test;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMWriter;
-import org.keycloak.util.PemUtils;
+import org.keycloak.common.util.PemUtils;
 
 import java.io.IOException;
 import java.io.StringWriter;

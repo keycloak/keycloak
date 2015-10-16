@@ -26,7 +26,7 @@ import org.keycloak.services.util.JsonConfigProvider;
 import org.keycloak.services.util.ObjectMapperResolver;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.SystemEnvProperties;
+import org.keycloak.common.util.SystemEnvProperties;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;

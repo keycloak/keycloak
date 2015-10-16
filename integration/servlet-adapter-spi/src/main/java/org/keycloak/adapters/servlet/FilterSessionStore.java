@@ -1,10 +1,10 @@
 package org.keycloak.adapters.servlet;
 
-import org.keycloak.adapters.AdapterSessionStore;
-import org.keycloak.adapters.HttpFacade;
-import org.keycloak.adapters.KeycloakAccount;
-import org.keycloak.util.Encode;
-import org.keycloak.util.MultivaluedHashMap;
+import org.keycloak.adapters.spi.AdapterSessionStore;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.spi.KeycloakAccount;
+import org.keycloak.common.util.Encode;
+import org.keycloak.common.util.MultivaluedHashMap;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
@@ -17,8 +17,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Enumeration;

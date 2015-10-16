@@ -11,7 +11,7 @@ import org.keycloak.adapters.ServerRequest;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.servlet.ServletOAuthClient;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.UriUtils;
+import org.keycloak.common.util.UriUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

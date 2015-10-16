@@ -14,7 +14,7 @@
     <name>CXF JAXRS Example - Secured in Karaf/Fuse</name>
 
     <properties>
-        <cxf.version>2.7.14</cxf.version>
+        <cxf.version>3.0.4</cxf.version>
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
