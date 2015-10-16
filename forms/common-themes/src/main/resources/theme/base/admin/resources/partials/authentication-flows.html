@@ -26,16 +26,20 @@
         <tr data-ng-hide="executions.length == 0">
             <th colspan="{{levelmax + 1}}">Auth Type</th>
             <th colspan="{{choicesmax}}">Requirement</th>
-            <th></th>
+            <th>&nbsp;</th>
         </tr>
         </thead>
         <tbody>
         <tr ng-repeat="execution in executions" data-ng-show="executions.length > 0">
             <td ng-repeat="lev in execution.preLevels"></td>
-            <td><button data-ng-hide="flow.builtIn || $first" class="btn btn-default" data-ng-click="raisePriority(execution)"><i class="fa fa-angle-up"></i></button><button data-ng-hide="flow.builtIn || $last" class="btn btn-default" data-ng-click="lowerPriority(execution)"><i class="fa fa-angle-down"></i></button> {{execution.displayName|capitalize}}</td>
+            <td class="kc-sorter">
+                    <button data-ng-hide="flow.builtIn" data-ng-disabled="$first" class="btn btn-default btn-sm" data-ng-click="raisePriority(execution)"><i class="fa fa-angle-up"></i></button>
+                    <button data-ng-hide="flow.builtIn" data-ng-disabled="$last" class="btn btn-default btn-sm" data-ng-click="lowerPriority(execution)"><i class="fa fa-angle-down"></i></button>
+                    <span>{{execution.displayName|capitalize}}</span>
+            </td>
             <td ng-repeat="lev in execution.postLevels"></td>
             <td ng-repeat="choice in execution.requirementChoices">
-            <label >
+            <label>
                 <input type="radio" ng-model="execution.requirement" ng-value="choice" ng-change="updateExecution(execution)">
                 {{choice}}
             </label>
@@ -43,20 +47,16 @@
             </td>
             <td ng-repeat="emptee in execution.empties"></td>
             <td>
-                <ul class="nav navbar-nav navbar-utility" data-ng-hide="flow.builtIn && !execution.configurable">
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            Actions <b class="caret"></b>
-                        </a>
-                        <ul class="dropdown-menu"  >
-                            <li data-ng-hide="flow.builtIn"><a href="" ng-click="removeExecution(execution)">Delete</a></li>
-                            <li data-ng-hide="flow.builtIn || !execution.authenticationFlow"><a href="" ng-click="addSubFlowExecution(execution)">Add Execution</a></li>
-                            <li data-ng-hide="flow.builtIn || !execution.authenticationFlow"><a href="" ng-click="addSubFlow(execution)">Add Flow</a></li>
-                            <li data-ng-show="execution.configurable && execution.authenticationConfig == null"><a href="#/create/authentication/{{realm.realm}}/execution/{{execution.id}}/provider/{{execution.providerId}}">Config</a></li>
-                            <li data-ng-show="execution.configurable && execution.authenticationConfig != null"><a href="#/realms/{{realm.realm}}/authentication/config/{{execution.providerId}}/{{execution.authenticationConfig}}">Config</a></li>
-                        </ul>
-                    </li>
-                </ul>
+                <div class="dropdown" data-ng-hide="flow.builtIn && !execution.configurable">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Actions <b class="caret"></b></a>
+                    <ul class="dropdown-menu"  >
+                        <li data-ng-hide="flow.builtIn"><a href="" ng-click="removeExecution(execution)">Delete</a></li>
+                        <li data-ng-hide="flow.builtIn || !execution.authenticationFlow"><a href="" ng-click="addSubFlowExecution(execution)">Add Execution</a></li>
+                        <li data-ng-hide="flow.builtIn || !execution.authenticationFlow"><a href="" ng-click="addSubFlow(execution)">Add Flow</a></li>
+                        <li data-ng-show="execution.configurable && execution.authenticationConfig == null"><a href="#/create/authentication/{{realm.realm}}/execution/{{execution.id}}/provider/{{execution.providerId}}">Config</a></li>
+                        <li data-ng-show="execution.configurable && execution.authenticationConfig != null"><a href="#/realms/{{realm.realm}}/authentication/config/{{execution.providerId}}/{{execution.authenticationConfig}}">Config</a></li>
+                    </ul>
+                </div>
             </td>
          </tr>
         <tr data-ng-show="executions.length == 0">
