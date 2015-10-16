@@ -294,28 +294,6 @@ public class ExportUtils {
             }
         }
 
-//        // Offline sessions
-//        List<OfflineUserSessionRepresentation> offlineSessionReps = new LinkedList<>();
-//        Collection<PersistentUserSessionModel> offlineSessions = session.users().getOfflineUserSessions(realm, user);
-//        Collection<PersistentClientSessionModel> offlineClientSessions = session.users().getOfflineClientSessions(realm, user);
-//
-//        Map<String, List<PersistentClientSessionModel>> processed = new HashMap<>();
-//        for (PersistentClientSessionModel clsm : offlineClientSessions) {
-//            String userSessionId = clsm.getUserSessionId();
-//            List<PersistentClientSessionModel> current = processed.get(userSessionId);
-//            if (current == null) {
-//                current = new LinkedList<>();
-//                processed.put(userSessionId, current);
-//            }
-//            current.add(clsm);
-//        }
-//
-//        for (PersistentUserSessionModel userSession : offlineSessions) {
-//            OfflineUserSessionRepresentation sessionRep = ModelToRepresentation.toRepresentation(realm, userSession, processed.get(userSession.getUserSessionId()));
-//            offlineSessionReps.add(sessionRep);
-//        }
-//        userRep.setOfflineUserSessions(offlineSessionReps);
-
         return userRep;
     }
 

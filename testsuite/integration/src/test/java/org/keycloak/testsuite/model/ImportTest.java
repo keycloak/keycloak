@@ -327,21 +327,6 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertFalse(otherAppAdminConsent.isRoleGranted(application.getRole("app-admin")));
         Assert.assertTrue(otherAppAdminConsent.isProtocolMapperGranted(gssCredentialMapper));
 
-//        // Test offline sessions
-//        Collection<PersistentUserSessionModel> offlineUserSessions = session.users().getOfflineUserSessions(realm, admin);
-//        Collection<PersistentClientSessionModel> offlineClientSessions = session.users().getOfflineClientSessions(realm, admin);
-//        Assert.assertEquals(offlineUserSessions.size(), 1);
-//        Assert.assertEquals(offlineClientSessions.size(), 1);
-//        PersistentUserSessionModel offlineSession = offlineUserSessions.iterator().next();
-//        PersistentClientSessionModel offlineClSession = offlineClientSessions.iterator().next();
-//        Assert.assertEquals(offlineSession.getData(), "something1");
-//        Assert.assertEquals(offlineSession.getUserSessionId(), "123");
-//        Assert.assertEquals(offlineClSession.getClientId(), otherApp.getId());
-//        Assert.assertEquals(offlineClSession.getUserSessionId(), "123");
-//        Assert.assertEquals(offlineClSession.getUserId(), admin.getId());
-//        Assert.assertEquals(offlineClSession.getData(), "something2");
-
-
         // Test service accounts
         Assert.assertFalse(application.isServiceAccountsEnabled());
         Assert.assertTrue(otherApp.isServiceAccountsEnabled());
