@@ -17,14 +17,16 @@
  */
 package org.keycloak.testsuite.auth.page.account;
 
-import java.util.List;
-import javax.ws.rs.core.UriBuilder;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import javax.ws.rs.core.UriBuilder;
+import java.util.List;
+
 /**
- *
  * @author Petr Mensik
+ * @author mhajas
  */
 public class Applications extends AccountManagement {
 
@@ -39,26 +41,42 @@ public class Applications extends AccountManagement {
     @FindBy(xpath = XPATH_APP_TABLE)
     protected WebElement appTable;
 
-    @FindBy(xpath = XPATH_APP_TABLE + "//a")
-    protected List<WebElement> applicationLinks;
-    
+    @FindBy(xpath = XPATH_APP_TABLE + "//tr")
+    private List<WebElement> applicationRows;
+
     public boolean containsApplication(String application) {
-        boolean contains = false;
-        for (WebElement appLink : applicationLinks) {
-            if (appLink.getText().equals(application)) {
-                contains = true;
-                break;
-            }
-        }
-        return contains;
+        return getRowForLinkText(application) != null;
     }
-    
+
     public void clickApplication(String application) {
-        for (WebElement appLink : applicationLinks) {
-            if (appLink.getText().equals(application)) {
-                appLink.click();
+        WebElement row = getRowForLinkText(application);
+        if (row == null) {
+            log.error("Application: " + application + " doesn't exist");
+            throw new IllegalArgumentException("Application: " + application + " doesn't exist");
+        }
+
+        row.findElement(By.xpath(".//a")).click();
+    }
+
+    public void revokeGrantForApplication(String application) {
+        WebElement row = getRowForLinkText(application);
+        if (row == null) {
+            log.error("Application: " + application + " doesn't exist");
+            throw new IllegalArgumentException("Application: " + application + " doesn't exist");
+        }
+
+        row.findElement(By.xpath("//button[@id='revoke-" + application + "']")).click();
+    }
+
+    private WebElement getRowForLinkText(String appLink) {
+        for (WebElement appRow : applicationRows) {
+            if (appRow.findElement(By.xpath(".//td")).getText().equals(appLink)) {
+                return appRow;
             }
         }
+
+        return null;
     }
+
 
 }
