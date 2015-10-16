@@ -148,6 +148,7 @@ public class ModelToRepresentation {
         rep.setAccessTokenLifespan(realm.getAccessTokenLifespan());
         rep.setSsoSessionIdleTimeout(realm.getSsoSessionIdleTimeout());
         rep.setSsoSessionMaxLifespan(realm.getSsoSessionMaxLifespan());
+        rep.setOfflineSessionIdleTimeout(realm.getOfflineSessionIdleTimeout());
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
         rep.setAccessCodeLifespanLogin(realm.getAccessCodeLifespanLogin());
@@ -211,7 +212,10 @@ public class ModelToRepresentation {
         }
 
         rep.setInternationalizationEnabled(realm.isInternationalizationEnabled());
-        rep.getSupportedLocales().addAll(realm.getSupportedLocales());
+        if(realm.getSupportedLocales() != null){
+            rep.setSupportedLocales(new HashSet<String>());
+            rep.getSupportedLocales().addAll(realm.getSupportedLocales());
+        }
         rep.setDefaultLocale(realm.getDefaultLocale());
         if (internal) {
             exportAuthenticationFlows(realm, rep);

@@ -175,6 +175,7 @@ public abstract class AbstractKerberosTest {
         events.clear();
         Response spnegoResponse = spnegoLogin("jduke", "theduke");
         Assert.assertEquals(302, spnegoResponse.getStatus());
+        String redirect = spnegoResponse.getLocation().toString();
         events.expectLogin()
                 .client("kerberos-app")
                 .user(keycloakRule.getUser("test", "jduke").getId())
@@ -244,6 +245,13 @@ public abstract class AbstractKerberosTest {
         spnegoSchemeFactory.setCredentials(username, password);
         Response response = client.target(kcLoginPageLocation).request().get();
         SpnegoAuthenticator.bypassChallengeJavascript = false;
+        if (response.getStatus() == 302) {
+            if (response.getLocation() == null) return response;
+            String uri = response.getLocation().toString();
+            if (uri.contains("login-actions/required-action")) {
+                response = client.target(uri).request().get();
+            }
+        }
         return response;
 
     }

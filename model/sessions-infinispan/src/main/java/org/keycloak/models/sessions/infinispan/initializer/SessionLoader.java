@@ -9,6 +9,8 @@ import org.keycloak.models.KeycloakSession;
  */
 public interface SessionLoader extends Serializable {
 
+    void init(KeycloakSession session);
+
     int getSessionsCount(KeycloakSession session);
 
     boolean loadSessions(KeycloakSession session, int first, int max);

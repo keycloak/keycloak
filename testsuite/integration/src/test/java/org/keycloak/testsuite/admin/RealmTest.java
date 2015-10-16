@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -100,6 +102,31 @@ public class RealmTest extends AbstractClientTest {
         assertEquals(Boolean.FALSE, rep.isRegistrationAllowed());
         assertEquals(Boolean.FALSE, rep.isRegistrationEmailAsUsername());
         assertEquals(Boolean.FALSE, rep.isEditUsernameAllowed());
+    }
+
+    @Test
+    public void updateRealmWithNewRepresentation() {
+        // first change
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setEditUsernameAllowed(true);
+        rep.setSupportedLocales(new HashSet<>(Arrays.asList("en", "de")));
+
+        realm.update(rep);
+
+        rep = realm.toRepresentation();
+
+        assertEquals(Boolean.TRUE, rep.isEditUsernameAllowed());
+        assertEquals(2, rep.getSupportedLocales().size());
+
+        // second change
+        rep = new RealmRepresentation();
+        rep.setEditUsernameAllowed(false);
+
+        realm.update(rep);
+
+        rep = realm.toRepresentation();
+        assertEquals(Boolean.FALSE, rep.isEditUsernameAllowed());
+        assertEquals(2, rep.getSupportedLocales().size());
     }
 
     @Test

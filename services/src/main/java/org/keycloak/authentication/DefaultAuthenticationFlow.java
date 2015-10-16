@@ -1,11 +1,19 @@
 package org.keycloak.authentication;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.util.Time;
+import org.omg.PortableInterceptor.SUCCESSFUL;
+
+import static org.keycloak.authentication.FlowStatus.*;
 
 import javax.ws.rs.core.Response;
+import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 
@@ -61,7 +69,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 AuthenticationProcessor.Result result = processor.createAuthenticatorContext(model, authenticator, executions);
                 authenticator.action(result);
                 Response response = processResult(result);
-                if (response == null) return processFlow();
+                if (response == null) {
+                    if (result.status == SUCCESS && processor.isBrowserFlow()) {
+                         // redirect to a non-action URL so browser refresh works without reposting.
+                         return processor.createSuccessRedirect();
+                    } else {
+                        return processFlow();
+                    }
+                }
                 else return response;
             }
         }
@@ -153,62 +168,65 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     public Response processResult(AuthenticationProcessor.Result result) {
         AuthenticationExecutionModel execution = result.getExecution();
         FlowStatus status = result.getStatus();
-        if (status == FlowStatus.SUCCESS) {
-            AuthenticationProcessor.logger.debugv("authenticator SUCCESS: {0}", execution.getAuthenticator());
-            processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.SUCCESS);
-            if (execution.isAlternative()) alternativeSuccessful = true;
-            return null;
-        } else if (status == FlowStatus.FAILED) {
-            AuthenticationProcessor.logger.debugv("authenticator FAILED: {0}", execution.getAuthenticator());
-            processor.logFailure();
-            processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.FAILED);
-            if (result.getChallenge() != null) {
-                return sendChallenge(result, execution);
-            }
-            throw new AuthenticationFlowException(result.getError());
-        } else if (status == FlowStatus.FORK) {
-            AuthenticationProcessor.logger.debugv("reset browser login from authenticator: {0}", execution.getAuthenticator());
-            processor.getClientSession().setNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, execution.getId());
-            throw new ForkFlowException(result.getSuccessMessage(), result.getErrorMessage());
-        } else if (status == FlowStatus.FORCE_CHALLENGE) {
-            processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
-            return sendChallenge(result, execution);
-        } else if (status == FlowStatus.CHALLENGE) {
-            AuthenticationProcessor.logger.debugv("authenticator CHALLENGE: {0}", execution.getAuthenticator());
-            if (execution.isRequired()) {
+        switch (status) {
+            case SUCCESS:
+                AuthenticationProcessor.logger.debugv("authenticator SUCCESS: {0}", execution.getAuthenticator());
+                processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.SUCCESS);
+                if (execution.isAlternative()) alternativeSuccessful = true;
+                return null;
+            case FAILED:
+                AuthenticationProcessor.logger.debugv("authenticator FAILED: {0}", execution.getAuthenticator());
+                processor.logFailure();
+                processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.FAILED);
+                if (result.getChallenge() != null) {
+                    return sendChallenge(result, execution);
+                }
+                throw new AuthenticationFlowException(result.getError());
+            case FORK:
+                AuthenticationProcessor.logger.debugv("reset browser login from authenticator: {0}", execution.getAuthenticator());
+                processor.getClientSession().setNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, execution.getId());
+                throw new ForkFlowException(result.getSuccessMessage(), result.getErrorMessage());
+            case FORCE_CHALLENGE:
                 processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
                 return sendChallenge(result, execution);
-            }
-            UserModel authenticatedUser = processor.getClientSession().getAuthenticatedUser();
-            if (execution.isOptional() && authenticatedUser != null && result.getAuthenticator().configuredFor(processor.getSession(), processor.getRealm(), authenticatedUser)) {
+            case CHALLENGE:
+                AuthenticationProcessor.logger.debugv("authenticator CHALLENGE: {0}", execution.getAuthenticator());
+                if (execution.isRequired()) {
+                    processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
+                    return sendChallenge(result, execution);
+                }
+                UserModel authenticatedUser = processor.getClientSession().getAuthenticatedUser();
+                if (execution.isOptional() && authenticatedUser != null && result.getAuthenticator().configuredFor(processor.getSession(), processor.getRealm(), authenticatedUser)) {
+                    processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
+                    return sendChallenge(result, execution);
+                }
+                if (execution.isAlternative()) {
+                    alternativeChallenge = result.getChallenge();
+                    challengedAlternativeExecution = execution;
+                } else {
+                    processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
+                }
+                return null;
+            case FAILURE_CHALLENGE:
+                AuthenticationProcessor.logger.debugv("authenticator FAILURE_CHALLENGE: {0}", execution.getAuthenticator());
+                processor.logFailure();
                 processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
                 return sendChallenge(result, execution);
-            }
-            if (execution.isAlternative()) {
-                alternativeChallenge = result.getChallenge();
-                challengedAlternativeExecution = execution;
-            } else {
-                processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
-            }
-            return null;
-        } else if (status == FlowStatus.FAILURE_CHALLENGE) {
-            AuthenticationProcessor.logger.debugv("authenticator FAILURE_CHALLENGE: {0}", execution.getAuthenticator());
-            processor.logFailure();
-            processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
-            return sendChallenge(result, execution);
-        } else if (status == FlowStatus.ATTEMPTED) {
-            AuthenticationProcessor.logger.debugv("authenticator ATTEMPTED: {0}", execution.getAuthenticator());
-            if (execution.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) {
-                throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CREDENTIALS);
-            }
-            processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.ATTEMPTED);
-            return null;
-        } else {
-            AuthenticationProcessor.logger.debugv("authenticator INTERNAL_ERROR: {0}", execution.getAuthenticator());
-            AuthenticationProcessor.logger.error("Unknown result status");
-            throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);
+            case ATTEMPTED:
+                AuthenticationProcessor.logger.debugv("authenticator ATTEMPTED: {0}", execution.getAuthenticator());
+                if (execution.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) {
+                    throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CREDENTIALS);
+                }
+                processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.ATTEMPTED);
+                return null;
+            case FLOW_RESET:
+                AuthenticationProcessor.resetFlow(processor.getClientSession());
+                return processor.authenticate();
+            default:
+                AuthenticationProcessor.logger.debugv("authenticator INTERNAL_ERROR: {0}", execution.getAuthenticator());
+                AuthenticationProcessor.logger.error("Unknown result status");
+                throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);
         }
-
     }
 
     public Response sendChallenge(AuthenticationProcessor.Result result, AuthenticationExecutionModel execution) {

@@ -65,10 +65,13 @@ public class UserSessionInitializerTest {
         resetSession();
 
         // Create and persist offline sessions
+        int started = Time.currentTime();
+        int serverStartTime = (int)(session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
+
         for (UserSessionModel origSession : origSessions) {
             UserSessionModel userSession = session.sessions().getUserSession(realm, origSession.getId());
             for (ClientSessionModel clientSession : userSession.getClientSessions()) {
-                sessionManager.persistOfflineSession(clientSession, userSession);
+                sessionManager.createOrUpdateOfflineSession(clientSession, userSession);
             }
         }
 
@@ -88,32 +91,23 @@ public class UserSessionInitializerTest {
         Assert.assertEquals(0, session.sessions().getOfflineSessionsCount(realm, testApp));
         Assert.assertEquals(0, session.sessions().getOfflineSessionsCount(realm, thirdparty));
 
-        int started = Time.currentTime();
+        // Load sessions from persister into infinispan/memory
+        UserSessionProviderFactory userSessionFactory = (UserSessionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserSessionProvider.class);
+        userSessionFactory.loadPersistentSessions(session.getKeycloakSessionFactory(), 1, 2);
 
-        try {
-            // Set some offset to ensure lastSessionRefresh will be updated
-            Time.setOffset(10);
+        resetSession();
 
-            // Load sessions from persister into infinispan/memory
-            UserSessionProviderFactory userSessionFactory = (UserSessionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserSessionProvider.class);
-            userSessionFactory.loadPersistentSessions(session.getKeycloakSessionFactory(), 10, 2);
+        // Assert sessions are in
+        testApp = realm.getClientByClientId("test-app");
+        Assert.assertEquals(3, session.sessions().getOfflineSessionsCount(realm, testApp));
+        Assert.assertEquals(1, session.sessions().getOfflineSessionsCount(realm, thirdparty));
 
-            resetSession();
+        List<UserSessionModel> loadedSessions = session.sessions().getOfflineUserSessions(realm, testApp, 0, 10);
+        UserSessionProviderTest.assertSessions(loadedSessions, origSessions);
 
-            // Assert sessions are in
-            testApp = realm.getClientByClientId("test-app");
-            Assert.assertEquals(3, session.sessions().getOfflineSessionsCount(realm, testApp));
-            Assert.assertEquals(1, session.sessions().getOfflineSessionsCount(realm, thirdparty));
-
-            List<UserSessionModel> loadedSessions = session.sessions().getOfflineUserSessions(realm, testApp, 0, 10);
-            UserSessionProviderTest.assertSessions(loadedSessions, origSessions);
-
-            UserSessionPersisterProviderTest.assertSessionLoaded(loadedSessions, origSessions[0].getId(), session.users().getUserByUsername("user1", realm), "127.0.0.1", started, started+10, "test-app", "third-party");
-            UserSessionPersisterProviderTest.assertSessionLoaded(loadedSessions, origSessions[1].getId(), session.users().getUserByUsername("user1", realm), "127.0.0.2", started, started+10, "test-app");
-            UserSessionPersisterProviderTest.assertSessionLoaded(loadedSessions, origSessions[2].getId(), session.users().getUserByUsername("user2", realm), "127.0.0.3", started, started+10, "test-app");
-        } finally {
-            Time.setOffset(0);
-        }
+        UserSessionPersisterProviderTest.assertSessionLoaded(loadedSessions, origSessions[0].getId(), session.users().getUserByUsername("user1", realm), "127.0.0.1", started, serverStartTime, "test-app", "third-party");
+        UserSessionPersisterProviderTest.assertSessionLoaded(loadedSessions, origSessions[1].getId(), session.users().getUserByUsername("user1", realm), "127.0.0.2", started, serverStartTime, "test-app");
+        UserSessionPersisterProviderTest.assertSessionLoaded(loadedSessions, origSessions[2].getId(), session.users().getUserByUsername("user2", realm), "127.0.0.3", started, serverStartTime, "test-app");
     }
 
     private ClientSessionModel createClientSession(ClientModel client, UserSessionModel userSession, String redirect, String state, Set<String> roles, Set<String> protocolMappers) {

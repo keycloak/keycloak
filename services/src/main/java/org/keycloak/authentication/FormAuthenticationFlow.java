@@ -219,8 +219,10 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
             action.setRequiredActions(processor.getSession(), processor.getRealm(), processor.getClientSession().getAuthenticatedUser());
 
         }
-        return null;
+        processor.getClientSession().setExecutionStatus(actionExecution, ClientSessionModel.ExecutionStatus.SUCCESS);
 
+        // redirect to no execution so browser refresh button works without reposting past data
+        return processor.createSuccessRedirect();
     }
 
     public URI getActionUrl(String executionId, String code) {

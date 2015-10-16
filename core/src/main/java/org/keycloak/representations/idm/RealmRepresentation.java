@@ -14,6 +14,7 @@ public class RealmRepresentation {
     protected Integer accessTokenLifespan;
     protected Integer ssoSessionIdleTimeout;
     protected Integer ssoSessionMaxLifespan;
+    protected Integer offlineSessionIdleTimeout;
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
     protected Integer accessCodeLifespanLogin;
@@ -197,6 +198,14 @@ public class RealmRepresentation {
 
     public void setSsoSessionMaxLifespan(Integer ssoSessionMaxLifespan) {
         this.ssoSessionMaxLifespan = ssoSessionMaxLifespan;
+    }
+
+    public Integer getOfflineSessionIdleTimeout() {
+        return offlineSessionIdleTimeout;
+    }
+
+    public void setOfflineSessionIdleTimeout(Integer offlineSessionIdleTimeout) {
+        this.offlineSessionIdleTimeout = offlineSessionIdleTimeout;
     }
 
     public List<ScopeMappingRepresentation> getScopeMappings() {
@@ -620,10 +629,14 @@ public class RealmRepresentation {
     }
 
     public Set<String> getSupportedLocales() {
-        if(supportedLocales == null){
-            supportedLocales = new HashSet<String>();
-        }
         return supportedLocales;
+    }
+
+    public void addSupportedLocales(String locale) {
+        if(supportedLocales == null){
+            supportedLocales = new HashSet<>();
+        }
+        supportedLocales.add(locale);
     }
 
     public void setSupportedLocales(Set<String> supportedLocales) {

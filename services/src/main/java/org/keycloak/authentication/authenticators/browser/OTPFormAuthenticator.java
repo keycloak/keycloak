@@ -37,6 +37,10 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
 
     public void validateOTP(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
+        if (inputData.containsKey("cancel")) {
+            context.resetFlow();
+            return;
+        }
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.TOTP);
         if (password == null) {

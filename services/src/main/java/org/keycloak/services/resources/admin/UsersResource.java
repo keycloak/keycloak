@@ -79,6 +79,7 @@ import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.AccountService;
+import org.keycloak.util.Time;
 
 /**
  * Base resource for managing users
@@ -350,6 +351,44 @@ public class UsersResource {
     }
 
     /**
+     * Get offline sessions associated with the user and client
+     *
+     * @param id User id
+     * @return
+     */
+    @Path("{id}/offline-sessions/{clientId}")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<UserSessionRepresentation> getSessions(final @PathParam("id") String id, final @PathParam("clientId") String clientId) {
+        auth.requireView();
+        UserModel user = session.users().getUserById(id, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        ClientModel client = realm.getClientById(clientId);
+        if (client == null) {
+            throw new NotFoundException("Client not found");
+        }
+        List<UserSessionModel> sessions = new UserSessionManager(session).findOfflineSessions(realm, client, user);
+        List<UserSessionRepresentation> reps = new ArrayList<UserSessionRepresentation>();
+        for (UserSessionModel session : sessions) {
+            UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(session);
+
+            // Update lastSessionRefresh with the timestamp from clientSession
+            for (ClientSessionModel clientSession : session.getClientSessions()) {
+                if (clientId.equals(clientSession.getClient().getId())) {
+                    rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
+                    break;
+                }
+            }
+
+            reps.add(rep);
+        }
+        return reps;
+    }
+
+    /**
      * Get social logins associated with the user
      *
      * @param id User id
@@ -469,7 +508,14 @@ public class UsersResource {
             currentRep.put("grantedRealmRoles", (rep==null ? Collections.emptyList() : rep.getGrantedRealmRoles()));
             currentRep.put("grantedClientRoles", (rep==null ? Collections.emptyMap() : rep.getGrantedClientRoles()));
 
-            List<String> additionalGrants = hasOfflineToken ? Arrays.asList("Offline Token") : Collections.<String>emptyList();
+            List<Map<String, String>> additionalGrants = new LinkedList<>();
+            if (hasOfflineToken) {
+                Map<String, String> offlineTokens = new HashMap<>();
+                offlineTokens.put("client", client.getId());
+                // TODO: translate
+                offlineTokens.put("key", "Offline Token");
+                additionalGrants.add(offlineTokens);
+            }
             currentRep.put("additionalGrants", additionalGrants);
 
             result.add(currentRep);
@@ -882,15 +928,42 @@ public class UsersResource {
     }
 
     /**
-     * Send a password-reset email to the user
+     * Send an email to the user with a link they can click to reset their password.
+     * The redirectUri and clientId parameters are optional. The default for the
+     * redirect is the account client.
      *
-     * An email contains a link the user can click to reset their password.
+     * This endpoint has been deprecated.  Please use the execute-actions-email passing a list with
+     * UPDATE_PASSWORD within it.
+     *
+     * @param id
+     * @param redirectUri redirect uri
+     * @param clientId client id
+     * @return
+     */
+    @Deprecated
+    @Path("{id}/reset-password-email")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response resetPasswordEmail(@PathParam("id") String id,
+                                        @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
+                                        @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+        return executeActionsEmail(id, redirectUri, clientId, actions);
+    }
+
+
+    /**
+     * Send a update account email to the user
+     *
+     * An email contains a link the user can click to perform a set of required actions.
      * The redirectUri and clientId parameters are optional. The default for the
      * redirect is the account client.
      *
      * @param id User is
      * @param redirectUri Redirect uri
      * @param clientId Client id
+     * @param actions required actions the user needs to complete
      * @return
      */
     @Path("{id}/execute-actions-email")

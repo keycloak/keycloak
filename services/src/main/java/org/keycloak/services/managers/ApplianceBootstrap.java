@@ -52,6 +52,7 @@ public class ApplianceBootstrap {
         realm.setSsoSessionIdleTimeout(1800);
         realm.setAccessTokenLifespan(60);
         realm.setSsoSessionMaxLifespan(36000);
+        realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
         realm.setAccessCodeLifespan(60);
         realm.setAccessCodeLifespanUserAction(300);
         realm.setAccessCodeLifespanLogin(1800);

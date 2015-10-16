@@ -54,6 +54,9 @@
             <module name="org.jboss.resteasy.resteasy-jaxrs"/>
 
             <module name="org.jboss.msc"/>
+
+            <!-- suppress unsupported dependency 'org.infinispan:main' warning -->
+            <module name="org.keycloak.keycloak-server-subsystem.infinispan"/>
         </dependencies>
         <exclusions>
             <module name="org.jboss.resteasy.resteasy-jackson2-provider"/>

@@ -4,6 +4,7 @@
     "accessTokenLifespan": 6000,
     "accessCodeLifespan": 30,
     "accessCodeLifespanUserAction": 600,
+    "offlineSessionIdleTimeout": 3600000,
     "requiredCredentials": [ "password" ],
     "defaultRoles": [ "foo", "bar" ],
     "verifyEmail" : "true",

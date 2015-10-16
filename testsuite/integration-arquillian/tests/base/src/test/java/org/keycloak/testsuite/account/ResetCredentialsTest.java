@@ -91,7 +91,7 @@ public class ResetCredentialsTest extends AbstractAccountManagementTest {
         
         log.info("navigating to " + url);
         driver.navigate().to(url);
-        assertCurrentUrlStartsWith(testRealmResetCredentialsPage);
+        //assertCurrentUrlStartsWith(testRealmResetCredentialsPage);
         testRealmResetCredentialsPage.updatePassword("newPassword");
         assertCurrentUrlStartsWith(testRealmAccountManagementPage);
         testRealmAccountManagementPage.signOut();

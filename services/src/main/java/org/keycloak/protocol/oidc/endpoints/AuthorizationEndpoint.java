@@ -22,10 +22,10 @@ import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPageException;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.Urls;
 import org.keycloak.services.resources.LoginActionsService;
 
 import javax.ws.rs.GET;
@@ -174,7 +174,7 @@ public class AuthorizationEndpoint {
     private void checkClient() {
         if (clientId == null) {
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM );
+            throw new ErrorPageException(session, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
         }
 
         event.client(clientId);
@@ -182,12 +182,12 @@ public class AuthorizationEndpoint {
         client = realm.getClientByClientId(clientId);
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            throw new ErrorPageException(session, Messages.CLIENT_NOT_FOUND );
+            throw new ErrorPageException(session, Messages.CLIENT_NOT_FOUND);
         }
 
         if (client.isBearerOnly()) {
             event.error(Errors.NOT_ALLOWED);
-            throw new ErrorPageException(session, Messages.BEARER_ONLY );
+            throw new ErrorPageException(session, Messages.BEARER_ONLY);
         }
 
         if (client.isDirectGrantsOnly()) {
@@ -204,7 +204,7 @@ public class AuthorizationEndpoint {
                 responseType = legacyResponseType;
             } else {
                 event.error(Errors.INVALID_REQUEST);
-                throw new ErrorPageException(session, Messages.MISSING_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM );
+                throw new ErrorPageException(session, Messages.MISSING_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
             }
         }
 
@@ -216,7 +216,7 @@ public class AuthorizationEndpoint {
             }
         } else {
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM );
+            throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
         }
     }
 
@@ -280,29 +280,43 @@ public class AuthorizationEndpoint {
         String flowId = flow.getId();
         AuthenticationProcessor processor = createProcessor(flowId, LoginActionsService.AUTHENTICATE_PATH);
 
-        Response challenge = null;
-        try {
-            challenge = processor.authenticateOnly();
+        if (prompt != null && prompt.equals("none")) {
+            // OIDC prompt == NONE
+            // This means that client is just checking if the user is already completely logged in.
+            //
+            // here we cancel login if any authentication action or required action is required
+            Response challenge = null;
+            try {
+                challenge = processor.authenticateOnly();
+                if (challenge == null) {
+                    challenge = processor.attachSessionExecutionRequiredActions();
+                }
+            } catch (Exception e) {
+                return processor.handleBrowserException(e);
+            }
+
+            if (challenge != null) {
+                if (processor.isUserSessionCreated()) {
+                    session.sessions().removeUserSession(realm, processor.getUserSession());
+                }
+                OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo, headers, event);
+                return oauth.cancelLogin(clientSession);
+            }
+
             if (challenge == null) {
-                challenge = processor.attachSessionExecutionRequiredActions();
+                return processor.finishAuthentication();
+            } else {
+                RestartLoginCookie.setRestartCookie(realm, clientConnection, uriInfo, clientSession);
+                return challenge;
             }
-        } catch (Exception e) {
-            return processor.handleBrowserException(e);
-        }
-
-        if (challenge != null && prompt != null && prompt.equals("none")) {
-            if (processor.isUserSessionCreated()) {
-                session.sessions().removeUserSession(realm, processor.getUserSession());
-            }
-            OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo, headers, event);
-            return oauth.cancelLogin(clientSession);
-        }
-
-        if (challenge == null) {
-            return processor.finishAuthentication();
         } else {
-            RestartLoginCookie.setRestartCookie(realm, clientConnection, uriInfo, clientSession);
-            return challenge;
+            try {
+                RestartLoginCookie.setRestartCookie(realm, clientConnection, uriInfo, clientSession);
+                return processor.authenticate();
+            } catch (Exception e) {
+                return processor.handleBrowserException(e);
+            }
+
         }
     }
 
