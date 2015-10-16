@@ -431,7 +431,14 @@ public class AuthenticationManagementResource {
         execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
         execution.setAuthenticatorFlow(true);
         execution.setAuthenticator(provider);
+        execution.setPriority(getNextPriority(parentFlow));
+
         realm.addAuthenticatorExecution(execution);
+    }
+
+    private int getNextPriority(AuthenticationFlowModel parentFlow) {
+        List<AuthenticationExecutionModel> executions = getSortedExecutions(parentFlow);
+        return executions.isEmpty() ? 0 : executions.get(executions.size() - 1).getPriority() + 1;
     }
 
     /**
@@ -453,12 +460,13 @@ public class AuthenticationManagementResource {
         }
         String provider = data.get("provider");
 
-
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
         execution.setParentFlow(parentFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
         execution.setAuthenticatorFlow(false);
         execution.setAuthenticator(provider);
+        execution.setPriority(getNextPriority(parentFlow));
+
         realm.addAuthenticatorExecution(execution);
     }
 
@@ -583,13 +591,7 @@ public class AuthenticationManagementResource {
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to add execution to a built in flow");
         }
-        int priority = 0;
-        List<AuthenticationExecutionModel> executions = getSortedExecutions(parentFlow);
-        for (AuthenticationExecutionModel execution : executions) {
-            priority = execution.getPriority();
-        }
-        if (priority > 0) priority += 10;
-        model.setPriority(priority);
+        model.setPriority(getNextPriority(parentFlow));
         model = realm.addAuthenticatorExecution(model);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
