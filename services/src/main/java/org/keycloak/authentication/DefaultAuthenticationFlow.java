@@ -1,19 +1,14 @@
 package org.keycloak.authentication;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.util.Time;
-import org.omg.PortableInterceptor.SUCCESSFUL;
 
 import static org.keycloak.authentication.FlowStatus.*;
 
 import javax.ws.rs.core.Response;
-import java.net.URI;
+
 import java.util.Iterator;
 import java.util.List;
 

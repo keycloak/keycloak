@@ -1,13 +1,13 @@
 package org.keycloak.events;
 
 import org.jboss.logging.Logger;
-import org.keycloak.ClientConnection;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import java.util.HashMap;
 import java.util.LinkedList;

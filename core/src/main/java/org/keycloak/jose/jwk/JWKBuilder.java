@@ -1,14 +1,12 @@
 package org.keycloak.jose.jwk;
 
-import org.keycloak.util.Base64Url;
+import org.keycloak.common.util.Base64Url;
 
 import java.math.BigInteger;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
 /**

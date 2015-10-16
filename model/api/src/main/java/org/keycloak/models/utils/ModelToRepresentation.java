@@ -44,7 +44,7 @@ import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import java.util.ArrayList;
 import java.util.Collection;

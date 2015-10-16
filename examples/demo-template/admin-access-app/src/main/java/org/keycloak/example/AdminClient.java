@@ -13,10 +13,10 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.util.HostUtils;
+import org.keycloak.common.util.HostUtils;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.KeycloakUriBuilder;
-import org.keycloak.util.UriUtils;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.UriUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;

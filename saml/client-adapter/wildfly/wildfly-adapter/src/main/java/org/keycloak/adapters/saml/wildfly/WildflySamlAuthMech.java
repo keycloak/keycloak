@@ -2,7 +2,7 @@ package org.keycloak.adapters.saml.wildfly;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
-import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.saml.SamlSessionStore;

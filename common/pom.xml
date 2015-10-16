@@ -18,7 +18,7 @@
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
         <keycloak.osgi.export>
-            org.keycloak.*
+            org.keycloak.common.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             *;resolution:=optional

@@ -1,7 +1,7 @@
 package org.keycloak.services.resources;
 
 import org.keycloak.Config;
-import org.keycloak.Version;
+import org.keycloak.common.Version;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

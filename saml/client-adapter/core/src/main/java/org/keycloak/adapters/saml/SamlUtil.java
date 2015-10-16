@@ -1,6 +1,6 @@
 package org.keycloak.adapters.saml;
 
-import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;

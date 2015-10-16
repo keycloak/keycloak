@@ -2,7 +2,6 @@ package org.keycloak.account.freemarker.model;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.UserModel;
-import org.keycloak.util.MultivaluedHashMap;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.HashMap;

@@ -4,10 +4,10 @@ import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.junit.Test;
 import org.keycloak.adapters.authentication.ClientIdAndSecretCredentialsProvider;
 import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
-import org.keycloak.enums.RelativeUrlsUsed;
-import org.keycloak.enums.SslRequired;
+import org.keycloak.common.enums.RelativeUrlsUsed;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.enums.TokenStore;
-import org.keycloak.util.PemUtils;
+import org.keycloak.common.util.PemUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

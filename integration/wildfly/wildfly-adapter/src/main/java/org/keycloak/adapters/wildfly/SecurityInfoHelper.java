@@ -5,7 +5,7 @@ import org.jboss.security.SecurityConstants;
 import org.jboss.security.SecurityContextAssociation;
 import org.jboss.security.SimpleGroup;
 import org.jboss.security.SimplePrincipal;
-import org.keycloak.adapters.KeycloakAccount;
+import org.keycloak.adapters.spi.KeycloakAccount;
 
 import javax.security.auth.Subject;
 import java.security.Principal;

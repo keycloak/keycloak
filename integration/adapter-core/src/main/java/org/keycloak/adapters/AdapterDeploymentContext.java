@@ -6,13 +6,14 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
-import org.keycloak.enums.RelativeUrlsUsed;
-import org.keycloak.enums.SslRequired;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.common.enums.RelativeUrlsUsed;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.KeycloakUriBuilder;
+import org.keycloak.common.util.KeycloakUriBuilder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

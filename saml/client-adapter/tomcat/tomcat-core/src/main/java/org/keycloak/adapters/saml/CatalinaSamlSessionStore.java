@@ -5,16 +5,13 @@ import org.apache.catalina.Session;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.HttpFacade;
-import org.keycloak.adapters.SessionIdMapper;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.tomcat.CatalinaUserSessionManagement;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
-import org.keycloak.util.KeycloakUriBuilder;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.security.Principal;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;

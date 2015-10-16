@@ -46,7 +46,7 @@
         <property name="realmName" value="does-not-matter"/>
     </bean>
 
-    <bean id="sessionHandler" class="org.keycloak.adapters.jetty.core.WrappingSessionHandler">
+    <bean id="sessionHandler" class="org.keycloak.adapters.jetty.spi.WrappingSessionHandler">
         <property name="handler" ref="securityHandler" />
     </bean>
 

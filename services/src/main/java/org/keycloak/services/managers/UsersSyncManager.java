@@ -11,7 +11,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.timer.TimerProvider;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import java.util.List;
 

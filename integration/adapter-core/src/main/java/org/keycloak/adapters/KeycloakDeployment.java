@@ -4,11 +4,11 @@ import org.apache.http.client.HttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 import org.keycloak.constants.ServiceUrlConstants;
-import org.keycloak.enums.RelativeUrlsUsed;
-import org.keycloak.enums.SslRequired;
+import org.keycloak.common.enums.RelativeUrlsUsed;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.util.KeycloakUriBuilder;
+import org.keycloak.common.util.KeycloakUriBuilder;
 
 import java.net.URI;
 import java.security.PublicKey;

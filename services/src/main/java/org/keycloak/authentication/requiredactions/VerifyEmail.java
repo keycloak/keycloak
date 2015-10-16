@@ -8,18 +8,13 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Response;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

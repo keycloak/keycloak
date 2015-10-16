@@ -1,7 +1,7 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.Config;
-import org.keycloak.enums.SslRequired;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.RealmCache;

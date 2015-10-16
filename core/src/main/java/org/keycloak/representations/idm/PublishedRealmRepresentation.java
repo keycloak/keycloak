@@ -3,7 +3,7 @@ package org.keycloak.representations.idm;
 import org.bouncycastle.openssl.PEMWriter;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
-import org.keycloak.util.PemUtils;
+import org.keycloak.common.util.PemUtils;
 
 import java.io.IOException;
 import java.io.StringWriter;

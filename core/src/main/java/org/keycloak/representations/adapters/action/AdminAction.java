@@ -1,7 +1,7 @@
 package org.keycloak.representations.adapters.action;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 /**
  * Posted to managed client from admin server.

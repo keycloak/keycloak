@@ -1,7 +1,7 @@
 package org.keycloak.protocol.oidc;
 
 import org.jboss.logging.Logger;
-import org.keycloak.ClientConnection;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
@@ -34,7 +34,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.util.TokenUtil;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;

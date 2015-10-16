@@ -1,9 +1,9 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.models.Constants;
-import org.keycloak.util.Base64;
+import org.keycloak.common.util.Base64;
 import org.jboss.logging.Logger;
-import org.keycloak.enums.SslRequired;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -49,7 +49,7 @@ import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.util.UriUtils;
+import org.keycloak.common.util.UriUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;

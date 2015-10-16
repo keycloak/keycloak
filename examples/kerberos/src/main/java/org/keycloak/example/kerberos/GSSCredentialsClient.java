@@ -12,9 +12,9 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.ietf.jgss.GSSCredential;
 import org.keycloak.KeycloakPrincipal;
-import org.keycloak.constants.KerberosConstants;
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.util.KerberosSerializationUtils;
+import org.keycloak.common.util.KerberosSerializationUtils;
 
 /**
  * Sample client able to authenticate against ApacheDS LDAP server with Krb5 GSS Credential.

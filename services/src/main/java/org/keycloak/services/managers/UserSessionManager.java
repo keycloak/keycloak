@@ -16,7 +16,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 /**
  *

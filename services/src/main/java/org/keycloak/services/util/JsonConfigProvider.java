@@ -2,7 +2,7 @@ package org.keycloak.services.util;
 
 import org.codehaus.jackson.JsonNode;
 import org.keycloak.Config;
-import org.keycloak.util.StringPropertyReplacer;
+import org.keycloak.common.util.StringPropertyReplacer;
 
 import java.util.Properties;
 

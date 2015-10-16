@@ -1,10 +1,10 @@
 package org.keycloak.adapters.saml;
 
 import org.jboss.logging.Logger;
-import org.keycloak.VerificationException;
-import org.keycloak.adapters.AuthChallenge;
-import org.keycloak.adapters.AuthOutcome;
-import org.keycloak.adapters.HttpFacade;
+import org.keycloak.common.VerificationException;
+import org.keycloak.adapters.spi.AuthChallenge;
+import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
@@ -22,20 +22,17 @@ import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.Base64;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
-import org.keycloak.util.KeycloakUriBuilder;
-import org.keycloak.util.MultivaluedHashMap;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
-import java.io.IOException;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.util.HashSet;

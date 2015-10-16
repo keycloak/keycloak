@@ -9,11 +9,10 @@ import org.keycloak.connections.mongo.api.types.MapperRegistry;
 import org.keycloak.connections.mongo.impl.EntityInfo;
 import org.keycloak.connections.mongo.impl.MongoStoreImpl;
 import org.keycloak.models.utils.reflection.Property;
-import org.keycloak.util.reflections.Types;
+import org.keycloak.common.util.reflections.Types;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 

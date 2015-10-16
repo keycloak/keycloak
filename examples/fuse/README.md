@@ -71,8 +71,8 @@ which automatically installs all other needed stuff.
 Once you run Apache Karaf, you need to run these commands from Karaf console (Make sure to replace keycloak versions in the example with actual Keycloak version):
 
 ```
-feature:repo-add mvn:org.apache.camel.karaf/apache-camel/2.12.5/xml/features
-feature:repo-add mvn:org.apache.cxf.karaf/apache-cxf/2.7.14/xml/features
+feature:repo-add mvn:org.apache.camel.karaf/apache-camel/2.15.1/xml/features
+feature:repo-add mvn:org.apache.cxf.karaf/apache-cxf/3.0.4/xml/features
 feature:repo-add mvn:org.keycloak/keycloak-osgi-features/1.2.0.Beta1/xml/features
 feature:repo-add mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.2.0.Beta1/xml/features
 feature:install keycloak-fuse-example

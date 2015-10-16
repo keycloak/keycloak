@@ -2,7 +2,7 @@ package org.keycloak;
 
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
-import org.keycloak.util.Base64Url;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;

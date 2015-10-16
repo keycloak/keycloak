@@ -7,7 +7,6 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.util.Time;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

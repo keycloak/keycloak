@@ -36,7 +36,7 @@ import org.keycloak.models.entities.RoleEntity;
 import org.keycloak.models.entities.UserEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import java.util.ArrayList;
 import java.util.Collections;

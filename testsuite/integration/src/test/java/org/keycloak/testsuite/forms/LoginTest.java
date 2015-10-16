@@ -46,7 +46,7 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;

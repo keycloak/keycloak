@@ -3,7 +3,7 @@ package org.keycloak.adapters.tomcat;
 import java.util.List;
 
 import org.apache.catalina.Manager;
-import org.keycloak.adapters.UserSessionManagement;
+import org.keycloak.adapters.spi.UserSessionManagement;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

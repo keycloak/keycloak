@@ -5,9 +5,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel.RequiredAction;
-import org.keycloak.util.Base64Url;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Time;
 
 import javax.crypto.Mac;
 import java.security.Key;

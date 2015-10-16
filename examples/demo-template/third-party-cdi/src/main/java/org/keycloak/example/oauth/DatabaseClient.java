@@ -10,7 +10,6 @@ import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.servlet.ServletOAuthClient;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.UriUtils;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.faces.application.FacesMessage;

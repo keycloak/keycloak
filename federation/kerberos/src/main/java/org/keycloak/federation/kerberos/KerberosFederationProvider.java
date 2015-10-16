@@ -20,7 +20,7 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.constants.KerberosConstants;
+import org.keycloak.common.constants.KerberosConstants;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

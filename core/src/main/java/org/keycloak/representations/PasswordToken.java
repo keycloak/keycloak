@@ -1,6 +1,6 @@
 package org.keycloak.representations;
 
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

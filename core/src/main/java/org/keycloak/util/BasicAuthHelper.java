@@ -1,6 +1,6 @@
 package org.keycloak.util;
 
-import org.keycloak.util.Base64;
+import org.keycloak.common.util.Base64;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;

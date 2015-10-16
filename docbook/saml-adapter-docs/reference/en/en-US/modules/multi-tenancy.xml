@@ -43,7 +43,7 @@
 
             <listitem>
                 A concrete implementation of <literal>org.keycloak.adapters.KeycloakConfigResolver</literal>. Keycloak will call the
-                <literal>resolve(org.keycloak.adapters.HttpFacade.Request)</literal> method and expects a complete
+                <literal>resolve(org.keycloak.adapters.spi.HttpFacade.Request)</literal> method and expects a complete
                 <literal>org.keycloak.adapters.KeycloakDeployment</literal> in response. Note that Keycloak will call this for every request,
                 so, take the usual performance precautions.
             </listitem>

@@ -3,7 +3,7 @@ package org.keycloak.federation.kerberos;
 import java.util.Map;
 
 import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.constants.KerberosConstants;
+import org.keycloak.common.constants.KerberosConstants;
 
 /**
  * Common configuration useful for all providers

@@ -2,8 +2,8 @@
          pageEncoding="ISO-8859-1" %>
 <%@ page import="org.keycloak.example.ProductServiceAccountServlet" %>
 <%@ page import="org.keycloak.representations.AccessToken" %>
-<%@ page import="org.keycloak.constants.ServiceAccountConstants" %>
-<%@ page import="org.keycloak.util.Time" %>
+<%@ page import="org.keycloak.common.constants.ServiceAccountConstants" %>
+<%@ page import="org.keycloak.common.util.Time" %>
 <html>
 <head>
     <title>Service account portal</title>

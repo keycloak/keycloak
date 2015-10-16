@@ -1,6 +1,6 @@
 package org.keycloak.adapters.saml;
 
-import org.keycloak.util.MultivaluedHashMap;
+import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.io.Serializable;
 import java.security.Principal;

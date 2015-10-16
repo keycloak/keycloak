@@ -16,7 +16,7 @@
  */
 package org.keycloak.protocol.oidc;
 
-import org.keycloak.constants.KerberosConstants;
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;

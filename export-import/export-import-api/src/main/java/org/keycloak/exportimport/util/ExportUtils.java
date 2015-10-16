@@ -1,9 +1,6 @@
 package org.keycloak.exportimport.util;
 
-import org.keycloak.models.session.PersistentClientSessionModel;
-import org.keycloak.models.session.PersistentUserSessionModel;
-import org.keycloak.representations.idm.OfflineUserSessionRepresentation;
-import org.keycloak.util.Base64;
+import org.keycloak.common.util.Base64;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;

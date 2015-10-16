@@ -1,7 +1,7 @@
 package org.keycloak.services.filters;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.ClientConnection;
+import org.keycloak.common.ClientConnection;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;

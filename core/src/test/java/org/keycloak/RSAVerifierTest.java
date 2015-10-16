@@ -7,9 +7,10 @@ import org.bouncycastle.x509.X509V1CertificateGenerator;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.keycloak.common.VerificationException;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 import org.keycloak.util.TokenUtil;
 
 import javax.security.auth.x500.X500Principal;

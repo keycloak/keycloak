@@ -21,7 +21,7 @@ import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.example.ws.Product;
 import org.keycloak.example.ws.UnknownProductFault;
-import org.keycloak.util.KeycloakUriBuilder;
+import org.keycloak.common.util.KeycloakUriBuilder;
 
 /**
  * Servlet for receiving informations about products from backend JAXWS service

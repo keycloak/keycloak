@@ -4,7 +4,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -17,7 +16,7 @@ import org.keycloak.models.sessions.infinispan.compat.entities.UsernameLoginFail
 import org.keycloak.models.sessions.infinispan.compat.entities.UsernameLoginFailureKey;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmInfoUtil;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import java.util.Collections;
 import java.util.Comparator;
