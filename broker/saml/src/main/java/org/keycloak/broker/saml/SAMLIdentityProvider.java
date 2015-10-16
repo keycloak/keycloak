@@ -228,7 +228,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
 
         String descriptor =
-                "<EntityDescriptor entityID=\"" + getEntityId(uriInfo, realm) + "\">\n" +
+                "<EntityDescriptor xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\" entityID=\"" + getEntityId(uriInfo, realm) + "\">\n" +
                 "    <SPSSODescriptor AuthnRequestsSigned=\"" + getConfig().isWantAuthnRequestsSigned() + "\"\n" +
                 "            protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol http://schemas.xmlsoap.org/ws/2003/07/secext\">\n" +
                 "        <NameIDFormat>" + getConfig().getNameIDPolicyFormat() + "\n" +
