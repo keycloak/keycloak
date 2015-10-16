@@ -34,8 +34,6 @@ public class PasswordPolicy extends Authentication {
     public void addPolicy(PasswordPolicy.Type policy, String value) {
         waitGuiForElement(addPolicySelectElement);
         addPolicySelect.selectByVisibleText(policy.getName());
-
-        //addPolicySelect.selectByValue(policy.getName());
         setPolicyValue(policy, value);
         primaryButton.click();
     }

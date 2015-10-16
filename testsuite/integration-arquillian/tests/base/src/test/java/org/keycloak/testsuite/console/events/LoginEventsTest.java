@@ -23,9 +23,10 @@ import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD
 public class LoginEventsTest extends AbstractConsoleTest {
     @Page
     private LoginEvents loginEventsPage;
+
     @Page
     private Config configPage;
-    
+
     @Before
     public void beforeLoginEventsTest() {
         RealmRepresentation realm = testRealmResource().toRepresentation();
