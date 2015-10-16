@@ -58,6 +58,7 @@ public class CachedRealm implements Serializable {
     private boolean revokeRefreshToken;
     private int ssoSessionIdleTimeout;
     private int ssoSessionMaxLifespan;
+    private int offlineSessionIdleTimeout;
     private int accessTokenLifespan;
     private int accessCodeLifespan;
     private int accessCodeLifespanUserAction;
@@ -140,6 +141,7 @@ public class CachedRealm implements Serializable {
         revokeRefreshToken = model.isRevokeRefreshToken();
         ssoSessionIdleTimeout = model.getSsoSessionIdleTimeout();
         ssoSessionMaxLifespan = model.getSsoSessionMaxLifespan();
+        offlineSessionIdleTimeout = model.getOfflineSessionIdleTimeout();
         accessTokenLifespan = model.getAccessTokenLifespan();
         accessCodeLifespan = model.getAccessCodeLifespan();
         accessCodeLifespanUserAction = model.getAccessCodeLifespanUserAction();
@@ -325,6 +327,10 @@ public class CachedRealm implements Serializable {
 
     public int getSsoSessionMaxLifespan() {
         return ssoSessionMaxLifespan;
+    }
+
+    public int getOfflineSessionIdleTimeout() {
+        return offlineSessionIdleTimeout;
     }
 
     public int getAccessTokenLifespan() {

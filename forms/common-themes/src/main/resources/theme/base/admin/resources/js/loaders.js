@@ -181,6 +181,16 @@ module.factory('UserSessionsLoader', function(Loader, UserSessions, $route, $q) 
     });
 });
 
+module.factory('UserOfflineSessionsLoader', function(Loader, UserOfflineSessions, $route, $q) {
+    return Loader.query(UserOfflineSessions, function() {
+        return {
+            realm : $route.current.params.realm,
+            user : $route.current.params.user,
+            client : $route.current.params.client
+        }
+    });
+});
+
 module.factory('UserFederatedIdentityLoader', function(Loader, UserFederatedIdentities, $route, $q) {
     return Loader.query(UserFederatedIdentities, function() {
         return {

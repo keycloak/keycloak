@@ -21,7 +21,7 @@
     <table class="table table-striped table-bordered" data-ng-show="count > 0">
         <thead>
         <tr>
-            <th class="kc-table-actions" colspan="3">
+            <th class="kc-table-actions" colspan="4">
                 <div class="pull-right">
                     <a class="btn btn-default" ng-click="loadUsers()" tooltip-placement="left" tooltip-trigger="mouseover mouseout" tooltip="{{:: 'show-offline-tokens.tooltip' | translate}}">{{:: 'show-offline-tokens' | translate}}</a>
                 </div>
@@ -31,6 +31,7 @@
             <th>{{:: 'user' | translate}}</th>
             <th>{{:: 'from-ip' | translate}}</th>
             <th>{{:: 'token-issued' | translate}}</th>
+            <th>{{:: 'last-refresh' | translate}}</th>
         </tr>
         </thead>
         <tfoot data-ng-show="sessions && (sessions.length >= 5 || query.first != 0)">
@@ -49,6 +50,7 @@
             <td><a href="#/realms/{{realm.realm}}/users/{{session.userId}}">{{session.username}}</a></td>
             <td>{{session.ipAddress}}</td>
             <td>{{session.start | date:'medium'}}</td>
+            <td>{{session.lastAccess | date:'medium'}}</td>
         </tr>
         </tbody>
     </table>

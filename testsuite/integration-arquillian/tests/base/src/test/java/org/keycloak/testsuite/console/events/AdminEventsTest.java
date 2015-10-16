@@ -4,6 +4,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.clients.AbstractClientTest;
@@ -13,10 +14,10 @@ import org.keycloak.testsuite.console.page.events.Config;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
-import static org.junit.Assert.assertEquals;
-
 import javax.ws.rs.core.Response;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 
 /**
@@ -37,10 +38,12 @@ public class AdminEventsTest extends AbstractConsoleTest {
 
     @Before
     public void beforeAdminEventsTest() {
-        configPage.navigateTo();
-        configPage.form().setSaveAdminEvents(true);
-        configPage.form().setIncludeRepresentation(true);
-        configPage.form().save();
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+
+        realm.setAdminEventsEnabled(true);
+        realm.setAdminEventsDetailsEnabled(true);
+
+        testRealmResource().update(realm);
     }
 
     @Test

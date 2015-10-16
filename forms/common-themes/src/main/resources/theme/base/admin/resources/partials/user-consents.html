@@ -38,7 +38,7 @@
             </td>
             <td>
                 <span data-ng-repeat="additionalGrant in consent.additionalGrants">
-                    <span ng-if="!$first">, </span>{{additionalGrant}}
+                    <span ng-if="!$first">, </span><a href="#/realms/{{realm.realm}}/users/{{user.id}}/offline-sessions/{{additionalGrant.client}}">{{additionalGrant.key}}</a>
                 </span>
             </td>
             <td class="kc-action-cell">

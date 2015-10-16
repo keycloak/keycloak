@@ -37,7 +37,6 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
         data.setProtocolMappers(clientSession.getProtocolMappers());
         data.setRedirectUri(clientSession.getRedirectUri());
         data.setRoles(clientSession.getRoles());
-        data.setTimestamp(clientSession.getTimestamp());
         data.setUserSessionNotes(clientSession.getUserSessionNotes());
 
         model = new PersistentClientSessionModel();
@@ -47,6 +46,7 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
             model.setUserId(clientSession.getAuthenticatedUser().getId());
         }
         model.setUserSessionId(clientSession.getUserSession().getId());
+        model.setTimestamp(clientSession.getTimestamp());
 
         realm = clientSession.getRealm();
         client = clientSession.getClient();
@@ -122,12 +122,12 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public int getTimestamp() {
-        return getData().getTimestamp();
+        return model.getTimestamp();
     }
 
     @Override
     public void setTimestamp(int timestamp) {
-        getData().setTimestamp(timestamp);
+        model.setTimestamp(timestamp);
     }
 
     @Override
@@ -309,9 +309,6 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
         @JsonProperty("executionStatus")
         private Map<String, ClientSessionModel.ExecutionStatus> executionStatus = new HashMap<>();
 
-        @JsonProperty("timestamp")
-        private int timestamp;
-
         @JsonProperty("action")
         private String action;
 
@@ -372,14 +369,6 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
 
         public void setExecutionStatus(Map<String, ClientSessionModel.ExecutionStatus> executionStatus) {
             this.executionStatus = executionStatus;
-        }
-
-        public int getTimestamp() {
-            return timestamp;
-        }
-
-        public void setTimestamp(int timestamp) {
-            this.timestamp = timestamp;
         }
 
         public String getAction() {

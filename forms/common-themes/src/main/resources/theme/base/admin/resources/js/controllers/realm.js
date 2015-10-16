@@ -912,6 +912,12 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         $scope.realm.ssoSessionMaxLifespan = TimeUnit.convert($scope.realm.ssoSessionMaxLifespan, from, to);
     });
 
+    $scope.realm.offlineSessionIdleTimeoutUnit = TimeUnit.autoUnit(realm.offlineSessionIdleTimeout);
+    $scope.realm.offlineSessionIdleTimeout = TimeUnit.toUnit(realm.offlineSessionIdleTimeout, $scope.realm.offlineSessionIdleTimeoutUnit);
+    $scope.$watch('realm.offlineSessionIdleTimeoutUnit', function(to, from) {
+        $scope.realm.offlineSessionIdleTimeout = TimeUnit.convert($scope.realm.offlineSessionIdleTimeout, from, to);
+    });
+
     $scope.realm.accessCodeLifespanUnit = TimeUnit.autoUnit(realm.accessCodeLifespan);
     $scope.realm.accessCodeLifespan = TimeUnit.toUnit(realm.accessCodeLifespan, $scope.realm.accessCodeLifespanUnit);
     $scope.$watch('realm.accessCodeLifespanUnit', function(to, from) {
@@ -943,6 +949,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         var realmCopy = angular.copy($scope.realm);
         delete realmCopy["accessTokenLifespanUnit"];
         delete realmCopy["ssoSessionMaxLifespanUnit"];
+        delete realmCopy["offlineSessionIdleTimeoutUnit"];
         delete realmCopy["accessCodeLifespanUnit"];
         delete realmCopy["ssoSessionIdleTimeoutUnit"];
         delete realmCopy["accessCodeLifespanUserActionUnit"];
@@ -951,6 +958,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         realmCopy.accessTokenLifespan = TimeUnit.toSeconds($scope.realm.accessTokenLifespan, $scope.realm.accessTokenLifespanUnit)
         realmCopy.ssoSessionIdleTimeout = TimeUnit.toSeconds($scope.realm.ssoSessionIdleTimeout, $scope.realm.ssoSessionIdleTimeoutUnit)
         realmCopy.ssoSessionMaxLifespan = TimeUnit.toSeconds($scope.realm.ssoSessionMaxLifespan, $scope.realm.ssoSessionMaxLifespanUnit)
+        realmCopy.offlineSessionIdleTimeout = TimeUnit.toSeconds($scope.realm.offlineSessionIdleTimeout, $scope.realm.offlineSessionIdleTimeoutUnit)
         realmCopy.accessCodeLifespan = TimeUnit.toSeconds($scope.realm.accessCodeLifespan, $scope.realm.accessCodeLifespanUnit)
         realmCopy.accessCodeLifespanUserAction = TimeUnit.toSeconds($scope.realm.accessCodeLifespanUserAction, $scope.realm.accessCodeLifespanUserActionUnit)
         realmCopy.accessCodeLifespanLogin = TimeUnit.toSeconds($scope.realm.accessCodeLifespanLogin, $scope.realm.accessCodeLifespanLoginUnit)
@@ -1649,12 +1657,12 @@ module.controller('CreateExecutionFlowCtrl', function($scope, realm, topFlow, pa
     $scope.save = function() {
         $scope.flow.provider = $scope.provider.id;
         CreateExecutionFlow.save({realm: realm.realm, alias: parentFlow.alias}, $scope.flow, function() {
-            $location.url("/realms/" + realm.realm + "/authentication/flows/" + topFlow);
+            $location.url("/realms/" + realm.realm + "/authentication/flows/" + parentFlow.alias);
             Notifications.success("Flow Created.");
         })
     }
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/authentication/flows/" + topFlow);
+        $location.url("/realms/" + realm.realm + "/authentication/flows/" + parentFlow.alias);
     };
 });
 
@@ -1663,7 +1671,7 @@ module.controller('CreateExecutionCtrl', function($scope, realm, topFlow, parent
                                                       Notifications, $location) {
     $scope.realm = realm;
     $scope.parentFlow = parentFlow;
-    console.log('parentFlow.providerId: ' + parentFlow.providerId);
+    console.debug('parentFlow.providerId: ' + parentFlow.providerId);
     if (parentFlow.providerId == 'form-flow') {
         $scope.providers = formActionProviders;
     } else if (parentFlow.providerId == 'client-flow') {
@@ -1682,12 +1690,12 @@ module.controller('CreateExecutionCtrl', function($scope, realm, topFlow, parent
             provider: $scope.provider.id
         }
         CreateExecution.save({realm: realm.realm, alias: parentFlow.alias}, execution, function() {
-            $location.url("/realms/" + realm.realm + "/authentication/flows/" + topFlow);
+            $location.url("/realms/" + realm.realm + "/authentication/flows/" + parentFlow.alias);
             Notifications.success("Execution Created.");
         })
     }
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/authentication/flows/" + topFlow);
+        $location.url("/realms/" + realm.realm + "/authentication/flows/" + parentFlow.alias);
     };
 });
 

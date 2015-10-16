@@ -305,6 +305,10 @@ h1 i {
     bottom: 0;
 }
 
+.kc-sorter span {
+    margin-left: 10px;
+}
+
 
 /* Time selector */
 

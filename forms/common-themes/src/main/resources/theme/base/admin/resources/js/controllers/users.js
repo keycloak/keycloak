@@ -216,6 +216,17 @@ module.controller('UserConsentsCtrl', function($scope, realm, user, userConsents
     }
 });
 
+module.controller('UserOfflineSessionsCtrl', function($scope, $location, realm, user, client, offlineSessions) {
+    $scope.realm = realm;
+    $scope.user = user;
+    $scope.client = client;
+    $scope.offlineSessions = offlineSessions;
+
+    $scope.cancel = function() {
+         $location.url("/realms/" + realm.realm + '/users/' + user.id + '/consents');
+    };
+});
+
 
 module.controller('UserListCtrl', function($scope, realm, User, UserImpersonation, BruteForce, Notifications, $route, Dialog) {
     $scope.realm = realm;

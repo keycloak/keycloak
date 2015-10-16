@@ -63,20 +63,12 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 if (compatMode) {
                     compatProviderFactory = new MemUserSessionProviderFactory();
                 }
-
-                log.debug("Clearing detached sessions from persistent storage");
-                UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-                if (persister == null) {
-                    throw new RuntimeException("userSessionPersister not configured. Please see the migration docs and upgrade your configuration");
-                } else {
-                    persister.clearDetachedUserSessions();
-                }
             }
 
         });
 
         // Max count of worker errors. Initialization will end with exception when this number is reached
-        int maxErrors = config.getInt("maxErrors", 50);
+        int maxErrors = config.getInt("maxErrors", 20);
 
         // Count of sessions to be computed in each segment
         int sessionsPerSegment = config.getInt("sessionsPerSegment", 100);

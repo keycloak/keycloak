@@ -35,6 +35,9 @@ public interface UserSessionPersisterProvider extends Provider {
     // Called at startup to remove userSessions without any clientSession
     void clearDetachedUserSessions();
 
+    // Update "lastSessionRefresh" of all userSessions and "timestamp" of all clientSessions to specified time
+    void updateAllTimestamps(int time);
+
     // Called during startup. For each userSession, it loads also clientSessions
     List<UserSessionModel> loadUserSessions(int firstResult, int maxResults, boolean offline);
 

@@ -19,19 +19,19 @@ package org.keycloak.testsuite.console.authentication;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.PasswordPolicy;
 import org.keycloak.testsuite.console.page.users.UserCredentials;
 
-import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.*;
+import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.HASH_ITERATIONS;
+import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.REGEX_PATTERN;
 
 /**
  * @author Petr Mensik
  * @author mhajas
  */
-@Ignore // FIXME still unstable
 public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Page
@@ -43,11 +43,11 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
     @Before
     public void beforePasswordPolicyTest() {
         testUserCredentialsPage.setId(testUser.getId());
-        passwordPolicyPage.navigateTo();
     }
 
     @Test
     public void testAddAndRemovePolicy() {
+        passwordPolicyPage.navigateTo();
         passwordPolicyPage.addPolicy(HASH_ITERATIONS, 5);
         passwordPolicyPage.removePolicy(HASH_ITERATIONS);
         assertFlashMessageSuccess();
@@ -55,17 +55,20 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Test
     public void testInvalidPolicyValues() {
+        passwordPolicyPage.navigateTo();
         passwordPolicyPage.addPolicy(HASH_ITERATIONS, "asd");
         assertFlashMessageDanger();
         passwordPolicyPage.removePolicy(HASH_ITERATIONS);
 
-        passwordPolicyPage.addPolicy(REGEX_PATTERN, "^[A-Z]{8,5}");
+        passwordPolicyPage.addPolicy(REGEX_PATTERN, "([");
         assertFlashMessageDanger();
     }
 
     @Test
     public void testLengthPolicy() {
-        passwordPolicyPage.addPolicy(LENGTH, 8);
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        realm.setPasswordPolicy("length(8) and ");
+        testRealmResource().update(realm);
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("1234567");
@@ -77,7 +80,9 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Test
     public void testDigitsPolicy() {
-        passwordPolicyPage.addPolicy(DIGITS, 2);
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        realm.setPasswordPolicy("digits(2) and ");
+        testRealmResource().update(realm);
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("invalidPassword1");
@@ -89,7 +94,9 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Test
     public void testLowerCasePolicy() {
-        passwordPolicyPage.addPolicy(LOWER_CASE, 2);
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        realm.setPasswordPolicy("lowerCase(2) and ");
+        testRealmResource().update(realm);
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("iNVALIDPASSWORD");
@@ -101,7 +108,9 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Test
     public void testUpperCasePolicy() {
-        passwordPolicyPage.addPolicy(UPPER_CASE, 2);
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        realm.setPasswordPolicy("upperCase(2) and ");
+        testRealmResource().update(realm);
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("Invalidpassword");
@@ -113,7 +122,9 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Test
     public void testSpecialCharsPolicy() {
-        passwordPolicyPage.addPolicy(SPECIAL_CHARS, 2);
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        realm.setPasswordPolicy("specialChars(2) and ");
+        testRealmResource().update(realm);
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("invalidPassword*");
@@ -125,7 +136,9 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Test
     public void testNotUsernamePolicy() {
-        passwordPolicyPage.addPolicy(NOT_USERNAME);
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        realm.setPasswordPolicy("notUsername(1) and ");
+        testRealmResource().update(realm);
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword(testUser.getUsername());
@@ -137,7 +150,9 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Test
     public void testRegexPatternsPolicy() {
-        passwordPolicyPage.addPolicy(REGEX_PATTERN, "^[A-Z]+#[a-z]{8}$");
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        realm.setPasswordPolicy("regexPattern(^[A-Z]+#[a-z]{8}$) and ");
+        testRealmResource().update(realm);
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("invalidPassword");
@@ -149,7 +164,9 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
     @Test
     public void testPasswordHistoryPolicy() {
-        passwordPolicyPage.addPolicy(PASSWORD_HISTORY, 2);
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        realm.setPasswordPolicy("passwordHistory(2) and ");
+        testRealmResource().update(realm);
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("firstPassword");

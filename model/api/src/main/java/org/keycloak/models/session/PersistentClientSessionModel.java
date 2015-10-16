@@ -9,6 +9,7 @@ public class PersistentClientSessionModel {
     private String userSessionId;
     private String clientId;
     private String userId;
+    private int timestamp;
     private String data;
 
     public String getClientSessionId() {
@@ -41,6 +42,14 @@ public class PersistentClientSessionModel {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public int getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(int timestamp) {
+        this.timestamp = timestamp;
     }
 
     public String getData() {

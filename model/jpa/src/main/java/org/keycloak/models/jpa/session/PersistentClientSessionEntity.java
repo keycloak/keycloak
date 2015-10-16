@@ -17,13 +17,14 @@ import javax.persistence.Table;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NamedQueries({
-        @NamedQuery(name="deleteClientSessionsByRealm", query="delete from PersistentClientSessionEntity sess where sess.userSessionId in (select u from PersistentUserSessionEntity u where u.realmId=:realmId)"),
+        @NamedQuery(name="deleteClientSessionsByRealm", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId=:realmId)"),
         @NamedQuery(name="deleteClientSessionsByClient", query="delete from PersistentClientSessionEntity sess where sess.clientId=:clientId"),
-        @NamedQuery(name="deleteClientSessionsByUser", query="delete from PersistentClientSessionEntity sess where sess.userSessionId in (select u from PersistentUserSessionEntity u where u.userId=:userId)"),
+        @NamedQuery(name="deleteClientSessionsByUser", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.userId=:userId)"),
         @NamedQuery(name="deleteClientSessionsByUserSession", query="delete from PersistentClientSessionEntity sess where sess.userSessionId=:userSessionId and offline=:offline"),
         @NamedQuery(name="deleteDetachedClientSessions", query="delete from PersistentClientSessionEntity sess where sess.userSessionId NOT IN (select u.userSessionId from PersistentUserSessionEntity u)"),
         @NamedQuery(name="findClientSessionsByUserSession", query="select sess from PersistentClientSessionEntity sess where sess.userSessionId=:userSessionId and offline=:offline"),
         @NamedQuery(name="findClientSessionsByUserSessions", query="select sess from PersistentClientSessionEntity sess where offline=:offline and sess.userSessionId IN (:userSessionIds) order by sess.userSessionId"),
+        @NamedQuery(name="updateClientSessionsTimestamps", query="update PersistentClientSessionEntity c set timestamp=:timestamp"),
 })
 @Table(name="OFFLINE_CLIENT_SESSION")
 @Entity
@@ -39,6 +40,9 @@ public class PersistentClientSessionEntity {
 
     @Column(name="CLIENT_ID", length = 36)
     protected String clientId;
+
+    @Column(name="TIMESTAMP")
+    protected int timestamp;
 
     @Id
     @Column(name = "OFFLINE")
@@ -69,6 +73,14 @@ public class PersistentClientSessionEntity {
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+
+    public int getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(int timestamp) {
+        this.timestamp = timestamp;
     }
 
     public boolean isOffline() {

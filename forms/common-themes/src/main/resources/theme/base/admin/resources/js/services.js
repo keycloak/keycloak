@@ -369,6 +369,13 @@ module.factory('UserSessions', function($resource) {
         user : '@user'
     });
 });
+module.factory('UserOfflineSessions', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/:user/offline-sessions/:client', {
+        realm : '@realm',
+        user : '@user',
+        client : '@client'
+    });
+});
 
 module.factory('UserSessionLogout', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/sessions/:session', {
