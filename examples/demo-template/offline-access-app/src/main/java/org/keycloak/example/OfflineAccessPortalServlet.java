@@ -98,6 +98,10 @@ public class OfflineAccessPortalServlet extends HttpServlet {
             KeycloakDeployment deployment = getDeployment(req);
             AccessTokenResponse response = ServerRequest.invokeRefresh(deployment, refreshToken);
             accessToken = response.getToken();
+
+            // Uncomment this when you use revokeRefreshToken for realm. In that case each offline token can be used just once. So at this point, you need to
+            // save new offline token into DB
+            // RefreshTokenDAO.saveToken(response.getRefreshToken());
         } catch (ServerRequest.HttpFailure failure) {
             return "Failed to refresh token. Status from auth-server request: " + failure.getStatus() + ", Error: " + failure.getError();
         }

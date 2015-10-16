@@ -34,7 +34,6 @@ public class UserRepresentation {
     protected List<String> realmRoles;
     protected Map<String, List<String>> clientRoles;
     protected List<UserConsentRepresentation> clientConsents;
-    protected List<OfflineUserSessionRepresentation> offlineUserSessions;
 
     @Deprecated
     protected Map<String, List<String>> applicationRoles;
@@ -216,13 +215,5 @@ public class UserRepresentation {
 
     public void setServiceAccountClientId(String serviceAccountClientId) {
         this.serviceAccountClientId = serviceAccountClientId;
-    }
-
-    public List<OfflineUserSessionRepresentation> getOfflineUserSessions() {
-        return offlineUserSessions;
-    }
-
-    public void setOfflineUserSessions(List<OfflineUserSessionRepresentation> offlineUserSessions) {
-        this.offlineUserSessions = offlineUserSessions;
     }
 }

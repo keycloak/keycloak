@@ -1161,30 +1161,6 @@ public class RepresentationToModel {
         return consentModel;
     }
 
-    // TODO
-//    public static void importOfflineSession(KeycloakSession session, RealmModel newRealm, UserModel user, OfflineUserSessionRepresentation sessionRep) {
-//        PersistentUserSessionModel model = new PersistentUserSessionModel();
-//        model.setUserSessionId(sessionRep.getUserSessionId());
-//        model.setData(sessionRep.getData());
-//        session.users().createOfflineUserSession(newRealm, user, model);
-//
-//        for (OfflineClientSessionRepresentation csRep : sessionRep.getOfflineClientSessions()) {
-//            PersistentClientSessionModel csModel = new PersistentClientSessionModel();
-//            String clientId = csRep.getClient();
-//            ClientModel client = newRealm.getClientByClientId(clientId);
-//            if (client == null) {
-//                throw new RuntimeException("Unable to find client " + clientId + " referenced from offlineClientSession of user " + user.getUsername());
-//            }
-//            csModel.setClientId(client.getId());
-//            csModel.setUserId(user.getId());
-//            csModel.setClientSessionId(csRep.getClientSessionId());
-//            csModel.setUserSessionId(sessionRep.getUserSessionId());
-//            csModel.setData(csRep.getData());
-//
-//            session.users().createOfflineClientSession(newRealm, csModel);
-//        }
-//    }
-
     public static AuthenticationFlowModel toModel(AuthenticationFlowRepresentation rep) {
         AuthenticationFlowModel model = new AuthenticationFlowModel();
         model.setBuiltIn(rep.isBuiltIn());
