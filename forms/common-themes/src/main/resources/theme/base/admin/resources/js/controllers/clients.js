@@ -779,7 +779,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
         } else if ($scope.client.attributes['saml.signature.algorithm'] == 'DSA_SHA1') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[3];
         }
-        if ($scope.client.attributes['saml_name_id_format'] == 'unspecified') {
+        if ($scope.client.attributes['saml_name_id_format'] == 'username') {
             $scope.nameIdFormat = $scope.nameIdFormats[0];
         } else if ($scope.client.attributes['saml_name_id_format'] == 'email') {
             $scope.nameIdFormat = $scope.nameIdFormats[1];
