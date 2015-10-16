@@ -215,6 +215,9 @@ public class AuthenticationProcessor {
         getClientSession().setAuthenticatedUser(user);
     }
 
+    public void clearAuthenticatedUser() {
+        getClientSession().setAuthenticatedUser(null);
+    }
 
     public class Result implements AuthenticationFlowContext, ClientAuthenticationFlowContext {
         AuthenticatorConfigModel authenticatorConfig;
@@ -332,6 +335,8 @@ public class AuthenticationProcessor {
 
         }
 
+
+
         @Override
         public UserModel getUser() {
             return getClientSession().getAuthenticatedUser();
@@ -340,6 +345,11 @@ public class AuthenticationProcessor {
         @Override
         public void setUser(UserModel user) {
             setAutheticatedUser(user);
+        }
+
+        @Override
+        public void clearUser() {
+            clearAuthenticatedUser();
         }
 
         @Override

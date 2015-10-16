@@ -140,6 +140,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = invalidCredentials(context);
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
+            context.clearUser();
             return false;
         }
         credentials.add(UserCredentialModel.password(password));
@@ -149,6 +150,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = invalidCredentials(context);
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
+            context.clearUser();
             return false;
         }
         return true;
