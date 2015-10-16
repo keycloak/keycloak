@@ -212,7 +212,10 @@ public class ModelToRepresentation {
         }
 
         rep.setInternationalizationEnabled(realm.isInternationalizationEnabled());
-        rep.getSupportedLocales().addAll(realm.getSupportedLocales());
+        if(realm.getSupportedLocales() != null){
+            rep.setSupportedLocales(new HashSet<String>());
+            rep.getSupportedLocales().addAll(realm.getSupportedLocales());
+        }
         rep.setDefaultLocale(realm.getDefaultLocale());
         if (internal) {
             exportAuthenticationFlows(realm, rep);
