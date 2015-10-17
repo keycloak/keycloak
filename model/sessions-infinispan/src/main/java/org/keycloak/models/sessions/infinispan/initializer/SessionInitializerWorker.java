@@ -38,8 +38,9 @@ public class SessionInitializerWorker implements DistributedCallable<String, Ses
 
     @Override
     public InfinispanUserSessionInitializer.WorkerResult call() throws Exception {
-        // TODO
-        log.infof("Running computation for segment: %d", segment);
+        if (log.isTraceEnabled()) {
+            log.tracef("Running computation for segment: %d", segment);
+        }
 
         KeycloakSessionFactory sessionFactory = cache.getAdvancedCache().getComponentRegistry().getComponent(KeycloakSessionFactory.class);
         if (sessionFactory == null) {

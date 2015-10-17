@@ -161,13 +161,13 @@ public class InfinispanUserSessionInitializer {
                 int nodesCount = transport==null ? 1 : transport.getMembers().size();
                 int distributedWorkersCount = processors * nodesCount;
 
-                // TODO: debug
-                log.infof("Starting next iteration with %d workers", distributedWorkersCount);
+                log.debugf("Starting next iteration with %d workers", distributedWorkersCount);
 
                 List<Integer> segments = state.getUnfinishedSegments(distributedWorkersCount);
 
-                // TODO: trace
-                log.info("unfinished segments for this iteration: " + segments);
+                if (log.isTraceEnabled()) {
+                    log.trace("unfinished segments for this iteration: " + segments);
+                }
 
                 List<Future<WorkerResult>> futures = new LinkedList<>();
                 for (Integer segment : segments) {
@@ -205,8 +205,9 @@ public class InfinispanUserSessionInitializer {
 
                 saveStateToCache(state);
 
-                // TODO
-                log.info("New initializer state pushed. The state is: " + state.printState());
+                if (log.isDebugEnabled()) {
+                    log.debug("New initializer state pushed. The state is: " + state.printState());
+                }
             }
         } finally {
             distributedExecutorService.shutdown();
@@ -235,8 +236,7 @@ public class InfinispanUserSessionInitializer {
         @ViewChanged
         public void viewChanged(ViewChangedEvent event) {
             boolean isCoordinator = isCoordinator();
-            // TODO: debug
-            log.info("View Changed: is coordinator: " + isCoordinator);
+            log.debug("View Changed: is coordinator: " + isCoordinator);
 
             if (isCoordinator) {
                 latch.countDown();

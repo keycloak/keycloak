@@ -3,7 +3,7 @@
     <changeSet author="mposolda@redhat.com" id="1.6.0">
 
         <addColumn tableName="REALM">
-            <column name="OFFLINE_SESSION_IDLE_TIMEOUT" type="INT"/>
+            <column name="OFFLINE_SESSION_IDLE_TIMEOUT" type="INT" defaultValueNumeric="0"/>
             <column name="REVOKE_REFRESH_TOKEN" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
             </column>

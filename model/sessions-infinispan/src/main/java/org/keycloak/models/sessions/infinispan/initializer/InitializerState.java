@@ -26,8 +26,7 @@ public class InitializerState extends SessionEntity {
             segmentsCount = segmentsCount + 1;
         }
 
-        // TODO: debug
-        log.infof("sessionsCount: %d, sessionsPerSegment: %d, segmentsCount: %d", sessionsCount, sessionsPerSegment, segmentsCount);
+        log.debugf("sessionsCount: %d, sessionsPerSegment: %d, segmentsCount: %d", sessionsCount, sessionsPerSegment, segmentsCount);
 
         for (int i=0 ; i<segmentsCount ; i++) {
             segments.add(false);
