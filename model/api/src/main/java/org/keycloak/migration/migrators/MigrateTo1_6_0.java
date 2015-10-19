@@ -18,6 +18,7 @@ package org.keycloak.migration.migrators;
 
 import java.util.List;
 
+import org.keycloak.Config;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.*;
@@ -79,7 +80,18 @@ public class MigrateTo1_6_0 {
                 role.setDescription("${role_" + AdminRoles.CREATE_CLIENT + "}");
                 role.setScopeParamRequired(false);
 
-                realm.getRole(AdminRoles.ADMIN).addCompositeRole(role);
+                client.getRealm().getRole(AdminRoles.ADMIN).addCompositeRole(role);
+            }
+
+            if (!realm.getName().equals(Config.getAdminRealm())) {
+                client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+                if (client.getRole(AdminRoles.CREATE_CLIENT) == null) {
+                    RoleModel role = client.addRole(AdminRoles.CREATE_CLIENT);
+                    role.setDescription("${role_" + AdminRoles.CREATE_CLIENT + "}");
+                    role.setScopeParamRequired(false);
+
+                    client.getRole(AdminRoles.REALM_ADMIN).addCompositeRole(role);
+                }
             }
         }
     }
