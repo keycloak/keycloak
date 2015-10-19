@@ -15,7 +15,7 @@ import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.UriUtils;
+import org.keycloak.common.util.UriUtils;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -1,8 +1,6 @@
 package org.keycloak.adapters.saml;
 
-import org.keycloak.adapters.saml.SamlDeployment;
-import org.keycloak.adapters.saml.config.IDP;
-import org.keycloak.enums.SslRequired;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.saml.SignatureAlgorithm;
 
 import java.security.KeyPair;

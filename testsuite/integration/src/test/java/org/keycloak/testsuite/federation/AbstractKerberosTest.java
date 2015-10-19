@@ -21,7 +21,7 @@ import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.authentication.authenticators.browser.SpnegoAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
-import org.keycloak.constants.KerberosConstants;
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;

@@ -1,6 +1,6 @@
 package org.keycloak.models.cache.entities;
 
-import org.keycloak.enums.SslRequired;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -17,7 +17,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.RealmCache;
-import org.keycloak.util.MultivaluedHashMap;
+import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.io.Serializable;
 import java.util.ArrayList;

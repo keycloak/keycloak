@@ -16,8 +16,8 @@ import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.util.EnvUtil;
-import org.keycloak.util.KeystoreUtil;
+import org.keycloak.common.util.EnvUtil;
+import org.keycloak.common.util.KeystoreUtil;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;

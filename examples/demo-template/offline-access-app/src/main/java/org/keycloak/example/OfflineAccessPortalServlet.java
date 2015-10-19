@@ -17,7 +17,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
-import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.ServerRequest;
@@ -25,9 +25,9 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
-import org.keycloak.util.StreamUtil;
-import org.keycloak.util.Time;
-import org.keycloak.util.UriUtils;
+import org.keycloak.common.util.StreamUtil;
+import org.keycloak.common.util.Time;
+import org.keycloak.common.util.UriUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -98,6 +98,10 @@ public class OfflineAccessPortalServlet extends HttpServlet {
             KeycloakDeployment deployment = getDeployment(req);
             AccessTokenResponse response = ServerRequest.invokeRefresh(deployment, refreshToken);
             accessToken = response.getToken();
+
+            // Uncomment this when you use revokeRefreshToken for realm. In that case each offline token can be used just once. So at this point, you need to
+            // save new offline token into DB
+            // RefreshTokenDAO.saveToken(response.getRefreshToken());
         } catch (ServerRequest.HttpFailure failure) {
             return "Failed to refresh token. Status from auth-server request: " + failure.getStatus() + ", Error: " + failure.getError();
         }

@@ -7,7 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-import org.keycloak.util.StreamUtil;
+import org.keycloak.common.util.StreamUtil;
 
 /**
  * Very simple DAO, which stores/loads just one token per whole application into file in tmp directory. Useful just for example purposes.

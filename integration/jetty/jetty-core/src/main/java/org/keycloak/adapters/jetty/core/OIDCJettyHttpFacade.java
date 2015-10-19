@@ -2,6 +2,7 @@ package org.keycloak.adapters.jetty.core;
 
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.OIDCHttpFacade;
+import org.keycloak.adapters.jetty.spi.JettyHttpFacade;
 
 import javax.servlet.http.HttpServletResponse;
 

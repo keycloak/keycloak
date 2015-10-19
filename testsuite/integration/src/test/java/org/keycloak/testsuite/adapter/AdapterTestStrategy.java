@@ -24,7 +24,7 @@ package org.keycloak.testsuite.adapter;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.Version;
+import org.keycloak.common.Version;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.constants.AdapterConstants;
@@ -47,7 +47,7 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;

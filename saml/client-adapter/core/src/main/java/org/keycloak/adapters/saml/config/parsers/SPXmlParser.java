@@ -6,7 +6,7 @@ import org.keycloak.adapters.saml.config.SP;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.parsers.AbstractParser;
 import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.util.StringPropertyReplacer;
+import org.keycloak.common.util.StringPropertyReplacer;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;

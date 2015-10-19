@@ -23,8 +23,8 @@ import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
-import org.keycloak.util.MultivaluedHashMap;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.Time;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;

@@ -28,7 +28,7 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;

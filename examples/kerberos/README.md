@@ -196,8 +196,8 @@ GSSException: Invalid name provided (Mechanism level: KrbException: Cannot locat
 
 ### Symptom
 ```
-17:32:19,825 ERROR [stderr] (default task-24) org.keycloak.util.KerberosSerializationUtils$KerberosSerializationException: Null credential given as input. Did you enable kerberos credential delegation for your web browser and mapping of gss credential to access token?, Java version: 1.8.0_60, runtime version: 1.8.0_60-b27, vendor: Oracle Corporation, os: 4.1.6-200.fc22.x86_64
-17:32:19,826 ERROR [stderr] (default task-24) 	at org.keycloak.util.KerberosSerializationUtils.deserializeCredential(KerberosSerializationUtils.java:109)
+17:32:19,825 ERROR [stderr] (default task-24) org.keycloak.common.util.KerberosSerializationUtils$KerberosSerializationException: Null credential given as input. Did you enable kerberos credential delegation for your web browser and mapping of gss credential to access token?, Java version: 1.8.0_60, runtime version: 1.8.0_60-b27, vendor: Oracle Corporation, os: 4.1.6-200.fc22.x86_64
+17:32:19,826 ERROR [stderr] (default task-24) 	at org.keycloak.common.util.KerberosSerializationUtils.deserializeCredential(KerberosSerializationUtils.java:109)
 17:32:19,827 ERROR [stderr] (default task-24) 	at org.keycloak.example.kerberos.GSSCredentialsClient.getUserFromLDAP(GSSCredentialsClient.java:42)
 ```
 

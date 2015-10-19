@@ -4,7 +4,7 @@ import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.constants.KerberosConstants;
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -14,8 +14,6 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.session.PersistentClientSessionModel;
-import org.keycloak.models.session.PersistentUserSessionModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -33,7 +31,6 @@ import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -329,21 +326,6 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(otherAppAdminConsent.isRoleGranted(realm.getRole("admin")));
         Assert.assertFalse(otherAppAdminConsent.isRoleGranted(application.getRole("app-admin")));
         Assert.assertTrue(otherAppAdminConsent.isProtocolMapperGranted(gssCredentialMapper));
-
-//        // Test offline sessions
-//        Collection<PersistentUserSessionModel> offlineUserSessions = session.users().getOfflineUserSessions(realm, admin);
-//        Collection<PersistentClientSessionModel> offlineClientSessions = session.users().getOfflineClientSessions(realm, admin);
-//        Assert.assertEquals(offlineUserSessions.size(), 1);
-//        Assert.assertEquals(offlineClientSessions.size(), 1);
-//        PersistentUserSessionModel offlineSession = offlineUserSessions.iterator().next();
-//        PersistentClientSessionModel offlineClSession = offlineClientSessions.iterator().next();
-//        Assert.assertEquals(offlineSession.getData(), "something1");
-//        Assert.assertEquals(offlineSession.getUserSessionId(), "123");
-//        Assert.assertEquals(offlineClSession.getClientId(), otherApp.getId());
-//        Assert.assertEquals(offlineClSession.getUserSessionId(), "123");
-//        Assert.assertEquals(offlineClSession.getUserId(), admin.getId());
-//        Assert.assertEquals(offlineClSession.getData(), "something2");
-
 
         // Test service accounts
         Assert.assertFalse(application.isServiceAccountsEnabled());

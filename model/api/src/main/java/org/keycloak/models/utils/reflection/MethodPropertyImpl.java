@@ -1,6 +1,6 @@
 package org.keycloak.models.utils.reflection;
 
-import org.keycloak.util.reflections.Reflections;
+import org.keycloak.common.util.reflections.Reflections;
 
 import java.beans.Introspector;
 import java.lang.annotation.Annotation;

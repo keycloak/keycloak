@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
          pageEncoding="ISO-8859-1" %>
 <%@ page import="org.keycloak.constants.ServiceUrlConstants" %>
-<%@ page import="org.keycloak.util.KeycloakUriBuilder" %>
+<%@ page import="org.keycloak.common.util.KeycloakUriBuilder" %>
 <%@ page import="org.keycloak.KeycloakSecurityContext" %>
 <%@ page import="org.keycloak.representations.IDToken" %>
 <%@ page import="org.keycloak.representations.AccessToken" %>

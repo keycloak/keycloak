@@ -1,6 +1,6 @@
 package org.keycloak.adapters.saml;
 
-import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.spi.HttpFacade;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

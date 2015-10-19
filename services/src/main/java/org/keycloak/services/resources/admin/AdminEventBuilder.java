@@ -5,25 +5,18 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.jboss.logging.Logger;
-import org.keycloak.ClientConnection;
-import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.IdentityProviderMapperModel;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import javax.ws.rs.core.UriInfo;
 

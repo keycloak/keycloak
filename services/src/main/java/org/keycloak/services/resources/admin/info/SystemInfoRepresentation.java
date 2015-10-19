@@ -1,6 +1,6 @@
 package org.keycloak.services.resources.admin.info;
 
-import org.keycloak.Version;
+import org.keycloak.common.Version;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.Date;

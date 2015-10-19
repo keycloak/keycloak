@@ -12,7 +12,6 @@ import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 import org.keycloak.Config;
 import org.keycloak.adapters.KeycloakConfigResolver;
-import org.keycloak.adapters.saml.servlet.SamlFilter;
 import org.keycloak.adapters.servlet.KeycloakOIDCFilter;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
@@ -25,7 +24,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.Servlet;

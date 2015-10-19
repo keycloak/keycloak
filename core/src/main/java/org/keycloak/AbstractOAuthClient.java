@@ -1,7 +1,7 @@
 package org.keycloak;
 
-import org.keycloak.enums.RelativeUrlsUsed;
-import org.keycloak.util.KeycloakUriBuilder;
+import org.keycloak.common.enums.RelativeUrlsUsed;
+import org.keycloak.common.util.KeycloakUriBuilder;
 
 import java.util.Map;
 import java.util.UUID;

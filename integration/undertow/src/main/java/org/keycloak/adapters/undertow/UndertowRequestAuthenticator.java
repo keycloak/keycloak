@@ -4,11 +4,9 @@ import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
-import org.keycloak.adapters.undertow.AbstractUndertowRequestAuthenticator;
-import org.keycloak.adapters.undertow.KeycloakUndertowAccount;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -2,7 +2,7 @@ package org.keycloak.testsuite.model;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.enums.SslRequired;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;

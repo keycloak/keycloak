@@ -1,11 +1,9 @@
 package org.keycloak.adapters.servlet;
 
-import org.bouncycastle.ocsp.Req;
-import org.keycloak.adapters.HttpFacade;
-import org.keycloak.util.KeycloakUriBuilder;
-import org.keycloak.util.MultivaluedHashMap;
-import org.keycloak.util.ServerCookie;
-import org.keycloak.util.UriUtils;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.ServerCookie;
+import org.keycloak.common.util.UriUtils;
 
 import javax.security.cert.X509Certificate;
 import javax.servlet.http.HttpServletRequest;
@@ -13,7 +11,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;

@@ -4,7 +4,7 @@ import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.UserIdentity;
-import org.keycloak.adapters.AdapterSessionStore;
+import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.saml.SamlDeployment;
 
 import javax.servlet.ServletRequest;

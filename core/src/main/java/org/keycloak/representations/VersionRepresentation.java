@@ -1,7 +1,7 @@
 package org.keycloak.representations;
 
 import org.codehaus.jackson.annotate.JsonProperty;
-import org.keycloak.Version;
+import org.keycloak.common.Version;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
