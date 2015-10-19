@@ -183,7 +183,6 @@
             "enabled": true,
             "publicClient": false,
             "directGrantsOnly": true,
-            "consentRequired": true,
             "secret": "password"
         }
     ],
