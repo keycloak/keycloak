@@ -12,6 +12,7 @@
             <directory>target/examples</directory>
             <outputDirectory></outputDirectory>
             <excludes>
+                <exclude>**/pom.xml.releaseBackup</exclude>
                 <exclude>**/.svn/**</exclude>
                 <exclude>**/target/**</exclude>
                 <exclude>**/*.iml</exclude>
