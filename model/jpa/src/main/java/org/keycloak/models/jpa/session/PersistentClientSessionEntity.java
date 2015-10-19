@@ -17,14 +17,14 @@ import javax.persistence.Table;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NamedQueries({
-        @NamedQuery(name="deleteClientSessionsByRealm", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId=:realmId)"),
-        @NamedQuery(name="deleteClientSessionsByClient", query="delete from PersistentClientSessionEntity sess where sess.clientId=:clientId"),
-        @NamedQuery(name="deleteClientSessionsByUser", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.userId=:userId)"),
-        @NamedQuery(name="deleteClientSessionsByUserSession", query="delete from PersistentClientSessionEntity sess where sess.userSessionId=:userSessionId and sess.offline=:offline"),
+        @NamedQuery(name="deleteClientSessionsByRealm", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId = :realmId)"),
+        @NamedQuery(name="deleteClientSessionsByClient", query="delete from PersistentClientSessionEntity sess where sess.clientId = :clientId"),
+        @NamedQuery(name="deleteClientSessionsByUser", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.userId = :userId)"),
+        @NamedQuery(name="deleteClientSessionsByUserSession", query="delete from PersistentClientSessionEntity sess where sess.userSessionId = :userSessionId and sess.offline = :offline"),
         @NamedQuery(name="deleteDetachedClientSessions", query="delete from PersistentClientSessionEntity sess where sess.userSessionId NOT IN (select u.userSessionId from PersistentUserSessionEntity u)"),
-        @NamedQuery(name="findClientSessionsByUserSession", query="select sess from PersistentClientSessionEntity sess where sess.userSessionId=:userSessionId and sess.offline=:offline"),
-        @NamedQuery(name="findClientSessionsByUserSessions", query="select sess from PersistentClientSessionEntity sess where sess.offline=:offline and sess.userSessionId IN (:userSessionIds) order by sess.userSessionId"),
-        @NamedQuery(name="updateClientSessionsTimestamps", query="update PersistentClientSessionEntity c set timestamp=:timestamp"),
+        @NamedQuery(name="findClientSessionsByUserSession", query="select sess from PersistentClientSessionEntity sess where sess.userSessionId=:userSessionId and sess.offline = :offline"),
+        @NamedQuery(name="findClientSessionsByUserSessions", query="select sess from PersistentClientSessionEntity sess where sess.offline = :offline and sess.userSessionId IN (:userSessionIds) order by sess.userSessionId"),
+        @NamedQuery(name="updateClientSessionsTimestamps", query="update PersistentClientSessionEntity c set timestamp = :timestamp"),
 })
 @Table(name="OFFLINE_CLIENT_SESSION")
 @Entity
@@ -45,8 +45,8 @@ public class PersistentClientSessionEntity {
     protected int timestamp;
 
     @Id
-    @Column(name = "OFFLINE")
-    protected boolean offline;
+    @Column(name = "OFFLINE_FLAG")
+    protected String offline;
 
     @Column(name="DATA")
     protected String data;
@@ -83,11 +83,11 @@ public class PersistentClientSessionEntity {
         this.timestamp = timestamp;
     }
 
-    public boolean isOffline() {
+    public String getOffline() {
         return offline;
     }
 
-    public void setOffline(boolean offline) {
+    public void setOffline(String offline) {
         this.offline = offline;
     }
 
@@ -103,12 +103,12 @@ public class PersistentClientSessionEntity {
 
         protected String clientSessionId;
 
-        protected boolean offline;
+        protected String offline;
 
         public Key() {
         }
 
-        public Key(String clientSessionId, boolean offline) {
+        public Key(String clientSessionId, String offline) {
             this.clientSessionId = clientSessionId;
             this.offline = offline;
         }
@@ -117,7 +117,7 @@ public class PersistentClientSessionEntity {
             return clientSessionId;
         }
 
-        public boolean isOffline() {
+        public String getOffline() {
             return offline;
         }
 
@@ -129,7 +129,7 @@ public class PersistentClientSessionEntity {
             Key key = (Key) o;
 
             if (this.clientSessionId != null ? !this.clientSessionId.equals(key.clientSessionId) : key.clientSessionId != null) return false;
-            if (offline != key.offline) return false;
+            if (this.offline != null ? !this.offline.equals(key.offline) : key.offline != null) return false;
 
             return true;
         }
@@ -137,7 +137,7 @@ public class PersistentClientSessionEntity {
         @Override
         public int hashCode() {
             int result = this.clientSessionId != null ? this.clientSessionId.hashCode() : 0;
-            result = 31 * result + (offline ? 1 : 0);
+            result = 31 * result + (this.offline != null ? this.offline.hashCode() : 0);
             return result;
         }
     }
