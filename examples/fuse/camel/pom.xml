@@ -21,6 +21,7 @@
         <keycloak.osgi.import>
             org.eclipse.jetty.security;version="[8.1,10)",
             org.eclipse.jetty.util.security;version="[8.1,10)",
+            org.apache.camel;version="[2.12,3)",
             org.keycloak.*;version="${project.version}",
             *;resolution:=optional
         </keycloak.osgi.import>
