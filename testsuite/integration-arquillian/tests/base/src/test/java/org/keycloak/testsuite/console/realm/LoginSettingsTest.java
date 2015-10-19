@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
@@ -37,6 +38,7 @@ import org.keycloak.testsuite.auth.page.login.Registration;
 import org.keycloak.testsuite.auth.page.login.ResetCredentials;
 import org.keycloak.testsuite.auth.page.login.VerifyEmail;
 import org.keycloak.testsuite.console.page.realm.LoginSettings.RequireSSLOption;
+import org.keycloak.testsuite.util.MailServer;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import org.openqa.selenium.Cookie;
@@ -44,7 +46,6 @@ import org.openqa.selenium.Cookie;
 /**
  *
  * @author tkyjovsk
- * @author vramik
  */
 @Ignore
 public class LoginSettingsTest extends AbstractRealmTest {
@@ -212,15 +213,23 @@ public class LoginSettingsTest extends AbstractRealmTest {
     @Test 
     public void verifyEmail() {
 
-        log.info("enabling verify email");
+        MailServer.start();
+        MailServer.createEmailAccount(testUser.getEmail(), "password");        
+        
+        log.info("enabling verify email in login settings");
         loginSettingsPage.form().setVerifyEmailAllowed(true);
         loginSettingsPage.form().save();
         log.debug("enabled");
+
+        log.info("configure smpt server in test realm");
+        RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
+        testRealmRep.setSmtpServer(suiteContext.getSmtpServer());
+        testRealmResource().update(testRealmRep);
         
         testAccountPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
-        Assert.assertEquals("Failed to send email, please try again later.", 
-                testRealmVerifyEmailPage.getErrorMessage());
+        Assert.assertEquals("An email with instructions to verify your email address has been sent to you.", 
+                testRealmVerifyEmailPage.getInstructionMessage());
         
         log.info("verified verify email is enabled");
         
@@ -243,6 +252,8 @@ public class LoginSettingsTest extends AbstractRealmTest {
         testAccountPage.waitForAccountLinkPresent();
                 
         log.info("verified verify email is disabled");
+        
+        MailServer.stop();
     }
     
     @Test

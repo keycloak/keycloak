@@ -44,14 +44,6 @@ public class LoginActions extends AuthRealm {
     @FindBy(css = "span.kc-feedback-text")
     private WebElement feedbackText;
     
-    @FindBy(xpath = "//div[@id='kc-error-message']/p")
-    private WebElement error;
-
-    public String getErrorMessage() {
-        waitGuiForElementPresent(error, "Error message should be visible");
-        return error.getText();
-    }
-    
     public String getFeedbackText() {
         waitGuiForElementPresent(feedbackText, "Feedback message should be visible");
         return feedbackText.getText();

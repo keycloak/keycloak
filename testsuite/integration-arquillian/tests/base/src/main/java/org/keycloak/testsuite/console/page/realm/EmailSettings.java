@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.console.page.realm;
 
+import java.util.Map;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
@@ -65,6 +66,14 @@ public class EmailSettings extends RealmSettings {
 
         public void setFromInput(String value) {
             setInputValue(fromInput, value);
+        }
+        
+        public void setSmtpServer(Map<String, String> smtpServer) {
+            setFromInput(smtpServer.get("from"));
+            setHostInput(smtpServer.get("host"));
+            setPortInput(smtpServer.get("port"));
+            
+            save();
         }
     }
 }
