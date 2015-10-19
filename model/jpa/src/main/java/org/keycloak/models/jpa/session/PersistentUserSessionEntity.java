@@ -22,12 +22,12 @@ import org.keycloak.models.jpa.entities.UserEntity;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NamedQueries({
-        @NamedQuery(name="deleteUserSessionsByRealm", query="delete from PersistentUserSessionEntity sess where sess.realmId=:realmId"),
-        @NamedQuery(name="deleteUserSessionsByUser", query="delete from PersistentUserSessionEntity sess where sess.userId=:userId"),
+        @NamedQuery(name="deleteUserSessionsByRealm", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId"),
+        @NamedQuery(name="deleteUserSessionsByUser", query="delete from PersistentUserSessionEntity sess where sess.userId = :userId"),
         @NamedQuery(name="deleteDetachedUserSessions", query="delete from PersistentUserSessionEntity sess where sess.userSessionId NOT IN (select c.userSessionId from PersistentClientSessionEntity c)"),
-        @NamedQuery(name="findUserSessionsCount", query="select count(sess) from PersistentUserSessionEntity sess where sess.offline=:offline"),
-        @NamedQuery(name="findUserSessions", query="select sess from PersistentUserSessionEntity sess where sess.offline=:offline order by sess.userSessionId"),
-        @NamedQuery(name="updateUserSessionsTimestamps", query="update PersistentUserSessionEntity c set lastSessionRefresh=:lastSessionRefresh"),
+        @NamedQuery(name="findUserSessionsCount", query="select count(sess) from PersistentUserSessionEntity sess where sess.offline = :offline"),
+        @NamedQuery(name="findUserSessions", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline order by sess.userSessionId"),
+        @NamedQuery(name="updateUserSessionsTimestamps", query="update PersistentUserSessionEntity c set lastSessionRefresh = :lastSessionRefresh"),
 
 })
 @Table(name="OFFLINE_USER_SESSION")
@@ -49,8 +49,8 @@ public class PersistentUserSessionEntity {
     protected int lastSessionRefresh;
 
     @Id
-    @Column(name = "OFFLINE")
-    protected boolean offline;
+    @Column(name = "OFFLINE_FLAG")
+    protected String offline;
 
     @Column(name="DATA")
     protected String data;
@@ -87,11 +87,11 @@ public class PersistentUserSessionEntity {
         this.lastSessionRefresh = lastSessionRefresh;
     }
 
-    public boolean isOffline() {
+    public String getOffline() {
         return offline;
     }
 
-    public void setOffline(boolean offline) {
+    public void setOffline(String offline) {
         this.offline = offline;
     }
 
@@ -107,12 +107,12 @@ public class PersistentUserSessionEntity {
 
         protected String userSessionId;
 
-        protected boolean offline;
+        protected String offline;
 
         public Key() {
         }
 
-        public Key(String userSessionId, boolean offline) {
+        public Key(String userSessionId, String offline) {
             this.userSessionId = userSessionId;
             this.offline = offline;
         }
@@ -121,7 +121,7 @@ public class PersistentUserSessionEntity {
             return userSessionId;
         }
 
-        public boolean isOffline() {
+        public String getOffline() {
             return offline;
         }
 
@@ -133,7 +133,7 @@ public class PersistentUserSessionEntity {
             Key key = (Key) o;
 
             if (this.userSessionId != null ? !this.userSessionId.equals(key.userSessionId) : key.userSessionId != null) return false;
-            if (offline != key.offline) return false;
+            if (this.offline != null ? !this.offline.equals(key.offline) : key.offline != null) return false;
 
             return true;
         }
@@ -141,7 +141,7 @@ public class PersistentUserSessionEntity {
         @Override
         public int hashCode() {
             int result = this.userSessionId != null ? this.userSessionId.hashCode() : 0;
-            result = 31 * result + (offline ? 1 : 0);
+            result = 31 * result + (this.offline != null ? this.offline.hashCode() : 0);
             return result;
         }
     }
