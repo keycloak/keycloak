@@ -16,7 +16,7 @@
 
     <modules>
         <module>as7-eap6-adapter</module>
-        <module>jetty81-adapter-zip</module>
+        <!--<module>jetty81-adapter-zip</module>-->
         <!--<module>jetty91-adapter-zip</module>-->
         <!--<module>jetty92-adapter-zip</module>-->
         <module>js-adapter-zip</module>
