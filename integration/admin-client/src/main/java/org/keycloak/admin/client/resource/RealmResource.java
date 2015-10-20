@@ -46,4 +46,7 @@ public interface RealmResource {
     @GET
     List<Map<String, String>> getClientSessionStats();
     
+    @Path("authentication")
+    AuthenticationResource authentication();
+    
 }

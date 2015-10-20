@@ -27,6 +27,12 @@
             </modules>
         </profile>
         <profile>
+            <id>migration-kc16</id>
+            <modules>
+                <module>wildfly_kc16</module>
+            </modules>
+        </profile>
+        <profile>
             <id>migration-kc15</id>
             <modules>
                 <module>wildfly_kc15</module>
