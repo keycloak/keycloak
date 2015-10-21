@@ -25,7 +25,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UserManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

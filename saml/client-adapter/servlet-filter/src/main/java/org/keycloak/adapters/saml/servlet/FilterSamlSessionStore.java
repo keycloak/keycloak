@@ -1,23 +1,17 @@
 package org.keycloak.adapters.saml.servlet;
 
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.HttpFacade;
-import org.keycloak.adapters.KeycloakAccount;
-import org.keycloak.adapters.SessionIdMapper;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.spi.KeycloakAccount;
+import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.servlet.FilterSessionStore;
-import org.keycloak.util.MultivaluedHashMap;
 
-import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpSession;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.security.Principal;
-import java.util.Collections;
-import java.util.Enumeration;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;

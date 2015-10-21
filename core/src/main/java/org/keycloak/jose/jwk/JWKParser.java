@@ -1,7 +1,7 @@
 package org.keycloak.jose.jwk;
 
 import org.codehaus.jackson.type.TypeReference;
-import org.keycloak.util.Base64Url;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
 
 import java.math.BigInteger;

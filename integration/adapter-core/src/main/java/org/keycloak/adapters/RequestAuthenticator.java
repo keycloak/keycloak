@@ -2,6 +2,9 @@ package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
+import org.keycloak.adapters.spi.AuthChallenge;
+import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.HttpFacade;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

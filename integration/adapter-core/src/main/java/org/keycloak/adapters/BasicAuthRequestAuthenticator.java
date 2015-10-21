@@ -10,11 +10,13 @@ import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
+import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.common.util.Base64;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.KeycloakUriBuilder;
+import org.keycloak.common.util.KeycloakUriBuilder;
 
 import java.util.List;
 
@@ -50,7 +52,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
 
         AccessTokenResponse atr=null;        
         try {
-            String userpw=new String(org.keycloak.util.Base64.decode(tokenString));
+            String userpw=new String(Base64.decode(tokenString));
             String[] parts=userpw.split(":");
             
             atr = getToken(parts[0], parts[1]);

@@ -5,7 +5,7 @@ import org.jboss.security.SimpleGroup;
 import org.jboss.security.SimplePrincipal;
 import org.jboss.security.auth.callback.ObjectCallback;
 import org.jboss.security.auth.spi.AbstractServerLoginModule;
-import org.keycloak.adapters.KeycloakAccount;
+import org.keycloak.adapters.spi.KeycloakAccount;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;

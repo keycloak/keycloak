@@ -46,7 +46,7 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
@@ -66,19 +66,28 @@ public class LoginTest {
 
     @ClassRule
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
+
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+            UserCredentialModel creds = new UserCredentialModel();
+            creds.setType(CredentialRepresentation.PASSWORD);
+            creds.setValue("password");
+
             UserModel user = manager.getSession().users().addUser(appRealm, "login-test");
             user.setEmail("login@test.com");
             user.setEnabled(true);
 
             userId = user.getId();
 
-            UserCredentialModel creds = new UserCredentialModel();
-            creds.setType(CredentialRepresentation.PASSWORD);
-            creds.setValue("password");
-
             user.updateCredential(creds);
+
+            UserModel user2 = manager.getSession().users().addUser(appRealm, "login-test2");
+            user2.setEmail("login2@test.com");
+            user2.setEnabled(true);
+
+            user2Id = user2.getId();
+
+            user2.updateCredential(creds);
         }
     });
 
@@ -108,6 +117,8 @@ public class LoginTest {
 
     private static String userId;
 
+    private static String user2Id;
+
     @Test
     public void testBrowserSecurityHeaders() {
         Client client = ClientBuilder.newClient();
@@ -120,6 +131,31 @@ public class LoginTest {
             Assert.assertEquals(headerValue, entry.getValue());
         }
         response.close();
+    }
+
+    @Test
+    public void loginChangeUserAfterInvalidPassword() {
+        loginPage.open();
+        loginPage.login("login-test2", "invalid");
+
+        loginPage.assertCurrent();
+
+        Assert.assertEquals("login-test2", loginPage.getUsername());
+        Assert.assertEquals("", loginPage.getPassword());
+
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+        events.expectLogin().user(user2Id).session((String) null).error("invalid_user_credentials")
+                .detail(Details.USERNAME, "login-test2")
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
+
+        loginPage.login("login-test", "password");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
     }
 
     @Test
@@ -247,6 +283,13 @@ public class LoginTest {
                 .detail(Details.USERNAME, "invalid")
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
+
+        loginPage.login("login-test", "password");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
     }
 
     @Test

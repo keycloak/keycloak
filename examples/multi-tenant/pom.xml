@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-examples-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.6.0.Final-SNAPSHOT</version>
+        <version>1.7.0.Final-SNAPSHOT</version>
     </parent>
 
     <name>Keycloak Examples - Multi Tenant</name>
@@ -38,16 +38,19 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-adapter-core</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-adapter-spi</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Contains KeycloakPrincipal -->
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
     <build>

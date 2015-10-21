@@ -49,7 +49,7 @@ public class VerifyEmailTest extends AbstractAccountManagementTest {
 
     @Before
     public void beforeVerifyEmail() {
-        // enable verify email and configure smpt server in test realm
+        log.info("enable verify email and configure smpt server in test realm");
         RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
         testRealmRep.setSmtpServer(suiteContext.getSmtpServer());
         testRealmRep.setVerifyEmail(true);
@@ -75,11 +75,11 @@ public class VerifyEmailTest extends AbstractAccountManagementTest {
         assertEquals("You need to verify your email address to activate your account.", 
                 testRealmVerifyEmailPage.getFeedbackText());
         
-        String url = assertEmailAndGetUrl(MailServerConfiguration.FROM, testUser.getEmail(), 
+        String verifyEmailUrl = assertEmailAndGetUrl(MailServerConfiguration.FROM, testUser.getEmail(), 
                 "Someone has created a Test account with this email address.");
         
-        log.info("navigating to " + url);
-        driver.navigate().to(url);
+        log.info("navigating to url from email: " + verifyEmailUrl);
+        driver.navigate().to(verifyEmailUrl);
         assertCurrentUrlStartsWith(testRealmAccountManagementPage);
         testRealmAccountManagementPage.signOut();
         testRealmLoginPage.form().login(testUser);

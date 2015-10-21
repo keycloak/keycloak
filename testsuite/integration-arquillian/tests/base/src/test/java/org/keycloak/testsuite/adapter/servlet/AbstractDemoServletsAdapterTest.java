@@ -1,5 +1,7 @@
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.keycloak.common.Version;
+import org.keycloak.common.util.Time;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import java.net.URI;
@@ -23,7 +25,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.Version;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -37,7 +38,6 @@ import org.keycloak.testsuite.arquillian.jira.Jira;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.util.Time;
 
 /**
  *

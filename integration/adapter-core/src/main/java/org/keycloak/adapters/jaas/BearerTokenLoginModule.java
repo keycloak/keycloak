@@ -1,7 +1,7 @@
 package org.keycloak.adapters.jaas;
 
 import org.jboss.logging.Logger;
-import org.keycloak.VerificationException;
+import org.keycloak.common.VerificationException;
 
 /**
  * Login module, which allows to authenticate Keycloak access token in environments, which rely on JAAS

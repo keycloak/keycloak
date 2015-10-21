@@ -25,7 +25,7 @@ import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 /**
  * HOWTO USE THIS:

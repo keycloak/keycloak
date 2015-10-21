@@ -1,7 +1,7 @@
 <%@ page import="org.keycloak.admin.client.Keycloak" %>
 <%@ page import="org.keycloak.admin.client.resource.ClientsResource" %>
 <%@ page import="org.keycloak.representations.idm.ClientRepresentation" %>
-<%@ page import="org.keycloak.util.UriUtils" %>
+<%@ page import="org.keycloak.common.util.UriUtils" %>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1" %>
 <%@ page session="false" %>
 <html>

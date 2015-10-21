@@ -1,22 +1,16 @@
 package org.keycloak.adapters.saml.jetty;
 
-import org.eclipse.jetty.security.DefaultUserIdentity;
-import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.SessionManager;
-import org.eclipse.jetty.server.UserIdentity;
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.AdapterSessionStore;
-import org.keycloak.adapters.HttpFacade;
-import org.keycloak.adapters.SessionIdMapper;
-import org.keycloak.adapters.jetty.core.JettyUserSessionManagement;
+import org.keycloak.adapters.spi.AdapterSessionStore;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.jetty.spi.JettyUserSessionManagement;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
 
-import javax.security.auth.Subject;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
-import java.util.HashSet;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;

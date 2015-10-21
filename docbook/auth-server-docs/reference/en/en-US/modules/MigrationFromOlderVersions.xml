@@ -91,6 +91,31 @@
                     settings.
                 </para>
             </simplesect>
+            <simplesect>
+                <title>Some packages renamed</title>
+                <para>
+                    We did a bit of restructure and renamed some packages. It is mainly about renaming internal packages of util classes.
+                    The most important classes used in your application ( for example AccessToken or KeycloakSecurityContext ) as well
+                    as the SPI are still unchanged. However there is slight chance that you will be affected and will need to update imports of your classes.
+                    For example if you are using multitenancy and KeycloakConfigResolver, you will be affected as for example class
+                    HttpFacade was moved to different package - it is <literal>org.keycloak.adapters.spi.HttpFacade</literal> now.
+                </para>
+            </simplesect>
+            <simplesect>
+                <title>Persisting user sessions</title>
+                <para>
+                    We added support for offline tokens in this release, which means that we are persisting "offline" user sessions into database now.
+                    If you are not using offline tokens, nothing will be persisted for you, so you don't need to care about worse performance for more DB writes.
+                    However in all cases, you will need to update <literal>standalone/configuration/keycloak-server.json</literal> and add <literal>userSessionPersister</literal>
+                    like this:
+<programlisting>
+"userSessionPersister": {
+    "provider": "jpa"
+},
+</programlisting>
+                    If you want sessions to be persisted in Mongo instead of classic RDBMS, use provider <literal>mongo</literal> instead.
+                </para>
+            </simplesect>
         </section>
         <section>
             <title>Migrating to 1.5.0.Final</title>

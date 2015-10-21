@@ -12,7 +12,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.util.PemUtils;
+import org.keycloak.common.util.PemUtils;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;

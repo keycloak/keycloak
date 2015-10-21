@@ -16,10 +16,10 @@ import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.util.ResolveRelative;
-import org.keycloak.util.KeycloakUriBuilder;
-import org.keycloak.util.MultivaluedHashMap;
-import org.keycloak.util.StringPropertyReplacer;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.Time;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;

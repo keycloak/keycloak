@@ -4,7 +4,7 @@
     <parent>
 		<artifactId>keycloak-parent</artifactId>
 		<groupId>org.keycloak</groupId>
-        <version>1.6.0.Final-SNAPSHOT</version>
+        <version>1.7.0.Final-SNAPSHOT</version>
 		<relativePath>../../../pom.xml</relativePath>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
@@ -14,7 +14,7 @@
     <properties>
         <jetty9.version>8.1.16.v20140903</jetty9.version>
         <keycloak.osgi.export>
-            org.keycloak.adapters.jetty.core.*
+            org.keycloak.adapters.jetty.spi.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             org.eclipse.jetty.*;version="[8.1,10)";resolution:=optional,

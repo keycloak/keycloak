@@ -2,7 +2,7 @@ package org.keycloak.authentication;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.ClientConnection;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
@@ -28,7 +28,7 @@ import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -215,6 +215,9 @@ public class AuthenticationProcessor {
         getClientSession().setAuthenticatedUser(user);
     }
 
+    public void clearAuthenticatedUser() {
+        getClientSession().setAuthenticatedUser(null);
+    }
 
     public class Result implements AuthenticationFlowContext, ClientAuthenticationFlowContext {
         AuthenticatorConfigModel authenticatorConfig;
@@ -332,6 +335,8 @@ public class AuthenticationProcessor {
 
         }
 
+
+
         @Override
         public UserModel getUser() {
             return getClientSession().getAuthenticatedUser();
@@ -340,6 +345,11 @@ public class AuthenticationProcessor {
         @Override
         public void setUser(UserModel user) {
             setAutheticatedUser(user);
+        }
+
+        @Override
+        public void clearUser() {
+            clearAuthenticatedUser();
         }
 
         @Override

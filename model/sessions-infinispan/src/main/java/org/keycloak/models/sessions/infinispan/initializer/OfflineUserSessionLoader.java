@@ -7,7 +7,6 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.util.Time;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -21,8 +20,7 @@ public class OfflineUserSessionLoader implements SessionLoader {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
         int startTime = (int)(session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
 
-        // TODO: debug
-        log.infof("Clearing detached sessions from persistent storage and updating timestamps to %d", startTime);
+        log.debugf("Clearing detached sessions from persistent storage and updating timestamps to %d", startTime);
 
         persister.clearDetachedUserSessions();
         persister.updateAllTimestamps(startTime);
@@ -36,8 +34,9 @@ public class OfflineUserSessionLoader implements SessionLoader {
 
     @Override
     public boolean loadSessions(KeycloakSession session, int first, int max) {
-        // TODO: trace
-        log.infof("Loading sessions - first: %d, max: %d", first, max);
+        if (log.isTraceEnabled()) {
+            log.tracef("Loading sessions - first: %d, max: %d", first, max);
+        }
 
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
         List<UserSessionModel> sessions = persister.loadUserSessions(first, max, true);

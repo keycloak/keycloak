@@ -17,10 +17,9 @@
 package org.keycloak.adapters.undertow;
 
 import io.undertow.server.session.SessionManager;
-import org.keycloak.adapters.UserSessionManagement;
+import org.keycloak.adapters.spi.UserSessionManagement;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

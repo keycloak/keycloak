@@ -1,8 +1,11 @@
 package org.keycloak.models;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.HmacOTP;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,6 +15,7 @@ import java.util.Map;
  */
 public class OTPPolicy {
 
+    protected static final Logger logger = Logger.getLogger(OTPPolicy.class);
 
     protected String type;
     protected String algorithm;
@@ -90,10 +94,17 @@ public class OTPPolicy {
         this.period = period;
     }
 
-    public String getKeyURI(RealmModel realm, String secret) {
+    public String getKeyURI(RealmModel realm, UserModel user, String secret) {
 
-        String uri = "otpauth://" + type + "/" + realm.getName() + "?secret=" + Base32.encode(secret.getBytes()) + "&digits=" + digits + "&algorithm=" + algToKeyUriAlg.get(algorithm);
-        if (type.equals(UserCredentialModel.HOTP)) {
+      String uri = null;
+        uri = "otpauth://" + type + "/" + realm.getName() + ":" + user.getUsername() + "?secret=" +
+            Base32.encode(secret.getBytes()) + "&digits=" + digits + "&algorithm=" + algToKeyUriAlg.get(algorithm);
+      try {
+        uri += "&issuer=" + URLEncoder.encode(realm.getName(), "UTF-8");
+      } catch (UnsupportedEncodingException e) {
+        logger.debug("Failed to add issuer parameter to OTP URI becasue UTF-8 is not supported.");
+      }
+      if (type.equals(UserCredentialModel.HOTP)) {
             uri += "&counter=" + initialCounter;
         }
         if (type.equals(UserCredentialModel.TOTP)) {

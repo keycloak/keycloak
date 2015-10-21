@@ -4,7 +4,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.util.UriUtils;
+import org.keycloak.common.util.UriUtils;
 
 import java.io.IOException;
 import java.util.Set;

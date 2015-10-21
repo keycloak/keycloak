@@ -9,7 +9,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.PasswordToken;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import java.io.IOException;
 import java.util.List;

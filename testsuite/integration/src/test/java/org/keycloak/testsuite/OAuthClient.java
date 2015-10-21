@@ -34,7 +34,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.VerificationException;
+import org.keycloak.common.VerificationException;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -42,7 +42,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.util.PemUtils;
+import org.keycloak.common.util.PemUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 

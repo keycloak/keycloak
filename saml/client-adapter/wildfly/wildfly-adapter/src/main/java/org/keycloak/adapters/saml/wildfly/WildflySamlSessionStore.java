@@ -2,7 +2,7 @@ package org.keycloak.adapters.saml.wildfly;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
-import org.keycloak.adapters.SessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.undertow.ServletSamlSessionStore;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;

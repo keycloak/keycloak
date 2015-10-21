@@ -7,7 +7,7 @@ import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.adapters.installed.KeycloakInstalled;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import java.io.BufferedReader;
 import java.io.IOException;

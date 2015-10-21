@@ -1,8 +1,5 @@
 package org.keycloak.adapters.saml.config;
 
-import org.keycloak.adapters.saml.SamlDeployment;
-import org.keycloak.enums.SslRequired;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.Set;

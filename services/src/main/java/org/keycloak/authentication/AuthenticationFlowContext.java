@@ -32,6 +32,11 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
      */
     void setUser(UserModel user);
 
+    /**
+     * Clear the user from the flow.
+     */
+    void clearUser();
+
     void attachUserSession(UserSessionModel userSession);
 
 

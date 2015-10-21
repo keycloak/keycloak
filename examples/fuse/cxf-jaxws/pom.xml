@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-examples-fuse-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.6.0.Final-SNAPSHOT</version>
+        <version>1.7.0.Final-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -15,7 +15,7 @@
     <description/>
 
     <properties>
-        <cxf.version>2.7.14</cxf.version>
+        <cxf.version>3.0.4</cxf.version>
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>

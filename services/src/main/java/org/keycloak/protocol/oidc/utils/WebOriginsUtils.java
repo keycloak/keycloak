@@ -1,7 +1,7 @@
 package org.keycloak.protocol.oidc.utils;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.util.UriUtils;
+import org.keycloak.common.util.UriUtils;
 
 import javax.ws.rs.core.UriInfo;
 import java.util.Set;

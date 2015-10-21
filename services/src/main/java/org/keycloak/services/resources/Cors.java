@@ -5,7 +5,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.util.CollectionUtil;
+import org.keycloak.common.util.CollectionUtil;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;

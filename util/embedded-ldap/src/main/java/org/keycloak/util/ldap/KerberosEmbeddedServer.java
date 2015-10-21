@@ -30,7 +30,7 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.jboss.logging.Logger;
-import org.keycloak.util.KerberosSerializationUtils;
+import org.keycloak.common.util.KerberosSerializationUtils;
 import sun.security.jgss.GSSNameImpl;
 import sun.security.jgss.krb5.Krb5NameElement;
 

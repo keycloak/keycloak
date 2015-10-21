@@ -1,6 +1,6 @@
 package org.keycloak.models.utils;
 
-import org.keycloak.util.Base64;
+import org.keycloak.common.util.Base64;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;

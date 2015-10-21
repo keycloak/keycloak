@@ -1617,6 +1617,7 @@ module.controller('RealmFlowBindingCtrl', function($scope, flows, Current, Realm
 module.controller('CreateFlowCtrl', function($scope, realm,
                                              AuthenticationFlows,
                                              Notifications, $location) {
+    console.debug('CreateFlowCtrl');
     $scope.realm = realm;
     $scope.flow = {
         alias: "",
@@ -1671,7 +1672,6 @@ module.controller('CreateExecutionCtrl', function($scope, realm, topFlow, parent
                                                       Notifications, $location) {
     $scope.realm = realm;
     $scope.parentFlow = parentFlow;
-    console.log('parentFlow.providerId: ' + parentFlow.providerId);
     if (parentFlow.providerId == 'form-flow') {
         $scope.providers = formActionProviders;
     } else if (parentFlow.providerId == 'client-flow') {

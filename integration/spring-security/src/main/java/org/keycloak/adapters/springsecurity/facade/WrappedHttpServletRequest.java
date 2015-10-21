@@ -1,7 +1,7 @@
 package org.keycloak.adapters.springsecurity.facade;
 
-import org.keycloak.adapters.HttpFacade.Cookie;
-import org.keycloak.adapters.HttpFacade.Request;
+import org.keycloak.adapters.spi.HttpFacade.Cookie;
+import org.keycloak.adapters.spi.HttpFacade.Request;
 import org.springframework.util.Assert;
 
 import javax.servlet.http.HttpServletRequest;

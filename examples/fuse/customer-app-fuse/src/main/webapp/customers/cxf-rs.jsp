@@ -3,7 +3,7 @@
 <%@ page import="org.keycloak.constants.ServiceUrlConstants" %>
 <%@ page import="org.keycloak.example.CxfRsClient" %>
 <%@ page import="org.keycloak.representations.IDToken" %>
-<%@ page import="org.keycloak.util.KeycloakUriBuilder" %>
+<%@ page import="org.keycloak.common.util.KeycloakUriBuilder" %>
 <%@ page session="false" %>
 <html>
 <head>

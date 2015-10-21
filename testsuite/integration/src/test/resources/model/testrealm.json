@@ -120,19 +120,6 @@
                         "openid-connect": [ "gss delegation credential" ]
                     }
                 }
-            ],
-            "offlineUserSessions": [
-                {
-                    "userSessionId": "123",
-                    "data": "something1",
-                    "offlineClientSessions": [
-                        {
-                            "clientSessionId": "456",
-                            "client": "OtherApp",
-                            "data": "something2"
-                        }
-                    ]
-                }
             ]
         },
         {

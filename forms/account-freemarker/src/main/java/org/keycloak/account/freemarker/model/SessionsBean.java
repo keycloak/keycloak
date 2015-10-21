@@ -4,7 +4,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.Time;
 
 import java.util.Date;
 import java.util.HashSet;

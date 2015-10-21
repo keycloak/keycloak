@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>1.6.0.Final-SNAPSHOT</version>
+        <version>1.7.0.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -24,6 +24,12 @@
             <modules>
                 <!--doesn't work yet, WIP-->
                 <module>eap6</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>migration-kc15</id>
+            <modules>
+                <module>wildfly_kc15</module>
             </modules>
         </profile>
         <profile>

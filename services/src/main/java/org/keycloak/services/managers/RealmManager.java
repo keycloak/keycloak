@@ -18,7 +18,7 @@ package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.enums.SslRequired;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.models.AccountRoles;

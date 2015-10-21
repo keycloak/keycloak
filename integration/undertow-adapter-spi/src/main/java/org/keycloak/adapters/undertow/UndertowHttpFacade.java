@@ -4,8 +4,8 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.CookieImpl;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
-import org.keycloak.adapters.HttpFacade;
-import org.keycloak.util.KeycloakUriBuilder;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.common.util.KeycloakUriBuilder;
 
 import javax.security.cert.X509Certificate;
 import java.io.IOException;

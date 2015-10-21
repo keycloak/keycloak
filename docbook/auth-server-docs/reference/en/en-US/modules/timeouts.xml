@@ -67,7 +67,12 @@
         </para>
         <para>
             The difference between classic Refresh token and Offline token is, that offline token will never expire and is not subject of <literal>SSO Session Idle timeout</literal> .
-            The offline token is valid even after user logout or server restart. User can revoke the offline tokens in Account management UI. The admin
+            The offline token is valid even after user logout or server restart. However you need to use offline token for refresh at least once per each 30 days (
+            The value can be changed in admin console. It is <literal>Offline Session Idle timeout</literal> ). Also if you enable option <literal>Revoke refresh tokens</literal>
+            , then each offline token can be used just once. So after refresh, you always need to store new offline token from refresh response into your DB instead of the previous one.
+        </para>
+        <para>
+            User can revoke the offline tokens in Account management UI. The admin
             user can revoke offline tokens for individual users in admin console (The <literal>Consent</literal> tab of particular user) and he can
             see all the offline tokens of all users for particular client application in the settings of the client. Revoking of all offline tokens for particular
             client is possible by set <literal>notBefore</literal> policy for the client.

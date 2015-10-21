@@ -19,6 +19,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.common.util.Base64;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.ClientManager;
@@ -138,6 +139,6 @@ public class JaxrsBasicAuthTest {
 
     private String encodeCredentials(String username, String password) {
         String text=username+":"+password;
-        return (org.keycloak.util.Base64.encodeBytes(text.getBytes()));
+        return (Base64.encodeBytes(text.getBytes()));
     }
 }

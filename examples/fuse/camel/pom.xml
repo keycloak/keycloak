@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-examples-fuse-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.6.0.Final-SNAPSHOT</version>
+        <version>1.7.0.Final-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -15,12 +15,13 @@
     <description/>
 
     <properties>
-        <camel.version>2.12.5</camel.version>
+        <camel.version>2.15.1</camel.version>
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             org.eclipse.jetty.security;version="[8.1,10)",
             org.eclipse.jetty.util.security;version="[8.1,10)",
+            org.apache.camel;version="[2.12,3)",
             org.keycloak.*;version="${project.version}",
             *;resolution:=optional
         </keycloak.osgi.import>

@@ -8,8 +8,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import org.jboss.logging.Logger;
-import org.keycloak.util.HostUtils;
-import org.keycloak.util.Time;
+import org.keycloak.common.util.HostUtils;
+import org.keycloak.common.util.Time;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

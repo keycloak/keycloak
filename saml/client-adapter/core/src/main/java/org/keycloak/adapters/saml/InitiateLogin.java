@@ -1,8 +1,8 @@
 package org.keycloak.adapters.saml;
 
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.AuthChallenge;
-import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.spi.AuthChallenge;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.saml.SAML2NameIDPolicyBuilder;

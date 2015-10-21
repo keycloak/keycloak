@@ -1,9 +1,9 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.models.Constants;
-import org.keycloak.util.Base64;
+import org.keycloak.common.util.Base64;
 import org.jboss.logging.Logger;
-import org.keycloak.enums.SslRequired;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -49,7 +49,7 @@ import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.util.UriUtils;
+import org.keycloak.common.util.UriUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -1160,30 +1160,6 @@ public class RepresentationToModel {
         }
         return consentModel;
     }
-
-    // TODO
-//    public static void importOfflineSession(KeycloakSession session, RealmModel newRealm, UserModel user, OfflineUserSessionRepresentation sessionRep) {
-//        PersistentUserSessionModel model = new PersistentUserSessionModel();
-//        model.setUserSessionId(sessionRep.getUserSessionId());
-//        model.setData(sessionRep.getData());
-//        session.users().createOfflineUserSession(newRealm, user, model);
-//
-//        for (OfflineClientSessionRepresentation csRep : sessionRep.getOfflineClientSessions()) {
-//            PersistentClientSessionModel csModel = new PersistentClientSessionModel();
-//            String clientId = csRep.getClient();
-//            ClientModel client = newRealm.getClientByClientId(clientId);
-//            if (client == null) {
-//                throw new RuntimeException("Unable to find client " + clientId + " referenced from offlineClientSession of user " + user.getUsername());
-//            }
-//            csModel.setClientId(client.getId());
-//            csModel.setUserId(user.getId());
-//            csModel.setClientSessionId(csRep.getClientSessionId());
-//            csModel.setUserSessionId(sessionRep.getUserSessionId());
-//            csModel.setData(csRep.getData());
-//
-//            session.users().createOfflineClientSession(newRealm, csModel);
-//        }
-//    }
 
     public static AuthenticationFlowModel toModel(AuthenticationFlowRepresentation rep) {
         AuthenticationFlowModel model = new AuthenticationFlowModel();
