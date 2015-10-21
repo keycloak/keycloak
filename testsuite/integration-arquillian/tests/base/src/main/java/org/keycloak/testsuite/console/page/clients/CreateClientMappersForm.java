@@ -28,17 +28,6 @@ public class CreateClientMappersForm extends Form {
     public static final String USER_ATTRIBUTE = "User Attribute";
     public static final String USER_PROPERTY = "User Property";
 
-    // Attributes labels
-    public final static String PROPERTY_LABEL = "Property";
-    public final static String USER_ATTRIBUTE_LABEL = "User Attribute";
-    public final static String USER_SESSION_NOTE_LABEL = "User Session Note";
-    public final static String MULTIVALUED_LABEL = "Multivalued";
-    public final static String SELECT_ROLE_LABEL = "Select Role";
-    public final static String TOKEN_CLAIM_NAME_LABEL = "Token Claim Name";
-    public final static String CLAIM_JSON_TYPE_LABEL = "Claim JSON Type";
-    public final static String ADD_TO_ID_TOKEN_LABEL = "Add to ID token";
-    public final static String ADD_TO_ACCESS_TOKEN_LABEL = "Add to access token";
-
     @FindBy(id = "name")
     private WebElement nameElement;
 
@@ -51,19 +40,38 @@ public class CreateClientMappersForm extends Form {
     @FindBy(id = "mapperTypeCreate")
     private Select mapperTypeSelect;
 
-    @FindBy
-    private WebElement roleElement;
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Property']//following-sibling::node()//input[@type='text']")
+    private WebElement propertyInput;
 
-    @ArquillianResource
-    private Actions actions;
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='User Attribute']//following-sibling::node()//input[@type='text']")
+    private WebElement userAttributeInput;
 
-    public void getName() {
-        getInputValue(nameElement);
-    }
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='User Session Note']//following-sibling::node()//input[@type='text']")
+    private WebElement userSessionNoteInput;
 
-    public void setName(String name) {
-        setInputValue(nameElement, name);
-    }
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Multivalued']//following-sibling::node()//div[@class='onoffswitch']")
+    private OnOffSwitch multivaluedInput;
+
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Role']//following-sibling::node()//input[@type='text']")
+    private WebElement roleInput;
+
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='New Role Name']//following-sibling::node()//input[@type='text']")
+    private WebElement newRoleInput;
+
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Token Claim Name']//following-sibling::node()//input[@type='text']")
+    private WebElement tokenClaimNameInput;
+
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Claim value']//following-sibling::node()//input[@type='text']")
+    private WebElement tokenClaimValueInput;
+
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Claim JSON Type']//following-sibling::node()//select")
+    private Select claimJSONTypeInput;
+
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Add to ID token']//following-sibling::node()//div[@class='onoffswitch']")
+    private OnOffSwitch addToIDTokenInput;
+
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Add to access token']//following-sibling::node()//div[@class='onoffswitch']")
+    private OnOffSwitch addToAccessTokenInput;
 
     public boolean isConsentRequired() {
         return consentRequiredSwitch.isOn();
@@ -88,37 +96,92 @@ public class CreateClientMappersForm extends Form {
     public void setMapperType(String type) {
         mapperTypeSelect.selectByVisibleText(type);
     }
-
-    protected String getConfigBaseXPath(String label) {
-        return ".//div[@properties='mapperType.properties']//label[text()='" + label + "']//following-sibling::node()";
+    
+    public String getProperty() {
+        return getInputValue(propertyInput);
+    }
+    
+    public void setProperty(String value) {
+        setInputValue(propertyInput, value);
     }
 
-    protected WebElement getTextInputElement(String label) {
-        return driver.findElement(By.xpath(getConfigBaseXPath(label) + "//input[@type='text']"));
+    public String getUserAttribute() {
+        return getInputValue(userAttributeInput);
     }
 
-    protected Select getSelectElement(String label) {
-        return new Select(driver.findElement(By.xpath(getConfigBaseXPath(label) + "//select")));
+    public void setUserAttribute(String value) {
+        setInputValue(userAttributeInput, value);
     }
 
-    public String getTextInput(String label) {
-        return getInputValue(getTextInputElement(label));
+    public String getUserSessionNote() {
+        return getInputValue(userSessionNoteInput);
     }
 
-    public void setTextInput(String label, String value) {
-        setInputValue(getTextInputElement(label), value);
+    public void setUserSessionNote(String value) {
+        setInputValue(userSessionNoteInput, value);
     }
 
-    public String getSelect(String label) {
-        return getSelectElement(label).getFirstSelectedOption().getText();
+    public boolean isMultivalued() {
+        return multivaluedInput.isOn();
     }
 
-    public void setSelect(String label, String value) {
-        getSelectElement(label).selectByVisibleText(value);
+    public void setMultivalued(boolean value) {
+        multivaluedInput.setOn(value);
     }
 
-    public OnOffSwitch onOffSwitch(String label) {
-        WebElement root = driver.findElement(By.xpath(getConfigBaseXPath(label) + "//div[@class='onoffswitch']"));
-        return new OnOffSwitch(root, actions);
+    public String getRole() {
+        return getInputValue(roleInput);
+    }
+
+    public void setRole(String value) {
+        setInputValue(roleInput, value);
+    }
+
+    public String getNewRole() {
+        return getInputValue(newRoleInput);
+    }
+
+    public void setNewRole(String value) {
+        setInputValue(newRoleInput, value);
+    }
+
+    public String getTokenClaimName() {
+        return getInputValue(tokenClaimNameInput);
+    }
+
+    public void setTokenClaimName(String value) {
+        setInputValue(tokenClaimNameInput, value);
+    }
+
+    public String getTokenClaimValue() {
+        return getInputValue(tokenClaimValueInput);
+    }
+
+    public void setTokenClaimValue(String value) {
+        setInputValue(tokenClaimValueInput, value);
+    }
+
+    public String getClaimJSONType() {
+        return claimJSONTypeInput.getFirstSelectedOption().getText();
+    }
+
+    public void setClaimJSONType(String value) {
+        claimJSONTypeInput.selectByVisibleText(value);
+    }
+
+    public boolean isAddToIDToken() {
+        return addToIDTokenInput.isOn();
+    }
+
+    public void setAddToIDToken(boolean value) {
+        addToIDTokenInput.setOn(value);
+    }
+
+    public boolean isAddToAccessToken() {
+        return addToAccessTokenInput.isOn();
+    }
+
+    public void setAddToAccessToken(boolean value) {
+        addToAccessTokenInput.setOn(value);
     }
 }
