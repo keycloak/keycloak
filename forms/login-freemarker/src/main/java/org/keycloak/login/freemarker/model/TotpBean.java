@@ -49,7 +49,7 @@ public class TotpBean {
         
         this.totpSecret = HmacOTP.generateSecret(20);
         this.totpSecretEncoded = Base32.encode(totpSecret.getBytes());
-        this.keyUri = realm.getOTPPolicy().getKeyURI(realm, this.totpSecret);
+        this.keyUri = realm.getOTPPolicy().getKeyURI(realm, user, this.totpSecret);
     }
 
     public boolean isEnabled() {
