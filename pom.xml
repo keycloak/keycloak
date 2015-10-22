@@ -57,7 +57,7 @@
         <wildfly.build-tools.version>1.0.0.Final</wildfly.build-tools.version>
 
         <!-- this is EAP 6.4 alpha, publicly available -->
-        <jboss.version>7.5.3.Final-redhat-2</jboss.version>
+        <jboss.version>7.5.4.Final-redhat-4</jboss.version>
 
         <!--<servlet.api.30.version>1.0.2.Final</servlet.api.30.version>-->
         <google.zxing.version>3.2.1.redhat-1</google.zxing.version>
@@ -165,7 +165,7 @@
             <dependency>
                 <groupId>org.jboss.bom</groupId>
                 <artifactId>eap6-supported-artifacts</artifactId>
-                <version>6.4.3.GA</version>
+                <version>6.4.4.GA</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
