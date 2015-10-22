@@ -42,6 +42,7 @@
                 <exclude>standalone/configuration/standalone.xml</exclude>
                 <exclude>modules/system/layers/base/org/jboss/as/product/**</exclude>
                 <exclude>bin/product.conf</exclude>
+                <exclude>welcome-content/**</exclude>
             </excludes>
         </fileSet>
         <fileSet>
@@ -63,6 +64,11 @@
         <fileSet>
             <directory>src/main/resources/content</directory>
             <outputDirectory>jboss-iam-1.0</outputDirectory>
+            <filtered>false</filtered>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/resources/welcome-content</directory>
+            <outputDirectory>jboss-iam-1.0/welcome-content</outputDirectory>
             <filtered>false</filtered>
         </fileSet>
     </fileSets>
