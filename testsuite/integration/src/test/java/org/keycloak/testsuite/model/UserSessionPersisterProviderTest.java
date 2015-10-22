@@ -290,6 +290,14 @@ public class UserSessionPersisterProviderTest {
         realmMgr.removeRealm(realmMgr.getRealm("foo"));
     }
 
+    // KEYCLOAK-1999
+    @Test
+    public void testNoSessions() {
+        UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+        List<UserSessionModel> sessions = persister.loadUserSessions(0, 1, true);
+        Assert.assertEquals(0, sessions.size());
+    }
+
 
     private ClientSessionModel createClientSession(ClientModel client, UserSessionModel userSession, String redirect, String state, Set<String> roles, Set<String> protocolMappers) {
         ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);

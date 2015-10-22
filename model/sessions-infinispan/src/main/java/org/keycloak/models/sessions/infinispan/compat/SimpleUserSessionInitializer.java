@@ -39,7 +39,7 @@ public class SimpleUserSessionInitializer {
             public void run(KeycloakSession session) {
                 int count = sessionLoader.getSessionsCount(session);
 
-                for (int i=0 ; i<=count ; i+=sessionsPerSegment) {
+                for (int i=0 ; i<count ; i+=sessionsPerSegment) {
                     sessionLoader.loadSessions(session, i, sessionsPerSegment);
                 }
             }
