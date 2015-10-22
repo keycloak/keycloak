@@ -493,6 +493,7 @@
                                     <migration>true</migration>
                                     <migration.kc16>true</migration.kc16>
                                     <keycloak-1.6.0.Final.home>${keycloak-1.6.0.Final.home}</keycloak-1.6.0.Final.home>
+                                    <keycloak.migration.file>src/test/resources/migration-test/migration-realm-16.json</keycloak.migration.file>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
