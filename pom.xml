@@ -62,7 +62,7 @@
         <!--<servlet.api.30.version>1.0.2.Final</servlet.api.30.version>-->
         <google.zxing.version>3.2.1.redhat-1</google.zxing.version>
         <!--<github.relaxng.version>2011.1</github.relaxng.version>-->
-        <freemarker.version>2.3.23</freemarker.version>
+        <freemarker.version>2.3.23.redhat-1</freemarker.version>
         <twitter4j.version>4.0.4.redhat-1</twitter4j.version>
         <selenium.version>2.36.0</selenium.version>
         <!--<sun.istack.version>2.21</sun.istack.version>-->
