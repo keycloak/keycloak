@@ -23,6 +23,8 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.requiredactions.VerifyEmail;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -49,6 +51,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
@@ -533,7 +536,7 @@ public class LoginActionsService {
         event.event(EventType.VERIFY_EMAIL);
         if (key != null) {
             Checks checks = new Checks();
-            if (!checks.verifyCode(key, ClientSessionModel.Action.REQUIRED_ACTIONS.name())) {
+            if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name())) {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
@@ -547,11 +550,21 @@ public class LoginActionsService {
             UserSessionModel userSession = clientSession.getUserSession();
             UserModel user = userSession.getUser();
             initEvent(clientSession);
+            event.event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail());
+
+            String keyFromSession = clientSession.getNote(Constants.VERIFY_EMAIL_KEY);
+            clientSession.removeNote(Constants.VERIFY_EMAIL_KEY);
+            if (!key.equals(keyFromSession)) {
+                logger.error("Invalid key for email verification");
+                event.error(Errors.INVALID_USER_CREDENTIALS);
+                throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
+            }
+
             user.setEmailVerified(true);
 
             user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
 
-            event.event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail()).success();
+            event.success();
 
             String actionCookieValue = getActionCookie();
             if (actionCookieValue == null || !actionCookieValue.equals(userSession.getId())) {
@@ -576,8 +589,11 @@ public class LoginActionsService {
 
             createActionCookie(realm, uriInfo, clientConnection, userSession.getId());
 
+            VerifyEmail.setupKey(clientSession);
+
             return session.getProvider(LoginFormsProvider.class)
                     .setClientSessionCode(accessCode.getCode())
+                    .setClientSession(clientSession)
                     .setUser(userSession.getUser())
                     .createResponse(RequiredAction.VERIFY_EMAIL);
         }

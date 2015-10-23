@@ -47,6 +47,7 @@ import org.keycloak.login.freemarker.model.TotpBean;
 import org.keycloak.login.freemarker.model.UrlBean;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -138,7 +139,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case VERIFY_EMAIL:
                 try {
                     UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());
-                    builder.queryParam("key", accessCode);
+                    builder.queryParam(OAuth2Constants.CODE, accessCode);
+                    builder.queryParam("key", clientSession.getNote(Constants.VERIFY_EMAIL_KEY));
 
                     String link = builder.build(realm.getName()).toString();
                     long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
@@ -528,6 +530,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public LoginFormsProvider setClientSessionCode(String accessCode) {
         this.accessCode = accessCode;
+        return this;
+    }
+
+    @Override
+    public LoginFormsProvider setClientSession(ClientSessionModel clientSession) {
+        this.clientSession = clientSession;
         return this;
     }
 
