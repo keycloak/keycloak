@@ -8,9 +8,12 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.validation.Validation;
 
@@ -44,8 +47,11 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, context.getUser().getEmail()).success();
         LoginActionsService.createActionCookie(context.getRealm(), context.getUriInfo(), context.getConnection(), context.getUserSession().getId());
 
+        setupKey(context.getClientSession());
+
         LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(context.generateCode())
+                .setClientSession(context.getClientSession())
                 .setUser(context.getUser());
         Response challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
         context.challenge(challenge);
@@ -86,5 +92,10 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     @Override
     public String getId() {
         return UserModel.RequiredAction.VERIFY_EMAIL.name();
+    }
+
+    public static void setupKey(ClientSessionModel clientSession) {
+        String secret = HmacOTP.generateSecret(10);
+        clientSession.setNote(Constants.VERIFY_EMAIL_KEY, secret);
     }
 }
