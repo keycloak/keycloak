@@ -11,6 +11,7 @@ import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.offlineconfig.AdminRecovery;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
@@ -83,6 +84,8 @@ public class KeycloakApplication extends Application {
         setupDefaultRealm(context.getContextPath());
 
         migrateModel();
+        sessionFactory.publish(new PostMigrationEvent());
+
         new ExportImportManager().checkExportImport(this.sessionFactory, context.getContextPath());
         importRealms(context);
 
