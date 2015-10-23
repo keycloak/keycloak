@@ -210,6 +210,7 @@ new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp'
                         <listitem>prompt - can be set to 'none' to check if the user is logged in already (if not logged in, a login form is not displayed)</listitem>
                         <listitem>loginHint - used to pre-fill the username/email field on the login form</listitem>
                         <listitem>action - if value is 'register' then user is redirected to registration page, otherwise to login page</listitem>
+                        <listitem>locale - specifies the desired locale for the UI</listitem>
                     </itemizedlist>
                 </para>
             </simplesect>
