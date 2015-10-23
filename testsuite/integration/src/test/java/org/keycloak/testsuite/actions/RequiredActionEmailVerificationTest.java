@@ -26,7 +26,9 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.models.RealmModel;
@@ -130,7 +132,7 @@ public class RequiredActionEmailVerificationTest {
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
-        Assert.assertEquals(mailCodeId, verificationUrl.split("key=")[1].split("\\.")[1]);
+        Assert.assertEquals(mailCodeId, verificationUrl.split("code=")[1].split("\\&")[0].split("\\.")[1]);
 
         driver.navigate().to(verificationUrl.trim());
 
@@ -223,7 +225,7 @@ public class RequiredActionEmailVerificationTest {
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
-        Assert.assertEquals(mailCodeId, verificationUrl.split("key=")[1].split("\\.")[1]);
+        Assert.assertEquals(mailCodeId, verificationUrl.split("code=")[1].split("\\&")[0].split("\\.")[1]);
 
         driver.manage().deleteAllCookies();
 
@@ -237,6 +239,42 @@ public class RequiredActionEmailVerificationTest {
         loginPage.open();
 
         assertTrue(loginPage.isCurrent());
+    }
+
+
+    @Test
+    public void verifyInvalidKeyOrCode() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        Assert.assertTrue(verifyEmailPage.isCurrent());
+        String resendEmailLink = verifyEmailPage.getResendEmailLink();
+        String keyInsteadCodeURL = resendEmailLink.replace("code=", "key=");
+
+        AssertEvents.ExpectedEvent emailEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost");
+        Event sendEvent = emailEvent.assertEvent();
+        String sessionId = sendEvent.getSessionId();
+        String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
+
+        driver.navigate().to(keyInsteadCodeURL);
+
+        events.expectRequiredAction(EventType.VERIFY_EMAIL_ERROR)
+                .error(Errors.INVALID_CODE)
+                .client((String)null)
+                .user((String)null)
+                .session((String)null)
+                .clearDetails()
+                .assertEvent();
+
+        String badKeyURL = KeycloakUriBuilder.fromUri(resendEmailLink).queryParam("key", "foo").build().toString();
+        driver.navigate().to(badKeyURL);
+
+        events.expectRequiredAction(EventType.VERIFY_EMAIL_ERROR)
+                .error(Errors.INVALID_USER_CREDENTIALS)
+                .session(sessionId)
+                .detail("email", "test-user@localhost")
+                .detail(Details.CODE_ID, mailCodeId)
+                .assertEvent();
     }
     
     private String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
