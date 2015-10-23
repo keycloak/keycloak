@@ -169,7 +169,7 @@
             }
 
             if (options && options.locale) {
-                url += '&kc_locale=' + options.locale;
+                url += '&ui_locales=' + options.locale;
             }
 
             return url;
