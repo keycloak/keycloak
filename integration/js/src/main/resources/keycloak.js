@@ -168,6 +168,10 @@
                 url += '&scope=' + options.scope;
             }
 
+            if (options && options.locale) {
+                url += '&kc_locale=' + options.locale;
+            }
+
             return url;
         }
 
