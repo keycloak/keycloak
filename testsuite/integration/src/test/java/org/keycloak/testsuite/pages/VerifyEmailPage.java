@@ -50,4 +50,8 @@ public class VerifyEmailPage extends AbstractPage {
         resendEmailLink.click();
     }
 
+    public String getResendEmailLink() {
+        return resendEmailLink.getAttribute("href");
+    }
+
 }
