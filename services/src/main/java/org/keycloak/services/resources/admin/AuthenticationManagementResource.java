@@ -711,6 +711,12 @@ public class AuthenticationManagementResource {
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to remove execution from a built in flow");
         }
+        
+        if(model.getFlowId() != null) {
+        	AuthenticationFlowModel nonTopLevelFlow = realm.getAuthenticationFlowById(model.getFlowId());
+        	realm.removeAuthenticationFlow(nonTopLevelFlow);
+        }
+		
         realm.removeAuthenticatorExecution(model);
     }
 
