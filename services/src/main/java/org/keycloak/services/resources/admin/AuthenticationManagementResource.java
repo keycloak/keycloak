@@ -276,6 +276,10 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createFlow(AuthenticationFlowModel model) {
         this.auth.requireManage();
+        
+        if (model.getAlias() == null || model.getAlias().isEmpty()) {
+            return ErrorResponse.exists("Failed to create flow with empty alias name");
+        }
 
         if (realm.getFlowByAlias(model.getAlias()) != null) {
             return ErrorResponse.exists("Flow " + model.getAlias() + " already exists");
