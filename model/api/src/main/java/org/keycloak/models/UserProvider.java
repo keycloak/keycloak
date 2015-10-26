@@ -43,6 +43,8 @@ public interface UserProvider extends Provider {
     Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm);
     FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm);
 
+    void grantToAllUsers(RealmModel realm, RoleModel role);
+
     void preRemove(RealmModel realm);
 
     void preRemove(RealmModel realm, UserFederationProviderModel link);
