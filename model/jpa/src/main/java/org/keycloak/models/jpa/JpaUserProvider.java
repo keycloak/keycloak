@@ -147,7 +147,13 @@ public class JpaUserProvider implements UserProvider {
         }
     }
 
-
+    @Override
+    public void grantToAllUsers(RealmModel realm, RoleModel role) {
+        int num = em.createNamedQuery("grantRoleToAllUsers")
+                .setParameter("realmId", realm.getId())
+                .setParameter("roleId", role.getId())
+                .executeUpdate();
+    }
 
     @Override
     public void preRemove(RealmModel realm) {

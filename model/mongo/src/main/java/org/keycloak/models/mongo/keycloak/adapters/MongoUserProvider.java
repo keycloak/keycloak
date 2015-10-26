@@ -369,6 +369,19 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
+    public void grantToAllUsers(RealmModel realm, RoleModel role) {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .get();
+
+        DBObject update = new QueryBuilder()
+                .and("$push").is(new BasicDBObject("roleIds", role.getId()))
+                .get();
+
+        int count = getMongoStore().updateEntities(MongoUserEntity.class, query, update, invocationContext);
+    }
+
+    @Override
     public void preRemove(RealmModel realm) {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(realm.getId())
