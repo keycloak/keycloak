@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.managers.ClientManager;
@@ -281,6 +282,36 @@ public class UserModelTest extends AbstractModelTest {
         // Assert service account removed as well
         realm = realmManager.getRealmByName("original");
         Assert.assertNull(session.users().getUserByUsername("user1", realm));
+    }
+
+    @Test
+    public void testGrantToAll() {
+        RealmModel realm1 = realmManager.createRealm("realm1");
+        RoleModel role1 = realm1.addRole("role1");
+        UserModel user1 = realmManager.getSession().users().addUser(realm1, "user1");
+        UserModel user2 = realmManager.getSession().users().addUser(realm1, "user2");
+
+        RealmModel realm2 = realmManager.createRealm("realm2");
+        UserModel realm2User1 = realmManager.getSession().users().addUser(realm2, "user1");
+
+        commit();
+
+        realm1 = realmManager.getRealmByName("realm1");
+        role1 = realm1.getRole("role1");
+        realmManager.getSession().users().grantToAllUsers(realm1, role1);
+
+        commit();
+
+        realm1 = realmManager.getRealmByName("realm1");
+        role1 = realm1.getRole("role1");
+        user1 = realmManager.getSession().users().getUserByUsername("user1", realm1);
+        user2 = realmManager.getSession().users().getUserByUsername("user2", realm1);
+        Assert.assertTrue(user1.hasRole(role1));
+        Assert.assertTrue(user2.hasRole(role1));
+
+        realm2 = realmManager.getRealmByName("realm2");
+        realm2User1 = realmManager.getSession().users().getUserByUsername("user1", realm2);
+        Assert.assertFalse(realm2User1.hasRole(role1));
     }
 
     public static void assertEquals(UserModel expected, UserModel actual) {

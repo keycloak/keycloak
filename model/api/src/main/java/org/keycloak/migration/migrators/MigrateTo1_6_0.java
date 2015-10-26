@@ -63,10 +63,8 @@ public class MigrateTo1_6_0 {
                 KeycloakModelUtils.setupOfflineTokens(realm);
                 RoleModel role = realm.getRole(Constants.OFFLINE_ACCESS_ROLE);
 
-                // Check if possible to avoid iterating over users
-                for (UserModel user : session.userStorage().getUsers(realm, true)) {
-                    user.grantRole(role);
-                }
+                // Bulk grant of offline_access role to all users
+                session.users().grantToAllUsers(realm, role);
             }
 
             ClientModel adminConsoleClient = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
