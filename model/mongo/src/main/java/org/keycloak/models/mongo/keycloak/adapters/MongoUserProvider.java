@@ -25,6 +25,7 @@ import org.keycloak.models.utils.CredentialValidation;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -227,6 +228,19 @@ public class MongoUserProvider implements UserProvider {
         DBObject sort = new BasicDBObject("username", 1);
 
         List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, queryBuilder.get(), sort, firstResult, maxResults, invocationContext);
+        return convertUserEntities(realm, users);
+    }
+
+    @Override
+    public List<UserModel> searchForExpiredUsers(Date olderThan, RealmModel realm) {
+        QueryBuilder queryBuilder = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .and("emailVerified").is(false)
+                .and("createdTimestamp").lessThan(olderThan.getTime());
+
+        DBObject query = queryBuilder.get();
+        DBObject sort = new BasicDBObject("username", 1);
+        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, query, sort, 0, Integer.MAX_VALUE, invocationContext);
         return convertUserEntities(realm, users);
     }
 

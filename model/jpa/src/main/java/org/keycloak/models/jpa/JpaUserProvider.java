@@ -21,6 +21,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -395,6 +396,20 @@ public class JpaUserProvider implements UserProvider {
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
         for (UserEntity entity : results) users.add(new UserAdapter(realm, em, entity));
+        return users;
+    }
+
+    @Override
+    public List<UserModel> searchForExpiredUsers(Date olderThan, RealmModel realm) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("getAllExpiredUsersByRealmAndDate", UserEntity.class);
+        query.setParameter("realmId", realm.getId());
+        query.setParameter("date", olderThan.getTime());
+        List<UserEntity> results = query.getResultList();
+
+        List<UserModel> users = new ArrayList<UserModel>();
+        for (UserEntity user : results) {
+            users.add(new UserAdapter(realm, em, user));
+        }
         return users;
     }
 

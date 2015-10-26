@@ -40,6 +40,7 @@ catalog.xml
 # Logs and databases #
 ######################
 *.log
+*.db
 
 # Maven #
 #########

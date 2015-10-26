@@ -35,6 +35,8 @@
         <undertow.version>1.1.1.Final</undertow.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
         <mongo.driver.version>2.11.3</mongo.driver.version>
+        <jongo.version>1.0</jongo.version>
+        <fongo.version>1.3.6</fongo.version>
         <jboss.logging.version>3.1.4.GA</jboss.logging.version>
         <syslog4j.version>0.9.30</syslog4j.version>
         <jboss-logging-tools.version>1.2.0.Beta1</jboss-logging-tools.version>
@@ -73,6 +75,8 @@
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
+        <assertj.version>3.2.0</assertj.version>
+        <mockito.version>1.10.19</mockito.version>
         <log4j.version>1.2.17</log4j.version>
         <greenmail.version>1.3.1b</greenmail.version>
         <xmlsec.version>1.5.1</xmlsec.version>
@@ -301,6 +305,16 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-all</artifactId>
+                <version>${mockito.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
                 <version>${hamcrest.version}</version>
@@ -411,6 +425,16 @@
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongo-java-driver</artifactId>
                 <version>${mongo.driver.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jongo</groupId>
+                <artifactId>jongo</artifactId>
+                <version>${jongo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.fakemongo</groupId>
+                <artifactId>fongo</artifactId>
+                <version>${fongo.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.jmeter</groupId>

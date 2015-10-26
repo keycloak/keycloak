@@ -4,7 +4,7 @@ import org.jboss.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -312,6 +312,11 @@ public class UserFederationManager implements UserProvider {
                 return session.userStorage().searchForUserByAttributes(attributes, realm, first, max);
             }
         }, realm, firstResult, maxResults);
+    }
+
+    @Override
+    public List<UserModel> searchForExpiredUsers(Date olderThan, RealmModel realm) {
+        throw new UnsupportedOperationException("Method not supported by FederationManager");
     }
 
     @Override

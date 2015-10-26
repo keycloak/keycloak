@@ -22,6 +22,7 @@ import java.util.Collection;
 @NamedQueries({
         @NamedQuery(name="getAllUsersByRealm", query="select u from UserEntity u where u.realmId = :realmId order by u.username"),
         @NamedQuery(name="getAllUsersByRealmExcludeServiceAccount", query="select u from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) order by u.username"),
+        @NamedQuery(name="getAllExpiredUsersByRealmAndDate", query="select u from UserEntity u where u.realmId = :realmId and u.createdTimestamp < :date and u.emailVerified = false order by u.username"),
         @NamedQuery(name="searchForUser", query="select u from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) and " +
                 "( lower(u.username) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search ) order by u.username"),
         @NamedQuery(name="getRealmUserById", query="select u from UserEntity u where u.id = :id and u.realmId = :realmId"),

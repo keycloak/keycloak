@@ -41,9 +41,11 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.Waiter;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountLogPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -63,9 +65,11 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.core.UriBuilder;
+import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -167,11 +171,6 @@ public class AccountTest {
         });
     }
 
-    //@Test
-    public void ideTesting() throws Exception {
-        Thread.sleep(100000000);
-    }
-
     @Test
     public void testMigrationModel() {
         KeycloakSession keycloakSession = keycloakRule.startSession();
@@ -179,7 +178,43 @@ public class AccountTest {
         keycloakSession.close();
     }
 
+    @Test
+    public void testEvictNotExpiredAccountsAfterCertainTime() throws Exception {
+        //given
+        final Calendar yearAgo = Calendar.getInstance();
+        yearAgo.add(Calendar.YEAR, -1);
 
+        keycloakRule.update(new KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                UserModel user2 = manager.getSession().users().addUser(appRealm, "expired-test-user@localhost");
+                user2.setEmail("expired-test-user@localhost");
+                user2.setCreatedTimestamp(yearAgo.getTime().getTime());
+                user2.setEmailVerified(false);
+            }
+        });
+
+        final int usersBeforeEviction = getNumberOfUserInTestRealm();
+
+        //when
+        //reschedule tasks with a very small interval
+        KeycloakApplication.setupScheduledTasks(KeycloakApplication.createSessionFactory(), 1);
+
+        //then
+        Waiter.waitForCondition(new Waiter.Condition() {
+            @Override
+            public boolean check() {
+                return getNumberOfUserInTestRealm() == usersBeforeEviction - 1;
+            }
+        }, 10, TimeUnit.SECONDS);
+    }
+
+    public int getNumberOfUserInTestRealm() {
+        final KeycloakSession keycloakSession = keycloakRule.startSession();
+        int usersCount = keycloakSession.userStorage().getUsersCount(keycloakSession.realms().getRealm("test"));
+        keycloakRule.stopSession(keycloakSession, true);
+        return usersCount;
+    }
 
     @Test
     public void returnToAppFromQueryParam() {

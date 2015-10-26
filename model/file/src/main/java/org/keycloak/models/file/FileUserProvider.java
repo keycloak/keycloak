@@ -23,9 +23,6 @@ import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.session.PersistentClientSessionModel;
-import org.keycloak.models.session.PersistentUserSessionModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -35,8 +32,6 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.entities.FederatedIdentityEntity;
-import org.keycloak.models.entities.PersistentClientSessionEntity;
-import org.keycloak.models.entities.PersistentUserSessionEntity;
 import org.keycloak.models.entities.UserEntity;
 import org.keycloak.models.file.adapter.UserAdapter;
 import org.keycloak.models.utils.CredentialValidation;
@@ -45,8 +40,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -258,6 +253,20 @@ public class FileUserProvider implements UserProvider {
         }
 
         return sortedSubList(found, firstResult, maxResults);
+    }
+
+    @Override
+    public List<UserModel> searchForExpiredUsers(Date olderThan, RealmModel realm) {
+        Collection<UserModel> users = inMemoryModel.getUsers(realm.getId());
+
+        List<UserModel> matchedUsers = new ArrayList<>();
+        for (UserModel user : users) {
+            if(!user.isEmailVerified() && new Date(user.getCreatedTimestamp()).before(olderThan)) {
+                matchedUsers.add(user);
+            }
+        }
+
+        return matchedUsers;
     }
 
     @Override
