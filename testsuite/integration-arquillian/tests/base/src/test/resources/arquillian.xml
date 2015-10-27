@@ -25,8 +25,16 @@
         <configuration>
             <property name="enabled">${migration.kc16}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${keycloak-1.6.0.Final.home}</property>
-            <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
+            <property name="jbossHome">${keycloak.migration.home}</property>
+            <property name="javaVmArguments">
+                -Dkeycloak.migration.action=import 
+                -Dkeycloak.migration.provider=singleFile
+                -Dkeycloak.migration.file=${keycloak.migration.file}
+                -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
+                -Dkeycloak.migration.realmName=Migration
+                -Djboss.socket.binding.port-offset=${auth.server.port.offset} 
+                -Xms64m -Xmx512m -XX:MaxPermSize=256m
+            </property>
             <property name="managementPort">${auth.server.management.port}</property>
             <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
         </configuration>
@@ -36,7 +44,7 @@
         <configuration>
             <property name="enabled">${migration.kc15}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${keycloak-1.5.1.Final.home}</property>
+            <property name="jbossHome">${keycloak.migration.homev}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
             <property name="managementPort">${auth.server.management.port}</property>
             <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
@@ -47,7 +55,7 @@
         <configuration>
             <property name="enabled">${migration.kc14}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${keycloak-1.4.0.Final.home}</property>
+            <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
             <property name="managementPort">${auth.server.management.port}</property>
             <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
@@ -58,7 +66,7 @@
         <configuration>
             <property name="enabled">${migration.kc13}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${keycloak-1.3.1.Final.home}</property>
+            <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
             <property name="managementPort">${auth.server.management.port}</property>
             <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
@@ -69,7 +77,7 @@
         <configuration>
             <property name="enabled">${migration.kc12}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${keycloak-1.2.0.Final.home}</property>
+            <property name="jbossHome">${keycloak.migration.homee}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
             <property name="managementPort">${auth.server.management.port}</property>
             <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>

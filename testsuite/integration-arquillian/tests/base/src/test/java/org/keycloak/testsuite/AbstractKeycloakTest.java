@@ -86,6 +86,7 @@ public abstract class AbstractKeycloakTest {
         driverSettings();
 
         if (!suiteContext.isAdminPasswordUpdated()) {
+            log.debug("updating admin password");
             updateMasterAdminPassword();
             suiteContext.setAdminPasswordUpdated(true);
         }
