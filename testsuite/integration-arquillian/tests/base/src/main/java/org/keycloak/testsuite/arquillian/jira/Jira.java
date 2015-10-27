@@ -24,5 +24,5 @@ import java.lang.annotation.Target;
 public @interface Jira {
 
     String value();
-	boolean enabled() default true;
+    boolean enabled() default true;
 }
