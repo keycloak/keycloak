@@ -11,15 +11,6 @@
     <artifactId>integration-arquillian-migration-servers</artifactId>
     <packaging>pom</packaging>
     <name>Migration Servers</name>
-    
-    <properties>
-        <jdbc.mvn.groupId>test.jdbc.eap7</jdbc.mvn.groupId>
-        <jdbc.mvn.artifactId>mysql57</jdbc.mvn.artifactId>
-        <jdbc.mvn.version>EAP_7.0.0</jdbc.mvn.version>
-        <keycloak.connectionsJpa.url>jdbc:mysql://localhost:3306/keycloak</keycloak.connectionsJpa.url>
-        <keycloak.connectionsJpa.user>root</keycloak.connectionsJpa.user>
-        <keycloak.connectionsJpa.password>rot</keycloak.connectionsJpa.password>
-    </properties>
 
     <profiles>
         <profile>
