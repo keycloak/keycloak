@@ -4,6 +4,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.services.util.ResolveRelative;
 
 import java.net.URI;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -32,4 +33,11 @@ public class ClientBean {
         return ResolveRelative.resolveRelativeUri(requestUri, client.getRootUrl(), client.getBaseUrl());
     }
 
+    public Map<String,String> getAttributes(){
+        return client.getAttributes();
+    }
+
+    public String getAttribute(String key){
+        return client.getAttribute(key);
+    }
 }

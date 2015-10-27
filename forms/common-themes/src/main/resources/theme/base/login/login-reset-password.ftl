@@ -11,7 +11,7 @@
                     <label for="username" class="${properties.kcLabelClass!}">${msg("usernameOrEmail")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="username" name="username" class="${properties.kcInputClass!}" />
+                    <input type="text" id="username" name="username" class="${properties.kcInputClass!}" autofocus/>
                 </div>
             </div>
 
