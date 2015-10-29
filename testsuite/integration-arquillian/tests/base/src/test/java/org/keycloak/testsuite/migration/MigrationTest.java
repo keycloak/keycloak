@@ -21,16 +21,17 @@
  */
 package org.keycloak.testsuite.migration;
 
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.migration.Migration;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
-public class MigrationTest extends AbstractAuthTest {
+public class MigrationTest extends AbstractKeycloakTest {
     
     @Test
     @Migration(versionFrom = "1.6.0.Final")
@@ -40,6 +41,11 @@ public class MigrationTest extends AbstractAuthTest {
         }
         
         Assert.fail("TODO");
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        log.info("Adding no test realms for migration test. Test realm should be migrated from previous vesrion.");
     }
 
 }
