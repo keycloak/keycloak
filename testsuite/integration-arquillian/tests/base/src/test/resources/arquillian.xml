@@ -21,7 +21,7 @@
     <!-- PREVIOUS VERSIONS KEYCLOAK FOR MIGRATION TESTS -->
     <!-- IT HAS TO BE LISTED ABOWE KEYCLOAK AUTH SERVERS -->
     
-    <container qualifier="keycloak-1.6.0.Final" mode="suite" >
+    <container qualifier="keycloak-1.6.1.Final" mode="suite" >
         <configuration>
             <property name="enabled">${migration.kc16}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
