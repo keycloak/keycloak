@@ -93,7 +93,7 @@ public class ContainersTestEnricher {
     public void startSuiteContainers(@Observes(precedence = 1) StartSuiteContainers event) {
         init();
         if (migrationTests) {
-            log.info("\n\n### Starting keycloak with previous version ###\n");
+            log.info("\n\n### Starting keycloak " + System.getProperty("version", "- previous") + " ###\n");
         }
     }
 
@@ -109,9 +109,9 @@ public class ContainersTestEnricher {
         }
 
         if (migrationTests && !alreadyStopped) {
-            log.info("\n\n### Stopping keycloak with previous version ###\n");
+            log.info("\n\n### Stopping keycloak " + System.getProperty("version", "- previous") + " ###\n");
             stopSuiteContainers.fire(new StopSuiteContainers());
-            log.info("\n\n### Starting keycloak with current version ###\n");
+            log.info("\n\n### Starting keycloak current version ###\n");
         }
         alreadyStopped = true;
     }

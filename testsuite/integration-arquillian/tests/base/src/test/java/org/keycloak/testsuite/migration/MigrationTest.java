@@ -21,6 +21,7 @@
  */
 package org.keycloak.testsuite.migration;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
@@ -38,7 +39,7 @@ public class MigrationTest extends AbstractAuthTest {
             System.out.println(realm.getRealm());
         }
         
-        throw new RuntimeException("TODO");
+        Assert.fail("TODO");
     }
 
 }
