@@ -6,6 +6,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -24,6 +25,7 @@ import org.keycloak.models.jpa.entities.AuthenticationExecutionEntity;
 import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
 import org.keycloak.models.jpa.entities.AuthenticatorConfigEntity;
 import org.keycloak.models.jpa.entities.ClientEntity;
+import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.jpa.entities.RealmAttributeEntity;
@@ -1943,5 +1945,61 @@ public class RealmAdapter implements RealmModel {
             if (action.getAlias().equals(alias)) return action;
         }
         return null;
+    }
+
+    @Override
+    public GroupModel getGroupById(String id) {
+        GroupEntity groupEntity = em.find(GroupEntity.class, id);
+        if (groupEntity == null) return null;
+        if (groupEntity.getRealm().getId().equals(getId())) return null;
+        return new GroupAdapter(this, em, groupEntity);
+    }
+
+    @Override
+    public List<GroupModel> getGroups() {
+        List<GroupModel> list = new LinkedList<>();
+        Collection<GroupEntity> groups = realm.getGroups();
+        if (groups == null) return list;
+        for (GroupEntity entity : groups) {
+            list.add(new GroupAdapter(this, em, entity));
+        }
+        return list;
+    }
+
+    @Override
+    public List<GroupModel> getTopLevelGroups() {
+        List<GroupModel> all = getGroups();
+        Iterator<GroupModel> it = all.iterator();
+        while (it.hasNext()) {
+            GroupModel group = it.next();
+            if (group.getParent() != null) {
+                it.remove();
+            }
+        }
+        return all;
+    }
+
+    @Override
+    public boolean removeGroup(GroupModel group) {
+        if (group == null) {
+            return false;
+        }
+        GroupEntity groupEntity = GroupAdapter.toEntity(group, em);
+        if (!groupEntity.getRealm().getId().equals(getId())) {
+            return false;
+        }
+        for (GroupModel subGroup : group.getSubGroups()) {
+            removeGroup(subGroup);
+        }
+
+
+        session.users().preRemove(this, group);
+        realm.getGroups().remove(groupEntity);
+        em.createNamedQuery("deleteGroupAttributesByGroup").setParameter("group", group).executeUpdate();
+        em.createNamedQuery("deleteGroupRoleMappingsByGroup").setParameter("group", group).executeUpdate();
+        em.remove(groupEntity);
+        return true;
+
+
     }
 }

@@ -328,4 +328,12 @@ public interface RealmModel extends RoleContainerModel {
     void setSupportedLocales(Set<String> locales);
     String getDefaultLocale();
     void setDefaultLocale(String locale);
+
+    GroupModel getGroupById(String id);
+    List<GroupModel> getGroups();
+    List<GroupModel> getTopLevelGroups();
+    boolean removeGroup(GroupModel group);
+
+
+
 }

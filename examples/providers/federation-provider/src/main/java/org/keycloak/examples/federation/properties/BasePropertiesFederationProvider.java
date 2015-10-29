@@ -1,6 +1,7 @@
 package org.keycloak.examples.federation.properties;
 
 import org.keycloak.models.CredentialValidationOutput;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -102,6 +103,12 @@ public abstract class BasePropertiesFederationProvider implements UserFederation
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
+        // complete we dont'care if a role is removed
+
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, GroupModel group) {
         // complete we dont'care if a role is removed
 
     }

@@ -9,6 +9,7 @@ import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -90,8 +91,24 @@ public class MongoUserProvider implements UserProvider {
         }
     }
 
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        QueryBuilder queryBuilder = new QueryBuilder()
+                .and("realmId").is(realm.getId());
+        queryBuilder.and("groupIds").is(group.getId());
+        DBObject sort = new BasicDBObject("username", 1);
+
+        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, queryBuilder.get(), sort, firstResult, maxResults, invocationContext);
+        return convertUserEntities(realm, users);
+    }
+
     protected MongoStore getMongoStore() {
         return invocationContext.getMongoStore();
+    }
+
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
+        return getGroupMembers(realm, group, -1, -1);
     }
 
     @Override
@@ -409,6 +426,17 @@ public class MongoUserProvider implements UserProvider {
                 .get();
         DBObject pull = new BasicDBObject("$pull", query);
         getMongoStore().updateEntities(MongoUserConsentEntity.class, query, pull, invocationContext);
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, GroupModel group) {
+        // Remove this role from all users, which has it
+        DBObject query = new QueryBuilder()
+                .and("groupIds").is(group.getId())
+                .get();
+
+        DBObject pull = new BasicDBObject("$pull", query);
+        getMongoStore().updateEntities(MongoUserEntity.class, query, pull, invocationContext);
     }
 
     @Override

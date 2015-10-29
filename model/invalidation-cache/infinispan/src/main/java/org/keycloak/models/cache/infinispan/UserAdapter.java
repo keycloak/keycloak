@@ -318,6 +318,44 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
+    public Set<GroupModel> getGroups() {
+        if (updated != null) return updated.getGroups();
+        Set<GroupModel> groups = new HashSet<GroupModel>();
+        for (String id : cached.getRoleMappings()) {
+            GroupModel groupModel = keycloakSession.realms().getGroupById(id, realm);
+            if (groupModel == null) {
+                // chance that role was removed, so just delete to persistence and get user invalidated
+                getDelegateForUpdate();
+                return updated.getGroups();
+            }
+            groups.add(groupModel);
+
+        }
+        return groups;
+    }
+
+    @Override
+    public void joinGroup(GroupModel group) {
+        getDelegateForUpdate();
+        updated.joinGroup(group);
+
+    }
+
+    @Override
+    public void leaveGroup(GroupModel group) {
+        getDelegateForUpdate();
+        updated.leaveGroup(group);
+    }
+
+    @Override
+    public boolean isMemberOf(GroupModel group) {
+        if (updated != null) return updated.isMemberOf(group);
+        if (cached.getGroups().contains(group.getId())) return true;
+        Set<GroupModel> roles = getGroups();
+        return KeycloakModelUtils.isMember(roles, group);
+    }
+
+    @Override
     public void addConsent(UserConsentModel consent) {
         getDelegateForUpdate();
         updated.addConsent(consent);
@@ -348,4 +386,5 @@ public class UserAdapter implements UserModel {
         getDelegateForUpdate();
         return updated.revokeConsentForClient(clientId);
     }
+
 }

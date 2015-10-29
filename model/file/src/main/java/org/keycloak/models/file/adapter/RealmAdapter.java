@@ -22,6 +22,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -88,6 +89,7 @@ public class RealmAdapter implements RealmModel {
     private final Map<String, ClientModel> allApps = new HashMap<String, ClientModel>();
     private ClientModel masterAdminApp = null;
     private final Map<String, RoleAdapter> allRoles = new HashMap<String, RoleAdapter>();
+    private final Map<String, GroupAdapter> allGroups = new HashMap<String, GroupAdapter>();
     private final Map<String, IdentityProviderModel> allIdProviders = new HashMap<String, IdentityProviderModel>();
 
     public RealmAdapter(KeycloakSession session, RealmEntity realm, InMemoryModel inMemoryModel) {
@@ -599,6 +601,36 @@ public class RealmAdapter implements RealmModel {
         }
 
         return null;
+    }
+
+    @Override
+    public GroupModel getGroupById(String id) {
+        GroupModel found = allGroups.get(id);
+        if (found != null) return found;
+        return null;
+    }
+
+    @Override
+    public List<GroupModel> getGroups() {
+        List<GroupModel> list = new LinkedList<>();
+        for (GroupAdapter group : allGroups.values()) {
+            list.add(group);
+        }
+        return list;
+    }
+
+    @Override
+    public List<GroupModel> getTopLevelGroups() {
+        List<GroupModel> list = new LinkedList<>();
+        for (GroupAdapter group : allGroups.values()) {
+            if (group.getParent() == null) list.add(group);
+        }
+        return list;
+    }
+
+    @Override
+    public boolean removeGroup(GroupModel group) {
+        return allGroups.remove(group.getId()) != null;
     }
 
     @Override

@@ -120,6 +120,14 @@ public interface UserFederationProvider extends Provider {
     void preRemove(RealmModel realm, RoleModel role);
 
     /**
+     * called before a role is removed.
+     *
+     * @param realm
+     * @param group
+     */
+    void preRemove(RealmModel realm, GroupModel group);
+
+    /**
      * Is the Keycloak UserModel still valid and/or existing in federated storage?  Keycloak may call this method
      * in various user operations.  The local storage may be deleted if this method returns false.
      *

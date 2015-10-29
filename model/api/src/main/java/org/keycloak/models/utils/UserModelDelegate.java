@@ -1,6 +1,7 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -254,5 +255,27 @@ public class UserModelDelegate implements UserModel {
     @Override
     public void setCreatedTimestamp(Long timestamp){
         delegate.setCreatedTimestamp(timestamp);
+    }
+
+    @Override
+    public Set<GroupModel> getGroups() {
+        return delegate.getGroups();
+    }
+
+    @Override
+    public void joinGroup(GroupModel group) {
+        delegate.joinGroup(group);
+
+    }
+
+    @Override
+    public void leaveGroup(GroupModel group) {
+        delegate.leaveGroup(group);
+
+    }
+
+    @Override
+    public boolean isMemberOf(GroupModel group) {
+        return delegate.isMemberOf(group);
     }
 }

@@ -57,7 +57,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
     }
 
     public boolean isActive() {
-        return this.token.isActive() && this.token.getIssuedAt() > deployment.getNotBefore();
+        return token != null && this.token.isActive() && this.token.getIssuedAt() > deployment.getNotBefore();
     }
 
     public KeycloakDeployment getDeployment() {
@@ -111,6 +111,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");
+            return false;
         }
         if (response.getNotBeforePolicy() > deployment.getNotBefore()) {
             deployment.setNotBefore(response.getNotBeforePolicy());

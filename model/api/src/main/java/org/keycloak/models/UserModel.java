@@ -101,6 +101,11 @@ public interface UserModel {
     Set<RoleModel> getRoleMappings();
     void deleteRoleMapping(RoleModel role);
 
+    Set<GroupModel> getGroups();
+    void joinGroup(GroupModel group);
+    void leaveGroup(GroupModel group);
+    boolean isMemberOf(GroupModel group);
+
     String getFederationLink();
     void setFederationLink(String link);
 

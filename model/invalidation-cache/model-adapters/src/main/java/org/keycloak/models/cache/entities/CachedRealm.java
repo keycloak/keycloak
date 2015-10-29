@@ -5,6 +5,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OTPPolicy;
@@ -106,6 +107,7 @@ public class CachedRealm implements Serializable {
     protected Set<String> adminEnabledEventOperations = new HashSet<String>();
     protected boolean adminEventsDetailsEnabled;
     private List<String> defaultRoles = new LinkedList<String>();
+    private Set<String> groups = new HashSet<String>();
     private Map<String, String> realmRoles = new HashMap<String, String>();
     private Map<String, String> clients = new HashMap<String, String>();
     private boolean internationalizationEnabled;
@@ -215,6 +217,9 @@ public class CachedRealm implements Serializable {
                 authenticationExecutions.add(flow.getId(), execution);
                 executionsById.put(execution.getId(), execution);
             }
+        }
+        for (GroupModel group : model.getGroups()) {
+            groups.add(group.getId());
         }
         for (AuthenticatorConfigModel authenticator : model.getAuthenticatorConfigs()) {
             authenticatorConfigs.put(authenticator.getId(), authenticator);
@@ -506,5 +511,9 @@ public class CachedRealm implements Serializable {
 
     public AuthenticationFlowModel getClientAuthenticationFlow() {
         return clientAuthenticationFlow;
+    }
+
+    public Set<String> getGroups() {
+        return groups;
     }
 }

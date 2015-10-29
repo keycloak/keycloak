@@ -21,6 +21,7 @@ import org.keycloak.connections.file.InMemoryModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -78,6 +79,21 @@ public class FileUserProvider implements UserProvider {
     @Override
     public UserModel getUserById(String userId, RealmModel realm) {
         return inMemoryModel.getUser(realm.getId(), userId);
+    }
+
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        return null;
+    }
+
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
+        return null;
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, GroupModel group) {
+
     }
 
     @Override

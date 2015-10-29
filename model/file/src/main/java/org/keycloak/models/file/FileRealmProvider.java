@@ -20,6 +20,7 @@ import org.keycloak.connections.file.FileConnectionProvider;
 import org.keycloak.connections.file.InMemoryModel;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -76,6 +77,11 @@ public class FileRealmProvider implements RealmProvider {
         inMemoryModel.putRealm(id, realm);
 
         return realm;
+    }
+
+    @Override
+    public GroupModel getGroupById(String id, RealmModel realm) {
+        return null;
     }
 
     @Override

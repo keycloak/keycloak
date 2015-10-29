@@ -1,5 +1,6 @@
 package org.keycloak.models.cache.entities;
 
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialValueModel;
@@ -33,6 +34,7 @@ public class CachedUser implements Serializable {
     private MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
     private Set<String> requiredActions = new HashSet<>();
     private Set<String> roleMappings = new HashSet<>();
+    private Set<String> groups = new HashSet<>();
 
     public CachedUser(RealmModel realm, UserModel user) {
         this.id = user.getId();
@@ -52,6 +54,12 @@ public class CachedUser implements Serializable {
         this.requiredActions.addAll(user.getRequiredActions());
         for (RoleModel role : user.getRoleMappings()) {
             roleMappings.add(role.getId());
+        }
+        Set<GroupModel> groupMappings = user.getGroups();
+        if (groupMappings != null) {
+            for (GroupModel group : groupMappings) {
+                groups.add(group.getId());
+            }
         }
     }
 
@@ -117,5 +125,9 @@ public class CachedUser implements Serializable {
 
     public String getServiceAccountClientLink() {
         return serviceAccountClientLink;
+    }
+
+    public Set<String> getGroups() {
+        return groups;
     }
 }
