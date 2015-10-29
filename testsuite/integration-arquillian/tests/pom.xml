@@ -477,7 +477,7 @@
         <profile>
             <id>migration-kc16</id>
             <properties>
-                <server.version>1.6.0.Final</server.version>
+                <server.version>1.6.1.Final</server.version>
                 <server.artifactId>integration-arquillian-server-wildfly-kc16</server.artifactId>
             </properties>
             <build>
@@ -518,6 +518,8 @@
                                     <migration>true</migration>
                                     <migration.kc15>true</migration.kc15>
                                     <keycloak.migration.home>${containers.home}/keycloak-${server.version}</keycloak.migration.home>
+                                    <keycloak.migration.file>src/test/resources/migration-test/migration-realm-15.json</keycloak.migration.file>
+                                    <version>${server.version}</version>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
