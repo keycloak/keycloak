@@ -199,6 +199,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 providerFactory : function(IdentityProviderFactoryLoader) {
                     return {};
+                },
+                authFlows : function(AuthenticationFlowsLoader) {
+                    return {};
                 }
             },
             controller : 'RealmIdentityProviderCtrl'
@@ -217,6 +220,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 providerFactory : function(IdentityProviderFactoryLoader) {
                     return new IdentityProviderFactoryLoader();
+                },
+                authFlows : function(AuthenticationFlowsLoader) {
+                    return AuthenticationFlowsLoader();
                 }
             },
             controller : 'RealmIdentityProviderCtrl'
@@ -235,6 +241,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 providerFactory : function(IdentityProviderFactoryLoader) {
                     return IdentityProviderFactoryLoader();
+                },
+                authFlows : function(AuthenticationFlowsLoader) {
+                    return AuthenticationFlowsLoader();
                 }
             },
             controller : 'RealmIdentityProviderCtrl'

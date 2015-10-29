@@ -594,7 +594,7 @@ module.controller('IdentityProviderTabCtrl', function(Dialog, $scope, Current, N
     };
 });
 
-module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload, $http, $route, realm, instance, providerFactory, IdentityProvider, serverInfo, $location, Notifications, Dialog) {
+module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload, $http, $route, realm, instance, providerFactory, IdentityProvider, serverInfo, authFlows, $location, Notifications, Dialog) {
     console.log('RealmIdentityProviderCtrl');
 
     $scope.realm = angular.copy(realm);
@@ -678,6 +678,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         $scope.identityProvider.enabled = true;
         $scope.identityProvider.updateProfileFirstLoginMode = "off";
         $scope.identityProvider.authenticateByDefault = false;
+        $scope.identityProvider.firstBrokerLoginFlowAlias = 'first broker login';
         $scope.newIdentityProvider = true;
     }
 
@@ -695,6 +696,13 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     $scope.allProviders = angular.copy(serverInfo.identityProviders);
 
     $scope.configuredProviders = angular.copy(realm.identityProviders);
+
+    $scope.authFlows = [];
+    for (var i=0 ; i<authFlows.length ; i++) {
+        if (authFlows[i].providerId == 'basic-flow') {
+            $scope.authFlows.push(authFlows[i]);
+        }
+    }
 
     $scope.$watch(function() {
         return $location.path();

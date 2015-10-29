@@ -1,8 +1,11 @@
 package org.keycloak.email.freemarker;
 
 import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -17,6 +20,7 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
 import org.jboss.logging.Logger;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.email.freemarker.beans.EventBean;
@@ -28,6 +32,7 @@ import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.freemarker.beans.MessageFormatterMethod;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -43,6 +48,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
     private FreeMarkerUtil freeMarker;
     private RealmModel realm;
     private UserModel user;
+    private final Map<String, Object> attributes = new HashMap<String, Object>();
 
     public FreeMarkerEmailProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
@@ -58,6 +64,12 @@ public class FreeMarkerEmailProvider implements EmailProvider {
     @Override
     public EmailProvider setUser(UserModel user) {
         this.user = user;
+        return this;
+    }
+
+    @Override
+    public EmailProvider setAttribute(String name, Object value) {
+        attributes.put(name, value);
         return this;
     }
 
@@ -81,6 +93,27 @@ public class FreeMarkerEmailProvider implements EmailProvider {
         attributes.put("realmName", realmName);
 
         send("passwordResetSubject", "password-reset.ftl", attributes);
+    }
+
+    @Override
+    public void sendConfirmIdentityBrokerLink(String link, long expirationInMinutes) throws EmailException {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("user", new ProfileBean(user));
+        attributes.put("link", link);
+        attributes.put("linkExpiration", expirationInMinutes);
+
+        String realmName = realm.getName().substring(0, 1).toUpperCase() + realm.getName().substring(1);
+        attributes.put("realmName", realmName);
+
+        BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
+        String idpAlias = brokerContext.getIdpConfig().getAlias();
+        idpAlias = idpAlias.substring(0, 1).toUpperCase() + idpAlias.substring(1);
+
+        attributes.put("identityProviderContext", brokerContext);
+        attributes.put("identityProviderAlias", idpAlias);
+
+        List<Object> subjectAttrs = Arrays.<Object>asList(idpAlias);
+        send("identityProviderLinkSubject", subjectAttrs, "identity-provider-link.ftl", attributes);
     }
 
     @Override
@@ -111,6 +144,10 @@ public class FreeMarkerEmailProvider implements EmailProvider {
     }
 
     private void send(String subjectKey, String template, Map<String, Object> attributes) throws EmailException {
+        send(subjectKey, Collections.emptyList(), template, attributes);
+    }
+
+    private void send(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
         try {
             ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
             Theme theme = themeProvider.getTheme(realm.getEmailTheme(), Theme.Type.EMAIL);
@@ -118,7 +155,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
             attributes.put("locale", locale);
             Properties rb = theme.getMessages(locale);
             attributes.put("msg", new MessageFormatterMethod(locale, rb));
-            String subject = new MessageFormat(rb.getProperty(subjectKey,subjectKey),locale).format(new Object[0]);
+            String subject = new MessageFormat(rb.getProperty(subjectKey,subjectKey),locale).format(subjectAttributes.toArray());
             String textTemplate = String.format("text/%s", template);
             String textBody;
             try {

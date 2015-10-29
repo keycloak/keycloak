@@ -164,6 +164,16 @@ public class RepresentationToModel {
         if (rep.getOtpPolicyType() != null) newRealm.setOTPPolicy(toPolicy(rep));
         else newRealm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
 
+        importAuthenticationFlows(newRealm, rep);
+        if (rep.getRequiredActions() != null) {
+            for (RequiredActionProviderRepresentation action : rep.getRequiredActions()) {
+                RequiredActionProviderModel model = toModel(action);
+                newRealm.addRequiredActionProvider(model);
+            }
+        } else {
+            DefaultRequiredActions.addActions(newRealm);
+        }
+
         importIdentityProviders(rep, newRealm);
         importIdentityProviderMappers(rep, newRealm);
 
@@ -317,16 +327,6 @@ public class RepresentationToModel {
         }
         if(rep.getDefaultLocale() != null){
             newRealm.setDefaultLocale(rep.getDefaultLocale());
-        }
-
-        importAuthenticationFlows(newRealm, rep);
-        if (rep.getRequiredActions() != null) {
-            for (RequiredActionProviderRepresentation action : rep.getRequiredActions()) {
-                RequiredActionProviderModel model = toModel(action);
-                newRealm.addRequiredActionProvider(model);
-            }
-        } else {
-            DefaultRequiredActions.addActions(newRealm);
         }
     }
 
@@ -1062,7 +1062,7 @@ public class RepresentationToModel {
     private static void importIdentityProviders(RealmRepresentation rep, RealmModel newRealm) {
         if (rep.getIdentityProviders() != null) {
             for (IdentityProviderRepresentation representation : rep.getIdentityProviders()) {
-                newRealm.addIdentityProvider(toModel(representation));
+                newRealm.addIdentityProvider(toModel(newRealm, representation));
             }
         }
     }
@@ -1073,7 +1073,7 @@ public class RepresentationToModel {
             }
         }
     }
-   public static IdentityProviderModel toModel(IdentityProviderRepresentation representation) {
+   public static IdentityProviderModel toModel(RealmModel realm, IdentityProviderRepresentation representation) {
         IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
         identityProviderModel.setInternalId(representation.getInternalId());
@@ -1087,7 +1087,18 @@ public class RepresentationToModel {
         identityProviderModel.setAddReadTokenRoleOnCreate(representation.isAddReadTokenRoleOnCreate());
         identityProviderModel.setConfig(representation.getConfig());
 
-        return identityProviderModel;
+        String flowAlias = representation.getFirstBrokerLoginFlowAlias();
+        if (flowAlias == null) {
+            flowAlias = DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW;
+        }
+
+       AuthenticationFlowModel flowModel = realm.getFlowByAlias(flowAlias);
+       if (flowModel == null) {
+           throw new ModelException("No available authentication flow with alias: " + flowAlias);
+       }
+       identityProviderModel.setFirstBrokerLoginFlowId(flowModel.getId());
+
+       return identityProviderModel;
     }
 
     public static ProtocolMapperModel toModel(ProtocolMapperRepresentation rep) {

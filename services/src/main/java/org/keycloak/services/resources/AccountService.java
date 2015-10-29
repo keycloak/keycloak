@@ -366,7 +366,7 @@ public class AccountService extends AbstractSecuredLocalService {
 
         UserModel user = auth.getUser();
 
-        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm, formData);
+        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm.isEditUsernameAllowed(), formData);
         if (errors != null && !errors.isEmpty()) {
             setReferrerOnPage();
             return account.setErrors(errors).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);

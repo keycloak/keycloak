@@ -17,6 +17,7 @@ import javax.security.auth.login.LoginException;
 
 import org.jboss.logging.Logger;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.models.ModelException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -54,6 +55,8 @@ public class KerberosUsernamePasswordAuthenticator {
             String message = le.getMessage();
             logger.debug("Message from kerberos: " + message);
 
+            checkKerberosServerAvailable(le);
+
             // Bit cumbersome, but seems to work with tested kerberos servers
             boolean exists = (!message.contains("Client not found"));
             return exists;
@@ -74,8 +77,16 @@ public class KerberosUsernamePasswordAuthenticator {
             logoutSubject();
             return true;
         } catch (LoginException le) {
+            checkKerberosServerAvailable(le);
+
             logger.debug("Failed to authenticate user " + username, le);
             return false;
+        }
+    }
+
+    protected void checkKerberosServerAvailable(LoginException le) {
+        if (le.getMessage().contains("Port Unreachable")) {
+            throw new ModelException("Kerberos unreachable", le);
         }
     }
 

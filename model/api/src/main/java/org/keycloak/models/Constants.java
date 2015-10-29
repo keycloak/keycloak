@@ -23,5 +23,6 @@ public interface Constants {
     // 30 days
     int DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT = 2592000;
 
-    public static final String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
+    String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
+    String KEY = "key";
 }

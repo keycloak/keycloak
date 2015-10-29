@@ -64,6 +64,8 @@ public class IdentityProviderModel implements Serializable {
      */
     private boolean authenticateByDefault;
 
+    private String firstBrokerLoginFlowId;
+
     /**
      * <p>A map containing the configuration and properties for a specific identity provider instance and implementation. The items
      * in the map are understood by the identity provider implementation.</p>
@@ -84,6 +86,7 @@ public class IdentityProviderModel implements Serializable {
         this.storeToken = model.isStoreToken();
         this.authenticateByDefault = model.isAuthenticateByDefault();
         this.addReadTokenRoleOnCreate = model.addReadTokenRoleOnCreate;
+        this.firstBrokerLoginFlowId = model.getFirstBrokerLoginFlowId();
     }
 
     public String getInternalId() {
@@ -146,6 +149,14 @@ public class IdentityProviderModel implements Serializable {
 
     public void setAuthenticateByDefault(boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
+    }
+
+    public String getFirstBrokerLoginFlowId() {
+        return firstBrokerLoginFlowId;
+    }
+
+    public void setFirstBrokerLoginFlowId(String firstBrokerLoginFlowId) {
+        this.firstBrokerLoginFlowId = firstBrokerLoginFlowId;
     }
 
     public Map<String, String> getConfig() {

@@ -3,6 +3,8 @@ package org.keycloak.services.resources;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
+import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
@@ -21,6 +23,11 @@ public class AttributeFormDataProcessor {
      * @param user
      */
     public static void process(MultivaluedMap<String, String> formData, RealmModel realm, UserModel user) {
+        UpdateProfileContext userCtx = new UserUpdateProfileContext(realm, user);
+        process(formData, realm, userCtx);
+    }
+
+    public static void process(MultivaluedMap<String, String> formData, RealmModel realm, UpdateProfileContext user) {
         for (String key : formData.keySet()) {
             if (!key.startsWith("user.attributes.")) continue;
             String attribute = key.substring("user.attributes.".length());
@@ -36,7 +43,6 @@ public class AttributeFormDataProcessor {
 
             user.setAttribute(attribute, modelValue);
         }
-
     }
 
     private static void addOrSetValue(List<String> list, int index, String value) {

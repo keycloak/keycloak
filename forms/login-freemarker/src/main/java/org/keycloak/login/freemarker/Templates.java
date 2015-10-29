@@ -17,6 +17,10 @@ public class Templates {
                 return "login-config-totp.ftl";
             case LOGIN_VERIFY_EMAIL:
                 return "login-verify-email.ftl";
+            case LOGIN_IDP_LINK_CONFIRM:
+                return "login-idp-link-confirm.ftl";
+            case LOGIN_IDP_LINK_EMAIL:
+                return "login-idp-link-email.ftl";
             case OAUTH_GRANT:
                 return "login-oauth-grant.ftl";
             case LOGIN_RESET_PASSWORD:

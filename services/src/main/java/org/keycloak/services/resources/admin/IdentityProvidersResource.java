@@ -145,7 +145,7 @@ public class IdentityProvidersResource {
         List<IdentityProviderRepresentation> representations = new ArrayList<IdentityProviderRepresentation>();
 
         for (IdentityProviderModel identityProviderModel : realm.getIdentityProviders()) {
-            representations.add(ModelToRepresentation.toRepresentation(identityProviderModel));
+            representations.add(ModelToRepresentation.toRepresentation(realm, identityProviderModel));
         }
         return representations;
     }
@@ -164,7 +164,7 @@ public class IdentityProvidersResource {
         this.auth.requireManage();
 
         try {
-            IdentityProviderModel identityProvider = RepresentationToModel.toModel(representation);
+            IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation);
             this.realm.addIdentityProvider(identityProvider);
 
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, identityProvider.getInternalId())

@@ -11,6 +11,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import java.util.Map;
 
@@ -55,6 +56,9 @@ public class IdentityProviderEntity {
 
     @Column(name="AUTHENTICATE_BY_DEFAULT")
     private boolean authenticateByDefault;
+
+    @Column(name="FIRST_BROKER_LOGIN_FLOW_ID")
+    private String firstBrokerLoginFlowId;
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
@@ -124,6 +128,14 @@ public class IdentityProviderEntity {
 
     public void setAuthenticateByDefault(boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
+    }
+
+    public String getFirstBrokerLoginFlowId() {
+        return firstBrokerLoginFlowId;
+    }
+
+    public void setFirstBrokerLoginFlowId(String firstBrokerLoginFlowId) {
+        this.firstBrokerLoginFlowId = firstBrokerLoginFlowId;
     }
 
     public Map<String, String> getConfig() {

@@ -23,8 +23,10 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.requiredactions.VerifyEmail;
+import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -33,6 +35,7 @@ import org.keycloak.authentication.RequiredActionContextResult;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -51,7 +54,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
@@ -92,6 +94,7 @@ public class LoginActionsService {
     public static final String REGISTRATION_PATH = "registration";
     public static final String RESET_CREDENTIALS_PATH = "reset-credentials";
     public static final String REQUIRED_ACTION = "required-action";
+    public static final String FIRST_BROKER_LOGIN_PATH = "first-broker-login";
 
     private RealmModel realm;
 
@@ -132,6 +135,10 @@ public class LoginActionsService {
 
     public static UriBuilder registrationFormProcessor(UriInfo uriInfo) {
         return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "processRegister");
+    }
+
+    public static UriBuilder firstBrokerLoginProcessor(UriInfo uriInfo) {
+        return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "firstBrokerLoginGet");
     }
 
     public static UriBuilder loginActionsBaseUrl(UriBuilder baseUriBuilder) {
@@ -208,7 +215,7 @@ public class LoginActionsService {
                         ClientSessionModel clientSession = RestartLoginCookie.restartSession(session, realm, code);
                         if (clientSession != null) {
                             event.clone().detail(Details.RESTART_AFTER_TIMEOUT, "true").error(Errors.EXPIRED_CODE);
-                            response = processFlow(null, clientSession, AUTHENTICATE_PATH, realm.getBrowserFlow(), Messages.LOGIN_TIMEOUT);
+                            response = processFlow(null, clientSession, AUTHENTICATE_PATH, realm.getBrowserFlow(), Messages.LOGIN_TIMEOUT, new AuthenticationProcessor());
                             return false;
                         }
                     } catch (Exception e) {
@@ -267,11 +274,10 @@ public class LoginActionsService {
     }
 
     protected Response processAuthentication(String execution, ClientSessionModel clientSession, String errorMessage) {
-        return processFlow(execution, clientSession, AUTHENTICATE_PATH, realm.getBrowserFlow(), errorMessage);
+        return processFlow(execution, clientSession, AUTHENTICATE_PATH, realm.getBrowserFlow(), errorMessage, new AuthenticationProcessor());
     }
 
-    protected Response processFlow(String execution, ClientSessionModel clientSession, String flowPath, AuthenticationFlowModel flow, String errorMessage) {
-        AuthenticationProcessor processor = new AuthenticationProcessor();
+    protected Response processFlow(String execution, ClientSessionModel clientSession, String flowPath, AuthenticationFlowModel flow, String errorMessage, AuthenticationProcessor processor) {
         processor.setClientSession(clientSession)
                 .setFlowPath(flowPath)
                 .setBrowserFlow(true)
@@ -384,12 +390,33 @@ public class LoginActionsService {
     }
 
     protected Response processResetCredentials(String execution, ClientSessionModel clientSession, String errorMessage) {
-        return processFlow(execution, clientSession, RESET_CREDENTIALS_PATH, realm.getResetCredentialsFlow(), errorMessage);
+        AuthenticationProcessor authProcessor = new AuthenticationProcessor() {
+
+            @Override
+            protected Response authenticationComplete() {
+                boolean firstBrokerLoginInProgress = (clientSession.getNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE) != null);
+                if (firstBrokerLoginInProgress) {
+
+                    UserModel linkingUser = AbstractIdpAuthenticator.getExistingUser(session, realm, clientSession);
+                    if (!linkingUser.getId().equals(clientSession.getAuthenticatedUser().getId())) {
+                        return ErrorPage.error(session, Messages.IDENTITY_PROVIDER_DIFFERENT_USER_MESSAGE, clientSession.getAuthenticatedUser().getUsername(), linkingUser.getUsername());
+                    }
+
+                    logger.debugf("Forget-password flow finished when authenticated user '%s' after first broker login.", linkingUser.getUsername());
+
+                    return redirectToAfterFirstBrokerLoginEndpoint(clientSession);
+                } else {
+                    return super.authenticationComplete();
+                }
+            }
+        };
+
+        return processFlow(execution, clientSession, RESET_CREDENTIALS_PATH, realm.getResetCredentialsFlow(), errorMessage, authProcessor);
     }
 
 
     protected Response processRegistration(String execution, ClientSessionModel clientSession, String errorMessage) {
-        return processFlow(execution, clientSession, REGISTRATION_PATH, realm.getRegistrationFlow(), errorMessage);
+        return processFlow(execution, clientSession, REGISTRATION_PATH, realm.getRegistrationFlow(), errorMessage, new AuthenticationProcessor());
     }
 
 
@@ -448,6 +475,60 @@ public class LoginActionsService {
         ClientSessionModel clientSession = clientCode.getClientSession();
 
         return processRegistration(execution, clientSession, null);
+    }
+
+    @Path(FIRST_BROKER_LOGIN_PATH)
+    @GET
+    public Response firstBrokerLoginGet(@QueryParam("code") String code,
+                                 @QueryParam("execution") String execution) {
+        return firstBrokerLogin(code, execution);
+    }
+
+    @Path(FIRST_BROKER_LOGIN_PATH)
+    @POST
+    public Response firstBrokerLoginPost(@QueryParam("code") String code,
+                                        @QueryParam("execution") String execution) {
+        return firstBrokerLogin(code, execution);
+    }
+
+    protected Response firstBrokerLogin(String code, String execution) {
+        event.event(EventType.IDENTITY_PROVIDER_FIRST_LOGIN);
+
+        Checks checks = new Checks();
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+            return checks.response;
+        }
+        event.detail(Details.CODE_ID, code);
+        ClientSessionCode clientSessionCode = checks.clientCode;
+        ClientSessionModel clientSession = clientSessionCode.getClientSession();
+
+        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromClientSession(clientSession);
+        if (serializedCtx == null) {
+            throw new WebApplicationException(ErrorPage.error(session, "Not found serialized context in clientSession"));
+        }
+        BrokeredIdentityContext brokerContext = serializedCtx.deserialize(session, clientSession);
+        AuthenticationFlowModel firstBrokerLoginFlow = realm.getAuthenticationFlowById(brokerContext.getIdpConfig().getFirstBrokerLoginFlowId());
+
+        AuthenticationProcessor processor = new AuthenticationProcessor() {
+
+            @Override
+            protected Response authenticationComplete() {
+                return redirectToAfterFirstBrokerLoginEndpoint(clientSession);
+            }
+
+        };
+
+        return processFlow(execution, clientSession, FIRST_BROKER_LOGIN_PATH, firstBrokerLoginFlow, null, processor);
+    }
+
+    private Response redirectToAfterFirstBrokerLoginEndpoint(ClientSessionModel clientSession) {
+        ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
+        clientSession.setTimestamp(Time.currentTime());
+
+        URI redirect = Urls.identityProviderAfterFirstBrokerLogin(uriInfo.getBaseUri(), realm.getName(), accessCode.getCode());
+        logger.debugf("Redirecting to '%s' ", redirect);
+
+        return Response.status(302).location(redirect).build();
     }
 
     /**
@@ -627,6 +708,10 @@ public class LoginActionsService {
     }
 
     private String getActionCookie() {
+        return getActionCookie(headers, realm, uriInfo, clientConnection);
+    }
+
+    public static String getActionCookie(HttpHeaders headers, RealmModel realm, UriInfo uriInfo, ClientConnection clientConnection) {
         Cookie cookie = headers.getCookies().get(ACTION_COOKIE);
         AuthenticationManager.expireCookie(realm, ACTION_COOKIE, AuthenticationManager.getRealmCookiePath(realm, uriInfo), realm.getSslRequired().isRequired(clientConnection), clientConnection);
         return cookie != null ? cookie.getValue() : null;

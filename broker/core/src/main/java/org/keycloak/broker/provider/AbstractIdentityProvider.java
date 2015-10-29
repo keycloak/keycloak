@@ -92,4 +92,9 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
 
     }
+
+    @Override
+    public IdentityProviderDataMarshaller getMarshaller() {
+        return new DefaultDataMarshaller();
+    }
 }
