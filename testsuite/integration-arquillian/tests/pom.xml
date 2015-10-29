@@ -358,7 +358,7 @@
             <properties>
                 <auth.server.container>auth-server-wildfly</auth.server.container>
                 <auth.server.wildfly.home>${containers.home}/keycloak-${project.version}</auth.server.wildfly.home>
-                <startup.timeout.sec>150</startup.timeout.sec>
+                <startup.timeout.sec>300</startup.timeout.sec>
                 <adapter.test.props/>
             </properties>
             <dependencies>
@@ -417,7 +417,7 @@
             <properties>
                 <auth.server.container>auth-server-eap6</auth.server.container>
                 <auth.server.eap6.home>${containers.home}/keycloak-${project.version}</auth.server.eap6.home>
-                <startup.timeout.sec>150</startup.timeout.sec>
+                <startup.timeout.sec>300</startup.timeout.sec>
                 <adapter.test.props/>
             </properties>
             <dependencies>
