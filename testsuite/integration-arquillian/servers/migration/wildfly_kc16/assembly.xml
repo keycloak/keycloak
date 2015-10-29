@@ -11,14 +11,14 @@
     <fileSets>
         <fileSet>
             <directory>${keycloak.server.home}</directory>
-            <outputDirectory>keycloak-1.6.0.Final</outputDirectory>
+            <outputDirectory>keycloak-1.6.1.Final</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
             </excludes>
         </fileSet>
         <fileSet>
             <directory>${keycloak.server.home}</directory>
-            <outputDirectory>keycloak-1.6.0.Final</outputDirectory>
+            <outputDirectory>keycloak-1.6.1.Final</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
             </includes>
