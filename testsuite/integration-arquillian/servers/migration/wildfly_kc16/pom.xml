@@ -10,10 +10,10 @@
 
     <artifactId>integration-arquillian-server-wildfly-kc16</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak 1.6.0.Final on Wildfly</name>
+    <name>Keycloak 1.6.1.Final on Wildfly</name>
     
     <properties>
-        <server.version>1.6.0.Final</server.version>
+        <server.version>1.6.1.Final</server.version>
         <keycloak.server.home>${project.build.directory}/unpacked/keycloak-${server.version}</keycloak.server.home>
         <jdbc.mvn.driver.deployment.dir>${keycloak.server.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
     </properties>

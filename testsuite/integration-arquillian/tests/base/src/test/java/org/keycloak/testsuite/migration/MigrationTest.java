@@ -33,19 +33,19 @@ import org.keycloak.testsuite.arquillian.migration.Migration;
  */
 public class MigrationTest extends AbstractKeycloakTest {
     
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        log.info("Adding no test realms for migration test. Test realm should be migrated from previous vesrion.");
+    }
+    
     @Test
-    @Migration(versionFrom = "1.6.0.Final")
+    @Migration(versionFrom = "1.6.1.Final")
     public void migration16Test() {
         for (RealmRepresentation realm : adminClient.realms().findAll()) {
             System.out.println(realm.getRealm());
         }
         
         Assert.fail("TODO");
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        log.info("Adding no test realms for migration test. Test realm should be migrated from previous vesrion.");
     }
 
 }
