@@ -25,7 +25,9 @@ import java.util.List;
 import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -52,8 +54,26 @@ public class MigrationTest extends AbstractKeycloakTest {
         assertEquals(1, realmRoles.size());
         assertEquals("offline_access", realmRoles.get(0).getName());
         
-        List<RoleRepresentation> clientRoles = realmResource.clients().get("realm-management").roles().list();
-        assertEquals(13, clientRoles.size());
+        for (ClientRepresentation client : realmResource.clients().findAll()) {
+            final String clientId = client.getClientId();
+            switch (clientId) {
+                case "realm-management":
+                    assertEquals(13, realmResource.clients().get(client.getId()).roles().list().size());
+                    break;
+                case "security-admin-console":
+                    assertEquals(0, realmResource.clients().get(client.getId()).roles().list().size());
+                    break;
+                case "broker":
+                    assertEquals(1, realmResource.clients().get(client.getId()).roles().list().size());
+                    break;
+                case "account":
+                    assertEquals(2, realmResource.clients().get(client.getId()).roles().list().size());
+                    break;
+                default:
+                    fail("Migrated realm contains unexpected client " + clientId);
+                    break;
+            }
+        }
     }
     
     @Test
