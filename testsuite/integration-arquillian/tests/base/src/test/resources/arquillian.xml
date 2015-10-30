@@ -44,7 +44,7 @@
         <configuration>
             <property name="enabled">${migration.kc15}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${keycloak.migration.homev}</property>
+            <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">
                 -Dkeycloak.migration.action=import 
                 -Dkeycloak.migration.provider=singleFile

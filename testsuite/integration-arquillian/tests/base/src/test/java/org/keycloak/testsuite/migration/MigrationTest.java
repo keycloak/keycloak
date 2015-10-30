@@ -47,5 +47,15 @@ public class MigrationTest extends AbstractKeycloakTest {
         
         Assert.fail("TODO");
     }
+    
+    @Test
+    @Migration(versionFrom = "1.5.1.Final")
+    public void migration15Test() {
+        for (RealmRepresentation realm : adminClient.realms().findAll()) {
+            System.out.println(realm.getRealm());
+        }
+        
+        Assert.fail("TODO");
+    }
 
 }
