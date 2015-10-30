@@ -22,9 +22,12 @@
 package org.keycloak.testsuite.migration;
 
 import java.util.List;
-import org.junit.Assert;
+import static org.junit.Assert.*;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.migration.Migration;
 
@@ -41,21 +44,27 @@ public class MigrationTest extends AbstractKeycloakTest {
     @Test
     @Migration(versionFrom = "1.6.1.Final")
     public void migration16Test() {
-        for (RealmRepresentation realm : adminClient.realms().findAll()) {
-            System.out.println(realm.getRealm());
-        }
+        RealmResource realmResource = adminClient.realms().realm("Migration");
+        RealmRepresentation realmRep = realmResource.toRepresentation();
+        assertEquals("Migration", realmRep.getRealm());
         
-        Assert.fail("TODO");
+        List<RoleRepresentation> realmRoles = realmResource.roles().list();
+        assertEquals(1, realmRoles.size());
+        assertEquals("offline_access", realmRoles.get(0).getName());
+        
+        List<RoleRepresentation> clientRoles = realmResource.clients().get("realm-management").roles().list();
+        assertEquals(13, clientRoles.size());
     }
     
     @Test
     @Migration(versionFrom = "1.5.1.Final")
+    @Ignore
     public void migration15Test() {
         for (RealmRepresentation realm : adminClient.realms().findAll()) {
             System.out.println(realm.getRealm());
         }
         
-        Assert.fail("TODO");
+        //TODO
     }
 
 }
