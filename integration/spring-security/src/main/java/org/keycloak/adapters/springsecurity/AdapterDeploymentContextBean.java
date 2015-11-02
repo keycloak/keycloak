@@ -3,10 +3,7 @@ package org.keycloak.adapters.springsecurity;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.io.Resource;
 
 import java.io.FileNotFoundException;
@@ -20,15 +17,16 @@ import java.io.IOException;
  * @author <a href="mailto:srossillo@smartling.com">Scott Rossillo</a>
  * @version $Revision: 1 $
  */
-public class AdapterDeploymentContextBean implements ApplicationContextAware, InitializingBean {
+public class AdapterDeploymentContextBean implements InitializingBean {
 
-    private static final String KEYCLOAK_CONFIG_FILE = "keycloak.json";
-    private static final String KEYCLOAK_CONFIG_WEB_RESOURCE = "WEB-INF/" + KEYCLOAK_CONFIG_FILE;
-    private static final String KEYCLOAK_CONFIG_CLASSPATH_RESOURCE = "classpath:" + KEYCLOAK_CONFIG_FILE;
+    private final Resource keycloakConfigFileResource;
 
-    private ApplicationContext applicationContext;
     private AdapterDeploymentContext deploymentContext;
     private KeycloakDeployment deployment;
+
+    public AdapterDeploymentContextBean(Resource keycloakConfigFileResource) {
+        this.keycloakConfigFileResource = keycloakConfigFileResource;
+    }
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -38,17 +36,12 @@ public class AdapterDeploymentContextBean implements ApplicationContextAware, In
 
     private KeycloakDeployment loadKeycloakDeployment() throws IOException {
 
-        Resource resource = applicationContext.getResource(KEYCLOAK_CONFIG_WEB_RESOURCE);
-
-        if (!resource.isReadable()) {
-            resource=  applicationContext.getResource(KEYCLOAK_CONFIG_CLASSPATH_RESOURCE);
+        if (!keycloakConfigFileResource.isReadable()) {
+            throw new FileNotFoundException(String.format("Unable to locate Keycloak configuration file: %s",
+                    keycloakConfigFileResource.getFilename()));
         }
 
-        if (!resource.isReadable()) {
-            throw new FileNotFoundException(String.format("Unable to locate Keycloak from %s or %s", KEYCLOAK_CONFIG_WEB_RESOURCE, KEYCLOAK_CONFIG_CLASSPATH_RESOURCE));
-        }
-
-        return KeycloakDeploymentBuilder.build(resource.getInputStream());
+        return KeycloakDeploymentBuilder.build(keycloakConfigFileResource.getInputStream());
     }
 
     /**
@@ -67,10 +60,5 @@ public class AdapterDeploymentContextBean implements ApplicationContextAware, In
      */
     public KeycloakDeployment getDeployment() {
         return deployment;
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
     }
 }
