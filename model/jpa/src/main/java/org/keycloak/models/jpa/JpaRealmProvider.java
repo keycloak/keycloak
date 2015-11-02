@@ -103,6 +103,14 @@ public class JpaRealmProvider implements RealmProvider {
             adapter.removeClient(a.getId());
         }
 
+        int num = em.createNamedQuery("deleteGroupRoleMappingsByRealm")
+                .setParameter("realm", realm).executeUpdate();
+        num = em.createNamedQuery("deleteGroupAttributesByRealm")
+                .setParameter("realm", realm).executeUpdate();
+        num = em.createNamedQuery("deleteGroupsByRealm")
+                .setParameter("realm", realm).executeUpdate();
+
+
         em.remove(realm);
         return true;
     }
