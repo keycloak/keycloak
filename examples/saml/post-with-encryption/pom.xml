@@ -2,9 +2,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.keycloak.examples</groupId>
+    <parent>
+        <artifactId>keycloak-examples-saml-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>1.7.0.Final-SNAPSHOT</version>
+    </parent>
+
     <artifactId>saml-post-encryption</artifactId>
-    <version>1.6.0.Final-SNAPSHOT</version>
 
     <packaging>war</packaging>
 

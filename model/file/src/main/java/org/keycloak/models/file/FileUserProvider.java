@@ -439,6 +439,13 @@ public class FileUserProvider implements UserProvider {
     }
 
     @Override
+    public void grantToAllUsers(RealmModel realm, RoleModel role) {
+        for (UserModel user : inMemoryModel.getUsers(realm.getId())) {
+            user.grantRole(role);
+        }
+    }
+
+    @Override
     public void preRemove(RealmModel realm) {
         // Nothing to do here?  Federation links are attached to users, which are removed by InMemoryModel
     }

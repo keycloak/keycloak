@@ -51,7 +51,7 @@ public class TotpBean {
 
         this.totpSecret = randomString(20);
         this.totpSecretEncoded = Base32.encode(totpSecret.getBytes());
-        this.keyUri = realm.getOTPPolicy().getKeyURI(realm, this.totpSecret);
+        this.keyUri = realm.getOTPPolicy().getKeyURI(realm, user, this.totpSecret);
     }
 
     private static String randomString(int length) {

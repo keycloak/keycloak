@@ -12,6 +12,10 @@
     <packaging>pom</packaging>
     <name>Servers</name>
 
+    <modules>
+        <module>migration</module>
+    </modules>
+    
     <profiles>
         <profile>
             <id>auth-server-wildfly</id>
@@ -24,30 +28,6 @@
             <modules>
                 <!--doesn't work yet, WIP-->
                 <module>eap6</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>migration-kc15</id>
-            <modules>
-                <module>wildfly_kc15</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>migration-kc14</id>
-            <modules>
-                <module>wildfly_kc14</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>migration-kc13</id>
-            <modules>
-                <module>wildfly_kc13</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>migration-kc12</id>
-            <modules>
-                <module>wildfly_kc12</module>
             </modules>
         </profile>
     </profiles>    

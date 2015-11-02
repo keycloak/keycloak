@@ -1,7 +1,13 @@
 package org.keycloak.testsuite.arquillian;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.LinkedList;
+import org.apache.commons.io.FileUtils;
+import org.jboss.arquillian.container.spi.Container;
+import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
 import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
 import org.jboss.arquillian.container.test.api.ContainerController;
@@ -33,13 +39,16 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 public class ContainersTestEnricher {
 
     protected final Logger log = Logger.getLogger(this.getClass());
-    
+
     @Inject
     private Instance<ContainerController> containerController;
 
     @Inject
+    private Instance<ContainerRegistry> containerRegistry;
+
+    @Inject
     private Event<StopSuiteContainers> stopSuiteContainers;
-    
+
     private String appServerQualifier;
 
     private static final String AUTH_SERVER_CONTAINER_PROPERTY = "auth.server.container";
@@ -62,24 +71,77 @@ public class ContainersTestEnricher {
     private InstanceProducer<OAuthClient> oauthClient;
 
     private ContainerController controller;
+    private LinkedList<Container> containers;
 
     private final boolean migrationTests = System.getProperty("migration", "false").equals("true");
     private boolean alreadyStopped = false;
+    private boolean init = false;
 
+    private void init() {
+        if (!init) {
+            containers = new LinkedList(containerRegistry.get().getContainers());
+        }
+        init = true;
+    }
+
+    /*
+     * non-javadoc
+     *
+     * Before starting suite containers. Initialization of containers is done 
+     * (only once during class life cycle)
+     */
     public void startSuiteContainers(@Observes(precedence = 1) StartSuiteContainers event) {
+        init();
         if (migrationTests) {
-            log.info("\n### Starting keycloak with previous version ###\n");
+            log.info("\n\n### Starting keycloak " + System.getProperty("version", "- previous") + " ###\n");
         }
     }
 
-    public void stopMigrationContainer(@Observes AfterStart event) {
+    /*
+     * non-javadoc
+     *
+     * After start container. Server logs are checked (in case jboss based container).
+     * In case of migration scenario: previous container is stopped.
+     */
+    public void afterStart(@Observes AfterStart event) throws IOException {
+        if (System.getProperty("check.server.log", "true").equals("true")) {
+            checkServerLog();
+        }
+
         if (migrationTests && !alreadyStopped) {
-            log.info("\n### Stopping keycloak with previous version ###\n");
+            log.info("\n\n### Stopping keycloak " + System.getProperty("version", "- previous") + " ###\n");
             stopSuiteContainers.fire(new StopSuiteContainers());
+            log.info("\n\n### Starting keycloak current version ###\n");
         }
         alreadyStopped = true;
     }
-    
+
+    /*
+     * non-javadoc
+     *
+     * check server logs (in case jboss based container) whether there are no ERRORs or SEVEREs
+     */
+    private void checkServerLog() throws IOException {
+        Container container = containers.removeFirst();
+        if (!container.getName().equals("auth-server-undertow")) {
+            String jbossHomePath = container.getContainerConfiguration().getContainerProperties().get("jbossHome");
+            log.debug("jbossHome: " + jbossHomePath + "\n");
+
+            String serverLogContent = FileUtils.readFileToString(new File(jbossHomePath + "/standalone/log/server.log"));
+
+            boolean containsError
+                    = serverLogContent.contains("ERROR")
+                    || serverLogContent.contains("SEVERE")
+                    || serverLogContent.contains("Exception ");
+                    //There is expected string "Exception" in server log: Adding provider 
+                    //singleton org.keycloak.services.resources.ModelExceptionMapper
+
+            if (containsError) {
+                throw new RuntimeException(container.getName() + ": Server log contains ERROR.");
+            }
+        }
+    }
+
     public void beforeSuite(@Observes BeforeSuite event) {
         suiteContext.set(new SuiteContext());
     }

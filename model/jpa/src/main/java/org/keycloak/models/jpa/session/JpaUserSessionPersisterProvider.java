@@ -188,31 +188,31 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             userSessionIds.add(entity.getUserSessionId());
         }
 
-        TypedQuery<PersistentClientSessionEntity> query2 = em.createNamedQuery("findClientSessionsByUserSessions", PersistentClientSessionEntity.class);
-        query2.setParameter("userSessionIds", userSessionIds);
-        query2.setParameter("offline", offlineStr);
-        List<PersistentClientSessionEntity> clientSessions = query2.getResultList();
+        if (!userSessionIds.isEmpty()) {
+            TypedQuery<PersistentClientSessionEntity> query2 = em.createNamedQuery("findClientSessionsByUserSessions", PersistentClientSessionEntity.class);
+            query2.setParameter("userSessionIds", userSessionIds);
+            query2.setParameter("offline", offlineStr);
+            List<PersistentClientSessionEntity> clientSessions = query2.getResultList();
 
-        // Assume both userSessions and clientSessions ordered by userSessionId
-        int j=0;
-        for (UserSessionModel ss : result) {
-            PersistentUserSessionAdapter userSession = (PersistentUserSessionAdapter) ss;
-            List<ClientSessionModel> currentClientSessions = userSession.getClientSessions(); // This is empty now and we want to fill it
+            // Assume both userSessions and clientSessions ordered by userSessionId
+            int j = 0;
+            for (UserSessionModel ss : result) {
+                PersistentUserSessionAdapter userSession = (PersistentUserSessionAdapter) ss;
+                List<ClientSessionModel> currentClientSessions = userSession.getClientSessions(); // This is empty now and we want to fill it
 
-            boolean next = true;
-            while (next && j<clientSessions.size()) {
-                PersistentClientSessionEntity clientSession = clientSessions.get(j);
-                if (clientSession.getUserSessionId().equals(userSession.getId())) {
-                    PersistentClientSessionAdapter clientSessAdapter = toAdapter(userSession.getRealm(), userSession, clientSession);
-                    currentClientSessions.add(clientSessAdapter);
-                    j++;
-                } else {
-                    next = false;
+                boolean next = true;
+                while (next && j < clientSessions.size()) {
+                    PersistentClientSessionEntity clientSession = clientSessions.get(j);
+                    if (clientSession.getUserSessionId().equals(userSession.getId())) {
+                        PersistentClientSessionAdapter clientSessAdapter = toAdapter(userSession.getRealm(), userSession, clientSession);
+                        currentClientSessions.add(clientSessAdapter);
+                        j++;
+                    } else {
+                        next = false;
+                    }
                 }
             }
         }
-
-
 
         return result;
     }

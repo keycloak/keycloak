@@ -5,9 +5,11 @@ import org.infinispan.Version;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
 import org.keycloak.models.session.UserSessionPersisterProvider;
@@ -19,6 +21,9 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.initializer.InfinispanUserSessionInitializer;
 import org.keycloak.models.sessions.infinispan.initializer.OfflineUserSessionLoader;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 
 /**
  * Uses Infinispan to store user sessions. On EAP 6.4 (Infinispan 5.2) map reduce is not supported for local caches as a work around
@@ -68,13 +73,20 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         });
 
         // Max count of worker errors. Initialization will end with exception when this number is reached
-        int maxErrors = config.getInt("maxErrors", 20);
+        final int maxErrors = config.getInt("maxErrors", 20);
 
         // Count of sessions to be computed in each segment
-        int sessionsPerSegment = config.getInt("sessionsPerSegment", 100);
+        final int sessionsPerSegment = config.getInt("sessionsPerSegment", 100);
 
-        // TODO: Possibility to run this asynchronously to not block start time
-        loadPersistentSessions(factory, maxErrors, sessionsPerSegment);
+        factory.register(new ProviderEventListener() {
+
+            @Override
+            public void onEvent(ProviderEvent event) {
+                if (event instanceof PostMigrationEvent) {
+                    loadPersistentSessions(factory, maxErrors, sessionsPerSegment);
+                }
+            }
+        });
     }
 
 

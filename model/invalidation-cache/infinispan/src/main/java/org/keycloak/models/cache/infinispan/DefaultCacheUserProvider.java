@@ -314,6 +314,12 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
+    public void grantToAllUsers(RealmModel realm, RoleModel role) {
+        realmInvalidations.add(realm.getId()); // easier to just invalidate whole realm
+        getDelegate().grantToAllUsers(realm, role);
+    }
+
+    @Override
     public void preRemove(RealmModel realm) {
         realmInvalidations.add(realm.getId());
         getDelegate().preRemove(realm);
