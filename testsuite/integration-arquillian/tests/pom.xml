@@ -36,6 +36,7 @@
         <arquillian-graphene.version>2.1.0.Alpha2</arquillian-graphene.version>
         <arquillian-wildfly-container.version>8.2.0.Final</arquillian-wildfly-container.version>
         <version.shrinkwrap.resolvers>2.1.1</version.shrinkwrap.resolvers>
+        <skip.unpack.previous>true</skip.unpack.previous>
     </properties>
 
     <dependencyManagement>
@@ -95,6 +96,32 @@
                         </properties>
                         <failIfNoTests>false</failIfNoTests>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>unpack-previous</id>
+                            <phase>generate-test-resources</phase>
+                            <goals>
+                                <goal>unpack</goal>
+                            </goals>
+                            <configuration>
+                                <skip>${skip.unpack.previous}</skip>
+                                <artifactItems>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>${server.artifactId}</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>zip</type>
+                                    </artifactItem>
+                                </artifactItems>
+                                <outputDirectory>${containers.home}</outputDirectory>
+                                <overWriteIfNewer>true</overWriteIfNewer>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>        
@@ -333,7 +360,7 @@
             <properties>
                 <auth.server.container>auth-server-wildfly</auth.server.container>
                 <auth.server.wildfly.home>${containers.home}/keycloak-${project.version}</auth.server.wildfly.home>
-                <startup.timeout.sec>150</startup.timeout.sec>
+                <startup.timeout.sec>300</startup.timeout.sec>
                 <adapter.test.props/>
             </properties>
             <dependencies>
@@ -348,7 +375,6 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-dependency-plugin</artifactId>
-                            <version>2.10</version>
                             <executions>
                                 <execution>
                                     <id>unpack</id>
@@ -393,7 +419,7 @@
             <properties>
                 <auth.server.container>auth-server-eap6</auth.server.container>
                 <auth.server.eap6.home>${containers.home}/keycloak-${project.version}</auth.server.eap6.home>
-                <startup.timeout.sec>150</startup.timeout.sec>
+                <startup.timeout.sec>300</startup.timeout.sec>
                 <adapter.test.props/>
             </properties>
             <dependencies>
@@ -409,7 +435,6 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-dependency-plugin</artifactId>
-                            <version>2.10</version>
                             <executions>
                                 <execution>
                                     <id>unpack</id>
@@ -454,37 +479,13 @@
         <profile>
             <id>migration-kc16</id>
             <properties>
-                <keycloak-1.6.0.Final.home>${containers.home}/keycloak-1.6.0.Final</keycloak-1.6.0.Final.home>
+                <skip.unpack.previous>false</skip.unpack.previous>
+                <server.version>1.6.1.Final</server.version>
+                <server.artifactId>integration-arquillian-server-wildfly-kc16</server.artifactId>
             </properties>
             <build>
                 <pluginManagement>
                     <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-dependency-plugin</artifactId>
-                            <version>2.10</version>
-                            <executions>
-                                <execution>
-                                    <id>unpack-previous</id>
-                                    <phase>generate-test-resources</phase>
-                                    <goals>
-                                        <goal>unpack</goal>
-                                    </goals>
-                                    <configuration>
-                                        <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-wildfly-kc16</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                            </artifactItem>
-                                        </artifactItems>
-                                        <outputDirectory>${containers.home}</outputDirectory>
-                                        <overWriteIfNewer>true</overWriteIfNewer>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-surefire-plugin</artifactId>
@@ -492,8 +493,9 @@
                                 <systemPropertyVariables>
                                     <migration>true</migration>
                                     <migration.kc16>true</migration.kc16>
-                                    <keycloak-1.6.0.Final.home>${keycloak-1.6.0.Final.home}</keycloak-1.6.0.Final.home>
+                                    <keycloak.migration.home>${containers.home}/keycloak-${server.version}</keycloak.migration.home>
                                     <keycloak.migration.file>src/test/resources/migration-test/migration-realm-16.json</keycloak.migration.file>
+                                    <version>${server.version}</version>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
@@ -505,37 +507,13 @@
         <profile>
             <id>migration-kc15</id>
             <properties>
-                <keycloak-1.5.1.Final.home>${containers.home}/keycloak-1.5.1.Final</keycloak-1.5.1.Final.home>
+                <skip.unpack.previous>false</skip.unpack.previous>
+                <server.version>1.5.1.Final</server.version>
+                <server.artifactId>integration-arquillian-server-wildfly-kc15</server.artifactId>
             </properties>
             <build>
                 <pluginManagement>
                     <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-dependency-plugin</artifactId>
-                            <version>2.10</version>
-                            <executions>
-                                <execution>
-                                    <id>unpack-previous</id>
-                                    <phase>generate-test-resources</phase>
-                                    <goals>
-                                        <goal>unpack</goal>
-                                    </goals>
-                                    <configuration>
-                                        <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-wildfly-kc15</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                            </artifactItem>
-                                        </artifactItems>
-                                        <outputDirectory>${containers.home}</outputDirectory>
-                                        <overWriteIfNewer>true</overWriteIfNewer>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-surefire-plugin</artifactId>
@@ -543,7 +521,9 @@
                                 <systemPropertyVariables>
                                     <migration>true</migration>
                                     <migration.kc15>true</migration.kc15>
-                                    <keycloak-1.5.1.Final.home>${keycloak-1.5.1.Final.home}</keycloak-1.5.1.Final.home>
+                                    <keycloak.migration.home>${containers.home}/keycloak-${server.version}</keycloak.migration.home>
+                                    <keycloak.migration.file>src/test/resources/migration-test/migration-realm-15.json</keycloak.migration.file>
+                                    <version>${server.version}</version>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
@@ -555,37 +535,13 @@
         <profile>
             <id>migration-kc14</id>
             <properties>
-                <keycloak-1.4.0.Final.home>${containers.home}/keycloak-1.4.0.Final</keycloak-1.4.0.Final.home>
+                <skip.unpack.previous>false</skip.unpack.previous>
+                <server.version>1.4.0.Final</server.version>
+                <server.artifactId>integration-arquillian-server-wildfly-kc14</server.artifactId>
             </properties>
             <build>
                 <pluginManagement>
                     <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-dependency-plugin</artifactId>
-                            <version>2.10</version>
-                            <executions>
-                                <execution>
-                                    <id>unpack-previous</id>
-                                    <phase>generate-test-resources</phase>
-                                    <goals>
-                                        <goal>unpack</goal>
-                                    </goals>
-                                    <configuration>
-                                        <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-wildfly-kc14</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                            </artifactItem>
-                                        </artifactItems>
-                                        <outputDirectory>${containers.home}</outputDirectory>
-                                        <overWriteIfNewer>true</overWriteIfNewer>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-surefire-plugin</artifactId>
@@ -593,7 +549,7 @@
                                 <systemPropertyVariables>
                                     <migration>true</migration>
                                     <migration.kc14>true</migration.kc14>
-                                    <keycloak-1.4.0.Final.home>${keycloak-1.4.0.Final.home}</keycloak-1.4.0.Final.home>
+                                    <keycloak.migration.home>${containers.home}/keycloak-${server.version}</keycloak.migration.home>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
@@ -605,37 +561,13 @@
         <profile>
             <id>migration-kc13</id>
             <properties>
-                <keycloak-1.3.1.Final.home>${containers.home}/keycloak-1.3.1.Final</keycloak-1.3.1.Final.home>
+                <skip.unpack.previous>false</skip.unpack.previous>
+                <server.version>1.3.1.Final</server.version>
+                <server.artifactId>integration-arquillian-server-wildfly-kc13</server.artifactId>
             </properties>
             <build>
                 <pluginManagement>
                     <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-dependency-plugin</artifactId>
-                            <version>2.10</version>
-                            <executions>
-                                <execution>
-                                    <id>unpack-previous</id>
-                                    <phase>generate-test-resources</phase>
-                                    <goals>
-                                        <goal>unpack</goal>
-                                    </goals>
-                                    <configuration>
-                                        <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-wildfly-kc13</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                            </artifactItem>
-                                        </artifactItems>
-                                        <outputDirectory>${containers.home}</outputDirectory>
-                                        <overWriteIfNewer>true</overWriteIfNewer>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-surefire-plugin</artifactId>
@@ -643,7 +575,7 @@
                                 <systemPropertyVariables>
                                     <migration>true</migration>
                                     <migration.kc13>true</migration.kc13>
-                                    <keycloak-1.3.1.Final.home>${keycloak-1.3.1.Final.home}</keycloak-1.3.1.Final.home>
+                                    <keycloak.migration.home>${containers.home}/keycloak-${server.version}</keycloak.migration.home>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
@@ -655,37 +587,13 @@
         <profile>
             <id>migration-kc12</id>
             <properties>
-                <keycloak-1.2.0.Final.home>${containers.home}/keycloak-1.2.0.Final</keycloak-1.2.0.Final.home>
+                <skip.unpack.previous>false</skip.unpack.previous>
+                <server.version>1.2.0.Final</server.version>
+                <server.artifactId>integration-arquillian-server-wildfly-kc12</server.artifactId>
             </properties>
             <build>
                 <pluginManagement>
                     <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-dependency-plugin</artifactId>
-                            <version>2.10</version>
-                            <executions>
-                                <execution>
-                                    <id>unpack-previous</id>
-                                    <phase>generate-test-resources</phase>
-                                    <goals>
-                                        <goal>unpack</goal>
-                                    </goals>
-                                    <configuration>
-                                        <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-wildfly-kc12</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                            </artifactItem>
-                                        </artifactItems>
-                                        <outputDirectory>${containers.home}</outputDirectory>
-                                        <overWriteIfNewer>true</overWriteIfNewer>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-surefire-plugin</artifactId>
@@ -693,7 +601,7 @@
                                 <systemPropertyVariables>
                                     <migration>true</migration>
                                     <migration.kc12>true</migration.kc12>
-                                    <keycloak-1.2.0.Final.home>${keycloak-1.2.0.Final.home}</keycloak-1.2.0.Final.home>
+                                    <keycloak.migration.home>${containers.home}/keycloak-${server.version}</keycloak.migration.home>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
