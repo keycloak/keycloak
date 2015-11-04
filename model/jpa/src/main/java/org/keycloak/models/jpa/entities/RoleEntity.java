@@ -30,7 +30,7 @@ import java.util.Collection;
 
 public class RoleEntity {
     @Id
-    @Column(name="id", length = 36)
+    @Column(name="ID", length = 36)
     private String id;
 
     @Column(name = "NAME")
