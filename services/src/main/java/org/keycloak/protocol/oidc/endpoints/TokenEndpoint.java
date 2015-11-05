@@ -326,58 +326,73 @@ public class TokenEndpoint {
         }
     }
 
-    public Response buildResourceOwnerPasswordCredentialsGrant() {
-        event.detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, "token");
+	public Response buildResourceOwnerPasswordCredentialsGrant() {
+		event.detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, "token");
 
-        if (client.isConsentRequired()) {
-            event.error(Errors.CONSENT_DENIED);
-            throw new ErrorResponseException("invalid_client", "Client requires user consent", Response.Status.BAD_REQUEST);
-        }
-        String scope = formParams.getFirst(OAuth2Constants.SCOPE);
+		String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
-        UserSessionProvider sessions = session.sessions();
-        ClientSessionModel clientSession = sessions.createClientSession(realm, client);
-        clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-        clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
-        clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
+		UserSessionProvider sessions = session.sessions();
+		ClientSessionModel clientSession = sessions.createClientSession(realm, client);
+		clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
+		clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+		clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+		clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
 
-        AuthenticationFlowModel flow = realm.getDirectGrantFlow();
-        String flowId = flow.getId();
-        AuthenticationProcessor processor = new AuthenticationProcessor();
-        processor.setClientSession(clientSession)
-                .setFlowId(flowId)
-                .setConnection(clientConnection)
-                .setEventBuilder(event)
-                .setProtector(authManager.getProtector())
-                .setRealm(realm)
-                .setSession(session)
-                .setUriInfo(uriInfo)
-                .setRequest(request);
-        Response challenge = processor.authenticateOnly();
-        if (challenge != null) return challenge;
-        processor.evaluateRequiredActionTriggers();
-        UserModel user = clientSession.getAuthenticatedUser();
-        if (user.getRequiredActions() != null && user.getRequiredActions().size() > 0) {
-            event.error(Errors.RESOLVE_REQUIRED_ACTIONS);
-            throw new ErrorResponseException("invalid_grant", "Account is not fully set up", Response.Status.BAD_REQUEST);
+		AuthenticationFlowModel flow = realm.getDirectGrantFlow();
+		String flowId = flow.getId();
+		AuthenticationProcessor processor = new AuthenticationProcessor();
+		processor.setClientSession(clientSession)
+		.setFlowId(flowId)
+		.setConnection(clientConnection)
+		.setEventBuilder(event)
+		.setProtector(authManager.getProtector())
+		.setRealm(realm)
+		.setSession(session)
+		.setUriInfo(uriInfo)
+		.setRequest(request);
+		Response challenge = processor.authenticateOnly();
+		if (challenge != null) return challenge;
+		processor.evaluateRequiredActionTriggers();
+		UserModel user = clientSession.getAuthenticatedUser();
+		if (user.getRequiredActions() != null && user.getRequiredActions().size() > 0) {
+			event.error(Errors.RESOLVE_REQUIRED_ACTIONS);
+			throw new ErrorResponseException("invalid_grant", "Account is not fully set up", Response.Status.BAD_REQUEST);
 
-        }
-        processor.attachSession();
-        UserSessionModel userSession = processor.getUserSession();
-        updateUserSessionFromClientAuth(userSession);
+		}
+		processor.attachSession();
+		UserSessionModel userSession = processor.getUserSession();
 
-        AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
-                .generateAccessToken()
-                .generateRefreshToken()
-                .generateIDToken()
-                .build();
+		if (client.isConsentRequired()) {
+			// Make sure consent has been granted for all required roles
+			UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
+			ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
+			if (grantedConsent == null){
+					event.error(Errors.CONSENT_DENIED);
+					throw new ErrorResponseException("invalid_client", "Client requires user consent", Response.Status.BAD_REQUEST);
+			}
+			for (RoleModel r : accessCode.getRequestedRoles()) {
+				if (grantedConsent == null || !grantedConsent.isRoleGranted(r)) {
+					event.error(Errors.CONSENT_DENIED);
+					throw new ErrorResponseException("invalid_client", "Client requires user consent", Response.Status.BAD_REQUEST);
+				}
+			}
+			event.detail(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT);
+		}else{
+			event.detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED);
+		}
 
+		updateUserSessionFromClientAuth(userSession);
 
-        event.success();
+		AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
+				.generateAccessToken()
+				.generateRefreshToken()
+				.generateIDToken()
+				.build();
 
-        return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
-    }
+		event.success();
+
+		return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+	}
 
     public Response buildClientCredentialsGrant() {
         if (client.isBearerOnly()) {
