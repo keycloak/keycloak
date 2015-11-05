@@ -180,36 +180,6 @@ public class StringUtil {
         return map;
     }
 
-    /**
-     * Given a masked password {@link String}, decode it
-     *
-     * @param maskedString a password string that is masked
-     * @param salt Salt
-     * @param iterationCount Iteration Count
-     *
-     * @return Decoded String
-     *
-     * @throws Exception
-     */
-    public static String decode(String maskedString, String salt, int iterationCount) throws Exception {
-        String pbeAlgo = PicketLinkCommonConstants.PBE_ALGORITHM;
-        if (maskedString.startsWith(PicketLinkCommonConstants.PASS_MASK_PREFIX)) {
-            // Create the PBE secret key
-            SecretKeyFactory factory = SecretKeyFactory.getInstance(pbeAlgo);
-
-            char[] password = "somearbitrarycrazystringthatdoesnotmatter".toCharArray();
-            PBEParameterSpec cipherSpec = new PBEParameterSpec(salt.getBytes(), iterationCount);
-            PBEKeySpec keySpec = new PBEKeySpec(password);
-            SecretKey cipherKey = factory.generateSecret(keySpec);
-
-            maskedString = maskedString.substring(PicketLinkCommonConstants.PASS_MASK_PREFIX.length());
-            String decodedValue = PBEUtils.decode64(maskedString, pbeAlgo, cipherKey, cipherSpec);
-
-            maskedString = decodedValue;
-        }
-        return maskedString;
-    }
-
     public static String[] split(String toSplit, String delimiter) {
         if (delimiter.length() != 1) {
             throw new IllegalArgumentException("Delimiter can only be one character in length");
