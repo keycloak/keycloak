@@ -99,6 +99,20 @@
                     <input ng-model="client.serviceAccountsEnabled" name="serviceAccountsEnabled" id="serviceAccountsEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'wsfed'">
+                <label class="col-md-2 control-label" for="wsfedJwt">Send JWT instead of SAML</label>
+                <div class="col-sm-6">
+                    <input ng-model="wsfedJwt" ng-click="switchChange()" name="wsfedJwt" id="wsfedJwt" onoffswitch />
+                </div>
+                <kc-tooltip>Should the response contain JWT in the custom token instead of SAML?</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'wsfed' && wsfedJwt">
+                <label class="col-md-2 control-label" for="wsfedX5t">Include x5t in header</label>
+                <div class="col-sm-6">
+                    <input ng-model="wsfedX5t" ng-click="switchChange()" name="wsfedX5t" id="wsfedX5t" onoffswitch />
+                </div>
+                <kc-tooltip>Should the response contain the x5t header?</kc-tooltip>
+            </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="samlServerSignature">{{:: 'include-authnstatement' | translate}}</label>
                 <div class="col-sm-6">
@@ -166,7 +180,7 @@
                 </div>
                 <kc-tooltip>{{:: 'force-post-binding.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+            <div class="form-group clearfix block" data-ng-show="protocol == 'saml' || protocol == 'wsfed'">
                 <label class="col-md-2 control-label" for="frontchannelLogout">{{:: 'front-channel-logout' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="client.frontchannelLogout" name="frontchannelLogout" id="frontchannelLogout" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
