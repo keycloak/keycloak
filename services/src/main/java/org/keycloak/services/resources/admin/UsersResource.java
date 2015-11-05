@@ -861,7 +861,7 @@ public class UsersResource {
     @POST
     public Response impersonateUser(@PathParam("username") String username, @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
 
-        if (!auth.hasRealmRole(AdminRoles.ADMIN)) {
+        if (!auth.hasRealmRole(AdminRoles.ADMIN) && !auth.hasRealmRole(AdminRoles.SM_ADMIN)) {
             auth.requireManage();
         }
 
