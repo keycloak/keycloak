@@ -46,7 +46,7 @@
         <div class="form-group">
             <label class="col-md-2 control-label" for="lookAhead">Look ahead window</label>
             <div class="col-md-6">
-                <input class="form-control" type="text" id="lookAhead" name="lookAhead" data-ng-model="realm.otpPolicyLookAheadWindow" autofocus>
+                <input class="form-control" type="number" required min="1" max="120" id="lookAhead" name="lookAhead" data-ng-model="realm.otpPolicyLookAheadWindow" autofocus>
             </div>
             <kc-tooltip>How far ahead should the server look just in case the token generator and server are out of time sync or counter sync?</kc-tooltip>
         </div>
@@ -62,7 +62,7 @@
         <div class="form-group" data-ng-show="realm.otpPolicyType == 'totp'">
             <label class="col-md-2 control-label" for="counter">OTP Token Period</label>
             <div class="col-md-6">
-                <input class="form-control" type="text" id="period" name="period" data-ng-model="realm.otpPolicyPeriod">
+                <input class="form-control" type="number" required min="1" max="120" id="period" name="period" data-ng-model="realm.otpPolicyPeriod">
             </div>
             <kc-tooltip>How many seconds should an OTP token be valid? Defaults to 30 seconds.</kc-tooltip>
         </div>
