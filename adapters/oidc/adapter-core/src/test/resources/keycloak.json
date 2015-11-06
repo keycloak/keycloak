@@ -29,5 +29,6 @@
     "register-node-at-startup": true,
     "register-node-period": 1000,
     "token-store": "cookie",
-    "principal-attribute": "email"
+    "principal-attribute": "email",
+    "token-minimum-time-to-live": 10
 }

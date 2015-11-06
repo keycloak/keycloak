@@ -94,6 +94,7 @@ public class KeycloakDeploymentBuilder {
         deployment.setAlwaysRefreshToken(adapterConfig.isAlwaysRefreshToken());
         deployment.setRegisterNodeAtStartup(adapterConfig.isRegisterNodeAtStartup());
         deployment.setRegisterNodePeriod(adapterConfig.getRegisterNodePeriod());
+        deployment.setTokenMinimumTimeToLive(adapterConfig.getTokenMinimumTimeToLive());
 
         if (realmKeyPem == null && adapterConfig.isBearerOnly() && adapterConfig.getAuthServerUrl() == null) {
             throw new IllegalArgumentException("For bearer auth, you must set the realm-public-key or auth-server-url");
