@@ -8,5 +8,6 @@
     "token-store": "cookie",
     "credentials": {
         "secret": "password"
-    }
+    },
+    "token-minimum-time-to-live": 1
 }
