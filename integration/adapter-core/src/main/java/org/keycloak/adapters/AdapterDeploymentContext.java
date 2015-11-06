@@ -433,6 +433,16 @@ public class AdapterDeploymentContext {
         public void setPrincipalAttribute(String principalAttribute) {
             delegate.setPrincipalAttribute(principalAttribute);
         }
+
+        @Override
+        public int getTokenMinimumTimeToLive() {
+            return delegate.getTokenMinimumTimeToLive();
+        }
+
+        @Override
+        public void setTokenMinimumTimeToLive(final int tokenMinimumTimeToLive) {
+            delegate.setTokenMinimumTimeToLive(tokenMinimumTimeToLive);
+        }
     }
 
     protected KeycloakUriBuilder getBaseBuilder(HttpFacade facade, String base) {

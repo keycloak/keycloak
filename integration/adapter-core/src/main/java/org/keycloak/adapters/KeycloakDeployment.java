@@ -58,6 +58,7 @@ public class KeycloakDeployment {
     protected boolean registerNodeAtStartup;
     protected int registerNodePeriod;
     protected volatile int notBefore;
+    protected int tokenMinimumTimeToLive;
 
     public KeycloakDeployment() {
     }
@@ -360,5 +361,13 @@ public class KeycloakDeployment {
 
     public void setPrincipalAttribute(String principalAttribute) {
         this.principalAttribute = principalAttribute;
+    }
+
+    public int getTokenMinimumTimeToLive() {
+        return tokenMinimumTimeToLive;
+    }
+
+    public void setTokenMinimumTimeToLive(final int tokenMinimumTimeToLive) {
+        this.tokenMinimumTimeToLive = tokenMinimumTimeToLive;
     }
 }

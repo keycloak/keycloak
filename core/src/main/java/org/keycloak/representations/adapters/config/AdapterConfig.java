@@ -18,7 +18,8 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
         "auth-server-url-for-backend-requests", "always-refresh-token",
-        "register-node-at-startup", "register-node-period", "token-store", "principal-attribute"
+        "register-node-at-startup", "register-node-period", "token-store", "principal-attribute",
+        "token-minimum-time-to-live"
 })
 public class AdapterConfig extends BaseAdapterConfig {
 
@@ -50,6 +51,8 @@ public class AdapterConfig extends BaseAdapterConfig {
     protected String tokenStore;
     @JsonProperty("principal-attribute")
     protected String principalAttribute;
+    @JsonProperty("token-minimum-time-to-live")
+    protected int tokenMinimumTimeToLive = 5;
 
     public boolean isAllowAnyHostname() {
         return allowAnyHostname;
@@ -161,5 +164,13 @@ public class AdapterConfig extends BaseAdapterConfig {
 
     public void setPrincipalAttribute(String principalAttribute) {
         this.principalAttribute = principalAttribute;
+    }
+
+    public int getTokenMinimumTimeToLive() {
+        return tokenMinimumTimeToLive;
+    }
+
+    public void setTokenMinimumTimeToLive(final int tokenMinimumTimeToLive) {
+        this.tokenMinimumTimeToLive = tokenMinimumTimeToLive;
     }
 }
