@@ -30,6 +30,7 @@
             "providerId" : "facebook",
             "enabled": true,
             "updateProfileFirstLogin" : "false",
+            "firstBrokerLoginFlowAlias" : "browser",
             "config": {
                 "authorizationUrl": "authorizationUrl",
                 "tokenUrl": "tokenUrl",

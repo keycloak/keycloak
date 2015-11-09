@@ -14,6 +14,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -34,7 +35,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory {
     public static final String RESET_CREDENTIAL_SECRET = "RESET_CREDENTIAL_SECRET";
-    public static final String KEY = "key";
+
     protected static Logger logger = Logger.getLogger(ResetCredentialEmail.class);
 
     public static final String PROVIDER_ID = "reset-credential-email";
@@ -67,7 +68,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         // it can only be guessed once, and it must match watch is stored in the client session.
         String secret = HmacOTP.generateSecret(10);
         context.getClientSession().setNote(RESET_CREDENTIAL_SECRET, secret);
-        String link = UriBuilder.fromUri(context.getActionUrl()).queryParam(KEY, secret).build().toString();
+        String link = UriBuilder.fromUri(context.getActionUrl()).queryParam(Constants.KEY, secret).build().toString();
         long expiration = TimeUnit.SECONDS.toMinutes(context.getRealm().getAccessCodeLifespanUserAction());
         try {
 
@@ -93,7 +94,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
     @Override
     public void action(AuthenticationFlowContext context) {
         String secret = context.getClientSession().getNote(RESET_CREDENTIAL_SECRET);
-        String key = context.getUriInfo().getQueryParameters().getFirst(KEY);
+        String key = context.getUriInfo().getQueryParameters().getFirst(Constants.KEY);
 
         // Can only guess once!  We remove the note so another guess can't happen
         context.getClientSession().removeNote(RESET_CREDENTIAL_SECRET);

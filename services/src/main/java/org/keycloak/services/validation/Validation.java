@@ -1,8 +1,8 @@
 package org.keycloak.services.validation;
 
+import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
@@ -68,13 +68,13 @@ public class Validation {
     }
 
     public static List<FormMessage> validateUpdateProfileForm(MultivaluedMap<String, String> formData) {
-        return validateUpdateProfileForm(null, formData);
+        return validateUpdateProfileForm(false, formData);
     }
 
-    public static List<FormMessage> validateUpdateProfileForm(RealmModel realm, MultivaluedMap<String, String> formData) {
+    public static List<FormMessage> validateUpdateProfileForm(boolean editUsernameAllowed, MultivaluedMap<String, String> formData) {
         List<FormMessage> errors = new ArrayList<>();
         
-        if (realm != null && realm.isEditUsernameAllowed() && isBlank(formData.getFirst(FIELD_USERNAME))) {
+        if (editUsernameAllowed && isBlank(formData.getFirst(FIELD_USERNAME))) {
             addError(errors, FIELD_USERNAME, Messages.MISSING_USERNAME);
         }
 
@@ -102,7 +102,7 @@ public class Validation {
      * @param user to validate
      * @return true if user object contains all mandatory values, false if some mandatory value is missing
      */
-    public static boolean validateUserMandatoryFields(RealmModel realm, UserModel user){
+    public static boolean validateUserMandatoryFields(RealmModel realm, UpdateProfileContext user){
         return!(isBlank(user.getFirstName()) || isBlank(user.getLastName()) || isBlank(user.getEmail()));        
     }
 

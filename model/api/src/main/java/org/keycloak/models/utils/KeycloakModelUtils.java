@@ -3,6 +3,7 @@ package org.keycloak.models.utils;
 import org.bouncycastle.openssl.PEMWriter;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -198,9 +199,9 @@ public final class KeycloakModelUtils {
     /**
      * Deep search if given role is descendant of composite role
      *
-     * @param role role to check
+     * @param role      role to check
      * @param composite composite role
-     * @param visited set of already visited roles (used for recursion)
+     * @param visited   set of already visited roles (used for recursion)
      * @return true if "role" is descendant of "composite"
      */
     public static boolean searchFor(RoleModel role, RoleModel composite, Set<RoleModel> visited) {
@@ -218,14 +219,14 @@ public final class KeycloakModelUtils {
     /**
      * Try to find user by given username. If it fails, then fallback to find him by email
      *
-     * @param realm realm
+     * @param realm    realm
      * @param username username or email of user
      * @return found user
      */
     public static UserModel findUserByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null && username.contains("@")) {
-            user =  session.users().getUserByEmail(username, realm);
+            user = session.users().getUserByEmail(username, realm);
         }
         return user;
     }
@@ -265,7 +266,6 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     *
      * @param roles
      * @param targetRole
      * @return true if targetRole is in roles (directly or indirectly via composite role)
@@ -284,8 +284,8 @@ public final class KeycloakModelUtils {
     /**
      * Ensure that displayName of myProvider (if not null) is unique and there is no other provider with same displayName in the list.
      *
-     * @param displayName to check for duplications
-     * @param myProvider provider, which is excluded from the list (if present)
+     * @param displayName         to check for duplications
+     * @param myProvider          provider, which is excluded from the list (if present)
      * @param federationProviders
      * @throws ModelDuplicateException if there is other provider with same displayName
      */

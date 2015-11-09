@@ -52,6 +52,7 @@ public class IdentityProviderRepresentation {
     protected boolean storeToken;
     protected boolean addReadTokenRoleOnCreate;
     protected boolean authenticateByDefault;
+    protected String firstBrokerLoginFlowAlias;
     protected Map<String, String> config = new HashMap<String, String>();
 
     public String getInternalId() {
@@ -125,6 +126,14 @@ public class IdentityProviderRepresentation {
 
     public void setAuthenticateByDefault(boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
+    }
+
+    public String getFirstBrokerLoginFlowAlias() {
+        return firstBrokerLoginFlowAlias;
+    }
+
+    public void setFirstBrokerLoginFlowAlias(String firstBrokerLoginFlowAlias) {
+        this.firstBrokerLoginFlowAlias = firstBrokerLoginFlowAlias;
     }
 
     public boolean isStoreToken() {

@@ -44,9 +44,8 @@ public class IdentityProviderBean {
     private List<IdentityProvider> providers;
     private RealmModel realm;
 
-    public IdentityProviderBean(RealmModel realm, URI baseURI, UriInfo uriInfo) {
+    public IdentityProviderBean(RealmModel realm, List<IdentityProviderModel> identityProviders, URI baseURI, UriInfo uriInfo) {
         this.realm = realm;
-        List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
 
         if (!identityProviders.isEmpty()) {
             Set<IdentityProvider> orderedSet = new TreeSet<>(IdentityProviderComparator.INSTANCE);
@@ -57,7 +56,7 @@ public class IdentityProviderBean {
             }
 
             if (!orderedSet.isEmpty()) {
-                providers = new LinkedList<IdentityProvider>(orderedSet);
+                providers = new LinkedList<>(orderedSet);
                 displaySocial = true;
             }
         }

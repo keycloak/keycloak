@@ -28,7 +28,7 @@ import java.util.Map;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.UserModel;
+import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -38,12 +38,12 @@ public class ProfileBean {
 
     private static final Logger logger = Logger.getLogger(ProfileBean.class);
 
-    private UserModel user;
+    private UpdateProfileContext user;
     private MultivaluedMap<String, String> formData;
 
     private final Map<String, String> attributes = new HashMap<>();
 
-    public ProfileBean(UserModel user, MultivaluedMap<String, String> formData) {
+    public ProfileBean(UpdateProfileContext user, MultivaluedMap<String, String> formData) {
         this.user = user;
         this.formData = formData;
 
@@ -68,6 +68,10 @@ public class ProfileBean {
             }
         }
 
+    }
+
+    public boolean isEditUsernameAllowed() {
+        return user.isEditUsernameAllowed();
     }
 
     public String getUsername() { return formData != null ? formData.getFirst("username") : user.getUsername(); }

@@ -79,7 +79,7 @@ public class IdentityProviderResource {
     @Produces(MediaType.APPLICATION_JSON)
     public IdentityProviderRepresentation getIdentityProvider() {
         this.auth.requireView();
-        IdentityProviderRepresentation rep = ModelToRepresentation.toRepresentation(this.identityProviderModel);
+        IdentityProviderRepresentation rep = ModelToRepresentation.toRepresentation(realm, this.identityProviderModel);
         return rep;
     }
 
@@ -117,7 +117,7 @@ public class IdentityProviderResource {
             String newProviderId = providerRep.getAlias();
             String oldProviderId = getProviderIdByInternalId(this.realm, internalId);
 
-            this.realm.updateIdentityProvider(RepresentationToModel.toModel(providerRep));
+            this.realm.updateIdentityProvider(RepresentationToModel.toModel(realm, providerRep));
 
             if (oldProviderId != null && !oldProviderId.equals(newProviderId)) {
 

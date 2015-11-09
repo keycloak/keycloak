@@ -13,7 +13,11 @@
                     </div>
 
                     <div class="${properties.kcInputWrapperClass!}">
-                        <input id="username" class="${properties.kcInputClass!}" name="username" value="${(login.username!'')?html}" type="text" autofocus />
+                        <#if usernameEditDisabled??>
+                            <input id="username" class="${properties.kcInputClass!}" name="username" value="${(login.username!'')?html}" type="text" disabled />
+                        <#else>
+                            <input id="username" class="${properties.kcInputClass!}" name="username" value="${(login.username!'')?html}" type="text" autofocus />
+                        </#if>
                     </div>
                 </div>
 
@@ -29,7 +33,7 @@
 
                 <div class="${properties.kcFormGroupClass!}">
                     <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
-                        <#if realm.rememberMe>
+                        <#if realm.rememberMe && !usernameEditDisabled??>
                             <div class="checkbox">
                                 <label>
                                     <#if login.rememberMe??>
@@ -56,7 +60,7 @@
             </form>
         </#if>
     <#elseif section = "info" >
-        <#if realm.password && realm.registrationAllowed>
+        <#if realm.password && realm.registrationAllowed && !usernameEditDisabled??>
             <div id="kc-registration">
                 <span>${msg("noAccount")} <a href="${url.registrationUrl}">${msg("doRegister")}</a></span>
             </div>
