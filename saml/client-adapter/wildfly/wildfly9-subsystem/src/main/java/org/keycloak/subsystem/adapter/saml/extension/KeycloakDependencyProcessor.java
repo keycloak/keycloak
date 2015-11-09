@@ -29,7 +29,6 @@ import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 
 /**
- *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
 public abstract class KeycloakDependencyProcessor implements DeploymentUnitProcessor {
