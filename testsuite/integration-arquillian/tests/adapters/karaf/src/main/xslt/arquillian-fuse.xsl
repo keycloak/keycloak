@@ -14,24 +14,20 @@
             <container qualifier="app-server-karaf" mode="manual" >
                 <configuration>
                     <property name="enabled">${app.server.karaf}</property>
-                    <!--<property name="adapterImplClass">org.jboss.arquillian.container.osgi.karaf.managed.KarafManagedDeployableContainer</property>-->
                     <property name="adapterImplClass">org.keycloak.testsuite.arquillian.karaf.CustomKarafContainer</property>
                     <property name="autostartBundle">false</property>
                     <property name="karafHome">${karaf.home}</property>
                     <property name="javaVmArguments">-agentlib:jdwp=transport=dt_socket,address=5005,server=y,suspend=n ${adapter.test.props}</property>
                     <property name="jmxServiceURL">service:jmx:rmi://127.0.0.1:44444/jndi/rmi://127.0.0.1:1099/karaf-root</property>
-                    <property name="jmxUsername">karaf</property>
-                    <property name="jmxPassword">karaf</property>          
-                   
-                    <!-- The following commands are performed by the CustomKarafContainer -->
+                    <property name="jmxUsername">admin</property>
+                    <property name="jmxPassword">admin</property>          
+                    
                     <property name="commandsAfterStart">
-                        feature:repo-add mvn:org.apache.camel.karaf/apache-camel/2.15.1/xml/features,
-                        feature:repo-add mvn:org.apache.cxf.karaf/apache-cxf/3.0.4/xml/features,
-                        feature:repo-add mvn:org.keycloak/keycloak-osgi-features/1.7.0.Final-SNAPSHOT/xml/features,
-                        feature:repo-add mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.7.0.Final-SNAPSHOT/xml/features,
-                        feature:install keycloak-fuse-example
+                        features:addurl mvn:org.keycloak/keycloak-osgi-features/1.7.0.Final-SNAPSHOT/xml/features,
+                        features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.7.0.Final-SNAPSHOT/xml/features,
+                        features:install keycloak-fuse-example
                     </property>
-                          
+                    
                 </configuration>
             </container>
     

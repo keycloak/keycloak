@@ -13,7 +13,8 @@
     
     <properties>
         <karaf.version>3.0.3</karaf.version>
-        <karaf.home>${project.build.directory}/assembly</karaf.home>
+        <karaf.home>${containers.home}/apache-karaf-minimal-${karaf.version}</karaf.home>
+        <!--<karaf.home>${project.build.directory}/assembly</karaf.home>-->
                 
         <!--fuse examples expect auth server on 8080-->
         <auth.server.port.offset>0</auth.server.port.offset>
@@ -25,82 +26,57 @@
     </properties>
 
     <dependencies>
-        <!-- for karaf-maven-plugin -->
+
         <dependency>
-            <groupId>org.apache.karaf.features</groupId>
-            <artifactId>framework</artifactId>
+            <groupId>org.apache.karaf</groupId>
+            <artifactId>apache-karaf-minimal</artifactId>
             <version>${karaf.version}</version>
-            <type>kar</type>
+            <type>zip</type>
         </dependency>
-        <dependency>
-            <groupId>org.apache.camel.karaf</groupId>
-            <artifactId>apache-camel</artifactId>
-            <version>2.12.5</version>
-            <classifier>features</classifier>
-            <type>xml</type>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cxf.karaf</groupId>
-            <artifactId>apache-cxf</artifactId>
-            <version>2.7.14</version>
-            <classifier>features</classifier>
-            <type>xml</type>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-osgi-features</artifactId>
-            <version>${project.version}</version>
-            <classifier>features</classifier>
-            <type>xml</type>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak.example.demo</groupId>
-            <artifactId>keycloak-fuse-example-features</artifactId>
-            <version>${project.version}</version>
-            <classifier>features</classifier>
-            <type>xml</type>
-            <scope>runtime</scope>
-        </dependency>
-        <!-- for arquillian -->
+
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>arquillian-container-karaf-managed</artifactId>
             <version>2.1.0.CR18</version>
         </dependency>
+        
         <dependency>
             <groupId>org.apache.aries.jmx</groupId>
             <artifactId>org.apache.aries.jmx</artifactId>
             <version>1.1.1</version>
         </dependency>
+        
     </dependencies>
     
     <build>
         <plugins>
+            
             <plugin>
-                <groupId>org.apache.karaf.tooling</groupId>
-                <artifactId>karaf-maven-plugin</artifactId>
-                <version>${karaf.version}</version>
-                <extensions>true</extensions>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>prepare-karaf-with-examples</id>
-                        <phase>generate-test-resources</phase>
+                        <id>unpack-karaf</id>
+                        <phase>generate-resources</phase>
                         <goals>
-                            <!-- creates custom karaf distro in ${project.build.directory}/assembly -->
-                            <goal>install-kars</goal>
+                            <goal>unpack</goal>
                         </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.apache.karaf</groupId>
+                                    <artifactId>apache-karaf-minimal</artifactId>
+                                    <version>${karaf.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${containers.home}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <bootFeatures>
-                        <!-- this installs all fuse examples -->
-                        <feature>keycloak-fuse-example</feature>
-                    </bootFeatures>
-                </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
