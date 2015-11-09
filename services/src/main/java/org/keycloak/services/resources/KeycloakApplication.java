@@ -21,6 +21,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.scheduled.ClearExpiredEvents;
+import org.keycloak.services.scheduled.ClearExpiredUserRegistrations;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.services.util.JsonConfigProvider;
@@ -91,7 +92,11 @@ public class KeycloakApplication extends Application {
 
         AdminRecovery.recover(sessionFactory);
 
-        setupScheduledTasks(sessionFactory);
+        setupScheduledTasks(sessionFactory, getScheduledTasksInterval());
+    }
+
+    private long getScheduledTasksInterval() {
+        return Config.scope("scheduled").getLong("interval", 60L) * 1000;
     }
 
     protected void migrateModel() {
@@ -163,12 +168,11 @@ public class KeycloakApplication extends Application {
         return factory;
     }
 
-    public static void setupScheduledTasks(final KeycloakSessionFactory sessionFactory) {
-        long interval = Config.scope("scheduled").getLong("interval", 60L) * 1000;
-
+    public static void setupScheduledTasks(final KeycloakSessionFactory sessionFactory, long interval) {
         TimerProvider timer = sessionFactory.create().getProvider(TimerProvider.class);
         timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredEvents()), interval, "ClearExpiredEvents");
         timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions()), interval, "ClearExpiredUserSessions");
+        timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserRegistrations()), interval, "ClearExpiredUserRegistrations");
         new UsersSyncManager().bootstrapPeriodic(sessionFactory, timer);
     }
 

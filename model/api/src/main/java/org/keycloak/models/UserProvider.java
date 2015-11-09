@@ -2,7 +2,7 @@ package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
 
-import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +36,15 @@ public interface UserProvider extends Provider {
     List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults);
     List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm);
     List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults);
+
+    /**
+     * Returns a list of expired users (who had not verified their email for certain time).
+     *
+     * @param olderThan Expiration date threshold.
+     * @param realm Realm to be checked.
+     * @return List of expired users.
+     */
+    List<UserModel> searchForExpiredUsers(Date olderThan, RealmModel realm);
 
     // Searching by UserModel.attribute (not property)
     List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm);

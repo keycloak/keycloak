@@ -275,6 +275,7 @@ public class KeycloakServer {
             RealmModel adminRealm = manager.getKeycloakAdminstrationRealm();
             UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             admin.removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+            admin.setEmailVerified(true);
 
             session.getTransaction().commit();
         } finally {
