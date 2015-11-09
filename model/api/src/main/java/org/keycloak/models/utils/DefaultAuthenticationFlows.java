@@ -334,7 +334,7 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(firstBrokerLogin.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
-        execution.setAuthenticator("idp-detect-duplications");
+        execution.setAuthenticator("idp-create-user-if-unique");
         execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
