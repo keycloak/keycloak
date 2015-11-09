@@ -70,46 +70,40 @@ public class OTPPolicyTest extends AbstractConsoleTest {
     @Jira(value = "KEYCLOAK-2031")
     public void invalidValuesTest() {
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "", "30");
-        assertEquals("Error! Failed to update test Realm.", otpPolicyPage.getErrorMessage());
+        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, " ", "30");
-        assertEquals("Error! Failed to update test Realm.", otpPolicyPage.getErrorMessage());
+        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "no number", "30");
-        assertEquals("Error! Failed to update test Realm.", otpPolicyPage.getErrorMessage());
-        
-        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1 2", "30");
-        assertEquals("Error! Failed to update test Realm.", otpPolicyPage.getErrorMessage());
+        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         
         RealmRepresentation realm = testRealmResource().toRepresentation();
         assertEquals(Integer.valueOf(1), realm.getOtpPolicyLookAheadWindow());
 
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1", "");
-        assertEquals("Error! Failed to update test Realm.", otpPolicyPage.getErrorMessage());
+        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1", " ");
-        assertEquals("Error! Failed to update test Realm.", otpPolicyPage.getErrorMessage());
+        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1", "no number");
-        assertEquals("Error! Failed to update test Realm.", otpPolicyPage.getErrorMessage());
-        
-        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1", "1 2");
-        assertEquals("Error! Failed to update test Realm.", otpPolicyPage.getErrorMessage());
-        
+        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
+
         realm = testRealmResource().toRepresentation();
         assertEquals(Integer.valueOf(30), realm.getOtpPolicyPeriod());
         
         otpPolicyPage.form().setValues(OTPType.COUNTER_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1", "");
-        assertEquals("Error! Failed to update test Realm.", otpPolicyPage.getErrorMessage());
+        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         
         otpPolicyPage.form().setValues(OTPType.COUNTER_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1", " ");
-        assertEquals("Error! Failed to update test Realm.", otpPolicyPage.getErrorMessage());
+        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         
         otpPolicyPage.form().setValues(OTPType.COUNTER_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1", "no number");
-        assertEquals("Error! Failed to update test Realm.", otpPolicyPage.getErrorMessage());
+        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         
         otpPolicyPage.form().setValues(OTPType.COUNTER_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1", "1 2");
-        assertEquals("Error! Failed to update test Realm.", otpPolicyPage.getErrorMessage());
+        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         
         realm = testRealmResource().toRepresentation();
         assertEquals(Integer.valueOf(0), realm.getOtpPolicyInitialCounter());
