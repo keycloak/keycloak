@@ -40,7 +40,7 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-saml-wf9-adapter-${project.version}</directory>
+            <directory>${project.build.directory}/unpacked/keycloak-saml-wildfly-adapter-${project.version}</directory>
             <outputDirectory>keycloak</outputDirectory>
             <excludes>
                 <exclude>standalone/configuration/standalone-keycloak.xml</exclude>

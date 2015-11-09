@@ -28,6 +28,7 @@ import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.LoginConfig;
 import io.undertow.servlet.api.ServletSessionConfig;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.saml.AdapterConstants;
 import org.keycloak.adapters.saml.DefaultSamlDeployment;
 import org.keycloak.adapters.saml.SamlConfigResolver;
 import org.keycloak.adapters.saml.SamlDeployment;
@@ -38,6 +39,7 @@ import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 import org.keycloak.saml.common.exceptions.ParsingException;
 
 import javax.servlet.ServletContext;
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -64,8 +66,16 @@ public class SamlServletExtension implements ServletExtension {
         return false;
     }
 
+    private static InputStream getXMLFromServletContext(ServletContext servletContext) {
+        String json = servletContext.getInitParameter(AdapterConstants.AUTH_DATA_PARAM_NAME);
+        if (json == null) {
+            return null;
+        }
+        return new ByteArrayInputStream(json.getBytes());
+    }
+
     private static InputStream getConfigInputStream(ServletContext context) {
-        InputStream is = null;
+        InputStream is = getXMLFromServletContext(context);
         if (is == null) {
             String path = context.getInitParameter("keycloak.config.file");
             if (path == null) {

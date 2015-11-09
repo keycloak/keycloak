@@ -44,7 +44,7 @@
                 <web-context>auth</web-context>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:keycloak:1.1"/>
-            <subsystem xmlns="urn:jboss:domain:keycloak-saml:1.6"/>
+            <subsystem xmlns="urn:jboss:domain:keycloak-saml:1.1"/>
         </xsl:copy>
     </xsl:template>
 
