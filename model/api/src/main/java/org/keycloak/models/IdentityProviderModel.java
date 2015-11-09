@@ -45,14 +45,6 @@ public class IdentityProviderModel implements Serializable {
     private String providerId;
 
     private boolean enabled;
-
-    /**
-     * For possible values see {@link IdentityProviderRepresentation#getUpdateProfileFirstLoginMode()}
-     * @see IdentityProviderRepresentation#UPFLM_ON
-     * @see IdentityProviderRepresentation#UPFLM_MISSING
-     * @see IdentityProviderRepresentation#UPFLM_OFF
-     */
-    protected String updateProfileFirstLoginMode = IdentityProviderRepresentation.UPFLM_ON;
     
     private boolean trustEmail;
 
@@ -81,7 +73,6 @@ public class IdentityProviderModel implements Serializable {
         this.alias = model.getAlias();
         this.config = new HashMap<String, String>(model.getConfig());
         this.enabled = model.isEnabled();
-        this.updateProfileFirstLoginMode = model.getUpdateProfileFirstLoginMode();
         this.trustEmail = model.isTrustEmail();
         this.storeToken = model.isStoreToken();
         this.authenticateByDefault = model.isAuthenticateByDefault();
@@ -119,20 +110,6 @@ public class IdentityProviderModel implements Serializable {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-    }
-
-    /**
-     * @see IdentityProviderRepresentation#getUpdateProfileFirstLoginMode() 
-     */
-    public String getUpdateProfileFirstLoginMode() {
-        return updateProfileFirstLoginMode;
-    }
-
-    /**
-     * @see IdentityProviderRepresentation#setUpdateProfileFirstLoginMode(String) 
-     */
-    public void setUpdateProfileFirstLoginMode(String updateProfileFirstLoginMode) {
-        this.updateProfileFirstLoginMode = updateProfileFirstLoginMode;
     }
 
     public boolean isStoreToken() {
