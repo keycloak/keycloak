@@ -66,4 +66,15 @@
             </includes>
         </fileSet>
     </fileSets>
+
+    <files>
+        <file>
+            <source>src/main/resources/content/standalone/configuration/keycloak-server.json</source>
+            <outputDirectory>content/domain/servers/server-one/configuration</outputDirectory>
+        </file>
+        <file>
+            <source>src/main/resources/content/standalone/configuration/keycloak-server.json</source>
+            <outputDirectory>content/domain/servers/server-two/configuration</outputDirectory>
+        </file>
+    </files>
 </assembly>
