@@ -37,7 +37,7 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
         // Restore formData for the case of error
         setupForm(context, formData, existingUser);
 
-        return validatePassword(context, formData);
+        return validatePassword(context, existingUser, formData);
     }
 
     protected LoginFormsProvider setupForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData, UserModel existingUser) {
