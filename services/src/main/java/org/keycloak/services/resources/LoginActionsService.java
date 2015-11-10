@@ -509,6 +509,10 @@ public class LoginActionsService {
         BrokeredIdentityContext brokerContext = serializedCtx.deserialize(session, clientSession);
         AuthenticationFlowModel firstBrokerLoginFlow = realm.getAuthenticationFlowById(brokerContext.getIdpConfig().getFirstBrokerLoginFlowId());
 
+        event.detail(Details.IDENTITY_PROVIDER, brokerContext.getIdpConfig().getAlias())
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername());
+
+
         AuthenticationProcessor processor = new AuthenticationProcessor() {
 
             @Override
