@@ -41,6 +41,11 @@ public final class WaitUtils {
                 .element(element).is().not().present();
     }
 
+    public static void waitAjaxForElementNotVisible(WebElement element) {
+        waitAjax().until()
+                .element(element).is().not().visible();
+    }
+
     public static void waitGuiForElement(By element, String message) {
         waitGui().until(message)
                 .element(element).is().present();
