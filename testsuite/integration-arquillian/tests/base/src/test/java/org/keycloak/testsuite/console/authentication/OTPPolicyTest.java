@@ -26,7 +26,6 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.jira.Jira;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicy;
 import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicyForm.Digits;
@@ -67,7 +66,6 @@ public class OTPPolicyTest extends AbstractConsoleTest {
     }      
     
     @Test
-    @Jira(value = "KEYCLOAK-2031")
     public void invalidValuesTest() {
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "", "30");
         assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());

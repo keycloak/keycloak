@@ -16,7 +16,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.page.SessionPortal;
-import org.keycloak.testsuite.arquillian.jira.Jira;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import org.keycloak.testsuite.auth.page.account.Sessions;
 import org.keycloak.testsuite.auth.page.login.Login;
@@ -60,7 +59,6 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
     @SecondBrowser
     protected WebDriver driver2;
 
-    @Jira("KEYCLOAK-732")
     @Test
     public void testSingleSessionInvalidated() {
 
@@ -102,7 +100,6 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
     }
 
     @Test
-    @Jira("KEYCLOAK-741, KEYCLOAK-1485")
     public void testSessionInvalidatedAfterFailedRefresh() {
         RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
         ClientResource sessionPortalRes = null;
@@ -139,7 +136,6 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
     }
 
     @Test
-    @Jira("KEYCLOAK-942")
     public void testAdminApplicationLogout() {
         // login as bburke
         loginAndCheckSession(driver, testRealmLoginPage);
@@ -157,7 +153,6 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
     }
 
     @Test
-    @Jira("KEYCLOAK-1216, KEYCLOAK-1485")
     public void testAccountManagementSessionsLogout() {
         // login as bburke
         loginAndCheckSession(driver, testRealmLoginPage);

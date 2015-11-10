@@ -34,7 +34,6 @@ import org.keycloak.testsuite.adapter.page.CustomerPortal;
 import org.keycloak.testsuite.adapter.page.InputPortal;
 import org.keycloak.testsuite.adapter.page.ProductPortal;
 import org.keycloak.testsuite.adapter.page.SecurePortal;
-import org.keycloak.testsuite.arquillian.jira.Jira;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import org.keycloak.util.BasicAuthHelper;
@@ -224,7 +223,6 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     }
 
     @Test
-    @Jira(value = "KEYCLOAK-1478") // rejected
     public void testLoginSSOIdleRemoveExpiredUserSessions() {
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
@@ -279,7 +277,6 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         testRealmResource().update(demoRealmRep);
     }
 
-    @Jira("KEYCLOAK-518")
     @Test
     public void testNullBearerToken() {
         Client client = ClientBuilder.newClient();
@@ -293,7 +290,6 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         client.close();
     }
 
-    @Jira("KEYCLOAK-1368")
     @Test
     public void testNullBearerTokenCustomErrorPage() {
         Client client = ClientBuilder.newClient();
@@ -326,7 +322,6 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         client.close();
     }
 
-    @Jira("KEYCLOAK-518")
     @Test
     public void testBadUser() {
         Client client = ClientBuilder.newClient();
