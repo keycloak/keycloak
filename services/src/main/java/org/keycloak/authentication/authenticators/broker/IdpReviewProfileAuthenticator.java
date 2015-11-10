@@ -14,6 +14,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -26,9 +27,9 @@ import org.keycloak.services.validation.Validation;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class IdpUpdateProfileAuthenticator extends AbstractIdpAuthenticator {
+public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static Logger logger = Logger.getLogger(IdpUpdateProfileAuthenticator.class);
+    protected static Logger logger = Logger.getLogger(IdpReviewProfileAuthenticator.class);
 
     @Override
     public boolean requiresUser() {
@@ -61,10 +62,17 @@ public class IdpUpdateProfileAuthenticator extends AbstractIdpAuthenticator {
             return true;
         }
 
-        IdentityProviderModel idpConfig = brokerContext.getIdpConfig();
+        String updateProfileFirstLogin;
+        AuthenticatorConfigModel authenticatorConfig = context.getAuthenticatorConfig();
+        if (authenticatorConfig == null || !authenticatorConfig.getConfig().containsKey(IdpReviewProfileAuthenticatorFactory.UPDATE_PROFILE_ON_FIRST_LOGIN)) {
+            updateProfileFirstLogin = IdentityProviderRepresentation.UPFLM_MISSING;
+        } else {
+            updateProfileFirstLogin = authenticatorConfig.getConfig().get(IdpReviewProfileAuthenticatorFactory.UPDATE_PROFILE_ON_FIRST_LOGIN);
+        }
+
         RealmModel realm = context.getRealm();
-        return IdentityProviderRepresentation.UPFLM_ON.equals(idpConfig.getUpdateProfileFirstLoginMode())
-                || (IdentityProviderRepresentation.UPFLM_MISSING.equals(idpConfig.getUpdateProfileFirstLoginMode()) && !Validation.validateUserMandatoryFields(realm, userCtx));
+        return IdentityProviderRepresentation.UPFLM_ON.equals(updateProfileFirstLogin)
+                || (IdentityProviderRepresentation.UPFLM_MISSING.equals(updateProfileFirstLogin) && !Validation.validateUserMandatoryFields(realm, userCtx));
     }
 
     @Override

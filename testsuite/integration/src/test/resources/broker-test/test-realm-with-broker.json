@@ -17,7 +17,6 @@
             "alias" : "model-google",
             "providerId" : "google",
             "enabled": true,
-            "updateProfileFirstLogin" : "true",
             "trustEmail" : "true",
             "storeToken": "true",
             "config": {
@@ -29,7 +28,6 @@
             "alias" : "model-facebook",
             "providerId" : "facebook",
             "enabled": true,
-            "updateProfileFirstLogin" : "false",
             "firstBrokerLoginFlowAlias" : "browser",
             "config": {
                 "authorizationUrl": "authorizationUrl",
@@ -43,7 +41,6 @@
             "alias" : "model-github",
             "providerId" : "github",
             "enabled": true,
-            "updateProfileFirstLoginMode" : "on",
             "storeToken": "false",
             "config": {
                 "authorizationUrl": "authorizationUrl",
@@ -57,7 +54,6 @@
             "alias" : "model-twitter",
             "providerId" : "twitter",
             "enabled": true,
-            "updateProfileFirstLoginMode" : "off",
             "storeToken": true,
             "config": {
                 "authorizationUrl": "authorizationUrl",
@@ -71,7 +67,6 @@
             "alias" : "model-linkedin",
             "providerId" : "linkedin",
             "enabled": true,
-            "updateProfileFirstLoginMode" : "missing",
             "storeToken": false,
             "config": {
                 "authorizationUrl": "authorizationUrl",
@@ -85,7 +80,6 @@
             "alias" : "model-stackoverflow",
             "providerId" : "stackoverflow",
             "enabled": true,
-            "updateProfileFirstLoginMode" : "off",
             "storeToken": false,
             "config": {
                 "key": "keyValue",
@@ -100,7 +94,6 @@
           "alias" : "model-saml-signed-idp",
           "providerId" : "saml",
           "enabled": true,
-          "updateProfileFirstLoginMode" : "on",
           "config": {
             "singleSignOnServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-identity-provider/protocol/saml",
             "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
@@ -116,7 +109,6 @@
             "alias" : "kc-saml-signed-idp",
             "providerId" : "saml",
             "enabled": true,
-            "updateProfileFirstLoginMode" : "on",
             "addReadTokenRoleOnCreate": true,
             "config": {
                 "singleSignOnServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-signed-idp/protocol/saml",
@@ -135,7 +127,6 @@
             "alias" : "kc-saml-idp-basic",
             "providerId" : "saml",
             "enabled": true,
-            "updateProfileFirstLoginMode" : "on",
             "trustEmail" : false,
             "addReadTokenRoleOnCreate": true,
             "config": {
@@ -151,7 +142,6 @@
             "alias" : "model-oidc-idp",
             "providerId" : "oidc",
             "enabled": false,
-            "updateProfileFirstLoginMode" : "off",
             "authenticateByDefault" : "false",
             "config": {
                 "clientId": "clientId",
@@ -167,7 +157,6 @@
             "alias" : "kc-oidc-idp",
             "providerId" : "keycloak-oidc",
             "enabled": true,
-            "updateProfileFirstLoginMode" : "off",
             "storeToken" : true,
             "addReadTokenRoleOnCreate": true,
             "config": {

@@ -23,15 +23,20 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthenticatorFactory;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.Urls;
@@ -138,7 +143,7 @@ public abstract class AbstractIdentityProviderTest {
     @Test
     public void testSuccessfulAuthentication() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_ON);
+        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_ON);
 
         UserModel user = assertSuccessfulAuthentication(identityProviderModel, "test-user", "new@email.com", true);
         Assert.assertEquals("617-666-7777", user.getFirstAttribute("mobile"));
@@ -147,7 +152,7 @@ public abstract class AbstractIdentityProviderTest {
     @Test
     public void testSuccessfulAuthenticationUpdateProfileOnMissing_nothingMissing() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_MISSING);
+        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_MISSING);
 
         assertSuccessfulAuthentication(identityProviderModel, "test-user", "test-user@localhost", false);
     }
@@ -155,7 +160,7 @@ public abstract class AbstractIdentityProviderTest {
     @Test
     public void testSuccessfulAuthenticationUpdateProfileOnMissing_missingEmail() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_MISSING);
+        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_MISSING);
 
         assertSuccessfulAuthentication(identityProviderModel, "test-user-noemail", "new@email.com", true);
     }
@@ -163,7 +168,7 @@ public abstract class AbstractIdentityProviderTest {
     @Test
     public void testSuccessfulAuthenticationWithoutUpdateProfile() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
+        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
 
         assertSuccessfulAuthentication(identityProviderModel, "test-user", "test-user@localhost", false);
     }
@@ -182,7 +187,7 @@ public abstract class AbstractIdentityProviderTest {
 
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
         try {
-            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
+            setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
             identityProviderModel.setTrustEmail(false);
 
             UserModel federatedUser = assertSuccessfulAuthenticationWithEmailVerification(identityProviderModel, "test-user", "test-user@localhost", false);
@@ -251,7 +256,7 @@ public abstract class AbstractIdentityProviderTest {
 
         try {
             IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
+            setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
 
             UserModel federatedUser = assertSuccessfulAuthentication(identityProviderModel, "test-user-noemail", null, false);
 
@@ -268,12 +273,12 @@ public abstract class AbstractIdentityProviderTest {
     @Test
     public void testSuccessfulAuthenticationWithoutUpdateProfile_emailProvided_emailVerifyEnabled_emailTrustEnabled() {
         getRealm().setVerifyEmail(true);
+        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
         brokerServerRule.stopSession(this.session, true);
         this.session = brokerServerRule.startSession();
 
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
         try {
-            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
             identityProviderModel.setTrustEmail(true);
 
             UserModel federatedUser = assertSuccessfulAuthentication(identityProviderModel, "test-user", "test-user@localhost", false);
@@ -300,7 +305,7 @@ public abstract class AbstractIdentityProviderTest {
 
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
         try {
-            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_ON);
+            setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_ON);
             identityProviderModel.setTrustEmail(true);
 
             UserModel user = assertSuccessfulAuthenticationWithEmailVerification(identityProviderModel, "test-user", "new@email.com", true);
@@ -320,7 +325,7 @@ public abstract class AbstractIdentityProviderTest {
 
         try {
             IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
+            setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
 
             authenticateWithIdentityProvider(identityProviderModel, "test-user", false);
 
@@ -368,7 +373,7 @@ public abstract class AbstractIdentityProviderTest {
 
         try {
             IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-            identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
+            setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
 
             authenticateWithIdentityProvider(identityProviderModel, "test-user-noemail", false);
 
@@ -475,7 +480,7 @@ public abstract class AbstractIdentityProviderTest {
     public void testUserAlreadyExistsWhenNotUpdatingProfile() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
 
-        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
+        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
 
         this.driver.navigate().to("http://localhost:8081/test-app/");
 
@@ -509,6 +514,7 @@ public abstract class AbstractIdentityProviderTest {
 
         // Link my "pedroigor" identity with "test-user" from brokered Keycloak
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_ON);
         accountFederatedIdentityPage.clickAddProvider(identityProviderModel.getAlias());
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
@@ -609,6 +615,7 @@ public abstract class AbstractIdentityProviderTest {
 
     @Test
     public void testTokenStorageAndRetrievalByApplication() {
+        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_ON);
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
 
         identityProviderModel.setStoreToken(true);
@@ -774,7 +781,6 @@ public abstract class AbstractIdentityProviderTest {
 
         assertNotNull(identityProviderModel);
 
-        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_ON);
         identityProviderModel.setEnabled(true);
 
         return identityProviderModel;
@@ -850,5 +856,19 @@ public abstract class AbstractIdentityProviderTest {
         assertEquals(htmlVerificationUrl, textVerificationUrl);
 
         return htmlVerificationUrl;
+    }
+
+    private void setUpdateProfileFirstLogin(final String updateProfileFirstLogin) {
+        KeycloakModelUtils.runJobInTransaction(this.session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+
+            @Override
+            public void run(KeycloakSession session) {
+                RealmModel realm = session.realms().getRealm("realm-with-broker");
+                AuthenticatorConfigModel reviewProfileConfig = realm.getAuthenticatorConfigByAlias(DefaultAuthenticationFlows.IDP_REVIEW_PROFILE_CONFIG_ALIAS);
+                reviewProfileConfig.getConfig().put(IdpReviewProfileAuthenticatorFactory.UPDATE_PROFILE_ON_FIRST_LOGIN, updateProfileFirstLogin);
+                realm.updateAuthenticatorConfig(reviewProfileConfig);
+            }
+
+        });
     }
 }

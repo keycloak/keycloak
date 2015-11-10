@@ -53,19 +53,6 @@
                 <kc-tooltip>{{:: 'identity-provider.stored-tokens-readable.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="updateProfileFirstLoginMode">{{:: 'update-profile-on-first-login' | translate}}</label>
-                <div class="col-md-2">
-                		<div>
-                        <select id="updateProfileFirstLoginMode" ng-model="identityProvider.updateProfileFirstLoginMode" class="form-control">
-                            <option value="on">{{:: 'on' | translate}}</option>
-                            <option value="missing">{{:: 'on-missing-info' | translate}}</option>
-                            <option value="off">{{:: 'off' | translate}}</option>
-                        </select>
-                    </div>
-                </div>
-                <kc-tooltip>{{:: 'update-profile-on-first-login.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group">
                 <label class="col-md-2 control-label" for="trustEmail">{{:: 'trust-email' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="identityProvider.trustEmail" name="identityProvider.trustEmail" id="trustEmail" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />

@@ -30,7 +30,6 @@ public class IdentityProviderEntity {
     private String providerId;
     private String name;
     private boolean enabled;
-    private String updateProfileFirstLoginMode;
     private boolean trustEmail;
     private boolean storeToken;
     protected boolean addReadTokenRoleOnCreate;
@@ -61,14 +60,6 @@ public class IdentityProviderEntity {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-    }
-
-    public String getUpdateProfileFirstLoginMode() {
-        return updateProfileFirstLoginMode;
-    }
-
-    public void setUpdateProfileFirstLoginMode(String updateProfileFirstLoginMode) {
-        this.updateProfileFirstLoginMode = updateProfileFirstLoginMode;
     }
 
     public boolean isAuthenticateByDefault() {

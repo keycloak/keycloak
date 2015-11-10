@@ -1080,7 +1080,6 @@ public class RepresentationToModel {
         identityProviderModel.setAlias(representation.getAlias());
         identityProviderModel.setProviderId(representation.getProviderId());
         identityProviderModel.setEnabled(representation.isEnabled());
-        identityProviderModel.setUpdateProfileFirstLoginMode(representation.getUpdateProfileFirstLoginMode());
         identityProviderModel.setTrustEmail(representation.isTrustEmail());
         identityProviderModel.setAuthenticateByDefault(representation.isAuthenticateByDefault());
         identityProviderModel.setStoreToken(representation.isStoreToken());
