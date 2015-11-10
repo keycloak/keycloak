@@ -27,7 +27,7 @@ public class CustomKarafContainer extends KarafManagedDeployableContainer<Custom
     @Override
     public void start() throws LifecycleException {
         super.start();
-        executePostStartCommands();
+        executeAfterStartCommands();
     }
 
     @Override
@@ -41,7 +41,7 @@ public class CustomKarafContainer extends KarafManagedDeployableContainer<Custom
         return CustomKarafContainerConfiguration.class;
     }
 
-    protected void executePostStartCommands() throws LifecycleException {
+    protected void executeAfterStartCommands() throws LifecycleException {
         try {
             mbeanServer = getMBeanServerConnection(500, TimeUnit.MILLISECONDS);
         } catch (TimeoutException ex) {
@@ -69,23 +69,32 @@ public class CustomKarafContainer extends KarafManagedDeployableContainer<Custom
                 String cmd = command.trim().split(" ")[0].trim();
                 String param = command.trim().split(" ")[1].trim();
                 log.info(String.format("command: %s, param: %s", cmd, param));
-                if (cmd.equals("feature:repo-add") || cmd.equals("features:addurl")) {
-                    featureMBean.addRepository(param);
-                } else if (cmd.equals("feature:repo-remove") || cmd.equals("features:removeurl")) {
-                    featureMBean.removeRepository(param);
-                } else if (cmd.equals("feature:install") || cmd.equals("features:install")) {
-                    featureMBean.installFeature(param);
-                } else if (cmd.equals("feature:uninstall") || cmd.equals("features:uninstall")) {
-                    featureMBean.uninstallFeature(param);
-                } else {
-                    throw new RuntimeException(String.format("Unsupported command: '%s'. "
-                            + "Supported commands on Karaf: 'feature:repo-add', 'feature:install'\n"
-                            + "Supported commands on Fuse: 'features:addurl', 'features:install'", cmd));
+                switch (cmd) {
+                    case "feature:repo-add":
+                    case "features:addurl":
+                        featureMBean.addRepository(param);
+                        break;
+                    case "feature:repo-remove":
+                    case "features:removeurl":
+                        featureMBean.removeRepository(param);
+                        break;
+                    case "feature:install":
+                    case "features:install":
+                        featureMBean.installFeature(param);
+                        break;
+                    case "feature:uninstall":
+                    case "features:uninstall":
+                        featureMBean.uninstallFeature(param);
+                        break;
+                    default:
+                        throw new RuntimeException(String.format("Unsupported command: '%s'. "
+                                + "Supported after-start commands for Karaf: 'feature:repo-add', 'feature:install', 'feature:repo-remove', 'feature:uninstall'\n"
+                                + "Supported after-start commands for Fuse: 'features:addurl', 'features:install', 'features:removeurl', 'features:uninstall'", cmd));
                 }
             }
         } catch (IOException | RuntimeException | TimeoutException ex) {
             stop();
-            throw new LifecycleException("Error when executing karaf post-start commands.", ex);
+            throw new LifecycleException("Error when executing karaf after-start commands.", ex);
         }
     }
 

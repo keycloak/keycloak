@@ -4,6 +4,8 @@
                 version="2.0"
                 exclude-result-prefixes="xalan a">
 
+    <xsl:param name="keycloak.version" />
+    
     <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes" xalan:indent-amount="4" standalone="no"/>
     <xsl:strip-space elements="*"/>
 
@@ -27,8 +29,8 @@
                     <property name="commandsAfterStart">
                         feature:repo-add mvn:org.apache.camel.karaf/apache-camel/2.15.1/xml/features,
                         feature:repo-add mvn:org.apache.cxf.karaf/apache-cxf/3.0.4/xml/features,
-                        feature:repo-add mvn:org.keycloak/keycloak-osgi-features/1.7.0.Final-SNAPSHOT/xml/features,
-                        feature:repo-add mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.7.0.Final-SNAPSHOT/xml/features,
+                        feature:repo-add mvn:org.keycloak/keycloak-osgi-features/<xsl:value-of select="$keycloak.version"/>/xml/features,
+                        feature:repo-add mvn:org.keycloak.example.demo/keycloak-fuse-example-features/<xsl:value-of select="$keycloak.version"/>/xml/features,
                         feature:install keycloak-fuse-example
                     </property>
                           
