@@ -37,7 +37,7 @@
             <td>{{mapper.name}}</td>
             <td>{{mapperTypes[mapper.protocolMapper].category}}</td>
             <td>{{mapperTypes[mapper.protocolMapper].name}}</td>
-            <td><input type="checkbox" ng-model="mapper.isChecked"></td>
+            <td><input type="checkbox" ng-model="mapper.isChecked" id="{{mapper.protocolMapper}}"></td>
         </tr>
         <tr data-ng-show="mappers.length == 0">
             <td>{{:: 'no-mappers-available' | translate}}</td>

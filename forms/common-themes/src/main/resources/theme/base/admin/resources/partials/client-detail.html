@@ -207,7 +207,7 @@
 
                 <div class="col-sm-6">
                     <div class="input-group" ng-repeat="(i, redirectUri) in client.redirectUris track by $index">
-                        <input class="form-control" ng-model="client.redirectUris[i]">
+                        <input class="form-control" ng-model="client.redirectUris[i]" id="{{'redirectUri_' + i}}">
                         <div class="input-group-addon">
                             <i class="pficon pficon-remove" style="width: 10px;" data-ng-click="deleteRedirectUri($index)"></i>
                         </div>
@@ -266,7 +266,7 @@
 
                 <div class="col-sm-6">
                     <div class="input-group" ng-repeat="(i, webOrigin) in client.webOrigins track by $index">
-                        <input class="form-control" ng-model="client.webOrigins[i]">
+                        <input class="form-control" ng-model="client.webOrigins[i]" id="{{'webOrigin_' + i}}">
                         <div class="input-group-addon">
                             <i class="pficon pficon-remove" style="width: 10px;" data-ng-click="deleteWebOrigin($index)"></i>
                         </div>
