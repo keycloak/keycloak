@@ -4,6 +4,8 @@
                 version="2.0"
                 exclude-result-prefixes="xalan a">
 
+    <xsl:param name="keycloak.version" />
+    
     <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes" xalan:indent-amount="4" standalone="no"/>
     <xsl:strip-space elements="*"/>
 
@@ -23,8 +25,8 @@
                     <property name="jmxPassword">admin</property>          
                     
                     <property name="commandsAfterStart">
-                        features:addurl mvn:org.keycloak/keycloak-osgi-features/1.7.0.Final-SNAPSHOT/xml/features,
-                        features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.7.0.Final-SNAPSHOT/xml/features,
+                        features:addurl mvn:org.keycloak/keycloak-osgi-features/<xsl:value-of select="$keycloak.version"/>/xml/features,
+                        features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/<xsl:value-of select="$keycloak.version"/>/xml/features,
                         features:install keycloak-fuse-example
                     </property>
                     
