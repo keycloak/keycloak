@@ -10,17 +10,19 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.messages.Messages;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class IdpDetectDuplicationsAuthenticator extends AbstractIdpAuthenticator {
+public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static Logger logger = Logger.getLogger(IdpDetectDuplicationsAuthenticator.class);
+    protected static Logger logger = Logger.getLogger(IdpCreateUserIfUniqueAuthenticator.class);
 
 
     @Override
@@ -52,6 +54,12 @@ public class IdpDetectDuplicationsAuthenticator extends AbstractIdpAuthenticator
 
             for (Map.Entry<String, List<String>> attr : serializedCtx.getAttributes().entrySet()) {
                 federatedUser.setAttribute(attr.getKey(), attr.getValue());
+            }
+
+            AuthenticatorConfigModel config = context.getAuthenticatorConfig();
+            if (config != null && Boolean.parseBoolean(config.getConfig().get(IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION))) {
+                logger.debugf("User '%s' required to update password", federatedUser.getUsername());
+                federatedUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
             }
 
             // TODO: Event

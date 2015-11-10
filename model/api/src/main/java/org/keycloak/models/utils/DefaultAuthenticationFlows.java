@@ -1,9 +1,14 @@
 package org.keycloak.models.utils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -20,6 +25,8 @@ public class DefaultAuthenticationFlows {
 
     public static final String CLIENT_AUTHENTICATION_FLOW = "clients";
     public static final String FIRST_BROKER_LOGIN_FLOW = "first broker login";
+
+    public static final String IDP_REVIEW_PROFILE_CONFIG_ALIAS = "review profile config";
 
     public static void addFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm);
@@ -321,23 +328,40 @@ public class DefaultAuthenticationFlows {
         firstBrokerLogin.setTopLevel(true);
         firstBrokerLogin.setBuiltIn(true);
         firstBrokerLogin = realm.addAuthenticationFlow(firstBrokerLogin);
-        // realm.setClientAuthenticationFlow(clients);
+
+        AuthenticatorConfigModel reviewProfileConfig = new AuthenticatorConfigModel();
+        reviewProfileConfig.setAlias(IDP_REVIEW_PROFILE_CONFIG_ALIAS);
+        Map<String, String> config = new HashMap<>();
+        config.put("update.profile.on.first.login", IdentityProviderRepresentation.UPFLM_MISSING);
+        reviewProfileConfig.setConfig(config);
+        reviewProfileConfig = realm.addAuthenticatorConfig(reviewProfileConfig);
 
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
         execution.setParentFlow(firstBrokerLogin.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator("idp-update-profile");
+        execution.setAuthenticator("idp-review-profile");
         execution.setPriority(10);
         execution.setAuthenticatorFlow(false);
+        execution.setAuthenticatorConfig(reviewProfileConfig.getId());
         realm.addAuthenticatorExecution(execution);
+
+
+        AuthenticatorConfigModel createUserIfUniqueConfig = new AuthenticatorConfigModel();
+        createUserIfUniqueConfig.setAlias("create unique user config");
+        config = new HashMap<>();
+        config.put("require.password.update.after.registration", "false");
+        createUserIfUniqueConfig.setConfig(config);
+        createUserIfUniqueConfig = realm.addAuthenticatorConfig(createUserIfUniqueConfig);
 
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(firstBrokerLogin.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
-        execution.setAuthenticator("idp-detect-duplications");
+        execution.setAuthenticator("idp-create-user-if-unique");
         execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
+        execution.setAuthenticatorConfig(createUserIfUniqueConfig.getId());
         realm.addAuthenticatorExecution(execution);
+
 
         AuthenticationFlowModel linkExistingAccountFlow = new AuthenticationFlowModel();
         linkExistingAccountFlow.setTopLevel(false);

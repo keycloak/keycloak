@@ -36,7 +36,6 @@ public class KeycloakArquillianExtension implements LoadableExtension {
                 .service(DeployableContainer.class, CustomUndertowContainer.class);
 
         builder
-                //.service(TestExecutionDecider.class, JiraTestExecutionDecider.class)
                 .service(TestExecutionDecider.class, MigrationTestExecutionDecider.class);
 
         builder

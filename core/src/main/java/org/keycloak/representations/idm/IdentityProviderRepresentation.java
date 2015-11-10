@@ -46,6 +46,7 @@ public class IdentityProviderRepresentation {
      * @see #UPFLM_MISSING
      * @see #UPFLM_OFF
      */
+    @Deprecated
     protected String updateProfileFirstLoginMode = UPFLM_ON;
 
     protected boolean trustEmail;
@@ -107,15 +108,17 @@ public class IdentityProviderRepresentation {
     }
 
     /**
-     * @return see {@link #updateProfileFirstLoginMode}
+     * @deprecated deprecated and replaced by configuration on IdpReviewProfileAuthenticator
      */
+    @Deprecated
     public String getUpdateProfileFirstLoginMode() {
         return updateProfileFirstLoginMode;
     }
 
     /**
-     * @param updateProfileFirstLoginMode see {@link #updateProfileFirstLoginMode}
+     * @deprecated deprecated and replaced by configuration on IdpReviewProfileAuthenticator
      */
+    @Deprecated
     public void setUpdateProfileFirstLoginMode(String updateProfileFirstLoginMode) {
         this.updateProfileFirstLoginMode = updateProfileFirstLoginMode;
     }
