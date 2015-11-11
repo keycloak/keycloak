@@ -112,6 +112,10 @@ public class LoginPage extends AbstractPage {
         return usernameInput.getAttribute("value");
     }
 
+    public boolean isUsernameInputEnabled() {
+        return usernameInput.isEnabled();
+    }
+
     public String getPassword() {
         return passwordInput.getAttribute("value");
     }

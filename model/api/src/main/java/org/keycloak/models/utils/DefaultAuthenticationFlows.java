@@ -25,8 +25,10 @@ public class DefaultAuthenticationFlows {
 
     public static final String CLIENT_AUTHENTICATION_FLOW = "clients";
     public static final String FIRST_BROKER_LOGIN_FLOW = "first broker login";
+    public static final String FIRST_BROKER_LOGIN_HANDLE_EXISTING_SUBFLOW = "Handle Existing Account";
 
     public static final String IDP_REVIEW_PROFILE_CONFIG_ALIAS = "review profile config";
+    public static final String IDP_CREATE_UNIQUE_USER_CONFIG_ALIAS = "create unique user config";
 
     public static void addFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm);
@@ -347,7 +349,7 @@ public class DefaultAuthenticationFlows {
 
 
         AuthenticatorConfigModel createUserIfUniqueConfig = new AuthenticatorConfigModel();
-        createUserIfUniqueConfig.setAlias("create unique user config");
+        createUserIfUniqueConfig.setAlias(IDP_CREATE_UNIQUE_USER_CONFIG_ALIAS);
         config = new HashMap<>();
         config.put("require.password.update.after.registration", "false");
         createUserIfUniqueConfig.setConfig(config);
@@ -366,7 +368,7 @@ public class DefaultAuthenticationFlows {
         AuthenticationFlowModel linkExistingAccountFlow = new AuthenticationFlowModel();
         linkExistingAccountFlow.setTopLevel(false);
         linkExistingAccountFlow.setBuiltIn(true);
-        linkExistingAccountFlow.setAlias("Handle Existing Account");
+        linkExistingAccountFlow.setAlias(FIRST_BROKER_LOGIN_HANDLE_EXISTING_SUBFLOW);
         linkExistingAccountFlow.setDescription("Handle what to do if there is existing account with same email/username like authenticated identity provider");
         linkExistingAccountFlow.setProviderId("basic-flow");
         linkExistingAccountFlow = realm.addAuthenticationFlow(linkExistingAccountFlow);

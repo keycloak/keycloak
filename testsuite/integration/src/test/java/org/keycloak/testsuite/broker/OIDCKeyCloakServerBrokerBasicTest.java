@@ -26,7 +26,7 @@ import static org.junit.Assert.fail;
 /**
  * @author pedroigor
  */
-public class OIDCKeyCloakServerBrokerBasicTest extends AbstractIdentityProviderTest {
+public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityProviderTest {
 
     private static final int PORT = 8082;
 
