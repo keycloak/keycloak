@@ -11,8 +11,6 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.session.PersistentClientSessionModel;
-import org.keycloak.models.session.PersistentUserSessionModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -47,7 +45,6 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.common.util.Time;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -390,6 +387,7 @@ public class ModelToRepresentation {
         rep.setNotBefore(clientModel.getNotBefore());
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
         rep.setClientAuthenticatorType(clientModel.getClientAuthenticatorType());
+        rep.setRegistrationAccessToken(clientModel.getRegistrationSecret());
 
         Set<String> redirectUris = clientModel.getRedirectUris();
         if (redirectUris != null) {

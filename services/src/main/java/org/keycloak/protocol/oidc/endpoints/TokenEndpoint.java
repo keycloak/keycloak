@@ -145,7 +145,7 @@ public class TokenEndpoint {
     }
 
     private void checkClient() {
-        AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event, realm);
+        AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event);
         client = clientAuth.getClient();
         clientAuthAttributes = clientAuth.getClientAuthAttributes();
 
