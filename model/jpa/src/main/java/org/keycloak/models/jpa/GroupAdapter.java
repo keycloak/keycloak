@@ -87,6 +87,13 @@ public class GroupAdapter implements GroupModel {
         return realm.getGroupById(parent.getId());
     }
 
+    @Override
+    public String getParentId() {
+        GroupEntity parent = group.getParent();
+        if (parent == null) return null;
+        return parent.getId();
+    }
+
     public static GroupEntity toEntity(GroupModel model, EntityManager em) {
         if (model instanceof GroupAdapter) {
             return ((GroupAdapter)model).getGroup();
@@ -95,21 +102,22 @@ public class GroupAdapter implements GroupModel {
     }
 
     @Override
-    public void setParent(GroupModel group) {
-        GroupEntity parent = toEntity(group, em);
-        group.setParent(group);
+    public void setParent(GroupModel parent) {
+        if (parent == null) group.setParent(null);
+        else {
+            GroupEntity parentEntity = toEntity(parent, em);
+            group.setParent(parentEntity);
+        }
     }
 
     @Override
     public void addChild(GroupModel subGroup) {
         subGroup.setParent(this);
-
     }
 
     @Override
     public void removeChild(GroupModel subGroup) {
         subGroup.setParent(null);
-
     }
 
     @Override

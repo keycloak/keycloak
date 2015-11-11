@@ -619,4 +619,11 @@ public class RealmAdminResource {
         return new IdentityProvidersResource(realm, session, this.auth, adminEvent);
     }
 
+    @Path("groups")
+    public GroupResource getGroups() {
+        GroupResource resource =  new GroupResource(realm, session, this.auth, adminEvent);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
+
 }

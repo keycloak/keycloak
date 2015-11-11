@@ -131,7 +131,7 @@ public class JpaRealmProvider implements RealmProvider {
     public GroupModel getGroupById(String id, RealmModel realm) {
         GroupEntity groupEntity = em.find(GroupEntity.class, id);
         if (groupEntity == null) return null;
-        if (groupEntity.getRealm().getId().equals(realm.getId())) return null;
+        if (!groupEntity.getRealm().getId().equals(realm.getId())) return null;
         return new GroupAdapter(realm, em, groupEntity);
     }
 

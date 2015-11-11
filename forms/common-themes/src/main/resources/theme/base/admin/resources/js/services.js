@@ -1442,6 +1442,78 @@ module.service('SelectRoleDialog', function($modal) {
     return dialog
 });
 
+module.factory('Group', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId', {
+        realm : '@realm',
+        userId : '@groupId'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+module.factory('GroupChildren', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/children', {
+        realm : '@realm',
+        groupId : '@groupId'
+    });
+});
+
+module.factory('Groups', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups', {
+        realm : '@realm'
+    });
+});
+
+module.factory('GroupRealmRoleMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/role-mappings/realm', {
+        realm : '@realm',
+        groupId : '@groupId'
+    });
+});
+
+module.factory('GroupCompositeRealmRoleMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/role-mappings/realm/composite', {
+        realm : '@realm',
+        groupId : '@groupId'
+    });
+});
+
+module.factory('GroupAvailableRealmRoleMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/role-mappings/realm/available', {
+        realm : '@realm',
+        groupId : '@groupId'
+    });
+});
+
+
+module.factory('GroupClientRoleMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/role-mappings/clients/:client', {
+        realm : '@realm',
+        groupId : '@groupId',
+        client : "@client"
+    });
+});
+
+module.factory('GroupAvailableClientRoleMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/role-mappings/clients/:client/available', {
+        realm : '@realm',
+        groupId : '@groupId',
+        client : "@client"
+    });
+});
+
+module.factory('GroupCompositeClientRoleMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/role-mappings/clients/:client/composite', {
+        realm : '@realm',
+        groupId : '@groupId',
+        client : "@client"
+    });
+});
+
+
+
 
 
 

@@ -1948,11 +1948,18 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public void moveGroup(GroupModel group, GroupModel toParent) {
+        if (group.getParentId() != null) {
+            group.getParent().removeChild(group);
+        }
+        group.setParent(toParent);
+        if (toParent != null) toParent.addChild(group);
+        else addTopLevelGroup(group);
+    }
+
+    @Override
     public GroupModel getGroupById(String id) {
-        GroupEntity groupEntity = em.find(GroupEntity.class, id);
-        if (groupEntity == null) return null;
-        if (groupEntity.getRealm().getId().equals(getId())) return null;
-        return new GroupAdapter(this, em, groupEntity);
+        return session.realms().getGroupById(id, this);
     }
 
     @Override
@@ -1994,12 +2001,29 @@ public class RealmAdapter implements RealmModel {
 
 
         session.users().preRemove(this, group);
+        moveGroup(group, null);
         realm.getGroups().remove(groupEntity);
-        em.createNamedQuery("deleteGroupAttributesByGroup").setParameter("group", group).executeUpdate();
-        em.createNamedQuery("deleteGroupRoleMappingsByGroup").setParameter("group", group).executeUpdate();
+        em.createNamedQuery("deleteGroupAttributesByGroup").setParameter("group", groupEntity).executeUpdate();
+        em.createNamedQuery("deleteGroupRoleMappingsByGroup").setParameter("group", groupEntity).executeUpdate();
         em.remove(groupEntity);
         return true;
 
 
+    }
+
+    @Override
+    public GroupModel createGroup(String name) {
+        GroupEntity groupEntity = new GroupEntity();
+        groupEntity.setId(KeycloakModelUtils.generateId());
+        groupEntity.setName(name);
+        groupEntity.setRealm(realm);
+        em.persist(groupEntity);
+
+        return new GroupAdapter(this, em, groupEntity);
+    }
+
+    @Override
+    public void addTopLevelGroup(GroupModel subGroup) {
+        subGroup.setParent(null);
     }
 }

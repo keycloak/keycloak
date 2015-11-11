@@ -198,6 +198,12 @@ public class GroupAdapter implements GroupModel {
     }
 
     @Override
+    public String getParentId() {
+        if (updated != null) return updated.getParentId();
+        return cached.getParentId();
+    }
+
+    @Override
     public Set<GroupModel> getSubGroups() {
         if (updated != null) return updated.getSubGroups();
         Set<GroupModel> subGroups = new HashSet<>();
@@ -213,6 +219,8 @@ public class GroupAdapter implements GroupModel {
         }
         return subGroups;
     }
+
+
 
     @Override
     public void setParent(GroupModel group) {

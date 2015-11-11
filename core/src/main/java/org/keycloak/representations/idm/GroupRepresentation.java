@@ -12,9 +12,9 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class GroupRepresentation {
-    private String id;
-    private String name;
-    protected Map<String, Object> attributes;
+    protected String id;
+    protected String name;
+    protected Map<String, List<String>>  attributes;
     protected List<String> realmRoles;
     protected Map<String, List<String>> clientRoles;
     protected List<GroupRepresentation> subGroups;
@@ -51,17 +51,12 @@ public class GroupRepresentation {
         this.clientRoles = clientRoles;
     }
 
-    public Map<String, Object> getAttributes() {
+
+    public Map<String, List<String>> getAttributes() {
         return attributes;
     }
 
-    // This method can be removed once we can remove backwards compatibility with Keycloak 1.3 (then getAttributes() can be changed to return Map<String, List<String>> )
-    @JsonIgnore
-    public Map<String, List<String>> getAttributesAsListValues() {
-        return (Map) attributes;
-    }
-
-    public void setAttributes(Map<String, Object> attributes) {
+    public void setAttributes(Map<String, List<String>>  attributes) {
         this.attributes = attributes;
     }
 

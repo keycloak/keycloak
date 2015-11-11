@@ -611,6 +611,15 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public void moveGroup(GroupModel group, GroupModel toParent) {
+        if (group.getParentId() != null) {
+            group.getParent().removeChild(group);
+        }
+        group.setParent(toParent);
+        if (toParent != null) toParent.addChild(group);
+        else addTopLevelGroup(group);
+    }
+    @Override
     public List<GroupModel> getGroups() {
         List<GroupModel> list = new LinkedList<>();
         for (GroupAdapter group : allGroups.values()) {
@@ -1819,4 +1828,13 @@ public class RealmAdapter implements RealmModel {
         return mapper;
     }
 
- }
+    @Override
+    public GroupModel createGroup(String name) {
+        return null;
+    }
+
+    @Override
+    public void addTopLevelGroup(GroupModel subGroup) {
+
+    }
+}

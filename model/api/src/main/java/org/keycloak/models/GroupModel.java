@@ -8,7 +8,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface GroupModel {
+public interface GroupModel extends RoleMapperModel {
     String getId();
 
     String getName();
@@ -41,18 +41,12 @@ public interface GroupModel {
 
     Map<String, List<String>> getAttributes();
 
-    Set<RoleModel> getRealmRoleMappings();
-    Set<RoleModel> getClientRoleMappings(ClientModel app);
-    boolean hasRole(RoleModel role);
-    void grantRole(RoleModel role);
-    Set<RoleModel> getRoleMappings();
-    void deleteRoleMapping(RoleModel role);
-
     GroupModel getParent();
+    String getParentId();
     Set<GroupModel> getSubGroups();
 
     /**
-     * You must also call joinGroup on the parent group.
+     * You must also call addChild on the parent group, addChild on RealmModel if there is no parent group
      *
      * @param group
      */

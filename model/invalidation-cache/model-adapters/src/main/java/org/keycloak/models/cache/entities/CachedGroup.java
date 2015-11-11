@@ -30,7 +30,7 @@ public class CachedGroup implements Serializable {
         this.id = group.getId();
         this.realm = realm.getId();
         this.name = group.getName();
-        if (group.getParent() != null) this.parentId = group.getParent().getId();
+        this.parentId = group.getParentId();
 
         this.attributes.putAll(group.getAttributes());
         for (RoleModel role : group.getRoleMappings()) {

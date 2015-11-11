@@ -192,6 +192,11 @@ public class GroupAdapter extends AbstractMongoAdapter<MongoGroupEntity> impleme
     }
 
     @Override
+    public String getParentId() {
+        return group.getParentId();
+    }
+
+    @Override
     public Set<GroupModel> getSubGroups() {
         Set<GroupModel> subGroups = new HashSet<>();
         for (GroupModel groupModel : realm.getGroups()) {

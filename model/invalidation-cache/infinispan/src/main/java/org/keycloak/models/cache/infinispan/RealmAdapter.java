@@ -1272,7 +1272,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<GroupModel> getGroups() {
         if (updated != null) return updated.getGroups();
-        if (cached.getGroups().isEmpty()) return null;
+        if (cached.getGroups().isEmpty()) return Collections.EMPTY_LIST;
         List<GroupModel> list = new LinkedList<>();
         for (String id : cached.getGroups()) {
             GroupModel group = cacheSession.getGroupById(id, this);
@@ -1299,5 +1299,24 @@ public class RealmAdapter implements RealmModel {
     public boolean removeGroup(GroupModel group) {
         getDelegateForUpdate();
         return updated.removeGroup(group);
+    }
+
+    @Override
+    public GroupModel createGroup(String name) {
+        getDelegateForUpdate();
+        return updated.createGroup(name);
+    }
+
+    @Override
+    public void addTopLevelGroup(GroupModel subGroup) {
+        getDelegateForUpdate();
+        updated.addTopLevelGroup(subGroup);
+
+    }
+
+    @Override
+    public void moveGroup(GroupModel group, GroupModel toParent) {
+        getDelegateForUpdate();
+        updated.moveGroup(group, toParent);
     }
 }

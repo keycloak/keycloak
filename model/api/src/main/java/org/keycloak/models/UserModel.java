@@ -8,7 +8,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UserModel {
+public interface UserModel extends RoleMapperModel {
     String USERNAME = "username";
     String LAST_NAME = "lastName";
     String FIRST_NAME = "firstName";
@@ -93,13 +93,6 @@ public interface UserModel {
     List<UserCredentialValueModel> getCredentialsDirectly();
 
     void updateCredentialDirectly(UserCredentialValueModel cred);
-
-    Set<RoleModel> getRealmRoleMappings();
-    Set<RoleModel> getClientRoleMappings(ClientModel app);
-    boolean hasRole(RoleModel role);
-    void grantRole(RoleModel role);
-    Set<RoleModel> getRoleMappings();
-    void deleteRoleMapping(RoleModel role);
 
     Set<GroupModel> getGroups();
     void joinGroup(GroupModel group);

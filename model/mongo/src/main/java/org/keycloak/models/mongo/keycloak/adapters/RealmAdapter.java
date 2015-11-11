@@ -610,6 +610,34 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public GroupModel createGroup(String name) {
+        MongoGroupEntity group = new MongoGroupEntity();
+        group.setId(KeycloakModelUtils.generateId());
+        group.setName(name);
+        group.setRealmId(getId());
+
+        getMongoStore().insertEntity(group, invocationContext);
+
+        return new GroupAdapter(session, this, group, invocationContext);
+    }
+
+    @Override
+    public void addTopLevelGroup(GroupModel subGroup) {
+        subGroup.setParent(null);
+
+    }
+
+    @Override
+    public void moveGroup(GroupModel group, GroupModel toParent) {
+        if (group.getParentId() != null) {
+            group.getParent().removeChild(group);
+        }
+        group.setParent(toParent);
+        if (toParent != null) toParent.addChild(group);
+        else addTopLevelGroup(group);
+    }
+
+    @Override
     public GroupModel getGroupById(String id) {
         return model.getGroupById(id, this);
     }
@@ -646,7 +674,11 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public boolean removeGroup(GroupModel group) {
+        for (GroupModel subGroup : group.getSubGroups()) {
+            removeGroup(subGroup);
+        }
         session.users().preRemove(this, group);
+        moveGroup(group, null);
         return getMongoStore().removeEntity(MongoGroupEntity.class, group.getId(), invocationContext);
     }
 
