@@ -11,7 +11,8 @@ import org.openqa.selenium.support.FindBy;
  */
 public class RequiredActions extends Authentication {
 
-    public final static String DEFAULT = "_default";
+    public final static String ENABLED = ".enabled";
+    public final static String DEFAULT = ".defaultAction";
     public final static String CONFIGURE_TOTP = "CONFIGURE_TOTP";
     public final static String UPDATE_PROFILE = "UPDATE_PROFILE";
     public final static String TERMS_AND_CONDITIONS = "terms_and_conditions";
@@ -34,12 +35,16 @@ public class RequiredActions extends Authentication {
         }
     }
 
+    private void setRequiredActionEnabledValue(String id, boolean value) {
+        setRequiredActionValue(id + ENABLED, value);
+    }
+
     private void setRequiredActionDefaultValue(String id, boolean value) {
         setRequiredActionValue(id + DEFAULT, value);
     }
 
     public void setTermsAndConditionEnabled(boolean value) {
-        setRequiredActionValue(TERMS_AND_CONDITIONS, value);
+        setRequiredActionEnabledValue(TERMS_AND_CONDITIONS, value);
     }
 
     public void setTermsAndConditionDefaultAction(boolean value) {
@@ -47,7 +52,7 @@ public class RequiredActions extends Authentication {
     }
 
     public void setVerifyEmailEnabled(boolean value) {
-        setRequiredActionValue(VERIFY_EMAIL, value);
+        setRequiredActionEnabledValue(VERIFY_EMAIL, value);
     }
 
     public void setVerifyEmailDefaultAction(boolean value) {
@@ -55,7 +60,7 @@ public class RequiredActions extends Authentication {
     }
 
     public void setUpdatePasswordEnabled(boolean value) {
-        setRequiredActionValue(UPDATE_PASSWORD, value);
+        setRequiredActionEnabledValue(UPDATE_PASSWORD, value);
     }
 
     public void setUpdatePasswordDefaultAction(boolean value) {
@@ -63,7 +68,7 @@ public class RequiredActions extends Authentication {
     }
 
     public void setConfigureTotpEnabled(boolean value) {
-        setRequiredActionValue(CONFIGURE_TOTP, value);
+        setRequiredActionEnabledValue(CONFIGURE_TOTP, value);
     }
 
     public void setConfigureTotpDefaultAction(boolean value) {
@@ -71,7 +76,7 @@ public class RequiredActions extends Authentication {
     }
 
     public void setUpdateProfileEnabled(boolean value) {
-        setRequiredActionValue(UPDATE_PROFILE, value);
+        setRequiredActionEnabledValue(UPDATE_PROFILE, value);
     }
 
     public void setUpdateProfileDefaultAction(boolean value) {
