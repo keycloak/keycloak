@@ -1,9 +1,14 @@
 package org.keycloak.models.utils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -19,6 +24,9 @@ public class DefaultAuthenticationFlows {
     public static final String LOGIN_FORMS_FLOW = "forms";
 
     public static final String CLIENT_AUTHENTICATION_FLOW = "clients";
+    public static final String FIRST_BROKER_LOGIN_FLOW = "first broker login";
+
+    public static final String IDP_REVIEW_PROFILE_CONFIG_ALIAS = "review profile config";
 
     public static void addFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm);
@@ -26,6 +34,7 @@ public class DefaultAuthenticationFlows {
         if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
         if (realm.getFlowByAlias(RESET_CREDENTIALS_FLOW) == null) resetCredentialsFlow(realm);
         if (realm.getFlowByAlias(CLIENT_AUTHENTICATION_FLOW) == null) clientAuthFlow(realm);
+        if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm);
     }
     public static void migrateFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm, true);
@@ -33,6 +42,7 @@ public class DefaultAuthenticationFlows {
         if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
         if (realm.getFlowByAlias(RESET_CREDENTIALS_FLOW) == null) resetCredentialsFlow(realm);
         if (realm.getFlowByAlias(CLIENT_AUTHENTICATION_FLOW) == null) clientAuthFlow(realm);
+        if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm);
     }
 
     public static void registrationFlow(RealmModel realm) {
@@ -305,6 +315,117 @@ public class DefaultAuthenticationFlows {
         execution.setParentFlow(clients.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
         execution.setAuthenticator("client-jwt");
+        execution.setPriority(20);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+    }
+
+    public static void firstBrokerLoginFlow(RealmModel realm) {
+        AuthenticationFlowModel firstBrokerLogin = new AuthenticationFlowModel();
+        firstBrokerLogin.setAlias(FIRST_BROKER_LOGIN_FLOW);
+        firstBrokerLogin.setDescription("Actions taken after first broker login with identity provider account, which is not yet linked to any Keycloak account");
+        firstBrokerLogin.setProviderId("basic-flow");
+        firstBrokerLogin.setTopLevel(true);
+        firstBrokerLogin.setBuiltIn(true);
+        firstBrokerLogin = realm.addAuthenticationFlow(firstBrokerLogin);
+
+        AuthenticatorConfigModel reviewProfileConfig = new AuthenticatorConfigModel();
+        reviewProfileConfig.setAlias(IDP_REVIEW_PROFILE_CONFIG_ALIAS);
+        Map<String, String> config = new HashMap<>();
+        config.put("update.profile.on.first.login", IdentityProviderRepresentation.UPFLM_MISSING);
+        reviewProfileConfig.setConfig(config);
+        reviewProfileConfig = realm.addAuthenticatorConfig(reviewProfileConfig);
+
+        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(firstBrokerLogin.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("idp-review-profile");
+        execution.setPriority(10);
+        execution.setAuthenticatorFlow(false);
+        execution.setAuthenticatorConfig(reviewProfileConfig.getId());
+        realm.addAuthenticatorExecution(execution);
+
+
+        AuthenticatorConfigModel createUserIfUniqueConfig = new AuthenticatorConfigModel();
+        createUserIfUniqueConfig.setAlias("create unique user config");
+        config = new HashMap<>();
+        config.put("require.password.update.after.registration", "false");
+        createUserIfUniqueConfig.setConfig(config);
+        createUserIfUniqueConfig = realm.addAuthenticatorConfig(createUserIfUniqueConfig);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(firstBrokerLogin.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+        execution.setAuthenticator("idp-create-user-if-unique");
+        execution.setPriority(20);
+        execution.setAuthenticatorFlow(false);
+        execution.setAuthenticatorConfig(createUserIfUniqueConfig.getId());
+        realm.addAuthenticatorExecution(execution);
+
+
+        AuthenticationFlowModel linkExistingAccountFlow = new AuthenticationFlowModel();
+        linkExistingAccountFlow.setTopLevel(false);
+        linkExistingAccountFlow.setBuiltIn(true);
+        linkExistingAccountFlow.setAlias("Handle Existing Account");
+        linkExistingAccountFlow.setDescription("Handle what to do if there is existing account with same email/username like authenticated identity provider");
+        linkExistingAccountFlow.setProviderId("basic-flow");
+        linkExistingAccountFlow = realm.addAuthenticationFlow(linkExistingAccountFlow);
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(firstBrokerLogin.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+        execution.setFlowId(linkExistingAccountFlow.getId());
+        execution.setPriority(30);
+        execution.setAuthenticatorFlow(true);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(linkExistingAccountFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("idp-confirm-link");
+        execution.setPriority(10);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(linkExistingAccountFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+        execution.setAuthenticator("idp-email-verification");
+        execution.setPriority(20);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        AuthenticationFlowModel verifyByReauthenticationAccountFlow = new AuthenticationFlowModel();
+        verifyByReauthenticationAccountFlow.setTopLevel(false);
+        verifyByReauthenticationAccountFlow.setBuiltIn(true);
+        verifyByReauthenticationAccountFlow.setAlias("Verify Existing Account by Re-authentication");
+        verifyByReauthenticationAccountFlow.setDescription("Reauthentication of existing account");
+        verifyByReauthenticationAccountFlow.setProviderId("basic-flow");
+        verifyByReauthenticationAccountFlow = realm.addAuthenticationFlow(verifyByReauthenticationAccountFlow);
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(linkExistingAccountFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+        execution.setFlowId(verifyByReauthenticationAccountFlow.getId());
+        execution.setPriority(30);
+        execution.setAuthenticatorFlow(true);
+        realm.addAuthenticatorExecution(execution);
+
+        // password + otp
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(verifyByReauthenticationAccountFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("idp-username-password-form");
+        execution.setPriority(10);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(verifyByReauthenticationAccountFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.OPTIONAL);
+        // TODO: read the requirement from browser authenticator
+//        if (migrate && hasCredentialType(realm, RequiredCredentialModel.TOTP.getType())) {
+//            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+//        }
+        execution.setAuthenticator("auth-otp-form");
         execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);

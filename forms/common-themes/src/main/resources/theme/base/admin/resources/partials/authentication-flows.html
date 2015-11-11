@@ -53,8 +53,8 @@
                         <li data-ng-hide="flow.builtIn"><a href="" ng-click="removeExecution(execution)">Delete</a></li>
                         <li data-ng-hide="flow.builtIn || !execution.authenticationFlow"><a href="" ng-click="addSubFlowExecution(execution)">Add Execution</a></li>
                         <li data-ng-hide="flow.builtIn || !execution.authenticationFlow"><a href="" ng-click="addSubFlow(execution)">Add Flow</a></li>
-                        <li data-ng-show="execution.configurable && execution.authenticationConfig == null"><a href="#/create/authentication/{{realm.realm}}/execution/{{execution.id}}/provider/{{execution.providerId}}">Config</a></li>
-                        <li data-ng-show="execution.configurable && execution.authenticationConfig != null"><a href="#/realms/{{realm.realm}}/authentication/config/{{execution.providerId}}/{{execution.authenticationConfig}}">Config</a></li>
+                        <li data-ng-show="execution.configurable && execution.authenticationConfig == null"><a href="#/create/authentication/{{realm.realm}}/flows/{{flow.id}}/execution/{{execution.id}}/provider/{{execution.providerId}}">Config</a></li>
+                        <li data-ng-show="execution.configurable && execution.authenticationConfig != null"><a href="#/realms/{{realm.realm}}/authentication/flows/{{flow.id}}/config/{{execution.providerId}}/{{execution.authenticationConfig}}">Config</a></li>
                     </ul>
                 </div>
             </td>

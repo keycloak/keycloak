@@ -30,11 +30,11 @@ public class IdentityProviderEntity {
     private String providerId;
     private String name;
     private boolean enabled;
-    private String updateProfileFirstLoginMode;
     private boolean trustEmail;
     private boolean storeToken;
     protected boolean addReadTokenRoleOnCreate;
     private boolean authenticateByDefault;
+    private String firstBrokerLoginFlowId;
 
     private Map<String, String> config = new HashMap<String, String>();
 
@@ -62,20 +62,20 @@ public class IdentityProviderEntity {
         this.enabled = enabled;
     }
 
-    public String getUpdateProfileFirstLoginMode() {
-        return updateProfileFirstLoginMode;
-    }
-
-    public void setUpdateProfileFirstLoginMode(String updateProfileFirstLoginMode) {
-        this.updateProfileFirstLoginMode = updateProfileFirstLoginMode;
-    }
-
     public boolean isAuthenticateByDefault() {
         return authenticateByDefault;
     }
 
     public void setAuthenticateByDefault(boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
+    }
+
+    public String getFirstBrokerLoginFlowId() {
+        return firstBrokerLoginFlowId;
+    }
+
+    public void setFirstBrokerLoginFlowId(String firstBrokerLoginFlowId) {
+        this.firstBrokerLoginFlowId = firstBrokerLoginFlowId;
     }
 
     public boolean isStoreToken() {

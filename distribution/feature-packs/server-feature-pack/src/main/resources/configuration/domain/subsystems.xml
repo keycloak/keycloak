@@ -10,7 +10,7 @@
       <subsystem>ee.xml</subsystem>
       <subsystem>ejb3.xml</subsystem>
       <subsystem>io.xml</subsystem>
-      <subsystem>infinispan.xml</subsystem>
+      <subsystem>keycloak-infinispan.xml</subsystem>
       <subsystem>jaxrs.xml</subsystem>
       <subsystem>jca.xml</subsystem>
       <subsystem>jdr.xml</subsystem>
@@ -41,7 +41,7 @@
       <subsystem>ee.xml</subsystem>
       <subsystem supplement="ha">ejb3.xml</subsystem>
       <subsystem>io.xml</subsystem>
-      <subsystem supplement="ha">infinispan.xml</subsystem>
+      <subsystem supplement="ha">keycloak-infinispan.xml</subsystem>
       <subsystem>jaxrs.xml</subsystem>
       <subsystem>jca.xml</subsystem>
       <subsystem>jdr.xml</subsystem>
@@ -74,7 +74,7 @@
       <subsystem supplement="full">ee.xml</subsystem>
       <subsystem supplement="full">ejb3.xml</subsystem>
       <subsystem>io.xml</subsystem>
-      <subsystem>infinispan.xml</subsystem>
+      <subsystem>keycloak-infinispan.xml</subsystem>
       <subsystem>iiop-openjdk.xml</subsystem>
       <subsystem>jaxrs.xml</subsystem>
       <subsystem>jca.xml</subsystem>
@@ -108,7 +108,7 @@
       <subsystem supplement="full">ee.xml</subsystem>
       <subsystem supplement="full-ha">ejb3.xml</subsystem>
       <subsystem>io.xml</subsystem>
-      <subsystem supplement="ha">infinispan.xml</subsystem>
+      <subsystem supplement="ha">keycloak-infinispan.xml</subsystem>
       <subsystem>iiop-openjdk.xml</subsystem>
       <subsystem>jaxrs.xml</subsystem>
       <subsystem>jca.xml</subsystem>

@@ -10,9 +10,13 @@ import org.keycloak.provider.Provider;
  */
 public interface EmailProvider extends Provider {
 
+    String IDENTITY_PROVIDER_BROKER_CONTEXT = "identityProviderBrokerCtx";
+
     public EmailProvider setRealm(RealmModel realm);
 
     public EmailProvider setUser(UserModel user);
+
+    public EmailProvider setAttribute(String name, Object value);
 
     public void sendEvent(Event event) throws EmailException;
 
@@ -24,6 +28,11 @@ public interface EmailProvider extends Provider {
      * @throws EmailException
      */
     public void sendPasswordReset(String link, long expirationInMinutes) throws EmailException;
+
+    /**
+     * Send to confirm that user wants to link his account with identity broker link
+     */
+    void sendConfirmIdentityBrokerLink(String link, long expirationInMinutes) throws EmailException;
 
     /**
      * Change password email requested by admin

@@ -123,7 +123,8 @@ public class ContainersTestEnricher {
      */
     private void checkServerLog() throws IOException {
         Container container = containers.removeFirst();
-        if (!container.getName().equals("auth-server-undertow")) {
+        if (container.getName().equals("auth-server-wildfly")
+                || container.getName().matches("auth-server-eap.")) {
             String jbossHomePath = container.getContainerConfiguration().getContainerProperties().get("jbossHome");
             log.debug("jbossHome: " + jbossHomePath + "\n");
 
@@ -133,8 +134,8 @@ public class ContainersTestEnricher {
                     = serverLogContent.contains("ERROR")
                     || serverLogContent.contains("SEVERE")
                     || serverLogContent.contains("Exception ");
-                    //There is expected string "Exception" in server log: Adding provider 
-                    //singleton org.keycloak.services.resources.ModelExceptionMapper
+            //There is expected string "Exception" in server log: Adding provider 
+            //singleton org.keycloak.services.resources.ModelExceptionMapper
 
             if (containsError) {
                 throw new RuntimeException(container.getName() + ": Server log contains ERROR.");

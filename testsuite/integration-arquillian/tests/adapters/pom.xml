@@ -19,6 +19,8 @@
         <app.server.management.port.jmx>10199</app.server.management.port.jmx>
         <adapter.test.props>-Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</adapter.test.props>
         <exclude.adapters>-</exclude.adapters>
+        
+        <arquillian.xml.stylesheet>src/main/xslt/arquillian.xsl</arquillian.xml.stylesheet>
     </properties>
     
     <build>
@@ -66,7 +68,13 @@
                                         <includes>
                                             <include>arquillian.xml</include>
                                         </includes>
-                                        <stylesheet>src/main/xslt/arquillian.xsl</stylesheet>
+                                        <stylesheet>${arquillian.xml.stylesheet}</stylesheet>
+                                        <parameters>
+                                            <parameter>
+                                                <name>keycloak.version</name>
+                                                <value>${project.version}</value>
+                                            </parameter>
+                                        </parameters>
                                         <outputDir>${project.build.directory}/dependency</outputDir>
                                     </transformationSet>
                                 </transformationSets>

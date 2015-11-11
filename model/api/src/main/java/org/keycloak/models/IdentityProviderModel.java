@@ -45,14 +45,6 @@ public class IdentityProviderModel implements Serializable {
     private String providerId;
 
     private boolean enabled;
-
-    /**
-     * For possible values see {@link IdentityProviderRepresentation#getUpdateProfileFirstLoginMode()}
-     * @see IdentityProviderRepresentation#UPFLM_ON
-     * @see IdentityProviderRepresentation#UPFLM_MISSING
-     * @see IdentityProviderRepresentation#UPFLM_OFF
-     */
-    protected String updateProfileFirstLoginMode = IdentityProviderRepresentation.UPFLM_ON;
     
     private boolean trustEmail;
 
@@ -63,6 +55,8 @@ public class IdentityProviderModel implements Serializable {
      * Specifies if particular provider should be used by default for authentication even before displaying login screen
      */
     private boolean authenticateByDefault;
+
+    private String firstBrokerLoginFlowId;
 
     /**
      * <p>A map containing the configuration and properties for a specific identity provider instance and implementation. The items
@@ -79,11 +73,11 @@ public class IdentityProviderModel implements Serializable {
         this.alias = model.getAlias();
         this.config = new HashMap<String, String>(model.getConfig());
         this.enabled = model.isEnabled();
-        this.updateProfileFirstLoginMode = model.getUpdateProfileFirstLoginMode();
         this.trustEmail = model.isTrustEmail();
         this.storeToken = model.isStoreToken();
         this.authenticateByDefault = model.isAuthenticateByDefault();
         this.addReadTokenRoleOnCreate = model.addReadTokenRoleOnCreate;
+        this.firstBrokerLoginFlowId = model.getFirstBrokerLoginFlowId();
     }
 
     public String getInternalId() {
@@ -118,20 +112,6 @@ public class IdentityProviderModel implements Serializable {
         this.enabled = enabled;
     }
 
-    /**
-     * @see IdentityProviderRepresentation#getUpdateProfileFirstLoginMode() 
-     */
-    public String getUpdateProfileFirstLoginMode() {
-        return updateProfileFirstLoginMode;
-    }
-
-    /**
-     * @see IdentityProviderRepresentation#setUpdateProfileFirstLoginMode(String) 
-     */
-    public void setUpdateProfileFirstLoginMode(String updateProfileFirstLoginMode) {
-        this.updateProfileFirstLoginMode = updateProfileFirstLoginMode;
-    }
-
     public boolean isStoreToken() {
         return this.storeToken;
     }
@@ -146,6 +126,14 @@ public class IdentityProviderModel implements Serializable {
 
     public void setAuthenticateByDefault(boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
+    }
+
+    public String getFirstBrokerLoginFlowId() {
+        return firstBrokerLoginFlowId;
+    }
+
+    public void setFirstBrokerLoginFlowId(String firstBrokerLoginFlowId) {
+        this.firstBrokerLoginFlowId = firstBrokerLoginFlowId;
     }
 
     public Map<String, String> getConfig() {

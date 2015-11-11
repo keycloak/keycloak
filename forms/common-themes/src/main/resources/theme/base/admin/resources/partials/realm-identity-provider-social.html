@@ -1,4 +1,4 @@
-<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2" data-ng-init="initProvider()">
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <ol class="breadcrumb">
         <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">{{:: 'identity-providers' | translate}}</a></li>
         <li>{{identityProvider.alias}}</li>
@@ -64,19 +64,6 @@
                 <kc-tooltip>{{:: 'identity-provider.enabled.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="updateProfileFirstLoginMode">{{:: 'update-profile-on-first-login' | translate}}</label>
-                <div class="col-md-2">
-                		<div>
-                        <select id="updateProfileFirstLoginMode" ng-model="identityProvider.updateProfileFirstLoginMode" class="form-control">
-                            <option value="on">{{:: 'on' | translate}}</option>
-                            <option value="missing">{{:: 'on-missing-info' | translate}}</option>
-                            <option value="off">{{:: 'off' | translate}}</option>
-                        </select>
-                    </div>
-                </div>
-                <kc-tooltip>{{:: 'update-profile-on-first-login.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group">
                 <label class="col-md-2 control-label" for="trustEmail">{{:: 'trust-email' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="identityProvider.trustEmail" name="identityProvider.trustEmail" id="trustEmail" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
@@ -96,6 +83,19 @@
                     <input class="form-control" id="guiOrder" type="text" ng-model="identityProvider.config.guiOrder">
                 </div>
                 <kc-tooltip>{{:: 'gui-order.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="firstBrokerLoginFlowAlias">{{:: 'first-broker-login-flow' | translate}}</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="firstBrokerLoginFlowAlias"
+                                ng-model="identityProvider.firstBrokerLoginFlowAlias"
+                                ng-options="flow.alias as flow.alias for flow in authFlows"
+                                required>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'first-broker-login-flow.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
 

@@ -30,9 +30,9 @@ import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.saml.SAMLIdentityProvider;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.social.facebook.FacebookIdentityProvider;
@@ -63,7 +63,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
     public void testInstallation() throws Exception {
         RealmModel realm = installTestRealm();
 
-        assertIdentityProviderConfig(realm.getIdentityProviders());
+        assertIdentityProviderConfig(realm, realm.getIdentityProviders());
 
         assertTrue(realm.isIdentityFederationEnabled());
         this.realmManager.removeRealm(realm);
@@ -81,10 +81,10 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
 
         identityProviderModel.getConfig().put("config-added", "value-added");
         identityProviderModel.setEnabled(false);
-        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_OFF);
         identityProviderModel.setTrustEmail(true);
         identityProviderModel.setStoreToken(true);
         identityProviderModel.setAuthenticateByDefault(true);
+        identityProviderModel.setFirstBrokerLoginFlowId(realm.getBrowserFlow().getId());
 
         realm.updateIdentityProvider(identityProviderModel);
 
@@ -96,14 +96,13 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
 
         assertEquals("value-added", identityProviderModel.getConfig().get("config-added"));
         assertFalse(identityProviderModel.isEnabled());
-        assertEquals(IdentityProviderRepresentation.UPFLM_OFF, identityProviderModel.getUpdateProfileFirstLoginMode());
         assertTrue(identityProviderModel.isTrustEmail());
         assertTrue(identityProviderModel.isStoreToken());
         assertTrue(identityProviderModel.isAuthenticateByDefault());
+        assertEquals(identityProviderModel.getFirstBrokerLoginFlowId(), realm.getBrowserFlow().getId());
 
         identityProviderModel.getConfig().remove("config-added");
         identityProviderModel.setEnabled(true);
-        identityProviderModel.setUpdateProfileFirstLoginMode(IdentityProviderRepresentation.UPFLM_MISSING);
         identityProviderModel.setTrustEmail(false);
         identityProviderModel.setAuthenticateByDefault(false);
 
@@ -116,13 +115,12 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
 
         assertFalse(identityProviderModel.getConfig().containsKey("config-added"));
         assertTrue(identityProviderModel.isEnabled());
-        assertEquals(IdentityProviderRepresentation.UPFLM_MISSING, identityProviderModel.getUpdateProfileFirstLoginMode());
         assertFalse(identityProviderModel.isTrustEmail());
         assertFalse(identityProviderModel.isAuthenticateByDefault());
         this.realmManager.removeRealm(realm);
     }
 
-    private void assertIdentityProviderConfig(List<IdentityProviderModel> identityProviders) {
+    private void assertIdentityProviderConfig(RealmModel realm, List<IdentityProviderModel> identityProviders) {
         assertFalse(identityProviders.isEmpty());
 
         Set<String> checkedProviders = new HashSet<String>(getExpectedProviders());
@@ -138,9 +136,9 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
                 } else if (OIDCIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
                     assertOidcIdentityProviderConfig(identityProvider);
                 } else if (FacebookIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                    assertFacebookIdentityProviderConfig(identityProvider);
+                    assertFacebookIdentityProviderConfig(realm, identityProvider);
                 } else if (GitHubIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-                    assertGitHubIdentityProviderConfig(identityProvider);
+                    assertGitHubIdentityProviderConfig(realm, identityProvider);
                 } else if (TwitterIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
                     assertTwitterIdentityProviderConfig(identityProvider);
                 } else if (LinkedInIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
@@ -165,7 +163,6 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals("model-google", config.getAlias());
         assertEquals(GoogleIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
         assertEquals(true, config.isEnabled());
-        assertEquals(IdentityProviderRepresentation.UPFLM_ON, config.getUpdateProfileFirstLoginMode());
         assertEquals(true, config.isTrustEmail());
         assertEquals(false, config.isAuthenticateByDefault());
         assertEquals(true, config.isStoreToken());
@@ -184,7 +181,6 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals("model-saml-signed-idp", config.getAlias());
         assertEquals(SAMLIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
         assertEquals(true, config.isEnabled());
-        assertEquals(IdentityProviderRepresentation.UPFLM_ON, config.getUpdateProfileFirstLoginMode());
         assertEquals(false, config.isAuthenticateByDefault());
         assertEquals(false, config.isTrustEmail());
         assertEquals(false, config.isStoreToken());
@@ -205,7 +201,6 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals("model-oidc-idp", config.getAlias());
         assertEquals(OIDCIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
         assertEquals(false, config.isEnabled());
-        assertEquals(IdentityProviderRepresentation.UPFLM_OFF, config.getUpdateProfileFirstLoginMode());
         assertEquals(false, config.isTrustEmail());
         assertEquals(false, config.isAuthenticateByDefault());
         assertEquals(false, config.isStoreToken());
@@ -213,37 +208,37 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals("clientSecret", config.getClientSecret());
     }
 
-    private void assertFacebookIdentityProviderConfig(IdentityProviderModel identityProvider) {
+    private void assertFacebookIdentityProviderConfig(RealmModel realm, IdentityProviderModel identityProvider) {
         FacebookIdentityProvider facebookIdentityProvider = new FacebookIdentityProviderFactory().create(identityProvider);
         OAuth2IdentityProviderConfig config = facebookIdentityProvider.getConfig();
 
         assertEquals("model-facebook", config.getAlias());
         assertEquals(FacebookIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
         assertEquals(true, config.isEnabled());
-        assertEquals(IdentityProviderRepresentation.UPFLM_OFF, config.getUpdateProfileFirstLoginMode());
         assertEquals(false, config.isTrustEmail());
         assertEquals(false, config.isAuthenticateByDefault());
         assertEquals(false, config.isStoreToken());
         assertEquals("clientId", config.getClientId());
         assertEquals("clientSecret", config.getClientSecret());
+        assertEquals(realm.getBrowserFlow().getId(), identityProvider.getFirstBrokerLoginFlowId());
         assertEquals(FacebookIdentityProvider.AUTH_URL, config.getAuthorizationUrl());
         assertEquals(FacebookIdentityProvider.TOKEN_URL, config.getTokenUrl());
         assertEquals(FacebookIdentityProvider.PROFILE_URL, config.getUserInfoUrl());
     }
 
-    private void assertGitHubIdentityProviderConfig(IdentityProviderModel identityProvider) {
+    private void assertGitHubIdentityProviderConfig(RealmModel realm, IdentityProviderModel identityProvider) {
         GitHubIdentityProvider gitHubIdentityProvider = new GitHubIdentityProviderFactory().create(identityProvider);
         OAuth2IdentityProviderConfig config = gitHubIdentityProvider.getConfig();
 
         assertEquals("model-github", config.getAlias());
         assertEquals(GitHubIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
         assertEquals(true, config.isEnabled());
-        assertEquals(IdentityProviderRepresentation.UPFLM_ON, config.getUpdateProfileFirstLoginMode());
         assertEquals(false, config.isTrustEmail());
         assertEquals(false, config.isAuthenticateByDefault());
         assertEquals(false, config.isStoreToken());
         assertEquals("clientId", config.getClientId());
         assertEquals("clientSecret", config.getClientSecret());
+        assertEquals(realm.getFlowByAlias(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW).getId(), identityProvider.getFirstBrokerLoginFlowId());
         assertEquals(GitHubIdentityProvider.AUTH_URL, config.getAuthorizationUrl());
         assertEquals(GitHubIdentityProvider.TOKEN_URL, config.getTokenUrl());
         assertEquals(GitHubIdentityProvider.PROFILE_URL, config.getUserInfoUrl());
@@ -254,17 +249,16 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         OAuth2IdentityProviderConfig config = liIdentityProvider.getConfig();
 
         assertEquals("model-linkedin", config.getAlias());
-      assertEquals(LinkedInIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
-      assertEquals(true, config.isEnabled());
-        assertEquals(IdentityProviderRepresentation.UPFLM_MISSING, config.getUpdateProfileFirstLoginMode());
+        assertEquals(LinkedInIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
+        assertEquals(true, config.isEnabled());
         assertEquals(false, config.isTrustEmail());
-      assertEquals(false, config.isAuthenticateByDefault());
-      assertEquals(false, config.isStoreToken());
-      assertEquals("clientId", config.getClientId());
-      assertEquals("clientSecret", config.getClientSecret());
-      assertEquals(LinkedInIdentityProvider.AUTH_URL, config.getAuthorizationUrl());
-      assertEquals(LinkedInIdentityProvider.TOKEN_URL, config.getTokenUrl());
-      assertEquals(LinkedInIdentityProvider.PROFILE_URL, config.getUserInfoUrl());
+        assertEquals(false, config.isAuthenticateByDefault());
+        assertEquals(false, config.isStoreToken());
+        assertEquals("clientId", config.getClientId());
+        assertEquals("clientSecret", config.getClientSecret());
+        assertEquals(LinkedInIdentityProvider.AUTH_URL, config.getAuthorizationUrl());
+        assertEquals(LinkedInIdentityProvider.TOKEN_URL, config.getTokenUrl());
+        assertEquals(LinkedInIdentityProvider.PROFILE_URL, config.getUserInfoUrl());
     }
 
     private void assertStackoverflowIdentityProviderConfig(IdentityProviderModel identityProvider) {
@@ -274,7 +268,6 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals("model-stackoverflow", config.getAlias());
         assertEquals(StackoverflowIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
         assertEquals(true, config.isEnabled());
-        assertEquals(IdentityProviderRepresentation.UPFLM_OFF, config.getUpdateProfileFirstLoginMode());
         assertEquals(false, config.isTrustEmail());
         assertEquals(false, config.isAuthenticateByDefault());
         assertEquals(false, config.isStoreToken());
@@ -293,7 +286,6 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals("model-twitter", config.getAlias());
         assertEquals(TwitterIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
         assertEquals(true, config.isEnabled());
-        assertEquals(IdentityProviderRepresentation.UPFLM_OFF, config.getUpdateProfileFirstLoginMode());
         assertEquals(false, config.isTrustEmail());
         assertEquals(false, config.isAuthenticateByDefault());
         assertEquals(true, config.isStoreToken());

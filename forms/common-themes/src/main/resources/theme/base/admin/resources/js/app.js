@@ -199,6 +199,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 providerFactory : function(IdentityProviderFactoryLoader) {
                     return {};
+                },
+                authFlows : function(AuthenticationFlowsLoader) {
+                    return {};
                 }
             },
             controller : 'RealmIdentityProviderCtrl'
@@ -217,6 +220,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 providerFactory : function(IdentityProviderFactoryLoader) {
                     return new IdentityProviderFactoryLoader();
+                },
+                authFlows : function(AuthenticationFlowsLoader) {
+                    return AuthenticationFlowsLoader();
                 }
             },
             controller : 'RealmIdentityProviderCtrl'
@@ -235,6 +241,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 providerFactory : function(IdentityProviderFactoryLoader) {
                     return IdentityProviderFactoryLoader();
+                },
+                authFlows : function(AuthenticationFlowsLoader) {
+                    return AuthenticationFlowsLoader();
                 }
             },
             controller : 'RealmIdentityProviderCtrl'
@@ -1406,11 +1415,14 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmOtpPolicyCtrl'
         })
-        .when('/realms/:realm/authentication/config/:provider/:config', {
+        .when('/realms/:realm/authentication/flows/:flow/config/:provider/:config', {
             templateUrl : resourceUrl + '/partials/authenticator-config.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                flow : function(AuthenticationFlowLoader) {
+                    return AuthenticationFlowLoader();
                 },
                 configType : function(AuthenticationConfigDescriptionLoader) {
                     return AuthenticationConfigDescriptionLoader();
@@ -1421,11 +1433,14 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'AuthenticationConfigCtrl'
         })
-        .when('/create/authentication/:realm/execution/:executionId/provider/:provider', {
+        .when('/create/authentication/:realm/flows/:flow/execution/:executionId/provider/:provider', {
             templateUrl : resourceUrl + '/partials/authenticator-config.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                flow : function(AuthenticationFlowLoader) {
+                    return AuthenticationFlowLoader();
                 },
                 configType : function(AuthenticationConfigDescriptionLoader) {
                     return AuthenticationConfigDescriptionLoader();

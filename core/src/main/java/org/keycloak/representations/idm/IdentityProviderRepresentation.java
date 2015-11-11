@@ -46,12 +46,14 @@ public class IdentityProviderRepresentation {
      * @see #UPFLM_MISSING
      * @see #UPFLM_OFF
      */
+    @Deprecated
     protected String updateProfileFirstLoginMode = UPFLM_ON;
 
     protected boolean trustEmail;
     protected boolean storeToken;
     protected boolean addReadTokenRoleOnCreate;
     protected boolean authenticateByDefault;
+    protected String firstBrokerLoginFlowAlias;
     protected Map<String, String> config = new HashMap<String, String>();
 
     public String getInternalId() {
@@ -106,15 +108,17 @@ public class IdentityProviderRepresentation {
     }
 
     /**
-     * @return see {@link #updateProfileFirstLoginMode}
+     * @deprecated deprecated and replaced by configuration on IdpReviewProfileAuthenticator
      */
+    @Deprecated
     public String getUpdateProfileFirstLoginMode() {
         return updateProfileFirstLoginMode;
     }
 
     /**
-     * @param updateProfileFirstLoginMode see {@link #updateProfileFirstLoginMode}
+     * @deprecated deprecated and replaced by configuration on IdpReviewProfileAuthenticator
      */
+    @Deprecated
     public void setUpdateProfileFirstLoginMode(String updateProfileFirstLoginMode) {
         this.updateProfileFirstLoginMode = updateProfileFirstLoginMode;
     }
@@ -125,6 +129,14 @@ public class IdentityProviderRepresentation {
 
     public void setAuthenticateByDefault(boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
+    }
+
+    public String getFirstBrokerLoginFlowAlias() {
+        return firstBrokerLoginFlowAlias;
+    }
+
+    public void setFirstBrokerLoginFlowAlias(String firstBrokerLoginFlowAlias) {
+        this.firstBrokerLoginFlowAlias = firstBrokerLoginFlowAlias;
     }
 
     public boolean isStoreToken() {

@@ -337,7 +337,7 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
     $scope.supportedLocalesOptions = {
         'multiple' : true,
         'simple_tags' : true,
-        'tags' : ['en', 'de', 'pt-BR', 'it']
+        'tags' : ['en', 'de', 'pt-BR', 'it', 'es']
     };
 
     $scope.$watch('realm.supportedLocales', function(oldVal, newVal) {
@@ -594,19 +594,10 @@ module.controller('IdentityProviderTabCtrl', function(Dialog, $scope, Current, N
     };
 });
 
-module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload, $http, $route, realm, instance, providerFactory, IdentityProvider, serverInfo, $location, Notifications, Dialog) {
+module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload, $http, $route, realm, instance, providerFactory, IdentityProvider, serverInfo, authFlows, $location, Notifications, Dialog) {
     console.log('RealmIdentityProviderCtrl');
 
     $scope.realm = angular.copy(realm);
-
-    $scope.initProvider = function() {
-        if (instance && instance.alias) {
-
-        } else {
-            $scope.identityProvider.updateProfileFirstLoginMode = "on";
-        }
-
-    };
 
     $scope.initSamlProvider = function() {
         $scope.nameIdFormats = [
@@ -658,7 +649,6 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         } else {
             $scope.identityProvider.config.nameIDPolicyFormat = $scope.nameIdFormats[0].format;
             $scope.identityProvider.config.signatureAlgorithm = $scope.signatureAlgorithms[1];
-            $scope.identityProvider.updateProfileFirstLoginMode = "off";
         }
     }
 
@@ -676,8 +666,8 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         $scope.identityProvider.alias = providerFactory.id;
         $scope.identityProvider.providerId = providerFactory.id;
         $scope.identityProvider.enabled = true;
-        $scope.identityProvider.updateProfileFirstLoginMode = "off";
         $scope.identityProvider.authenticateByDefault = false;
+        $scope.identityProvider.firstBrokerLoginFlowAlias = 'first broker login';
         $scope.newIdentityProvider = true;
     }
 
@@ -695,6 +685,13 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     $scope.allProviders = angular.copy(serverInfo.identityProviders);
 
     $scope.configuredProviders = angular.copy(realm.identityProviders);
+
+    $scope.authFlows = [];
+    for (var i=0 ; i<authFlows.length ; i++) {
+        if (authFlows[i].providerId == 'basic-flow') {
+            $scope.authFlows.push(authFlows[i]);
+        }
+    }
 
     $scope.$watch(function() {
         return $location.path();
@@ -1901,8 +1898,9 @@ module.controller('RequiredActionsCtrl', function($scope, realm, unregisteredReq
 
 });
 
-module.controller('AuthenticationConfigCtrl', function($scope, realm, configType, config, AuthenticationConfig, Notifications, Dialog, $location) {
+module.controller('AuthenticationConfigCtrl', function($scope, realm, flow, configType, config, AuthenticationConfig, Notifications, Dialog, $location) {
     $scope.realm = realm;
+    $scope.flow = flow;
     $scope.configType = configType;
     $scope.create = false;
     $scope.config = angular.copy(config);
@@ -1927,7 +1925,7 @@ module.controller('AuthenticationConfigCtrl', function($scope, realm, configType
         }, $scope.config, function() {
             $scope.changed = false;
             config = angular.copy($scope.config);
-            $location.url("/realms/" + realm.realm + '/authentication/config/' + configType.providerId + "/" + config.id);
+            $location.url("/realms/" + realm.realm + '/authentication/flows/' + flow.id + '/config/' + configType.providerId + "/" + config.id);
             Notifications.success("Your changes have been saved.");
         });
     };
@@ -1946,15 +1944,16 @@ module.controller('AuthenticationConfigCtrl', function($scope, realm, configType
         Dialog.confirmDelete($scope.config.alias, 'config', function() {
             AuthenticationConfig.remove({ realm: realm.realm, config : $scope.config.id }, function() {
                 Notifications.success("The config has been deleted.");
-                $location.url("/realms/" + realm.realm + '/authentication/flows');
+                $location.url("/realms/" + realm.realm + '/authentication/flows/' + flow.id);
             });
         });
     };
 
 });
 
-module.controller('AuthenticationConfigCreateCtrl', function($scope, realm, configType, execution, AuthenticationExecutionConfig, Notifications, Dialog, $location) {
+module.controller('AuthenticationConfigCreateCtrl', function($scope, realm, flow, configType, execution, AuthenticationExecutionConfig, Notifications, Dialog, $location) {
     $scope.realm = realm;
+    $scope.flow = flow;
     $scope.create = true;
     $scope.config = { config: {}};
     $scope.configType = configType;
@@ -1972,7 +1971,7 @@ module.controller('AuthenticationConfigCreateCtrl', function($scope, realm, conf
         }, $scope.config, function(data, headers) {
             var l = headers().location;
             var id = l.substring(l.lastIndexOf("/") + 1);
-            var url = "/realms/" + realm.realm + '/authentication/config/' + configType.providerId + "/" + id;
+            var url = "/realms/" + realm.realm + '/authentication/flows/' + flow.id + '/config/' + configType.providerId + "/" + id;
             console.log('redirect url: ' + url);
             $location.url(url);
             Notifications.success("Config has been created.");

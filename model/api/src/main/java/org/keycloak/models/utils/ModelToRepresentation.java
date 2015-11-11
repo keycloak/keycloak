@@ -257,7 +257,7 @@ public class ModelToRepresentation {
         }
 
         for (IdentityProviderModel provider : realm.getIdentityProviders()) {
-            rep.addIdentityProvider(toRepresentation(provider));
+            rep.addIdentityProvider(toRepresentation(realm, provider));
         }
 
         for (IdentityProviderMapperModel mapper : realm.getIdentityProviderMappers()) {
@@ -436,7 +436,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static IdentityProviderRepresentation toRepresentation(IdentityProviderModel identityProviderModel) {
+    public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
         IdentityProviderRepresentation providerRep = new IdentityProviderRepresentation();
 
         providerRep.setInternalId(identityProviderModel.getInternalId());
@@ -444,11 +444,19 @@ public class ModelToRepresentation {
         providerRep.setAlias(identityProviderModel.getAlias());
         providerRep.setEnabled(identityProviderModel.isEnabled());
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
-        providerRep.setUpdateProfileFirstLoginMode(identityProviderModel.getUpdateProfileFirstLoginMode());
         providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
         providerRep.setConfig(identityProviderModel.getConfig());
         providerRep.setAddReadTokenRoleOnCreate(identityProviderModel.isAddReadTokenRoleOnCreate());
+
+        String firstBrokerLoginFlowId = identityProviderModel.getFirstBrokerLoginFlowId();
+        if (firstBrokerLoginFlowId != null) {
+            AuthenticationFlowModel flow = realm.getAuthenticationFlowById(firstBrokerLoginFlowId);
+            if (flow == null) {
+                throw new ModelException("Couldn't find authentication flow with id " + firstBrokerLoginFlowId);
+            }
+            providerRep.setFirstBrokerLoginFlowAlias(flow.getAlias());
+        }
 
         return providerRep;
     }
