@@ -48,8 +48,8 @@
         <dom4j.version>1.6.1</dom4j.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <slf4j.version>1.7.7</slf4j.version>
-        <wildfly.version>9.0.1.Final</wildfly.version>
-        <wildfly.core.version>1.0.1.Final</wildfly.core.version>
+        <wildfly.version>9.0.2.Final</wildfly.version>
+        <wildfly.core.version>1.0.2.Final</wildfly.core.version>
         <wildfly.build-tools.version>1.0.0.Final</wildfly.build-tools.version>
 
         <!-- this is EAP 6.4 alpha, publicly available -->

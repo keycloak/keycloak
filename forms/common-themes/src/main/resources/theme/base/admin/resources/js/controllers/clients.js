@@ -877,7 +877,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
     $scope.viewImportDetails = function() {
         $modal.open({
             templateUrl: resourceUrl + '/partials/modal/view-object.html',
-            controller: 'JsonModalCtrl',
+            controller: 'ObjectModalCtrl',
             resolve: {
                 object: function () {
                     return $scope.client;

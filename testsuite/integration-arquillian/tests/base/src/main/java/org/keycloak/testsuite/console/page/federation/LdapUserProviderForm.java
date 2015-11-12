@@ -1,5 +1,8 @@
 package org.keycloak.testsuite.console.page.federation;
 
+import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
+
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
@@ -8,10 +11,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
-
 /**
- * Created by fkiss.
+ * @author fkiss, pdrozd
  */
 public class LdapUserProviderForm extends Form {
 
@@ -24,23 +25,32 @@ public class LdapUserProviderForm extends Form {
     @FindBy(id = "usernameLDAPAttribute")
     private WebElement usernameLDAPAttributeInput;
 
+    @FindBy(id = "rdnLDAPAttribute")
+    private WebElement rdnLDAPAttributeInput;
+
+    @FindBy(id = "uuidLDAPAttribute")
+    private WebElement uuidLDAPAttributeInput;
+
     @FindBy(id = "userObjectClasses")
     private WebElement userObjectClassesInput;
 
     @FindBy(id = "ldapConnectionUrl")
     private WebElement ldapConnectionUrlInput;
 
-    @FindBy(id = "ldapBaseDn")
-    private WebElement ldapBaseDnInput;
-
     @FindBy(id = "ldapUsersDn")
     private WebElement ldapUserDnInput;
+
+    @FindBy(id = "authType")
+    private Select authTypeSelect;
 
     @FindBy(id = "ldapBindDn")
     private WebElement ldapBindDnInput;
 
     @FindBy(id = "ldapBindCredential")
     private WebElement ldapBindCredentialInput;
+
+    @FindBy(id = "searchScope")
+    private Select searchScopeSelect;
 
     @FindBy(id = "kerberosRealm")
     private WebElement kerberosRealmInput;
@@ -72,59 +82,173 @@ public class LdapUserProviderForm extends Form {
     @FindByJQuery("a:contains('Test authentication')")
     private WebElement testAuthenticationButton;
 
-    @FindByJQuery("div[class='onoffswitch']:eq(0)")
+    @FindByJQuery("a:contains('Synchronize changed users')")
+    private WebElement synchronizeChangedUsersButton;
+
+    @FindByJQuery("button:contains('Synchronize all users')")
+    private WebElement synchronizeAllUsersButton;
+
+    @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='syncRegistrations']]")
     private OnOffSwitch syncRegistrations;
 
-    @FindByJQuery("div[class='onoffswitch']:eq(1)")
+    @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='connectionPooling']]")
     private OnOffSwitch connectionPooling;
 
-    @FindByJQuery("div[class='onoffswitch']:eq(2)")
+    @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='pagination']]")
     private OnOffSwitch pagination;
 
-    @FindByJQuery("div[class='onoffswitch']:eq(3)")
+    @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='userAccountControlsAfterPasswordUpdate']]")
+    private OnOffSwitch enableAccountAfterPasswordUpdate;
+
+    @FindBy(xpath = "//div[contains(@class,'onoffswitch') and ./input[@id='allowKerberosAuthentication']]")
     private OnOffSwitch allowKerberosAuth;
 
-    @FindByJQuery("div[class='onoffswitch']:eq(4)")
+    @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='debug']]")
     private OnOffSwitch debug;
 
-    @FindByJQuery("div[class='onoffswitch']:eq(5)")
+    @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='useKerberosForPasswordAuthentication']]")
     private OnOffSwitch useKerberosForPwdAuth;
 
-    @FindByJQuery("div[class='onoffswitch']:eq(6)")
+    @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='compositeSwitch']]")
     private OnOffSwitch periodicFullSync;
 
-    @FindByJQuery("div[class='onoffswitch']:eq(7)")
+    @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='changedSyncEnabled']]")
     private OnOffSwitch periodicChangedUsersSync;
 
-    @FindByJQuery("button:contains('Save')")
-    private WebElement saveButton;
+    public void setConsoleDisplayNameInput(String name) {
+        setInputValue(consoleDisplayNameInput, name);
+    }
 
-    public void selectEditMode(String mode){
+    public void setPriorityInput(Integer priority) {
+        setInputValue(priorityInput, String.valueOf(priority));
+    }
+
+    public void setUsernameLDAPAttributeInput(String usernameLDAPAttribute) {
+        setInputValue(usernameLDAPAttributeInput, usernameLDAPAttribute);
+    }
+
+    public void setRdnLDAPAttributeInput(String rdnLDAPAttribute) {
+        setInputValue(rdnLDAPAttributeInput, rdnLDAPAttribute);
+    }
+
+    public void setUuidLDAPAttributeInput(String uuidLDAPAttribute) {
+        setInputValue(uuidLDAPAttributeInput, uuidLDAPAttribute);
+    }
+
+    public void setUserObjectClassesInput(String userObjectClasses) {
+        setInputValue(userObjectClassesInput, userObjectClasses);
+    }
+
+    public void setLdapConnectionUrlInput(String ldapConnectionUrl) {
+        setInputValue(ldapConnectionUrlInput, ldapConnectionUrl);
+    }
+
+    public void setLdapUserDnInput(String ldapUserDn) {
+        setInputValue(ldapUserDnInput, ldapUserDn);
+    }
+
+    public void setLdapBindDnInput(String ldapBindDn) {
+        setInputValue(ldapBindDnInput, ldapBindDn);
+    }
+
+    public void setLdapBindCredentialInput(String ldapBindCredential) {
+        setInputValue(ldapBindCredentialInput, ldapBindCredential);
+    }
+
+    public void setKerberosRealmInput(String kerberosRealm) {
+        waitAjaxForElement(kerberosRealmInput);
+        setInputValue(kerberosRealmInput, kerberosRealm);
+    }
+
+    public void setServerPrincipalInput(String serverPrincipal) {
+        waitAjaxForElement(serverPrincipalInput);
+        setInputValue(serverPrincipalInput, serverPrincipal);
+    }
+
+    public void setKeyTabInput(String keyTab) {
+        waitAjaxForElement(keyTabInput);
+        setInputValue(keyTabInput, keyTab);
+    }
+
+    public void setBatchSizeForSyncInput(String batchSizeForSync) {
+        setInputValue(batchSizeForSyncInput, batchSizeForSync);
+    }
+
+    public void selectEditMode(String mode) {
         waitGuiForElement(By.id("editMode"));
         editModeSelect.selectByVisibleText(mode);
     }
 
-    public void selectVendor(String vendor){
-        waitGuiForElement(By.id("editMode"));
+    public void selectVendor(String vendor) {
+        waitGuiForElement(By.id("vendor"));
         vendorSelect.selectByVisibleText(vendor);
     }
 
-    public void configureLdap(String displayName, String editMode, String vendor, String connectionUrl, String userDN, String ldapBindDn, String ldapBindCredential){
-        consoleDisplayNameInput.sendKeys(displayName);
-        editModeSelect.selectByVisibleText(editMode);
-        selectVendor(vendor);
-        ldapConnectionUrlInput.sendKeys(connectionUrl);
-        ldapUserDnInput.sendKeys(userDN);
-        ldapBindDnInput.sendKeys(ldapBindDn);
-        ldapBindCredentialInput.sendKeys(ldapBindCredential);
-        saveButton.click();
+    public void selectAuthenticationType(String authenticationType) {
+        waitGuiForElement(By.id("authType"));
+        authTypeSelect.selectByVisibleText(authenticationType);
     }
 
-    public void testConnection(){
+    public void selectSearchScope(String searchScope) {
+        waitGuiForElement(By.id("searchScope"));
+        searchScopeSelect.selectByVisibleText(searchScope);
+    }
+
+    public void setSyncRegistrationsEnabled(boolean syncRegistrationsEnabled) {
+        this.syncRegistrations.setOn(syncRegistrationsEnabled);
+    }
+
+    public void setConnectionPoolingEnabled(boolean connectionPoolingEnabled) {
+        this.connectionPooling.setOn(connectionPoolingEnabled);
+    }
+
+    public void setPaginationEnabled(boolean paginationEnabled) {
+        this.pagination.setOn(paginationEnabled);
+    }
+
+    public void setAccountAfterPasswordUpdateEnabled(boolean enabled) {
+        if ((!enableAccountAfterPasswordUpdate.isOn() && enabled)
+                || !enabled && enableAccountAfterPasswordUpdate.isOn()) {
+            driver.findElement(By
+                    .xpath("//div[contains(@class,'onoffswitch') and ./input[@id='userAccountControlsAfterPasswordUpdate']]"))
+                    .findElements(By.tagName("span")).get(0).click();
+        }
+    }
+
+    public void setAllowKerberosAuthEnabled(boolean enabled) {
+        if ((!allowKerberosAuth.isOn() && enabled) || !enabled && allowKerberosAuth.isOn()) {
+            driver.findElement(
+                    By.xpath("//div[contains(@class,'onoffswitch') and ./input[@id='allowKerberosAuthentication']]"))
+                    .findElements(By.tagName("span")).get(0).click();
+        }
+    }
+
+    public void setDebugEnabled(boolean debugEnabled) {
+        this.debug.setOn(debugEnabled);
+    }
+
+    public void setUseKerberosForPwdAuthEnabled(boolean useKerberosForPwdAuthEnabled) {
+        this.useKerberosForPwdAuth.setOn(useKerberosForPwdAuthEnabled);
+    }
+
+    public void setPeriodicFullSyncEnabled(boolean periodicFullSyncEnabled) {
+        this.periodicFullSync.setOn(periodicFullSyncEnabled);
+    }
+
+    public void setPeriodicChangedUsersSyncEnabled(boolean periodicChangedUsersSyncEnabled) {
+        this.periodicChangedUsersSync.setOn(periodicChangedUsersSyncEnabled);
+    }
+
+    public void testConnection() {
         testConnectionButton.click();
     }
 
-    public void testAuthentication(){
+    public void testAuthentication() {
         testAuthenticationButton.click();
+    }
+
+    public void synchronizeAllUsers() {
+        waitAjaxForElement(synchronizeAllUsersButton);
+        synchronizeAllUsersButton.click();
     }
 }

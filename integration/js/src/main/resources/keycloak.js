@@ -153,23 +153,23 @@
                 + '&response_type=code';
 
             if (options && options.prompt) {
-                url += '&prompt=' + options.prompt;
+                url += '&prompt=' + encodeURIComponent(options.prompt);
             }
 
             if (options && options.loginHint) {
-                url += '&login_hint=' + options.loginHint;
+                url += '&login_hint=' + encodeURIComponent(options.loginHint);
             }
 
             if (options && options.idpHint) {
-                url += '&kc_idp_hint=' + options.idpHint;
+                url += '&kc_idp_hint=' + encodeURIComponent(options.idpHint);
             }
 
             if (options && options.scope) {
-                url += '&scope=' + options.scope;
+                url += '&scope=' + encodeURIComponent(options.scope);
             }
 
             if (options && options.locale) {
-                url += '&ui_locales=' + options.locale;
+                url += '&ui_locales=' + encodeURIComponent(options.locale);
             }
 
             return url;
