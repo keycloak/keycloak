@@ -57,7 +57,7 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
         private WebElement rolesLink;
         @FindBy(partialLinkText = "Identity Providers")
         private WebElement identityProvidersLink;
-        @FindBy(partialLinkText = "User Feferation")
+        @FindBy(partialLinkText = "User Federation")
         private WebElement userFederationLink;
         @FindBy(partialLinkText = "Authentication")
         private WebElement authenticationLink;

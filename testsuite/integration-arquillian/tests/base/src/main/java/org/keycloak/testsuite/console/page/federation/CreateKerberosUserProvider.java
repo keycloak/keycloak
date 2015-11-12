@@ -5,23 +5,24 @@ import org.keycloak.testsuite.console.page.AdminConsoleCreate;
 
 /**
  *
- * @author tkyjovsk
+ * @author pdrozd
  */
-public class CreateLdapUserProvider extends AdminConsoleCreate {
+public class CreateKerberosUserProvider extends AdminConsoleCreate {
 
     @Page
-    private LdapUserProviderForm form;
+    private KerberosUserProviderForm form;
 
-    public CreateLdapUserProvider() {
+    public CreateKerberosUserProvider() {
         setEntity("user-federation");
     }
 
     @Override
     public String getUriFragment() {
-        return super.getUriFragment() + "/providers/ldap";
+        return super.getUriFragment() + "/providers/kerberos";
     }
 
-    public LdapUserProviderForm form() {
+    public KerberosUserProviderForm form() {
         return form;
     }
+
 }
