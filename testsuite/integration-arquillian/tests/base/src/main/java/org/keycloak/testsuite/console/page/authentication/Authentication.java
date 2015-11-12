@@ -3,7 +3,7 @@ package org.keycloak.testsuite.console.page.authentication;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.util.WaitUtils.*;
 
 /**
  * @author tkyjovsk
@@ -20,6 +20,9 @@ public class Authentication extends AdminConsoleRealm {
     @FindBy(xpath = "//div[contains(@class, 'alert-success')]")
     private WebElement success;
     
+    @FindBy(xpath = "//button[@class='close']/span")
+    private WebElement close;
+    
     public String getSuccessMessage() {
         waitAjaxForElement(success);
         return success.getText();
@@ -28,6 +31,13 @@ public class Authentication extends AdminConsoleRealm {
     public String getErrorMessage() {
         waitAjaxForElement(error);
         return error.getText();
+    }
+    
+    public void closeNotification() {
+        if (close.isDisplayed()) {
+            close.click();
+        }
+        waitAjaxForElementNotVisible(close);
     }
     
     public AuthenticationTabs tabs() {
