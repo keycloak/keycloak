@@ -17,6 +17,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -36,6 +37,7 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
@@ -676,7 +678,7 @@ public class UsersResource {
 
     }
 
-    /**
+     /**
      * Set up a temporary password for the user
      *
      * User will have to reset the temporary password next time they log in.
@@ -910,5 +912,58 @@ public class UsersResource {
 
         return clientSession;
     }
+
+    @GET
+    @Path("{id}/groups")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<GroupRepresentation> groupMembership(@PathParam("id") String id) {
+        auth.requireView();
+
+        UserModel user = session.users().getUserById(id, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        List<GroupRepresentation> memberships = new LinkedList<>();
+        for (GroupModel group : user.getGroups()) {
+            memberships.add(ModelToRepresentation.toRepresentation(group, false));
+        }
+        return memberships;
+    }
+
+    @DELETE
+    @Path("{id}/groups/{groupId}")
+    @NoCache
+    public void removeMembership(@PathParam("id") String id, @PathParam("groupId") String groupId) {
+        auth.requireManage();
+
+        UserModel user = session.users().getUserById(id, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        GroupModel group = session.realms().getGroupById(groupId, realm);
+        if (group == null) {
+            throw new NotFoundException("Group not found");
+        }
+        if (user.isMemberOf(group)) user.leaveGroup(group);
+    }
+
+    @PUT
+    @Path("{id}/groups/{groupId}")
+    @NoCache
+    public void joinGroup(@PathParam("id") String id, @PathParam("groupId") String groupId) {
+        auth.requireManage();
+
+        UserModel user = session.users().getUserById(id, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        GroupModel group = session.realms().getGroupById(groupId, realm);
+        if (group == null) {
+            throw new NotFoundException("Group not found");
+        }
+        if (!user.isMemberOf(group)) user.joinGroup(group);
+    }
+
 
 }
