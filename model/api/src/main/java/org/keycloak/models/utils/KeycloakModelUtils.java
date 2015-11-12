@@ -3,6 +3,7 @@ package org.keycloak.models.utils;
 import org.bouncycastle.openssl.PEMWriter;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -279,6 +280,24 @@ public final class KeycloakModelUtils {
         return false;
     }
 
+    /**
+     *
+     * @param groups
+     * @param targetGroup
+     * @return true if targetGroup is in groups (directly or indirectly via parent child relationship)
+     */
+    public static boolean isMember(Set<GroupModel> groups, GroupModel targetGroup) {
+        if (groups.contains(targetGroup)) return true;
+
+        for (GroupModel mapping : groups) {
+            GroupModel child = mapping;
+            while(child.getParent() != null) {
+                if (child.getParent().equals(targetGroup)) return true;
+                child = child.getParent();
+            }
+        }
+        return false;
+    }
     // USER FEDERATION RELATED STUFF
 
     /**

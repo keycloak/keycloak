@@ -4,6 +4,7 @@ import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.models.cache.RealmCache;
 import org.keycloak.models.cache.entities.CachedClient;
+import org.keycloak.models.cache.entities.CachedGroup;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRole;
 
@@ -102,10 +103,47 @@ public class InfinispanRealmCache implements RealmCache {
     }
 
     @Override
+    public CachedGroup getGroup(String id) {
+        if (!enabled) return null;
+        return get(id, CachedGroup.class);
+    }
+
+    @Override
+    public void invalidateGroup(CachedGroup role) {
+        logger.tracev("Removing group {0}", role.getId());
+        cache.remove(role.getId());
+
+    }
+
+    @Override
+    public void addCachedGroup(CachedGroup role) {
+        if (!enabled) return;
+        logger.tracev("Adding group {0}", role.getId());
+        cache.put(role.getId(), role);
+
+    }
+
+    @Override
+    public void invalidateCachedGroupById(String id) {
+        logger.tracev("Removing group {0}", id);
+        cache.remove(id);
+
+    }
+
+    @Override
+    public void invalidateGroupById(String id) {
+        logger.tracev("Removing group {0}", id);
+        cache.remove(id);
+
+    }
+
+    @Override
     public CachedRole getRole(String id) {
         if (!enabled) return null;
         return get(id, CachedRole.class);
     }
+
+
 
     @Override
     public void invalidateRole(CachedRole role) {

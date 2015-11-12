@@ -25,12 +25,16 @@ public interface UserProvider extends Provider {
     UserModel getUserById(String id, RealmModel realm);
     UserModel getUserByUsername(String username, RealmModel realm);
     UserModel getUserByEmail(String email, RealmModel realm);
+
+    List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults);
+
     UserModel getUserByFederatedIdentity(FederatedIdentityModel socialLink, RealmModel realm);
     UserModel getUserByServiceAccountClient(ClientModel client);
     List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts);
 
     // Service account is included for counts
     int getUsersCount(RealmModel realm);
+    List<UserModel> getGroupMembers(RealmModel realm, GroupModel group);
     List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts);
     List<UserModel> searchForUser(String search, RealmModel realm);
     List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults);
@@ -50,6 +54,7 @@ public interface UserProvider extends Provider {
     void preRemove(RealmModel realm, UserFederationProviderModel link);
 
     void preRemove(RealmModel realm, RoleModel role);
+    void preRemove(RealmModel realm, GroupModel group);
 
     void preRemove(RealmModel realm, ClientModel client);
     void preRemove(ClientModel realm, ProtocolMapperModel protocolMapper);

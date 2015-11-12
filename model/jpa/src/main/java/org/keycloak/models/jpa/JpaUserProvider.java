@@ -3,6 +3,7 @@ package org.keycloak.models.jpa;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -175,6 +176,8 @@ public class JpaUserProvider implements UserProvider {
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUsersByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteUserGroupMembershipByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
     }
 
     @Override
@@ -223,6 +226,25 @@ public class JpaUserProvider implements UserProvider {
         em.createNamedQuery("deleteUserConsentProtMappersByProtocolMapper")
                 .setParameter("protocolMapperId", protocolMapper.getId())
                 .executeUpdate();
+    }
+
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("groupMembership", UserEntity.class);
+        query.setParameter("groupId", group.getId());
+        List<UserEntity> results = query.getResultList();
+
+        List<UserModel> users = new ArrayList<UserModel>();
+        for (UserEntity user : results) {
+            users.add(new UserAdapter(realm, em, user));
+        }
+        return users;
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, GroupModel group) {
+        em.createNamedQuery("deleteUserGroupMembershipsByGroup").setParameter("groupId", group.getId()).executeUpdate();
+
     }
 
     @Override
@@ -321,6 +343,25 @@ public class JpaUserProvider implements UserProvider {
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
         for (UserEntity entity : results) users.add(new UserAdapter(realm, em, entity));
+        return users;
+    }
+
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("groupMembership", UserEntity.class);
+        query.setParameter("groupId", group.getId());
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != -1) {
+            query.setMaxResults(maxResults);
+        }
+        List<UserEntity> results = query.getResultList();
+
+        List<UserModel> users = new ArrayList<UserModel>();
+        for (UserEntity user : results) {
+            users.add(new UserAdapter(realm, em, user));
+        }
         return users;
     }
 

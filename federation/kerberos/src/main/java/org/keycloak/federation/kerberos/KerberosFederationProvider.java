@@ -12,6 +12,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.models.CredentialValidationOutput;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -102,6 +103,11 @@ public class KerberosFederationProvider implements UserFederationProvider {
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
+
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, GroupModel group) {
 
     }
 

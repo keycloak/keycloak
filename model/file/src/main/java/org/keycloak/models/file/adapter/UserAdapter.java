@@ -21,6 +21,7 @@ import org.keycloak.models.ClientModel;
 
 import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.UserConsentModel;
@@ -59,6 +60,7 @@ public class UserAdapter implements UserModel, Comparable {
     private final RealmModel realm;
 
     private final Set<RoleModel> allRoles = new HashSet<RoleModel>();
+    private final Set<GroupModel> allGroups = new HashSet<GroupModel>();
 
     public UserAdapter(RealmModel realm, UserEntity userEntity, InMemoryModel inMemoryModel) {
         this.user = userEntity;
@@ -465,6 +467,29 @@ public class UserAdapter implements UserModel, Comparable {
         credentialEntity.setAlgorithm(credModel.getAlgorithm());
         credentialEntity.setDigits(credModel.getDigits());
         credentialEntity.setPeriod(credModel.getPeriod());
+    }
+
+    @Override
+    public Set<GroupModel> getGroups() {
+        return Collections.unmodifiableSet(allGroups);
+    }
+
+    @Override
+    public void joinGroup(GroupModel group) {
+        allGroups.add(group);
+
+    }
+
+    @Override
+    public void leaveGroup(GroupModel group) {
+        if (user == null || group == null) return;
+        allGroups.remove(group);
+
+    }
+
+    @Override
+    public boolean isMemberOf(GroupModel group) {
+        return KeycloakModelUtils.isMember(getGroups(), group);
     }
 
     @Override

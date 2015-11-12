@@ -21,6 +21,7 @@ public class UserEntity extends AbstractIdentifiableEntity {
     private String realmId;
 
     private List<String> roleIds;
+    private List<String> groupIds;
 
     private Map<String, List<String>> attributes;
     private List<String> requiredActions;
@@ -156,6 +157,14 @@ public class UserEntity extends AbstractIdentifiableEntity {
 
     public void setServiceAccountClientLink(String serviceAccountClientLink) {
         this.serviceAccountClientLink = serviceAccountClientLink;
+    }
+
+    public List<String> getGroupIds() {
+        return groupIds;
+    }
+
+    public void setGroupIds(List<String> groupIds) {
+        this.groupIds = groupIds;
     }
 }
 

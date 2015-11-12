@@ -47,6 +47,7 @@ public class RealmRepresentation {
     protected String certificate;
     protected String codeSecret;
     protected RolesRepresentation roles;
+    protected List<GroupRepresentation> groups;
     protected List<String> defaultRoles;
     @Deprecated
     protected Set<String> requiredCredentials;
@@ -774,5 +775,13 @@ public class RealmRepresentation {
 
     public void setClientAuthenticationFlow(String clientAuthenticationFlow) {
         this.clientAuthenticationFlow = clientAuthenticationFlow;
+    }
+
+    public List<GroupRepresentation> getGroups() {
+        return groups;
+    }
+
+    public void setGroups(List<GroupRepresentation> groups) {
+        this.groups = groups;
     }
 }

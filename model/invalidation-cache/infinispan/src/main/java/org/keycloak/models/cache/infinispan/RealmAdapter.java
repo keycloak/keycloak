@@ -1262,4 +1262,61 @@ public class RealmAdapter implements RealmModel {
         if (updated != null) return updated.getRequiredActionProviderByAlias(alias);
         return cached.getRequiredActionProvidersByAlias().get(alias);
     }
+
+    @Override
+    public GroupModel getGroupById(String id) {
+        if (updated != null) return updated.getGroupById(id);
+        return cacheSession.getGroupById(id, this);
+    }
+
+    @Override
+    public List<GroupModel> getGroups() {
+        if (updated != null) return updated.getGroups();
+        if (cached.getGroups().isEmpty()) return Collections.EMPTY_LIST;
+        List<GroupModel> list = new LinkedList<>();
+        for (String id : cached.getGroups()) {
+            GroupModel group = cacheSession.getGroupById(id, this);
+            if (group == null) continue;
+            list.add(group);
+        }
+        return list;
+    }
+
+    @Override
+    public List<GroupModel> getTopLevelGroups() {
+        List<GroupModel> all = getGroups();
+        Iterator<GroupModel> it = all.iterator();
+        while (it.hasNext()) {
+            GroupModel group = it.next();
+            if (group.getParent() != null) {
+                it.remove();
+            }
+        }
+        return all;
+    }
+
+    @Override
+    public boolean removeGroup(GroupModel group) {
+        getDelegateForUpdate();
+        return updated.removeGroup(group);
+    }
+
+    @Override
+    public GroupModel createGroup(String name) {
+        getDelegateForUpdate();
+        return updated.createGroup(name);
+    }
+
+    @Override
+    public void addTopLevelGroup(GroupModel subGroup) {
+        getDelegateForUpdate();
+        updated.addTopLevelGroup(subGroup);
+
+    }
+
+    @Override
+    public void moveGroup(GroupModel group, GroupModel toParent) {
+        getDelegateForUpdate();
+        updated.moveGroup(group, toParent);
+    }
 }

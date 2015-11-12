@@ -25,6 +25,7 @@
     <script src="${resourceUrl}/lib/angular/angular-sanitize.js"></script>
     <script src="${resourceUrl}/lib/angular/angular-translate.js"></script>
     <script src="${resourceUrl}/lib/angular/angular-translate-loader-url.js"></script>
+    <script src="${resourceUrl}/lib/angular/treeview/angular.treeview.js"></script>
     <script src="${resourceUrl}/lib/angular/ui-bootstrap-tpls-0.11.0.js"></script>
 
     <script src="${resourceUrl}/lib/angular/select2.js" type="text/javascript"></script>
@@ -37,6 +38,7 @@
     <script src="${resourceUrl}/js/controllers/realm.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/controllers/clients.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/controllers/users.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/js/controllers/groups.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/loaders.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/services.js" type="text/javascript"></script>
 </head>

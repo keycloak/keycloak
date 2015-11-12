@@ -166,6 +166,16 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        return session.userStorage().getGroupMembers(realm, group, firstResult, maxResults);
+    }
+
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
+        return getGroupMembers(realm, group, -1, -1);
+    }
+
+    @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
         UserModel user = session.userStorage().getUserByUsername(username.toLowerCase(), realm);
         if (user != null) {
@@ -351,6 +361,16 @@ public class UserFederationManager implements UserProvider {
     @Override
     public void preRemove(RealmModel realm, UserFederationProviderModel model) {
         session.userStorage().preRemove(realm, model);
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, GroupModel group) {
+        for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
+            UserFederationProvider fed = getFederationProvider(federation);
+            fed.preRemove(realm, group);
+        }
+        session.userStorage().preRemove(realm, group);
+
     }
 
     @Override
