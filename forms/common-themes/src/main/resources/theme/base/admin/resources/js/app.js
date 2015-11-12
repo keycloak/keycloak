@@ -447,6 +447,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'UserRoleMappingCtrl'
         })
+        .when('/realms/:realm/users/:user/groups', {
+            templateUrl : resourceUrl + '/partials/user-group-membership.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                },
+                groups : function(GroupListLoader) {
+                    return GroupListLoader();
+                }
+            },
+            controller : 'UserGroupMembershipCtrl'
+        })
         .when('/realms/:realm/users/:user/sessions', {
             templateUrl : resourceUrl + '/partials/user-sessions.html',
             resolve : {

@@ -60,10 +60,25 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ModelToRepresentation {
+    public static void buildGroupPath(StringBuilder sb, GroupModel group) {
+        if (group.getParent() != null) {
+            buildGroupPath(sb, group.getParent());
+        }
+        sb.append('/').append(group.getName());
+    }
+
+    public static String buildGroupPath(GroupModel group) {
+        StringBuilder sb = new StringBuilder();
+        buildGroupPath(sb, group);
+        return sb.toString();
+    }
+
+
     public static GroupRepresentation toRepresentation(GroupModel group, boolean full) {
         GroupRepresentation rep = new GroupRepresentation();
         rep.setId(group.getId());
         rep.setName(group.getName());
+        rep.setPath(buildGroupPath(group));
         if (!full) return rep;
         // Role mappings
         Set<RoleModel> roles = group.getRoleMappings();
