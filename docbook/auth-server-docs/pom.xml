@@ -114,6 +114,10 @@
                             <name>picketlink.version</name>
                             <value>${picketlink.version}</value>
                         </injection>
+                        <injection>
+                            <name>wildfly.version</name>
+                            <value>${wildfly.version}</value>
+                        </injection>
                     </injections>
                     <options>
                         <xmlTransformerType>saxon</xmlTransformerType>
