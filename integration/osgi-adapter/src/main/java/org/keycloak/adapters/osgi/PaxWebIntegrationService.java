@@ -1,9 +1,9 @@
 package org.keycloak.adapters.osgi;
 
 import java.net.URL;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.util.security.Constraint;
@@ -133,7 +133,8 @@ public class PaxWebIntegrationService {
         Constraint constraint = constraintMapping.getConstraint();
         String[] roles = constraint.getRoles();
         // name property is unavailable on constraint object :/
-        String name = "Constraint-" + new Random().nextInt();
+
+        String name = "Constraint-" + new SecureRandom().nextInt(Integer.MAX_VALUE);
 
         int dataConstraint = constraint.getDataConstraint();
         String dataConstraintStr;
