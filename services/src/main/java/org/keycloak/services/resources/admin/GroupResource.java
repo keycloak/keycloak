@@ -10,6 +10,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -19,12 +20,15 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -255,6 +259,42 @@ public class GroupResource {
         return resource;
 
     }
+
+    /**
+     * Get users
+     *
+     * Returns a list of users, filtered according to query parameters
+     *
+     * @param firstResult Pagination offset
+     * @param maxResults Pagination size
+     * @return
+     */
+    @GET
+    @NoCache
+    @Path("{id}/members")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<UserRepresentation> getMembers(@PathParam("id") String id,
+                                               @QueryParam("first") Integer firstResult,
+                                               @QueryParam("max") Integer maxResults) {
+        auth.requireView();
+
+        GroupModel group = session.realms().getGroupById(id, realm);
+        if (group == null) {
+            throw new NotFoundException("Group not found");
+        }
+
+        firstResult = firstResult != null ? firstResult : -1;
+        maxResults = maxResults != null ? maxResults : -1;
+
+        List<UserRepresentation> results = new ArrayList<UserRepresentation>();
+        List<UserModel> userModels = session.users().getGroupMembers(realm, group, firstResult, maxResults);
+
+        for (UserModel user : userModels) {
+            results.add(ModelToRepresentation.toRepresentation(user));
+        }
+        return results;
+    }
+
 
 
 
