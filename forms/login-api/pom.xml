@@ -34,6 +34,11 @@
             <artifactId>resteasy-jaxrs</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+	        <groupId>org.jboss.spec.javax.annotation</groupId>
+	        <artifactId>jboss-annotations-api_1.1_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
 	</dependencies>
 
 	<build>
