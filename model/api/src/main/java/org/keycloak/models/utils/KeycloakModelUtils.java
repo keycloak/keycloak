@@ -30,6 +30,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -386,4 +387,51 @@ public final class KeycloakModelUtils {
             realm.addDefaultRole(Constants.OFFLINE_ACCESS_ROLE);
         }
     }
+
+    public static String resolveFirstAttribute(GroupModel group, String name) {
+        String value = group.getFirstAttribute(name);
+        if (value != null) return value;
+        if (group.getParentId() == null) return null;
+        return resolveFirstAttribute(group.getParent(), name);
+
+    }
+
+    /**
+     *
+     *
+     * @param user
+     * @param name
+     * @return
+     */
+    public static String resolveFirstAttribute(UserModel user, String name) {
+        String value = user.getFirstAttribute(name);
+        if (value != null) return value;
+        for (GroupModel group : user.getGroups()) {
+            value = resolveFirstAttribute(group, name);
+            if (value != null) return value;
+        }
+        return null;
+
+    }
+
+    public static List<String>  resolveAttribute(GroupModel group, String name) {
+        List<String> values = group.getAttribute(name);
+        if (!values.isEmpty()) return values;
+        if (group.getParentId() == null) return null;
+        return resolveAttribute(group.getParent(), name);
+
+    }
+
+
+    public static List<String> resolveAttribute(UserModel user, String name) {
+        List<String> values = user.getAttribute(name);
+        if (!values.isEmpty()) return values;
+        for (GroupModel group : user.getGroups()) {
+            values = resolveAttribute(group, name);
+            if (values != null) return values;
+        }
+        return Collections.emptyList();
+    }
+
+
 }
