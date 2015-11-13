@@ -1512,6 +1512,14 @@ module.factory('GroupCompositeClientRoleMapping', function($resource) {
     });
 });
 
+module.factory('GroupMembership', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/members', {
+        realm : '@realm',
+        groupId : '@groupId'
+    });
+});
+
+
 module.factory('UserGroupMembership', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:userId/groups', {
         realm : '@realm',

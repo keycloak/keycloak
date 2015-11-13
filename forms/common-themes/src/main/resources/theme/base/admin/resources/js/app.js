@@ -643,8 +643,20 @@ module.config([ '$routeProvider', function($routeProvider) {
                 group : function(GroupLoader) {
                     return GroupLoader();
                 }
-           },
+            },
             controller : 'GroupDetailCtrl'
+        })
+        .when('/realms/:realm/groups/:group/members', {
+            templateUrl : resourceUrl + '/partials/group-members.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                group : function(GroupLoader) {
+                    return GroupLoader();
+                }
+            },
+            controller : 'GroupMembersCtrl'
         })
         .when('/realms/:realm/groups/:group/role-mappings', {
             templateUrl : resourceUrl + '/partials/group-role-mappings.html',
