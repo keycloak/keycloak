@@ -224,11 +224,11 @@
         <module-def name="org.keycloak.keycloak-social-facebook">
             <maven-resource group="org.keycloak" artifact="keycloak-social-facebook"/>
         </module-def>
-    	
+
     	  <module-def name="org.keycloak.keycloak-social-linkedin">
     	      <maven-resource group="org.keycloak" artifact="keycloak-social-linkedin"/>
     	  </module-def>
-    	
+
       	<module-def name="org.keycloak.keycloak-social-stackoverflow">
     	      <maven-resource group="org.keycloak" artifact="keycloak-social-stackoverflow"/>
     	  </module-def>
@@ -248,12 +248,6 @@
         </module-def>
         <module-def name="org.keycloak.keycloak-saml-protocol">
             <maven-resource group="org.keycloak" artifact="keycloak-saml-protocol"/>
-        </module-def>
-
-        <!-- file -->
-
-        <module-def name="org.keycloak.keycloak-model-file">
-            <maven-resource group="org.keycloak" artifact="keycloak-model-file"/>
         </module-def>
 
         <!-- mongo -->
