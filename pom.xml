@@ -32,7 +32,8 @@
         <jackson.version>1.9.9.redhat-4</jackson.version>
         <apache.httpcomponents.version>4.3.6.redhat-1</apache.httpcomponents.version>
         <!--<apache.httpcomponents.httpcore.version>4.3.3</apache.httpcomponents.httpcore.version>-->
-        <!--<resteasy.version>2.3.7.Final</resteasy.version>-->
+        <!--resteasy version aligned with eap6-supported-artifacts bom version -->
+        <resteasy.version>2.3.12.Final-redhat-1</resteasy.version>
         <resteasy.latest.version>3.0.9.Final</resteasy.latest.version>
         <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
         <undertow.version>1.1.1.Final</undertow.version>
@@ -217,13 +218,19 @@
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>jaxrs-api</artifactId>
                 <version>${resteasy.version}</version>
-            </dependency>
+            </dependency>-->
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-jaxrs</artifactId>
                 <version>${resteasy.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.annotation</groupId>
+                        <artifactId>jsr250-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
-            <dependency>
+            <!--<dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-multipart-provider</artifactId>
                 <version>${resteasy.version}</version>
