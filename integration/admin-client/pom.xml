@@ -42,6 +42,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+	        <groupId>org.jboss.spec.javax.annotation</groupId>
+	        <artifactId>jboss-annotations-api_1.1_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jackson-provider</artifactId>
             <version>${resteasy.latest.version}</version>
