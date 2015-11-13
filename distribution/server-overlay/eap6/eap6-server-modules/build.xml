@@ -173,10 +173,6 @@
             <maven-resource group="org.keycloak" artifact="keycloak-connections-jpa-liquibase"/>
         </module-def>
 
-        <module-def name="org.keycloak.keycloak-connections-file">
-            <maven-resource group="org.keycloak" artifact="keycloak-connections-file"/>
-        </module-def>
-
         <module-def name="org.keycloak.keycloak-connections-infinispan">
             <maven-resource group="org.keycloak" artifact="keycloak-connections-infinispan"/>
         </module-def>
