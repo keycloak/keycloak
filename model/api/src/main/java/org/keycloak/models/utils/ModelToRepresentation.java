@@ -6,6 +6,7 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelException;
@@ -30,6 +31,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -58,6 +60,74 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ModelToRepresentation {
+    public static void buildGroupPath(StringBuilder sb, GroupModel group) {
+        if (group.getParent() != null) {
+            buildGroupPath(sb, group.getParent());
+        }
+        sb.append('/').append(group.getName());
+    }
+
+    public static String buildGroupPath(GroupModel group) {
+        StringBuilder sb = new StringBuilder();
+        buildGroupPath(sb, group);
+        return sb.toString();
+    }
+
+
+    public static GroupRepresentation toRepresentation(GroupModel group, boolean full) {
+        GroupRepresentation rep = new GroupRepresentation();
+        rep.setId(group.getId());
+        rep.setName(group.getName());
+        rep.setPath(buildGroupPath(group));
+        if (!full) return rep;
+        // Role mappings
+        Set<RoleModel> roles = group.getRoleMappings();
+        List<String> realmRoleNames = new ArrayList<>();
+        Map<String, List<String>> clientRoleNames = new HashMap<>();
+        for (RoleModel role : roles) {
+            if (role.getContainer() instanceof RealmModel) {
+                realmRoleNames.add(role.getName());
+            } else {
+                ClientModel client = (ClientModel)role.getContainer();
+                String clientId = client.getClientId();
+                List<String> currentClientRoles = clientRoleNames.get(clientId);
+                if (currentClientRoles == null) {
+                    currentClientRoles = new ArrayList<>();
+                    clientRoleNames.put(clientId, currentClientRoles);
+                }
+
+                currentClientRoles.add(role.getName());
+            }
+        }
+        rep.setRealmRoles(realmRoleNames);
+        rep.setClientRoles(clientRoleNames);
+        Map<String, List<String>> attributes = group.getAttributes();
+        rep.setAttributes(attributes);
+        return rep;
+    }
+
+    public static List<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full) {
+        List<GroupRepresentation> hierarchy = new LinkedList<>();
+        List<GroupModel> groups = realm.getTopLevelGroups();
+        if (groups == null) return hierarchy;
+        for (GroupModel group : groups) {
+            GroupRepresentation rep = toGroupHierarchy(group, full);
+            hierarchy.add(rep);
+        }
+        return hierarchy;
+    }
+
+    public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full) {
+        GroupRepresentation rep = toRepresentation(group, full);
+        List<GroupRepresentation> subGroups = new LinkedList<>();
+        for (GroupModel subGroup : group.getSubGroups()) {
+            subGroups.add(toGroupHierarchy(subGroup, full));
+        }
+        rep.setSubGroups(subGroups);
+        return rep;
+    }
+
+
     public static UserRepresentation toRepresentation(UserModel user) {
         UserRepresentation rep = new UserRepresentation();
         rep.setId(user.getId());

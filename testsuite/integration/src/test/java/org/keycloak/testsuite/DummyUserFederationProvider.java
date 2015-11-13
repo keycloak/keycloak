@@ -1,6 +1,7 @@
 package org.keycloak.testsuite;
 
 import org.keycloak.models.CredentialValidationOutput;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -64,6 +65,11 @@ public class DummyUserFederationProvider implements UserFederationProvider {
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
+
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, GroupModel group) {
 
     }
 

@@ -328,4 +328,19 @@ public interface RealmModel extends RoleContainerModel {
     void setSupportedLocales(Set<String> locales);
     String getDefaultLocale();
     void setDefaultLocale(String locale);
+
+    GroupModel createGroup(String name);
+
+    /**
+     * Move Group to top realm level.  Basically just sets group parent to null.  You need to call this though
+     * to make sure caches are set properly
+     *
+     * @param subGroup
+     */
+    void addTopLevelGroup(GroupModel subGroup);
+    GroupModel getGroupById(String id);
+    List<GroupModel> getGroups();
+    List<GroupModel> getTopLevelGroups();
+    boolean removeGroup(GroupModel group);
+    void moveGroup(GroupModel group, GroupModel toParent);
 }

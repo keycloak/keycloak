@@ -7,7 +7,7 @@ var configUrl = consoleBaseUrl + "/config";
 
 var auth = {};
 
-var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload', 'pascalprecht.translate', 'ngCookies', 'ngSanitize']);
+var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload', 'angularTreeview', 'pascalprecht.translate', 'ngCookies', 'ngSanitize']);
 var resourceRequests = 0;
 var loadingTimer = -1;
 
@@ -447,6 +447,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'UserRoleMappingCtrl'
         })
+        .when('/realms/:realm/users/:user/groups', {
+            templateUrl : resourceUrl + '/partials/user-group-membership.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                },
+                groups : function(GroupListLoader) {
+                    return GroupListLoader();
+                }
+            },
+            controller : 'UserGroupMembershipCtrl'
+        })
         .when('/realms/:realm/users/:user/sessions', {
             templateUrl : resourceUrl + '/partials/user-sessions.html',
             resolve : {
@@ -583,6 +598,73 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RoleListCtrl'
         })
+        .when('/realms/:realm/groups', {
+            templateUrl : resourceUrl + '/partials/group-list.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                groups : function(GroupListLoader) {
+                    return GroupListLoader();
+                }
+            },
+            controller : 'GroupListCtrl'
+        })
+        .when('/create/group/:realm/parent/:parentId', {
+            templateUrl : resourceUrl + '/partials/create-group.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                parentId : function($route) {
+                    return $route.current.params.parentId;
+                }
+            },
+            controller : 'GroupCreateCtrl'
+        })
+        .when('/realms/:realm/groups/:group', {
+            templateUrl : resourceUrl + '/partials/group-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                group : function(GroupLoader) {
+                    return GroupLoader();
+                }
+            },
+            controller : 'GroupDetailCtrl'
+        })
+        .when('/realms/:realm/groups/:group/attributes', {
+            templateUrl : resourceUrl + '/partials/group-attributes.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                group : function(GroupLoader) {
+                    return GroupLoader();
+                }
+           },
+            controller : 'GroupDetailCtrl'
+        })
+        .when('/realms/:realm/groups/:group/role-mappings', {
+            templateUrl : resourceUrl + '/partials/group-role-mappings.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                group : function(GroupLoader) {
+                    return GroupLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
+                },
+                client : function() {
+                    return {};
+                }
+            },
+            controller : 'GroupRoleMappingCtrl'
+        })
+
 
         .when('/create/role/:realm/clients/:client', {
             templateUrl : resourceUrl + '/partials/client-role-detail.html',
@@ -1868,6 +1950,15 @@ module.directive('kcTabsUser', function () {
         restrict: 'E',
         replace: true,
         templateUrl: resourceUrl + '/templates/kc-tabs-user.html'
+    }
+});
+
+module.directive('kcTabsGroup', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-group.html'
     }
 });
 

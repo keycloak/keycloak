@@ -21,9 +21,11 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
     protected Set<String> realmInvalidations = new HashSet<String>();
     protected Set<String> appInvalidations = new HashSet<String>();
     protected Set<String> roleInvalidations = new HashSet<String>();
+    protected Set<String> groupInvalidations = new HashSet<String>();
     protected Map<String, RealmModel> managedRealms = new HashMap<String, RealmModel>();
     protected Map<String, ClientModel> managedApplications = new HashMap<String, ClientModel>();
     protected Map<String, RoleModel> managedRoles = new HashMap<String, RoleModel>();
+    protected Map<String, GroupModel> managedGroups = new HashMap<String, GroupModel>();
 
     protected boolean clearAll;
 
@@ -73,12 +75,21 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
         roleInvalidations.add(id);
     }
 
+    @Override
+    public void registerGroupInvalidation(String id) {
+        groupInvalidations.add(id);
+
+    }
+
     protected void runInvalidations() {
         for (String id : realmInvalidations) {
             cache.invalidateCachedRealmById(id);
         }
         for (String id : roleInvalidations) {
             cache.invalidateRoleById(id);
+        }
+        for (String id : groupInvalidations) {
+            cache.invalidateGroupById(id);
         }
         for (String id : appInvalidations) {
             cache.invalidateCachedApplicationById(id);
@@ -251,6 +262,31 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
         }
         RoleAdapter adapter = new RoleAdapter(cached, cache, this, realm);
         managedRoles.put(id, adapter);
+        return adapter;
+    }
+
+    @Override
+    public GroupModel getGroupById(String id, RealmModel realm) {
+        if (!cache.isEnabled()) return getDelegate().getGroupById(id, realm);
+        CachedGroup cached = cache.getGroup(id);
+        if (cached != null && !cached.getRealm().equals(realm.getId())) {
+            cached = null;
+        }
+
+        if (cached == null) {
+            GroupModel model = getDelegate().getGroupById(id, realm);
+            if (model == null) return null;
+            if (groupInvalidations.contains(id)) return model;
+            cached = new CachedGroup(realm, model);
+            cache.addCachedGroup(cached);
+
+        } else if (groupInvalidations.contains(id)) {
+            return getDelegate().getGroupById(id, realm);
+        } else if (managedGroups.containsKey(id)) {
+            return managedGroups.get(id);
+        }
+        GroupAdapter adapter = new GroupAdapter(cached, this, session, realm);
+        managedGroups.put(id, adapter);
         return adapter;
     }
 

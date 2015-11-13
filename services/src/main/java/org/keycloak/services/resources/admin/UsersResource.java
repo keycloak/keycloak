@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.email.EmailException;
@@ -16,6 +17,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -35,6 +37,7 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
@@ -137,7 +140,7 @@ public class UsersResource {
                 throw new NotFoundException("User not found");
             }
 
-            Set<String> attrsToRemove;
+             Set<String> attrsToRemove;
             if (rep.getAttributes() != null) {
                 attrsToRemove = new HashSet<>(user.getAttributes().keySet());
                 attrsToRemove.removeAll(rep.getAttributes().keySet());
@@ -660,218 +663,22 @@ public class UsersResource {
         return results;
     }
 
-    /**
-     * Get role mappings for the user
-     *
-     * @param id User id
-     * @return
-     */
     @Path("{id}/role-mappings")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    public MappingsRepresentation getRoleMappings(@PathParam("id") String id) {
-        auth.requireView();
+    public RoleMapperResource getRoleMappings(@PathParam("id") String id) {
 
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
+        auth.init(RealmAuth.Resource.USER);
 
-        MappingsRepresentation all = new MappingsRepresentation();
-        Set<RoleModel> realmMappings = user.getRoleMappings();
-        RealmManager manager = new RealmManager(session);
-        if (realmMappings.size() > 0) {
-            List<RoleRepresentation> realmRep = new ArrayList<RoleRepresentation>();
-            for (RoleModel roleModel : realmMappings) {
-                realmRep.add(ModelToRepresentation.toRepresentation(roleModel));
-            }
-            all.setRealmMappings(realmRep);
-        }
-
-        List<ClientModel> clients = realm.getClients();
-        if (clients.size() > 0) {
-            Map<String, ClientMappingsRepresentation> appMappings = new HashMap<String, ClientMappingsRepresentation>();
-            for (ClientModel client : clients) {
-                Set<RoleModel> roleMappings = user.getClientRoleMappings(client);
-                if (roleMappings.size() > 0) {
-                    ClientMappingsRepresentation mappings = new ClientMappingsRepresentation();
-                    mappings.setId(client.getId());
-                    mappings.setClient(client.getClientId());
-                    List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
-                    mappings.setMappings(roles);
-                    for (RoleModel role : roleMappings) {
-                        roles.add(ModelToRepresentation.toRepresentation(role));
-                    }
-                    appMappings.put(client.getClientId(), mappings);
-                    all.setClientMappings(appMappings);
-                }
-            }
-        }
-        return all;
-    }
-
-    /**
-     * Get realm-level role mappings for the user
-     *
-     * @param id User id
-     * @return
-     */
-    @Path("{id}/role-mappings/realm")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    public List<RoleRepresentation> getRealmRoleMappings(@PathParam("id") String id) {
-        auth.requireView();
-
-        UserModel user = session.users().getUserById(id, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-
-        Set<RoleModel> realmMappings = user.getRealmRoleMappings();
-        List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
-        for (RoleModel roleModel : realmMappings) {
-            realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
-        }
-        return realmMappingsRep;
-    }
-
-    /**
-     * Get effective realm-level role mappings for the user
-     *
-     * This will recurse all composite roles to get the result.
-     *
-     * @param id User id
-     * @return
-     */
-    @Path("{id}/role-mappings/realm/composite")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    public List<RoleRepresentation> getCompositeRealmRoleMappings(@PathParam("id") String id) {
-        auth.requireView();
-
-        UserModel user = session.users().getUserById(id, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-
-        Set<RoleModel> roles = realm.getRoles();
-        List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
-        for (RoleModel roleModel : roles) {
-            if (user.hasRole(roleModel)) {
-               realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
-            }
-        }
-        return realmMappingsRep;
-    }
-
-    /**
-     * Get realm-level roles that can be mapped to this user
-     *
-     * @param id User id
-     * @return
-     */
-    @Path("{id}/role-mappings/realm/available")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    public List<RoleRepresentation> getAvailableRealmRoleMappings(@PathParam("id") String id) {
-        auth.requireView();
-
-        UserModel user = session.users().getUserById(id, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-
-        Set<RoleModel> available = realm.getRoles();
-        return UserClientRoleMappingsResource.getAvailableRoles(user, available);
-    }
-
-    /**
-     * Add realm-level role mappings to the user
-     *
-     * @param id User id
-     * @param roles Roles to add
-     */
-    @Path("{id}/role-mappings/realm")
-    @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void addRealmRoleMappings(@PathParam("id") String id, List<RoleRepresentation> roles) {
-        auth.requireManage();
-
-        logger.debugv("** addRealmRoleMappings: {0}", roles);
-        UserModel user = session.users().getUserById(id, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-
-        for (RoleRepresentation role : roles) {
-            RoleModel roleModel = realm.getRole(role.getName());
-            if (roleModel == null || !roleModel.getId().equals(role.getId())) {
-                throw new NotFoundException("Role not found");
-            }
-            user.grantRole(roleModel);
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, role.getId()).representation(roles).success();
-        }
-    }
-
-    /**
-     * Delete realm-level role mappings
-     *
-     * @param id User id
-     * @param roles
-     */
-    @Path("{id}/role-mappings/realm")
-    @DELETE
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void deleteRealmRoleMappings(@PathParam("id") String id, List<RoleRepresentation> roles) {
-        auth.requireManage();
-
-        logger.debug("deleteRealmRoleMappings");
-        UserModel user = session.users().getUserById(id, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-
-        if (roles == null) {
-            Set<RoleModel> roleModels = user.getRealmRoleMappings();
-            for (RoleModel roleModel : roleModels) {
-                user.deleteRoleMapping(roleModel);
-            }
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
-        } else {
-            for (RoleRepresentation role : roles) {
-                RoleModel roleModel = realm.getRole(role.getName());
-                if (roleModel == null || !roleModel.getId().equals(role.getId())) {
-                    throw new NotFoundException("Role not found");
-                }
-                user.deleteRoleMapping(roleModel);
-
-                adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo, role.getId()).representation(roles).success();
-            }
-        }
+        RoleMapperResource resource =  new RoleMapperResource(realm, auth, user, adminEvent);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
 
     }
 
-    @Path("{id}/role-mappings/clients/{client}")
-    public UserClientRoleMappingsResource getUserClientRoleMappingsResource(@PathParam("id") String id, @PathParam("client") String client) {
-        UserModel user = session.users().getUserById(id, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-
-        ClientModel clientModel = realm.getClientById(client);
-        if (clientModel == null) {
-            throw new NotFoundException("Client not found");
-        }
-
-        return new UserClientRoleMappingsResource(uriInfo, realm, auth, user, clientModel, adminEvent);
-
-    }
-
-    /**
+     /**
      * Set up a temporary password for the user
      *
      * User will have to reset the temporary password next time they log in.
@@ -1105,5 +912,58 @@ public class UsersResource {
 
         return clientSession;
     }
+
+    @GET
+    @Path("{id}/groups")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<GroupRepresentation> groupMembership(@PathParam("id") String id) {
+        auth.requireView();
+
+        UserModel user = session.users().getUserById(id, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        List<GroupRepresentation> memberships = new LinkedList<>();
+        for (GroupModel group : user.getGroups()) {
+            memberships.add(ModelToRepresentation.toRepresentation(group, false));
+        }
+        return memberships;
+    }
+
+    @DELETE
+    @Path("{id}/groups/{groupId}")
+    @NoCache
+    public void removeMembership(@PathParam("id") String id, @PathParam("groupId") String groupId) {
+        auth.requireManage();
+
+        UserModel user = session.users().getUserById(id, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        GroupModel group = session.realms().getGroupById(groupId, realm);
+        if (group == null) {
+            throw new NotFoundException("Group not found");
+        }
+        if (user.isMemberOf(group)) user.leaveGroup(group);
+    }
+
+    @PUT
+    @Path("{id}/groups/{groupId}")
+    @NoCache
+    public void joinGroup(@PathParam("id") String id, @PathParam("groupId") String groupId) {
+        auth.requireManage();
+
+        UserModel user = session.users().getUserById(id, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        GroupModel group = session.realms().getGroupById(groupId, realm);
+        if (group == null) {
+            throw new NotFoundException("Group not found");
+        }
+        if (!user.isMemberOf(group)) user.joinGroup(group);
+    }
+
 
 }

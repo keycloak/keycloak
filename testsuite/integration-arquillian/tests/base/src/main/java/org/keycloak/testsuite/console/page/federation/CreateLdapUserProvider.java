@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.console.page.federation;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.AdminConsoleCreate;
 
 /**
@@ -7,6 +8,9 @@ import org.keycloak.testsuite.console.page.AdminConsoleCreate;
  * @author tkyjovsk
  */
 public class CreateLdapUserProvider extends AdminConsoleCreate {
+
+    @Page
+    private LdapUserProviderForm form;
 
     public CreateLdapUserProvider() {
         setEntity("user-federation");
@@ -17,4 +21,7 @@ public class CreateLdapUserProvider extends AdminConsoleCreate {
         return super.getUriFragment() + "/providers/ldap";
     }
 
+    public LdapUserProviderForm form() {
+        return form;
+    }
 }

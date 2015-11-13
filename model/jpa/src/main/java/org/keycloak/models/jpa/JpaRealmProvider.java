@@ -2,11 +2,13 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
+import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -101,6 +103,14 @@ public class JpaRealmProvider implements RealmProvider {
             adapter.removeClient(a.getId());
         }
 
+        int num = em.createNamedQuery("deleteGroupRoleMappingsByRealm")
+                .setParameter("realm", realm).executeUpdate();
+        num = em.createNamedQuery("deleteGroupAttributesByRealm")
+                .setParameter("realm", realm).executeUpdate();
+        num = em.createNamedQuery("deleteGroupsByRealm")
+                .setParameter("realm", realm).executeUpdate();
+
+
         em.remove(realm);
         return true;
     }
@@ -115,6 +125,14 @@ public class JpaRealmProvider implements RealmProvider {
         if (entity == null) return null;
         if (!realm.getId().equals(entity.getRealmId())) return null;
         return new RoleAdapter(realm, em, entity);
+    }
+
+    @Override
+    public GroupModel getGroupById(String id, RealmModel realm) {
+        GroupEntity groupEntity = em.find(GroupEntity.class, id);
+        if (groupEntity == null) return null;
+        if (!groupEntity.getRealm().getId().equals(realm.getId())) return null;
+        return new GroupAdapter(realm, em, groupEntity);
     }
 
     @Override

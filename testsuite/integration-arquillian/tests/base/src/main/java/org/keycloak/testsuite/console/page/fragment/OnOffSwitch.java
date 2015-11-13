@@ -36,6 +36,14 @@ public class OnOffSwitch {
     @ArquillianResource
     private Actions actions;
 
+    public OnOffSwitch() {
+    }
+
+    public OnOffSwitch(WebElement root, Actions actions) {
+        this.root = root;
+        this.actions = actions;
+    }
+
     public boolean isOn() {
         waitAjaxForElement(root);
         return root.findElement(By.tagName("input")).isSelected();

@@ -12,6 +12,7 @@ import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.models.CredentialValidationOutput;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelDuplicateException;
@@ -317,6 +318,11 @@ public class LDAPFederationProvider implements UserFederationProvider {
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
         // TODO: Maybe mappers callback to ensure role deletion propagated to LDAP by RoleLDAPFederationMapper?
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, GroupModel group) {
+
     }
 
     public boolean validPassword(RealmModel realm, UserModel user, String password) {

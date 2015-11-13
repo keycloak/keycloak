@@ -1,6 +1,7 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.cache.entities.CachedClient;
+import org.keycloak.models.cache.entities.CachedGroup;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRole;
 
@@ -38,6 +39,16 @@ public interface RealmCache {
     void invalidateCachedRoleById(String id);
 
     void invalidateRoleById(String id);
+
+    CachedGroup getGroup(String id);
+
+    void invalidateGroup(CachedGroup role);
+
+    void addCachedGroup(CachedGroup role);
+
+    void invalidateCachedGroupById(String id);
+
+    void invalidateGroupById(String id);
 
     boolean isEnabled();
 

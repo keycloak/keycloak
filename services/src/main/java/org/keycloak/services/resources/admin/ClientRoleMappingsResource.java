@@ -6,6 +6,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -29,17 +30,17 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserClientRoleMappingsResource {
-    protected static final Logger logger = Logger.getLogger(UserClientRoleMappingsResource.class);
+public class ClientRoleMappingsResource {
+    protected static final Logger logger = Logger.getLogger(ClientRoleMappingsResource.class);
 
     protected RealmModel realm;
     protected RealmAuth auth;
-    protected UserModel user;
+    protected RoleMapperModel user;
     protected ClientModel client;
     protected AdminEventBuilder adminEvent;
     private UriInfo uriInfo;
 
-    public UserClientRoleMappingsResource(UriInfo uriInfo, RealmModel realm, RealmAuth auth, UserModel user, ClientModel client, AdminEventBuilder adminEvent) {
+    public ClientRoleMappingsResource(UriInfo uriInfo, RealmModel realm, RealmAuth auth, RoleMapperModel user, ClientModel client, AdminEventBuilder adminEvent) {
         this.uriInfo = uriInfo;
         this.realm = realm;
         this.auth = auth;
@@ -105,10 +106,10 @@ public class UserClientRoleMappingsResource {
         return getAvailableRoles(user, available);
     }
 
-    public static List<RoleRepresentation> getAvailableRoles(UserModel user, Set<RoleModel> available) {
+    public static List<RoleRepresentation> getAvailableRoles(RoleMapperModel mapper, Set<RoleModel> available) {
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (RoleModel roleModel : available) {
-            if (user.hasRole(roleModel)) continue;
+            if (mapper.hasRole(roleModel)) continue;
             roles.add(roleModel);
         }
 

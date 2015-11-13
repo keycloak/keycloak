@@ -347,6 +347,7 @@ public class AuthorizationEndpoint {
         processor.setClientSession(clientSession)
                 .setFlowPath(flowPath)
                 .setFlowId(flowId)
+                .setBrowserFlow(true)
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
                 .setProtector(authManager.getProtector())
