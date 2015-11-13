@@ -724,7 +724,9 @@ public class AccountService extends AbstractSecuredLocalService {
                         logger.debugv("Social provider {0} removed successfully from user {1}", providerId, user.getUsername());
 
                         event.event(EventType.REMOVE_FEDERATED_IDENTITY).client(auth.getClient()).user(auth.getUser())
-                                .detail(Details.USERNAME, link.getUserId() + "@" + link.getIdentityProvider())
+                                .detail(Details.USERNAME, auth.getUser().getUsername())
+                                .detail(Details.IDENTITY_PROVIDER, link.getIdentityProvider())
+                                .detail(Details.IDENTITY_PROVIDER_USERNAME, link.getUserName())
                                 .success();
 
                         setReferrerOnPage();

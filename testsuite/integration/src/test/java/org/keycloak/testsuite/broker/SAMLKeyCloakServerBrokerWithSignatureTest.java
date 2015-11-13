@@ -24,7 +24,7 @@ import static org.junit.Assert.fail;
 /**
  * @author pedroigor
  */
-public class SAMLKeyCloakServerBrokerWithSignatureTest extends AbstractIdentityProviderTest {
+public class SAMLKeyCloakServerBrokerWithSignatureTest extends AbstractKeycloakIdentityProviderTest {
 
     @ClassRule
     public static AbstractKeycloakRule samlServerRule = new AbstractKeycloakRule() {

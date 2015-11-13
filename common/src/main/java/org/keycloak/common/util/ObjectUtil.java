@@ -24,4 +24,8 @@ public class ObjectUtil {
 
         return str1.equals(str2);
     }
+
+    public static String capitalize(String str) {
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
+    }
 }

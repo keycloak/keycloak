@@ -10,11 +10,12 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.messages.Messages;
 
 /**
@@ -78,6 +79,15 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
                     .setError(Messages.FEDERATED_IDENTITY_EXISTS, duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue())
                     .createErrorPage();
             context.challenge(challengeResponse);
+
+            if (context.getExecution().isRequired()) {
+                context.getEvent()
+                        .user(duplication.getExistingUserId())
+                        .detail("existing_" + duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue())
+                        .removeDetail(Details.AUTH_METHOD)
+                        .removeDetail(Details.AUTH_TYPE)
+                        .error(Errors.FEDERATED_IDENTITY_EXISTS);
+            }
         }
     }
 

@@ -21,6 +21,7 @@ import javax.mail.internet.MimeMultipart;
 
 import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.email.freemarker.beans.EventBean;
@@ -89,7 +90,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
 
-        String realmName = realm.getName().substring(0, 1).toUpperCase() + realm.getName().substring(1);
+        String realmName = ObjectUtil.capitalize(realm.getName());
         attributes.put("realmName", realmName);
 
         send("passwordResetSubject", "password-reset.ftl", attributes);
@@ -102,12 +103,12 @@ public class FreeMarkerEmailProvider implements EmailProvider {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
 
-        String realmName = realm.getName().substring(0, 1).toUpperCase() + realm.getName().substring(1);
+        String realmName = ObjectUtil.capitalize(realm.getName());
         attributes.put("realmName", realmName);
 
         BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
         String idpAlias = brokerContext.getIdpConfig().getAlias();
-        idpAlias = idpAlias.substring(0, 1).toUpperCase() + idpAlias.substring(1);
+        idpAlias = ObjectUtil.capitalize(idpAlias);
 
         attributes.put("identityProviderContext", brokerContext);
         attributes.put("identityProviderAlias", idpAlias);
@@ -123,7 +124,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
 
-        String realmName = realm.getName().substring(0, 1).toUpperCase() + realm.getName().substring(1);
+        String realmName = ObjectUtil.capitalize(realm.getName());
         attributes.put("realmName", realmName);
 
         send("executeActionsSubject", "executeActions.ftl", attributes);
@@ -137,7 +138,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
 
-        String realmName = realm.getName().substring(0, 1).toUpperCase() + realm.getName().substring(1);
+        String realmName = ObjectUtil.capitalize(realm.getName());
         attributes.put("realmName", realmName);
 
         send("emailVerificationSubject", "email-verification.ftl", attributes);
@@ -253,7 +254,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
     private String toCamelCase(EventType event){
         StringBuilder sb = new StringBuilder("event");
         for(String s : event.name().toString().toLowerCase().split("_")){
-            sb.append(s.substring(0,1).toUpperCase()).append(s.substring(1));
+            sb.append(ObjectUtil.capitalize(s));
         }
         return sb.toString();
     }
