@@ -11,11 +11,11 @@
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
             
-            <container qualifier="app-server-as7" mode="manual" >
+            <container qualifier="app-server-eap6" mode="manual" >
                 <configuration>
-                    <property name="enabled">${app.server.as7}</property>
+                    <property name="enabled">${app.server.eap6}</property>
                     <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-                    <property name="jbossHome">${app.server.as7.home}</property>
+                    <property name="jbossHome">${app.server.eap6.home}</property>
                     <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${app.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m ${adapter.test.props}</property>
                     <property name="managementAddress">localhost</property>
                     <property name="managementProtocol">remote</property>
