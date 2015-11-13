@@ -818,43 +818,19 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
     </section>
 
     <section>
-        <title>Adding Keycloak server in Domain Mode</title>
+        <title>Keycloak server in Domain Mode</title>
         <para>
             In domain mode, you start the server with the "domain" command instead of the "standalone" command.  In this case, the Keycloak subsystem is
             defined in domain/configuration/domain.xml instead of standalone/configuration.standalone.xml.  Inside domain.xml, you will see more than one
-            profile.  A Keycloak subsystem can be defined in zero or more of those profiles.
+            profile.  The Keycloak subsystem is defined for all initial profiles.
         </para>
         <para>
-            To enable Keycloak for a server profile edit domain/configuration/domain.xml. To the <literal>extensions</literal>
-            element add the Keycloak extension:
-<programlisting><![CDATA[
-<extensions>
-    ...
-    <extension module="org.keycloak.keycloak-subsystem"/>
-</extensions>
-]]></programlisting>
-            Then you need to add the server to the required server profiles. By default WildFly starts two servers
-            in the main-server-group which uses the full profile. To add Keycloak for this profile add the Keycloak
-            subsystem to the <literal>profile</literal> element with <literal>name</literal> full:
-<programlisting><![CDATA[
-<profile name="full">
-    ...
-    <subsystem xmlns="urn:jboss:domain:keycloak:1.0">
-        <auth-server name="main-auth-server">
-            <enabled>true</enabled>
-            <web-context>auth</web-context>
-        </auth-server>
-    </subsystem>
-]]></programlisting>
+            THe server is also added to server profiles. By default two servers are started
+            in the main-server-group which uses the full profile.
         </para>
         <para>
-            To configure the server copy <literal>standalone/configuration/keycloak-server.json</literal> to
-            <literal>domain/servers/&lt;SERVER NAME&gt;/configuration</literal>. The configuration should be identical
+            You need to make sure <literal>domain/servers/&lt;SERVER NAME&gt;/configuration</literal> is identical
             for all servers in a group.
-        </para>
-        <para>
-            Follow the <link linkend='clustering'>Clustering</link> section of the documentation to configure Keycloak
-            for clustering. In domain mode it doesn't make much sense to not configure Keycloak in cluster mode.
         </para>
         <para>
             To deploy custom providers and themes you should deploys these as modules and make sure the modules are
