@@ -368,6 +368,13 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     context.getUsername(), context.getToken());
             session.users().addFederatedIdentity(realmModel, federatedUser, federatedIdentityModel);
 
+            EventBuilder event = this.event.clone().user(federatedUser)
+                    .detail(Details.CODE_ID, clientSession.getId())
+                    .detail(Details.USERNAME, federatedUser.getUsername())
+                    .detail(Details.IDENTITY_PROVIDER, providerId)
+                    .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
+                    .removeDetail("auth_method");
+
             String isRegisteredNewUser = clientSession.getNote(AbstractIdpAuthenticator.BROKER_REGISTERED_NEW_USER);
             if (Boolean.parseBoolean(isRegisteredNewUser)) {
 
@@ -388,14 +395,16 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     federatedUser.setEmailVerified(true);
                 }
 
-                this.event.clone().user(federatedUser).event(EventType.REGISTER)
-                        .detail(Details.IDENTITY_PROVIDER, providerId)
-                        .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
-                        .removeDetail("auth_method")
+                event.event(EventType.REGISTER)
+                        .detail(Details.REGISTER_METHOD, "broker")
+                        .detail(Details.EMAIL, federatedUser.getEmail())
                         .success();
 
             } else {
                 LOGGER.debugf("Linked existing keycloak user '%s' with identity provider '%s' . Identity provider username is '%s' .", federatedUser.getUsername(), providerId, context.getUsername());
+
+                event.event(EventType.FEDERATED_IDENTITY_LINK)
+                        .success();
 
                 updateFederatedIdentity(context, federatedUser);
             }
@@ -453,7 +462,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private Response performAccountLinking(ClientSessionModel clientSession, BrokeredIdentityContext context, FederatedIdentityModel federatedIdentityModel, UserModel federatedUser) {
-        this.event.event(EventType.IDENTITY_PROVIDER_ACCCOUNT_LINKING);
+        this.event.event(EventType.FEDERATED_IDENTITY_LINK);
 
         if (federatedUser != null) {
             return redirectToErrorPage(Messages.IDENTITY_PROVIDER_ALREADY_LINKED, context.getIdpConfig().getAlias());
@@ -478,7 +487,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, federatedIdentityModel);
         context.getIdp().attachUserSession(clientSession.getUserSession(), clientSession, context);
 
-        this.event.success();
+        this.event.user(authenticatedUser)
+                .detail(Details.USERNAME, authenticatedUser.getUsername())
+                .detail(Details.IDENTITY_PROVIDER, federatedIdentityModel.getIdentityProvider())
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, federatedIdentityModel.getUserName())
+                .success();
         return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
     }
 
