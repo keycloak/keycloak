@@ -1,6 +1,8 @@
 package org.keycloak.models.utils;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -36,7 +38,7 @@ public class DefaultAuthenticationFlows {
         if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
         if (realm.getFlowByAlias(RESET_CREDENTIALS_FLOW) == null) resetCredentialsFlow(realm);
         if (realm.getFlowByAlias(CLIENT_AUTHENTICATION_FLOW) == null) clientAuthFlow(realm);
-        if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm);
+        if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm, false);
     }
     public static void migrateFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm, true);
@@ -44,7 +46,7 @@ public class DefaultAuthenticationFlows {
         if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
         if (realm.getFlowByAlias(RESET_CREDENTIALS_FLOW) == null) resetCredentialsFlow(realm);
         if (realm.getFlowByAlias(CLIENT_AUTHENTICATION_FLOW) == null) clientAuthFlow(realm);
-        if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm);
+        if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm, true);
     }
 
     public static void registrationFlow(RealmModel realm) {
@@ -322,7 +324,7 @@ public class DefaultAuthenticationFlows {
         realm.addAuthenticatorExecution(execution);
     }
 
-    public static void firstBrokerLoginFlow(RealmModel realm) {
+    public static void firstBrokerLoginFlow(RealmModel realm, boolean migrate) {
         AuthenticationFlowModel firstBrokerLogin = new AuthenticationFlowModel();
         firstBrokerLogin.setAlias(FIRST_BROKER_LOGIN_FLOW);
         firstBrokerLogin.setDescription("Actions taken after first broker login with identity provider account, which is not yet linked to any Keycloak account");
@@ -423,10 +425,19 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(verifyByReauthenticationAccountFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.OPTIONAL);
-        // TODO: read the requirement from browser authenticator
-//        if (migrate && hasCredentialType(realm, RequiredCredentialModel.TOTP.getType())) {
-//            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-//        }
+
+        if (migrate) {
+            // Try to read OTP requirement from browser flow
+            AuthenticationFlowModel browserFlow = realm.getBrowserFlow();
+            List<AuthenticationExecutionModel> browserExecutions = new LinkedList<>();
+            KeycloakModelUtils.deepFindAuthenticationExecutions(realm, browserFlow, browserExecutions);
+            for (AuthenticationExecutionModel browserExecution : browserExecutions) {
+                if (browserExecution.getAuthenticator().equals("auth-otp-form")) {
+                    execution.setRequirement(browserExecution.getRequirement());
+                }
+            }
+        }
+
         execution.setAuthenticator("auth-otp-form");
         execution.setPriority(20);
         execution.setAuthenticatorFlow(false);

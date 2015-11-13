@@ -389,6 +389,34 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         this.updateProfilePage.assertCurrent();
     }
 
+
+    // KEYCLOAK-1822
+    @Test
+    public void testAccountManagementLinkedIdentityAlreadyExists() {
+        // Login as "test-user" through broker
+        IdentityProviderModel identityProvider = getIdentityProviderModel();
+        assertSuccessfulAuthentication(identityProvider, "test-user", "test-user@localhost", false);
+
+        // Login as pedroigor to account management
+        accountFederatedIdentityPage.realm("realm-with-broker");
+        accountFederatedIdentityPage.open();
+        assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
+        loginPage.login("pedroigor", "password");
+        assertTrue(accountFederatedIdentityPage.isCurrent());
+
+        // Try to link my "pedroigor" identity with "test-user" from brokered Keycloak.
+        accountFederatedIdentityPage.clickAddProvider(identityProvider.getAlias());
+
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
+        this.loginPage.login("test-user", "password");
+        doAfterProviderAuthentication();
+
+        // Error is displayed in account management because federated identity"test-user" already linked to local account "test-user"
+        assertTrue(accountFederatedIdentityPage.isCurrent());
+        assertEquals("Federated identity returned by " + getProviderId() + " is already linked to another user.", accountFederatedIdentityPage.getError());
+    }
+
+
     @Test(expected = NoSuchElementException.class)
     public void testIdentityProviderNotAllowed() {
         this.driver.navigate().to("http://localhost:8081/test-app/");
