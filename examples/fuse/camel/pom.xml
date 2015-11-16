@@ -49,6 +49,10 @@
             <artifactId>camel-jetty</artifactId>
             <version>${camel.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.relaxng</groupId>
+            <artifactId>relaxngDatatype</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
