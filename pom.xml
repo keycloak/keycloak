@@ -85,6 +85,9 @@
         <!--<xmlsec.version>1.5.1</xmlsec.version>-->
         <aesh.version>0.65.1</aesh.version>
         <commons.logging.version>1.1.1-redhat-2</commons.logging.version>
+        <!-- txw2 and istack versions have to be in sync with eap6-supported-artifacts bom -->
+        <com.sun.xml.txw2.version>20110809.0.0.redhat-5</com.sun.xml.txw2.version>
+        <version.com.sun.istack>2.6.1.redhat-3</version.com.sun.istack>
 
         <enforcer.plugin.version>1.4</enforcer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
@@ -386,6 +389,34 @@
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
                 <version>${commons.logging.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.txw2</groupId>
+                <artifactId>txw2</artifactId>
+                <version>${com.sun.xml.txw2.version}</version>
+                <exclusions>
+                    <!--Part of Java SE from version 6-->
+                    <exclusion>
+                        <groupId>javax.xml.stream</groupId>
+                        <artifactId>stax-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>relaxngDatatype</groupId>
+                        <artifactId>relaxngDatatype</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.istack</groupId>
+                <artifactId>istack-commons-runtime</artifactId>
+                <version>${version.com.sun.istack}</version>
+                <exclusions>
+                    <!--Part of Java SE from version 6-->
+                    <exclusion>
+                        <groupId>javax.xml.stream</groupId>
+                        <artifactId>stax-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- Twitter -->
