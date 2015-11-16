@@ -113,11 +113,11 @@ public class RealmsResource {
         return service;
     }
 
-    @Path("{realm}/client-registration")
+    @Path("{realm}/clients")
     public ClientRegistrationService getClientsService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        ClientRegistrationService service = new ClientRegistrationService(realm, event);
+        ClientRegistrationService service = new ClientRegistrationService(event);
         ResteasyProviderFactory.getInstance().injectProperties(service);
         return service;
     }

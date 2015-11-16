@@ -19,6 +19,7 @@ public class ClientRepresentation {
     protected Boolean enabled;
     protected String clientAuthenticatorType;
     protected String secret;
+    protected String registrationAccessToken;
     protected String[] defaultRoles;
     protected List<String> redirectUris;
     protected List<String> webOrigins;
@@ -122,6 +123,14 @@ public class ClientRepresentation {
 
     public void setSecret(String secret) {
         this.secret = secret;
+    }
+
+    public String getRegistrationAccessToken() {
+        return registrationAccessToken;
+    }
+
+    public void setRegistrationAccessToken(String registrationAccessToken) {
+        this.registrationAccessToken = registrationAccessToken;
     }
 
     public List<String> getRedirectUris() {
@@ -251,4 +260,5 @@ public class ClientRepresentation {
     public void setProtocolMappers(List<ProtocolMapperRepresentation> protocolMappers) {
         this.protocolMappers = protocolMappers;
     }
+
 }

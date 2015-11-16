@@ -1,1 +1,3 @@
 org.keycloak.services.clientregistration.DefaultClientRegistrationProviderFactory
+org.keycloak.services.clientregistration.oidc.OIDCClientRegistrationProviderFactory
+org.keycloak.services.clientregistration.AdapterInstallationClientRegistrationProviderFactory
