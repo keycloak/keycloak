@@ -1,10 +1,19 @@
 package org.keycloak.protocol.oidc.endpoints;
 
+import java.util.List;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -18,6 +27,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -28,44 +38,18 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import java.util.List;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AuthorizationEndpoint {
+public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     private static final Logger logger = Logger.getLogger(AuthorizationEndpoint.class);
+
     public static final String CODE_AUTH_TYPE = "code";
 
     private enum Action {
         REGISTER, CODE, FORGOT_CREDENTIALS
     }
-
-    @Context
-    private KeycloakSession session;
-
-    @Context
-    private HttpRequest request;
-
-    @Context
-    private HttpHeaders headers;
-
-    @Context
-    private UriInfo uriInfo;
-
-    @Context
-    private ClientConnection clientConnection;
-
-    private final AuthenticationManager authManager;
-    private final RealmModel realm;
-    private final EventBuilder event;
 
     private ClientModel client;
     private ClientSessionModel clientSession;
@@ -86,9 +70,7 @@ public class AuthorizationEndpoint {
     private String legacyResponseType;
 
     public AuthorizationEndpoint(AuthenticationManager authManager, RealmModel realm, EventBuilder event) {
-        this.authManager = authManager;
-        this.realm = realm;
-        this.event = event;
+        super(realm, event, authManager);
         event.event(EventType.LOGIN);
     }
 
@@ -249,7 +231,6 @@ public class AuthorizationEndpoint {
     }
 
     private Response buildAuthorizationCodeAuthorizationResponse() {
-        String accessCode = new ClientSessionCode(realm, clientSession).getCode();
 
         if (idpHint != null && !"".equals(idpHint)) {
             IdentityProviderModel identityProviderModel = realm.getIdentityProviderByAlias(idpHint);
@@ -259,65 +240,13 @@ public class AuthorizationEndpoint {
                         .setError(Messages.IDENTITY_PROVIDER_NOT_FOUND, idpHint)
                         .createErrorPage();
             }
-            return buildRedirectToIdentityProvider(idpHint, accessCode);
+            return buildRedirectToIdentityProvider(idpHint, new ClientSessionCode(realm, clientSession).getCode());
         }
 
-        return browserAuthentication(accessCode);
-    }
-
-    protected Response browserAuthentication(String accessCode) {
         this.event.event(EventType.LOGIN);
-        List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
-        for (IdentityProviderModel identityProvider : identityProviders) {
-            if (identityProvider.isAuthenticateByDefault()) {
-                return buildRedirectToIdentityProvider(identityProvider.getAlias(), accessCode);
-            }
-        }
         clientSession.setNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
 
-
-        AuthenticationFlowModel flow = realm.getBrowserFlow();
-        String flowId = flow.getId();
-        AuthenticationProcessor processor = createProcessor(flowId, LoginActionsService.AUTHENTICATE_PATH);
-
-        if (prompt != null && prompt.equals("none")) {
-            // OIDC prompt == NONE
-            // This means that client is just checking if the user is already completely logged in.
-            //
-            // here we cancel login if any authentication action or required action is required
-            Response challenge = null;
-            try {
-                challenge = processor.authenticateOnly();
-                if (challenge == null) {
-                    challenge = processor.attachSessionExecutionRequiredActions();
-                }
-            } catch (Exception e) {
-                return processor.handleBrowserException(e);
-            }
-
-            if (challenge != null) {
-                if (processor.isUserSessionCreated()) {
-                    session.sessions().removeUserSession(realm, processor.getUserSession());
-                }
-                OIDCLoginProtocol oauth = new OIDCLoginProtocol(session, realm, uriInfo, headers, event);
-                return oauth.cancelLogin(clientSession);
-            }
-
-            if (challenge == null) {
-                return processor.finishAuthentication();
-            } else {
-                RestartLoginCookie.setRestartCookie(realm, clientConnection, uriInfo, clientSession);
-                return challenge;
-            }
-        } else {
-            try {
-                RestartLoginCookie.setRestartCookie(realm, clientConnection, uriInfo, clientSession);
-                return processor.authenticate();
-            } catch (Exception e) {
-                return processor.handleBrowserException(e);
-            }
-
-        }
+        return handleBrowserAuthenticationRequest(clientSession, new OIDCLoginProtocol(session, realm, uriInfo, headers, event), prompt != null && prompt.equals("none"));
     }
 
     private Response buildRegister() {
@@ -326,7 +255,7 @@ public class AuthorizationEndpoint {
         AuthenticationFlowModel flow = realm.getRegistrationFlow();
         String flowId = flow.getId();
 
-        AuthenticationProcessor processor = createProcessor(flowId, LoginActionsService.REGISTRATION_PATH);
+        AuthenticationProcessor processor = createProcessor(clientSession, flowId, LoginActionsService.REGISTRATION_PATH);
 
         return processor.authenticate();
     }
@@ -337,32 +266,12 @@ public class AuthorizationEndpoint {
         AuthenticationFlowModel flow = realm.getResetCredentialsFlow();
         String flowId = flow.getId();
 
-        AuthenticationProcessor processor = createProcessor(flowId, LoginActionsService.RESET_CREDENTIALS_PATH);
+        AuthenticationProcessor processor = createProcessor(clientSession, flowId, LoginActionsService.RESET_CREDENTIALS_PATH);
 
         return processor.authenticate();
     }
 
-    private AuthenticationProcessor createProcessor(String flowId, String flowPath) {
-        AuthenticationProcessor processor = new AuthenticationProcessor();
-        processor.setClientSession(clientSession)
-                .setFlowPath(flowPath)
-                .setFlowId(flowId)
-                .setBrowserFlow(true)
-                .setConnection(clientConnection)
-                .setEventBuilder(event)
-                .setProtector(authManager.getProtector())
-                .setRealm(realm)
-                .setSession(session)
-                .setUriInfo(uriInfo)
-                .setRequest(request);
-        return processor;
-    }
 
-    private Response buildRedirectToIdentityProvider(String providerId, String accessCode) {
-        logger.debug("Automatically redirect to identity provider: " + providerId);
-        return Response.temporaryRedirect(
-                Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), providerId, this.realm.getName(), accessCode))
-                .build();
-    }
+
 
 }

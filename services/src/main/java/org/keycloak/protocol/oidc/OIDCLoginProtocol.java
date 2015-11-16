@@ -82,7 +82,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         this.event = event;
     }
 
-    public OIDCLoginProtocol(){
+    public OIDCLoginProtocol() {
 
     }
 
@@ -105,7 +105,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     }
 
     @Override
-    public OIDCLoginProtocol setHttpHeaders(HttpHeaders headers){
+    public OIDCLoginProtocol setHttpHeaders(HttpHeaders headers) {
         this.headers = headers;
         return this;
     }
@@ -114,19 +114,6 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public OIDCLoginProtocol setEventBuilder(EventBuilder event) {
         this.event = event;
         return this;
-    }
-
-    @Override
-    public Response cancelLogin(ClientSessionModel clientSession) {
-        String redirect = clientSession.getRedirectUri();
-        String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
-        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
-        if (state != null) {
-            redirectUri.queryParam(OAuth2Constants.STATE, state);
-        }
-        session.sessions().removeClientSession(realm, clientSession);
-        RestartLoginCookie.expireRestartCookie(realm, session.getContext().getConnection(), uriInfo);
-        return Response.status(302).location(redirectUri.build()).build();
     }
 
     @Override
@@ -144,10 +131,11 @@ public class OIDCLoginProtocol implements LoginProtocol {
         return location.build();
     }
 
-    public Response consentDenied(ClientSessionModel clientSession) {
+    @Override
+    public Response sendError(ClientSessionModel clientSession, Error error) {
         String redirect = clientSession.getRedirectUri();
         String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
-        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
+        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, translateError(error));
         if (state != null)
             redirectUri.queryParam(OAuth2Constants.STATE, state);
         session.sessions().removeClientSession(realm, clientSession);
@@ -156,20 +144,25 @@ public class OIDCLoginProtocol implements LoginProtocol {
         return location.build();
     }
 
-
-    public Response invalidSessionError(ClientSessionModel clientSession) {
-        String redirect = clientSession.getRedirectUri();
-        String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
-        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
-        if (state != null) {
-            redirectUri.queryParam(OAuth2Constants.STATE, state);
+    private String translateError(Error error) {
+        switch (error) {
+            case CANCELLED_BY_USER:
+            case CONSENT_DENIED:
+                return "access_denied";
+            case PASSIVE_INTERACTION_REQUIRED:
+                return "interaction_required";
+            case PASSIVE_LOGIN_REQUIRED:
+                return "login_required";
+            default:
+                log.warn("Untranslated protocol Error: " + error.name() + " so we return default SAML error");
+                return "access_denied";
         }
-        return Response.status(302).location(redirectUri.build()).build();
     }
 
     @Override
     public void backchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!(clientSession.getClient() instanceof ClientModel)) return;
+        if (!(clientSession.getClient() instanceof ClientModel))
+            return;
         ClientModel app = clientSession.getClient();
         new ResourceAdminManager(session).logoutClientSession(uriInfo.getRequestUri(), realm, app, clientSession);
     }
@@ -190,10 +183,10 @@ public class OIDCLoginProtocol implements LoginProtocol {
         }
         event.user(userSession.getUser()).session(userSession).success();
 
-
         if (redirectUri != null) {
             UriBuilder uriBuilder = UriBuilder.fromUri(redirectUri);
-            if (state != null) uriBuilder.queryParam(STATE_PARAM, state);
+            if (state != null)
+                uriBuilder.queryParam(STATE_PARAM, state);
             return Response.status(302).location(uriBuilder.build()).build();
         } else {
             return Response.ok().build();
