@@ -50,6 +50,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import static java.lang.Boolean.TRUE;
+
 
 /**
  * Base resource class for managing one particular client of a realm.
@@ -103,7 +105,7 @@ public class ClientResource {
         auth.requireManage();
 
         try {
-            if (rep.isServiceAccountsEnabled() && !client.isServiceAccountsEnabled()) {
+            if (TRUE.equals(rep.isServiceAccountsEnabled()) && !client.isServiceAccountsEnabled()) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(client);;
             }
 
