@@ -1,5 +1,6 @@
 package org.keycloak.services.clientregistration;
 
+import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.ErrorResponseException;
@@ -28,6 +29,11 @@ public class ClientRegistrationService {
         checkSsl();
 
         ClientRegistrationProvider provider = session.getProvider(ClientRegistrationProvider.class, providerId);
+
+        if (provider == null) {
+            throw new NotFoundException("Client registration provider not found");
+        }
+
         provider.setEvent(event);
         provider.setAuth(new ClientRegAuth(session, event));
         return provider;

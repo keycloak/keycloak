@@ -15,7 +15,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.clientregistration.ClientRegAuth;
 import org.keycloak.services.clientregistration.ClientRegistrationProvider;
-import org.keycloak.services.clientregistration.TokenGenerator;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
