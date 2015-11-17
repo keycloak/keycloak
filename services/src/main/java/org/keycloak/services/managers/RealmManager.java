@@ -50,6 +50,7 @@ import org.keycloak.timer.TimerProvider;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import static java.lang.Boolean.TRUE;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 
@@ -221,9 +222,12 @@ public class RealmManager implements RealmImporter {
         if(rep.getEnabledEventTypes() != null) {
             realm.setEnabledEventTypes(new HashSet<>(rep.getEnabledEventTypes()));
         }
-
-        realm.setAdminEventsEnabled(rep.isAdminEventsEnabled());
-        realm.setAdminEventsDetailsEnabled(rep.isAdminEventsDetailsEnabled());
+        if(rep.isAdminEventsEnabled() != null) {
+            realm.setAdminEventsEnabled(rep.isAdminEventsEnabled());
+        }
+        if(rep.isAdminEventsDetailsEnabled() != null){
+            realm.setAdminEventsDetailsEnabled(rep.isAdminEventsDetailsEnabled());
+        }
     }
 
     private void setupMasterAdminManagement(RealmModel realm) {
