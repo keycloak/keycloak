@@ -33,10 +33,33 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         reg.auth(Auth.token(client.getRegistrationAccessToken()));
     }
 
+    private ClientRepresentation assertRead(String id, String registrationAccess, boolean expectSuccess) throws ClientRegistrationException {
+        if (expectSuccess) {
+            reg.auth(Auth.token(registrationAccess));
+            ClientRepresentation rep = reg.get(client.getClientId());
+            assertNotNull(rep);
+            return rep;
+        } else {
+            reg.auth(Auth.token(registrationAccess));
+            try {
+                reg.get(client.getClientId());
+                fail("Expected 403");
+            } catch (ClientRegistrationException e) {
+                assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+            }
+        }
+        return null;
+    }
+
     @Test
     public void getClientWithRegistrationToken() throws ClientRegistrationException {
         ClientRepresentation rep = reg.get(client.getClientId());
         assertNotNull(rep);
+        assertNotEquals(client.getRegistrationAccessToken(), rep.getRegistrationAccessToken());
+
+        // check registration access token is updated
+        assertRead(client.getClientId(), client.getRegistrationAccessToken(), false);
+        assertRead(client.getClientId(), rep.getRegistrationAccessToken(), true);
     }
 
     @Test
@@ -53,9 +76,14 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
     @Test
     public void updateClientWithRegistrationToken() throws ClientRegistrationException {
         client.setRootUrl("http://newroot");
-        reg.update(client);
+        ClientRepresentation rep = reg.update(client);
 
         assertEquals("http://newroot", getClient(client.getId()).getRootUrl());
+        assertNotEquals(client.getRegistrationAccessToken(), rep.getRegistrationAccessToken());
+
+        // check registration access token is updated
+        assertRead(client.getClientId(), client.getRegistrationAccessToken(), false);
+        assertRead(client.getClientId(), rep.getRegistrationAccessToken(), true);
     }
 
     @Test

@@ -55,9 +55,10 @@ public class ClientRegistration {
         return resultStream != null ? deserialize(resultStream, AdapterConfig.class) : null;
     }
 
-    public void update(ClientRepresentation client) throws ClientRegistrationException {
+    public ClientRepresentation update(ClientRepresentation client) throws ClientRegistrationException {
         String content = serialize(client);
-        httpUtil.doPut(content, DEFAULT, client.getClientId());
+        InputStream resultStream = httpUtil.doPut(content, DEFAULT, client.getClientId());
+        return resultStream != null ? deserialize(resultStream, ClientRepresentation.class) : null;
     }
 
     public void delete(ClientRepresentation client) throws ClientRegistrationException {

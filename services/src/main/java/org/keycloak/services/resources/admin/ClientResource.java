@@ -215,6 +215,24 @@ public class ClientResource {
     }
 
     /**
+     * Generate a new registration access token for the client
+     *
+     * @return
+     */
+    @Path("registration-access-token")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ClientRepresentation regenerateRegistrationAccessToken() {
+        auth.requireManage();
+
+        KeycloakModelUtils.generateRegistrationAccessToken(client);
+        ClientRepresentation rep = ModelToRepresentation.toRepresentation(client);
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(rep).success();
+        return rep;
+    }
+
+    /**
      * Get the client secret
      *
      * @return

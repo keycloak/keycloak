@@ -80,7 +80,9 @@ class HttpUtil {
                 responseStream.close();
                 return null;
             } else {
-                responseStream.close();
+                if (responseStream != null) {
+                    responseStream.close();
+                }
                 throw new HttpErrorException(response.getStatusLine());
             }
         } catch (IOException e) {
@@ -88,7 +90,7 @@ class HttpUtil {
         }
     }
 
-    void doPut(String content, String... path) throws ClientRegistrationException {
+    InputStream doPut(String content, String... path) throws ClientRegistrationException {
         try {
             HttpPut request = new HttpPut(getUrl(baseUri, path));
 
@@ -100,10 +102,20 @@ class HttpUtil {
 
             HttpResponse response = httpClient.execute(request);
             if (response.getEntity() != null) {
-                response.getEntity().getContent().close();
+                response.getEntity().getContent();
             }
 
-            if (response.getStatusLine().getStatusCode() != 200) {
+            InputStream responseStream = null;
+            if (response.getEntity() != null) {
+                responseStream = response.getEntity().getContent();
+            }
+
+            if (response.getStatusLine().getStatusCode() == 200) {
+                return responseStream;
+            } else {
+                if (responseStream != null) {
+                    responseStream.close();
+                }
                 throw new HttpErrorException(response.getStatusLine());
             }
         } catch (IOException e) {

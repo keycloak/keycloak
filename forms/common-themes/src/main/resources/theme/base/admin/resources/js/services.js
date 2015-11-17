@@ -981,6 +981,17 @@ module.factory('ClientSecret', function($resource) {
     });
 });
 
+module.factory('ClientRegistrationAccessToken', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/registration-access-token', {
+        realm : '@realm',
+        client : '@client'
+    },  {
+        update : {
+            method : 'POST'
+        }
+    });
+});
+
 module.factory('ClientOrigins', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/clients/:client/allowed-origins', {
         realm : '@realm',

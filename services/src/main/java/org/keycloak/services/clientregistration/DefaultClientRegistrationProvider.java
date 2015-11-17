@@ -5,6 +5,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -38,7 +39,7 @@ public class DefaultClientRegistrationProvider implements ClientRegistrationProv
 
         try {
             ClientModel clientModel = RepresentationToModel.createClient(session, session.getContext().getRealm(), client, true);
-            clientModel.setRegistrationSecret(TokenGenerator.createRegistrationAccessToken());
+            KeycloakModelUtils.generateRegistrationAccessToken(clientModel);
 
             client = ModelToRepresentation.toRepresentation(clientModel);
             URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build();
@@ -59,6 +60,10 @@ public class DefaultClientRegistrationProvider implements ClientRegistrationProv
         ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
         auth.requireView(client);
 
+        if (auth.isRegistrationAccessToken()) {
+            KeycloakModelUtils.generateRegistrationAccessToken(client);
+        }
+
         event.client(client.getClientId()).success();
         return Response.ok(ModelToRepresentation.toRepresentation(client)).build();
     }
@@ -74,8 +79,14 @@ public class DefaultClientRegistrationProvider implements ClientRegistrationProv
 
         RepresentationToModel.updateClient(rep, client);
 
+        if (auth.isRegistrationAccessToken()) {
+            KeycloakModelUtils.generateRegistrationAccessToken(client);
+        }
+
+        rep = ModelToRepresentation.toRepresentation(client);
+
         event.client(client.getClientId()).success();
-        return Response.status(Response.Status.OK).build();
+        return Response.ok(rep).build();
     }
 
     @DELETE

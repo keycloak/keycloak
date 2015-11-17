@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 
@@ -20,10 +21,13 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
     private ClientRepresentation client;
     private ClientRepresentation client2;
     private ClientRepresentation clientPublic;
+    private String publicKey;
 
     @Before
     public void before() throws Exception {
         super.before();
+
+        publicKey = adminClient.realm(REALM_NAME).toRepresentation().getPublicKey();
 
         client = new ClientRepresentation();
         client.setEnabled(true);
@@ -66,6 +70,16 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
 
         AdapterConfig config = reg.getAdapterConfig(client.getClientId());
         assertNotNull(config);
+
+        assertEquals(testContext.getAuthServerContextRoot() + "/auth", config.getAuthServerUrl());
+        assertEquals("test", config.getRealm());
+
+        assertEquals(1, config.getCredentials().size());
+        assertEquals(client.getSecret(), config.getCredentials().get("secret"));
+
+        assertEquals(publicKey, config.getRealmKey());
+        assertEquals(client.getClientId(), config.getResource());
+        assertEquals(SslRequired.EXTERNAL.name().toLowerCase(), config.getSslRequired());
     }
 
     @Test
@@ -98,6 +112,14 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
 
         AdapterConfig config = reg.getAdapterConfig(clientPublic.getClientId());
         assertNotNull(config);
+
+        assertEquals("test", config.getRealm());
+
+        assertEquals(0, config.getCredentials().size());
+
+        assertEquals(publicKey, config.getRealmKey());
+        assertEquals(clientPublic.getClientId(), config.getResource());
+        assertEquals(SslRequired.EXTERNAL.name().toLowerCase(), config.getSslRequired());
     }
 
 }

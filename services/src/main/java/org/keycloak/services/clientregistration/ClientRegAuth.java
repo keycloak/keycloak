@@ -24,6 +24,7 @@ public class ClientRegAuth {
     private AccessToken.Access bearerRealmAccess;
 
     private boolean authenticated = false;
+    private boolean registrationAccessToken = false;
 
     public ClientRegAuth(KeycloakSession session, EventBuilder event) {
         this.session = session;
@@ -48,6 +49,7 @@ public class ClientRegAuth {
         if (split[1].indexOf('.') == -1) {
             token = split[1];
             authenticated = true;
+            registrationAccessToken = true;
         } else {
             AuthenticationManager.AuthResult authResult = new AppAuthManager().authenticateBearerToken(session, realm);
             bearerRealmAccess = authResult.getToken().getResourceAccess(Constants.REALM_MANAGEMENT_CLIENT_ID);
@@ -57,6 +59,10 @@ public class ClientRegAuth {
 
     public boolean isAuthenticated() {
         return authenticated;
+    }
+
+    public boolean isRegistrationAccessToken() {
+        return registrationAccessToken;
     }
 
     public void requireCreate() {
