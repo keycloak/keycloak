@@ -2,25 +2,9 @@ package org.keycloak.protocol.saml.clientregistration;
 
 import org.jboss.logging.Logger;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
-import org.keycloak.exportimport.ClientDescriptionConverter;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.protocol.saml.EntityDescriptorDescriptionConverter;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.clientregistration.ClientRegAuth;
+import org.keycloak.services.clientregistration.ClientRegistrationAuth;
 import org.keycloak.services.clientregistration.ClientRegistrationProvider;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.net.URI;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -31,7 +15,7 @@ public class EntityDescriptorClientRegistrationProvider implements ClientRegistr
 
     private KeycloakSession session;
     private EventBuilder event;
-    private ClientRegAuth auth;
+    private ClientRegistrationAuth auth;
 
     public EntityDescriptorClientRegistrationProvider(KeycloakSession session) {
         this.session = session;
@@ -67,7 +51,7 @@ public class EntityDescriptorClientRegistrationProvider implements ClientRegistr
     }
 
     @Override
-    public void setAuth(ClientRegAuth auth) {
+    public void setAuth(ClientRegistrationAuth auth) {
         this.auth = auth;
     }
 

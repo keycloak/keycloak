@@ -17,7 +17,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private boolean enabled;
     private String clientAuthenticatorType;
     private String secret;
-    private String registrationSecret;
+    private String registrationToken;
     private String protocol;
     private int notBefore;
     private boolean publicClient;
@@ -91,12 +91,12 @@ public class ClientEntity extends AbstractIdentifiableEntity {
         this.secret = secret;
     }
 
-    public String getRegistrationSecret() {
-        return registrationSecret;
+    public String getRegistrationToken() {
+        return registrationToken;
     }
 
-    public void setRegistrationSecret(String registrationSecret) {
-        this.registrationSecret = registrationSecret;
+    public void setRegistrationToken(String registrationToken) {
+        this.registrationToken = registrationToken;
     }
 
     public int getNotBefore() {

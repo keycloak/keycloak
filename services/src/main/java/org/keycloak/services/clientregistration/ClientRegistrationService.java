@@ -35,7 +35,7 @@ public class ClientRegistrationService {
         }
 
         provider.setEvent(event);
-        provider.setAuth(new ClientRegAuth(session, event));
+        provider.setAuth(new ClientRegistrationAuth(session, event));
         return provider;
     }
 

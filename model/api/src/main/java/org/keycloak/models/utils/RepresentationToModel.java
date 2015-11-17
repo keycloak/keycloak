@@ -737,8 +737,6 @@ public class RepresentationToModel {
             KeycloakModelUtils.generateSecret(client);
         }
 
-        client.setRegistrationSecret(resourceRep.getRegistrationAccessToken());
-
         if (resourceRep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : resourceRep.getAttributes().entrySet()) {
                 client.setAttribute(entry.getKey(), entry.getValue());
@@ -815,7 +813,6 @@ public class RepresentationToModel {
         if (rep.isSurrogateAuthRequired() != null) resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
         if (rep.getNodeReRegistrationTimeout() != null) resource.setNodeReRegistrationTimeout(rep.getNodeReRegistrationTimeout());
         if (rep.getClientAuthenticatorType() != null) resource.setClientAuthenticatorType(rep.getClientAuthenticatorType());
-        if (rep.getRegistrationAccessToken() != null) resource.setRegistrationSecret(rep.getRegistrationAccessToken());
         resource.updateClient();
 
         if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());

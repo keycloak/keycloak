@@ -196,20 +196,4 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         }
     }
 
-    private void authCreateClients() {
-        reg.auth(Auth.token(getToken("create-clients", "password")));
-    }
-
-    private void authManageClients() {
-        reg.auth(Auth.token(getToken("manage-clients", "password")));
-    }
-
-    private void authNoAccess() {
-        reg.auth(Auth.token(getToken("no-access", "password")));
-    }
-
-    private String getToken(String username, String password) {
-        return oauthClient.getToken(REALM_NAME, "security-admin-console", null, username, password).getToken();
-    }
-
 }
