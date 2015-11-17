@@ -447,6 +447,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'UserRoleMappingCtrl'
         })
+        .when('/realms/:realm/users/:user/groups', {
+            templateUrl : resourceUrl + '/partials/user-group-membership.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                },
+                groups : function(GroupListLoader) {
+                    return GroupListLoader();
+                }
+            },
+            controller : 'UserGroupMembershipCtrl'
+        })
         .when('/realms/:realm/users/:user/sessions', {
             templateUrl : resourceUrl + '/partials/user-sessions.html',
             resolve : {
@@ -628,8 +643,20 @@ module.config([ '$routeProvider', function($routeProvider) {
                 group : function(GroupLoader) {
                     return GroupLoader();
                 }
-           },
+            },
             controller : 'GroupDetailCtrl'
+        })
+        .when('/realms/:realm/groups/:group/members', {
+            templateUrl : resourceUrl + '/partials/group-members.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                group : function(GroupLoader) {
+                    return GroupLoader();
+                }
+            },
+            controller : 'GroupMembersCtrl'
         })
         .when('/realms/:realm/groups/:group/role-mappings', {
             templateUrl : resourceUrl + '/partials/group-role-mappings.html',

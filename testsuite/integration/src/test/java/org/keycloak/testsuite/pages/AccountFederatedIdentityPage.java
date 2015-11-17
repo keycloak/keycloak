@@ -5,11 +5,16 @@ import javax.ws.rs.core.UriBuilder;
 import org.keycloak.services.Urls;
 import org.keycloak.testsuite.Constants;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class AccountFederatedIdentityPage extends AbstractAccountPage {
+
+    @FindBy(className = "alert-error")
+    private WebElement errorMessage;
 
     public AccountFederatedIdentityPage() {};
 
@@ -38,5 +43,9 @@ public class AccountFederatedIdentityPage extends AbstractAccountPage {
 
     public void clickRemoveProvider(String providerId) {
         driver.findElement(By.id("remove-" + providerId)).click();
+    }
+
+    public String getError() {
+        return errorMessage.getText();
     }
 }

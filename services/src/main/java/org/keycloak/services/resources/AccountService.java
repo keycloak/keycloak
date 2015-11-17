@@ -61,6 +61,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -74,6 +75,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Variant;
+
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.HashSet;
@@ -115,6 +118,9 @@ public class AccountService extends AbstractSecuredLocalService {
     }
 
     public static final String KEYCLOAK_STATE_CHECKER = "KEYCLOAK_STATE_CHECKER";
+
+    // Used when some other context (ie. IdentityBrokerService) wants to forward error to account management and display it here
+    public static final String ACCOUNT_MGMT_FORWARDED_ERROR_NOTE = "ACCOUNT_MGMT_FORWARDED_ERROR";
 
     private final AppAuthManager authManager;
     private EventBuilder event;
@@ -216,6 +222,17 @@ public class AccountService extends AbstractSecuredLocalService {
             }
 
             setReferrerOnPage();
+
+            String forwardedError = auth.getClientSession().getNote(ACCOUNT_MGMT_FORWARDED_ERROR_NOTE);
+            if (forwardedError != null) {
+                try {
+                    FormMessage errorMessage = JsonSerialization.readValue(forwardedError, FormMessage.class);
+                    account.setError(errorMessage.getMessage(), errorMessage.getParameters());
+                    auth.getClientSession().removeNote(ACCOUNT_MGMT_FORWARDED_ERROR_NOTE);
+                } catch (IOException ioe) {
+                    throw new RuntimeException(ioe);
+                }
+            }
 
             return account.createResponse(page);
         } else {
@@ -724,7 +741,9 @@ public class AccountService extends AbstractSecuredLocalService {
                         logger.debugv("Social provider {0} removed successfully from user {1}", providerId, user.getUsername());
 
                         event.event(EventType.REMOVE_FEDERATED_IDENTITY).client(auth.getClient()).user(auth.getUser())
-                                .detail(Details.USERNAME, link.getUserId() + "@" + link.getIdentityProvider())
+                                .detail(Details.USERNAME, auth.getUser().getUsername())
+                                .detail(Details.IDENTITY_PROVIDER, link.getIdentityProvider())
+                                .detail(Details.IDENTITY_PROVIDER_USERNAME, link.getUserName())
                                 .success();
 
                         setReferrerOnPage();

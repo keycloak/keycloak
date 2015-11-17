@@ -1223,7 +1223,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public ClientModel getMasterAdminClient() {
         MongoClientEntity appData = getMongoStore().loadEntity(MongoClientEntity.class, realm.getMasterAdminClient(), invocationContext);
-        return appData != null ? new ClientAdapter(session, this, appData, invocationContext) : null;
+        if (appData == null) {
+            return null;
+        }
+
+        MongoRealmEntity masterRealm = getMongoStore().loadEntity(MongoRealmEntity.class, appData.getRealmId(), invocationContext);
+        RealmModel masterRealmModel = new RealmAdapter(session, masterRealm, invocationContext);
+        return new ClientAdapter(session, masterRealmModel, appData, invocationContext);
     }
 
     @Override

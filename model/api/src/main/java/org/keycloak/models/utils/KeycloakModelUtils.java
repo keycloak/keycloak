@@ -1,6 +1,8 @@
 package org.keycloak.models.utils;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
@@ -16,6 +18,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.PemUtils;
@@ -31,6 +34,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -384,6 +388,26 @@ public final class KeycloakModelUtils {
             role.setDescription("${role_offline-access}");
             role.setScopeParamRequired(true);
             realm.addDefaultRole(Constants.OFFLINE_ACCESS_ROLE);
+        }
+    }
+
+
+    /**
+     * Recursively find all AuthenticationExecutionModel from specified flow or all it's subflows
+     *
+     * @param realm
+     * @param flow
+     * @param result input should be empty list. At the end will be all executions added to this list
+     */
+    public static void deepFindAuthenticationExecutions(RealmModel realm, AuthenticationFlowModel flow, List<AuthenticationExecutionModel> result) {
+        List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(flow.getId());
+        for (AuthenticationExecutionModel execution : executions) {
+            if (execution.isAuthenticatorFlow()) {
+                AuthenticationFlowModel subFlow = realm.getAuthenticationFlowById(execution.getFlowId());
+                deepFindAuthenticationExecutions(realm, subFlow, result);
+            } else {
+                result.add(execution);
+            }
         }
     }
 }

@@ -453,7 +453,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
     @Override
     public Set<GroupModel> getGroups() {
-        if (user.getGroupIds() == null && user.getGroupIds().size() == 0) return Collections.EMPTY_SET;
+        if (user.getGroupIds() == null || user.getGroupIds().size() == 0) return Collections.EMPTY_SET;
         Set<GroupModel> groups = new HashSet<>();
         for (String id : user.getGroupIds()) {
             groups.add(realm.getGroupById(id));

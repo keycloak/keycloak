@@ -14,6 +14,7 @@ import java.util.Map;
 public class GroupRepresentation {
     protected String id;
     protected String name;
+    protected String path;
     protected Map<String, List<String>>  attributes;
     protected List<String> realmRoles;
     protected Map<String, List<String>> clientRoles;
@@ -33,6 +34,14 @@ public class GroupRepresentation {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 
     public List<String> getRealmRoles() {

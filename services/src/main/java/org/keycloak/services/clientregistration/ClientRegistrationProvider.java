@@ -9,7 +9,7 @@ import org.keycloak.provider.Provider;
  */
 public interface ClientRegistrationProvider extends Provider {
 
-    void setRealm(RealmModel realm);
+    void setAuth(ClientRegAuth auth);
 
     void setEvent(EventBuilder event);
 

@@ -20,8 +20,8 @@
         <tbody>
         <tr ng-repeat="requiredAction in requiredActions" data-ng-show="requiredActions.length > 0">
             <td>{{requiredAction.name}}</td>
-            <td><input type="checkbox" ng-model="requiredAction.enabled" ng-change="updateRequiredAction(requiredAction)"></td>
-            <td><input type="checkbox" ng-model="requiredAction.defaultAction" ng-change="updateRequiredAction(requiredAction)"></td>
+            <td><input type="checkbox" ng-model="requiredAction.enabled" ng-change="updateRequiredAction(requiredAction)" id="{{requiredAction.alias}}.enabled"></td>
+            <td><input type="checkbox" ng-model="requiredAction.defaultAction" ng-change="updateRequiredAction(requiredAction)" id="{{requiredAction.alias}}.defaultAction"></td>
         </tr>
         <tr data-ng-show="requiredActions.length == 0">
             <td>No required actions configured</td>

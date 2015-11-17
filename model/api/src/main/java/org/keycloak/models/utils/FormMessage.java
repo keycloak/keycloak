@@ -23,6 +23,9 @@ public class FormMessage {
 	private String message;
 	private Object[] parameters;
 
+	public FormMessage() {
+	}
+
 	/**
 	 * Create message.
 	 * 
