@@ -44,13 +44,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.common.util.Time;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -292,19 +286,50 @@ public class ModelToRepresentation {
     public static void exportAuthenticationFlows(RealmModel realm, RealmRepresentation rep) {
         rep.setAuthenticationFlows(new LinkedList<AuthenticationFlowRepresentation>());
         rep.setAuthenticatorConfig(new LinkedList<AuthenticatorConfigRepresentation>());
-        for (AuthenticationFlowModel model : realm.getAuthenticationFlows()) {
+
+        List<AuthenticationFlowModel> authenticationFlows = new ArrayList<>(realm.getAuthenticationFlows());
+        //ensure consistent ordering of authenticationFlows.
+        Collections.sort(authenticationFlows, new Comparator<AuthenticationFlowModel>() {
+            @Override
+            public int compare(AuthenticationFlowModel left, AuthenticationFlowModel right) {
+                return left.getAlias().compareTo(right.getAlias());
+            }
+        });
+
+        for (AuthenticationFlowModel model : authenticationFlows) {
             AuthenticationFlowRepresentation flowRep = toRepresentation(realm, model);
             rep.getAuthenticationFlows().add(flowRep);
         }
-        for (AuthenticatorConfigModel model : realm.getAuthenticatorConfigs()) {
+
+        List<AuthenticatorConfigModel> authenticatorConfigs = new ArrayList<>(realm.getAuthenticatorConfigs());
+        //ensure consistent ordering of authenticatorConfigs.
+        Collections.sort(authenticatorConfigs, new Comparator<AuthenticatorConfigModel>() {
+            @Override
+            public int compare(AuthenticatorConfigModel left, AuthenticatorConfigModel right) {
+                return left.getAlias().compareTo(right.getAlias());
+            }
+        });
+
+        for (AuthenticatorConfigModel model : authenticatorConfigs) {
             rep.getAuthenticatorConfig().add(toRepresentation(model));
         }
 
     }
 
     public static void exportRequiredActions(RealmModel realm, RealmRepresentation rep) {
+
         rep.setRequiredActions(new LinkedList<RequiredActionProviderRepresentation>());
-        for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
+
+        List<RequiredActionProviderModel> requiredActionProviders = realm.getRequiredActionProviders();
+        //ensure consistent ordering of requiredActionProviders.
+        Collections.sort(requiredActionProviders, new Comparator<RequiredActionProviderModel>() {
+            @Override
+            public int compare(RequiredActionProviderModel left, RequiredActionProviderModel right) {
+                return left.getAlias().compareTo(right.getAlias());
+            }
+        });
+
+        for (RequiredActionProviderModel model : requiredActionProviders) {
             RequiredActionProviderRepresentation action = toRepresentation(model);
             rep.getRequiredActions().add(action);
         }
