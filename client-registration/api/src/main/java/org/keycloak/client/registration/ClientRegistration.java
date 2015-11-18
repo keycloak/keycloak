@@ -2,6 +2,7 @@ package org.keycloak.client.registration;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -13,6 +14,11 @@ import java.io.InputStream;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ClientRegistration {
+
+    public static final ObjectMapper outputMapper = new ObjectMapper();
+    static {
+        outputMapper.getSerializationConfig().addMixInAnnotations(ClientRepresentation.class, ClientRepresentationMixIn.class);
+    }
 
     private final String DEFAULT = "default";
     private final String INSTALLATION = "install";
@@ -69,15 +75,16 @@ public class ClientRegistration {
         httpUtil.doDelete(DEFAULT, clientId);
     }
 
-    private String serialize(ClientRepresentation client) throws ClientRegistrationException {
+    public static String serialize(ClientRepresentation client) throws ClientRegistrationException {
         try {
-            return JsonSerialization.writeValueAsString(client);
+
+            return outputMapper.writeValueAsString(client);
         } catch (IOException e) {
             throw new ClientRegistrationException("Failed to write json object", e);
         }
     }
 
-    private <T> T deserialize(InputStream inputStream, Class<T> clazz) throws ClientRegistrationException {
+    private static <T> T deserialize(InputStream inputStream, Class<T> clazz) throws ClientRegistrationException {
         try {
             return JsonSerialization.readValue(inputStream, clazz);
         } catch (IOException e) {

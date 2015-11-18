@@ -2,10 +2,10 @@ package org.keycloak.services.clientregistration;
 
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -23,7 +23,7 @@ public class DefaultClientRegistrationProvider implements ClientRegistrationProv
 
     private KeycloakSession session;
     private EventBuilder event;
-    private ClientRegAuth auth;
+    private ClientRegistrationAuth auth;
 
     public DefaultClientRegistrationProvider(KeycloakSession session) {
         this.session = session;
@@ -39,10 +39,18 @@ public class DefaultClientRegistrationProvider implements ClientRegistrationProv
 
         try {
             ClientModel clientModel = RepresentationToModel.createClient(session, session.getContext().getRealm(), client, true);
-            KeycloakModelUtils.generateRegistrationAccessToken(clientModel);
-
             client = ModelToRepresentation.toRepresentation(clientModel);
+
+            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel);
+
+            client.setRegistrationAccessToken(registrationAccessToken);
+
             URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build();
+
+            if (auth.isInitialAccessToken()) {
+                ClientInitialAccessModel initialAccessModel = auth.getInitialAccessModel();
+                initialAccessModel.decreaseRemainingCount();
+            }
 
             event.client(client.getClientId()).success();
             return Response.created(uri).entity(client).build();
@@ -60,12 +68,15 @@ public class DefaultClientRegistrationProvider implements ClientRegistrationProv
         ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
         auth.requireView(client);
 
+        ClientRepresentation rep = ModelToRepresentation.toRepresentation(client);
+
         if (auth.isRegistrationAccessToken()) {
-            KeycloakModelUtils.generateRegistrationAccessToken(client);
+            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client);
+            rep.setRegistrationAccessToken(registrationAccessToken);
         }
 
         event.client(client.getClientId()).success();
-        return Response.ok(ModelToRepresentation.toRepresentation(client)).build();
+        return Response.ok(rep).build();
     }
 
     @PUT
@@ -78,12 +89,12 @@ public class DefaultClientRegistrationProvider implements ClientRegistrationProv
         auth.requireUpdate(client);
 
         RepresentationToModel.updateClient(rep, client);
+        rep = ModelToRepresentation.toRepresentation(client);
 
         if (auth.isRegistrationAccessToken()) {
-            KeycloakModelUtils.generateRegistrationAccessToken(client);
+            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client);
+            rep.setRegistrationAccessToken(registrationAccessToken);
         }
-
-        rep = ModelToRepresentation.toRepresentation(client);
 
         event.client(client.getClientId()).success();
         return Response.ok(rep).build();
@@ -106,7 +117,7 @@ public class DefaultClientRegistrationProvider implements ClientRegistrationProv
     }
 
     @Override
-    public void setAuth(ClientRegAuth auth) {
+    public void setAuth(ClientRegistrationAuth auth) {
         this.auth = auth;
     }
 

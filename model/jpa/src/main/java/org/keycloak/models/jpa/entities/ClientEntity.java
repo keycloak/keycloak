@@ -42,8 +42,8 @@ public class ClientEntity {
     private boolean enabled;
     @Column(name="SECRET")
     private String secret;
-    @Column(name="REGISTRATION_SECRET")
-    private String registrationSecret;
+    @Column(name="REGISTRATION_TOKEN")
+    private String registrationToken;
     @Column(name="CLIENT_AUTHENTICATOR_TYPE")
     private String clientAuthenticatorType;
     @Column(name="NOT_BEFORE")
@@ -203,12 +203,12 @@ public class ClientEntity {
         this.secret = secret;
     }
 
-    public String getRegistrationSecret() {
-        return registrationSecret;
+    public String getRegistrationToken() {
+        return registrationToken;
     }
 
-    public void setRegistrationSecret(String registrationSecret) {
-        this.registrationSecret = registrationSecret;
+    public void setRegistrationToken(String registrationToken) {
+        this.registrationToken = registrationToken;
     }
 
     public int getNotBefore() {

@@ -59,7 +59,7 @@
         <addForeignKeyConstraint baseColumnNames="ROLE_ID" baseTableName="GROUP_ROLE_MAPPING" constraintName="FK_GROUP_ROLE_ROLE" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
 
         <addColumn tableName="CLIENT">
-            <column name="REGISTRATION_SECRET" type="VARCHAR(255)"/>
+            <column name="REGISTRATION_TOKEN" type="VARCHAR(255)"/>
         </addColumn>
 
     </changeSet>

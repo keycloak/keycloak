@@ -178,13 +178,13 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public String getRegistrationSecret() {
-        return entity.getRegistrationSecret();
+    public String getRegistrationToken() {
+        return entity.getRegistrationToken();
     }
 
     @Override
-    public void setRegistrationSecret(String registrationSecret) {
-        entity.setRegistrationSecret(registrationSecret);
+    public void setRegistrationToken(String registrationToken) {
+        entity.setRegistrationToken(registrationToken);
     }
 
     @Override

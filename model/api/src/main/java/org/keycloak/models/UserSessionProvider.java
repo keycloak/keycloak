@@ -63,6 +63,11 @@ public interface UserSessionProvider extends Provider {
     UserSessionModel importUserSession(UserSessionModel persistentUserSession, boolean offline);
     ClientSessionModel importClientSession(ClientSessionModel persistentClientSession, boolean offline);
 
+    ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count);
+    ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id);
+    void removeClientInitialAccessModel(RealmModel realm, String id);
+    List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm);
+
     void close();
 
 }

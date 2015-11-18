@@ -1,0 +1,52 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <kc-tabs-realm></kc-tabs-realm>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+        <tr>
+            <th class="kc-table-actions" colspan="6">
+                <div class="form-inline">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="search.id" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                            <div class="input-group-addon">
+                                <i class="fa fa-search" type="submit"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pull-right" data-ng-show="access.manageRealm">
+                        <a id="createClient" class="btn btn-default" href="#/realms/{{realm.realm}}/client-initial-access/create">{{:: 'create' | translate}}</a>
+                    </div>
+                </div>
+            </th>
+        </tr>
+        <tr data-ng-hide="clients.length == 0">
+            <th>{{:: 'id' | translate}}</th>
+            <th>{{:: 'created' | translate}}</th>
+            <th>{{:: 'expires' | translate}}</th>
+            <th>{{:: 'count' | translate}}</th>
+            <th>{{:: 'remainingCount' | translate}}</th>
+            <th>{{:: 'actions' | translate}}</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="ia in clientInitialAccess | filter:search | orderBy:'timestamp'">
+            <td>{{ia.id}}</td>
+            <td>{{(ia.timestamp * 1000)|date:'shortDate'}}&nbsp;{{(ia.timestamp * 1000)|date:'mediumTime'}}</td>
+            <td><span data-ng-show="ia.expiration > 0">{{((ia.timestamp + ia.expiration) * 1000)|date:'shortDate'}}&nbsp;{{((ia.timestamp + ia.expiration) * 1000)|date:'mediumTime'}}</span></td>
+            <td>{{ia.count}}</td>
+            <td>{{ia.remainingCount}}</td>
+            <td class="kc-action-cell">
+                <button class="btn btn-default btn-block btn-sm" data-ng-click="remove(ia.id)">{{:: 'delete' | translate}}</button>
+            </td>
+        </tr>
+        <tr data-ng-show="(clients | filter:search).length == 0">
+            <td class="text-muted" colspan="3" data-ng-show="search.clientId">{{:: 'no-results' | translate}}</td>
+            <td class="text-muted" colspan="3" data-ng-hide="search.clientId">{{:: 'no-clients-available' | translate}}</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<kc-menu></kc-menu>
