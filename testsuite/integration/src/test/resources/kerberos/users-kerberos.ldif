@@ -76,6 +76,20 @@ userPassword: theduke
 krb5PrincipalName: jduke@KEYCLOAK.ORG
 krb5KeyVersionNumber: 0
 
+dn: uid=MyDuke,ou=People,dc=keycloak,dc=org
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: My
+sn: Duke
+mail: MyDuke@keycloak.org
+uid: MyDuke
+userPassword: theduke
+krb5PrincipalName: MyDuke@KEYCLOAK.ORG
+krb5KeyVersionNumber: 0
+
 dn: uid=gsstestserver,ou=People,dc=keycloak,dc=org
 objectClass: top
 objectClass: person

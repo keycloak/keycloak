@@ -127,7 +127,34 @@ public abstract class AbstractKerberosTest {
 
         spnegoResponse.close();
         events.clear();
-     }
+    }
+
+    // KEYCLOAK-2102
+    @Test
+    public void spnegoCaseInsensitiveTest() throws Exception {
+        KeycloakRule keycloakRule = getKeycloakRule();
+        AssertEvents events = getAssertEvents();
+
+        Response spnegoResponse = spnegoLogin("MyDuke", "theduke");
+        Assert.assertEquals(302, spnegoResponse.getStatus());
+
+        events.expectLogin()
+                .client("kerberos-app")
+                .user(keycloakRule.getUser("test", "myduke").getId())
+                .detail(Details.REDIRECT_URI, KERBEROS_APP_URL)
+                        //.detail(Details.AUTH_METHOD, "spnego")
+                .detail(Details.USERNAME, "myduke")
+                .assertEvent();
+
+        String location = spnegoResponse.getLocation().toString();
+        driver.navigate().to(location);
+
+        String pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("Kerberos Test") && pageSource.contains("Kerberos servlet secured content"));
+
+        spnegoResponse.close();
+        events.clear();
+    }
 
 
     @Test
