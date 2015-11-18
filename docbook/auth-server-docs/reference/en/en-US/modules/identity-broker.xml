@@ -66,7 +66,7 @@
 
     </itemizedlist>
 
-    <section>
+    <section id="identity-broker-overview">
         <title>Overview</title>
 
         <para>
@@ -127,10 +127,11 @@
             <listitem>
                 <para>
                     Now Keycloak is going to check if the response from the identity provider is valid. If valid, it will create an user
-                    or just skip that if the user already exists. If it is a new user, Keycloak will ask informations about the user to the identity provider
+                    or just skip that if the user already exists. If it is a new user, Keycloak may ask informations about the user to the identity provider
                     (or just read that from a security token) and create the user locally. This is what we call <emphasis>identity federation</emphasis>.
-                    If the user already exists Keycloak will ask him to link the identity returned from the identity provider
-                    with his existing account. A process that we call <emphasis>account linking</emphasis>.
+                    If the user already exists Keycloak may ask him to link the identity returned from the identity provider
+                    with his existing account. A process that we call <emphasis>account linking</emphasis>. What exactly is done is configurable
+                    and can be specified by setup of <link linkend="identity-broker-first-login">First Login Flow</link> .
                     At the end of this step, Keycloak authenticates the user and issues its own token in order to access
                     the requested resource in the service provider.
                 </para>
@@ -210,7 +211,7 @@
                     <para>
                         Social providers allows you to enable social authentication to your realm.
                         Keycloak makes it easy to let users log in to your application using an existing account with a social network.
-                        Currently Facebook, Google and Twitter are supported with more planned for the future.
+                        Currently Facebook, Google, Twitter, GitHub, LinkedIn and StackOverflow are supported with more planned for the future.
                     </para>
                 </listitem>
             </varlistentry>
@@ -274,6 +275,15 @@
                             be used by any other means.
                         </entry>
                     </row>
+                    <row>
+                        <entry>
+                            <literal>Authenticate By Default</literal>
+                        </entry>
+                        <entry>
+                            If enabled, Keycloak will automatically redirect to this identity provider even before displaying login screen.
+                            In other words, steps 3 and 4 from <link linkend="identity-broker-overview">the base flow</link> are skipped.
+                        </entry>
+                    </row>
                    <row>
                         <entry>
                             <literal>Store Tokens</literal>
@@ -295,20 +305,6 @@
                     </row>
                     <row>
                         <entry>
-                            <literal>Update Profile on First Login</literal>
-                        </entry>
-                        <entry>
-                            Allows you to force users to update their profile right after the authentication finishes and
-                            before the account is actually created in Keycloak. When "On", users will be always presented with the
-                            <emphasis>update profile page</emphasis> asking for additional information in order to federate their identities.
-                            When "On missing info", users will be presented with the <emphasis>update profile page</emphasis> only if some 
-                            mandatory information (email, first name, last name) is not provided by identity provider.
-                            If "Off", the account will be created with the minimal information obtained from the identity provider
-                            during the authentication process.
-                        </entry>
-                    </row>
-                    <row>
-                        <entry>
                             <literal>Trust email</literal>
                         </entry>
                         <entry>
@@ -326,6 +322,16 @@
                             You can put number into this field, providers with lower numbers are shown first.
                         </entry>
                     </row>
+                    <row>
+                        <entry>
+                            <literal>First Login Flow</literal>
+                        </entry>
+                        <entry>
+                            Alias of authentication flow, which is triggered during first login with this identity provider. Term <literal>First Login</literal>
+                            means that there is not yet existing Keycloak account linked with the authenticated identity provider account.
+                            More details in <link linkend="identity-broker-first-login">First Login section</link>.
+                        </entry>
+                    </row>
                 </tbody>
             </tgroup>
         </table>
@@ -340,8 +346,8 @@
             Forcing users to register to your realm when they want to access applications is hard.
             So is trying to remember yet another username and password combination.
             Social identity providers makes it easy for users to register on your realm and quickly sign in using a social network.
-            Keycloak provides built-in support for the most common social networks out there, such as Google, Facebook, Twitter and
-            even Github.
+            Keycloak provides built-in support for the most common social networks out there, such as Google, Facebook, Twitter,
+            Github, LinkedId and StackOverflow.
         </para>
 
         <section>
@@ -1211,7 +1217,13 @@ Authorization: Bearer {keycloak_access_token}]]></programlisting>
     <section>
         <title>Automatically Select and Identity Provider</title>
         <para>
-            Applications can automatically select an identity provider in order to authenticate an user. In this case, the user will not be presented to the login page but automatically redirected to the identity provider.
+            Each Identity provider has option <literal>Authenticate By Default</literal>, which allows that Identity provider is automatically
+            selected during authentication. User won't even see Keycloak login page, but is automatically redirected to the identity provider.
+        </para>
+        <para>
+            Applications can also automatically select an identity provider in order to authenticate an user.
+            Selection per application is preferred over <literal>Authenticate By Default</literal> option if you need more control
+            on when exactly is Identity provider automatically selected.
         </para>
         <para>
             Keycloak supports a specific HTTP query parameter that you can use as a hint to tell the server which identity provider should be used to authenticate the user.
@@ -1281,6 +1293,122 @@ keycloak.createLoginUrl({
                 </varlistentry>
              </variablelist>
         </para>
+    </section>
+
+    <section id="identity-broker-first-login">
+        <title>First Login Flow</title>
+        <para>
+            When Keycloak successfully authenticates user through identity provider (step 8 in <link linkend="identity-broker-overview">Overview</link> chapter),
+            there can be two situations:
+            <orderedlist>
+                <listitem>
+                    <para>
+                        There is already Keycloak user account linked with the authenticated identity provider account. In this case,
+                        Keycloak will just authenticate as the existing user and redirect back to application (step 9 in <link linkend="identity-broker-overview">Overview</link> chapter).
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        There is not yet existing Keycloak user account linked with the identity provider account. This situation is more tricky.
+                        Usually you just want to register new account into Keycloak database, but what if there is existing Keycloak account with same email like the identity provider account?
+                        Automatically link identity provider account with existing Keycloak account is not very good option as there are possible security flaws related to that...
+                    </para>
+                </listitem>
+            </orderedlist>
+        </para>
+        <para>
+            Because we had various requirements what to do in second case, we changed the behaviour to be flexible and configurable
+            through <link linkend="auth_spi">Authentication Flows SPI</link>. In admin console in Identity provider settings, there is option
+            <literal>First Login Flow</literal>, which allows you to choose, which workflow will be used after "first login" with this identity provider account.
+            By default it points to <literal>first broker login</literal> flow, but you can configure and use your own flow and use different flows for different identity providers etc.
+        </para>
+        <para>
+            The flow itself is configured in admin console under <literal>Authentication</literal> tab. When you choose <literal>First Broker Login</literal> flow,
+            you will see what authenticators are used by default. You can either re-configure existing flow (For example disable some authenticators,
+            mark some of them as <literal>required</literal>, configure some authenticators etc). Or you can even create new authentication flow and/or
+            write your own Authenticator implementations and use it in your flow. See <link linkend="auth_spi">Authentication Flows SPI</link> for more details on how to do it.
+        </para>
+        <para>
+            For <literal>First Broker Login</literal> case, it might be useful if your Authenticator is subclass of <literal>org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator</literal>
+            so you have access to all details about authenticated Identity provider account. But it's not a requirement.
+        </para>
+        <section>
+            <title>Default First Login Flow</title>
+            <para>
+                Let's describe the default behaviour provided by <literal>First Broker Login</literal> flow. There are those authenticators:
+                <variablelist>
+                    <varlistentry>
+                        <term>Review Profile</term>
+                        <listitem>
+                            <para>
+                                This authenticator might display the profile info page, where user can review his profile retrieved from identity provider.
+                                The authenticator is configurable. You can set <literal>Update Profile On First Login</literal> option.
+                                When <literal>On</literal>, users will be always presented with the profile page asking for additional information
+                                in order to federate their identities. When <literal>missing</literal>, users will be presented with
+                                the profile page only if some mandatory information (email, first name, last name) is not provided by identity provider.
+                                If <literal>Off</literal>, the profile page won't be displayed, unless user clicks in later phase on <literal>Review profile info</literal>
+                                link (page displayed in later phase by <literal>Confirm Link Existing Account</literal> authenticator)
+                            </para>
+                        </listitem>
+                    </varlistentry>
+
+                    <varlistentry>
+                        <term>Create User If Unique</term>
+                        <listitem>
+                            <para>
+                                This authenticator checks if there is already existing Keycloak account with same email or username like
+                                the account from identity provider. If it's not, then authenticator just creates new Keyclok account and
+                                link it with identity provider and whole flow is finished. Otherwise it goes to the next <literal>Handle Existing Account</literal> subflow.
+                                If you always want to ensure that there is no duplicated account, you can mark this authenticator as <literal>REQUIRED</literal> .
+                                In this case, the user will see the error page if there is existing Keycloak account and user needs
+                                to link his identity provider account through Account management.
+                            </para>
+                            <para>
+                                This authenticator also has config option <literal>Require Password Update After Registration</literal> .
+                                When enabled, user is required to update password after account is created.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+
+                    <varlistentry>
+                        <term>Confirm Link Existing Account</term>
+                        <listitem>
+                            <para>
+                                User will see the info page, that there is existing Keycloak account with same email. He can either
+                                review his profile again and use different email or username (flow is restarted and goes back to <literal>Review Profile</literal> authenticator).
+                                Or he can confirm that he wants to link identity provider account with his existing Keycloak account.
+                                Disable this authenticator if you don't want users to see this confirmation page, but go straight
+                                to linking identity provider account by email verification or re-authentication.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+
+                    <varlistentry>
+                        <term>Verify Existing Account By Email</term>
+                        <listitem>
+                            <para>
+                                This authenticator is <literal>ALTERNATIVE</literal> by default, so it's used only if realm has SMTP setup configured.
+                                It will send mail to user, where he can confirm that he wants to link identity provider with his Keycloak account.
+                                Disable this if you don't want to confirm linking by email, but instead you always want users to reauthenticate with their password (and alternatively OTP).
+                            </para>
+                        </listitem>
+                    </varlistentry>
+
+                    <varlistentry>
+                        <term>Verify Existing Account By Re-authentication</term>
+                        <listitem>
+                            <para>
+                                This authenticator is used if email authenticator is disabled or non-available (SMTP not configured for realm). It
+                                will display login screen where user needs to authenticate with his password to link his Keycloak account with Identity provider.
+                                User can also re-authenticate with some different identity provider, which is already linked to his keycloak account.
+                                You can also force users to use OTP, otherwise it's optional and used only if OTP is already set for user account.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+
+                </variablelist>
+            </para>
+        </section>
     </section>
 
     <section>

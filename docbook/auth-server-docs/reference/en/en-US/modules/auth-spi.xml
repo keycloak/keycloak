@@ -866,6 +866,14 @@ public class SecretQuestionRequiredActionFactory implements RequiredActionFactor
         </para>
     </section>
 
+    <section>
+        <title>Modifying First Broker Login Flow</title>
+        <para>
+            First Broker Login flow is used during first login with some identity provider. Term <literal>First Login</literal> means that there is not yet existing Keycloak account
+            linked with the particular authenticated identity provider account. More details about this flow are in the <link linkend="identity-broker-first-login">Identity provider chapter</link>.
+        </para>
+    </section>
+
     <section id="client_authentication">
         <title>Authentication of clients</title>
         <para>Keycloak actually supports pluggable authentication for <ulink url="http://openid.net/specs/openid-connect-core-1_0.html">OpenID Connect</ulink>

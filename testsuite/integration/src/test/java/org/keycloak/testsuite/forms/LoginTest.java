@@ -215,9 +215,10 @@ public class LoginTest {
             Assert.assertEquals("login-test", loginPage.getUsername());
             Assert.assertEquals("", loginPage.getPassword());
 
-            Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
+            // KEYCLOAK-2024
+            Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-            events.expectLogin().user(userId).session((String) null).error("user_disabled")
+            events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
                     .detail(Details.USERNAME, "login-test")
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
@@ -250,6 +251,7 @@ public class LoginTest {
             Assert.assertEquals("login-test", loginPage.getUsername());
             Assert.assertEquals("", loginPage.getPassword());
 
+            // KEYCLOAK-2024
             Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
 
             events.expectLogin().user(userId).session((String) null).error("user_disabled")

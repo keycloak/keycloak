@@ -8,7 +8,7 @@
     <para>
         <orderedlist>
             <listitem>
-                Create a new theme within the <literal>themes/admin/mytheme</literal> directory in your distribution.
+                Create a new theme within the <literal>themes/mytheme/admin</literal> directory in your distribution.
                 Where <literal>mytheme</literal> is whatever you want to name your theme.
             </listitem>
             <listitem>
@@ -19,15 +19,15 @@ import=common/keycloak
 ]]></programlisting>
             </listitem>
             <listitem>
-                Copy the file <literal>themes/admin/base/resources/partials/user-attribute-entry.html</literal> into the
-                a mirror directory in your theme: <literal>themes/admin/mytheme/resources/partials/user-attribute-entry.html</literal>.
+                Copy the file <literal>themes/base/admin/resources/partials/user-attributes.html</literal> into the
+                a mirror directory in your theme: <literal>themes/mytheme/admin/resources/partials/user-attributes.html</literal>.
                 What you are doing here is overriding the user attribute entry page in the admin console and putting in
                 what attributes you want.  This file already contains an example of entering address data.  You can remove
                 this if you want and replace it with something else.  Also, if you want to edit this file directly instead
                 of creating a new theme, you can.
             </listitem>
             <listitem>
-                In the <literal>user-attribute-entry.html</literal> file add your custom user attribute entry form item.  For example
+                In the <literal>user-attributes.html</literal> file add your custom user attribute entry form item.  For example
 <programlisting><![CDATA[    <div class="form-group clearfix block">
         <label class="col-sm-2 control-label" for="mobile">Mobile</label>
         <div class="col-sm-6">
@@ -52,7 +52,7 @@ import=common/keycloak
     <para>
         <orderedlist>
             <listitem>
-                Create a new theme within the <literal>themes/login/mytheme</literal> directory in your distribution.
+                Create a new theme within the <literal>themes/mytheme/login</literal> directory in your distribution.
                 Where <literal>mytheme</literal> is whatever you want to name your theme.
             </listitem>
             <listitem>
@@ -63,8 +63,8 @@ import=common/keycloak
 styles= ../patternfly/lib/patternfly/css/patternfly.css ../patternfly/css/login.css ../patternfly/lib/zocial/zocial.css css/login.css]]></programlisting>
             </listitem>
             <listitem>
-                Copy the file <literal>themes/login/base/register.ftl</literal> into the
-                a mirror directory in your theme: <literal>themes/login/mytheme/register.ftl</literal>.
+                Copy the file <literal>themes/base/login/register.ftl</literal> into the
+                a mirror directory in your theme: <literal>themes/mytheme/login/register.ftl</literal>.
                 What you are doing here is overriding the registration page and adding
                 what attributes you want.  This file already contains an example of entering address data.  You can remove
                 this if you want and replace it with something else.  Also, if you want to edit this file directly instead
@@ -101,7 +101,7 @@ styles= ../patternfly/lib/patternfly/css/patternfly.css ../patternfly/css/login.
     <para>
         <orderedlist>
             <listitem>
-                Create a new theme within the <literal>themes/account/mytheme</literal> directory in your distribution.
+                Create a new theme within the <literal>themes/mytheme/account</literal> directory in your distribution.
                 Where <literal>mytheme</literal> is whatever you want to name your theme.
             </listitem>
             <listitem>
@@ -113,8 +113,8 @@ import=common/keycloak
 styles= ../patternfly/lib/patternfly/css/patternfly.css ../patternfly/css/account.css css/account.css]]></programlisting>
             </listitem>
             <listitem>
-                Copy the file <literal>themes/account/base/account.ftl</literal> into the
-                a mirror directory in your theme: <literal>themes/account/mytheme/account.ftl</literal>.
+                Copy the file <literal>themes/base/account/account.ftl</literal> into the
+                a mirror directory in your theme: <literal>themes/mytheme/account/account.ftl</literal>.
                 What you are doing here is overriding the profile page and adding
                 what attributes you want to manage.  This file already contains an example of entering address data.  You can remove
                 this if you want and replace it with something else.  Also, if you want to edit this file directly instead

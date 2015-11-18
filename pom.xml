@@ -599,11 +599,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-connections-file</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-connections-infinispan</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -838,7 +833,7 @@
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wf9-server-subsystem</artifactId>
                 <version>${project.version}</version>
-            </dependency>            
+            </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-subsystem</artifactId>
@@ -957,11 +952,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-model-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-model-file</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1441,7 +1431,7 @@
                     <groupId>org.wildfly.build</groupId>
                     <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
                     <version>${wildfly.build-tools.version}</version>
-                </plugin> 
+                </plugin>
                 <plugin>
                     <groupId>org.wildfly.build</groupId>
                     <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
@@ -1462,7 +1452,7 @@
                                     <requireMavenVersion>
                                         <version>3.1.1</version>
                                     </requireMavenVersion>
-                                </rules>    
+                                </rules>
                             </configuration>
                         </execution>
                     </executions>

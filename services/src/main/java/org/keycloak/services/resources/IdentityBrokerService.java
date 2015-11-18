@@ -65,6 +65,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialIdentityProvider;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -74,6 +75,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -368,6 +370,13 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     context.getUsername(), context.getToken());
             session.users().addFederatedIdentity(realmModel, federatedUser, federatedIdentityModel);
 
+            EventBuilder event = this.event.clone().user(federatedUser)
+                    .detail(Details.CODE_ID, clientSession.getId())
+                    .detail(Details.USERNAME, federatedUser.getUsername())
+                    .detail(Details.IDENTITY_PROVIDER, providerId)
+                    .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
+                    .removeDetail("auth_method");
+
             String isRegisteredNewUser = clientSession.getNote(AbstractIdpAuthenticator.BROKER_REGISTERED_NEW_USER);
             if (Boolean.parseBoolean(isRegisteredNewUser)) {
 
@@ -388,14 +397,16 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     federatedUser.setEmailVerified(true);
                 }
 
-                this.event.clone().user(federatedUser).event(EventType.REGISTER)
-                        .detail(Details.IDENTITY_PROVIDER, providerId)
-                        .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
-                        .removeDetail("auth_method")
+                event.event(EventType.REGISTER)
+                        .detail(Details.REGISTER_METHOD, "broker")
+                        .detail(Details.EMAIL, federatedUser.getEmail())
                         .success();
 
             } else {
                 LOGGER.debugf("Linked existing keycloak user '%s' with identity provider '%s' . Identity provider username is '%s' .", federatedUser.getUsername(), providerId, context.getUsername());
+
+                event.event(EventType.FEDERATED_IDENTITY_LINK)
+                        .success();
 
                 updateFederatedIdentity(context, federatedUser);
             }
@@ -410,7 +421,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 return finishBrokerAuthentication(context, federatedUser, clientSession, providerId);
             }
         }  catch (Exception e) {
-            // TODO?
             return redirectToErrorPage(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
         }
     }
@@ -453,10 +463,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private Response performAccountLinking(ClientSessionModel clientSession, BrokeredIdentityContext context, FederatedIdentityModel federatedIdentityModel, UserModel federatedUser) {
-        this.event.event(EventType.IDENTITY_PROVIDER_ACCCOUNT_LINKING);
+        this.event.event(EventType.FEDERATED_IDENTITY_LINK);
 
         if (federatedUser != null) {
-            return redirectToErrorPage(Messages.IDENTITY_PROVIDER_ALREADY_LINKED, context.getIdpConfig().getAlias());
+            return redirectToAccountErrorPage(clientSession, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, context.getIdpConfig().getAlias());
         }
 
         UserModel authenticatedUser = clientSession.getUserSession().getUser();
@@ -466,19 +476,21 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         if (!authenticatedUser.isEnabled()) {
-            fireErrorEvent(Errors.USER_DISABLED);
-            return redirectToErrorPage(Messages.ACCOUNT_DISABLED);
+            return redirectToAccountErrorPage(clientSession, Messages.ACCOUNT_DISABLED);
         }
 
         if (!authenticatedUser.hasRole(this.realmModel.getClientByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(MANAGE_ACCOUNT))) {
-            fireErrorEvent(Errors.NOT_ALLOWED);
             return redirectToErrorPage(Messages.INSUFFICIENT_PERMISSION);
         }
 
         this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, federatedIdentityModel);
         context.getIdp().attachUserSession(clientSession.getUserSession(), clientSession, context);
 
-        this.event.success();
+        this.event.user(authenticatedUser)
+                .detail(Details.USERNAME, authenticatedUser.getUsername())
+                .detail(Details.IDENTITY_PROVIDER, federatedIdentityModel.getIdentityProvider())
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, federatedIdentityModel.getUserName())
+                .success();
         return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
     }
 
@@ -566,6 +578,20 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         fireErrorEvent(message, throwable);
         return ErrorPage.error(this.session, message, parameters);
+    }
+
+    private Response redirectToAccountErrorPage(ClientSessionModel clientSession, String message, Object ... parameters) {
+        fireErrorEvent(message);
+
+        FormMessage errorMessage = new FormMessage(message, parameters);
+        try {
+            String serializedError = JsonSerialization.writeValueAsString(errorMessage);
+            clientSession.setNote(AccountService.ACCOUNT_MGMT_FORWARDED_ERROR_NOTE, serializedError);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+
+        return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
     }
 
     private Response redirectToLoginPage(Throwable t, ClientSessionCode clientCode) {

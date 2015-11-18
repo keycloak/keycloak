@@ -116,7 +116,7 @@ public class KerberosFederationProvider implements UserFederationProvider {
         // KerberosUsernamePasswordAuthenticator.isUserAvailable is an overhead, so avoid it for now
 
         String kerberosPrincipal = local.getUsername() + "@" + kerberosConfig.getKerberosRealm();
-        return kerberosPrincipal.equals(local.getFirstAttribute(KERBEROS_PRINCIPAL));
+        return kerberosPrincipal.equalsIgnoreCase(local.getFirstAttribute(KERBEROS_PRINCIPAL));
     }
 
     @Override

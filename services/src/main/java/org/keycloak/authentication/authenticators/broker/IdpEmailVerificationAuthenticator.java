@@ -14,6 +14,10 @@ import org.keycloak.authentication.authenticators.broker.util.SerializedBrokered
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -52,6 +56,15 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         String link = UriBuilder.fromUri(context.getActionUrl())
                 .queryParam(Constants.KEY, clientSession.getNote(Constants.VERIFY_EMAIL_KEY))
                 .build().toString();
+
+        EventBuilder event = context.getEvent().clone().event(EventType.SEND_IDENTITY_PROVIDER_LINK)
+                .user(existingUser)
+                .detail(Details.USERNAME, existingUser.getUsername())
+                .detail(Details.EMAIL, existingUser.getEmail())
+                .detail(Details.CODE_ID, clientSession.getId())
+                .removeDetail(Details.AUTH_METHOD)
+                .removeDetail(Details.AUTH_TYPE);
+
         long expiration = TimeUnit.SECONDS.toMinutes(context.getRealm().getAccessCodeLifespanUserAction());
         try {
 
@@ -60,15 +73,11 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
                     .setUser(existingUser)
                     .setAttribute(EmailProvider.IDENTITY_PROVIDER_BROKER_CONTEXT, brokerContext)
                     .sendConfirmIdentityBrokerLink(link, expiration);
-//            event.clone().event(EventType.SEND_RESET_PASSWORD)
-//                    .user(user)
-//                    .detail(Details.USERNAME, username)
-//                    .detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, context.getClientSession().getId()).success();
+
+            event.success();
         } catch (EmailException e) {
-//            event.clone().event(EventType.SEND_RESET_PASSWORD)
-//                    .detail(Details.USERNAME, username)
-//                    .user(user)
-//                    .error(Errors.EMAIL_SEND_FAILED);
+            event.error(Errors.EMAIL_SEND_FAILED);
+
             logger.error("Failed to send email to confirm identity broker linking", e);
             Response challenge = context.form()
                     .setError(Messages.EMAIL_SENT_ERROR)
