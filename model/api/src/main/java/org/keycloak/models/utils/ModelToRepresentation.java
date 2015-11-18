@@ -279,8 +279,14 @@ public class ModelToRepresentation {
         if (internal) {
             exportAuthenticationFlows(realm, rep);
             exportRequiredActions(realm, rep);
+            exportGroups(realm, rep);
         }
         return rep;
+    }
+
+    public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
+        List<GroupRepresentation> groups = toGroupHierarchy(realm, true);
+        rep.setGroups(groups);
     }
 
     public static void exportAuthenticationFlows(RealmModel realm, RealmRepresentation rep) {

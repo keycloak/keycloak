@@ -40,6 +40,30 @@
                 { "type" : "password",
                     "value" : "password" }
             ]
+        },
+        {
+            "username" : "topGroupUser",
+            "enabled": true,
+            "email" : "top@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "groups": [
+                "/top"
+            ]
+        },
+        {
+            "username" : "level2GroupUser",
+            "enabled": true,
+            "email" : "level2@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "groups": [
+                "/top/level2"
+            ]
         }
     ],
     "applications": [
@@ -345,6 +369,26 @@
                 "saml.authnstatement": "true",
                 "saml.signing.certificate": "MIIB0DCCATkCBgFJH5u0EDANBgkqhkiG9w0BAQsFADAuMSwwKgYDVQQDEyNodHRwOi8vbG9jYWxob3N0OjgwODAvZW1wbG95ZWUtc2lnLzAeFw0xNDEwMTcxOTMzNThaFw0yNDEwMTcxOTM1MzhaMC4xLDAqBgNVBAMTI2h0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9lbXBsb3llZS1zaWcvMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+9kVgPFpshjS2aT2g52lqTv2lqb1jgvXZVk7iFF4LAO6SdCXKXRZI4SuzIRkVNpE1a42V1kQRlaozoFklgvX5sje8tkpa9ylq+bxGXM9RRycqRu2B+oWUV7Aqq7Bs0Xud0WeHQYRcEoCjqsFKGy65qkLRDdT70FTJgpSHts+gDwIDAQABMA0GCSqGSIb3DQEBCwUAA4GBACKyPLGqMX8GsIrCfJU8eVnpaqzTXMglLVo/nTcfAnWe9UAdVe8N3a2PXpDBvuqNA/DEAhVcQgxdlOTWnB6s8/yLTRuH0bZgb3qGdySif+lU+E7zZ/SiDzavAvn+ABqemnzHcHyhYO+hNRGHvUbW5OAii9Vdjhm8BI32YF1NwhKp"
             }
+        }
+    ],
+    "groups" : [
+        {
+            "name": "top",
+            "attributes": {
+                "topAttribute": ["true"]
+
+            },
+            "realmRoles": ["manager"],
+            "subGroups": [
+                {
+                    "name": "level2",
+                    "realmRoles": ["user"],
+                    "attributes": {
+                        "level2Attribute": ["true"]
+
+                    }
+                }
+            ]
         }
     ],
     "roles" : {

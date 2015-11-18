@@ -1,6 +1,8 @@
 package org.keycloak.admin.client.resource;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 import javax.ws.rs.*;
@@ -35,6 +37,15 @@ public interface RealmResource {
 
     @Path("roles")
     RolesResource roles();
+
+    @Path("groups")
+    GroupsResource groups();
+
+    @GET
+    @Path("group-by-path/{path: .*}")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public GroupRepresentation getGroupByPath(@PathParam("path") String path);
 
     @Path("identity-provider")
     IdentityProvidersResource identityProviders();

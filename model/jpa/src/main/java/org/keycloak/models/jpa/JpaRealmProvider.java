@@ -99,19 +99,20 @@ public class JpaRealmProvider implements RealmProvider {
 
         RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
-        for (ClientEntity a : new LinkedList<>(realm.getClients())) {
-            adapter.removeClient(a.getId());
-        }
-
         int num = em.createNamedQuery("deleteGroupRoleMappingsByRealm")
                 .setParameter("realm", realm).executeUpdate();
         num = em.createNamedQuery("deleteGroupAttributesByRealm")
                 .setParameter("realm", realm).executeUpdate();
         num = em.createNamedQuery("deleteGroupsByRealm")
                 .setParameter("realm", realm).executeUpdate();
-
+        for (ClientEntity a : new LinkedList<>(realm.getClients())) {
+            adapter.removeClient(a.getId());
+        }
 
         em.remove(realm);
+
+        em.flush();
+        em.clear();
         return true;
     }
 

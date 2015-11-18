@@ -611,8 +611,15 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public GroupModel createGroup(String name) {
+        String id = KeycloakModelUtils.generateId();
+        return createGroup(id, name);
+    }
+
+    @Override
+    public GroupModel createGroup(String id, String name) {
+        if (id == null) id = KeycloakModelUtils.generateId();
         MongoGroupEntity group = new MongoGroupEntity();
-        group.setId(KeycloakModelUtils.generateId());
+        group.setId(id);
         group.setName(name);
         group.setRealmId(getId());
 
@@ -653,7 +660,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
         if (groups == null) return result;
         for (MongoGroupEntity group : groups) {
-            result.add(new GroupAdapter(session, this, group, invocationContext));
+            result.add(model.getGroupById(group.getId(), this));
         }
 
         return result;
@@ -665,7 +672,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         Iterator<GroupModel> it = all.iterator();
         while (it.hasNext()) {
             GroupModel group = it.next();
-            if (group.getParent() != null) {
+            if (group.getParentId() != null) {
                 it.remove();
             }
         }

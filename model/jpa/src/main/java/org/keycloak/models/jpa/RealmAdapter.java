@@ -1000,6 +1000,7 @@ public class RealmAdapter implements RealmModel {
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
         em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
+        em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", roleEntity.getId()).executeUpdate();
 
         em.remove(roleEntity);
 
@@ -1971,7 +1972,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<GroupModel> getGroups() {
         List<GroupModel> list = new LinkedList<>();
-        Collection<GroupEntity> groups = realm.getGroups();
+        Collection<GroupEntity> groups =  em.createNamedQuery("getAllGroupsByRealm").setParameter("realm", realm).getResultList();
         if (groups == null) return list;
         for (GroupEntity entity : groups) {
             list.add(new GroupAdapter(this, em, entity));
@@ -2008,7 +2009,6 @@ public class RealmAdapter implements RealmModel {
 
         session.users().preRemove(this, group);
         moveGroup(group, null);
-        realm.getGroups().remove(groupEntity);
         em.createNamedQuery("deleteGroupAttributesByGroup").setParameter("group", groupEntity).executeUpdate();
         em.createNamedQuery("deleteGroupRoleMappingsByGroup").setParameter("group", groupEntity).executeUpdate();
         em.remove(groupEntity);
@@ -2019,8 +2019,15 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public GroupModel createGroup(String name) {
+        String id = KeycloakModelUtils.generateId();
+        return createGroup(id, name);
+    }
+
+    @Override
+    public GroupModel createGroup(String id, String name) {
+        if (id == null) id = KeycloakModelUtils.generateId();
         GroupEntity groupEntity = new GroupEntity();
-        groupEntity.setId(KeycloakModelUtils.generateId());
+        groupEntity.setId(id);
         groupEntity.setName(name);
         groupEntity.setRealm(realm);
         em.persist(groupEntity);

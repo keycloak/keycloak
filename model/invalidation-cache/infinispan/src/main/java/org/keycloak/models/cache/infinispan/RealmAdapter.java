@@ -1308,6 +1308,12 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public GroupModel createGroup(String id, String name) {
+        getDelegateForUpdate();
+        return updated.createGroup(id, name);
+    }
+
+    @Override
     public void addTopLevelGroup(GroupModel subGroup) {
         getDelegateForUpdate();
         updated.addTopLevelGroup(subGroup);

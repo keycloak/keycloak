@@ -321,7 +321,7 @@ public class UserAdapter implements UserModel {
     public Set<GroupModel> getGroups() {
         if (updated != null) return updated.getGroups();
         Set<GroupModel> groups = new HashSet<GroupModel>();
-        for (String id : cached.getRoleMappings()) {
+        for (String id : cached.getGroups()) {
             GroupModel groupModel = keycloakSession.realms().getGroupById(id, realm);
             if (groupModel == null) {
                 // chance that role was removed, so just delete to persistence and get user invalidated

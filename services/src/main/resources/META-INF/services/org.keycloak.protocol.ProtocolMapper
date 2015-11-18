@@ -6,5 +6,6 @@ org.keycloak.protocol.oidc.mappers.HardcodedClaim
 org.keycloak.protocol.oidc.mappers.HardcodedRole
 org.keycloak.protocol.oidc.mappers.RoleNameMapper
 org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper
+org.keycloak.protocol.oidc.mappers.GroupMembershipMapper
 
 

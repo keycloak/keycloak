@@ -462,6 +462,9 @@ public class UserFederationManager implements UserProvider {
     }
 
 
+
+
+
     @Override
     public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
         return validCredentials(realm, user, Arrays.asList(input));

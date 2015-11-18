@@ -133,9 +133,6 @@ public class RealmEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<GroupEntity> groups = new ArrayList<GroupEntity>();
-
     @ElementCollection
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
@@ -720,21 +717,6 @@ public class RealmEntity {
 
     public void setClientAuthenticationFlow(String clientAuthenticationFlow) {
         this.clientAuthenticationFlow = clientAuthenticationFlow;
-    }
-
-    public Collection<GroupEntity> getGroups() {
-        return groups;
-    }
-
-    public void setGroups(Collection<GroupEntity> groups) {
-        this.groups = groups;
-    }
-
-    public void addGroup(GroupEntity group) {
-        if (groups == null) {
-            groups = new ArrayList<GroupEntity>();
-        }
-        groups.add(group);
     }
 
 }

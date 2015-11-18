@@ -34,12 +34,36 @@
             "lastName": "Posolda",
             "credentials" : [
                 { "type" : "password",
-                  "value" : "password" }
+                    "value" : "password" }
             ],
             "realmRoles": [ "user" ],
             "applicationRoles": {
                 "account": [ "manage-account" ]
             }
+        },
+        {
+            "username" : "topGroupUser",
+            "enabled": true,
+            "email" : "top@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "groups": [
+                "/top"
+            ]
+        },
+        {
+            "username" : "level2GroupUser",
+            "enabled": true,
+            "email" : "level2@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "groups": [
+                "/top/level2"
+            ]
         }
     ],
     "roles" : {
@@ -54,6 +78,29 @@
             }
         ]
     },
+    "groups" : [
+        {
+            "name": "top",
+            "attributes": {
+                "topAttribute": ["true"]
+
+            },
+            "realmRoles": ["user"],
+            "clientRoles": {
+                "account": ["manage-account"]
+            },
+            "subGroups": [
+                {
+                    "name": "level2",
+                    "realmRoles": ["admin"],
+                    "attributes": {
+                        "level2Attribute": ["true"]
+
+                    }
+                }
+            ]
+        }
+    ],
     "scopeMappings": [
         {
             "client": "third-party",

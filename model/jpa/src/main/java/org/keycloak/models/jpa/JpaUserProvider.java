@@ -97,6 +97,7 @@ public class JpaUserProvider implements UserProvider {
     private void removeUser(UserEntity user) {
         String id = user.getId();
         em.createNamedQuery("deleteUserRoleMappingsByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteUserGroupMembershipsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteFederatedIdentityByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentRolesByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentProtMappersByUser").setParameter("user", user).executeUpdate();
@@ -174,9 +175,9 @@ public class JpaUserProvider implements UserProvider {
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUserAttributesByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
-        num = em.createNamedQuery("deleteUsersByRealm")
-                .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUserGroupMembershipByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteUsersByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
     }
 
