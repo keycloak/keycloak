@@ -330,6 +330,7 @@ public interface RealmModel extends RoleContainerModel {
     void setDefaultLocale(String locale);
 
     GroupModel createGroup(String name);
+    GroupModel createGroup(String id, String name);
 
     /**
      * Move Group to top realm level.  Basically just sets group parent to null.  You need to call this though

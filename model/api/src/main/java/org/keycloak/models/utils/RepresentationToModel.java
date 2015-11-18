@@ -12,6 +12,7 @@ import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -36,6 +37,7 @@ import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
@@ -311,6 +313,11 @@ public class RepresentationToModel {
             }
         }
 
+        if (rep.getGroups() != null) {
+            importGroups(newRealm, rep);
+        }
+
+
         // create users and their role mappings and social mappings
 
         if (rep.getUsers() != null) {
@@ -327,6 +334,59 @@ public class RepresentationToModel {
         }
         if(rep.getDefaultLocale() != null){
             newRealm.setDefaultLocale(rep.getDefaultLocale());
+        }
+    }
+
+    public static void importGroups(RealmModel realm, RealmRepresentation rep) {
+        List<GroupRepresentation> groups = rep.getGroups();
+        if (groups == null) return;
+
+        Map<String, ClientModel> clientMap = realm.getClientNameMap();
+        GroupModel parent = null;
+        for (GroupRepresentation group : groups) {
+            importGroup(realm, clientMap, parent, group);
+        }
+    }
+
+    public static void importGroup(RealmModel realm, Map<String, ClientModel> clientMap, GroupModel parent, GroupRepresentation group) {
+        GroupModel newGroup = realm.createGroup(group.getId(), group.getName());
+        if (group.getAttributes() != null) {
+            for (Map.Entry<String, List<String>> attr : group.getAttributes().entrySet()) {
+                newGroup.setAttribute(attr.getKey(), attr.getValue());
+            }
+        }
+        realm.moveGroup(newGroup, parent);
+
+        if (group.getRealmRoles() != null) {
+            for (String roleString : group.getRealmRoles()) {
+                RoleModel role = realm.getRole(roleString.trim());
+                if (role == null) {
+                    role = realm.addRole(roleString.trim());
+                }
+                newGroup.grantRole(role);
+            }
+        }
+        if (group.getClientRoles() != null) {
+            for (Map.Entry<String, List<String>> entry : group.getClientRoles().entrySet()) {
+                ClientModel client = clientMap.get(entry.getKey());
+                if (client == null) {
+                    throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
+                }
+                List<String> roleNames = entry.getValue();
+                for (String roleName : roleNames) {
+                    RoleModel role = client.getRole(roleName.trim());
+                    if (role == null) {
+                        role = client.addRole(roleName.trim());
+                    }
+                    newGroup.grantRole(role);
+
+                }
+            }
+        }
+        if (group.getSubGroups() != null) {
+            for (GroupRepresentation subGroup : group.getSubGroups()) {
+                importGroup(realm, clientMap, newGroup, subGroup);
+            }
         }
     }
 
@@ -998,6 +1058,16 @@ public class RepresentationToModel {
                 throw new RuntimeException("Unable to find client specified for service account link. Client: " + clientId);
             }
             user.setServiceAccountClientLink(client.getId());;
+        }
+        if (userRep.getGroups() != null) {
+            for (String path : userRep.getGroups()) {
+                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, path);
+                if (group == null) {
+                    throw new RuntimeException("Unable to find group specified by path: " + path);
+
+                }
+                user.joinGroup(group);
+            }
         }
         return user;
     }

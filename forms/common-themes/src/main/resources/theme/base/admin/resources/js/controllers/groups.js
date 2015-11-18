@@ -95,7 +95,7 @@ module.controller('GroupCreateCtrl', function($scope, $route, realm, parentId, G
         console.log('save!!!');
         if (parentId == 'realm') {
             console.log('realm')
-            Groups.save({realm: realm.realm, groupId: parentId}, $scope.group, function(data, headers) {
+            Groups.save({realm: realm.realm}, $scope.group, function(data, headers) {
                 var l = headers().location;
 
 

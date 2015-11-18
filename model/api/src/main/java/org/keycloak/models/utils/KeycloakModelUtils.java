@@ -1,6 +1,7 @@
 package org.keycloak.models.utils;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
@@ -416,7 +417,7 @@ public final class KeycloakModelUtils {
 
     public static List<String>  resolveAttribute(GroupModel group, String name) {
         List<String> values = group.getAttribute(name);
-        if (!values.isEmpty()) return values;
+        if (values != null && !values.isEmpty()) return values;
         if (group.getParentId() == null) return null;
         return resolveAttribute(group.getParent(), name);
 
@@ -434,4 +435,54 @@ public final class KeycloakModelUtils {
     }
 
 
+    private static GroupModel findSubGroup(String[] path, int index, GroupModel parent) {
+        for (GroupModel group : parent.getSubGroups()) {
+            if (group.getName().equals(path[index])) {
+                if (path.length == index + 1) {
+                    return group;
+                }
+                else {
+                    if (index + 1 < path.length) {
+                        GroupModel found = findSubGroup(path, index + 1, group);
+                        if (found != null) return found;
+                    } else {
+                        return null;
+                    }
+                }
+
+            }
+        }
+        return null;
+    }
+
+    public static GroupModel findGroupByPath(RealmModel realm, String path) {
+        if (path == null) {
+            return null;
+        }
+        if (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        if (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+        String[] split = path.split("/");
+        if (split.length == 0) return null;
+        GroupModel found = null;
+        for (GroupModel group : realm.getTopLevelGroups()) {
+            if (group.getName().equals(split[0])) {
+                if (split.length == 1) {
+                    found = group;
+                    break;
+                }
+                else {
+                    if (split.length > 1) {
+                        found = findSubGroup(split, 1, group);
+                        if (found != null) break;
+                    }
+                }
+
+            }
+        }
+        return found;
+    }
 }

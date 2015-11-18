@@ -1834,6 +1834,11 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public GroupModel createGroup(String id, String name) {
+        return null;
+    }
+
+    @Override
     public void addTopLevelGroup(GroupModel subGroup) {
 
     }

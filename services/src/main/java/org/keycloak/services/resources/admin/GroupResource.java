@@ -45,123 +45,47 @@ public class GroupResource {
     private final KeycloakSession session;
     private final RealmAuth auth;
     private final AdminEventBuilder adminEvent;
+    private final GroupModel group;
 
-    public GroupResource(RealmModel realm, KeycloakSession session, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public GroupResource(RealmModel realm, GroupModel group, KeycloakSession session, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.session = session;
         this.auth = auth;
         this.adminEvent = adminEvent;
+        this.group = group;
     }
 
     @Context private UriInfo uriInfo;
 
-    public GroupResource(RealmAuth auth, RealmModel realm, KeycloakSession session, AdminEventBuilder adminEvent) {
-        this.realm = realm;
-        this.session = session;
-        this.auth = auth;
-        this.adminEvent = adminEvent;
-    }
-
     /**
-     * Get group hierarchy.  Only name and ids are returned.
+     *
      *
      * @return
      */
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<GroupRepresentation> getGroups() {
+    public GroupRepresentation getGroup() {
         this.auth.requireView();
-        return ModelToRepresentation.toGroupHierarchy(realm, false);
+        return ModelToRepresentation.toGroupHierarchy(group, true);
     }
 
     /**
-     * Set or create child as a top level group.  This will update the group and set the parent if it exists.  Create it and set the parent
-     * if the group doesn't exist.
-     *
-     * @param rep
-     */
-    @POST
-    @Path("{id}")
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response addRealmGroup(@PathParam("id") String parentId, GroupRepresentation rep) {
-        GroupModel parentModel = realm.getGroupById(parentId);
-        Response.ResponseBuilder builder = Response.status(204);
-        if (parentModel == null) {
-            throw new NotFoundException("Could not find parent by id");
-        }
-        GroupModel child = null;
-        if (rep.getId() != null) {
-            child = realm.getGroupById(rep.getId());
-            if (child == null) {
-                throw new NotFoundException("Could not find child by id");
-            }
-        } else {
-            child = realm.createGroup(rep.getName());
-            updateGroup(rep, child);
-            URI uri = uriInfo.getBaseUriBuilder()
-                    .path(uriInfo.getMatchedURIs().get(1))
-                    .path(child.getId()).build();
-            builder.status(201).location(uri);
-
-        }
-        child.setParent(parentModel);
-        GroupRepresentation childRep = ModelToRepresentation.toRepresentation(child, true);
-        return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(childRep).build();
-    }
-
-
-
-
-    /**
-     * Does not expand hierarchy.  Subgroups will not be set.
-     *
-     * @param id
-     * @return
-     */
-    @GET
-    @Path("{id}")
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public GroupRepresentation getGroupById(@PathParam("id") String id) {
-        this.auth.requireView();
-        GroupModel group = realm.getGroupById(id);
-        if (group == null) {
-            throw new NotFoundException("Could not find group by id");
-        }
-
-        return ModelToRepresentation.toRepresentation(group, true);
-    }
-
-    /**
-     * Update group
+     * Update group, ignores subgroups.
      *
      * @param rep
      */
     @PUT
-    @Path("{id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void updateGroup(@PathParam("id") String id, GroupRepresentation rep) {
-        GroupModel model = realm.getGroupById(id);
-        if (model == null) {
-            throw new NotFoundException("Could not find group by id");
-        }
-
-        updateGroup(rep, model);
+    public void updateGroup(GroupRepresentation rep) {
+        updateGroup(rep, group);
 
 
     }
 
     @DELETE
-    @Path("{id}")
-    public void deleteGroup(@PathParam("id") String id) {
-        GroupModel model = realm.getGroupById(id);
-        if (model == null) {
-            throw new NotFoundException("Could not find group by id");
-        }
-        realm.removeGroup(model);
+    public void deleteGroup() {
+        realm.removeGroup(group);
     }
 
 
@@ -172,16 +96,12 @@ public class GroupResource {
      * @param rep
      */
     @POST
-    @Path("{id}/children")
+    @Path("children")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response addGroup(@PathParam("id") String parentId, GroupRepresentation rep) {
-        GroupModel parentModel = realm.getGroupById(parentId);
+    public Response addChild(GroupRepresentation rep) {
         Response.ResponseBuilder builder = Response.status(204);
-        if (parentModel == null) {
-            throw new NotFoundException("Could not find parent by id");
-        }
         GroupModel child = null;
         if (rep.getId() != null) {
             child = realm.getGroupById(rep.getId());
@@ -197,39 +117,12 @@ public class GroupResource {
             builder.status(201).location(uri);
 
         }
-        realm.moveGroup(child, parentModel);
-        GroupRepresentation childRep = ModelToRepresentation.toRepresentation(child, true);
+        realm.moveGroup(child, group);
+        GroupRepresentation childRep = ModelToRepresentation.toGroupHierarchy(child, true);
         return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(childRep).build();
     }
 
-    /**
-     * create or add a top level realm groupSet or create child.  This will update the group and set the parent if it exists.  Create it and set the parent
-     * if the group doesn't exist.
-     *
-     * @param rep
-     */
-    @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response addTopLevelGroup(GroupRepresentation rep) {
-        GroupModel child = null;
-        Response.ResponseBuilder builder = Response.status(204);
-        if (rep.getId() != null) {
-            child = realm.getGroupById(rep.getId());
-            if (child == null) {
-                throw new NotFoundException("Could not find child by id");
-            }
-        } else {
-            child = realm.createGroup(rep.getName());
-            updateGroup(rep, child);
-            URI uri = uriInfo.getAbsolutePathBuilder()
-                    .path(child.getId()).build();
-            builder.status(201).location(uri);
-        }
-        realm.moveGroup(child, null);
-        return builder.build();
-    }
-
-    public void updateGroup(GroupRepresentation rep, GroupModel model) {
+    public static void updateGroup(GroupRepresentation rep, GroupModel model) {
         if (rep.getName() != null) model.setName(rep.getName());
 
         if (rep.getAttributes() != null) {
@@ -245,13 +138,8 @@ public class GroupResource {
         }
     }
 
-    @Path("{id}/role-mappings")
-    public RoleMapperResource getRoleMappings(@PathParam("id") String id) {
-
-        GroupModel group = session.realms().getGroupById(id, realm);
-        if (group == null) {
-            throw new NotFoundException("Group not found");
-        }
+    @Path("role-mappings")
+    public RoleMapperResource getRoleMappings() {
         auth.init(RealmAuth.Resource.USER);
 
         RoleMapperResource resource =  new RoleMapperResource(realm, auth, group, adminEvent);
@@ -271,18 +159,11 @@ public class GroupResource {
      */
     @GET
     @NoCache
-    @Path("{id}/members")
+    @Path("members")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserRepresentation> getMembers(@PathParam("id") String id,
-                                               @QueryParam("first") Integer firstResult,
+    public List<UserRepresentation> getMembers(@QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults) {
         auth.requireView();
-
-        GroupModel group = session.realms().getGroupById(id, realm);
-        if (group == null) {
-            throw new NotFoundException("Group not found");
-        }
-
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : -1;
 

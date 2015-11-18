@@ -16,6 +16,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -23,12 +24,14 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CacheUserProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -620,10 +623,26 @@ public class RealmAdminResource {
     }
 
     @Path("groups")
-    public GroupResource getGroups() {
-        GroupResource resource =  new GroupResource(realm, session, this.auth, adminEvent);
+    public GroupsResource getGroups() {
+        GroupsResource resource =  new GroupsResource(realm, session, this.auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }
+
+
+    @GET
+    @Path("group-by-path/{path: .*}")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public GroupRepresentation getGroupByPath(@PathParam("path") String path) {
+        this.auth.requireView();
+        GroupModel found = KeycloakModelUtils.findGroupByPath(realm, path);
+        if (found == null) {
+            throw new NotFoundException("Group path does not exist");
+
+        }
+        return ModelToRepresentation.toGroupHierarchy(found, true);
+    }
+
 
 }

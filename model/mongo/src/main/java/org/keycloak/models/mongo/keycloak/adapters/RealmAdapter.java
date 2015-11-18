@@ -611,8 +611,15 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public GroupModel createGroup(String name) {
+        String id = KeycloakModelUtils.generateId();
+        return createGroup(id, name);
+    }
+
+    @Override
+    public GroupModel createGroup(String id, String name) {
+        if (id == null) id = KeycloakModelUtils.generateId();
         MongoGroupEntity group = new MongoGroupEntity();
-        group.setId(KeycloakModelUtils.generateId());
+        group.setId(id);
         group.setName(name);
         group.setRealmId(getId());
 

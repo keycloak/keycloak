@@ -40,6 +40,8 @@ public class UserRepresentation {
     @Deprecated
     protected List<SocialLinkRepresentation> socialLinks;
 
+    protected List<String> groups;
+
     public String getSelf() {
         return self;
     }
@@ -215,5 +217,13 @@ public class UserRepresentation {
 
     public void setServiceAccountClientId(String serviceAccountClientId) {
         this.serviceAccountClientId = serviceAccountClientId;
+    }
+
+    public List<String> getGroups() {
+        return groups;
+    }
+
+    public void setGroups(List<String> groups) {
+        this.groups = groups;
     }
 }
