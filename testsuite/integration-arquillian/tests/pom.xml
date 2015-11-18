@@ -230,7 +230,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-client-api</artifactId>
+                    <artifactId>keycloak-client-registration-api</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>
