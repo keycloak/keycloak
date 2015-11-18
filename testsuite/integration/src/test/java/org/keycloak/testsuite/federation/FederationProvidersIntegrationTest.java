@@ -678,7 +678,7 @@ public class FederationProvidersIntegrationTest {
             user.updateCredential(cred);
             UserCredentialValueModel userCredentialValueModel = user.getCredentialsDirectly().get(0);
             Assert.assertEquals(UserCredentialModel.PASSWORD, userCredentialValueModel.getType());
-            Assert.assertTrue(session.users().validCredentials(appRealm, user, cred));
+            Assert.assertTrue(session.users().validCredentials(session, appRealm, user, cred));
 
             // LDAP password is still unchanged
             LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, model);

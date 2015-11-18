@@ -322,7 +322,12 @@ public class ExportImportTest {
             Assert.fail("user " + username + " not found");
         }
 
-        Assert.assertTrue(userProvider.validCredentials(realm, user, UserCredentialModel.password(password)));
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            Assert.assertTrue(userProvider.validCredentials(session, realm, user, UserCredentialModel.password(password)));
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
     }
 
     private void assertNotAuthenticated(UserProvider userProvider, RealmProvider realmProvider, String realmName, String username, String password) {
@@ -336,7 +341,12 @@ public class ExportImportTest {
             return;
         }
 
-        Assert.assertFalse(userProvider.validCredentials(realm, user, UserCredentialModel.password(password)));
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            Assert.assertFalse(userProvider.validCredentials(session, realm, user, UserCredentialModel.password(password)));
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
     }
 
     private static void addUser(UserProvider userProvider, RealmModel appRealm, String username, String password) {

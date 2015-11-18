@@ -59,7 +59,7 @@ public class JpaUserProvider implements UserProvider {
         entity.setRealmId(realm.getId());
         em.persist(entity);
         em.flush();
-        UserModel userModel = new UserAdapter(realm, em, entity);
+        UserModel userModel = new UserAdapter(session, realm, em, entity);
 
         if (addDefaultRoles) {
             for (String r : realm.getDefaultRoles()) {
@@ -241,7 +241,7 @@ public class JpaUserProvider implements UserProvider {
 
         List<UserModel> users = new ArrayList<UserModel>();
         for (UserEntity user : results) {
-            users.add(new UserAdapter(realm, em, user));
+            users.add(new UserAdapter(session, realm, em, user));
         }
         return users;
     }
@@ -259,7 +259,7 @@ public class JpaUserProvider implements UserProvider {
         query.setParameter("realmId", realm.getId());
         List<UserEntity> entities = query.getResultList();
         if (entities.size() == 0) return null;
-        return new UserAdapter(realm, em, entities.get(0));
+        return new UserAdapter(session, realm, em, entities.get(0));
     }
 
     @Override
@@ -269,7 +269,7 @@ public class JpaUserProvider implements UserProvider {
         query.setParameter("realmId", realm.getId());
         List<UserEntity> results = query.getResultList();
         if (results.size() == 0) return null;
-        return new UserAdapter(realm, em, results.get(0));
+        return new UserAdapter(session, realm, em, results.get(0));
     }
 
     @Override
@@ -278,7 +278,7 @@ public class JpaUserProvider implements UserProvider {
         query.setParameter("email", email.toLowerCase());
         query.setParameter("realmId", realm.getId());
         List<UserEntity> results = query.getResultList();
-        return results.isEmpty() ? null : new UserAdapter(realm, em, results.get(0));
+        return results.isEmpty() ? null : new UserAdapter(session, realm, em, results.get(0));
     }
 
      @Override
@@ -299,7 +299,7 @@ public class JpaUserProvider implements UserProvider {
                     ", userId=" + identity.getUserId() + ", results=" + results);
         } else {
             UserEntity user = results.get(0);
-            return new UserAdapter(realm, em, user);
+            return new UserAdapter(session, realm, em, user);
         }
     }
 
@@ -316,7 +316,7 @@ public class JpaUserProvider implements UserProvider {
                     ", results=" + results);
         } else {
             UserEntity user = results.get(0);
-            return new UserAdapter(client.getRealm(), em, user);
+            return new UserAdapter(session, client.getRealm(), em, user);
         }
     }
 
@@ -347,7 +347,7 @@ public class JpaUserProvider implements UserProvider {
         }
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
-        for (UserEntity entity : results) users.add(new UserAdapter(realm, em, entity));
+        for (UserEntity entity : results) users.add(new UserAdapter(session, realm, em, entity));
         return users;
     }
 
@@ -365,7 +365,7 @@ public class JpaUserProvider implements UserProvider {
 
         List<UserModel> users = new ArrayList<UserModel>();
         for (UserEntity user : results) {
-            users.add(new UserAdapter(realm, em, user));
+            users.add(new UserAdapter(session, realm, em, user));
         }
         return users;
     }
@@ -388,7 +388,7 @@ public class JpaUserProvider implements UserProvider {
         }
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
-        for (UserEntity entity : results) users.add(new UserAdapter(realm, em, entity));
+        for (UserEntity entity : results) users.add(new UserAdapter(session, realm, em, entity));
         return users;
     }
 
@@ -446,7 +446,7 @@ public class JpaUserProvider implements UserProvider {
         }
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
-        for (UserEntity entity : results) users.add(new UserAdapter(realm, em, entity));
+        for (UserEntity entity : results) users.add(new UserAdapter(session, realm, em, entity));
         return users;
     }
 
@@ -460,7 +460,7 @@ public class JpaUserProvider implements UserProvider {
         List<UserModel> users = new ArrayList<UserModel>();
         for (UserAttributeEntity attr : results) {
             UserEntity user = attr.getUser();
-            users.add(new UserAdapter(realm, em, user));
+            users.add(new UserAdapter(session, realm, em, user));
         }
         return users;
     }
@@ -495,17 +495,17 @@ public class JpaUserProvider implements UserProvider {
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        return CredentialValidation.validCredentials(realm, user, input);
+    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> input) {
+        return CredentialValidation.validCredentials(session, realm, user, input);
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        return CredentialValidation.validCredentials(realm, user, input);
+    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel... input) {
+        return CredentialValidation.validCredentials(session, realm, user, input);
     }
 
     @Override
-    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel... input) {
+    public CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input) {
         // Not supported yet
         return null;
     }
