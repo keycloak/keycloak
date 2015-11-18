@@ -50,8 +50,6 @@ import java.util.UUID;
  */
 public final class KeycloakModelUtils {
 
-    private static final int RANDOM_PASSWORD_BYTES = 32;
-
     private KeycloakModelUtils() {
     }
 
@@ -187,16 +185,6 @@ public final class KeycloakModelUtils {
         UserCredentialModel secret = UserCredentialModel.generateSecret();
         client.setSecret(secret.getValue());
         return secret;
-    }
-
-    public static void generateRegistrationAccessToken(ClientModel client) {
-        client.setRegistrationSecret(generatePassword());
-    }
-
-    public static String generatePassword() {
-        byte[] buf = new byte[RANDOM_PASSWORD_BYTES];
-        new SecureRandom().nextBytes(buf);
-        return Base64Url.encode(buf);
     }
 
     public static String getDefaultClientAuthenticatorType() {

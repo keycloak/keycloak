@@ -102,6 +102,10 @@ module.service('Dialog', function($modal) {
         openDialog(title, message, btns, '/templates/kc-modal-message.html').then(success, cancel);
     }
 
+    dialog.open = function(title, message, btns, success, cancel) {
+        openDialog(title, message, btns, '/templates/kc-modal.html').then(success, cancel);
+    }
+
     return dialog
 });
 
@@ -282,6 +286,13 @@ module.service('ServerInfo', function($resource, $q, $http) {
         },
         promise: delay.promise
     }
+});
+
+module.factory('ClientInitialAccess', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients-initial-access/:id', {
+        realm : '@realm',
+        id : '@id'
+    });
 });
 
 
@@ -1549,10 +1560,3 @@ module.factory('UserGroupMapping', function($resource) {
         }
     });
 });
-
-
-
-
-
-
-

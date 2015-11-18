@@ -178,13 +178,13 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
-    public String getRegistrationSecret() {
-        return getMongoEntity().getRegistrationSecret();
+    public String getRegistrationToken() {
+        return getMongoEntity().getRegistrationToken();
     }
 
     @Override
-    public void setRegistrationSecret(String registrationSecretsecret) {
-        getMongoEntity().setRegistrationSecret(registrationSecretsecret);
+    public void setRegistrationToken(String registrationToken) {
+        getMongoEntity().setRegistrationToken(registrationToken);
         updateMongoEntity();
     }
 

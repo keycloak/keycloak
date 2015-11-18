@@ -1,6 +1,5 @@
 package org.keycloak.services.clientregistration;
 
-import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -23,7 +22,7 @@ public class AdapterInstallationClientRegistrationProvider implements ClientRegi
 
     private KeycloakSession session;
     private EventBuilder event;
-    private ClientRegAuth auth;
+    private ClientRegistrationAuth auth;
 
     public AdapterInstallationClientRegistrationProvider(KeycloakSession session) {
         this.session = session;
@@ -51,7 +50,7 @@ public class AdapterInstallationClientRegistrationProvider implements ClientRegi
     }
 
     @Override
-    public void setAuth(ClientRegAuth auth) {
+    public void setAuth(ClientRegistrationAuth auth) {
         this.auth = auth;
     }
 

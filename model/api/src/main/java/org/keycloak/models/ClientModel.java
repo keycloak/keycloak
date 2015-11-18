@@ -90,8 +90,8 @@ public interface ClientModel extends RoleContainerModel {
     String getSecret();
     public void setSecret(String secret);
 
-    String getRegistrationSecret();
-    void setRegistrationSecret(String registrationSecret);
+    String getRegistrationToken();
+    void setRegistrationToken(String registrationToken);
 
     boolean isFullScopeAllowed();
     void setFullScopeAllowed(boolean value);

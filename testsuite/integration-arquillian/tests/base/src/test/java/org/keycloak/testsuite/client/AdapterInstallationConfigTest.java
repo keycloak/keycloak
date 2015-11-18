@@ -9,8 +9,6 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 
-import javax.ws.rs.core.Response;
-
 import static org.junit.Assert.*;
 
 /**
@@ -37,6 +35,7 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
         client.setRegistrationAccessToken("RegistrationAccessTokenTestRegistrationAccessToken");
         client.setRootUrl("http://root");
         client = createClient(client);
+        client.setSecret("RegistrationAccessTokenTestClientSecret");
 
         client2 = new ClientRepresentation();
         client2.setEnabled(true);

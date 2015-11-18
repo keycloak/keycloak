@@ -418,7 +418,6 @@ public class ModelToRepresentation {
         rep.setNotBefore(clientModel.getNotBefore());
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
         rep.setClientAuthenticatorType(clientModel.getClientAuthenticatorType());
-        rep.setRegistrationAccessToken(clientModel.getRegistrationSecret());
 
         Set<String> redirectUris = clientModel.getRedirectUris();
         if (redirectUris != null) {

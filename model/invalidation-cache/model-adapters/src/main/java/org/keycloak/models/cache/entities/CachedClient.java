@@ -31,7 +31,7 @@ public class CachedClient implements Serializable {
     private boolean enabled;
     private String clientAuthenticatorType;
     private String secret;
-    private String registrationSecret;
+    private String registrationToken;
     private String protocol;
     private Map<String, String> attributes = new HashMap<String, String>();
     private boolean publicClient;
@@ -58,7 +58,7 @@ public class CachedClient implements Serializable {
         id = model.getId();
         clientAuthenticatorType = model.getClientAuthenticatorType();
         secret = model.getSecret();
-        registrationSecret = model.getRegistrationSecret();
+        registrationToken = model.getRegistrationToken();
         clientId = model.getClientId();
         name = model.getName();
         description = model.getDescription();
@@ -131,8 +131,8 @@ public class CachedClient implements Serializable {
         return secret;
     }
 
-    public String getRegistrationSecret() {
-        return registrationSecret;
+    public String getRegistrationToken() {
+        return registrationToken;
     }
 
     public boolean isPublicClient() {

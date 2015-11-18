@@ -56,5 +56,8 @@ public interface RealmResource {
     @Path("client-session-stats")
     @GET
     List<Map<String, String>> getClientSessionStats();
-    
+
+    @Path("clients-initial-access")
+    ClientInitialAccessResource clientInitialAccess();
+
 }

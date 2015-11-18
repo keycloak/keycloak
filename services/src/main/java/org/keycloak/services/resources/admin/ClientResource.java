@@ -22,6 +22,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
@@ -228,8 +229,11 @@ public class ClientResource {
     public ClientRepresentation regenerateRegistrationAccessToken() {
         auth.requireManage();
 
-        KeycloakModelUtils.generateRegistrationAccessToken(client);
+        String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(realm, uriInfo, client);
+
         ClientRepresentation rep = ModelToRepresentation.toRepresentation(client);
+        rep.setRegistrationAccessToken(token);
+
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(rep).success();
         return rep;
     }

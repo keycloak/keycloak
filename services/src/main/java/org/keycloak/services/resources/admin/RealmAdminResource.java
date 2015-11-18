@@ -144,6 +144,18 @@ public class RealmAdminResource {
     }
 
     /**
+     * Base path for managing client initial access tokens
+     *
+     * @return
+     */
+    @Path("clients-initial-access")
+    public ClientInitialAccessResource getClientInitialAccess() {
+        ClientInitialAccessResource resource = new ClientInitialAccessResource(realm, auth, adminEvent);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
+
+    /**
      * base path for managing realm-level roles of this realm
      *
      * @return

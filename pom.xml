@@ -76,6 +76,7 @@
         <log4j.version>1.2.17</log4j.version>
         <greenmail.version>1.3.1b</greenmail.version>
         <xmlsec.version>1.5.1</xmlsec.version>
+        <aesh.version>0.66</aesh.version>
 
         <enforcer.plugin.version>1.4</enforcer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
@@ -135,7 +136,7 @@
     <modules>
         <module>common</module>
         <module>core</module>
-        <module>client-api</module>
+        <module>client-registration</module>
         <module>connections</module>
         <module>dependencies</module>
         <module>events</module>
@@ -580,6 +581,11 @@
                 <artifactId>pax-web-runtime</artifactId>
                 <version>${pax.web.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.jboss.aesh</groupId>
+                <artifactId>aesh</artifactId>
+                <version>${aesh.version}</version>
+            </dependency>
 
             <!-- keycloak -->
             <dependency>
@@ -620,6 +626,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-connections-http-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-client-registration-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

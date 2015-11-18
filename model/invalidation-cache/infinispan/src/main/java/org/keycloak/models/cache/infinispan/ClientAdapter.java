@@ -120,14 +120,14 @@ public class ClientAdapter implements ClientModel {
         getDelegateForUpdate();
         updated.setSecret(secret);
     }
-    public String getRegistrationSecret() {
-        if (updated != null) return updated.getRegistrationSecret();
-        return cached.getRegistrationSecret();
+    public String getRegistrationToken() {
+        if (updated != null) return updated.getRegistrationToken();
+        return cached.getRegistrationToken();
     }
 
-    public void setRegistrationSecret(String registrationsecret) {
+    public void setRegistrationToken(String registrationToken) {
         getDelegateForUpdate();
-        updated.setRegistrationSecret(registrationsecret);
+        updated.setRegistrationToken(registrationToken);
     }
 
     public boolean isPublicClient() {

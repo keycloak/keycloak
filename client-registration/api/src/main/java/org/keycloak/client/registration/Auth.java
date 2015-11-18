@@ -3,6 +3,7 @@ package org.keycloak.client.registration;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpRequest;
 import org.keycloak.common.util.Base64;
+import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 
 /**
@@ -15,6 +16,11 @@ public abstract class Auth {
     public static Auth token(String token) {
         return new BearerTokenAuth(token);
     }
+
+    public static Auth token(ClientInitialAccessPresentation initialAccess) {
+        return new BearerTokenAuth(initialAccess.getToken());
+    }
+
 
     public static Auth token(ClientRepresentation client) {
         return new BearerTokenAuth(client.getRegistrationAccessToken());
