@@ -1986,6 +1986,65 @@ module.controller('AuthenticationConfigCreateCtrl', function($scope, realm, flow
 
 });
 
+module.controller('ClientInitialAccessCtrl', function($scope, realm, clientInitialAccess, ClientInitialAccess, Dialog, Notifications, $route) {
+    $scope.realm = realm;
+    $scope.clientInitialAccess = clientInitialAccess;
+
+    $scope.remove = function(id) {
+        Dialog.confirmDelete(id, 'initial access token', function() {
+            ClientInitialAccess.remove({ realm: realm.realm, id: id }, function() {
+                Notifications.success("The initial access token was deleted.");
+                $route.reload();
+            });
+        });
+    }
+});
+
+module.controller('ClientInitialAccessCreateCtrl', function($scope, realm, ClientInitialAccess, TimeUnit, Dialog, $location) {
+    $scope.expirationUnit = 'Days';
+    $scope.expiration = TimeUnit.toUnit(0, $scope.expirationUnit);
+    $scope.count = 1;
+    $scope.realm = realm;
+
+    $scope.$watch('expirationUnit', function(to, from) {
+        $scope.expiration = TimeUnit.convert($scope.expiration, from, to);
+    });
+
+    $scope.save = function() {
+        var expiration = TimeUnit.toSeconds($scope.expiration, $scope.expirationUnit);
+        ClientInitialAccess.save({
+            realm: realm.realm
+        }, { expiration: expiration, count: $scope.count}, function (data) {
+            console.debug(data);
+            $scope.id = data.id;
+            $scope.token = data.token;
+        });
+    };
+
+    $scope.cancel = function() {
+        $location.url('/realms/' + realm.realm + '/client-initial-access');
+    };
+
+    $scope.done = function() {
+        var btns = {
+            ok: {
+                label: 'Continue',
+                cssClass: 'btn btn-primary'
+            },
+            cancel: {
+                label: 'Cancel',
+                cssClass: 'btn btn-default'
+            }
+        }
+
+        var title = 'Copy Initial Access Token';
+        var message = 'Please copy and paste the initial access token before confirming as it can\'t be retrieved later';
+        Dialog.open(title, message, btns, function() {
+            $location.url('/realms/' + realm.realm + '/client-initial-access');
+        });
+    };
+});
+
 
 
 

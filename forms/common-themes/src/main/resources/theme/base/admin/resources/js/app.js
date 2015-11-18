@@ -176,6 +176,27 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmTokenDetailCtrl'
         })
+        .when('/realms/:realm/client-initial-access', {
+            templateUrl : resourceUrl + '/partials/client-initial-access.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientInitialAccess : function(ClientInitialAccessLoader) {
+                    return ClientInitialAccessLoader();
+                }
+            },
+            controller : 'ClientInitialAccessCtrl'
+        })
+        .when('/realms/:realm/client-initial-access/create', {
+            templateUrl : resourceUrl + '/partials/client-initial-access-create.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'ClientInitialAccessCreateCtrl'
+        })
         .when('/realms/:realm/keys-settings', {
             templateUrl : resourceUrl + '/partials/realm-keys.html',
             resolve : {
