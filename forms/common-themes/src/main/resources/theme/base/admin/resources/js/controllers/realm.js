@@ -2000,7 +2000,7 @@ module.controller('ClientInitialAccessCtrl', function($scope, realm, clientIniti
     }
 });
 
-module.controller('ClientInitialAccessCreateCtrl', function($scope, realm, ClientInitialAccess, TimeUnit, Dialog, $location) {
+module.controller('ClientInitialAccessCreateCtrl', function($scope, realm, ClientInitialAccess, TimeUnit, Dialog, $location, $translate) {
     $scope.expirationUnit = 'Days';
     $scope.expiration = TimeUnit.toUnit(0, $scope.expirationUnit);
     $scope.count = 1;
@@ -2028,17 +2028,17 @@ module.controller('ClientInitialAccessCreateCtrl', function($scope, realm, Clien
     $scope.done = function() {
         var btns = {
             ok: {
-                label: 'Continue',
+                label: $translate.instant('continue'),
                 cssClass: 'btn btn-primary'
             },
             cancel: {
-                label: 'Cancel',
+                label: $translate.instant('cancel'),
                 cssClass: 'btn btn-default'
             }
         }
 
-        var title = 'Copy Initial Access Token';
-        var message = 'Please copy and paste the initial access token before confirming as it can\'t be retrieved later';
+        var title = $translate.instant('initial-access-token.confirm.title');
+        var message = $translate.instant('initial-access-token.confirm.text');
         Dialog.open(title, message, btns, function() {
             $location.url('/realms/' + realm.realm + '/client-initial-access');
         });
