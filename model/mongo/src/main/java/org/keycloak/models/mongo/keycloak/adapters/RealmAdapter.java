@@ -660,7 +660,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
         if (groups == null) return result;
         for (MongoGroupEntity group : groups) {
-            result.add(new GroupAdapter(session, this, group, invocationContext));
+            result.add(model.getGroupById(group.getId(), this));
         }
 
         return result;
@@ -672,7 +672,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         Iterator<GroupModel> it = all.iterator();
         while (it.hasNext()) {
             GroupModel group = it.next();
-            if (group.getParent() != null) {
+            if (group.getParentId() != null) {
                 it.remove();
             }
         }

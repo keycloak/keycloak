@@ -1000,6 +1000,7 @@ public class RealmAdapter implements RealmModel {
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
         em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
+        em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", roleEntity.getId()).executeUpdate();
 
         em.remove(roleEntity);
 
