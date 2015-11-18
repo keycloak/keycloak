@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.Config;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -1195,8 +1196,13 @@ public class RealmAdapter implements RealmModel {
     
     @Override
     public ClientModel getMasterAdminClient() {
-        ClientEntity client = realm.getMasterAdminClient();
-        return client!=null ? new ClientAdapter(this, em, session, realm.getMasterAdminClient()) : null;
+        ClientEntity masterAdminClient = realm.getMasterAdminClient();
+        if (masterAdminClient == null) {
+            return null;
+        }
+
+        RealmAdapter masterRealm = new RealmAdapter(session, em, masterAdminClient.getRealm());
+        return new ClientAdapter(masterRealm, em, session, masterAdminClient);
     }
 
     @Override

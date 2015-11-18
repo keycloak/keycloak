@@ -18,7 +18,6 @@
         <module name="org.keycloak.keycloak-connections-jpa-liquibase" services="import"/>
         <module name="org.keycloak.keycloak-connections-mongo" services="import"/>
         <module name="org.keycloak.keycloak-connections-mongo-update" services="import"/>
-        <module name="org.keycloak.keycloak-connections-file" services="import"/>
         <module name="org.keycloak.keycloak-common" services="import"/>
         <module name="org.keycloak.keycloak-core" services="import"/>
         <module name="org.keycloak.keycloak-email-api" services="import"/>
@@ -43,7 +42,6 @@
         <module name="org.keycloak.keycloak-model-api" services="import"/>
         <module name="org.keycloak.keycloak-model-jpa" services="import"/>
         <module name="org.keycloak.keycloak-model-mongo" services="import"/>
-        <module name="org.keycloak.keycloak-model-file" services="import"/>
         <module name="org.keycloak.keycloak-model-sessions-infinispan" services="import"/>
 
         <module name="org.keycloak.keycloak-saml-core" services="import"/>

@@ -1,7 +1,9 @@
 package org.keycloak.models.utils;
 
 import org.bouncycastle.openssl.PEMWriter;
-import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
@@ -17,6 +19,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.PemUtils;
@@ -30,9 +33,11 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +49,8 @@ import java.util.UUID;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public final class KeycloakModelUtils {
+
+    private static final int RANDOM_PASSWORD_BYTES = 32;
 
     private KeycloakModelUtils() {
     }
@@ -176,10 +183,20 @@ public final class KeycloakModelUtils {
         return rep;
     }
 
-    public static UserCredentialModel generateSecret(ClientModel app) {
+    public static UserCredentialModel generateSecret(ClientModel client) {
         UserCredentialModel secret = UserCredentialModel.generateSecret();
-        app.setSecret(secret.getValue());
+        client.setSecret(secret.getValue());
         return secret;
+    }
+
+    public static void generateRegistrationAccessToken(ClientModel client) {
+        client.setRegistrationSecret(generatePassword());
+    }
+
+    public static String generatePassword() {
+        byte[] buf = new byte[RANDOM_PASSWORD_BYTES];
+        new SecureRandom().nextBytes(buf);
+        return Base64Url.encode(buf);
     }
 
     public static String getDefaultClientAuthenticatorType() {
@@ -386,6 +403,26 @@ public final class KeycloakModelUtils {
             role.setDescription("${role_offline-access}");
             role.setScopeParamRequired(true);
             realm.addDefaultRole(Constants.OFFLINE_ACCESS_ROLE);
+        }
+    }
+
+
+    /**
+     * Recursively find all AuthenticationExecutionModel from specified flow or all it's subflows
+     *
+     * @param realm
+     * @param flow
+     * @param result input should be empty list. At the end will be all executions added to this list
+     */
+    public static void deepFindAuthenticationExecutions(RealmModel realm, AuthenticationFlowModel flow, List<AuthenticationExecutionModel> result) {
+        List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(flow.getId());
+        for (AuthenticationExecutionModel execution : executions) {
+            if (execution.isAuthenticatorFlow()) {
+                AuthenticationFlowModel subFlow = realm.getAuthenticationFlowById(execution.getFlowId());
+                deepFindAuthenticationExecutions(realm, subFlow, result);
+            } else {
+                result.add(execution);
+            }
         }
     }
 

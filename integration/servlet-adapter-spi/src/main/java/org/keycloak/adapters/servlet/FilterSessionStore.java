@@ -90,6 +90,9 @@ public class FilterSessionStore implements AdapterSessionStore {
 
                 MultivaluedHashMap<String, String> getParams() {
                     if (parameters != null) return parameters;
+
+                    if (body == null) return new MultivaluedHashMap<String, String>();
+
                     String contentType = getContentType();
                     contentType = contentType.toLowerCase();
                     if (contentType.startsWith("application/x-www-form-urlencoded")) {

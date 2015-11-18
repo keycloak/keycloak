@@ -178,6 +178,17 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
+    public String getRegistrationSecret() {
+        return getMongoEntity().getRegistrationSecret();
+    }
+
+    @Override
+    public void setRegistrationSecret(String registrationSecretsecret) {
+        getMongoEntity().setRegistrationSecret(registrationSecretsecret);
+        updateMongoEntity();
+    }
+
+    @Override
     public boolean isPublicClient() {
         return getMongoEntity().isPublicClient();
     }

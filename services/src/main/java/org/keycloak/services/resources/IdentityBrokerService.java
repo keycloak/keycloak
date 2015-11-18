@@ -65,6 +65,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialIdentityProvider;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -74,6 +75,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -419,7 +421,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 return finishBrokerAuthentication(context, federatedUser, clientSession, providerId);
             }
         }  catch (Exception e) {
-            // TODO?
             return redirectToErrorPage(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
         }
     }
@@ -465,7 +466,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         this.event.event(EventType.FEDERATED_IDENTITY_LINK);
 
         if (federatedUser != null) {
-            return redirectToErrorPage(Messages.IDENTITY_PROVIDER_ALREADY_LINKED, context.getIdpConfig().getAlias());
+            return redirectToAccountErrorPage(clientSession, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, context.getIdpConfig().getAlias());
         }
 
         UserModel authenticatedUser = clientSession.getUserSession().getUser();
@@ -475,12 +476,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         if (!authenticatedUser.isEnabled()) {
-            fireErrorEvent(Errors.USER_DISABLED);
-            return redirectToErrorPage(Messages.ACCOUNT_DISABLED);
+            return redirectToAccountErrorPage(clientSession, Messages.ACCOUNT_DISABLED);
         }
 
         if (!authenticatedUser.hasRole(this.realmModel.getClientByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(MANAGE_ACCOUNT))) {
-            fireErrorEvent(Errors.NOT_ALLOWED);
             return redirectToErrorPage(Messages.INSUFFICIENT_PERMISSION);
         }
 
@@ -579,6 +578,20 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         fireErrorEvent(message, throwable);
         return ErrorPage.error(this.session, message, parameters);
+    }
+
+    private Response redirectToAccountErrorPage(ClientSessionModel clientSession, String message, Object ... parameters) {
+        fireErrorEvent(message);
+
+        FormMessage errorMessage = new FormMessage(message, parameters);
+        try {
+            String serializedError = JsonSerialization.writeValueAsString(errorMessage);
+            clientSession.setNote(AccountService.ACCOUNT_MGMT_FORWARDED_ERROR_NOTE, serializedError);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+
+        return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
     }
 
     private Response redirectToLoginPage(Throwable t, ClientSessionCode clientCode) {
