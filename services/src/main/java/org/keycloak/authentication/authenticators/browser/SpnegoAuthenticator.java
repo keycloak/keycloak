@@ -69,7 +69,7 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
         String spnegoToken = tokens[1];
         UserCredentialModel spnegoCredential = UserCredentialModel.kerberos(spnegoToken);
 
-        CredentialValidationOutput output = context.getSession().users().validCredentials(context.getRealm(), spnegoCredential);
+        CredentialValidationOutput output = context.getSession().users().validCredentials(context.getSession(), context.getRealm(), spnegoCredential);
 
         if (output.getAuthStatus() == CredentialValidationOutput.Status.AUTHENTICATED) {
             context.setUser(output.getAuthenticatedUser());

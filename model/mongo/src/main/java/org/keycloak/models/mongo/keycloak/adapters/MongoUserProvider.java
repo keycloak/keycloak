@@ -474,17 +474,17 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        return CredentialValidation.validCredentials(realm, user, input);
+    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> input) {
+        return CredentialValidation.validCredentials(session, realm, user, input);
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        return CredentialValidation.validCredentials(realm, user, input);
+    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel... input) {
+        return CredentialValidation.validCredentials(session, realm, user, input);
     }
 
     @Override
-    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel... input) {
+    public CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input) {
         // Not supported yet
         return null;
     }

@@ -26,8 +26,8 @@ import org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.common.util.Time;
+import org.keycloak.hash.PasswordHashProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -331,6 +331,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     private void setValue(CredentialEntity credentialEntity, UserCredentialModel cred) {
         byte[] salt = getSalt();
         int hashIterations = 1;
+        PasswordHashProvider provider = session.getProvider(PasswordHashProvider.class);
         PasswordPolicy policy = realm.getPasswordPolicy();
         if (policy != null) {
             hashIterations = policy.getHashIterations();
@@ -338,7 +339,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
                 hashIterations = 1;
         }
         credentialEntity.setCreatedDate(Time.toMillis(Time.currentTime()));
-        credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
+        credentialEntity.setValue(provider.encode(cred.getValue(), salt, hashIterations));
         credentialEntity.setSalt(salt);
         credentialEntity.setHashIterations(hashIterations);
     }
