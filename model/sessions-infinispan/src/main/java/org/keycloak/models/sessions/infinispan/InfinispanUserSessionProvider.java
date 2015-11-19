@@ -339,7 +339,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         // Remove expired client initial access
         map = new MapReduceTask(sessionCache)
-                .mappedWith(ClientInitialAccessMapper.create(realm.getId()).time(Time.currentTime()).remainingCount(0).emitKey())
+                .mappedWith(ClientInitialAccessMapper.create(realm.getId()).expired(Time.currentTime()).emitKey())
                 .reducedWith(new FirstResultReducer())
                 .execute();
 

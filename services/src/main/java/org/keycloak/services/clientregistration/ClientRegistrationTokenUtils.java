@@ -37,7 +37,7 @@ public class ClientRegistrationTokenUtils {
     }
 
     public static String createInitialAccessToken(RealmModel realm, UriInfo uri, ClientInitialAccessModel model) {
-        return createToken(realm, uri, model.getId(), TYPE_INITIAL_ACCESS_TOKEN, model.getTimestamp() + model.getExpiration());
+        return createToken(realm, uri, model.getId(), TYPE_INITIAL_ACCESS_TOKEN, model.getExpiration() > 0 ? model.getTimestamp() + model.getExpiration() : 0);
     }
 
     public static JsonWebToken parseToken(RealmModel realm, UriInfo uri, String token) {

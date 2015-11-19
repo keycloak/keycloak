@@ -64,6 +64,9 @@
                     <literal>manage-applications</literal> - Create, modify and delete applications in the realm
                 </listitem>
                 <listitem>
+                    <literal>create-clients</literal> - Create clients in the realm
+                </listitem>
+                <listitem>
                     <literal>manage-clients</literal> - Create, modify and delete clients in the realm
                 </listitem>
                 <listitem>

@@ -24,8 +24,7 @@ public class ClientInitialAccessMapper implements Mapper<String, SessionEntity, 
 
     private EmitValue emit = EmitValue.ENTITY;
 
-    private Integer time;
-    private Integer remainingCount;
+    private Integer expired;
 
     public static ClientInitialAccessMapper create(String realm) {
         return new ClientInitialAccessMapper(realm);
@@ -36,14 +35,8 @@ public class ClientInitialAccessMapper implements Mapper<String, SessionEntity, 
         return this;
     }
 
-    public ClientInitialAccessMapper time(int time) {
-        this.time = time;
-        return this;
-    }
-
-
-    public ClientInitialAccessMapper remainingCount(int remainingCount) {
-        this.remainingCount = remainingCount;
+    public ClientInitialAccessMapper expired(int time) {
+        this.expired = time;
         return this;
     }
 
@@ -59,21 +52,27 @@ public class ClientInitialAccessMapper implements Mapper<String, SessionEntity, 
 
         ClientInitialAccessEntity entity = (ClientInitialAccessEntity) e;
 
-        if (time != null && entity.getExpiration() > 0 && (entity.getTimestamp() + entity.getExpiration()) < time) {
-            return;
+        boolean include = false;
+
+        if (expired != null) {
+            if (entity.getRemainingCount() <= 0) {
+                include = true;
+            } else if (entity.getExpiration() > 0 && (entity.getTimestamp() + entity.getExpiration()) < expired) {
+                include = true;
+            }
+        } else {
+            include = true;
         }
 
-        if (remainingCount != null && entity.getRemainingCount() == remainingCount) {
-            return;
-        }
-
-        switch (emit) {
-            case KEY:
-                collector.emit(key, key);
-                break;
-            case ENTITY:
-                collector.emit(key, entity);
-                break;
+        if (include) {
+            switch (emit) {
+                case KEY:
+                    collector.emit(key, key);
+                    break;
+                case ENTITY:
+                    collector.emit(key, entity);
+                    break;
+            }
         }
     }
 

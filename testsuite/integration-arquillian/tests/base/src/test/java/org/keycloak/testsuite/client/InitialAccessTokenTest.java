@@ -26,12 +26,14 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
     }
 
     @Test
-    public void create() throws ClientRegistrationException {
+    public void create() throws ClientRegistrationException, InterruptedException {
         ClientInitialAccessPresentation response = resource.create(new ClientInitialAccessCreatePresentation());
 
         reg.auth(Auth.token(response));
 
         ClientRepresentation rep = new ClientRepresentation();
+
+        Thread.sleep(2);
 
         ClientRepresentation created = reg.create(rep);
         Assert.assertNotNull(created);
