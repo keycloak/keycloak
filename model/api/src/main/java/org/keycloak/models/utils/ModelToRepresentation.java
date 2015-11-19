@@ -239,6 +239,14 @@ public class ModelToRepresentation {
             roleStrings.addAll(defaultRoles);
             rep.setDefaultRoles(roleStrings);
         }
+        List<GroupModel> defaultGroups = realm.getDefaultGroups();
+        if (!defaultGroups.isEmpty()) {
+            List<String> groupPaths = new LinkedList<>();
+            for (GroupModel group : defaultGroups) {
+                groupPaths.add(ModelToRepresentation.buildGroupPath(group));
+            }
+            rep.setDefaultGroups(groupPaths);
+        }
 
         List<RequiredCredentialModel> requiredCredentialModels = realm.getRequiredCredentials();
         if (requiredCredentialModels.size() > 0) {

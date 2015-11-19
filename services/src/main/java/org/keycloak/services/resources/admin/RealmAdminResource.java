@@ -634,6 +634,48 @@ public class RealmAdminResource {
         return new IdentityProvidersResource(realm, session, this.auth, adminEvent);
     }
 
+    /**
+     * Get group hierarchy.  Only name and ids are returned.
+     *
+     * @return
+     */
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("default-groups")
+    public List<GroupRepresentation> getDefaultGroups() {
+        this.auth.requireView();
+        List<GroupRepresentation> defaults = new LinkedList<>();
+        for (GroupModel group : realm.getDefaultGroups()) {
+            defaults.add(ModelToRepresentation.toRepresentation(group, false));
+        }
+        return defaults;
+    }
+    @PUT
+    @NoCache
+    @Path("default-groups/{groupId}")
+    public void addDefaultGroup(@PathParam("groupId") String groupId) {
+        this.auth.requireManage();
+        GroupModel group = realm.getGroupById(groupId);
+        if (group == null) {
+            throw new NotFoundException("Group not found");
+        }
+        realm.addDefaultGroup(group);
+    }
+
+    @DELETE
+    @NoCache
+    @Path("default-groups/{groupId}")
+    public void removeDefaultGroup(@PathParam("groupId") String groupId) {
+        this.auth.requireManage();
+        GroupModel group = realm.getGroupById(groupId);
+        if (group == null) {
+            throw new NotFoundException("Group not found");
+        }
+        realm.removeDefaultGroup(group);
+    }
+
+
     @Path("groups")
     public GroupsResource getGroups() {
         GroupsResource resource =  new GroupsResource(realm, session, this.auth, adminEvent);

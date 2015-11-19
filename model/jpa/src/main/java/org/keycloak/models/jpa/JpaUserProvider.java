@@ -71,6 +71,10 @@ public class JpaUserProvider implements UserProvider {
                     userModel.grantRole(application.getRole(r));
                 }
             }
+
+            for (GroupModel g : realm.getDefaultGroups()) {
+                userModel.joinGroup(g);
+            }
         }
         for (RequiredActionProviderModel r : realm.getRequiredActionProviders()) {
             if (r.isEnabled() && r.isDefaultAction()) {

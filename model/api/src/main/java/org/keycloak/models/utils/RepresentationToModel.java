@@ -315,6 +315,13 @@ public class RepresentationToModel {
 
         if (rep.getGroups() != null) {
             importGroups(newRealm, rep);
+            if (rep.getDefaultGroups() != null) {
+                for (String path : rep.getDefaultGroups()) {
+                    GroupModel found = KeycloakModelUtils.findGroupByPath(newRealm, path);
+                    if (found == null) throw new RuntimeException("default group in realm rep doesn't exist: " + path);
+                    newRealm.addDefaultGroup(found);
+                }
+            }
         }
 
 

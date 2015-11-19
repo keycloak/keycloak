@@ -37,6 +37,14 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <createTable tableName="REALM_DEFAULT_GROUPS">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="GROUP_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
 
         <addColumn tableName="IDENTITY_PROVIDER">
             <column name="FIRST_BROKER_LOGIN_FLOW_ID" type="VARCHAR(36)">
@@ -58,6 +66,9 @@
         <addForeignKeyConstraint baseColumnNames="GROUP_ID" baseTableName="GROUP_ROLE_MAPPING" constraintName="FK_GROUP_ROLE_GROUP" referencedColumnNames="ID" referencedTableName="KEYCLOAK_GROUP"/>
         <addForeignKeyConstraint baseColumnNames="ROLE_ID" baseTableName="GROUP_ROLE_MAPPING" constraintName="FK_GROUP_ROLE_ROLE" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
 
+        <addUniqueConstraint columnNames="GROUP_ID" constraintName="CON_GROUP_ID_DEF_GROUPS" tableName="REALM_DEFAULT_GROUPS"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_DEFAULT_GROUPS" constraintName="FK_DEF_GROUPS_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="GROUP_ID" baseTableName="REALM_DEFAULT_GROUPS" constraintName="FK_DEF_GROUPS_GROUP" referencedColumnNames="ID" referencedTableName="KEYCLOAK_GROUP"/>
         <addColumn tableName="CLIENT">
             <column name="REGISTRATION_TOKEN" type="VARCHAR(255)"/>
         </addColumn>
