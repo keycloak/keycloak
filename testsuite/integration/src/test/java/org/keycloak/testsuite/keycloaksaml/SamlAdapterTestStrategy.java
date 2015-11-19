@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.keycloaksaml;
 
-import com.mongodb.util.Hash;
 import org.apache.commons.io.IOUtils;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Assert;
