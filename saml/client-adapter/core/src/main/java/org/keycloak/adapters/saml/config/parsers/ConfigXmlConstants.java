@@ -5,16 +5,16 @@ package org.keycloak.adapters.saml.config.parsers;
  * @version $Revision: 1 $
  */
 public class ConfigXmlConstants {
-    public static final String KEYCLOAK_SAML_ADAPTER ="keycloak-saml-adapter";
-    public static final String SP_ELEMENT="SP";
+    public static final String KEYCLOAK_SAML_ADAPTER = "keycloak-saml-adapter";
+    public static final String SP_ELEMENT = "SP";
     public static final String ENTITY_ID_ATTR = "entityID";
     public static final String SSL_POLICY_ATTR = "sslPolicy";
     public static final String NAME_ID_POLICY_FORMAT_ATTR = "nameIDPolicyFormat";
     public static final String FORCE_AUTHENTICATION_ATTR = "forceAuthentication";
+    public static final String IS_PASSIVE_ATTR = "isPassive";
     public static final String SIGNATURE_ALGORITHM_ATTR = "signatureAlgorithm";
     public static final String SIGNATURE_CANONICALIZATION_METHOD_ATTR = "signatureCanonicalizationMethod";
     public static final String LOGOUT_PAGE_ATTR = "logoutPage";
-
 
     public static final String KEYS_ELEMENT = "Keys";
     public static final String KEY_ELEMENT = "Key";
@@ -35,7 +35,6 @@ public class ConfigXmlConstants {
     public static final String PRINCIPAL_NAME_MAPPING_ELEMENT = "PrincipalNameMapping";
     public static final String POLICY_ATTR = "policy";
     public static final String ATTRIBUTE_ATTR = "attribute";
-
 
     public static final String ROLE_IDENTIFIERS_ELEMENT = "RoleIdentifiers";
     public static final String ATTRIBUTE_ELEMENT = "Attribute";

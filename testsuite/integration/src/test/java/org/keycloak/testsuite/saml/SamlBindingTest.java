@@ -1,35 +1,24 @@
 package org.keycloak.testsuite.saml;
 
 import org.apache.commons.io.IOUtils;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.Config;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.HardcodedAttributeMapper;
 import org.keycloak.protocol.saml.mappers.HardcodedRole;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.RoleNameMapper;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
@@ -47,19 +36,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 import static org.junit.Assert.assertEquals;
 
@@ -166,6 +146,7 @@ public class SamlBindingTest {
         driver.navigate().to("http://localhost:8081/sales-post?GLO=true");
         checkLoggedOut("http://localhost:8081/sales-post/");
     }
+
     @Test
     public void testPostSimpleLoginLogoutIdpInitiated() {
         driver.navigate().to("http://localhost:8081/auth/realms/demo/protocol/saml/clients/sales-post");
@@ -188,6 +169,7 @@ public class SamlBindingTest {
         checkLoggedOut("http://localhost:8081/sales-post-sig/");
 
     }
+
     @Test
     public void testPostSignedLoginLogoutTransientNameID() {
         driver.navigate().to("http://localhost:8081/sales-post-sig-transient/");
@@ -452,23 +434,10 @@ public class SamlBindingTest {
         Assert.assertTrue(driver.getPageSource().contains("null"));
     }
 
-    private static String createToken() {
-        KeycloakSession session = keycloakRule.startSession();
-        try {
-            RealmManager manager = new RealmManager(session);
-
-            RealmModel adminRealm = manager.getRealm(Config.getAdminRealm());
-            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-            TokenManager tm = new TokenManager();
-            UserModel admin = session.users().getUserByUsername("admin", adminRealm);
-            ClientSessionModel clientSession = session.sessions().createClientSession(adminRealm, adminConsole);
-            clientSession.setNote(OIDCLoginProtocol.ISSUER, "http://localhost:8081/auth/realms/master");
-            UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, "admin", null, "form", false, null, null);
-            AccessToken token = tm.createClientAccessToken(session, tm.getAccess(null, true, adminConsole, admin), adminRealm, adminConsole, admin, userSession, clientSession);
-            return tm.encodeToken(adminRealm, token);
-        } finally {
-            keycloakRule.stopSession(session, true);
-        }
+    @Test
+    public void testPassiveMode() {
+        // KEYCLOAK-2075 test SAML IsPassive handling - PicketLink SP client library doesn't support this option unfortunately.
+        // But the test of server side is included in test of SAML Keycloak adapter
     }
 
 

@@ -17,7 +17,9 @@ import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusType;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
@@ -27,6 +29,7 @@ import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.Base64;
+import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
@@ -207,7 +210,26 @@ public abstract class SamlAuthenticator {
             log.error("Request URI does not match SAML request destination");
             return AuthOutcome.FAILED;
         }
+        
         if (statusResponse instanceof ResponseType) {
+
+            //validate status
+            StatusType status = statusResponse.getStatus();
+            if(status == null){
+                log.error("Missing Status in SAML response");
+                return AuthOutcome.FAILED;
+            }
+            if(!checkStatusCodeValue(status.getStatusCode(), JBossSAMLURIConstants.STATUS_SUCCESS.get())){
+                if(checkStatusCodeValue(status.getStatusCode(), JBossSAMLURIConstants.STATUS_RESPONDER.get()) && checkStatusCodeValue(status.getStatusCode().getStatusCode(), JBossSAMLURIConstants.STATUS_NO_PASSIVE.get())){
+                    // KEYCLOAK-2107 - handle user not authenticated due passive mode 
+                    log.debug("Not authenticated due passive mode Status found in SAML response: " + status.toString());
+                    return AuthOutcome.NOT_AUTHENTICATED;
+                }
+                log.error("Error Status found in SAML response: " + status.toString());
+                return AuthOutcome.FAILED;
+                
+            }
+            
             try {
                 if (deployment.getIDP().getSingleSignOnService().validateResponseSignature()) {
                     try {
@@ -287,7 +309,16 @@ public abstract class SamlAuthenticator {
         }
     }
 
+    private boolean checkStatusCodeValue(StatusCodeType statusCode, String expectedValue){
+        if(statusCode != null && statusCode.getValue()!=null){
+            String v = statusCode.getValue().toString();
+            return expectedValue.equals(v);
+        }
+        return false;
+    }
+    
     protected AuthOutcome handleLoginResponse(ResponseType responseType) {
+        
         AssertionType assertion = null;
         try {
             assertion = AssertionUtil.getAssertion(responseType, deployment.getDecryptionKey());
@@ -295,7 +326,7 @@ public abstract class SamlAuthenticator {
                 return initiateLogin();
             }
         } catch (Exception e) {
-            log.error("Error extracting SAML assertion, e");
+            log.error("Error extracting SAML assertion: " + e.getMessage());
             challenge = new AuthChallenge() {
                 @Override
                 public boolean challenge(HttpFacade exchange) {
@@ -434,9 +465,9 @@ public abstract class SamlAuthenticator {
         return SAMLRequestParser.parseRequestRedirectBinding(response);
     }
 
+    
     protected SAMLDocumentHolder extractPostBindingResponse(String response) {
         byte[] samlBytes = PostBindingUtil.base64Decode(response);
-        String xml = new String(samlBytes);
         return SAMLRequestParser.parseResponseDocument(samlBytes);
     }
 

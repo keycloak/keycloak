@@ -80,4 +80,10 @@ public class StatusCodeType implements Serializable {
     public void setValue(URI value) {
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        return "StatusCodeType [value=" + value + ", statusCode=" + statusCode + "]";
+    }
+
 }

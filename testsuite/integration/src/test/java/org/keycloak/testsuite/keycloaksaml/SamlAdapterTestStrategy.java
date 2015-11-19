@@ -139,6 +139,37 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post/");
     }
 
+    public void testPostPassiveLoginLogout(boolean forbiddenIfNotauthenticated) {
+        // first request on passive app - no login page shown, user not logged in as we are in passive mode
+        driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-passive/");
+        assertEquals(APP_SERVER_BASE_URL + "/sales-post-passive/", driver.getCurrentUrl());
+        System.out.println(driver.getPageSource());
+        if (forbiddenIfNotauthenticated) {
+            Assert.assertTrue(driver.getPageSource().contains("Forbidden"));
+        } else {
+            Assert.assertTrue(driver.getPageSource().contains("principal=null"));
+        }
+
+        // login user by asking login from other app
+        driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post/");
+        loginPage.login("bburke", "password");
+
+        // navigate to the passive app again, we have to be logged in now
+        driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-passive/");
+        assertEquals(APP_SERVER_BASE_URL + "/sales-post-passive/", driver.getCurrentUrl());
+        System.out.println(driver.getPageSource());
+        Assert.assertTrue(driver.getPageSource().contains("bburke"));
+
+        // logout from both app
+        driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-passive?GLO=true");
+        driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post?GLO=true");
+
+        // refresh passive app page, not logged in again as we are in passive mode
+        driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-passive/");
+        assertEquals(APP_SERVER_BASE_URL + "/sales-post-passive/", driver.getCurrentUrl());
+        Assert.assertFalse(driver.getPageSource().contains("bburke"));
+    }
+
     public void testPostSimpleUnauthorized(CheckAuthError error) {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post/");
         assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");

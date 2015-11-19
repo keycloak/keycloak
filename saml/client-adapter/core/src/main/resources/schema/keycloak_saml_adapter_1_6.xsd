@@ -33,6 +33,7 @@
         <xs:attribute name="nameIDPolicyFormat" type="xs:string" use="optional"/>
         <xs:attribute name="logoutPage" type="xs:string" use="optional"/>
         <xs:attribute name="forceAuthentication" type="xs:boolean" use="optional"/>
+        <xs:attribute name="isPassive" type="xs:boolean" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="keys-type">

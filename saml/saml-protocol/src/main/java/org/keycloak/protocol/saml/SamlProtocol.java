@@ -147,33 +147,36 @@ public class SamlProtocol implements LoginProtocol {
 
     @Override
     public Response sendError(ClientSessionModel clientSession, Error error) {
-        RestartLoginCookie.expireRestartCookie(realm, session.getContext().getConnection(), uriInfo);
-        session.sessions().removeClientSession(realm, clientSession);
-        if ("true".equals(clientSession.getClient().getAttribute(SAML_IDP_INITIATED_LOGIN))) {
-            if (error == Error.CANCELLED_BY_USER) {
-                UriBuilder builder = RealmsResource.protocolUrl(uriInfo).path(SamlService.class, "idpInitiatedSSO");
-                Map<String, String> params = new HashMap<>();
-                params.put("realm", realm.getName());
-                params.put("protocol", LOGIN_PROTOCOL);
-                params.put("client", clientSession.getClient().getAttribute(SAML_IDP_INITIATED_SSO_URL_NAME));
-                URI redirect = builder.buildFromMap(params);
-                return Response.status(302).location(redirect).build();
-            } else {
-                return ErrorPage.error(session, translateErrorToIdpInitiatedErrorMessage(error));
-            }
-        } else {
-            SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder().destination(clientSession.getRedirectUri()).issuer(getResponseIssuer(realm)).status(translateErrorToSAMLStatus(error).get());
-            try {
-                JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(clientSession.getNote(GeneralConstants.RELAY_STATE));
-                Document document = builder.buildDocument();
-                if (isPostBinding(clientSession)) {
-                    return binding.postBinding(document).response(clientSession.getRedirectUri());
+        try {
+            if ("true".equals(clientSession.getClient().getAttribute(SAML_IDP_INITIATED_LOGIN))) {
+                if (error == Error.CANCELLED_BY_USER) {
+                    UriBuilder builder = RealmsResource.protocolUrl(uriInfo).path(SamlService.class, "idpInitiatedSSO");
+                    Map<String, String> params = new HashMap<>();
+                    params.put("realm", realm.getName());
+                    params.put("protocol", LOGIN_PROTOCOL);
+                    params.put("client", clientSession.getClient().getAttribute(SAML_IDP_INITIATED_SSO_URL_NAME));
+                    URI redirect = builder.buildFromMap(params);
+                    return Response.status(302).location(redirect).build();
                 } else {
-                    return binding.redirectBinding(document).response(clientSession.getRedirectUri());
+                    return ErrorPage.error(session, translateErrorToIdpInitiatedErrorMessage(error));
                 }
-            } catch (Exception e) {
-                return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);
+            } else {
+                SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder().destination(clientSession.getRedirectUri()).issuer(getResponseIssuer(realm)).status(translateErrorToSAMLStatus(error).get());
+                try {
+                    JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(clientSession.getNote(GeneralConstants.RELAY_STATE));
+                    Document document = builder.buildDocument();
+                    if (isPostBinding(clientSession)) {
+                        return binding.postBinding(document).response(clientSession.getRedirectUri());
+                    } else {
+                        return binding.redirectBinding(document).response(clientSession.getRedirectUri());
+                    }
+                } catch (Exception e) {
+                    return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);
+                }
             }
+        } finally {
+            RestartLoginCookie.expireRestartCookie(realm, session.getContext().getConnection(), uriInfo);
+            session.sessions().removeClientSession(realm, clientSession);
         }
     }
 

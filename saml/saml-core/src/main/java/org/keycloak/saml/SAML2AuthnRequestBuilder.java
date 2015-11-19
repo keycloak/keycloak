@@ -17,15 +17,15 @@
  */
 package org.keycloak.saml;
 
+import java.net.URI;
+
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
-import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.w3c.dom.Document;
-
-import java.net.URI;
 
 /**
  * @author pedroigor
@@ -64,6 +64,11 @@ public class SAML2AuthnRequestBuilder {
         return this;
     }
 
+    public SAML2AuthnRequestBuilder isPassive(boolean isPassive) {
+        this.authnRequestType.setIsPassive(isPassive);
+        return this;
+    }
+
     public SAML2AuthnRequestBuilder nameIdPolicy(SAML2NameIDPolicyBuilder nameIDPolicy) {
         this.authnRequestType.setNameIDPolicy(nameIDPolicy.build());
         return this;
@@ -74,7 +79,7 @@ public class SAML2AuthnRequestBuilder {
         return this;
     }
 
-    public Document toDocument()  {
+    public Document toDocument() {
         try {
             AuthnRequestType authnRequestType = this.authnRequestType;
 
