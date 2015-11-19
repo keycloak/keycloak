@@ -11,6 +11,8 @@ import org.keycloak.services.clientregistration.ClientRegistrationProviderFactor
  */
 public class OIDCClientRegistrationProviderFactory implements ClientRegistrationProviderFactory {
 
+    public static final String ID = "openid-connect";
+
     @Override
     public ClientRegistrationProvider create(KeycloakSession session) {
         return new OIDCClientRegistrationProvider(session);
@@ -30,7 +32,7 @@ public class OIDCClientRegistrationProviderFactory implements ClientRegistration
 
     @Override
     public String getId() {
-        return "openid-connect";
+        return ID;
     }
 
 }

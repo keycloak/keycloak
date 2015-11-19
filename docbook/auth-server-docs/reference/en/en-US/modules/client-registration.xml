@@ -10,15 +10,15 @@
     <para>
         The Client Registration Service provides built-in support for Keycloak Client Representations, OpenID Connect
         Client Meta Data and SAML Entity Descriptors. It's also possible to plugin custom client registration providers
-        if required. The Client Registration Service endpoint is <literal>&lt;KEYCLOAK URL&gt;/clients/&lt;provider&gt;</literal>.
+        if required. The Client Registration Service endpoint is <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;</literal>.
     </para>
     <para>
         The built-in supported <literal>providers</literal> are:
         <itemizedlist>
             <listitem><literal>default</literal> Keycloak Representations</listitem>
             <listitem><literal>install</literal> Keycloak Adapter Configuration</listitem>
-            <!--<listitem><literal>openid-connect</literal> OpenID Connect Dynamic Client Registration</listitem>-->
-            <!--<listitem><literal>saml-ed</literal> SAML Entity Descriptors</listitem>-->
+            <listitem><literal>openid-connect</literal> OpenID Connect Dynamic Client Registration</listitem>
+            <listitem><literal>saml2-entity-descriptor</literal> SAML Entity Descriptors</listitem>
         </itemizedlist>
         The following sections will describe how to use the different providers.
     </para>
@@ -106,30 +106,30 @@ Authorization: bearer eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiJmMjJmNzQyYy04ZjNlLTQ2M....
         </para>
         <para>
             To create a client create a Client Representation (JSON) then do a HTTP POST to:
-            <literal>&lt;KEYCLOAK URL&gt;/clients/&lt;provider&gt;/default</literal>. It will return a Client Representation
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/default</literal>. It will return a Client Representation
             that also includes the registration access token. You should save the registration access token somewhere
             if you want to retrieve the config, update or delete the client later.
         </para>
         <para>
             To retrieve the Client Representation then do a HTTP GET to:
-            <literal>&lt;KEYCLOAK URL&gt;/clients/&lt;provider&gt;/default/&lt;client id&gt;</literal>. It will also
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;clients/&lt;provider&gt;/default/&lt;client id&gt;</literal>. It will also
             return a new registration access token.
         </para>
         <para>
             To update the Client Representation then do a HTTP PUT to with the updated Client Representation to:
-            <literal>&lt;KEYCLOAK URL&gt;/clients/&lt;provider&gt;/default/&lt;client id&gt;</literal>. It will also
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/default/&lt;client id&gt;</literal>. It will also
             return a new registration access token.
         </para>
         <para>
             To delete the Client Representation then do a HTTP DELETE to:
-            <literal>&lt;KEYCLOAK URL&gt;/clients/&lt;provider&gt;/default/&lt;client id&gt;</literal>
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/default/&lt;client id&gt;</literal>
         </para>
     </section>
 
     <section>
         <title>Keycloak Adapter Configuration</title>
         <para>
-            The <default>installation</default> client registration provider can be used to retrieve the adapter configuration
+            The <literal>installation</literal> client registration provider can be used to retrieve the adapter configuration
             for a client. In addition to token authentication you can also authenticate with client credentials using
             HTTP basic authentication. To do this include the following header in the request:
 <programlisting><![CDATA[
@@ -138,7 +138,7 @@ Authorization: basic BASE64(client-id + ':' + client-secret)
         </para>
         <para>
             To retrieve the Adapter Configuration then do a HTTP GET to:
-            <literal>&lt;KEYCLOAK URL&gt;/clients/&lt;provider&gt;/installation/&lt;client id&gt;</literal>
+            <literal>&lt;KEYCLOAK URL&gt;//realms/&lt;realm&gt;clients/&lt;provider&gt;/installation/&lt;client id&gt;</literal>
         </para>
         <para>
             No authentication is required for public clients. This means that for the JavaScript adapter you can
@@ -146,23 +146,36 @@ Authorization: basic BASE64(client-id + ':' + client-secret)
         </para>
     </section>
 
-    <!--
     <section>
         <title>OpenID Connect Dynamic Client Registration</title>
         <para>
-            TODO
+            Keycloak implements <ulink url="https://openid.net/specs/openid-connect-registration-1_0.html">OpenID Connect Dynamic Client Registration</ulink>,
+            which extends <ulink url="https://tools.ietf.org/html/rfc7591">OAuth 2.0 Dynamic Client Registration Protocol</ulink> and
+            <ulink url="https://tools.ietf.org/html/rfc7592">OAuth 2.0 Dynamic Client Registration Management Protocol</ulink>.
+        </para>
+        <para>
+            The endpoint to use these specifications to register clients in Keycloak is:
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/oidc[/&lt;client id&gt;]</literal>.
+        </para>
+        <para>
+            This endpoints can also be found in the OpenID Connect Discovery endpoint for the realm:
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/.well-known/openid-configuration</literal>.
         </para>
     </section>
-    -->
 
-    <!--
     <section>
         <title>SAML Entity Descriptors</title>
         <para>
-            TODO
+            The SAML Entity Descriptor endpoint only supports using SAML v2 Entity Descriptors to create clients. It
+            doesn't support retrieving, updating or deleting clients. For those operations the Keycloak representation
+            endpoints should be used. When creating a client a Keycloak Client Representation is returned with details
+            about the created client, including a registration access token.
+        </para>
+        <para>
+            To create a client do a HTTP POST with the SAML Entity Descriptor to:
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/saml2-entity-descriptor</literal>.
         </para>
     </section>
-    -->
 
     <section>
         <title>Client Registration Java API</title>

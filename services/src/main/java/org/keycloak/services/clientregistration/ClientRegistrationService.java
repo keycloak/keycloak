@@ -25,7 +25,7 @@ public class ClientRegistrationService {
     }
 
     @Path("{provider}")
-    public Object getProvider(@PathParam("provider") String providerId) {
+    public Object provider(@PathParam("provider") String providerId) {
         checkSsl();
 
         ClientRegistrationProvider provider = session.getProvider(ClientRegistrationProvider.class, providerId);

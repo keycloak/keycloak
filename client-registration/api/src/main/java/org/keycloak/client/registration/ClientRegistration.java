@@ -3,8 +3,10 @@ package org.keycloak.client.registration;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -18,10 +20,17 @@ public class ClientRegistration {
     public static final ObjectMapper outputMapper = new ObjectMapper();
     static {
         outputMapper.getSerializationConfig().addMixInAnnotations(ClientRepresentation.class, ClientRepresentationMixIn.class);
+        outputMapper.getSerializationConfig().addMixInAnnotations(OIDCClientRepresentation.class, OIDCClientRepresentationMixIn.class);
+        outputMapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
     }
+
+    private final String JSON = "application/json";
+    private final String XML = "application/xml";
 
     private final String DEFAULT = "default";
     private final String INSTALLATION = "install";
+    private final String OIDC = "openid-connect";
+    private final String SAML = "saml2-entity-descriptor";
 
     private HttpUtil httpUtil;
 
@@ -47,23 +56,23 @@ public class ClientRegistration {
 
     public ClientRepresentation create(ClientRepresentation client) throws ClientRegistrationException {
         String content = serialize(client);
-        InputStream resultStream = httpUtil.doPost(content, DEFAULT);
+        InputStream resultStream = httpUtil.doPost(content, JSON, JSON, DEFAULT);
         return deserialize(resultStream, ClientRepresentation.class);
     }
 
     public ClientRepresentation get(String clientId) throws ClientRegistrationException {
-        InputStream resultStream = httpUtil.doGet(DEFAULT, clientId);
+        InputStream resultStream = httpUtil.doGet(JSON, DEFAULT, clientId);
         return resultStream != null ? deserialize(resultStream, ClientRepresentation.class) : null;
     }
 
     public AdapterConfig getAdapterConfig(String clientId) throws ClientRegistrationException {
-        InputStream resultStream = httpUtil.doGet(INSTALLATION, clientId);
+        InputStream resultStream = httpUtil.doGet(JSON, INSTALLATION, clientId);
         return resultStream != null ? deserialize(resultStream, AdapterConfig.class) : null;
     }
 
     public ClientRepresentation update(ClientRepresentation client) throws ClientRegistrationException {
         String content = serialize(client);
-        InputStream resultStream = httpUtil.doPut(content, DEFAULT, client.getClientId());
+        InputStream resultStream = httpUtil.doPut(content, JSON, JSON, DEFAULT, client.getClientId());
         return resultStream != null ? deserialize(resultStream, ClientRepresentation.class) : null;
     }
 
@@ -75,10 +84,17 @@ public class ClientRegistration {
         httpUtil.doDelete(DEFAULT, clientId);
     }
 
-    public static String serialize(ClientRepresentation client) throws ClientRegistrationException {
-        try {
+    public OIDCClientRegistration oidc() {
+        return new OIDCClientRegistration();
+    }
 
-            return outputMapper.writeValueAsString(client);
+    public SAMLClientRegistration saml() {
+        return new SAMLClientRegistration();
+    }
+
+    public static String serialize(Object obj) throws ClientRegistrationException {
+        try {
+            return outputMapper.writeValueAsString(obj);
         } catch (IOException e) {
             throw new ClientRegistrationException("Failed to write json object", e);
         }
@@ -90,6 +106,44 @@ public class ClientRegistration {
         } catch (IOException e) {
             throw new ClientRegistrationException("Failed to read json object", e);
         }
+    }
+
+    public class OIDCClientRegistration {
+
+        public OIDCClientRepresentation create(OIDCClientRepresentation client) throws ClientRegistrationException {
+            String content = serialize(client);
+            InputStream resultStream = httpUtil.doPost(content, JSON, JSON, OIDC);
+            return deserialize(resultStream, OIDCClientRepresentation.class);
+        }
+
+        public OIDCClientRepresentation get(String clientId) throws ClientRegistrationException {
+            InputStream resultStream = httpUtil.doGet(JSON, OIDC, clientId);
+            return resultStream != null ? deserialize(resultStream, OIDCClientRepresentation.class) : null;
+        }
+
+        public OIDCClientRepresentation update(OIDCClientRepresentation client) throws ClientRegistrationException {
+            String content = serialize(client);
+            InputStream resultStream = httpUtil.doPut(content, JSON, JSON, OIDC, client.getClientId());
+            return resultStream != null ? deserialize(resultStream, OIDCClientRepresentation.class) : null;
+        }
+
+        public void delete(OIDCClientRepresentation client) throws ClientRegistrationException {
+            delete(client.getClientId());
+        }
+
+        public void delete(String clientId) throws ClientRegistrationException {
+            httpUtil.doDelete(OIDC, clientId);
+        }
+
+    }
+
+    public class SAMLClientRegistration {
+
+        public ClientRepresentation create(String entityDescriptor) throws ClientRegistrationException {
+            InputStream resultStream = httpUtil.doPost(entityDescriptor, XML, JSON, SAML);
+            return deserialize(resultStream, ClientRepresentation.class);
+        }
+
     }
 
     public static class ClientRegistrationBuilder {
