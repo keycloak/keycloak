@@ -49,6 +49,7 @@ public class RealmRepresentation {
     protected RolesRepresentation roles;
     protected List<GroupRepresentation> groups;
     protected List<String> defaultRoles;
+    protected List<String> defaultGroups;
     @Deprecated
     protected Set<String> requiredCredentials;
     protected String passwordPolicy;
@@ -267,6 +268,14 @@ public class RealmRepresentation {
 
     public void setDefaultRoles(List<String> defaultRoles) {
         this.defaultRoles = defaultRoles;
+    }
+
+    public List<String> getDefaultGroups() {
+        return defaultGroups;
+    }
+
+    public void setDefaultGroups(List<String> defaultGroups) {
+        this.defaultGroups = defaultGroups;
     }
 
     public String getPrivateKey() {

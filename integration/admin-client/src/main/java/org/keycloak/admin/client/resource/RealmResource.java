@@ -47,6 +47,19 @@ public interface RealmResource {
     @Produces(MediaType.APPLICATION_JSON)
     public GroupRepresentation getGroupByPath(@PathParam("path") String path);
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("default-groups")
+    public List<GroupRepresentation> getDefaultGroups();
+
+    @PUT
+    @Path("default-groups/{groupId}")
+    public void addDefaultGroup(@PathParam("groupId") String groupId);
+
+    @DELETE
+    @Path("default-groups/{groupId}")
+    public void removeDefaultGroup(@PathParam("groupId") String groupId);
+
     @Path("identity-provider")
     IdentityProvidersResource identityProviders();
 

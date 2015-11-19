@@ -107,6 +107,7 @@ public class CachedRealm implements Serializable {
     protected Set<String> adminEnabledEventOperations = new HashSet<String>();
     protected boolean adminEventsDetailsEnabled;
     private List<String> defaultRoles = new LinkedList<String>();
+    private List<String> defaultGroups = new LinkedList<String>();
     private Set<String> groups = new HashSet<String>();
     private Map<String, String> realmRoles = new HashMap<String, String>();
     private Map<String, String> clients = new HashMap<String, String>();
@@ -227,6 +228,10 @@ public class CachedRealm implements Serializable {
         for (RequiredActionProviderModel action : model.getRequiredActionProviders()) {
             requiredActionProviders.put(action.getId(), action);
             requiredActionProvidersByAlias.put(action.getAlias(), action);
+        }
+
+        for (GroupModel group : model.getDefaultGroups()) {
+            defaultGroups.add(group.getId());
         }
 
         browserFlow = model.getBrowserFlow();
@@ -515,5 +520,9 @@ public class CachedRealm implements Serializable {
 
     public Set<String> getGroups() {
         return groups;
+    }
+
+    public List<String> getDefaultGroups() {
+        return defaultGroups;
     }
 }

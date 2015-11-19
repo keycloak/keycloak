@@ -180,6 +180,25 @@ public class GroupTest {
         Assert.assertTrue(token.getRealmAccess().getRoles().contains("level2Role"));
         Assert.assertTrue(token.getRealmAccess().getRoles().contains("level3Role"));
 
+        realm.addDefaultGroup(level3Group.getId());
+
+        List<GroupRepresentation> defaultGroups = realm.getDefaultGroups();
+        Assert.assertEquals(1, defaultGroups.size());
+        Assert.assertEquals(defaultGroups.get(0).getId(), level3Group.getId());
+
+        UserRepresentation newUser = new UserRepresentation();
+        newUser.setUsername("groupUser");
+        newUser.setEmail("group@group.com");
+        response = realm.users().create(newUser);
+        response.close();
+        newUser =  realm.users().search("groupUser", -1, -1).get(0);
+        membership = realm.users().get(newUser.getId()).groups();
+        Assert.assertEquals(1, membership.size());
+        Assert.assertEquals("level3", membership.get(0).getName());
+
+        realm.removeDefaultGroup(level3Group.getId());
+        defaultGroups = realm.getDefaultGroups();
+        Assert.assertEquals(0, defaultGroups.size());
 
     }
 

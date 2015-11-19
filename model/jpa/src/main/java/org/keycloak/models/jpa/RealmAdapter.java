@@ -648,6 +648,44 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public List<GroupModel> getDefaultGroups() {
+        Collection<GroupEntity> entities = realm.getDefaultGroups();
+        List<GroupModel> defaultGroups = new LinkedList<>();
+        for (GroupEntity entity : entities) {
+            defaultGroups.add(session.realms().getGroupById(entity.getId(), this));
+        }
+        return defaultGroups;
+    }
+
+    @Override
+    public void addDefaultGroup(GroupModel group) {
+        Collection<GroupEntity> entities = realm.getDefaultGroups();
+        for (GroupEntity entity : entities) {
+            if (entity.getId().equals(group.getId())) return;
+        }
+        GroupEntity groupEntity = GroupAdapter.toEntity(group, em);
+        realm.getDefaultGroups().add(groupEntity);
+        em.flush();
+
+    }
+
+    @Override
+    public void removeDefaultGroup(GroupModel group) {
+        GroupEntity found = null;
+        for (GroupEntity defaultGroup : realm.getDefaultGroups()) {
+            if (defaultGroup.getId().equals(group.getId())) {
+                found = defaultGroup;
+                break;
+            }
+        }
+        if (found != null) {
+            realm.getDefaultGroups().remove(found);
+            em.flush();
+        }
+
+    }
+
+    @Override
     public Map<String, ClientModel> getClientNameMap() {
         Map<String, ClientModel> map = new HashMap<String, ClientModel>();
         for (ClientModel app : getClients()) {
@@ -2002,6 +2040,7 @@ public class RealmAdapter implements RealmModel {
         if (!groupEntity.getRealm().getId().equals(getId())) {
             return false;
         }
+        realm.getDefaultRoles().remove(groupEntity);
         for (GroupModel subGroup : group.getSubGroups()) {
             removeGroup(subGroup);
         }
