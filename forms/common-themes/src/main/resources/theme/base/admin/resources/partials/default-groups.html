@@ -1,0 +1,80 @@
+ <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+     <kc-tabs-group-list></kc-tabs-group-list>
+
+     <form class="form-horizontal" name="realmForm" novalidate>
+         <div class="form-group" kc-read-only="!access.manageRealm">
+             <label class="col-md-1 control-label" class="control-label"></label>
+
+             <div class="col-md-8" >
+                  <div class="row">
+                     <div class="col-md-5">
+                         <table class="table table-striped table-bordered">
+                             <thead>
+                             <tr>
+                                 <th class="kc-table-actions" colspan="5">
+                                     <div class="form-inline">
+                                         <label class="control-label">Default Groups</label>
+                                         <kc-tooltip>Newly created or registered users will automatically be added to these groups</kc-tooltip>
+
+                                         <div class="pull-right" data-ng-show="access.manageRealm">
+                                             <button id="removeDefaultGroup" class="btn btn-default" ng-click="removeDefaultGroup()">Remove</button>
+                                         </div>
+                                     </div>
+                                 </th>
+                             </tr>
+                             </thead>
+                             <tbody>
+                             <tr>
+                                 <td>
+                                     <select id="defaultGroups" class="form-control" size=5
+                                                            ng-model="selectedGroup"
+                                                            ng-options="r.path for r in defaultGroups">
+                                         <option style="display:none" value="">select a type</option>
+                                 </select>
+
+
+                                 </td>
+                             </tr>
+                             </tbody>
+                         </table>
+                     </div>
+                     <div class="col-md-5">
+                         <table class="table table-striped table-bordered">
+                             <thead>
+                             <tr>
+                                 <th class="kc-table-actions" colspan="5">
+
+                                     <div class="form-inline">
+                                         <label class="control-label">Available Groups</label>
+                                         <kc-tooltip>Select a group you want to add as a default.</kc-tooltip>
+
+                                         <div class="pull-right" data-ng-show="access.manageRealm">
+                                             <button id="addDefaultGroup" class="btn btn-default" ng-click="addDefaultGroup()">Add</button>
+                                         </div>
+                                     </div>
+                                 </th>
+                             </tr>
+                             </thead>
+                         <tbody>
+                             <tr>
+                                 <td>                             <div
+                                         tree-id="tree"
+                                         angular-treeview="true"
+                                         tree-model="groupList"
+                                         node-id="id"
+                                         node-label="name"
+                                         node-children="subGroups" >
+                                 </div>
+
+                                 </td>
+                             </tr>
+                             </tbody>
+                         </table>
+                     </div>
+                 </div>
+             </div>
+         </div>
+     </form>
+ </div>
+
+<kc-menu></kc-menu>

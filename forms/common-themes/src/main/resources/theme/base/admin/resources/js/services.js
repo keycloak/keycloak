@@ -1560,3 +1560,14 @@ module.factory('UserGroupMapping', function($resource) {
         }
     });
 });
+
+module.factory('DefaultGroups', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/default-groups/:groupId', {
+        realm : '@realm',
+        groupId : '@groupId'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});

@@ -1,0 +1,11 @@
+<div data-ng-controller="GroupTabCtrl">
+    <h1>
+        <span>User Groups</span>
+    </h1>
+
+    <ul class="nav nav-tabs">
+        <li ng-class="{active: path[2] == 'groups'}"><a href="#/realms/{{realm.realm}}/groups">Groups</a></li>
+        <li ng-class="{active: path[2] == 'default-groups'}"><a href="#/realms/{{realm.realm}}/default-groups">Default Groups</a><kc-tooltip>Set of groups that new users will automatically join.</kc-tooltip>
+        </li>
+    </ul>
+</div>
