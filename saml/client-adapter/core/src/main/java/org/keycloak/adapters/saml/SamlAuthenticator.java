@@ -22,6 +22,7 @@ import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.Base64;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
@@ -33,6 +34,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
+import java.net.URI;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.util.HashSet;
@@ -312,7 +314,9 @@ public abstract class SamlAuthenticator {
         }
 
 
-        final SamlPrincipal principal = new SamlPrincipal(principalName, principalName, subjectNameID.getFormat().toString(), attributes, friendlyAttributes);
+        URI nameFormat = subjectNameID.getFormat();
+        String nameFormatString = nameFormat == null ?  JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get() : nameFormat.toString();
+        final SamlPrincipal principal = new SamlPrincipal(principalName, principalName, nameFormatString, attributes, friendlyAttributes);
         String index = authn == null ? null : authn.getSessionIndex();
         final String sessionIndex = index;
         SamlSession account = new SamlSession(principal, roles, sessionIndex);
