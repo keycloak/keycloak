@@ -174,23 +174,7 @@ public class OAuthRequestAuthenticator {
         final String state = getStateCode();
         final String redirect = getRedirectUri(state);
         if (redirect == null) {
-            return new AuthChallenge() {
-                @Override
-                public boolean challenge(HttpFacade exchange) {
-                    exchange.getResponse().setStatus(403);
-                    return true;
-                }
-
-                @Override
-                public boolean errorPage() {
-                    return true;
-                }
-
-                @Override
-                public int getResponseCode() {
-                    return 403;
-                }
-            };
+            return challenge(403);
         }
         return new AuthChallenge() {
 
@@ -283,7 +267,7 @@ public class OAuthRequestAuthenticator {
 
             @Override
             public boolean challenge(HttpFacade exchange) {
-                exchange.getResponse().setStatus(code);
+                exchange.getResponse().sendError(code);
                 return true;
             }
         };
