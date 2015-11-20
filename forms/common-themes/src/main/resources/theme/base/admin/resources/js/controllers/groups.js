@@ -323,7 +323,7 @@ module.controller('GroupRoleMappingCtrl', function($scope, $http, realm, group, 
 module.controller('GroupMembersCtrl', function($scope, realm, group, GroupMembership) {
     $scope.realm = realm;
     $scope.page = 0;
-
+    $scope.group = group;
 
     $scope.query = {
         realm: realm.realm,
