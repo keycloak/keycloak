@@ -25,12 +25,12 @@ public class ClientRegistration {
 
     private HttpUtil httpUtil;
 
-    public ClientRegistration(String authServerUrl, String realm) {
-        httpUtil = new HttpUtil(HttpClients.createDefault(), HttpUtil.getUrl(authServerUrl, "realms", realm, "clients"));
+    public static ClientRegistrationBuilder create() {
+        return new ClientRegistrationBuilder();
     }
 
-    public ClientRegistration(String authServerUrl, String realm, HttpClient httpClient) {
-        httpUtil = new HttpUtil(httpClient, HttpUtil.getUrl(authServerUrl, "realms", realm, "clients"));
+    ClientRegistration(HttpUtil httpUtil) {
+        this.httpUtil = httpUtil;
     }
 
     public void close() throws ClientRegistrationException {
@@ -90,6 +90,43 @@ public class ClientRegistration {
         } catch (IOException e) {
             throw new ClientRegistrationException("Failed to read json object", e);
         }
+    }
+
+    public static class ClientRegistrationBuilder {
+
+        private String url;
+        private HttpClient httpClient;
+
+        ClientRegistrationBuilder() {
+        }
+
+        public ClientRegistrationBuilder url(String realmUrl) {
+            url = realmUrl;
+            return this;
+        }
+
+        public ClientRegistrationBuilder url(String authUrl, String realm) {
+            url = HttpUtil.getUrl(authUrl, "realms", realm, "clients");
+            return this;
+        }
+
+        public ClientRegistrationBuilder httpClient(HttpClient httpClient) {
+            this.httpClient = httpClient;
+            return this;
+        }
+
+        public ClientRegistration build() {
+            if (url == null) {
+                throw new IllegalStateException("url not configured");
+            }
+
+            if (httpClient == null) {
+                httpClient = HttpClients.createDefault();
+            }
+
+            return new ClientRegistration(new HttpUtil(httpClient, url));
+        }
+
     }
 
 }

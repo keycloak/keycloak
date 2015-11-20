@@ -48,6 +48,7 @@
                 <!ENTITY Recaptcha SYSTEM "modules/recaptcha.xml">
                 <!ENTITY AuthSPI SYSTEM "modules/auth-spi.xml">
                 <!ENTITY FilterAdapter SYSTEM "modules/servlet-filter-adapter.xml">
+                <!ENTITY ClientRegistration SYSTEM "modules/client-registration.xml">
                 ]>
 
 <book>
@@ -116,6 +117,7 @@ This one is short
         &MultiTenancy;
         &JAAS;
     </chapter>
+    &ClientRegistration;
 
     &IdentityBroker;
     &Themes;

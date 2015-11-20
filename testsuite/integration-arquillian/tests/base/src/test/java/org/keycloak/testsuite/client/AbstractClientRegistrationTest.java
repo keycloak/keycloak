@@ -29,7 +29,7 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
 
     @Before
     public void before() throws Exception {
-        reg = new ClientRegistration(testContext.getAuthServerContextRoot() + "/auth", "test");
+        reg = ClientRegistration.create().url(testContext.getAuthServerContextRoot() + "/auth", "test").build();
     }
 
     @After
