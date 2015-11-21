@@ -1,7 +1,7 @@
 <chapter id="roles">
     <title>Roles</title>
     <para>
-        In Keycloak, roles (or permissions) can be defined globally at the realm level, or individually per application.
+        In Keycloak, roles can be defined globally at the realm level, or individually per application.
         Each role has a name which must be unique at the level it is defined in, i.e. you can have only one "admin" role at
         the realm level.  You may have that a role named "admin" within an Application too, but "admin" must be unique
         for that application.

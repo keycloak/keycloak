@@ -697,6 +697,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'GroupRoleMappingCtrl'
         })
+        .when('/realms/:realm/default-groups', {
+            templateUrl : resourceUrl + '/partials/default-groups.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                groups : function(GroupListLoader) {
+                    return GroupListLoader();
+                }
+            },
+            controller : 'DefaultGroupsCtrl'
+        })
 
 
         .when('/create/role/:realm/clients/:client', {
@@ -1992,6 +2004,15 @@ module.directive('kcTabsGroup', function () {
         restrict: 'E',
         replace: true,
         templateUrl: resourceUrl + '/templates/kc-tabs-group.html'
+    }
+});
+
+module.directive('kcTabsGroupList', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-group-list.html'
     }
 });
 

@@ -27,6 +27,7 @@
                 <!ENTITY Migration SYSTEM "modules/MigrationFromOlderVersions.xml">
                 <!ENTITY Email SYSTEM "modules/email.xml">
                 <!ENTITY Roles SYSTEM "modules/roles.xml">
+                <!ENTITY Groups SYSTEM "modules/groups.xml">
                 <!ENTITY DirectAccess SYSTEM "modules/direct-access.xml">
                 <!ENTITY ServiceAccounts SYSTEM "modules/service-accounts.xml">
                 <!ENTITY CORS SYSTEM "modules/cors.xml">
@@ -133,6 +134,7 @@ This one is short
     </chapter>
     &AccessTypes;
     &Roles;
+    &Groups;
     &DirectAccess;
     &ServiceAccounts;
     &CORS;
