@@ -1,10 +1,12 @@
 package org.keycloak.adapters.saml;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.VerificationException;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
@@ -29,8 +31,6 @@ import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -74,7 +74,7 @@ public abstract class SamlAuthenticator {
             return handleSamlRequest(samlRequest, relayState);
         } else if (samlResponse != null) {
             return handleSamlResponse(samlResponse, relayState);
-        }  else if (sessionStore.isLoggedIn()) {
+        } else if (sessionStore.isLoggedIn()) {
             if (globalLogout) {
                 return globalLogout();
             }
@@ -106,6 +106,7 @@ public abstract class SamlAuthenticator {
 
         try {
             SamlUtil.sendSaml(true, facade, deployment.getIDP().getSingleLogoutService().getRequestBindingUrl(), binding, logoutBuilder.buildDocument(), deployment.getIDP().getSingleLogoutService().getRequestBinding());
+            sessionStore.setCurrentAction(SamlSessionStore.CurrentAction.LOGGING_OUT);
         } catch (Exception e) {
             log.error("Could not send global logout SAML request", e);
             return AuthOutcome.FAILED;
@@ -155,7 +156,7 @@ public abstract class SamlAuthenticator {
     protected AuthOutcome logoutRequest(LogoutRequestType request, String relayState) {
         if (request.getSessionIndex() == null || request.getSessionIndex().isEmpty()) {
             sessionStore.logoutByPrincipal(request.getNameID().getValue());
-        }  else {
+        } else {
             sessionStore.logoutBySsoId(request.getSessionIndex());
         }
 
@@ -169,7 +170,8 @@ public abstract class SamlAuthenticator {
             binding.signatureAlgorithm(deployment.getSignatureAlgorithm())
                     .signWith(deployment.getSigningKeyPair())
                     .signDocument();
-            if (deployment.getSignatureCanonicalizationMethod() != null) binding.canonicalizationMethod(deployment.getSignatureCanonicalizationMethod());
+            if (deployment.getSignatureCanonicalizationMethod() != null)
+                binding.canonicalizationMethod(deployment.getSignatureCanonicalizationMethod());
         }
 
 
@@ -199,7 +201,7 @@ public abstract class SamlAuthenticator {
             postBinding = true;
             holder = extractPostBindingResponse(samlResponse);
         }
-        StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
+        final StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
         // validate destination
         if (!requestUri.equals(statusResponse.getDestination())) {
             log.error("Request URI does not match SAML request destination");
@@ -214,19 +216,49 @@ public abstract class SamlAuthenticator {
                     return AuthOutcome.FAILED;
                 }
             }
-            return handleLoginResponse((ResponseType)statusResponse);
+            return handleLoginResponse((ResponseType) statusResponse);
 
         } else {
-            if (deployment.getIDP().getSingleLogoutService().validateResponseSignature()) {
+            if (sessionStore.isLoggingOut()) {
                 try {
-                    validateSamlSignature(holder, postBinding, GeneralConstants.SAML_RESPONSE_KEY);
-                } catch (VerificationException e) {
-                    log.error("Failed to verify saml response signature", e);
+                    if (deployment.getIDP().getSingleLogoutService().validateResponseSignature()) {
+                        try {
+                            validateSamlSignature(holder, postBinding, GeneralConstants.SAML_RESPONSE_KEY);
+                        } catch (VerificationException e) {
+                            log.error("Failed to verify saml response signature", e);
+                            return AuthOutcome.FAILED;
+                        }
+                    }
+                    return handleLogoutResponse(holder, statusResponse, relayState);
+                } finally {
+                    sessionStore.setCurrentAction(SamlSessionStore.CurrentAction.NONE);
+                }
+
+            } else if (sessionStore.isLoggingIn()) {
+                try {
+                    challenge = new AuthChallenge() {
+                        @Override
+                        public boolean challenge(HttpFacade exchange) {
+                            exchange.getResponse().sendError(500, statusResponse.getStatus().getStatusCode().getValue().toString());
+                            return true;
+                        }
+
+                        @Override
+                        public boolean errorPage() {
+                            return true;
+                        }
+
+                        @Override
+                        public int getResponseCode() {
+                            return 500;
+                        }
+                    };
                     return AuthOutcome.FAILED;
+                } finally {
+                    sessionStore.setCurrentAction(SamlSessionStore.CurrentAction.NONE);
                 }
             }
-            // todo need to check that it is actually a LogoutResponse
-            return handleLogoutResponse(holder, statusResponse, relayState);
+            return AuthOutcome.NOT_ATTEMPTED;
         }
 
     }
@@ -239,7 +271,7 @@ public abstract class SamlAuthenticator {
         }
     }
 
-    protected AuthOutcome handleLoginResponse(ResponseType responseType)  {
+    protected AuthOutcome handleLoginResponse(ResponseType responseType) {
         AssertionType assertion = null;
         try {
             assertion = AssertionUtil.getAssertion(responseType, deployment.getDecryptionKey());
@@ -308,14 +340,14 @@ public abstract class SamlAuthenticator {
         AuthnStatementType authn = null;
         for (Object statement : assertion.getStatements()) {
             if (statement instanceof AuthnStatementType) {
-                authn = (AuthnStatementType)statement;
+                authn = (AuthnStatementType) statement;
                 break;
             }
         }
 
 
         URI nameFormat = subjectNameID.getFormat();
-        String nameFormatString = nameFormat == null ?  JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get() : nameFormat.toString();
+        String nameFormatString = nameFormat == null ? JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get() : nameFormat.toString();
         final SamlPrincipal principal = new SamlPrincipal(principalName, principalName, nameFormatString, attributes, friendlyAttributes);
         String index = authn == null ? null : authn.getSessionIndex();
         final String sessionIndex = index;
@@ -341,9 +373,9 @@ public abstract class SamlAuthenticator {
     protected abstract void completeAuthentication(SamlSession account);
 
     private String getAttributeValue(Object attrValue) {
-        String value =  null;
+        String value = null;
         if (attrValue instanceof String) {
-            value = (String)attrValue;
+            value = (String) attrValue;
         } else if (attrValue instanceof Node) {
             Node roleNode = (Node) attrValue;
             value = roleNode.getFirstChild().getNodeValue();
@@ -372,12 +404,12 @@ public abstract class SamlAuthenticator {
     protected SAMLDocumentHolder extractRedirectBindingResponse(String response) {
         return SAMLRequestParser.parseRequestRedirectBinding(response);
     }
+
     protected SAMLDocumentHolder extractPostBindingResponse(String response) {
         byte[] samlBytes = PostBindingUtil.base64Decode(response);
         String xml = new String(samlBytes);
         return SAMLRequestParser.parseResponseDocument(samlBytes);
     }
-
 
 
     protected AuthOutcome initiateLogin() {
@@ -443,7 +475,6 @@ public abstract class SamlAuthenticator {
             throw new VerificationException(e);
         }
     }
-
 
 
 }

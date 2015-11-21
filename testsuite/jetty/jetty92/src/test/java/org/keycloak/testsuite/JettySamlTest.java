@@ -104,6 +104,11 @@ public class JettySamlTest {
     }
 
     @Test
+    public void testErrorHandling() throws Exception {
+        testStrategy.testErrorHandling();
+    }
+
+    @Test
     public void testPostSimpleLoginLogout() {
         testStrategy.testPostSimpleLoginLogout();
     }

@@ -67,6 +67,10 @@ public class SamlAdapterTest {
     }
 
     @Test
+    public void testErrorHandling() throws Exception {
+        testStrategy.testErrorHandling();
+    }
+    @Test
     public void testMetadataPostSignedLoginLogout() throws Exception {
         testStrategy.testMetadataPostSignedLoginLogout();
     }

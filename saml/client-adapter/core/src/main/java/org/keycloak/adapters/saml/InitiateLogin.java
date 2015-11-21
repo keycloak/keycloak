@@ -87,6 +87,7 @@ public class InitiateLogin implements AuthChallenge {
             Document document = authnRequestBuilder.toDocument();
             SamlDeployment.Binding samlBinding = deployment.getIDP().getSingleSignOnService().getRequestBinding();
             SamlUtil.sendSaml(true, httpFacade, actionUrl, binding, document, samlBinding);
+            sessionStore.setCurrentAction(SamlSessionStore.CurrentAction.LOGGING_IN);
         } catch (Exception e) {
             throw new RuntimeException("Could not create authentication request.", e);
         }

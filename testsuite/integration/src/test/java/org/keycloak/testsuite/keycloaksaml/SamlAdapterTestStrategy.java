@@ -1,27 +1,16 @@
 package org.keycloak.testsuite.keycloaksaml;
 
-import com.mongodb.util.Hash;
 import org.apache.commons.io.IOUtils;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
 import org.junit.rules.ExternalResource;
-import org.keycloak.Config;
 import org.keycloak.adapters.saml.SamlPrincipal;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.saml.mappers.HardcodedAttributeMapper;
@@ -29,33 +18,27 @@ import org.keycloak.protocol.saml.mappers.HardcodedRole;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.RoleNameMapper;
 import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.saml.BaseSAML2BindingBuilder;
+import org.keycloak.saml.SAML2ErrorResponseBuilder;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
+import org.w3c.dom.Document;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.URI;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -114,6 +97,27 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         Assert.assertTrue(pageSource.contains("request-path: /logout.jsp"));
         driver.navigate().to(mainUrl);
         Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
+    }
+
+    public void testErrorHandling() throws Exception {
+        Client client = ClientBuilder.newClient();
+        // make sure
+        Response response = client.target(APP_SERVER_BASE_URL + "/employee-sig/").request().get();
+        response.close();
+        SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
+                .destination(APP_SERVER_BASE_URL + "/employee-sig/")
+                        .issuer(AUTH_SERVER_URL + "/realms/demo")
+                        .status(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
+        BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder()
+                .relayState(null);
+        Document document = builder.buildDocument();
+        URI uri = binding.redirectBinding(document).generateURI(APP_SERVER_BASE_URL + "/employee-sig/", false);
+        response = client.target(uri).request().get();
+        String errorPage = response.readEntity(String.class);
+        response.close();
+        Assert.assertTrue(errorPage.contains(JBossSAMLURIConstants.STATUS_RESPONDER.get()));
+        client.close();
+
     }
 
     public void testPostSimpleLoginLogout() {
