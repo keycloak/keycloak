@@ -57,7 +57,7 @@ public class AuthenticatedActionsHandler {
     protected boolean abortTokenResponse() {
         if (facade.getSecurityContext() == null) {
             log.debugv("Not logged in, sending back 401: {0}",facade.getRequest().getURI());
-            facade.getResponse().setStatus(401);
+            facade.getResponse().sendError(401);
             facade.getResponse().end();
             return true;
         }
@@ -94,7 +94,7 @@ public class AuthenticatedActionsHandler {
                     log.debugv("allowedOrigins did not contain origin");
 
                 }
-                facade.getResponse().setStatus(403);
+                facade.getResponse().sendError(403);
                 facade.getResponse().end();
                 return true;
             }

@@ -171,6 +171,15 @@ public class JettyHttpFacade implements HttpFacade {
         }
 
         @Override
+        public void sendError(int code) {
+            try {
+                response.sendError(code);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
         public void sendError(int code, String message) {
             try {
                 response.sendError(code, message);

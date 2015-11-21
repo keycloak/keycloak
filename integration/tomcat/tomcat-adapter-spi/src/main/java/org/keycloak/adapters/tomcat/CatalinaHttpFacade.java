@@ -168,6 +168,15 @@ public class CatalinaHttpFacade implements HttpFacade {
         }
 
         @Override
+        public void sendError(int code) {
+            try {
+                response.sendError(code);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
         public void sendError(int code, String message) {
             try {
                 response.sendError(code, message);
@@ -175,6 +184,7 @@ public class CatalinaHttpFacade implements HttpFacade {
                 throw new RuntimeException(e);
             }
         }
+
 
         @Override
         public void end() {
