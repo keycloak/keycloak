@@ -153,6 +153,10 @@ public class ExtendingThemeManager implements ThemeProvider {
 
         private List<Theme> themes;
 
+        private Properties properties;
+
+        private ConcurrentHashMap<String, ConcurrentHashMap<Locale, Properties>> messages = new ConcurrentHashMap<>();
+
         public ExtendingTheme(List<Theme> themes) {
             this.themes = themes;
         }
@@ -229,28 +233,41 @@ public class ExtendingThemeManager implements ThemeProvider {
 
         @Override
         public Properties getMessages(String baseBundlename, Locale locale) throws IOException {
-            Properties messages = new Properties();
-            ListIterator<Theme> itr = themes.listIterator(themes.size());
-            while (itr.hasPrevious()) {
-                Properties m = itr.previous().getMessages(baseBundlename, locale);
-                if (m != null) {
-                    messages.putAll(m);
+            if (messages.get(baseBundlename) == null || messages.get(baseBundlename).get(locale) == null) {
+                Properties messages = new Properties();
+                ListIterator<Theme> itr = themes.listIterator(themes.size());
+                while (itr.hasPrevious()) {
+                    Properties m = itr.previous().getMessages(baseBundlename, locale);
+                    if (m != null) {
+                        messages.putAll(m);
+                    }
                 }
+
+                this.messages.putIfAbsent(baseBundlename, new ConcurrentHashMap<Locale, Properties>());
+                this.messages.get(baseBundlename).putIfAbsent(locale, messages);
+
+                return messages;
+            } else {
+                return messages.get(baseBundlename).get(locale);
             }
-            return messages;
         }
 
         @Override
         public Properties getProperties() throws IOException {
-            Properties properties = new Properties();
-            ListIterator<Theme> itr = themes.listIterator(themes.size());
-            while (itr.hasPrevious()) {
-                Properties p = itr.previous().getProperties();
-                if (p != null) {
-                    properties.putAll(p);
+            if (properties == null) {
+                Properties properties = new Properties();
+                ListIterator<Theme> itr = themes.listIterator(themes.size());
+                while (itr.hasPrevious()) {
+                    Properties p = itr.previous().getProperties();
+                    if (p != null) {
+                        properties.putAll(p);
+                    }
                 }
+                this.properties = properties;
+                return properties;
+            } else {
+                return properties;
             }
-            return properties;
         }
 
     }
