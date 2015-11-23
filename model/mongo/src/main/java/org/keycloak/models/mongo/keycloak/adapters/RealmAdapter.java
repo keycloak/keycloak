@@ -799,6 +799,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         clientEntity.setClientId(clientId);
         clientEntity.setRealmId(getId());
         clientEntity.setEnabled(true);
+        clientEntity.setStandardFlowEnabled(true);
+        clientEntity.setDirectAccessGrantsEnabled(true);
         getMongoStore().insertEntity(clientEntity, invocationContext);
 
         final ClientModel model = new ClientAdapter(session, this, clientEntity, invocationContext);

@@ -36,7 +36,6 @@ public class CachedClient implements Serializable {
     private Map<String, String> attributes = new HashMap<String, String>();
     private boolean publicClient;
     private boolean fullScopeAllowed;
-    private boolean directGrantsOnly;
     private boolean frontchannelLogout;
     private int notBefore;
     private Set<String> scope = new HashSet<String>();
@@ -49,6 +48,9 @@ public class CachedClient implements Serializable {
     private List<String> defaultRoles = new LinkedList<String>();
     private boolean bearerOnly;
     private boolean consentRequired;
+    private boolean standardFlowEnabled;
+    private boolean implicitFlowEnabled;
+    private boolean directAccessGrantsEnabled;
     private boolean serviceAccountsEnabled;
     private Map<String, String> roles = new HashMap<String, String>();
     private int nodeReRegistrationTimeout;
@@ -67,7 +69,6 @@ public class CachedClient implements Serializable {
         protocol = model.getProtocol();
         attributes.putAll(model.getAttributes());
         notBefore = model.getNotBefore();
-        directGrantsOnly = model.isDirectGrantsOnly();
         frontchannelLogout = model.isFrontchannelLogout();
         publicClient = model.isPublicClient();
         fullScopeAllowed = model.isFullScopeAllowed();
@@ -86,6 +87,9 @@ public class CachedClient implements Serializable {
         defaultRoles.addAll(model.getDefaultRoles());
         bearerOnly = model.isBearerOnly();
         consentRequired = model.isConsentRequired();
+        standardFlowEnabled = model.isStandardFlowEnabled();
+        implicitFlowEnabled = model.isImplicitFlowEnabled();
+        directAccessGrantsEnabled = model.isDirectAccessGrantsEnabled();
         serviceAccountsEnabled = model.isServiceAccountsEnabled();
         for (RoleModel role : model.getRoles()) {
             roles.put(role.getName(), role.getId());
@@ -137,10 +141,6 @@ public class CachedClient implements Serializable {
 
     public boolean isPublicClient() {
         return publicClient;
-    }
-
-    public boolean isDirectGrantsOnly() {
-        return directGrantsOnly;
     }
 
     public int getNotBefore() {
@@ -201,6 +201,18 @@ public class CachedClient implements Serializable {
 
     public boolean isConsentRequired() {
         return consentRequired;
+    }
+
+    public boolean isStandardFlowEnabled() {
+        return standardFlowEnabled;
+    }
+
+    public boolean isImplicitFlowEnabled() {
+        return implicitFlowEnabled;
+    }
+
+    public boolean isDirectAccessGrantsEnabled() {
+        return directAccessGrantsEnabled;
     }
 
     public boolean isServiceAccountsEnabled() {

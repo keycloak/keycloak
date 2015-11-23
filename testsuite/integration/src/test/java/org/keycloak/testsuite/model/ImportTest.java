@@ -327,6 +327,13 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertFalse(otherAppAdminConsent.isRoleGranted(application.getRole("app-admin")));
         Assert.assertTrue(otherAppAdminConsent.isProtocolMapperGranted(gssCredentialMapper));
 
+        Assert.assertTrue(application.isStandardFlowEnabled());
+        Assert.assertTrue(application.isImplicitFlowEnabled());
+        Assert.assertTrue(application.isDirectAccessGrantsEnabled());
+        Assert.assertFalse(otherApp.isStandardFlowEnabled());
+        Assert.assertFalse(otherApp.isImplicitFlowEnabled());
+        Assert.assertFalse(otherApp.isDirectAccessGrantsEnabled());
+
         // Test service accounts
         Assert.assertFalse(application.isServiceAccountsEnabled());
         Assert.assertTrue(otherApp.isServiceAccountsEnabled());
