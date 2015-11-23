@@ -76,7 +76,7 @@
         <log4j.version>1.2.17</log4j.version>
         <greenmail.version>1.3.1b</greenmail.version>
         <xmlsec.version>1.5.1</xmlsec.version>
-        <aesh.version>0.66</aesh.version>
+        <aesh.version>0.65.1</aesh.version>
 
         <enforcer.plugin.version>1.4</enforcer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
@@ -154,6 +154,7 @@
         <module>timer</module>
         <module>export-import</module>
         <module>util</module>
+        <module>wildfly</module>
     </modules>
 
     <dependencyManagement>
@@ -827,7 +828,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-as7-server-subsystem</artifactId>
+                <artifactId>keycloak-eap6-server-subsystem</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -842,7 +843,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-wf9-server-subsystem</artifactId>
+                <artifactId>keycloak-wildfly-server-subsystem</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -943,6 +944,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wildfly-adapter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-wildfly-adduser</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

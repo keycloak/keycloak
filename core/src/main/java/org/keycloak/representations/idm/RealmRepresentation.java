@@ -84,7 +84,6 @@ public class RealmRepresentation {
     private List<IdentityProviderRepresentation> identityProviders;
     private List<IdentityProviderMapperRepresentation> identityProviderMappers;
     private List<ProtocolMapperRepresentation> protocolMappers;
-    private Boolean identityFederationEnabled;
     protected Boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
@@ -611,10 +610,6 @@ public class RealmRepresentation {
     public void addIdentityProvider(IdentityProviderRepresentation identityProviderRepresentation) {
         if (identityProviders == null) identityProviders = new LinkedList<>();
         identityProviders.add(identityProviderRepresentation);
-    }
-
-    public boolean isIdentityFederationEnabled() {
-        return identityProviders != null && !identityProviders.isEmpty();
     }
 
     public List<ProtocolMapperRepresentation> getProtocolMappers() {
