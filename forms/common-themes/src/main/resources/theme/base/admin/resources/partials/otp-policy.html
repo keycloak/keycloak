@@ -51,18 +51,18 @@
             <kc-tooltip>How far ahead should the server look just in case the token generator and server are out of time sync or counter sync?</kc-tooltip>
         </div>
 
-        <div class="form-group" data-ng-show="realm.otpPolicyType == 'hotp'">
+        <div class="form-group" data-ng-if="realm.otpPolicyType == 'hotp'">
             <label class="col-md-2 control-label" for="counter">Initial Counter</label>
             <div class="col-md-6">
-                <input class="form-control" type="number" required min="1" max="120" id="counter" name="counter" data-ng-model="realm.otpPolicyInitialCounter" autofocus>
+                <input class="form-control" type="number" data-ng-required="realm.otpPolicyType == 'hotp'" min="1" max="120" id="counter" name="counter" data-ng-model="realm.otpPolicyInitialCounter" autofocus>
             </div>
             <kc-tooltip>What should the initial counter value be?</kc-tooltip>
         </div>
 
-        <div class="form-group" data-ng-show="realm.otpPolicyType == 'totp'">
+        <div class="form-group" data-ng-if="realm.otpPolicyType == 'totp'">
             <label class="col-md-2 control-label" for="counter">OTP Token Period</label>
             <div class="col-md-6">
-                <input class="form-control" type="number" required min="1" max="120" id="period" name="period" data-ng-model="realm.otpPolicyPeriod">
+                <input class="form-control" type="number" data-ng-required="realm.otpPolicyType == 'totp'" min="1" max="120" id="period" name="period" data-ng-model="realm.otpPolicyPeriod">
             </div>
             <kc-tooltip>How many seconds should an OTP token be valid? Defaults to 30 seconds.</kc-tooltip>
         </div>
