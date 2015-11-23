@@ -9,6 +9,7 @@ cache:
 
 before_cache:
   - rm -rf $HOME/.m2/repository/org/keycloak
+  - cd $HOME/.m2/repository && find -name *.lastUpdated | xargs rm
 
 install: mvn install -Pdistribution -DskipTests=true -B -V
 
