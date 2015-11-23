@@ -8,20 +8,19 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-adapters-as7</artifactId>
-    <name>Adapter Tests on JBossAS 7</name>
+    <artifactId>integration-arquillian-adapters-eap6</artifactId>
+    <name>Adapter Tests on EAP 6</name>
     
     <properties>
-        <as7.version>7.1.1.Final</as7.version>
-        <app.server.as7.home>${containers.home}/jboss-as-${as7.version}</app.server.as7.home>
-        <adapter.libs.as7>${containers.home}/keycloak-as7-adapter-dist</adapter.libs.as7>
+        <app.server.eap6.home>${containers.home}/jboss-eap-6.4</app.server.eap6.home>
+        <adapter.libs.eap6>${containers.home}/keycloak-eap6-adapter-dist</adapter.libs.eap6>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-dist</artifactId>
-            <version>${as7.version}</version>
+            <version>${jboss.version}</version>
             <type>zip</type>
         </dependency>
         <dependency>
@@ -59,16 +58,16 @@
                                 <artifactItem>
                                     <groupId>org.jboss.as</groupId>
                                     <artifactId>jboss-as-dist</artifactId>
-                                    <version>${as7.version}</version>
+                                    <version>${jboss.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${containers.home}</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-as7-adapter-dist</artifactId>
+                                    <artifactId>keycloak-eap6-adapter-dist</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
-                                    <outputDirectory>${adapter.libs.as7}</outputDirectory>
+                                    <outputDirectory>${adapter.libs.eap6}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -82,9 +81,9 @@
                 <version>2.18.1</version>
                 <configuration>
                     <systemPropertyVariables>
-                        <app.server.as7>true</app.server.as7>
-                        <app.server.as7.home>${app.server.as7.home}</app.server.as7.home>
-                        <adapter.libs.as7>${adapter.libs.as7}</adapter.libs.as7>
+                        <app.server.eap6>true</app.server.eap6>
+                        <app.server.eap6.home>${app.server.eap6.home}</app.server.eap6.home>
+                        <adapter.libs.eap6>${adapter.libs.eap6}</adapter.libs.eap6>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -100,7 +99,7 @@
                 </property>
             </activation>
             <properties>
-                <adapter.libs.as7>${app.server.as7.home}</adapter.libs.as7>
+                <adapter.libs.eap6>${app.server.eap6.home}</adapter.libs.eap6>
             </properties>
             <build>
                 <plugins>
@@ -117,12 +116,12 @@
                                 <configuration>
                                     <transformationSets>
                                         <transformationSet>
-                                            <dir>${app.server.as7.home}/standalone/configuration</dir>
+                                            <dir>${app.server.eap6.home}/standalone/configuration</dir>
                                             <includes>
                                                 <include>standalone.xml</include>
                                             </includes>
                                             <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
-                                            <outputDir>${app.server.as7.home}/standalone/configuration</outputDir>
+                                            <outputDir>${app.server.eap6.home}/standalone/configuration</outputDir>
                                         </transformationSet>
                                     </transformationSets>
                                 </configuration>
