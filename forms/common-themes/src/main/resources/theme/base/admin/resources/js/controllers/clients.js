@@ -805,7 +805,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
         $scope.client = angular.copy(client);
         updateProperties();
     } else {
-        $scope.client = { enabled: true, attributes: {}};
+        $scope.client = {
+            enabled: true,
+            standardFlowEnabled: true,
+            directAccessGrantsEnabled: true,
+            attributes: {}
+        };
         $scope.client.attributes['saml_signature_canonicalization_method'] = $scope.canonicalization[0].value;
         $scope.client.redirectUris = [];
         $scope.accessType = $scope.accessTypes[0];
@@ -1039,7 +1044,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
         $scope.client.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;
         $scope.client.attributes['saml_name_id_format'] = $scope.nameIdFormat;
 
-        if ($scope.client.protocol != 'saml' && !$scope.client.bearerOnly && !$scope.client.directGrantsOnly && (!$scope.client.redirectUris || $scope.client.redirectUris.length == 0)) {
+        if ($scope.client.protocol != 'saml' && !$scope.client.bearerOnly && ($scope.client.standardFlowEnabled || $scope.client.implicitFlowEnabled) && (!$scope.client.redirectUris || $scope.client.redirectUris.length == 0)) {
             Notifications.error("You must specify at least one redirect uri");
         } else {
             if ($scope.create) {

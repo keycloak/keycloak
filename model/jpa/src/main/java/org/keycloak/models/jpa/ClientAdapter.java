@@ -499,6 +499,36 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public boolean isStandardFlowEnabled() {
+        return entity.isStandardFlowEnabled();
+    }
+
+    @Override
+    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
+        entity.setStandardFlowEnabled(standardFlowEnabled);
+    }
+
+    @Override
+    public boolean isImplicitFlowEnabled() {
+        return entity.isImplicitFlowEnabled();
+    }
+
+    @Override
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        entity.setImplicitFlowEnabled(implicitFlowEnabled);
+    }
+
+    @Override
+    public boolean isDirectAccessGrantsEnabled() {
+        return entity.isDirectAccessGrantsEnabled();
+    }
+
+    @Override
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        entity.setDirectAccessGrantsEnabled(directAccessGrantsEnabled);
+    }
+
+    @Override
     public boolean isServiceAccountsEnabled() {
         return entity.isServiceAccountsEnabled();
     }
@@ -506,16 +536,6 @@ public class ClientAdapter implements ClientModel {
     @Override
     public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
         entity.setServiceAccountsEnabled(serviceAccountsEnabled);
-    }
-
-    @Override
-    public boolean isDirectGrantsOnly() {
-        return entity.isDirectGrantsOnly();
-    }
-
-    @Override
-    public void setDirectGrantsOnly(boolean flag) {
-        entity.setDirectGrantsOnly(flag);
     }
 
     @Override

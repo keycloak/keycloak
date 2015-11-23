@@ -69,11 +69,37 @@
         <addUniqueConstraint columnNames="GROUP_ID" constraintName="CON_GROUP_ID_DEF_GROUPS" tableName="REALM_DEFAULT_GROUPS"/>
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_DEFAULT_GROUPS" constraintName="FK_DEF_GROUPS_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
         <addForeignKeyConstraint baseColumnNames="GROUP_ID" baseTableName="REALM_DEFAULT_GROUPS" constraintName="FK_DEF_GROUPS_GROUP" referencedColumnNames="ID" referencedTableName="KEYCLOAK_GROUP"/>
+
         <addColumn tableName="CLIENT">
             <column name="REGISTRATION_TOKEN" type="VARCHAR(255)"/>
+            <column name="STANDARD_FLOW_ENABLED" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="IMPLICIT_FLOW_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DIRECT_ACCESS_GRANTS_ENABLED" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
         </addColumn>
 
+        <update tableName="CLIENT">
+            <column name="STANDARD_FLOW_ENABLED" valueBoolean="false"/>
+            <where>DIRECT_GRANTS_ONLY = :value</where>
+            <whereParams>
+                <param valueBoolean="true" />
+            </whereParams>
+        </update>
+
+        <dropDefaultValue tableName="CLIENT" columnName="DIRECT_GRANTS_ONLY" />
+        <dropColumn tableName="CLIENT" columnName="DIRECT_GRANTS_ONLY"/>
+
         <modifyDataType tableName="REALM" columnName="PASSWORD_POLICY" newDataType="VARCHAR(2550)"/>
+
+        <!-- Sybase specific hacks -->
+        <modifySql dbms="sybase">
+            <regExpReplace replace=".*(SET DEFAULT NULL)" with="SELECT 1" />
+        </modifySql>
 
     </changeSet>
 </databaseChangeLog>

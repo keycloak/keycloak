@@ -172,9 +172,9 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             throw new ErrorPageException(session, Messages.BEARER_ONLY);
         }
 
-        if (client.isDirectGrantsOnly()) {
+        if (!client.isStandardFlowEnabled()) {
             event.error(Errors.NOT_ALLOWED);
-            throw new ErrorPageException(session, Messages.DIRECT_GRANTS_ONLY);
+            throw new ErrorPageException(session, Messages.STANDARD_FLOW_DISABLED);
         }
 
         session.getContext().setClient(client);
