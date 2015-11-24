@@ -1,72 +1,70 @@
 package org.keycloak.services.clientregistration.oidc;
 
-import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
 import org.keycloak.services.clientregistration.ClientRegistrationAuth;
-import org.keycloak.services.clientregistration.ClientRegistrationProvider;
+import org.keycloak.services.clientregistration.ErrorCodes;
+
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.net.URI;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class OIDCClientRegistrationProvider implements ClientRegistrationProvider {
-
-    private static final Logger logger = Logger.getLogger(OIDCClientRegistrationProvider.class);
-
-    private KeycloakSession session;
-    private EventBuilder event;
-    private ClientRegistrationAuth auth;
+public class OIDCClientRegistrationProvider extends AbstractClientRegistrationProvider {
 
     public OIDCClientRegistrationProvider(KeycloakSession session) {
-        this.session = session;
+        super(session);
     }
 
-//    @POST
-//    @Consumes(MediaType.APPLICATION_JSON)
-//    @Produces(MediaType.APPLICATION_JSON)
-//    public Response create(OIDCClientRepresentation clientOIDC) {
-//        event.event(EventType.CLIENT_REGISTER);
-//
-//        auth.requireCreate();
-//
-//        ClientRepresentation client = DescriptionConverter.toInternal(clientOIDC);
-//
-//        try {
-//            ClientModel clientModel = RepresentationToModel.createClient(session, session.getContext().getRealm(), client, true);
-//
-//            client = ModelToRepresentation.toRepresentation(clientModel);
-//
-//            String registrationAccessToken = TokenGenerator.createRegistrationAccessToken();
-//
-//            clientModel.setRegistrationToken(registrationAccessToken);
-//
-//            URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build();
-//
-//            logger.infov("Created client {0}", client.getClientId());
-//
-//            event.client(client.getClientId()).success();
-//
-//            OIDCClientResponseRepresentation response = DescriptionConverter.toExternalResponse(client);
-//
-//            response.setClientName(client.getName());
-//            response.setClientUri(client.getBaseUrl());
-//
-//            response.setClientSecret(client.getSecret());
-//            response.setClientSecretExpiresAt(0);
-//
-//            response.setRedirectUris(client.getRedirectUris());
-//
-//            response.setRegistrationAccessToken(registrationAccessToken);
-//            response.setRegistrationClientUri(uri.toString());
-//
-//            return Response.created(uri).entity(response).build();
-//        } catch (ModelDuplicateException e) {
-//            return ErrorResponse.exists("Client " + client.getClientId() + " already exists");
-//        }
-//    }
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response createOIDC(OIDCClientRepresentation clientOIDC) {
+        if (clientOIDC.getClientId() != null) {
+            throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier included", Response.Status.BAD_REQUEST);
+        }
 
-    @Override
-    public void close() {
+        ClientRepresentation client = DescriptionConverter.toInternal(clientOIDC);
+        client = create(client);
+        URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
+        clientOIDC = DescriptionConverter.toExternalResponse(client, uri);
+        clientOIDC.setClientIdIssuedAt(Time.currentTime());
+        return Response.created(uri).entity(clientOIDC).build();
+    }
+
+    @GET
+    @Path("{clientId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getOIDC(@PathParam("clientId") String clientId) {
+        ClientRepresentation client = get(clientId);
+        OIDCClientRepresentation clientOIDC = DescriptionConverter.toExternalResponse(client, session.getContext().getUri().getRequestUri());
+        return Response.ok(clientOIDC).build();
+    }
+
+    @PUT
+    @Path("{clientId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updateOIDC(@PathParam("clientId") String clientId, OIDCClientRepresentation clientOIDC) {
+        ClientRepresentation client = DescriptionConverter.toInternal(clientOIDC);
+        client = update(clientId, client);
+        URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
+        clientOIDC = DescriptionConverter.toExternalResponse(client, uri);
+        return Response.ok(clientOIDC).build();
+    }
+
+    @DELETE
+    @Path("{clientId}")
+    public void deleteOIDC(@PathParam("clientId") String clientId) {
+        delete(clientId);
     }
 
     @Override
@@ -77,6 +75,10 @@ public class OIDCClientRegistrationProvider implements ClientRegistrationProvide
     @Override
     public void setEvent(EventBuilder event) {
         this.event = event;
+    }
+
+    @Override
+    public void close() {
     }
 
 }
