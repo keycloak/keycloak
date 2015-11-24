@@ -67,7 +67,6 @@ public class OTPPolicyTest extends AbstractConsoleTest {
     }      
     
     @Test
-    @Ignore //KEYCLOAK-2051 when you close notification, it is not displayed again
     public void invalidValuesTest() {
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.SIX, "", "30");
         assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());

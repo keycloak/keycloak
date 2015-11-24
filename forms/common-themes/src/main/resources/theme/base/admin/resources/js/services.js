@@ -142,31 +142,32 @@ module.factory('Notifications', function($rootScope, $timeout) {
 	var delay = 5000;
 
 	var notifications = {};
+    notifications.current = { display: false };
+    notifications.current.remove = function() {
+        if (notifications.scheduled) {
+            $timeout.cancel(notifications.scheduled);
+            delete notifications.scheduled;
+        }
+        delete notifications.current.type;
+        delete notifications.current.header;
+        delete notifications.current.message;
+        notifications.current.display = false;
+        console.debug("Remove message");
+    }
 
-	var scheduled = null;
-	var schedulePop = function() {
-		if (scheduled) {
-			$timeout.cancel(scheduled);
-		}
-
-		scheduled = $timeout(function() {
-			$rootScope.notification = null;
-			scheduled = null;
-		}, delay);
-	};
-
-	if (!$rootScope.notifications) {
-		$rootScope.notifications = [];
-	}
+    $rootScope.notification = notifications.current;
 
 	notifications.message = function(type, header, message) {
-		$rootScope.notification = {
-			type : type,
-			header: header,
-			message : message
-		};
+        notifications.current.type = type;
+        notifications.current.header = header;
+        notifications.current.message = message;
+        notifications.current.display = true;
 
-		schedulePop();
+        notifications.scheduled = $timeout(function() {
+            notifications.current.remove();
+        }, delay);
+
+        console.debug("Added message");
 	}
 
 	notifications.info = function(message) {
