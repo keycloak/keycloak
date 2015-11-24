@@ -47,6 +47,8 @@ public interface HttpFacade {
         InputStream getInputStream();
 
         String getRemoteAddr();
+        void setError(AuthenticationError error);
+        void setError(LogoutError error);
     }
 
     interface Response {

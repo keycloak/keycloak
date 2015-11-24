@@ -45,7 +45,7 @@ public class BearerTokenRequestAuthenticator {
     public AuthOutcome authenticate(HttpFacade exchange)  {
         List<String> authHeaders = exchange.getRequest().getHeaders("Authorization");
         if (authHeaders == null || authHeaders.size() == 0) {
-            challenge = challengeResponse(exchange, null, null);
+            challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.NO_BEARER_TOKEN, null, null);
             return AuthOutcome.NOT_ATTEMPTED;
         }
 
@@ -58,7 +58,7 @@ public class BearerTokenRequestAuthenticator {
         }
 
         if (tokenString == null) {
-            challenge = challengeResponse(exchange, null, null);
+            challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.NO_BEARER_TOKEN, null, null);
             return AuthOutcome.NOT_ATTEMPTED;
         }
 
@@ -70,12 +70,12 @@ public class BearerTokenRequestAuthenticator {
             token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl());
         } catch (VerificationException e) {
             log.error("Failed to verify token", e);
-            challenge = challengeResponse(exchange, "invalid_token", e.getMessage());
+            challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.INVALID_TOKEN, "invalid_token", e.getMessage());
             return AuthOutcome.FAILED;
         }
         if (token.getIssuedAt() < deployment.getNotBefore()) {
             log.error("Stale token");
-            challenge = challengeResponse(exchange, "invalid_token", "Stale token");
+            challenge = challengeResponse(exchange,  OIDCAuthenticationError.Reason.STALE_TOKEN, "invalid_token", "Stale token");
             return AuthOutcome.FAILED;
         }
         boolean verifyCaller = false;
@@ -113,11 +113,6 @@ public class BearerTokenRequestAuthenticator {
     protected AuthChallenge clientCertChallenge() {
         return new AuthChallenge() {
             @Override
-            public boolean errorPage() {
-                return false;
-            }
-
-            @Override
             public int getResponseCode() {
                 return 0;
             }
@@ -131,7 +126,7 @@ public class BearerTokenRequestAuthenticator {
     }
 
 
-    protected AuthChallenge challengeResponse(HttpFacade facade, String error, String description) {
+    protected AuthChallenge challengeResponse(HttpFacade facade, final OIDCAuthenticationError.Reason reason, final String error, final String description) {
         StringBuilder header = new StringBuilder("Bearer realm=\"");
         header.append(deployment.getRealm()).append("\"");
         if (error != null) {
@@ -143,19 +138,16 @@ public class BearerTokenRequestAuthenticator {
         final String challenge = header.toString();
         return new AuthChallenge() {
             @Override
-            public boolean errorPage() {
-                return true;
-            }
-
-            @Override
             public int getResponseCode() {
                 return 401;
             }
 
             @Override
             public boolean challenge(HttpFacade facade) {
-                facade.getResponse().setStatus(401);
+                OIDCAuthenticationError error = new OIDCAuthenticationError(reason, description);
+                facade.getRequest().setError(error);
                 facade.getResponse().addHeader("WWW-Authenticate", challenge);
+                facade.getResponse().sendError(401);
                 return true;
             }
         };

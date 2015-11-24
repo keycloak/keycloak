@@ -6,6 +6,8 @@ import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.ServerRequest;
+import org.keycloak.adapters.spi.AuthenticationError;
+import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -237,6 +239,18 @@ public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
                 public String getRemoteAddr() {
                     return servletRequest.getRemoteAddr();
                 }
+
+                @Override
+                public void setError(AuthenticationError error) {
+                    servletRequest.setAttribute(AuthenticationError.class.getName(), error);
+
+                }
+
+                @Override
+                public void setError(LogoutError error) {
+                    servletRequest.setAttribute(LogoutError.class.getName(), error);
+                }
+
             };
         }
 

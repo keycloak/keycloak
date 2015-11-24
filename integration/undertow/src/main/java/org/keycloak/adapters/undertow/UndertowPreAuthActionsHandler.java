@@ -47,10 +47,14 @@ public class UndertowPreAuthActionsHandler implements HttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        UndertowHttpFacade facade = new OIDCUndertowHttpFacade(exchange);
+        UndertowHttpFacade facade = createFacade(exchange);
         SessionManagementBridge bridge = new SessionManagementBridge(userSessionManagement, sessionManager);
         PreAuthActionsHandler handler = new PreAuthActionsHandler(bridge, deploymentContext, facade);
         if (handler.handleRequest()) return;
         next.handleRequest(exchange);
+    }
+
+    public UndertowHttpFacade createFacade(HttpServerExchange exchange) {
+        return new OIDCUndertowHttpFacade(exchange);
     }
 }

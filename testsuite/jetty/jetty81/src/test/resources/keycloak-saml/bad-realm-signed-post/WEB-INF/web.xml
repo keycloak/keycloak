@@ -10,10 +10,39 @@
         <servlet-name>SendUsernameServlet</servlet-name>
         <servlet-class>org.keycloak.testsuite.keycloaksaml.SendUsernameServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>Error Servlet</servlet-name>
+        <servlet-class>org.keycloak.testsuite.rule.ErrorServlet</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>SendUsernameServlet</servlet-name>
         <url-pattern>/*</url-pattern>
     </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>Error Servlet</servlet-name>
+        <url-pattern>/error.html</url-pattern>
+    </servlet-mapping>
+
+    <error-page>
+        <error-code>400</error-code>
+        <location>/error.html</location>
+    </error-page>
+
+    <error-page>
+        <error-code>401</error-code>
+        <location>/error.html</location>
+    </error-page>
+
+    <error-page>
+        <error-code>403</error-code>
+        <location>/error.html</location>
+    </error-page>
+
+    <error-page>
+        <error-code>500</error-code>
+        <location>/error.html</location>
+    </error-page>
 
     <security-constraint>
         <web-resource-collection>

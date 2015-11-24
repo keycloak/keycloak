@@ -20,6 +20,7 @@
                 <!ENTITY SpringSecurityAdapter SYSTEM "modules/spring-security-adapter.xml">
                 <!ENTITY InstalledApplications SYSTEM "modules/installed-applications.xml">
                 <!ENTITY Logout SYSTEM "modules/logout.xml">
+                <!ENTITY ErrorHandling SYSTEM "modules/adapter_error_handling.xml">
                 <!ENTITY SAML SYSTEM "modules/saml.xml">
                 <!ENTITY JAAS SYSTEM "modules/jaas.xml">
                 <!ENTITY IdentityBroker SYSTEM "modules/identity-broker.xml">
@@ -115,6 +116,7 @@ This one is short
         &SpringSecurityAdapter;
         &InstalledApplications;
         &Logout;
+        &ErrorHandling;
         &MultiTenancy;
         &JAAS;
     </chapter>

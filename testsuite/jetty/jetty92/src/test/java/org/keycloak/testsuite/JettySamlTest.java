@@ -104,6 +104,11 @@ public class JettySamlTest {
     }
 
     @Test
+    public void testErrorHandling() throws Exception {
+        testStrategy.testErrorHandling();
+    }
+
+    @Test
     public void testPostSimpleLoginLogout() {
         testStrategy.testPostSimpleLoginLogout();
     }
@@ -165,12 +170,7 @@ public class JettySamlTest {
 
     @Test
     public void testPostBadRealmSignature() {
-        testStrategy.testPostBadRealmSignature( new SamlAdapterTestStrategy.CheckAuthError() {
-            @Override
-            public void check(WebDriver driver) {
-                Assert.assertEquals(driver.getPageSource(), "");
-            }
-        });
+        testStrategy.testPostBadRealmSignature( );
     }
 
     @Test
