@@ -52,7 +52,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Stateful object that creates tokens and manages oauth access codes
+ * Stateless object that creates tokens and manages oauth access codes
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
