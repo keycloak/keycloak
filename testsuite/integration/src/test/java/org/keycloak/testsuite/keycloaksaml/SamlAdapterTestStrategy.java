@@ -3,7 +3,7 @@ package org.keycloak.testsuite.keycloaksaml;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
-import org.keycloak.adapters.saml.SamlAuthError;
+import org.keycloak.adapters.saml.SamlAuthenticationError;
 import org.keycloak.adapters.saml.SamlPrincipal;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -121,8 +121,8 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         Assert.assertTrue(errorPage.contains("Error Page"));
         client.close();
         Assert.assertNotNull(ErrorServlet.authError);
-        SamlAuthError error = (SamlAuthError)ErrorServlet.authError;
-        Assert.assertEquals(SamlAuthError.Reason.ERROR_STATUS, error.getReason());
+        SamlAuthenticationError error = (SamlAuthenticationError)ErrorServlet.authError;
+        Assert.assertEquals(SamlAuthenticationError.Reason.ERROR_STATUS, error.getReason());
         Assert.assertNotNull(error.getStatus());
         ErrorServlet.authError = null;
 
@@ -404,8 +404,8 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/bad-realm-sales-post-sig/");
         System.out.println(driver.getPageSource());
         Assert.assertNotNull(ErrorServlet.authError);
-        SamlAuthError error = (SamlAuthError)ErrorServlet.authError;
-        Assert.assertEquals(SamlAuthError.Reason.INVALID_SIGNATURE, error.getReason());
+        SamlAuthenticationError error = (SamlAuthenticationError)ErrorServlet.authError;
+        Assert.assertEquals(SamlAuthenticationError.Reason.INVALID_SIGNATURE, error.getReason());
         ErrorServlet.authError = null;
     }
 

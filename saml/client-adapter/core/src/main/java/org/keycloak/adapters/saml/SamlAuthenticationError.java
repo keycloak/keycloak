@@ -10,7 +10,7 @@ import org.keycloak.dom.saml.v2.protocol.StatusType;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SamlAuthError implements AuthenticationError {
+public class SamlAuthenticationError implements AuthenticationError {
     public static enum Reason {
         EXTRACTION_FAILURE,
         INVALID_SIGNATURE,
