@@ -10,6 +10,7 @@ import org.keycloak.services.util.LocaleHelper;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 import java.util.Locale;
 
 /**
@@ -27,6 +28,13 @@ public class DefaultKeycloakContext implements KeycloakContext {
 
     public DefaultKeycloakContext(KeycloakSession session) {
         this.session = session;
+    }
+
+    @Override
+    public URI getAuthServerUrl() {
+        UriInfo uri = getUri();
+        KeycloakApplication keycloakApplication = getContextObject(KeycloakApplication.class);
+        return keycloakApplication.getBaseUri(uri);
     }
 
     @Override

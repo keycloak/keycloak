@@ -27,6 +27,7 @@
                 <!ENTITY Migration SYSTEM "modules/MigrationFromOlderVersions.xml">
                 <!ENTITY Email SYSTEM "modules/email.xml">
                 <!ENTITY Roles SYSTEM "modules/roles.xml">
+                <!ENTITY Groups SYSTEM "modules/groups.xml">
                 <!ENTITY DirectAccess SYSTEM "modules/direct-access.xml">
                 <!ENTITY ServiceAccounts SYSTEM "modules/service-accounts.xml">
                 <!ENTITY CORS SYSTEM "modules/cors.xml">
@@ -48,6 +49,7 @@
                 <!ENTITY Recaptcha SYSTEM "modules/recaptcha.xml">
                 <!ENTITY AuthSPI SYSTEM "modules/auth-spi.xml">
                 <!ENTITY FilterAdapter SYSTEM "modules/servlet-filter-adapter.xml">
+                <!ENTITY ClientRegistration SYSTEM "modules/client-registration.xml">
                 ]>
 
 <book>
@@ -116,6 +118,7 @@ This one is short
         &MultiTenancy;
         &JAAS;
     </chapter>
+    &ClientRegistration;
 
     &IdentityBroker;
     &Themes;
@@ -131,6 +134,7 @@ This one is short
     </chapter>
     &AccessTypes;
     &Roles;
+    &Groups;
     &DirectAccess;
     &ServiceAccounts;
     &CORS;

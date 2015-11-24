@@ -511,6 +511,7 @@ public class SamlService {
         processor.setClientSession(clientSession)
                 .setFlowPath(LoginActionsService.AUTHENTICATE_PATH)
                 .setFlowId(flowId)
+                .setBrowserFlow(true)
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
                 .setProtector(authManager.getProtector())

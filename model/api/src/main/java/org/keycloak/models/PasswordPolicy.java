@@ -76,6 +76,8 @@ public class PasswordPolicy implements Serializable {
                 list.add(new PasswordHistory(arg));
             } else if (name.equals(ForceExpiredPasswordChange.NAME)) {
                 list.add(new ForceExpiredPasswordChange(arg));
+            } else {
+                throw new IllegalArgumentException("Unsupported policy");
             }
         }
         return list;

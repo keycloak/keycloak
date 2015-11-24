@@ -32,6 +32,8 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.ThemeResource;
 
 import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+
 import java.net.URI;
 
 /**
@@ -92,6 +94,13 @@ public class Urls {
 
     public static URI identityProviderAuthnRequest(URI baseURI, String providerId, String realmName) {
         return identityProviderAuthnRequest(baseURI, providerId, realmName, null);
+    }
+
+    public static URI identityProviderAfterFirstBrokerLogin(URI baseUri, String realmName, String accessCode) {
+        return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
+                .path(IdentityBrokerService.class, "afterFirstBrokerLogin")
+                .replaceQueryParam(OAuth2Constants.CODE, accessCode)
+                .build(realmName);
     }
 
     public static URI accountTotpPage(URI baseUri, String realmId) {
@@ -202,6 +211,11 @@ public class Urls {
 
     public static URI realmOauthAction(URI baseUri, String realmId) {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "processConsent").build(realmId);
+    }
+
+    public static URI firstBrokerLoginProcessor(URI baseUri, String realmName) {
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "firstBrokerLoginGet")
+                .build(realmName);
     }
 
     public static String localeCookiePath(URI baseUri, String realmName){

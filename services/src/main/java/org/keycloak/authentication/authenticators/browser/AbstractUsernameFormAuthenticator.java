@@ -71,12 +71,16 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return true;
         }
+        return false;
+    }
+
+    public boolean enabledUser(AuthenticationFlowContext context, UserModel user) {
         if (!user.isEnabled()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
             Response challengeResponse = disabledUser(context);
             context.failureChallenge(AuthenticationFlowError.USER_DISABLED, challengeResponse);
-            return true;
+            return false;
         }
         if (context.getRealm().isBruteForceProtected()) {
             if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user.getUsername())) {
@@ -84,13 +88,13 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
                 context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
                 Response challengeResponse = temporarilyDisabledUser(context);
                 context.failureChallenge(AuthenticationFlowError.USER_TEMPORARILY_DISABLED, challengeResponse);
-                return true;
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
-    public boolean validateUser(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
+    public boolean validateUserAndPassword(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
         String username = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
@@ -117,7 +121,18 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             return false;
         }
 
-        if (invalidUser(context, user)) return false;
+        if (invalidUser(context, user)){
+            return false;
+        }
+
+        if (!validatePassword(context, user, inputData)){
+            return false;
+        }
+
+        if(!enabledUser(context, user)){
+            return false;
+        }
+
         String rememberMe = inputData.getFirst("rememberMe");
         boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
         if (remember) {
@@ -130,23 +145,13 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return true;
     }
 
-    public boolean validatePassword(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
+    public boolean validatePassword(AuthenticationFlowContext context, UserModel user, MultivaluedMap<String, String> inputData) {
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
-        if (password == null || password.isEmpty()) {
-            if (context.getUser() != null) {
-                context.getEvent().user(context.getUser());
-            }
-            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = invalidCredentials(context);
-            context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
-            context.clearUser();
-            return false;
-        }
         credentials.add(UserCredentialModel.password(password));
-        boolean valid = context.getSession().users().validCredentials(context.getRealm(), context.getUser(), credentials);
+        boolean valid = context.getSession().users().validCredentials(context.getRealm(), user, credentials);
         if (!valid) {
-            context.getEvent().user(context.getUser());
+            context.getEvent().user(user);
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = invalidCredentials(context);
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
@@ -155,4 +160,5 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         }
         return true;
     }
+
 }

@@ -3,28 +3,10 @@ package org.keycloak.models.sessions.infinispan;
 import org.infinispan.Cache;
 import org.infinispan.distexec.mapreduce.MapReduceTask;
 import org.jboss.logging.Logger;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.models.*;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
-import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
-import org.keycloak.models.sessions.infinispan.mapreduce.ClientSessionMapper;
-import org.keycloak.models.sessions.infinispan.mapreduce.FirstResultReducer;
-import org.keycloak.models.sessions.infinispan.mapreduce.LargestResultReducer;
-import org.keycloak.models.sessions.infinispan.mapreduce.SessionMapper;
-import org.keycloak.models.sessions.infinispan.mapreduce.UserLoginFailureMapper;
-import org.keycloak.models.sessions.infinispan.mapreduce.UserSessionMapper;
-import org.keycloak.models.sessions.infinispan.mapreduce.UserSessionNoteMapper;
+import org.keycloak.models.sessions.infinispan.entities.*;
+import org.keycloak.models.sessions.infinispan.mapreduce.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmInfoUtil;
 import org.keycloak.common.util.Time;
@@ -355,6 +337,15 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             persister.removeClientSession(clientSessionId, true);
         }
 
+        // Remove expired client initial access
+        map = new MapReduceTask(sessionCache)
+                .mappedWith(ClientInitialAccessMapper.create(realm.getId()).expired(Time.currentTime()).emitKey())
+                .reducedWith(new FirstResultReducer())
+                .execute();
+
+        for (String id : map.keySet()) {
+            tx.remove(sessionCache, id);
+        }
     }
 
     @Override
@@ -538,9 +529,22 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return models;
     }
 
+    List<ClientInitialAccessModel> wrapClientInitialAccess(RealmModel realm, Collection<ClientInitialAccessEntity> entities) {
+        List<ClientInitialAccessModel> models = new LinkedList<>();
+        for (ClientInitialAccessEntity e : entities) {
+            models.add(wrap(realm, e));
+        }
+        return models;
+    }
+
     ClientSessionAdapter wrap(RealmModel realm, ClientSessionEntity entity, boolean offline) {
         Cache<String, SessionEntity> cache = getCache(offline);
         return entity != null ? new ClientSessionAdapter(session, this, cache, realm, entity, offline) : null;
+    }
+
+    ClientInitialAccessAdapter wrap(RealmModel realm, ClientInitialAccessEntity entity) {
+        Cache<String, SessionEntity> cache = getCache(false);
+        return entity != null ? new ClientInitialAccessAdapter(session, this, cache, realm, entity) : null;
     }
 
 
@@ -678,6 +682,50 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         Cache<String, SessionEntity> cache = getCache(offline);
         tx.put(cache, clientSession.getId(), entity);
         return wrap(clientSession.getRealm(), entity, offline);
+    }
+
+    @Override
+    public ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count) {
+        String id = KeycloakModelUtils.generateId();
+
+        ClientInitialAccessEntity entity = new ClientInitialAccessEntity();
+        entity.setId(id);
+        entity.setRealm(realm.getId());
+        entity.setTimestamp(Time.currentTime());
+        entity.setExpiration(expiration);
+        entity.setCount(count);
+        entity.setRemainingCount(count);
+
+        tx.put(sessionCache, id, entity);
+
+        return wrap(realm, entity);
+    }
+
+    @Override
+    public ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id) {
+        Cache<String, SessionEntity> cache = getCache(false);
+        ClientInitialAccessEntity entity = (ClientInitialAccessEntity) cache.get(id);
+
+        // If created in this transaction
+        if (entity == null) {
+            entity = (ClientInitialAccessEntity) tx.get(cache, id);
+        }
+
+        return wrap(realm, entity);
+    }
+
+    @Override
+    public void removeClientInitialAccessModel(RealmModel realm, String id) {
+        tx.remove(getCache(false), id);
+    }
+
+    @Override
+    public List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm) {
+        Map<String, ClientInitialAccessEntity> entities = new MapReduceTask(sessionCache)
+                .mappedWith(ClientInitialAccessMapper.create(realm.getId()))
+                .reducedWith(new FirstResultReducer())
+                .execute();
+        return wrapClientInitialAccess(realm, entities.values());
     }
 
     class InfinispanKeycloakTransaction implements KeycloakTransaction {

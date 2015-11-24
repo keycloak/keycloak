@@ -12,6 +12,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
@@ -289,10 +290,23 @@ public class TokenManager {
         }
     }
 
+    public static void addGroupRoles(GroupModel group, Set<RoleModel> roleMappings) {
+        roleMappings.addAll(group.getRoleMappings());
+        if (group.getParentId() == null) return;
+        addGroupRoles(group.getParent(), roleMappings);
+    }
+
     public static Set<RoleModel> getAccess(String scopeParam, boolean applyScopeParam, ClientModel client, UserModel user) {
         Set<RoleModel> requestedRoles = new HashSet<RoleModel>();
 
-        Set<RoleModel> roleMappings = user.getRoleMappings();
+        Set<RoleModel> mappings = user.getRoleMappings();
+        Set<RoleModel> roleMappings = new HashSet<>();
+        roleMappings.addAll(mappings);
+        for (GroupModel group : user.getGroups()) {
+            addGroupRoles(group, roleMappings);
+        }
+
+
 
         if (client.isFullScopeAllowed()) {
             requestedRoles = roleMappings;

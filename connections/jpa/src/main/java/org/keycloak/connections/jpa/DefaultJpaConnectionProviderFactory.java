@@ -1,18 +1,5 @@
 package org.keycloak.connections.jpa;
 
-import org.hibernate.ejb.AvailableSettings;
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
-import org.keycloak.connections.jpa.util.JpaUtils;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-
-import javax.naming.InitialContext;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -22,10 +9,25 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javax.naming.InitialContext;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+import javax.sql.DataSource;
+
+import org.hibernate.ejb.AvailableSettings;
+import org.jboss.logging.Logger;
+import org.keycloak.Config;
+import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
+import org.keycloak.connections.jpa.util.JpaUtils;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ServerInfoAwareProviderFactory;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultJpaConnectionProviderFactory implements JpaConnectionProviderFactory {
+public class DefaultJpaConnectionProviderFactory implements JpaConnectionProviderFactory, ServerInfoAwareProviderFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultJpaConnectionProviderFactory.class);
 

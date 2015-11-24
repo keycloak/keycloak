@@ -120,7 +120,7 @@ public class RealmEntity {
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="FED_PROVIDERS", joinColumns={ @JoinColumn(name="REALM_ID") })
+    @JoinTable(name="FED_PROVIDERS", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name = "USERFEDERATIONPROVIDERS_ID") })
     List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
@@ -142,6 +142,10 @@ public class RealmEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="REALM_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
     protected Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
+
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="REALM_DEFAULT_GROUPS", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="GROUP_ID")})
+    protected Collection<GroupEntity> defaultGroups = new ArrayList<>();
 
     @Column(name="EVENTS_ENABLED")
     protected boolean eventsEnabled;
@@ -424,6 +428,14 @@ public class RealmEntity {
 
     public void setDefaultRoles(Collection<RoleEntity> defaultRoles) {
         this.defaultRoles = defaultRoles;
+    }
+
+    public Collection<GroupEntity> getDefaultGroups() {
+        return defaultGroups;
+    }
+
+    public void setDefaultGroups(Collection<GroupEntity> defaultGroups) {
+        this.defaultGroups = defaultGroups;
     }
 
     public String getPasswordPolicy() {
@@ -718,5 +730,6 @@ public class RealmEntity {
     public void setClientAuthenticationFlow(String clientAuthenticationFlow) {
         this.clientAuthenticationFlow = clientAuthenticationFlow;
     }
+
 }
 

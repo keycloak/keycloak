@@ -56,6 +56,7 @@ public interface HttpFacade {
         void resetCookie(String name, String path);
         void setCookie(String name, String value, String path, String domain, int maxAge, boolean secure, boolean httpOnly);
         OutputStream getOutputStream();
+        void sendError(int code);
         void sendError(int code, String message);
 
         /**

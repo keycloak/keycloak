@@ -22,10 +22,12 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
+import org.keycloak.protocol.saml.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.saml.mappers.HardcodedAttributeMapper;
 import org.keycloak.protocol.saml.mappers.HardcodedRole;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.RoleNameMapper;
+import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -53,8 +55,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -202,6 +206,40 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
     }
 
     public void testAttributes() throws Exception {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                ClientModel app = appRealm.getClientByClientId(APP_SERVER_BASE_URL + "/employee2/");
+                app.addProtocolMapper(GroupMembershipMapper.create("groups", "group", null, null, true));
+                app.addProtocolMapper(UserAttributeStatementMapper.createAttributeMapper("topAttribute", "topAttribute", "topAttribute", "Basic", null, false, null));
+                app.addProtocolMapper(UserAttributeStatementMapper.createAttributeMapper("level2Attribute", "level2Attribute", "level2Attribute", "Basic", null, false, null));
+            }
+        }, "demo");
+        {
+            SendUsernameServlet.sentPrincipal = null;
+            SendUsernameServlet.checkRoles = null;
+            driver.navigate().to(APP_SERVER_BASE_URL + "/employee2/");
+            Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
+            List<String> requiredRoles = new LinkedList<>();
+            requiredRoles.add("manager");
+            requiredRoles.add("user");
+            SendUsernameServlet.checkRoles = requiredRoles;
+            loginPage.login("level2GroupUser", "password");
+            assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee2/");
+            SendUsernameServlet.checkRoles = null;
+            SamlPrincipal principal = (SamlPrincipal) SendUsernameServlet.sentPrincipal;
+            Assert.assertNotNull(principal);
+            assertEquals("level2@redhat.com", principal.getAttribute(X500SAMLProfileConstants.EMAIL.get()));
+            assertEquals("true", principal.getAttribute("topAttribute"));
+            assertEquals("true", principal.getAttribute("level2Attribute"));
+            List<String> groups = principal.getAttributes("group");
+            Assert.assertNotNull(groups);
+            Set<String> groupSet = new HashSet<>();
+            assertEquals("level2@redhat.com", principal.getFriendlyAttribute("email"));
+            driver.navigate().to(APP_SERVER_BASE_URL + "/employee2/?GLO=true");
+            checkLoggedOut(APP_SERVER_BASE_URL + "/employee2/");
+
+        }
         {
             SendUsernameServlet.sentPrincipal = null;
             SendUsernameServlet.checkRoles = null;

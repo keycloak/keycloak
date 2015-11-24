@@ -61,6 +61,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     // We are using names of defaultRoles (not ids)
     private List<String> defaultRoles = new ArrayList<String>();
+    private List<String> defaultGroups = new ArrayList<String>();
 
     private List<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
     private List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
@@ -628,6 +629,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setClientAuthenticationFlow(String clientAuthenticationFlow) {
         this.clientAuthenticationFlow = clientAuthenticationFlow;
+    }
+
+    public List<String> getDefaultGroups() {
+        return defaultGroups;
+    }
+
+    public void setDefaultGroups(List<String> defaultGroups) {
+        this.defaultGroups = defaultGroups;
     }
 }
 

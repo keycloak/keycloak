@@ -1,14 +1,12 @@
 package org.keycloak.models.sessions.infinispan.compat;
 
-import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.UserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.compat.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.compat.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.compat.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.compat.entities.UsernameLoginFailureKey;
+import org.keycloak.models.sessions.infinispan.compat.entities.ClientInitialAccessEntity;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,9 +27,11 @@ public class MemUserSessionProviderFactory {
     private ConcurrentHashMap<String, UserSessionEntity> offlineUserSessions = new ConcurrentHashMap<String, UserSessionEntity>();
     private ConcurrentHashMap<String, ClientSessionEntity> offlineClientSessions = new ConcurrentHashMap<String, ClientSessionEntity>();
 
+    private ConcurrentHashMap<String, ClientInitialAccessEntity> clientInitialAccess = new ConcurrentHashMap<>();
+
     public UserSessionProvider create(KeycloakSession session) {
         return new MemUserSessionProvider(session, userSessions, userSessionsByBrokerSessionId, userSessionsByBrokerUserId, clientSessions, loginFailures,
-                offlineUserSessions, offlineClientSessions);
+                offlineUserSessions, offlineClientSessions, clientInitialAccess);
     }
 
     public void close() {

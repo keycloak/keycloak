@@ -171,6 +171,12 @@ public class UndertowHttpFacade implements HttpFacade {
         }
 
         @Override
+        public void sendError(int code) {
+            exchange.setResponseCode(code);
+            exchange.endExchange();
+        }
+
+        @Override
         public void sendError(int code, String message) {
             exchange.setResponseCode(code);
             exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/html");

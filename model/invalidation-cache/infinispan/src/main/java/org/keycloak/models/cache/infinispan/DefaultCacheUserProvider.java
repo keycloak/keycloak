@@ -198,6 +198,16 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        return getDelegate().getGroupMembers(realm, group, firstResult, maxResults);
+    }
+
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
+        return getDelegate().getGroupMembers(realm, group);
+    }
+
+    @Override
     public UserModel getUserByServiceAccountClient(ClientModel client) {
         return getDelegate().getUserByServiceAccountClient(client);
     }
@@ -319,6 +329,11 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     public void preRemove(RealmModel realm, RoleModel role) {
         getDelegate().preRemove(realm, role);
     }
+    @Override
+    public void preRemove(RealmModel realm, GroupModel group) {
+        getDelegate().preRemove(realm, group);
+    }
+
 
     @Override
     public void preRemove(RealmModel realm, UserFederationProviderModel link) {

@@ -1,0 +1,18 @@
+<div>
+    <form class="form-horizontal" name="registrationAccessTokenForm" novalidate kc-read-only="!access.manageClients">
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="registrationAccessToken">{{:: 'registrationAccessToken' | translate}}</label>
+            <div class="col-sm-6">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <input readonly kc-select-action="click" class="form-control" type="text" id="registrationAccessToken" name="registrationAccessToken" data-ng-model="client.registrationAccessToken">
+                    </div>
+                    <div class="col-sm-6" data-ng-show="access.manageClients">
+                        <button type="submit" data-ng-click="regenerateRegistrationAccessToken()" class="btn btn-default">{{:: 'registrationAccessToken.regenerate' | translate}}</button>
+                    </div>
+                </div>
+            </div>
+            <kc-tooltip>{{:: 'registrationAccessToken.tooltip' | translate}}</kc-tooltip>
+        </div>
+    </form>
+</div>

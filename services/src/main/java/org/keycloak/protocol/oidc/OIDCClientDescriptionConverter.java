@@ -5,9 +5,9 @@ import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.representations.OIDCClientRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.services.clientregistration.oidc.DescriptionConverter;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -16,6 +16,8 @@ import java.io.IOException;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class OIDCClientDescriptionConverter implements ClientDescriptionConverter, ClientDescriptionConverterFactory {
+
+    public static final String ID = "openid-connect";
 
     @Override
     public boolean isSupported(String description) {
@@ -26,15 +28,8 @@ public class OIDCClientDescriptionConverter implements ClientDescriptionConverte
     @Override
     public ClientRepresentation convertToInternal(String description) {
         try {
-            OIDCClientRepresentation oidcRep = JsonSerialization.readValue(description, OIDCClientRepresentation.class);
-
-            ClientRepresentation client = new ClientRepresentation();
-            client.setClientId(KeycloakModelUtils.generateId());
-            client.setName(oidcRep.getClientName());
-            client.setRedirectUris(oidcRep.getRedirectUris());
-            client.setBaseUrl(oidcRep.getClientUri());
-
-            return client;
+            OIDCClientRepresentation clientOIDC = JsonSerialization.readValue(description, OIDCClientRepresentation.class);
+            return DescriptionConverter.toInternal(clientOIDC);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -59,7 +54,7 @@ public class OIDCClientDescriptionConverter implements ClientDescriptionConverte
 
     @Override
     public String getId() {
-        return "openid-connect";
+        return ID;
     }
 
 }

@@ -76,6 +76,11 @@ public abstract class AbstractParser implements ParserNamespaceSupport {
      * @throws {@link IllegalArgumentException} when the configStream is null
      */
     public Object parse(InputStream configStream) throws ParsingException {
+        XMLEventReader xmlEventReader = createEventReader(configStream);
+        return parse(xmlEventReader);
+    }
+
+    public XMLEventReader createEventReader(InputStream configStream) throws ParsingException {
         if (configStream == null)
             throw logger.nullArgumentError("InputStream");
 
@@ -105,7 +110,7 @@ public abstract class AbstractParser implements ParserNamespaceSupport {
             throw logger.parserException(e);
         }
 
-        return parse(xmlEventReader);
+        return xmlEventReader;
     }
 
     private ClassLoader getTCCL() {

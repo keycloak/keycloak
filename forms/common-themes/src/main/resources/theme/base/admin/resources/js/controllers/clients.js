@@ -30,7 +30,7 @@ module.controller('ClientRoleListCtrl', function($scope, $location, realm, clien
     });
 });
 
-module.controller('ClientCredentialsCtrl', function($scope, $location, realm, client, clientAuthenticatorProviders, clientConfigProperties, Client) {
+module.controller('ClientCredentialsCtrl', function($scope, $location, realm, client, clientAuthenticatorProviders, clientConfigProperties, Client, ClientRegistrationAccessToken, Notifications) {
     $scope.realm = realm;
     $scope.client = angular.copy(client);
     $scope.clientAuthenticatorProviders = clientAuthenticatorProviders;
@@ -68,6 +68,17 @@ module.controller('ClientCredentialsCtrl', function($scope, $location, realm, cl
         }
     }, true);
 
+    $scope.regenerateRegistrationAccessToken = function() {
+        var secret = ClientRegistrationAccessToken.update({ realm : $scope.realm.realm, client : $scope.client.id },
+            function(data) {
+                Notifications.success('The registration access token has been updated.');
+                $scope.client['registrationAccessToken'] = data.registrationAccessToken;
+            },
+            function() {
+                Notifications.error('Failed to update the registration access token');
+            }
+        );
+    };
 });
 
 module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, Notifications) {
@@ -877,7 +888,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
     $scope.viewImportDetails = function() {
         $modal.open({
             templateUrl: resourceUrl + '/partials/modal/view-object.html',
-            controller: 'JsonModalCtrl',
+            controller: 'ObjectModalCtrl',
             resolve: {
                 object: function () {
                     return $scope.client;

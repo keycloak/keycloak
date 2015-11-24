@@ -6,12 +6,11 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.session.PersistentClientSessionModel;
-import org.keycloak.models.session.PersistentUserSessionModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -30,6 +29,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -44,20 +44,81 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.common.util.Time;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class ModelToRepresentation {
+    public static void buildGroupPath(StringBuilder sb, GroupModel group) {
+        if (group.getParent() != null) {
+            buildGroupPath(sb, group.getParent());
+        }
+        sb.append('/').append(group.getName());
+    }
+
+    public static String buildGroupPath(GroupModel group) {
+        StringBuilder sb = new StringBuilder();
+        buildGroupPath(sb, group);
+        return sb.toString();
+    }
+
+
+    public static GroupRepresentation toRepresentation(GroupModel group, boolean full) {
+        GroupRepresentation rep = new GroupRepresentation();
+        rep.setId(group.getId());
+        rep.setName(group.getName());
+        rep.setPath(buildGroupPath(group));
+        if (!full) return rep;
+        // Role mappings
+        Set<RoleModel> roles = group.getRoleMappings();
+        List<String> realmRoleNames = new ArrayList<>();
+        Map<String, List<String>> clientRoleNames = new HashMap<>();
+        for (RoleModel role : roles) {
+            if (role.getContainer() instanceof RealmModel) {
+                realmRoleNames.add(role.getName());
+            } else {
+                ClientModel client = (ClientModel)role.getContainer();
+                String clientId = client.getClientId();
+                List<String> currentClientRoles = clientRoleNames.get(clientId);
+                if (currentClientRoles == null) {
+                    currentClientRoles = new ArrayList<>();
+                    clientRoleNames.put(clientId, currentClientRoles);
+                }
+
+                currentClientRoles.add(role.getName());
+            }
+        }
+        rep.setRealmRoles(realmRoleNames);
+        rep.setClientRoles(clientRoleNames);
+        Map<String, List<String>> attributes = group.getAttributes();
+        rep.setAttributes(attributes);
+        return rep;
+    }
+
+    public static List<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full) {
+        List<GroupRepresentation> hierarchy = new LinkedList<>();
+        List<GroupModel> groups = realm.getTopLevelGroups();
+        if (groups == null) return hierarchy;
+        for (GroupModel group : groups) {
+            GroupRepresentation rep = toGroupHierarchy(group, full);
+            hierarchy.add(rep);
+        }
+        return hierarchy;
+    }
+
+    public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full) {
+        GroupRepresentation rep = toRepresentation(group, full);
+        List<GroupRepresentation> subGroups = new LinkedList<>();
+        for (GroupModel subGroup : group.getSubGroups()) {
+            subGroups.add(toGroupHierarchy(subGroup, full));
+        }
+        rep.setSubGroups(subGroups);
+        return rep;
+    }
+
+
     public static UserRepresentation toRepresentation(UserModel user) {
         UserRepresentation rep = new UserRepresentation();
         rep.setId(user.getId());
@@ -178,6 +239,14 @@ public class ModelToRepresentation {
             roleStrings.addAll(defaultRoles);
             rep.setDefaultRoles(roleStrings);
         }
+        List<GroupModel> defaultGroups = realm.getDefaultGroups();
+        if (!defaultGroups.isEmpty()) {
+            List<String> groupPaths = new LinkedList<>();
+            for (GroupModel group : defaultGroups) {
+                groupPaths.add(ModelToRepresentation.buildGroupPath(group));
+            }
+            rep.setDefaultGroups(groupPaths);
+        }
 
         List<RequiredCredentialModel> requiredCredentialModels = realm.getRequiredCredentials();
         if (requiredCredentialModels.size() > 0) {
@@ -202,7 +271,7 @@ public class ModelToRepresentation {
         }
 
         for (IdentityProviderModel provider : realm.getIdentityProviders()) {
-            rep.addIdentityProvider(toRepresentation(provider));
+            rep.addIdentityProvider(toRepresentation(realm, provider));
         }
 
         for (IdentityProviderMapperModel mapper : realm.getIdentityProviderMappers()) {
@@ -218,26 +287,63 @@ public class ModelToRepresentation {
         if (internal) {
             exportAuthenticationFlows(realm, rep);
             exportRequiredActions(realm, rep);
+            exportGroups(realm, rep);
         }
         return rep;
+    }
+
+    public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
+        List<GroupRepresentation> groups = toGroupHierarchy(realm, true);
+        rep.setGroups(groups);
     }
 
     public static void exportAuthenticationFlows(RealmModel realm, RealmRepresentation rep) {
         rep.setAuthenticationFlows(new LinkedList<AuthenticationFlowRepresentation>());
         rep.setAuthenticatorConfig(new LinkedList<AuthenticatorConfigRepresentation>());
-        for (AuthenticationFlowModel model : realm.getAuthenticationFlows()) {
+
+        List<AuthenticationFlowModel> authenticationFlows = new ArrayList<>(realm.getAuthenticationFlows());
+        //ensure consistent ordering of authenticationFlows.
+        Collections.sort(authenticationFlows, new Comparator<AuthenticationFlowModel>() {
+            @Override
+            public int compare(AuthenticationFlowModel left, AuthenticationFlowModel right) {
+                return left.getAlias().compareTo(right.getAlias());
+            }
+        });
+
+        for (AuthenticationFlowModel model : authenticationFlows) {
             AuthenticationFlowRepresentation flowRep = toRepresentation(realm, model);
             rep.getAuthenticationFlows().add(flowRep);
         }
-        for (AuthenticatorConfigModel model : realm.getAuthenticatorConfigs()) {
+
+        List<AuthenticatorConfigModel> authenticatorConfigs = new ArrayList<>(realm.getAuthenticatorConfigs());
+        //ensure consistent ordering of authenticatorConfigs.
+        Collections.sort(authenticatorConfigs, new Comparator<AuthenticatorConfigModel>() {
+            @Override
+            public int compare(AuthenticatorConfigModel left, AuthenticatorConfigModel right) {
+                return left.getAlias().compareTo(right.getAlias());
+            }
+        });
+
+        for (AuthenticatorConfigModel model : authenticatorConfigs) {
             rep.getAuthenticatorConfig().add(toRepresentation(model));
         }
 
     }
 
     public static void exportRequiredActions(RealmModel realm, RealmRepresentation rep) {
+
         rep.setRequiredActions(new LinkedList<RequiredActionProviderRepresentation>());
-        for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
+
+        List<RequiredActionProviderModel> requiredActionProviders = realm.getRequiredActionProviders();
+        //ensure consistent ordering of requiredActionProviders.
+        Collections.sort(requiredActionProviders, new Comparator<RequiredActionProviderModel>() {
+            @Override
+            public int compare(RequiredActionProviderModel left, RequiredActionProviderModel right) {
+                return left.getAlias().compareTo(right.getAlias());
+            }
+        });
+
+        for (RequiredActionProviderModel model : requiredActionProviders) {
             RequiredActionProviderRepresentation action = toRepresentation(model);
             rep.getRequiredActions().add(action);
         }
@@ -381,7 +487,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static IdentityProviderRepresentation toRepresentation(IdentityProviderModel identityProviderModel) {
+    public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
         IdentityProviderRepresentation providerRep = new IdentityProviderRepresentation();
 
         providerRep.setInternalId(identityProviderModel.getInternalId());
@@ -389,11 +495,19 @@ public class ModelToRepresentation {
         providerRep.setAlias(identityProviderModel.getAlias());
         providerRep.setEnabled(identityProviderModel.isEnabled());
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
-        providerRep.setUpdateProfileFirstLoginMode(identityProviderModel.getUpdateProfileFirstLoginMode());
         providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
         providerRep.setConfig(identityProviderModel.getConfig());
         providerRep.setAddReadTokenRoleOnCreate(identityProviderModel.isAddReadTokenRoleOnCreate());
+
+        String firstBrokerLoginFlowId = identityProviderModel.getFirstBrokerLoginFlowId();
+        if (firstBrokerLoginFlowId != null) {
+            AuthenticationFlowModel flow = realm.getAuthenticationFlowById(firstBrokerLoginFlowId);
+            if (flow == null) {
+                throw new ModelException("Couldn't find authentication flow with id " + firstBrokerLoginFlowId);
+            }
+            providerRep.setFirstBrokerLoginFlowAlias(flow.getAlias());
+        }
 
         return providerRep;
     }

@@ -12,7 +12,7 @@
 	<artifactId>keycloak-jetty-adapter-spi</artifactId>
 	<name>Keycloak Jetty Adapter SPI</name>
     <properties>
-        <jetty9.version>8.1.16.v20140903</jetty9.version>
+        <jetty9.version>8.1.17.v20150415</jetty9.version>
         <keycloak.osgi.export>
             org.keycloak.adapters.jetty.spi.*
         </keycloak.osgi.export>
@@ -43,21 +43,21 @@
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
             <version>${jetty9.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-util</artifactId>
             <version>${jetty9.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-security</artifactId>
             <version>${jetty9.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
 
 		<dependency>

@@ -19,6 +19,7 @@ public class TokenUtil {
 
     public static final String TOKEN_TYPE_OFFLINE = "Offline";
 
+
     public static boolean isOfflineTokenRequested(String scopeParam) {
         if (scopeParam == null) {
             return false;

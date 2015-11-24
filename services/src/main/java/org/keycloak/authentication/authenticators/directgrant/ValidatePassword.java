@@ -31,15 +31,6 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
-        if (password == null || password.isEmpty()) {
-            if (context.getUser() != null) {
-                context.getEvent().user(context.getUser());
-            }
-            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
-            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
-            return;
-        }
         credentials.add(UserCredentialModel.password(password));
         boolean valid = context.getSession().users().validCredentials(context.getRealm(), context.getUser(), credentials);
         if (!valid) {

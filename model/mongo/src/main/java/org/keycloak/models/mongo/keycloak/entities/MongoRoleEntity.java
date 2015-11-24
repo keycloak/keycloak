@@ -41,6 +41,18 @@ public class MongoRoleEntity extends RoleEntity implements MongoIdentifiableEnti
     public void afterRemove(MongoStoreInvocationContext invContext) {
         MongoStore mongoStore = invContext.getMongoStore();
 
+        {
+            DBObject query = new QueryBuilder()
+                    .and("roleIds").is(getId())
+                    .get();
+
+            List<MongoGroupEntity> groups = mongoStore.loadEntities(MongoGroupEntity.class, query, invContext);
+            for (MongoGroupEntity group : groups) {
+                mongoStore.pullItemFromList(group, "roleIds", getId(), invContext);
+            }
+
+        }
+
         // Remove this scope from all clients, which has it
         DBObject query = new QueryBuilder()
                 .and("scopeIds").is(getId())

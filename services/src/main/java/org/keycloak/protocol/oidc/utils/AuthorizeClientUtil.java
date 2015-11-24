@@ -19,18 +19,8 @@ import javax.ws.rs.core.Response;
  */
 public class AuthorizeClientUtil {
 
-    public static ClientAuthResult authorizeClient(KeycloakSession session, EventBuilder event, RealmModel realm) {
-        AuthenticationFlowModel clientAuthFlow = realm.getClientAuthenticationFlow();
-        String flowId = clientAuthFlow.getId();
-
-        AuthenticationProcessor processor = new AuthenticationProcessor();
-        processor.setFlowId(flowId)
-                .setConnection(session.getContext().getConnection())
-                .setEventBuilder(event)
-                .setRealm(realm)
-                .setSession(session)
-                .setUriInfo(session.getContext().getUri())
-                .setRequest(session.getContext().getContextObject(HttpRequest.class));
+    public static ClientAuthResult authorizeClient(KeycloakSession session, EventBuilder event) {
+        AuthenticationProcessor processor = getAuthenticationProcessor(session, event);
 
         Response response = processor.authenticateClient();
         if (response != null) {
@@ -43,6 +33,24 @@ public class AuthorizeClientUtil {
         }
 
         return new ClientAuthResult(client, processor.getClientAuthAttributes());
+    }
+
+    public static AuthenticationProcessor getAuthenticationProcessor(KeycloakSession session, EventBuilder event) {
+        RealmModel realm = session.getContext().getRealm();
+
+        AuthenticationFlowModel clientAuthFlow = realm.getClientAuthenticationFlow();
+        String flowId = clientAuthFlow.getId();
+
+        AuthenticationProcessor processor = new AuthenticationProcessor();
+        processor.setFlowId(flowId)
+                .setConnection(session.getContext().getConnection())
+                .setEventBuilder(event)
+                .setRealm(realm)
+                .setSession(session)
+                .setUriInfo(session.getContext().getUri())
+                .setRequest(session.getContext().getContextObject(HttpRequest.class));
+
+        return processor;
     }
 
     public static class ClientAuthResult {

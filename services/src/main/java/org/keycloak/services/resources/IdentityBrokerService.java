@@ -20,6 +20,9 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
+import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.broker.provider.AuthenticationRequest;
@@ -28,10 +31,12 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -49,7 +54,6 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.services.managers.BruteForceProtector;
@@ -61,6 +65,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialIdentityProvider;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -70,6 +75,8 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -79,7 +86,6 @@ import java.util.Set;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.ClientSessionModel.Action.AUTHENTICATE;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
-import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
 
 /**
  * <p></p>
@@ -285,27 +291,141 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         if (federatedUser == null) {
-            try {
-                federatedUser = createUser(context);
 
-                if (IdentityProviderRepresentation.UPFLM_ON.equals(identityProviderConfig.getUpdateProfileFirstLoginMode()) 
-                        || (IdentityProviderRepresentation.UPFLM_MISSING.equals(identityProviderConfig.getUpdateProfileFirstLoginMode()) && !Validation.validateUserMandatoryFields(realmModel, federatedUser))) {
-                    if (isDebugEnabled()) {
-                        LOGGER.debugf("Identity provider requires update profile action.", federatedUser);
-                    }
-                    federatedUser.addRequiredAction(UPDATE_PROFILE);
+            LOGGER.debugf("Federated user not found for provider '%s' and broker username '%s' . Redirecting to flow for firstBrokerLogin", providerId, context.getUsername());
+
+            String username = context.getModelUsername();
+            if (username == null) {
+                if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isBlank(context.getEmail())) {
+                    username = context.getEmail();
+                } else if (context.getUsername() == null) {
+                    username = context.getIdpConfig().getAlias() + "." + context.getId();
+                } else {
+                    username = context.getIdpConfig().getAlias() + "." + context.getUsername();
                 }
-                if(identityProviderConfig.isTrustEmail() && !Validation.isBlank(federatedUser.getEmail())){
-                    federatedUser.setEmailVerified(true);
-                }
-            } catch (Exception e) {
-                return redirectToLoginPage(e, clientCode);
             }
+            username = username.trim();
+            context.setModelUsername(username);
+
+            clientSession.setTimestamp(Time.currentTime());
+
+            SerializedBrokeredIdentityContext ctx = SerializedBrokeredIdentityContext.serialize(context);
+            ctx.saveToClientSession(clientSession);
+
+            URI redirect = LoginActionsService.firstBrokerLoginProcessor(uriInfo)
+                    .queryParam(OAuth2Constants.CODE, context.getCode())
+                    .build(realmModel.getName());
+            return Response.status(302).location(redirect).build();
+
         } else {
             updateFederatedIdentity(context, federatedUser);
+
+            boolean firstBrokerLoginInProgress = (clientSession.getNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE) != null);
+            if (firstBrokerLoginInProgress) {
+                LOGGER.debugf("Reauthenticated with broker '%s' when linking user '%s' with other broker", context.getIdpConfig().getAlias(), federatedUser.getUsername());
+
+                UserModel linkingUser = AbstractIdpAuthenticator.getExistingUser(session, realmModel, clientSession);
+                if (!linkingUser.getId().equals(federatedUser.getId())) {
+                    return redirectToErrorPage(Messages.IDENTITY_PROVIDER_DIFFERENT_USER_MESSAGE, federatedUser.getUsername(), linkingUser.getUsername());
+                }
+
+                clientSession.setAuthenticatedUser(federatedUser);
+                return afterFirstBrokerLogin(context.getCode());
+            }
+
+            return finishBrokerAuthentication(context, federatedUser, clientSession, providerId);
         }
+    }
 
+    // Callback from LoginActionsService after first login with broker was done and Keycloak account is successfully linked/created
+    @GET
+    @Path("/after-first-broker-login")
+    public Response afterFirstBrokerLogin(@QueryParam("code") String code) {
+        ClientSessionCode clientCode = parseClientSessionCode(code);
+        ClientSessionModel clientSession = clientCode.getClientSession();
 
+        try {
+            SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromClientSession(clientSession);
+            if (serializedCtx == null) {
+                throw new IdentityBrokerException("Not found serialized context in clientSession");
+            }
+            BrokeredIdentityContext context = serializedCtx.deserialize(session, clientSession);
+            String providerId = context.getIdpConfig().getAlias();
+
+            // firstBrokerLogin workflow finished. Removing note now
+            clientSession.removeNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
+
+            UserModel federatedUser = clientSession.getAuthenticatedUser();
+            if (federatedUser == null) {
+                throw new IdentityBrokerException("Couldn't found authenticated federatedUser in clientSession");
+            }
+
+            if (context.getIdpConfig().isAddReadTokenRoleOnCreate()) {
+                RoleModel readTokenRole = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(Constants.READ_TOKEN_ROLE);
+                federatedUser.grantRole(readTokenRole);
+            }
+
+            // Add federated identity link here
+            FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
+                    context.getUsername(), context.getToken());
+            session.users().addFederatedIdentity(realmModel, federatedUser, federatedIdentityModel);
+
+            EventBuilder event = this.event.clone().user(federatedUser)
+                    .detail(Details.CODE_ID, clientSession.getId())
+                    .detail(Details.USERNAME, federatedUser.getUsername())
+                    .detail(Details.IDENTITY_PROVIDER, providerId)
+                    .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
+                    .removeDetail("auth_method");
+
+            String isRegisteredNewUser = clientSession.getNote(AbstractIdpAuthenticator.BROKER_REGISTERED_NEW_USER);
+            if (Boolean.parseBoolean(isRegisteredNewUser)) {
+
+                LOGGER.debugf("Registered new user '%s' after first login with identity provider '%s'. Identity provider username is '%s' . ", federatedUser.getUsername(), providerId, context.getUsername());
+
+                context.getIdp().importNewUser(session, realmModel, federatedUser, context);
+                Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(providerId);
+                if (mappers != null) {
+                    KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+                    for (IdentityProviderMapperModel mapper : mappers) {
+                        IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                        target.importNewUser(session, realmModel, federatedUser, mapper, context);
+                    }
+                }
+
+                if (context.getIdpConfig().isTrustEmail() && !Validation.isBlank(federatedUser.getEmail()) && !Boolean.parseBoolean(clientSession.getNote(AbstractIdpAuthenticator.UPDATE_PROFILE_EMAIL_CHANGED))) {
+                    LOGGER.debugf("Email verified automatically after registration of user '%s' through Identity provider '%s' ", federatedUser.getUsername(), context.getIdpConfig().getAlias());
+                    federatedUser.setEmailVerified(true);
+                }
+
+                event.event(EventType.REGISTER)
+                        .detail(Details.REGISTER_METHOD, "broker")
+                        .detail(Details.EMAIL, federatedUser.getEmail())
+                        .success();
+
+            } else {
+                LOGGER.debugf("Linked existing keycloak user '%s' with identity provider '%s' . Identity provider username is '%s' .", federatedUser.getUsername(), providerId, context.getUsername());
+
+                event.event(EventType.FEDERATED_IDENTITY_LINK)
+                        .success();
+
+                updateFederatedIdentity(context, federatedUser);
+            }
+
+            String isDifferentBrowser = clientSession.getNote(AbstractIdpAuthenticator.IS_DIFFERENT_BROWSER);
+            if (Boolean.parseBoolean(isDifferentBrowser)) {
+                session.sessions().removeClientSession(realmModel, clientSession);
+                return session.getProvider(LoginFormsProvider.class)
+                            .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, context.getIdpConfig().getAlias(), context.getUsername())
+                            .createInfoPage();
+            } else {
+                return finishBrokerAuthentication(context, federatedUser, clientSession, providerId);
+            }
+        }  catch (Exception e) {
+            return redirectToErrorPage(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
+        }
+    }
+
+    private Response finishBrokerAuthentication(BrokeredIdentityContext context, UserModel federatedUser, ClientSessionModel clientSession, String providerId) {
         UserSessionModel userSession = this.session.sessions()
                 .createUserSession(this.realmModel, federatedUser, federatedUser.getUsername(), this.clientConnection.getRemoteAddr(), "broker", false, context.getBrokerSessionId(), context.getBrokerUserId());
 
@@ -343,10 +463,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private Response performAccountLinking(ClientSessionModel clientSession, BrokeredIdentityContext context, FederatedIdentityModel federatedIdentityModel, UserModel federatedUser) {
-        this.event.event(EventType.IDENTITY_PROVIDER_ACCCOUNT_LINKING);
+        this.event.event(EventType.FEDERATED_IDENTITY_LINK);
 
         if (federatedUser != null) {
-            return redirectToErrorPage(Messages.IDENTITY_PROVIDER_ALREADY_LINKED, context.getIdpConfig().getAlias());
+            return redirectToAccountErrorPage(clientSession, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, context.getIdpConfig().getAlias());
         }
 
         UserModel authenticatedUser = clientSession.getUserSession().getUser();
@@ -356,19 +476,21 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         if (!authenticatedUser.isEnabled()) {
-            fireErrorEvent(Errors.USER_DISABLED);
-            return redirectToErrorPage(Messages.ACCOUNT_DISABLED);
+            return redirectToAccountErrorPage(clientSession, Messages.ACCOUNT_DISABLED);
         }
 
         if (!authenticatedUser.hasRole(this.realmModel.getClientByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(MANAGE_ACCOUNT))) {
-            fireErrorEvent(Errors.NOT_ALLOWED);
             return redirectToErrorPage(Messages.INSUFFICIENT_PERMISSION);
         }
 
         this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, federatedIdentityModel);
         context.getIdp().attachUserSession(clientSession.getUserSession(), clientSession, context);
 
-        this.event.success();
+        this.event.user(authenticatedUser)
+                .detail(Details.USERNAME, authenticatedUser.getUsername())
+                .detail(Details.IDENTITY_PROVIDER, federatedIdentityModel.getIdentityProvider())
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, federatedIdentityModel.getUserName())
+                .success();
         return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
     }
 
@@ -376,7 +498,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
 
         // Skip DB write if tokens are null or equal
-        if (context.getIdpConfig().isStoreToken() && !ObjectUtil.isEqualOrNull(context.getToken(), federatedIdentityModel.getToken())) {
+        if (context.getIdpConfig().isStoreToken() && !ObjectUtil.isEqualOrBothNull(context.getToken(), federatedIdentityModel.getToken())) {
             federatedIdentityModel.setToken(context.getToken());
 
             this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
@@ -412,6 +534,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
                 LOGGER.debugf("Got authorization code from client [%s].", client.getClientId());
                 this.event.client(client);
+                this.session.getContext().setClient(client);
 
                 if (clientSession.getUserSession() != null) {
                     this.event.session(clientSession.getUserSession());
@@ -455,6 +578,20 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         fireErrorEvent(message, throwable);
         return ErrorPage.error(this.session, message, parameters);
+    }
+
+    private Response redirectToAccountErrorPage(ClientSessionModel clientSession, String message, Object ... parameters) {
+        fireErrorEvent(message);
+
+        FormMessage errorMessage = new FormMessage(message, parameters);
+        try {
+            String serializedError = JsonSerialization.writeValueAsString(errorMessage);
+            clientSession.setNote(AccountService.ACCOUNT_MGMT_FORWARDED_ERROR_NOTE, serializedError);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+
+        return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
     }
 
     private Response redirectToLoginPage(Throwable t, ClientSessionCode clientCode) {
@@ -534,100 +671,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private IdentityProviderModel getIdentityProviderConfig(String providerId) {
-        for (IdentityProviderModel model : this.realmModel.getIdentityProviders()) {
-            if (model.getAlias().equals(providerId)) {
-                return model;
-            }
+        IdentityProviderModel model = this.realmModel.getIdentityProviderByAlias(providerId);
+        if (model == null) {
+            throw new IdentityBrokerException("Configuration for identity provider [" + providerId + "] not found.");
         }
-
-        throw new IdentityBrokerException("Configuration for identity provider [" + providerId + "] not found.");
-    }
-
-    private UserModel createUser(BrokeredIdentityContext context) {
-        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
-                context.getUsername(), context.getToken());
-        // Check if no user already exists with this username or email
-        UserModel existingUser = null;
-
-        if (context.getEmail() != null) {
-            existingUser = this.session.users().getUserByEmail(context.getEmail(), this.realmModel);
-        }
-
-        if (existingUser != null) {
-            fireErrorEvent(Errors.FEDERATED_IDENTITY_EMAIL_EXISTS);
-            throw new IdentityBrokerException(Messages.FEDERATED_IDENTITY_EMAIL_EXISTS);
-        }
-        String username = context.getModelUsername();
-        if (username == null) {
-            username = context.getUsername();
-            if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isBlank(context.getEmail())) {
-                username = context.getEmail();
-            } else if (username == null) {
-                username = context.getIdpConfig().getAlias() + "." + context.getId();
-            } else {
-                username = context.getIdpConfig().getAlias() + "." + context.getUsername();
-            }
-        }
-        if (username == null) {
-            LOGGER.warn("Unknown username");
-            fireErrorEvent(Errors.FEDERATED_IDENTITY_USERNAME_EXISTS);
-            throw new IdentityBrokerException(Messages.FEDERATED_IDENTITY_USERNAME_EXISTS);
-
-        }
-        username = username.trim();
-
-        existingUser = this.session.users().getUserByUsername(username, this.realmModel);
-
-        if (existingUser != null) {
-            fireErrorEvent(Errors.FEDERATED_IDENTITY_USERNAME_EXISTS);
-            throw new IdentityBrokerException(Messages.FEDERATED_IDENTITY_USERNAME_EXISTS);
-        }
-
-        if (isDebugEnabled()) {
-            LOGGER.debugf("Creating account from identity [%s].", federatedIdentityModel);
-        }
-
-        UserModel federatedUser = this.session.users().addUser(this.realmModel, username);
-
-        if (isDebugEnabled()) {
-            LOGGER.debugf("Account [%s] created.", federatedUser);
-        }
-
-        federatedUser.setEnabled(true);
-        federatedUser.setEmail(context.getEmail());
-        federatedUser.setFirstName(context.getFirstName());
-        federatedUser.setLastName(context.getLastName());
-
-
-        if (context.getIdpConfig().isAddReadTokenRoleOnCreate()) {
-            RoleModel readTokenRole = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(Constants.READ_TOKEN_ROLE);
-            federatedUser.grantRole(readTokenRole);
-        }
-
-        if (context.getIdpConfig().isStoreToken()) {
-            federatedIdentityModel.setToken(context.getToken());
-        }
-
-        this.session.users().addFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
-
-        context.getIdp().importNewUser(session, realmModel, federatedUser, context);
-        Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(context.getIdpConfig().getAlias());
-        if (mappers != null) {
-            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-            for (IdentityProviderMapperModel mapper : mappers) {
-                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                target.importNewUser(session, realmModel, federatedUser, mapper, context);
-            }
-        }
-
-
-        this.event.clone().user(federatedUser).event(EventType.REGISTER)
-                .detail(Details.IDENTITY_PROVIDER, federatedIdentityModel.getIdentityProvider())
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
-                .removeDetail("auth_method")
-                .success();
-
-        return federatedUser;
+        return model;
     }
 
     private Response corsResponse(Response response, ClientModel clientModel) {

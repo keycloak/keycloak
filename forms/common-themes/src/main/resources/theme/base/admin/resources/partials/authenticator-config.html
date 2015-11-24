@@ -2,6 +2,7 @@
 
     <ol class="breadcrumb">
         <li><a href="#/realms/{{realm.realm}}/authentication/flows">Authentication Flows</a></li>
+        <li><a href="#/realms/{{realm.realm}}/authentication/flows/{{flow.alias}}">{{flow.alias | capitalize}}</a></li>
         <li class="active" data-ng-show="create">Create Authenticator Config</li>
         <li class="active" data-ng-hide="create">{{config.alias}}</li>
     </ol>

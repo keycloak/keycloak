@@ -133,6 +133,13 @@ public class JaxrsHttpFacade implements OIDCHttpFacade {
         }
 
         @Override
+        public void sendError(int code) {
+            javax.ws.rs.core.Response response = responseBuilder.status(code).build();
+            requestContext.abortWith(response);
+            responseFinished = true;
+        }
+
+        @Override
         public void sendError(int code, String message) {
             javax.ws.rs.core.Response response = responseBuilder.status(code).entity(message).build();
             requestContext.abortWith(response);

@@ -52,7 +52,7 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         RealmModel realm = context.getRealm();
 
 
-        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm, formData);
+        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm.isEditUsernameAllowed(), formData);
         if (errors != null && !errors.isEmpty()) {
             Response challenge = context.form()
                     .setErrors(errors)

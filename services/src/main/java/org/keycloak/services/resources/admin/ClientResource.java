@@ -22,6 +22,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
@@ -50,6 +51,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import static java.lang.Boolean.TRUE;
+
 
 /**
  * Base resource class for managing one particular client of a realm.
@@ -103,7 +106,7 @@ public class ClientResource {
         auth.requireManage();
 
         try {
-            if (rep.isServiceAccountsEnabled() && !client.isServiceAccountsEnabled()) {
+            if (TRUE.equals(rep.isServiceAccountsEnabled()) && !client.isServiceAccountsEnabled()) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(client);;
             }
 
@@ -210,6 +213,27 @@ public class ClientResource {
         logger.debug("regenerateSecret");
         UserCredentialModel cred = KeycloakModelUtils.generateSecret(client);
         CredentialRepresentation rep = ModelToRepresentation.toRepresentation(cred);
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(rep).success();
+        return rep;
+    }
+
+    /**
+     * Generate a new registration access token for the client
+     *
+     * @return
+     */
+    @Path("registration-access-token")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ClientRepresentation regenerateRegistrationAccessToken() {
+        auth.requireManage();
+
+        String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(realm, uriInfo, client);
+
+        ClientRepresentation rep = ModelToRepresentation.toRepresentation(client);
+        rep.setRegistrationAccessToken(token);
+
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(rep).success();
         return rep;
     }

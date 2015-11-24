@@ -178,6 +178,17 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
+    public String getRegistrationToken() {
+        return getMongoEntity().getRegistrationToken();
+    }
+
+    @Override
+    public void setRegistrationToken(String registrationToken) {
+        getMongoEntity().setRegistrationToken(registrationToken);
+        updateMongoEntity();
+    }
+
+    @Override
     public boolean isPublicClient() {
         return getMongoEntity().isPublicClient();
     }

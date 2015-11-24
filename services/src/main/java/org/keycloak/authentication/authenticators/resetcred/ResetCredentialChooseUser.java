@@ -1,10 +1,12 @@
 package org.keycloak.authentication.authenticators.resetcred;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
+import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
@@ -36,10 +38,22 @@ import java.util.concurrent.TimeUnit;
  */
 public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFactory {
 
+    protected static Logger logger = Logger.getLogger(ResetCredentialChooseUser.class);
+
     public static final String PROVIDER_ID = "reset-credentials-choose-user";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
+        String existingUserId = context.getClientSession().getNote(AbstractIdpAuthenticator.EXISTING_USER_INFO);
+        if (existingUserId != null) {
+            UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getClientSession());
+
+            logger.debugf("Forget-password triggered when reauthenticating user after first broker login. Skipping reset-credential-choose-user screen and using user '%s' ", existingUser.getUsername());
+            context.setUser(existingUser);
+            context.success();
+            return;
+        }
+
         Response challenge = context.form().createPasswordReset();
         context.challenge(challenge);
     }

@@ -19,6 +19,10 @@ package org.keycloak.login.freemarker;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
+import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
@@ -48,6 +52,7 @@ import org.keycloak.login.freemarker.model.UrlBean;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -129,6 +134,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 page = LoginFormsPages.LOGIN_CONFIG_TOTP;
                 break;
             case UPDATE_PROFILE:
+                UpdateProfileContext userBasedContext = new UserUpdateProfileContext(realm, user);
+                this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, userBasedContext);
+
                 actionMessage = Messages.UPDATE_PROFILE;
                 page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
                 break;
@@ -140,7 +148,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 try {
                     UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());
                     builder.queryParam(OAuth2Constants.CODE, accessCode);
-                    builder.queryParam("key", clientSession.getNote(Constants.VERIFY_EMAIL_KEY));
+                    builder.queryParam(Constants.KEY, clientSession.getNote(Constants.VERIFY_EMAIL_KEY));
 
                     String link = builder.build(realm.getName()).toString();
                     long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
@@ -222,6 +230,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 }
             }
             attributes.put("message", wholeMessage);
+        } else {
+            attributes.put("message", null);
         }
         attributes.put("messagesPerField", messagesPerField);
 
@@ -237,7 +247,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         if (realm != null) {
             attributes.put("realm", new RealmBean(realm));
-            attributes.put("social", new IdentityProviderBean(realm, baseUri, uriInfo));
+
+            List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
+            identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData);
+            attributes.put("social", new IdentityProviderBean(realm, identityProviders, baseUri, uriInfo));
+
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
 
             if (realm.isInternationalizationEnabled()) {
@@ -268,7 +282,17 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("totp", new TotpBean(realm, user, baseUri));
                 break;
             case LOGIN_UPDATE_PROFILE:
-                attributes.put("user", new ProfileBean(user, formData));
+                UpdateProfileContext userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
+                attributes.put("user", new ProfileBean(userCtx, formData));
+                break;
+            case LOGIN_IDP_LINK_CONFIRM:
+            case LOGIN_IDP_LINK_EMAIL:
+                BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
+                String idpAlias = brokerContext.getIdpConfig().getAlias();
+                idpAlias = ObjectUtil.capitalize(idpAlias);
+
+                attributes.put("brokerContext", brokerContext);
+                attributes.put("idpAlias", idpAlias);
                 break;
             case REGISTER:
                 attributes.put("register", new RegisterBean(formData));
@@ -371,7 +395,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         if (realm != null) {
             attributes.put("realm", new RealmBean(realm));
-            attributes.put("social", new IdentityProviderBean(realm, baseUri, uriInfo));
+
+            List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
+            identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData);
+            attributes.put("social", new IdentityProviderBean(realm, identityProviders, baseUri, uriInfo));
+
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
 
@@ -421,6 +449,32 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createInfoPage() {
         return createResponse(LoginFormsPages.INFO);
+    }
+
+    @Override
+    public Response createUpdateProfilePage() {
+        // Don't display initial message if we already have some errors
+        if (messageType != MessageType.ERROR) {
+            setMessage(MessageType.WARNING, Messages.UPDATE_PROFILE);
+        }
+
+        return createResponse(LoginFormsPages.LOGIN_UPDATE_PROFILE);
+    }
+
+
+    @Override
+    public Response createIdpLinkConfirmLinkPage() {
+        return createResponse(LoginFormsPages.LOGIN_IDP_LINK_CONFIRM);
+    }
+
+    @Override
+    public Response createIdpLinkEmailPage() {
+        BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
+        String idpAlias = brokerContext.getIdpConfig().getAlias();
+        idpAlias = ObjectUtil.capitalize(idpAlias);;
+        setMessage(MessageType.WARNING, Messages.LINK_IDP, idpAlias);
+
+        return createResponse(LoginFormsPages.LOGIN_IDP_LINK_EMAIL);
     }
 
     @Override

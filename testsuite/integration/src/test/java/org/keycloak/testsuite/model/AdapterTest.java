@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.Config;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.ModelDuplicateException;
@@ -146,11 +147,11 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertTrue(userProvider.validCredentials(realmModel, user, UserCredentialModel.password("geheim")));
         List<UserCredentialValueModel> creds = user.getCredentialsDirectly();
         Assert.assertEquals(creds.get(0).getHashIterations(), 1);
-        realmModel.setPasswordPolicy( new PasswordPolicy("hashIterations(200)"));
+        realmModel.setPasswordPolicy(new PasswordPolicy("hashIterations(200)"));
         Assert.assertTrue(userProvider.validCredentials(realmModel, user, UserCredentialModel.password("geheim")));
         creds = user.getCredentialsDirectly();
         Assert.assertEquals(creds.get(0).getHashIterations(), 200);
-        realmModel.setPasswordPolicy( new PasswordPolicy("hashIterations(1)"));
+        realmModel.setPasswordPolicy(new PasswordPolicy("hashIterations(1)"));
     }
 
     @Test
@@ -795,6 +796,22 @@ public class AdapterTest extends AbstractModelTest {
         }
         commit(true);
 
+    }
+
+    // KEYCLOAK-2026
+    @Test
+    public void testMasterAdminClient() {
+        realmModel = realmManager.createRealm("foo-realm");
+        ClientModel masterAdminClient = realmModel.getMasterAdminClient();
+        Assert.assertEquals(Config.getAdminRealm(), masterAdminClient.getRealm().getId());
+
+        commit();
+
+        realmModel = realmManager.getRealmByName("foo-realm");
+        masterAdminClient = realmModel.getMasterAdminClient();
+        Assert.assertEquals(Config.getAdminRealm(), masterAdminClient.getRealm().getId());
+
+        realmManager.removeRealm(realmModel);
     }
 
     private KeyPair generateKeypair() throws NoSuchAlgorithmException {

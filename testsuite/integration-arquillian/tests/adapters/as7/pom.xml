@@ -25,14 +25,13 @@
             <type>zip</type>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-as7-adapter-dist</artifactId>
-            <type>zip</type>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-arquillian-container-managed</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-arquillian-container-managed</artifactId>
-            <version>7.2.0.Final</version>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-eap6-adapter-dist</artifactId>
+            <type>zip</type>
         </dependency>
     </dependencies>
 
@@ -67,18 +66,20 @@
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-as7-adapter-dist</artifactId>
+                                    <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${adapter.libs.as7}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
-                            <overWriteIfNewer>true</overWriteIfNewer>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+            
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.18.1</version>
                 <configuration>
                     <systemPropertyVariables>
                         <app.server.as7>true</app.server.as7>
@@ -89,7 +90,6 @@
             </plugin>
         </plugins>
     </build>
-    
     
     <profiles>
         <profile>
@@ -133,5 +133,4 @@
             </build>
         </profile>
     </profiles>        
-    
 </project>

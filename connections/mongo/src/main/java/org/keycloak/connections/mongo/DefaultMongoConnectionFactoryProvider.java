@@ -1,11 +1,12 @@
 package org.keycloak.connections.mongo;
 
-import com.mongodb.DB;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientURI;
-import com.mongodb.MongoCredential;
-import com.mongodb.ServerAddress;
+import java.lang.reflect.Method;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import javax.net.ssl.SSLSocketFactory;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -15,24 +16,26 @@ import org.keycloak.connections.mongo.impl.context.TransactionMongoStoreInvocati
 import org.keycloak.connections.mongo.updater.MongoUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
-import javax.net.ssl.SSLSocketFactory;
-import java.lang.reflect.Method;
-import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import com.mongodb.DB;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
+import com.mongodb.MongoClientURI;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultMongoConnectionFactoryProvider implements MongoConnectionProviderFactory {
+public class DefaultMongoConnectionFactoryProvider implements MongoConnectionProviderFactory, ServerInfoAwareProviderFactory {
 
     // TODO Make it dynamic
     private String[] entities = new String[]{
             "org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoUserEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity",
+            "org.keycloak.models.mongo.keycloak.entities.MongoGroupEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoClientEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoMigrationModelEntity",

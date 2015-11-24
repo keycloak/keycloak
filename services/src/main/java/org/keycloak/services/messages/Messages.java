@@ -64,9 +64,13 @@ public class Messages {
 
     public static final String EMAIL_EXISTS = "emailExistsMessage";
 
-    public static final String FEDERATED_IDENTITY_EMAIL_EXISTS = "federatedIdentityEmailExistsMessage";
+    public static final String FEDERATED_IDENTITY_EXISTS = "federatedIdentityExistsMessage";
 
-    public static final String FEDERATED_IDENTITY_USERNAME_EXISTS = "federatedIdentityUsernameExistsMessage";
+    public static final String FEDERATED_IDENTITY_CONFIRM_LINK_MESSAGE = "federatedIdentityConfirmLinkMessage";
+
+    public static final String FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE = "federatedIdentityConfirmReauthenticateMessage";
+
+    public static final String IDENTITY_PROVIDER_DIFFERENT_USER_MESSAGE = "identityProviderDifferentUserMessage";
 
     public static final String CONFIGURE_TOTP = "configureTotpMessage";
 
@@ -75,6 +79,8 @@ public class Messages {
     public static final String UPDATE_PASSWORD = "updatePasswordMessage";
 
     public static final String VERIFY_EMAIL = "verifyEmailMessage";
+
+    public static final String LINK_IDP = "linkIdpMessage";
 
     public static final String EMAIL_VERIFIED = "emailVerifiedMessage";
 
@@ -146,6 +152,8 @@ public class Messages {
     public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
 
     public static final String IDENTITY_PROVIDER_NOT_FOUND = "identityProviderNotFoundMessage";
+
+    public static final String IDENTITY_PROVIDER_LINK_SUCCESS = "identityProviderLinkSuccess";
 
     public static final String IDENTITY_PROVIDER_NOT_UNIQUE = "identityProviderNotUniqueMessage";
 

@@ -1,8 +1,13 @@
 package org.keycloak.models.utils;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -14,6 +19,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.PemUtils;
@@ -27,8 +33,11 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -172,9 +181,9 @@ public final class KeycloakModelUtils {
         return rep;
     }
 
-    public static UserCredentialModel generateSecret(ClientModel app) {
+    public static UserCredentialModel generateSecret(ClientModel client) {
         UserCredentialModel secret = UserCredentialModel.generateSecret();
-        app.setSecret(secret.getValue());
+        client.setSecret(secret.getValue());
         return secret;
     }
 
@@ -198,9 +207,9 @@ public final class KeycloakModelUtils {
     /**
      * Deep search if given role is descendant of composite role
      *
-     * @param role role to check
+     * @param role      role to check
      * @param composite composite role
-     * @param visited set of already visited roles (used for recursion)
+     * @param visited   set of already visited roles (used for recursion)
      * @return true if "role" is descendant of "composite"
      */
     public static boolean searchFor(RoleModel role, RoleModel composite, Set<RoleModel> visited) {
@@ -218,14 +227,14 @@ public final class KeycloakModelUtils {
     /**
      * Try to find user by given username. If it fails, then fallback to find him by email
      *
-     * @param realm realm
+     * @param realm    realm
      * @param username username or email of user
      * @return found user
      */
     public static UserModel findUserByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null && username.contains("@")) {
-            user =  session.users().getUserByEmail(username, realm);
+            user = session.users().getUserByEmail(username, realm);
         }
         return user;
     }
@@ -265,7 +274,6 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     *
      * @param roles
      * @param targetRole
      * @return true if targetRole is in roles (directly or indirectly via composite role)
@@ -279,13 +287,31 @@ public final class KeycloakModelUtils {
         return false;
     }
 
+    /**
+     *
+     * @param groups
+     * @param targetGroup
+     * @return true if targetGroup is in groups (directly or indirectly via parent child relationship)
+     */
+    public static boolean isMember(Set<GroupModel> groups, GroupModel targetGroup) {
+        if (groups.contains(targetGroup)) return true;
+
+        for (GroupModel mapping : groups) {
+            GroupModel child = mapping;
+            while(child.getParent() != null) {
+                if (child.getParent().equals(targetGroup)) return true;
+                child = child.getParent();
+            }
+        }
+        return false;
+    }
     // USER FEDERATION RELATED STUFF
 
     /**
      * Ensure that displayName of myProvider (if not null) is unique and there is no other provider with same displayName in the list.
      *
-     * @param displayName to check for duplications
-     * @param myProvider provider, which is excluded from the list (if present)
+     * @param displayName         to check for duplications
+     * @param myProvider          provider, which is excluded from the list (if present)
      * @param federationProviders
      * @throws ModelDuplicateException if there is other provider with same displayName
      */
@@ -366,5 +392,122 @@ public final class KeycloakModelUtils {
             role.setScopeParamRequired(true);
             realm.addDefaultRole(Constants.OFFLINE_ACCESS_ROLE);
         }
+    }
+
+
+    /**
+     * Recursively find all AuthenticationExecutionModel from specified flow or all it's subflows
+     *
+     * @param realm
+     * @param flow
+     * @param result input should be empty list. At the end will be all executions added to this list
+     */
+    public static void deepFindAuthenticationExecutions(RealmModel realm, AuthenticationFlowModel flow, List<AuthenticationExecutionModel> result) {
+        List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(flow.getId());
+        for (AuthenticationExecutionModel execution : executions) {
+            if (execution.isAuthenticatorFlow()) {
+                AuthenticationFlowModel subFlow = realm.getAuthenticationFlowById(execution.getFlowId());
+                deepFindAuthenticationExecutions(realm, subFlow, result);
+            } else {
+                result.add(execution);
+            }
+        }
+    }
+
+    public static String resolveFirstAttribute(GroupModel group, String name) {
+        String value = group.getFirstAttribute(name);
+        if (value != null) return value;
+        if (group.getParentId() == null) return null;
+        return resolveFirstAttribute(group.getParent(), name);
+
+    }
+
+    /**
+     *
+     *
+     * @param user
+     * @param name
+     * @return
+     */
+    public static String resolveFirstAttribute(UserModel user, String name) {
+        String value = user.getFirstAttribute(name);
+        if (value != null) return value;
+        for (GroupModel group : user.getGroups()) {
+            value = resolveFirstAttribute(group, name);
+            if (value != null) return value;
+        }
+        return null;
+
+    }
+
+    public static List<String>  resolveAttribute(GroupModel group, String name) {
+        List<String> values = group.getAttribute(name);
+        if (values != null && !values.isEmpty()) return values;
+        if (group.getParentId() == null) return null;
+        return resolveAttribute(group.getParent(), name);
+
+    }
+
+
+    public static List<String> resolveAttribute(UserModel user, String name) {
+        List<String> values = user.getAttribute(name);
+        if (!values.isEmpty()) return values;
+        for (GroupModel group : user.getGroups()) {
+            values = resolveAttribute(group, name);
+            if (values != null) return values;
+        }
+        return Collections.emptyList();
+    }
+
+
+    private static GroupModel findSubGroup(String[] path, int index, GroupModel parent) {
+        for (GroupModel group : parent.getSubGroups()) {
+            if (group.getName().equals(path[index])) {
+                if (path.length == index + 1) {
+                    return group;
+                }
+                else {
+                    if (index + 1 < path.length) {
+                        GroupModel found = findSubGroup(path, index + 1, group);
+                        if (found != null) return found;
+                    } else {
+                        return null;
+                    }
+                }
+
+            }
+        }
+        return null;
+    }
+
+    public static GroupModel findGroupByPath(RealmModel realm, String path) {
+        if (path == null) {
+            return null;
+        }
+        if (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        if (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+        String[] split = path.split("/");
+        if (split.length == 0) return null;
+        GroupModel found = null;
+        for (GroupModel group : realm.getTopLevelGroups()) {
+            if (group.getName().equals(split[0])) {
+                if (split.length == 1) {
+                    found = group;
+                    break;
+                }
+                else {
+                    if (split.length > 1) {
+                        found = findSubGroup(split, 1, group);
+                        if (found != null) break;
+                    }
+                }
+
+            }
+        }
+        return found;
     }
 }

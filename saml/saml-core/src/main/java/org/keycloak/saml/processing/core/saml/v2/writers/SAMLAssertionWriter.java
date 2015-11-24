@@ -136,7 +136,7 @@ public class SAMLAssertionWriter extends BaseWriter {
         if (statements != null) {
             for (StatementAbstractType statement : statements) {
                 if (statement instanceof AuthnStatementType) {
-                    write((AuthnStatementType) statement);
+                    write((AuthnStatementType) statement, false);
                 } else if (statement instanceof AttributeStatementType) {
                     write((AttributeStatementType) statement);
                 } else
@@ -188,8 +188,12 @@ public class SAMLAssertionWriter extends BaseWriter {
      *
      * @throws ProcessingException
      */
-    public void write(AuthnStatementType authnStatement) throws ProcessingException {
+    public void write(AuthnStatementType authnStatement, boolean includeNamespace) throws ProcessingException {
         StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.AUTHN_STATEMENT.get(), ASSERTION_NSURI.get());
+        if (includeNamespace) {
+            StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
+            StaxUtil.writeDefaultNameSpace(writer, ASSERTION_NSURI.get());
+        }
 
         XMLGregorianCalendar authnInstant = authnStatement.getAuthnInstant();
         if (authnInstant != null) {

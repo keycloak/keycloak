@@ -102,6 +102,10 @@ module.service('Dialog', function($modal) {
         openDialog(title, message, btns, '/templates/kc-modal-message.html').then(success, cancel);
     }
 
+    dialog.open = function(title, message, btns, success, cancel) {
+        openDialog(title, message, btns, '/templates/kc-modal.html').then(success, cancel);
+    }
+
     return dialog
 });
 
@@ -282,6 +286,13 @@ module.service('ServerInfo', function($resource, $q, $http) {
         },
         promise: delay.promise
     }
+});
+
+module.factory('ClientInitialAccess', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients-initial-access/:id', {
+        realm : '@realm',
+        id : '@id'
+    });
 });
 
 
@@ -981,6 +992,17 @@ module.factory('ClientSecret', function($resource) {
     });
 });
 
+module.factory('ClientRegistrationAccessToken', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/registration-access-token', {
+        realm : '@realm',
+        client : '@client'
+    },  {
+        update : {
+            method : 'POST'
+        }
+    });
+});
+
 module.factory('ClientOrigins', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/clients/:client/allowed-origins', {
         realm : '@realm',
@@ -1442,6 +1464,110 @@ module.service('SelectRoleDialog', function($modal) {
     return dialog
 });
 
+module.factory('Group', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId', {
+        realm : '@realm',
+        userId : '@groupId'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+module.factory('GroupChildren', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/children', {
+        realm : '@realm',
+        groupId : '@groupId'
+    });
+});
+
+module.factory('Groups', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups', {
+        realm : '@realm'
+    });
+});
+
+module.factory('GroupRealmRoleMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/role-mappings/realm', {
+        realm : '@realm',
+        groupId : '@groupId'
+    });
+});
+
+module.factory('GroupCompositeRealmRoleMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/role-mappings/realm/composite', {
+        realm : '@realm',
+        groupId : '@groupId'
+    });
+});
+
+module.factory('GroupAvailableRealmRoleMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/role-mappings/realm/available', {
+        realm : '@realm',
+        groupId : '@groupId'
+    });
+});
 
 
+module.factory('GroupClientRoleMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/role-mappings/clients/:client', {
+        realm : '@realm',
+        groupId : '@groupId',
+        client : "@client"
+    });
+});
 
+module.factory('GroupAvailableClientRoleMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/role-mappings/clients/:client/available', {
+        realm : '@realm',
+        groupId : '@groupId',
+        client : "@client"
+    });
+});
+
+module.factory('GroupCompositeClientRoleMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/role-mappings/clients/:client/composite', {
+        realm : '@realm',
+        groupId : '@groupId',
+        client : "@client"
+    });
+});
+
+module.factory('GroupMembership', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:groupId/members', {
+        realm : '@realm',
+        groupId : '@groupId'
+    });
+});
+
+
+module.factory('UserGroupMembership', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/:userId/groups', {
+        realm : '@realm',
+        userId : '@userId'
+    });
+});
+
+module.factory('UserGroupMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/:userId/groups/:groupId', {
+        realm : '@realm',
+        userId : '@userId',
+        groupId : '@groupId'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+module.factory('DefaultGroups', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/default-groups/:groupId', {
+        realm : '@realm',
+        groupId : '@groupId'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});

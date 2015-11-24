@@ -59,6 +59,10 @@ public class RealmsResource {
         return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getProtocol");
     }
 
+    public static UriBuilder clientRegistrationUrl(UriInfo uriInfo) {
+        return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getClientsService");
+    }
+
     public static UriBuilder brokerUrl(UriInfo uriInfo) {
         return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getBrokerService");
     }
@@ -113,11 +117,11 @@ public class RealmsResource {
         return service;
     }
 
-    @Path("{realm}/client-registration")
+    @Path("{realm}/clients")
     public ClientRegistrationService getClientsService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        ClientRegistrationService service = new ClientRegistrationService(realm, event);
+        ClientRegistrationService service = new ClientRegistrationService(event);
         ResteasyProviderFactory.getInstance().injectProperties(service);
         return service;
     }

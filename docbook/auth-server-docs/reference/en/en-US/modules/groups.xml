@@ -1,0 +1,31 @@
+<chapter id="groups">
+    <title>Groups</title>
+    <para>
+        Groups in Keycloak allow you to manage a common set of attributes and role mappings for a large set of users.
+        Users can be members of zero or more groups.  Users inherit the attributes and role mappings assign to each group.
+        As an admin this makes it easy for you to manage permissions for a user in one place.
+    </para>
+    <para>
+        Groups are hierarchical.  A group can have many subgroups, but a group can only have one parent.  Subgroups inherit
+        the attributes and role mappings from the parent.  This applies to user as well.  So, if you have a parent group and a child group
+        and a user that only belongs to the child group, the user inherits the attributes and role mappings of both the
+        parent and child.
+    </para>
+    <section>
+        <title>Groups vs. Roles</title>
+        <para>
+            In the IT world the concepts of Group and Role are often blurred and interchangeable.  In Keycloak, Groups are just
+            a collection of users that you can apply roles and attributes to in one place.  Roles are used to assign permissions
+            and access control.
+        </para>
+        <para>
+            Keycloak Roles have the concept of a Composite Role.  A role can be associated with one or more additional roles.
+            This is called a Composite Role.  If a user has a role mapping to the Composite Role, they inherit all the roles associated
+            with the composite.  So what's the difference from a Keycloak Group and a Composite Role?  Logically they could be
+            used for the same exact thing.  The difference is conceptual.  Composite roles should be used to compose the
+            permission model of your set of services and applications.  So, roles become a set of permissions.  Groups on the
+            other hand, would be a set of users that have a set of permissions.  Use Groups to manage users, composite roles to
+            manage applications and services.
+        </para>
+    </section>
+</chapter>
