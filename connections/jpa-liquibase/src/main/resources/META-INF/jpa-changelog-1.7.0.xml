@@ -73,5 +73,7 @@
             <column name="REGISTRATION_TOKEN" type="VARCHAR(255)"/>
         </addColumn>
 
+        <modifyDataType tableName="REALM" columnName="PASSWORD_POLICY" newDataType="VARCHAR(2550)"/>
+
     </changeSet>
 </databaseChangeLog>
