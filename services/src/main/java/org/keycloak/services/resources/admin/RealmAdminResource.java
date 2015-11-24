@@ -236,7 +236,7 @@ public class RealmAdminResource {
         } catch (ModelDuplicateException e) {
             throw e;
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.getMessage(), e);
             return ErrorResponse.error("Failed to update " + rep.getRealm() + " Realm.", Response.Status.INTERNAL_SERVER_ERROR);
         }
     }

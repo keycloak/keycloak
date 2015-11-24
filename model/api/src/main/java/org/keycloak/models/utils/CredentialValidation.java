@@ -51,6 +51,10 @@ public class CredentialValidation {
     }
 
     public static boolean validateHashedCredential(RealmModel realm, UserModel user, String unhashedCredValue, UserCredentialValueModel credential) {
+        if(unhashedCredValue == null){
+            return false;
+        }
+
         boolean validated = new Pbkdf2PasswordEncoder(credential.getSalt()).verify(unhashedCredValue, credential.getValue(), credential.getHashIterations());
         if (validated) {
             int iterations = hashIterations(realm);

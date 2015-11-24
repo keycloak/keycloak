@@ -69,12 +69,12 @@ public class RepresentationToModel {
     private static Logger logger = Logger.getLogger(RepresentationToModel.class);
     public static OTPPolicy toPolicy(RealmRepresentation rep) {
         OTPPolicy policy = new OTPPolicy();
-        policy.setType(rep.getOtpPolicyType());
-        policy.setLookAheadWindow(rep.getOtpPolicyLookAheadWindow());
-        policy.setInitialCounter(rep.getOtpPolicyInitialCounter());
-        policy.setAlgorithm(rep.getOtpPolicyAlgorithm());
-        policy.setDigits(rep.getOtpPolicyDigits());
-        policy.setPeriod(rep.getOtpPolicyPeriod());
+        if (rep.getOtpPolicyType() != null) policy.setType(rep.getOtpPolicyType());
+        if (rep.getOtpPolicyLookAheadWindow() != null) policy.setLookAheadWindow(rep.getOtpPolicyLookAheadWindow());
+        if (rep.getOtpPolicyInitialCounter() != null) policy.setInitialCounter(rep.getOtpPolicyInitialCounter());
+        if (rep.getOtpPolicyAlgorithm() != null) policy.setAlgorithm(rep.getOtpPolicyAlgorithm());
+        if (rep.getOtpPolicyDigits() != null) policy.setDigits(rep.getOtpPolicyDigits());
+        if (rep.getOtpPolicyPeriod() != null) policy.setPeriod(rep.getOtpPolicyPeriod());
         return policy;
 
     }

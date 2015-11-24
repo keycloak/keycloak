@@ -5,6 +5,7 @@ import org.apache.http.HttpRequest;
 import org.keycloak.common.util.Base64;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -21,8 +22,11 @@ public abstract class Auth {
         return new BearerTokenAuth(initialAccess.getToken());
     }
 
-
     public static Auth token(ClientRepresentation client) {
+        return new BearerTokenAuth(client.getRegistrationAccessToken());
+    }
+
+    public static Auth token(OIDCClientRepresentation client) {
         return new BearerTokenAuth(client.getRegistrationAccessToken());
     }
 
