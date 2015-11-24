@@ -218,7 +218,7 @@ public abstract class SamlAuthenticator {
                         challenge = new AuthChallenge() {
                             @Override
                             public boolean challenge(HttpFacade exchange) {
-                                SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.INVALID_SIGNATURE);
+                                SamlAuthError error = new SamlAuthError(SamlAuthError.Reason.INVALID_SIGNATURE);
                                 exchange.getRequest().setError(error);
                                 exchange.getResponse().sendError(403);
                                 return true;
@@ -258,7 +258,7 @@ public abstract class SamlAuthenticator {
                     challenge = new AuthChallenge() {
                         @Override
                         public boolean challenge(HttpFacade exchange) {
-                            SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.ERROR_STATUS, statusResponse);
+                            SamlAuthError error = new SamlAuthError(SamlAuthError.Reason.ERROR_STATUS, statusResponse);
                             exchange.getRequest().setError(error);
                             exchange.getResponse().sendError(403);
                             return true;
@@ -299,7 +299,7 @@ public abstract class SamlAuthenticator {
             challenge = new AuthChallenge() {
                 @Override
                 public boolean challenge(HttpFacade exchange) {
-                    SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.EXTRACTION_FAILURE);
+                    SamlAuthError error = new SamlAuthError(SamlAuthError.Reason.EXTRACTION_FAILURE);
                     exchange.getRequest().setError(error);
                     exchange.getResponse().sendError(403);
                     return true;
