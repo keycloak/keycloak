@@ -4,7 +4,7 @@ jdk:
   - oraclejdk8
 
 install: 
-  - mvn install -Pdistribution -DskipTests=true -B -V -q
+  - travis_wait mvn install -Pdistribution -DskipTests=true -B -V -q
 
 script:
   - mvn test -B
