@@ -208,15 +208,34 @@ public abstract class SamlAuthenticator {
             return AuthOutcome.FAILED;
         }
         if (statusResponse instanceof ResponseType) {
-            if (deployment.getIDP().getSingleSignOnService().validateResponseSignature()) {
-                try {
-                    validateSamlSignature(holder, postBinding, GeneralConstants.SAML_RESPONSE_KEY);
-                } catch (VerificationException e) {
-                    log.error("Failed to verify saml response signature", e);
-                    return AuthOutcome.FAILED;
+            try {
+                if (deployment.getIDP().getSingleSignOnService().validateResponseSignature()) {
+                    try {
+                        validateSamlSignature(holder, postBinding, GeneralConstants.SAML_RESPONSE_KEY);
+                    } catch (VerificationException e) {
+                        log.error("Failed to verify saml response signature", e);
+
+                        challenge = new AuthChallenge() {
+                            @Override
+                            public boolean challenge(HttpFacade exchange) {
+                                SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.INVALID_SIGNATURE);
+                                exchange.getRequest().setError(error);
+                                exchange.getResponse().sendError(403);
+                                return true;
+                            }
+
+                            @Override
+                            public int getResponseCode() {
+                                return 403;
+                            }
+                        };
+                        return AuthOutcome.FAILED;
+                    }
                 }
+                return handleLoginResponse((ResponseType) statusResponse);
+            } finally {
+                sessionStore.setCurrentAction(SamlSessionStore.CurrentAction.NONE);
             }
-            return handleLoginResponse((ResponseType) statusResponse);
 
         } else {
             if (sessionStore.isLoggingOut()) {
@@ -239,18 +258,15 @@ public abstract class SamlAuthenticator {
                     challenge = new AuthChallenge() {
                         @Override
                         public boolean challenge(HttpFacade exchange) {
-                            exchange.getResponse().sendError(500, statusResponse.getStatus().getStatusCode().getValue().toString());
-                            return true;
-                        }
-
-                        @Override
-                        public boolean errorPage() {
+                            SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.ERROR_STATUS, statusResponse);
+                            exchange.getRequest().setError(error);
+                            exchange.getResponse().sendError(403);
                             return true;
                         }
 
                         @Override
                         public int getResponseCode() {
-                            return 500;
+                            return 403;
                         }
                     };
                     return AuthOutcome.FAILED;
@@ -280,7 +296,20 @@ public abstract class SamlAuthenticator {
             }
         } catch (Exception e) {
             log.error("Error extracting SAML assertion, e");
-            return AuthOutcome.FAILED;
+            challenge = new AuthChallenge() {
+                @Override
+                public boolean challenge(HttpFacade exchange) {
+                    SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.EXTRACTION_FAILURE);
+                    exchange.getRequest().setError(error);
+                    exchange.getResponse().sendError(403);
+                    return true;
+                }
+
+                @Override
+                public int getResponseCode() {
+                    return 403;
+                }
+            };
         }
 
         SubjectType subject = assertion.getSubject();

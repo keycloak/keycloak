@@ -1,0 +1,58 @@
+<section id="adapter_error_handling">
+    <title>Error Handling</title>
+    <para>
+        Keycloak has some error handling facilities for servlet based client adapters.  When an error is encountered in
+        authentication, keycloak will call <literal>HttpServletResponse.sendError()</literal>.  You can set up an error-page
+        within your <literal>web.xml</literal> file to handle the error however you want.  Keycloak may throw
+        400, 401, 403, and 500 errors.
+    </para>
+    <para>
+<programlisting>
+<![CDATA[
+<error-page>
+    <error-code>404</error-code>
+    <location>/ErrorHandler</location>
+</error-page>]]>
+</programlisting>
+    </para>
+    <para>
+        Keycloak also sets an <literal>HttpServletRequest</literal> attribute that you can retrieve.  The attribute name
+        is <literal>org.keycloak.adapters.spi.AuthenticationError</literal>.  Typecast this object to:
+        <literal>org.keycloak.adapters.OIDCAuthenticationError</literal>.  This class can tell you exactly what happened.
+        If this attribute is not set, then the adapter was not responsible for the error code.
+    </para>
+    <para>
+<programlisting>
+public class OIDCAuthenticationError implements AuthenticationError {
+    public static enum Reason {
+        NO_BEARER_TOKEN,
+        NO_REDIRECT_URI,
+        INVALID_STATE_COOKIE,
+        OAUTH_ERROR,
+        SSL_REQUIRED,
+        CODE_TO_TOKEN_FAILURE,
+        INVALID_TOKEN,
+        STALE_TOKEN,
+        NO_AUTHORIZATION_HEADER
+    }
+
+    private Reason reason;
+    private String description;
+
+    public OIDCAuthenticationError(Reason reason, String description) {
+        this.reason = reason;
+        this.description = description;
+    }
+
+    public Reason getReason() {
+        return reason;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+}
+
+</programlisting>
+    </para>
+</section>

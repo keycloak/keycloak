@@ -170,12 +170,7 @@ public class JettySamlTest {
 
     @Test
     public void testPostBadRealmSignature() {
-        testStrategy.testPostBadRealmSignature( new SamlAdapterTestStrategy.CheckAuthError() {
-            @Override
-            public void check(WebDriver driver) {
-                Assert.assertEquals(driver.getPageSource(), "");
-            }
-        });
+        testStrategy.testPostBadRealmSignature( );
     }
 
     @Test

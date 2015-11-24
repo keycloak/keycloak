@@ -27,11 +27,6 @@ public class InitiateLogin implements AuthChallenge {
     }
 
     @Override
-    public boolean errorPage() {
-        return false;
-    }
-
-    @Override
     public int getResponseCode() {
         return 0;
     }

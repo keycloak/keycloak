@@ -3,6 +3,7 @@ package org.keycloak.testsuite.keycloaksaml;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
+import org.keycloak.adapters.saml.SamlAuthenticationError;
 import org.keycloak.adapters.saml.SamlPrincipal;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -28,6 +29,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
+import org.keycloak.testsuite.rule.ErrorServlet;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
@@ -100,6 +102,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
     }
 
     public void testErrorHandling() throws Exception {
+        ErrorServlet.authError = null;
         Client client = ClientBuilder.newClient();
         // make sure
         Response response = client.target(APP_SERVER_BASE_URL + "/employee-sig/").request().get();
@@ -115,8 +118,13 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         response = client.target(uri).request().get();
         String errorPage = response.readEntity(String.class);
         response.close();
-        Assert.assertTrue(errorPage.contains(JBossSAMLURIConstants.STATUS_RESPONDER.get()));
+        Assert.assertTrue(errorPage.contains("Error Page"));
         client.close();
+        Assert.assertNotNull(ErrorServlet.authError);
+        SamlAuthenticationError error = (SamlAuthenticationError)ErrorServlet.authError;
+        Assert.assertEquals(SamlAuthenticationError.Reason.ERROR_STATUS, error.getReason());
+        Assert.assertNotNull(error.getStatus());
+        ErrorServlet.authError = null;
 
     }
 
@@ -388,13 +396,17 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         void check(WebDriver driver);
     }
 
-    public void testPostBadRealmSignature(CheckAuthError error) {
+    public void testPostBadRealmSignature() {
+        ErrorServlet.authError = null;
         driver.navigate().to(APP_SERVER_BASE_URL + "/bad-realm-sales-post-sig/");
         assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
         loginPage.login("bburke", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/bad-realm-sales-post-sig/");
         System.out.println(driver.getPageSource());
-        error.check(driver);
+        Assert.assertNotNull(ErrorServlet.authError);
+        SamlAuthenticationError error = (SamlAuthenticationError)ErrorServlet.authError;
+        Assert.assertEquals(SamlAuthenticationError.Reason.INVALID_SIGNATURE, error.getReason());
+        ErrorServlet.authError = null;
     }
 
     public void testMetadataPostSignedLoginLogout() throws Exception {

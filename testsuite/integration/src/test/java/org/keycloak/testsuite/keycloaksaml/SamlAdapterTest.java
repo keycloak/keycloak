@@ -48,12 +48,7 @@ public class SamlAdapterTest {
 
     @Test
     public void testPostBadRealmSignature() {
-        testStrategy.testPostBadRealmSignature( new SamlAdapterTestStrategy.CheckAuthError() {
-            @Override
-            public void check(WebDriver driver) {
-                Assert.assertTrue(driver.getPageSource().contains("Forbidden"));
-            }
-        });
+        testStrategy.testPostBadRealmSignature();
     }
 
     @Test
@@ -61,7 +56,8 @@ public class SamlAdapterTest {
         testStrategy.testPostSimpleUnauthorized( new SamlAdapterTestStrategy.CheckAuthError() {
             @Override
             public void check(WebDriver driver) {
-                Assert.assertTrue(driver.getPageSource().contains("Forbidden"));
+                String pageSource = driver.getPageSource();
+                Assert.assertTrue(pageSource.contains("Error Page"));
             }
         });
     }
