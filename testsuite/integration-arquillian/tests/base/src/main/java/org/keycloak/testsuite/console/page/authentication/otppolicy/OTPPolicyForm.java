@@ -26,6 +26,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
+import java.util.List;
+
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
@@ -53,7 +55,8 @@ public class OTPPolicyForm extends Form {
     public void setValues(OTPType otpType, OTPHashAlg otpHashAlg, Digits digits, String lookAhead, String periodOrCounter) {
         this.otpType.selectByValue(otpType.getName());
         this.otpHashAlg.selectByValue(otpHashAlg.getName());
-        this.digits.selectByValue(digits.getName());
+        this.digits.selectByVisibleText("" + digits.getName());
+
         setInputValue(this.lookAhead, lookAhead);
         
         switch (otpType) {
@@ -102,17 +105,16 @@ public class OTPPolicyForm extends Form {
     
     public enum Digits {
 
-        EMPTY("? number:6 ?"),
-        SIX("6"),
-        EIGHT("8");
+        SIX(6),
+        EIGHT(8);
 
-        private final String name;
+        private final int name;
 
-        private Digits(String name) {
+        private Digits(int name) {
             this.name = name;
         }
 
-        public String getName() {
+        public int getName() {
             return name;
         }
     }

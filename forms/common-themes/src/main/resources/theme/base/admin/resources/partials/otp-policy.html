@@ -34,9 +34,7 @@
             <label class="col-md-2 control-label" for="digits">Number of Digits</label>
             <div class="col-md-2">
                 <div>
-                    <select id="digits" ng-model="realm.otpPolicyDigits" class="form-control">
-                        <option value="6">6</option>
-                        <option value="8">8</option>
+                    <select id="digits" ng-model="realm.otpPolicyDigits" class="form-control" ng-options="item as item for item in optionsDigits">
                     </select>
                 </div>
             </div>
