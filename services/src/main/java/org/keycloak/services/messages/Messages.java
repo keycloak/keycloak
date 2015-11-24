@@ -112,6 +112,8 @@ public class Messages {
 
     public static final String STANDARD_FLOW_DISABLED = "standardFlowDisabledMessage";
 
+    public static final String IMPLICIT_FLOW_DISABLED = "implicitFlowDisabledMessage";
+
     public static final String INVALID_REDIRECT_URI = "invalidRedirectUriMessage";
 
     public static final String UNSUPPORTED_NAME_ID_FORMAT = "unsupportedNameIdFormatMessage";

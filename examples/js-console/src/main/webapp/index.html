@@ -106,7 +106,13 @@
         event('Auth Logout');
     };
 
-    keycloak.init().success(function(authenticated) {
+    // Flow can be changed to 'implicit' or 'hybrid', but then client must enable implicit flow too in admin console
+    var initOptions = {
+        responseMode: 'fragment',
+        flow: 'standard'
+    };
+
+    keycloak.init(initOptions).success(function(authenticated) {
         output('Init Success (' + (authenticated ? 'Authenticated' : 'Not Authenticated') + ')');
     }).error(function() {
         output('Init Error');
