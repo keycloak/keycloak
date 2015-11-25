@@ -8,6 +8,7 @@ module.controller('GroupListCtrl', function($scope, $route, realm, groups, Group
     $scope.tree = [];
 
     $scope.edit = function(selected) {
+        if (selected.id == 'realm') return;
         $location.url("/realms/" + realm.realm + "/groups/" + selected.id);
     }
 
