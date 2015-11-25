@@ -1,8 +1,8 @@
 package org.keycloak.email.freemarker;
 
 import org.keycloak.Config;
-import org.keycloak.email.EmailProvider;
-import org.keycloak.email.EmailProviderFactory;
+import org.keycloak.email.EmailTemplateProvider;
+import org.keycloak.email.EmailTemplateProviderFactory;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -10,13 +10,13 @@ import org.keycloak.models.KeycloakSessionFactory;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class FreeMarkerEmailProviderFactory implements EmailProviderFactory {
+public class FreeMarkerEmailTemplateProviderFactory implements EmailTemplateProviderFactory {
 
     private FreeMarkerUtil freeMarker;
 
     @Override
-    public EmailProvider create(KeycloakSession session) {
-        return new FreeMarkerEmailProvider(session, freeMarker);
+    public EmailTemplateProvider create(KeycloakSession session) {
+        return new FreeMarkerEmailTemplateProvider(session, freeMarker);
     }
 
     @Override
@@ -26,7 +26,6 @@ public class FreeMarkerEmailProviderFactory implements EmailProviderFactory {
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
     }
 
     @Override

@@ -1195,7 +1195,7 @@ module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, real
             }
         }
 
-        obj['port'] = obj['port'].toString();
+        obj['port'] = obj['port'] && obj['port'].toString();
 
         return obj;
     }

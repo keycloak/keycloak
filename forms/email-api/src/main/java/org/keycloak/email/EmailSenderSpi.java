@@ -7,7 +7,7 @@ import org.keycloak.provider.Spi;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class EmailSpi implements Spi {
+public class EmailSenderSpi implements Spi {
 
     @Override
     public boolean isInternal() {
@@ -16,16 +16,16 @@ public class EmailSpi implements Spi {
 
     @Override
     public String getName() {
-        return "email";
+        return "emailSender";
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return EmailProvider.class;
+        return EmailSenderProvider.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return EmailProviderFactory.class;
+        return EmailSenderProviderFactory.class;
     }
 }

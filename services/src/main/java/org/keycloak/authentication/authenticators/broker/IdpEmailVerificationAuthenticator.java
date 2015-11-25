@@ -13,7 +13,7 @@ import org.keycloak.authentication.requiredactions.VerifyEmail;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.email.EmailException;
-import org.keycloak.email.EmailProvider;
+import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -68,10 +68,10 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         long expiration = TimeUnit.SECONDS.toMinutes(context.getRealm().getAccessCodeLifespanUserAction());
         try {
 
-            context.getSession().getProvider(EmailProvider.class)
+            context.getSession().getProvider(EmailTemplateProvider.class)
                     .setRealm(realm)
                     .setUser(existingUser)
-                    .setAttribute(EmailProvider.IDENTITY_PROVIDER_BROKER_CONTEXT, brokerContext)
+                    .setAttribute(EmailTemplateProvider.IDENTITY_PROVIDER_BROKER_CONTEXT, brokerContext)
                     .sendConfirmIdentityBrokerLink(link, expiration);
 
             event.success();
