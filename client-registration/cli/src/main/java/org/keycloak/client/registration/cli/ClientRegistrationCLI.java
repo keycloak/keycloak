@@ -57,6 +57,8 @@ public class ClientRegistrationCLI {
                 .create();
 
         aeshConsole.start();
+
+
 /*
         if (args.length > 0) {
             CommandContainer command = registry.getCommand(args[0], null);

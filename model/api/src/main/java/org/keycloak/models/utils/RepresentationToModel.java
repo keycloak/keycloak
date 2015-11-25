@@ -996,14 +996,14 @@ public class RepresentationToModel {
 
         // Import users just to user storage. Don't federate
         UserModel user = session.userStorage().addUser(newRealm, userRep.getId(), userRep.getUsername(), false, false);
-        user.setEnabled(userRep.isEnabled());
+        user.setEnabled(userRep.isEnabled() != null && userRep.isEnabled());
         user.setCreatedTimestamp(userRep.getCreatedTimestamp());
         user.setEmail(userRep.getEmail());
-        user.setEmailVerified(userRep.isEmailVerified());
+        if (userRep.isEmailVerified() != null) user.setEmailVerified(userRep.isEmailVerified());
         user.setFirstName(userRep.getFirstName());
         user.setLastName(userRep.getLastName());
         user.setFederationLink(userRep.getFederationLink());
-        user.setOtpEnabled(userRep.isTotp());
+        if (userRep.isTotp() != null) user.setOtpEnabled(userRep.isTotp());
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, Object> entry : userRep.getAttributes().entrySet()) {
                 Object value = entry.getValue();

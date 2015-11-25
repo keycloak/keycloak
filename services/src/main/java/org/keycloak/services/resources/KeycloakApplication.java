@@ -2,6 +2,7 @@ package org.keycloak.services.resources;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -11,9 +12,11 @@ import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.PostMigrationEvent;
-import org.keycloak.offlineconfig.AdminRecovery;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.BruteForceProtector;
@@ -36,10 +39,7 @@ import javax.ws.rs.core.UriInfo;
 import java.io.*;
 import java.net.URI;
 import java.net.URL;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
-import java.util.StringTokenizer;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -81,7 +81,7 @@ public class KeycloakApplication extends Application {
 
         singletons.add(new ObjectMapperResolver(Boolean.parseBoolean(System.getProperty("keycloak.jsonPrettyPrint", "false"))));
 
-        setupDefaultRealm(context.getContextPath());
+        boolean defaultRealmCreated = ApplianceBootstrap.setupDefaultRealm(sessionFactory, context.getContextPath());
 
         migrateModel();
         sessionFactory.publish(new PostMigrationEvent());
@@ -89,7 +89,11 @@ public class KeycloakApplication extends Application {
         new ExportImportManager().checkExportImport(this.sessionFactory, context.getContextPath());
         importRealms(context);
 
-        AdminRecovery.recover(sessionFactory);
+        importAddUser();
+
+        if (defaultRealmCreated) {
+            ApplianceBootstrap.setupDefaultUser(sessionFactory);
+        }
 
         setupScheduledTasks(sessionFactory);
     }
@@ -151,10 +155,6 @@ public class KeycloakApplication extends Application {
         } catch (IOException e) {
             throw new RuntimeException("Failed to load config", e);
         }
-    }
-
-    protected void setupDefaultRealm(String contextPath) {
-        new ApplianceBootstrap().bootstrap(sessionFactory, contextPath);
     }
 
     public static KeycloakSessionFactory createSessionFactory() {
@@ -251,6 +251,44 @@ public class KeycloakApplication extends Application {
             }
         } finally {
             session.close();
+        }
+    }
+
+    public void importAddUser() {
+        String configDir = System.getProperty("jboss.server.config.dir");
+        if (configDir != null) {
+            File addUserFile = new File(configDir + File.separator + "keycloak-add-user.json");
+            if (addUserFile.isFile()) {
+                log.info("Importing users from '" + addUserFile + "'");
+
+                KeycloakSession session = sessionFactory.create();
+                try {
+                    session.getTransaction().begin();
+
+                    List<RealmRepresentation> realms = JsonSerialization.readValue(new FileInputStream(addUserFile), new TypeReference<List<RealmRepresentation>>() {});
+                    for (RealmRepresentation r : realms) {
+                        RealmModel realm = session.realms().getRealmByName(r.getRealm());
+                        if (realm == null) {
+                            throw new Exception("Realm '" + r.getRealm() + "' not found");
+                        }
+
+                        for (UserRepresentation u : r.getUsers()) {
+                            RepresentationToModel.createUser(session, realm, u, realm.getClientNameMap());
+                        }
+                    }
+
+                    session.getTransaction().commit();
+
+                    if (!addUserFile.delete()) {
+                        log.error("Failed to delete '" + addUserFile + "'");
+                    }
+                } catch (Throwable t) {
+                    session.getTransaction().rollback();
+                    log.error("Failed to import users from '" + addUserFile + "'", t);
+                } finally {
+                    session.close();
+                }
+            }
         }
     }
 

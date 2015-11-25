@@ -29,7 +29,7 @@ public class CredentialRepresentation {
     private Integer period;
 
     // only used when updating a credential.  Might set required action
-    protected boolean temporary;
+    protected Boolean temporary;
 
     public String getType() {
         return type;
@@ -79,11 +79,11 @@ public class CredentialRepresentation {
         this.hashIterations = hashIterations;
     }
 
-    public boolean isTemporary() {
+    public Boolean isTemporary() {
         return temporary;
     }
 
-    public void setTemporary(boolean temporary) {
+    public void setTemporary(Boolean temporary) {
         this.temporary = temporary;
     }
 

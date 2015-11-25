@@ -60,7 +60,8 @@ public class ExportImportManager {
 	                        
 	                        // Check if master realm was exported. If it's not, then it needs to be created before other realms are imported
 	                        if (!importProvider.isMasterRealmExported()) {
-	                            new ApplianceBootstrap().bootstrap(sessionFactory, contextPath);
+	                            ApplianceBootstrap.setupDefaultRealm(sessionFactory, contextPath);
+                                ApplianceBootstrap.setupDefaultUser(sessionFactory);
 	                        }
 	
 	                        importProvider.importModel(sessionFactory, strategy);
@@ -69,7 +70,8 @@ public class ExportImportManager {
 	
 	                        if (!realmName.equals(Config.getAdminRealm())) {
 	                            // Check if master realm exists. If it's not, then it needs to be created before other realm is imported
-	                            new ApplianceBootstrap().bootstrap(sessionFactory, contextPath);
+                                ApplianceBootstrap.setupDefaultRealm(sessionFactory, contextPath);
+                                ApplianceBootstrap.setupDefaultUser(sessionFactory);
 	                        }
 	
 	                        importProvider.importRealm(sessionFactory, realmName, strategy);

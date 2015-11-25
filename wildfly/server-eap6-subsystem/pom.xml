@@ -19,13 +19,12 @@
 
     <parent>
         <groupId>org.keycloak</groupId>
-        <artifactId>keycloak-parent</artifactId>
+        <artifactId>keycloak-wildfly-parent</artifactId>
         <version>1.7.0.Final-SNAPSHOT</version>
-        <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-wf9-server-subsystem</artifactId>
-    <name>Keycloak Wildfly 9 Server Subsystem</name>
+    <artifactId>keycloak-eap6-server-subsystem</artifactId>
+    <name>Keycloak EAP 6 Server Subsystem</name>
     <description/>
     <packaging>jar</packaging>
 
@@ -53,19 +52,24 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-controller</artifactId>
-            <scope>provided</scope>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-naming</artifactId>
+            <version>${jboss.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-server</artifactId>
-            <scope>provided</scope>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-server</artifactId>
+            <version>${jboss.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-web-common</artifactId>
-            <scope>provided</scope>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-ee</artifactId>
+            <version>${jboss.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-web</artifactId>
+            <version>${jboss.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
@@ -85,22 +89,15 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
-
         <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-subsystem-test-framework</artifactId>
-            <scope>test</scope>
+            <groupId>org.jboss.msc</groupId>
+            <artifactId>jboss-msc</artifactId>
+            <version>1.0.2.GA</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wildfly-adapter</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>
