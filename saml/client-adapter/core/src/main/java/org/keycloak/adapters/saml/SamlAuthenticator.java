@@ -377,7 +377,7 @@ public abstract class SamlAuthenticator {
 
         URI nameFormat = subjectNameID.getFormat();
         String nameFormatString = nameFormat == null ? JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get() : nameFormat.toString();
-        final SamlPrincipal principal = new SamlPrincipal(principalName, principalName, nameFormatString, attributes, friendlyAttributes);
+        final SamlPrincipal principal = new SamlPrincipal(assertion, principalName, principalName, nameFormatString, attributes, friendlyAttributes);
         String index = authn == null ? null : authn.getSessionIndex();
         final String sessionIndex = index;
         SamlSession account = new SamlSession(principal, roles, sessionIndex);
