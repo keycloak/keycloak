@@ -1,1 +1,2 @@
-org.keycloak.email.EmailSpi
+org.keycloak.email.EmailSenderSpi
+org.keycloak.email.EmailTemplateSpi

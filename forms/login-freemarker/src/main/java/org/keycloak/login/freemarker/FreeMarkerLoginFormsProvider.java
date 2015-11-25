@@ -24,7 +24,7 @@ import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.email.EmailException;
-import org.keycloak.email.EmailProvider;
+import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.freemarker.BrowserSecurityHeaderSetup;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
@@ -153,7 +153,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                     String link = builder.build(realm.getName()).toString();
                     long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
 
-                    session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendVerifyEmail(link, expiration);
+                    session.getProvider(EmailTemplateProvider.class).setRealm(realm).setUser(user).sendVerifyEmail(link, expiration);
                 } catch (EmailException e) {
                     logger.error("Failed to send verification email", e);
                     return setError(Messages.EMAIL_SENT_ERROR).createErrorPage();
