@@ -1994,6 +1994,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void moveGroup(GroupModel group, GroupModel toParent) {
+        if (toParent != null && group.getId().equals(toParent.getId())) {
+            return;
+        }
         if (group.getParentId() != null) {
             group.getParent().removeChild(group);
         }
