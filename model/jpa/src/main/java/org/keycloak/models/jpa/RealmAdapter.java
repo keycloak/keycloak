@@ -2040,7 +2040,7 @@ public class RealmAdapter implements RealmModel {
         if (!groupEntity.getRealm().getId().equals(getId())) {
             return false;
         }
-        realm.getDefaultRoles().remove(groupEntity);
+        realm.getDefaultGroups().remove(groupEntity);
         for (GroupModel subGroup : group.getSubGroups()) {
             removeGroup(subGroup);
         }
