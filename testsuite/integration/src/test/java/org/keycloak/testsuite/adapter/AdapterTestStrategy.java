@@ -24,6 +24,7 @@ package org.keycloak.testsuite.adapter;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.adapters.OIDCAuthenticationError;
 import org.keycloak.common.Version;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.admin.client.Keycloak;
@@ -42,6 +43,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountSessionsPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
+import org.keycloak.testsuite.rule.ErrorServlet;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
@@ -385,6 +387,7 @@ public class AdapterTestStrategy extends ExternalResource {
      * @throws Exception
      */
     public void testNullBearerTokenCustomErrorPage() throws Exception {
+        ErrorServlet.authError = null;
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(APP_SERVER_BASE_URL + "/customer-db-error-page/");
 
@@ -396,11 +399,15 @@ public class AdapterTestStrategy extends ExternalResource {
             response.close();
             response = client.target(location).request().get();
         }
-        Assert.assertEquals(200, response.getStatus());
+        Assert.assertEquals(401, response.getStatus());
         String errorPageResponse = response.readEntity(String.class);
         Assert.assertTrue(errorPageResponse.contains("Error Page"));
         response.close();
+        Assert.assertNotNull(ErrorServlet.authError);
+        OIDCAuthenticationError error = (OIDCAuthenticationError)ErrorServlet.authError;
+        Assert.assertEquals(OIDCAuthenticationError.Reason.NO_BEARER_TOKEN, error.getReason());
 
+        ErrorServlet.authError = null;
         response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer null").get();
         // TODO: follow redirects automatically if possible
         if (response.getStatus() == 302) {
@@ -408,10 +415,13 @@ public class AdapterTestStrategy extends ExternalResource {
             response.close();
             response = client.target(location).request().get();
         }
-        Assert.assertEquals(200, response.getStatus());
+        Assert.assertEquals(401, response.getStatus());
         errorPageResponse = response.readEntity(String.class);
         Assert.assertTrue(errorPageResponse.contains("Error Page"));
         response.close();
+        Assert.assertNotNull(ErrorServlet.authError);
+        error = (OIDCAuthenticationError)ErrorServlet.authError;
+        Assert.assertEquals(OIDCAuthenticationError.Reason.INVALID_TOKEN, error.getReason());
 
         client.close();
 

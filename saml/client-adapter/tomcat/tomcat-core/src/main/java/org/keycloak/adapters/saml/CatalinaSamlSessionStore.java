@@ -9,6 +9,8 @@ import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.tomcat.CatalinaUserSessionManagement;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
+import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusType;
 
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
@@ -39,6 +41,28 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
         this.request = request;
         this.valve = valve;
         this.facade = facade;
+    }
+
+    @Override
+    public void setCurrentAction(CurrentAction action) {
+        if (action == CurrentAction.NONE && request.getSession(false) == null) return;
+        request.getSession().setAttribute(CURRENT_ACTION, action);
+    }
+
+    @Override
+    public boolean isLoggingIn() {
+        HttpSession session = request.getSession(false);
+        if (session == null) return false;
+        CurrentAction action = (CurrentAction)session.getAttribute(CURRENT_ACTION);
+        return action == CurrentAction.LOGGING_IN;
+    }
+
+    @Override
+    public boolean isLoggingOut() {
+        HttpSession session = request.getSession(false);
+        if (session == null) return false;
+        CurrentAction action = (CurrentAction)session.getAttribute(CURRENT_ACTION);
+        return action == CurrentAction.LOGGING_OUT;
     }
 
     @Override

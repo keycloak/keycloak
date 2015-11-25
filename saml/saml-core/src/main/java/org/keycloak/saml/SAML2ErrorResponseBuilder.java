@@ -1,6 +1,12 @@
 package org.keycloak.saml;
 
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
+import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusType;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
@@ -9,7 +15,10 @@ import org.keycloak.saml.processing.core.saml.v2.holders.IDPInfoHolder;
 import org.keycloak.saml.processing.core.saml.v2.holders.IssuerInfoHolder;
 import org.keycloak.saml.processing.core.saml.v2.holders.SPInfoHolder;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.w3c.dom.Document;
+
+import java.net.URI;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -38,29 +47,25 @@ public class SAML2ErrorResponseBuilder {
 
 
     public Document buildDocument() throws ProcessingException {
-        Document samlResponse = null;
-        ResponseType responseType = null;
 
-        SAML2Response saml2Response = new SAML2Response();
+        try {
+            StatusResponseType statusResponse = new StatusResponseType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
 
-        // Create a response type
-        String id = IDGenerator.create("ID_");
+            statusResponse.setStatus(JBossSAMLAuthnResponseFactory.createStatusTypeForResponder(status));
+            NameIDType issuer = new NameIDType();
+            issuer.setValue(this.issuer);
 
-        IssuerInfoHolder issuerHolder = new IssuerInfoHolder(issuer);
-        issuerHolder.setStatusCode(status);
+            statusResponse.setIssuer(issuer);
+            statusResponse.setDestination(destination);
 
-        IDPInfoHolder idp = new IDPInfoHolder();
-        idp.setNameIDFormatValue(null);
-        idp.setNameIDFormat(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get());
+            SAML2Response saml2Response = new SAML2Response();
+            return saml2Response.convert(statusResponse);
+        } catch (ConfigurationException e) {
+            throw new ProcessingException(e);
+        } catch (ParsingException e) {
+            throw new ProcessingException(e);
+        }
 
-        SPInfoHolder sp = new SPInfoHolder();
-        sp.setResponseDestinationURI(destination);
-
-        responseType = saml2Response.createResponseType(id);
-        responseType.setStatus(JBossSAMLAuthnResponseFactory.createStatusTypeForResponder(status));
-        responseType.setDestination(destination);
-
-        return samlResponse;
     }
 
 

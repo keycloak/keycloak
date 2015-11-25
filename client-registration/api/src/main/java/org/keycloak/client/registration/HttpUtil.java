@@ -33,12 +33,12 @@ class HttpUtil {
         this.auth = auth;
     }
 
-    InputStream doPost(String content, String... path) throws ClientRegistrationException {
+    InputStream doPost(String content, String contentType, String acceptType, String... path) throws ClientRegistrationException {
         try {
             HttpPost request = new HttpPost(getUrl(baseUri, path));
 
-            request.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-            request.setHeader(HttpHeaders.ACCEPT, "application/json");
+            request.setHeader(HttpHeaders.CONTENT_TYPE, contentType);
+            request.setHeader(HttpHeaders.ACCEPT, acceptType);
             request.setEntity(new StringEntity(content));
 
             addAuth(request);
@@ -60,11 +60,11 @@ class HttpUtil {
         }
     }
 
-    InputStream doGet(String... path) throws ClientRegistrationException {
+    InputStream doGet(String acceptType, String... path) throws ClientRegistrationException {
         try {
             HttpGet request = new HttpGet(getUrl(baseUri, path));
 
-            request.setHeader(HttpHeaders.ACCEPT, "application/json");
+            request.setHeader(HttpHeaders.ACCEPT, acceptType);
 
             addAuth(request);
 
@@ -90,12 +90,12 @@ class HttpUtil {
         }
     }
 
-    InputStream doPut(String content, String... path) throws ClientRegistrationException {
+    InputStream doPut(String content, String contentType, String acceptType, String... path) throws ClientRegistrationException {
         try {
             HttpPut request = new HttpPut(getUrl(baseUri, path));
 
-            request.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-            request.setHeader(HttpHeaders.ACCEPT, "application/json");
+            request.setHeader(HttpHeaders.CONTENT_TYPE, contentType);
+            request.setHeader(HttpHeaders.ACCEPT, acceptType);
             request.setEntity(new StringEntity(content));
 
             addAuth(request);
@@ -134,7 +134,7 @@ class HttpUtil {
                 response.getEntity().getContent().close();
             }
 
-            if (response.getStatusLine().getStatusCode() != 200) {
+            if (response.getStatusLine().getStatusCode() != 204) {
                 throw new HttpErrorException(response.getStatusLine());
             }
         } catch (IOException e) {

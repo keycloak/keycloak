@@ -79,7 +79,7 @@ public class ServletKeycloakAuthMech extends AbstractUndertowKeycloakAuthMech {
 
     @Override
     public AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange, SecurityContext securityContext) {
-        UndertowHttpFacade facade = new OIDCUndertowHttpFacade(exchange);
+        UndertowHttpFacade facade = createFacade(exchange);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (!deployment.isConfigured()) {
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
@@ -119,4 +119,8 @@ public class ServletKeycloakAuthMech extends AbstractUndertowKeycloakAuthMech {
         }
     }
 
+    @Override
+    public UndertowHttpFacade createFacade(HttpServerExchange exchange) {
+        return new OIDCServletUndertowHttpFacade(exchange);
+    }
 }

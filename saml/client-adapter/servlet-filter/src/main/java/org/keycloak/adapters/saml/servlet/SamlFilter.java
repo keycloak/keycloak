@@ -137,11 +137,6 @@ public class SamlFilter implements Filter {
         if (challenge != null) {
             log.fine("challenge");
             challenge.challenge(facade);
-            if (challenge.errorPage()) {
-                response.sendError(challenge.getResponseCode());
-                return;
-            }
-            log.fine("sending challenge");
             return;
         }
         if (!facade.isEnded()) {

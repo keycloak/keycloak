@@ -3,6 +3,7 @@ package org.keycloak.util;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,7 +28,10 @@ public class JsonSerialization {
 
     public static void writeValueToStream(OutputStream os, Object obj) throws IOException {
         mapper.writeValue(os, obj);
+    }
 
+    public static void writeValuePrettyToStream(OutputStream os, Object obj) throws IOException {
+        prettyMapper.writeValue(os, obj);
     }
 
     public static String writeValueAsPrettyString(Object obj) throws IOException {
@@ -51,6 +55,10 @@ public class JsonSerialization {
 
     public static <T> T readValue(InputStream bytes, Class<T> type) throws IOException {
         return readValue(bytes, type, false);
+    }
+
+    public static <T> T readValue(InputStream bytes, TypeReference<T> type) throws IOException {
+        return mapper.readValue(bytes, type);
     }
 
     public static <T> T readValue(InputStream bytes, Class<T> type, boolean replaceSystemProperties) throws IOException {

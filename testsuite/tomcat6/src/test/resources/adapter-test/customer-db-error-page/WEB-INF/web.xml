@@ -25,6 +25,26 @@
         <url-pattern>/error.html</url-pattern>
     </servlet-mapping>
 
+    <error-page>
+        <error-code>400</error-code>
+        <location>/error.html</location>
+    </error-page>
+
+    <error-page>
+        <error-code>401</error-code>
+        <location>/error.html</location>
+    </error-page>
+
+    <error-page>
+        <error-code>403</error-code>
+        <location>/error.html</location>
+    </error-page>
+
+    <error-page>
+        <error-code>500</error-code>
+        <location>/error.html</location>
+    </error-page>
+
     <security-constraint>
         <web-resource-collection>
             <web-resource-name>Users</web-resource-name>
@@ -44,11 +64,7 @@
     <login-config>
         <auth-method>BASIC</auth-method>
         <realm-name>demo</realm-name>
-        <form-login-config>
-            <form-login-page>/error.html</form-login-page>
-            <form-error-page>/error.html</form-error-page>
-        </form-login-config>
-    </login-config>
+     </login-config>
 
     <security-role>
         <role-name>admin</role-name>

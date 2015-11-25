@@ -19,9 +19,8 @@
 
     <parent>
         <groupId>org.keycloak</groupId>
-        <artifactId>keycloak-parent</artifactId>
+        <artifactId>keycloak-wildfly-parent</artifactId>
         <version>1.7.0.Final-SNAPSHOT</version>
-        <relativePath>../../../pom.xml</relativePath>
     </parent>
 
     <artifactId>keycloak-wildfly-extensions</artifactId>

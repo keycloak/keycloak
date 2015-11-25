@@ -148,7 +148,7 @@ public class UsersResource {
                 attrsToRemove = Collections.emptySet();
             }
 
-            if (rep.isEnabled()) {
+            if (rep.isEnabled() != null && rep.isEnabled()) {
                 UsernameLoginFailureModel failureModel = session.sessions().getUserLoginFailure(realm, rep.getUsername());
                 if (failureModel != null) {
                     failureModel.clearFailures();
@@ -219,9 +219,9 @@ public class UsersResource {
         user.setFirstName(rep.getFirstName());
         user.setLastName(rep.getLastName());
 
-        user.setEnabled(rep.isEnabled());
-        user.setOtpEnabled(rep.isTotp());
-        user.setEmailVerified(rep.isEmailVerified());
+        if (rep.isEnabled() != null) user.setEnabled(rep.isEnabled());
+        if (rep.isTotp() != null) user.setOtpEnabled(rep.isTotp());
+        if (rep.isEmailVerified() != null) user.setEmailVerified(rep.isEmailVerified());
 
         List<String> reqActions = rep.getRequiredActions();
 
@@ -708,7 +708,7 @@ public class UsersResource {
         } catch (ModelReadOnlyException mre) {
             throw new BadRequestException("Can't reset password as account is read only");
         }
-        if (pass.isTemporary()) user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+        if (pass.isTemporary() != null && pass.isTemporary()) user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }

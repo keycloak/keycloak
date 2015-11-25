@@ -130,8 +130,8 @@ public class UserAttributesForm extends Form {
         setEmail(user.getEmail());
         setFirstName(user.getFirstName());
         setLastName(user.getLastName());
-        setEnabled(user.isEnabled());
-        setEmailVerified(user.isEmailVerified());
+        if (user.isEnabled() != null) setEnabled(user.isEnabled());
+        if (user.isEmailVerified() != null) setEmailVerified(user.isEmailVerified());
         setRequiredActions(user.getRequiredActions());
     }
 

@@ -327,6 +327,8 @@ module.controller('RealmLoginSettingsCtrl', function($scope, Current, Realm, rea
 });
 
 module.controller('RealmOtpPolicyCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications) {
+    $scope.optionsDigits = [ 6, 8 ];
+
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/otp-policy");
 });
 

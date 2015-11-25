@@ -32,7 +32,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-as7-server-subsystem</artifactId>
+            <artifactId>keycloak-eap6-server-subsystem</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

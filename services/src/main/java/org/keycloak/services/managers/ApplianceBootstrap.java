@@ -23,62 +23,71 @@ public class ApplianceBootstrap {
 
     private static final Logger logger = Logger.getLogger(ApplianceBootstrap.class);
 
-    public void bootstrap(KeycloakSessionFactory sessionFactory, String contextPath) {
+    public static boolean setupDefaultRealm(KeycloakSessionFactory sessionFactory, String contextPath) {
         KeycloakSession session = sessionFactory.create();
         session.getTransaction().begin();
 
         try {
-            bootstrap(session, contextPath);
+            String adminRealmName = Config.getAdminRealm();
+            if (session.realms().getRealm(adminRealmName) != null) {
+                return false;
+            }
+
+            logger.info("Initializing " + adminRealmName + " realm");
+
+            RealmManager manager = new RealmManager(session);
+            manager.setContextPath(contextPath);
+            RealmModel realm = manager.createRealm(adminRealmName, adminRealmName);
+            realm.setName(adminRealmName);
+            realm.setEnabled(true);
+            realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
+            realm.setSsoSessionIdleTimeout(1800);
+            realm.setAccessTokenLifespan(60);
+            realm.setSsoSessionMaxLifespan(36000);
+            realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
+            realm.setAccessCodeLifespan(60);
+            realm.setAccessCodeLifespanUserAction(300);
+            realm.setAccessCodeLifespanLogin(1800);
+            realm.setSslRequired(SslRequired.EXTERNAL);
+            realm.setRegistrationAllowed(false);
+            realm.setRegistrationEmailAsUsername(false);
+            KeycloakModelUtils.generateRealmKeys(realm);
+
             session.getTransaction().commit();
+            return true;
         } finally {
             session.close();
         }
     }
 
-    public void bootstrap(KeycloakSession session, String contextPath) {
-        String adminRealmName = Config.getAdminRealm();
-        if (session.realms().getRealm(adminRealmName) != null) {
-            return;
-        }
+    public static boolean setupDefaultUser(KeycloakSessionFactory sessionFactory) {
+        KeycloakSession session = sessionFactory.create();
+        session.getTransaction().begin();
 
-        logger.info("Initializing " + adminRealmName + " realm");
+        try {
+            RealmModel realm = session.realms().getRealm(Config.getAdminRealm());
+            if (session.users().getUserByUsername("admin", realm) == null) {
+                UserModel adminUser = session.users().addUser(realm, "admin");
 
-        RealmManager manager = new RealmManager(session);
-        manager.setContextPath(contextPath);
-        RealmModel realm = manager.createRealm(adminRealmName, adminRealmName);
-        realm.setName(adminRealmName);
-        realm.setEnabled(true);
-        realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
-        realm.setSsoSessionIdleTimeout(1800);
-        realm.setAccessTokenLifespan(60);
-        realm.setSsoSessionMaxLifespan(36000);
-        realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
-        realm.setAccessCodeLifespan(60);
-        realm.setAccessCodeLifespanUserAction(300);
-        realm.setAccessCodeLifespanLogin(1800);
-        realm.setSslRequired(SslRequired.EXTERNAL);
-        realm.setRegistrationAllowed(false);
-        realm.setRegistrationEmailAsUsername(false);
-        KeycloakModelUtils.generateRealmKeys(realm);
+                adminUser.setEnabled(true);
+                UserCredentialModel usrCredModel = new UserCredentialModel();
+                usrCredModel.setType(UserCredentialModel.PASSWORD);
+                usrCredModel.setValue("admin");
+                session.users().updateCredential(realm, adminUser, usrCredModel);
+                adminUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
-        UserModel adminUser = session.users().addUser(realm, "admin");
-        setupAdminUser(session, realm, adminUser, "admin");
-    }
+                RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
+                adminUser.grantRole(adminRole);
 
-    public static void setupAdminUser(KeycloakSession session, RealmModel realm, UserModel adminUser, String password) {
-        adminUser.setEnabled(true);
-        UserCredentialModel usrCredModel = new UserCredentialModel();
-        usrCredModel.setType(UserCredentialModel.PASSWORD);
-        usrCredModel.setValue(password);
-        session.users().updateCredential(realm, adminUser, usrCredModel);
-        adminUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-
-        RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
-        adminUser.grantRole(adminRole);
-
-        ClientModel accountApp = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        for (String r : accountApp.getDefaultRoles()) {
-            adminUser.grantRole(accountApp.getRole(r));
+                ClientModel accountApp = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+                for (String r : accountApp.getDefaultRoles()) {
+                    adminUser.grantRole(accountApp.getRole(r));
+                }
+            }
+            session.getTransaction().commit();
+            return true;
+        } finally {
+            session.close();
         }
     }
 

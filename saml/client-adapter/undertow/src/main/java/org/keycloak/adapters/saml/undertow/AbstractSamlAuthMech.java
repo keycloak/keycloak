@@ -55,10 +55,6 @@ public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
     public ChallengeResult sendChallenge(HttpServerExchange exchange, SecurityContext securityContext) {
         AuthChallenge challenge = exchange.getAttachment(KEYCLOAK_CHALLENGE_ATTACHMENT_KEY);
         if (challenge != null) {
-            if (challenge.errorPage() && errorPage != null) {
-                Integer code = servePage(exchange, errorPage);
-                return new ChallengeResult(true, code);
-            }
             UndertowHttpFacade facade = createFacade(exchange);
             if (challenge.challenge(facade)) {
                 return new ChallengeResult(true, exchange.getResponseCode());

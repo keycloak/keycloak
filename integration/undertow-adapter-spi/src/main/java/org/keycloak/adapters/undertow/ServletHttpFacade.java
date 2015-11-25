@@ -2,9 +2,13 @@ package org.keycloak.adapters.undertow;
 
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.handlers.ServletRequestContext;
+import org.keycloak.adapters.spi.AuthenticationError;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.spi.LogoutError;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -18,6 +22,7 @@ public class ServletHttpFacade extends UndertowHttpFacade {
         super(exchange);
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         request = (HttpServletRequest)servletRequestContext.getServletRequest();
+        response = (HttpServletResponse)servletRequestContext.getServletResponse();
     }
 
     protected class RequestFacade extends UndertowHttpFacade.RequestFacade {
@@ -26,6 +31,47 @@ public class ServletHttpFacade extends UndertowHttpFacade {
             return request.getParameter(param);
         }
 
+        @Override
+        public void setError(AuthenticationError error) {
+            request.setAttribute(AuthenticationError.class.getName(), error);
+
+        }
+
+        @Override
+        public void setError(LogoutError error) {
+            request.setAttribute(LogoutError.class.getName(), error);
+        }
+
+
+    }
+
+    protected class ResponseFacade extends UndertowHttpFacade.ResponseFacade {
+        // can't call sendError from a challenge.  Undertow ends up calling send error.
+        /*
+        @Override
+        public void sendError(int code) {
+            try {
+                response.sendError(code);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public void sendError(int code, String message) {
+            try {
+                response.sendError(code, message);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        */
+
+    }
+
+    @Override
+    public Response getResponse() {
+        return new ResponseFacade();
     }
 
     @Override

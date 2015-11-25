@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-as7-server-subsystem">
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-eap6-server-subsystem">
 
     <resources>
         <resource-root path="."/>

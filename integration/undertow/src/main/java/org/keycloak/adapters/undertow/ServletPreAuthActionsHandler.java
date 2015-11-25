@@ -61,11 +61,13 @@ public class ServletPreAuthActionsHandler implements HttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        UndertowHttpFacade facade = new OIDCUndertowHttpFacade(exchange);
+        UndertowHttpFacade facade = new OIDCServletUndertowHttpFacade(exchange);
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         SessionManagementBridge bridge = new SessionManagementBridge(userSessionManagement, servletRequestContext.getDeployment().getSessionManager());
         PreAuthActionsHandler handler = new PreAuthActionsHandler(bridge, deploymentContext, facade);
         if (handler.handleRequest()) return;
         next.handleRequest(exchange);
     }
+
+
 }

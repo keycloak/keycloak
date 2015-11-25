@@ -1,0 +1,22 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>1.7.0.Final-SNAPSHOT</version>
+    </parent>
+
+    <name>Keycloak WildFly Integration</name>
+    <description/>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>keycloak-wildfly-parent</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>adduser</module>
+        <module>extensions</module>
+        <module>server-subsystem</module>
+        <module>server-eap6-subsystem</module>
+    </modules>
+</project>

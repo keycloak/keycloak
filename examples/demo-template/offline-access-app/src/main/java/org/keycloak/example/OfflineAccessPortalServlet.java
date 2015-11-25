@@ -17,10 +17,12 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.ServerRequest;
+import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.JsonSerialization;
@@ -203,6 +205,18 @@ public class OfflineAccessPortalServlet extends HttpServlet {
                     public String getRemoteAddr() {
                         return servletRequest.getRemoteAddr();
                     }
+
+                    @Override
+                    public void setError(AuthenticationError error) {
+                        servletRequest.setAttribute(AuthenticationError.class.getName(), error);
+
+                    }
+
+                    @Override
+                    public void setError(LogoutError error) {
+                        servletRequest.setAttribute(LogoutError.class.getName(), error);
+                    }
+
                 };
             }
 

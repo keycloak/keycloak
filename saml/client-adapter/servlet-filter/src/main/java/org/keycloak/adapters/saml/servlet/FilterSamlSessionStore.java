@@ -7,6 +7,7 @@ import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.servlet.FilterSessionStore;
+import org.keycloak.dom.saml.v2.protocol.StatusType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
@@ -27,6 +28,28 @@ public class FilterSamlSessionStore extends FilterSessionStore implements SamlSe
     public FilterSamlSessionStore(HttpServletRequest request, HttpFacade facade, int maxBuffer, SessionIdMapper idMapper) {
         super(request, facade, maxBuffer);
         this.idMapper = idMapper;
+    }
+
+    @Override
+    public void setCurrentAction(CurrentAction action) {
+        if (action == CurrentAction.NONE && request.getSession(false) == null) return;
+        request.getSession().setAttribute(CURRENT_ACTION, action);
+    }
+
+    @Override
+    public boolean isLoggingIn() {
+        HttpSession session = request.getSession(false);
+        if (session == null) return false;
+        CurrentAction action = (CurrentAction)session.getAttribute(CURRENT_ACTION);
+        return action == CurrentAction.LOGGING_IN;
+    }
+
+    @Override
+    public boolean isLoggingOut() {
+        HttpSession session = request.getSession(false);
+        if (session == null) return false;
+        CurrentAction action = (CurrentAction)session.getAttribute(CURRENT_ACTION);
+        return action == CurrentAction.LOGGING_OUT;
     }
 
     @Override
