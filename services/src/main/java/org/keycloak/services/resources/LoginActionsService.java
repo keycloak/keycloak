@@ -57,6 +57,7 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
+import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
@@ -591,7 +592,7 @@ public class LoginActionsService {
                     .setHttpHeaders(headers)
                     .setUriInfo(uriInfo);
             event.error(Errors.REJECTED_BY_USER);
-            return protocol.consentDenied(clientSession);
+            return protocol.sendError(clientSession, Error.CONSENT_DENIED);
         }
 
         UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
@@ -828,7 +829,7 @@ public class LoginActionsService {
                     .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
                     .setUriInfo(context.getUriInfo());
             event.detail(Details.CUSTOM_REQUIRED_ACTION, action).error(Errors.REJECTED_BY_USER);
-            return protocol.consentDenied(context.getClientSession());
+            return protocol.sendError(context.getClientSession(), Error.CONSENT_DENIED);
         }
 
         throw new RuntimeException("Unreachable");

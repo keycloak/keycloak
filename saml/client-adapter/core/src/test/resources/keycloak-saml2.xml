@@ -4,7 +4,8 @@
         nameIDPolicyFormat="format"
         signatureAlgorithm=""
         signatureCanonicalizationMethod=""
-        forceAuthentication="true">
+        forceAuthentication="true"
+        isPassive="true">
         <Keys>
             <Key signing="true" >
                 <KeyStore file="file" resource="cp" password="pw">

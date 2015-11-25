@@ -41,6 +41,7 @@ public class DeploymentBuilder {
         deployment.setConfigured(true);
         deployment.setEntityID(sp.getEntityID());
         deployment.setForceAuthentication(sp.isForceAuthentication());
+        deployment.setIsPassive(sp.isIsPassive());
         deployment.setNameIDPolicyFormat(sp.getNameIDPolicyFormat());
         deployment.setLogoutPage(sp.getLogoutPage());
         deployment.setSignatureCanonicalizationMethod(sp.getIdp().getSignatureCanonicalizationMethod());

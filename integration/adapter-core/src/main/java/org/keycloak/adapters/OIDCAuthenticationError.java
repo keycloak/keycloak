@@ -36,4 +36,11 @@ public class OIDCAuthenticationError implements AuthenticationError {
     public String getDescription() {
         return description;
     }
+
+    @Override
+    public String toString() {
+        return "OIDCAuthenticationError [reason=" + reason + ", description=" + description + "]";
+    }
+    
+    
 }

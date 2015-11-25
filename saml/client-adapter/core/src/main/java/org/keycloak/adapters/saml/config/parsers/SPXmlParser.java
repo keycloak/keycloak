@@ -1,21 +1,22 @@
 package org.keycloak.adapters.saml.config.parsers;
 
-import org.keycloak.adapters.saml.config.IDP;
-import org.keycloak.adapters.saml.config.Key;
-import org.keycloak.adapters.saml.config.SP;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.parsers.AbstractParser;
-import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.common.util.StringPropertyReplacer;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+
+import org.keycloak.adapters.saml.config.IDP;
+import org.keycloak.adapters.saml.config.Key;
+import org.keycloak.adapters.saml.config.SP;
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.parsers.AbstractParser;
+import org.keycloak.saml.common.util.StaxParserUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -25,13 +26,16 @@ public class SPXmlParser extends AbstractParser {
 
     public static String getAttributeValue(StartElement startElement, String tag) {
         String str = StaxParserUtil.getAttributeValue(startElement, tag);
-        if (str != null) return StringPropertyReplacer.replaceProperties(str);
-        else return str;
+        if (str != null)
+            return StringPropertyReplacer.replaceProperties(str);
+        else
+            return str;
     }
 
     public static boolean getBooleanAttributeValue(StartElement startElement, String tag, boolean defaultValue) {
         String result = getAttributeValue(startElement, tag);
-        if (result == null) return defaultValue;
+        if (result == null)
+            return defaultValue;
         return Boolean.valueOf(result);
     }
 
@@ -41,10 +45,10 @@ public class SPXmlParser extends AbstractParser {
 
     public static String getElementText(XMLEventReader xmlEventReader) throws ParsingException {
         String result = StaxParserUtil.getElementText(xmlEventReader);
-        if (result != null) result = StringPropertyReplacer.replaceProperties(result);
+        if (result != null)
+            result = StringPropertyReplacer.replaceProperties(result);
         return result;
     }
-
 
     @Override
     public Object parse(XMLEventReader xmlEventReader) throws ParsingException {
@@ -61,6 +65,7 @@ public class SPXmlParser extends AbstractParser {
         sp.setLogoutPage(getAttributeValue(startElement, ConfigXmlConstants.LOGOUT_PAGE_ATTR));
         sp.setNameIDPolicyFormat(getAttributeValue(startElement, ConfigXmlConstants.NAME_ID_POLICY_FORMAT_ATTR));
         sp.setForceAuthentication(getBooleanAttributeValue(startElement, ConfigXmlConstants.FORCE_AUTHENTICATION_ATTR));
+        sp.setIsPassive(getBooleanAttributeValue(startElement, ConfigXmlConstants.IS_PASSIVE_ATTR));
         while (xmlEventReader.hasNext()) {
             XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);
             if (xmlEvent == null)
@@ -79,7 +84,7 @@ public class SPXmlParser extends AbstractParser {
             String tag = StaxParserUtil.getStartElementName(startElement);
             if (tag.equals(ConfigXmlConstants.KEYS_ELEMENT)) {
                 KeysXmlParser parser = new KeysXmlParser();
-                List<Key> keys = (List<Key>)parser.parse(xmlEventReader);
+                List<Key> keys = (List<Key>) parser.parse(xmlEventReader);
                 sp.setKeys(keys);
             } else if (tag.equals(ConfigXmlConstants.PRINCIPAL_NAME_MAPPING_ELEMENT)) {
                 StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
@@ -98,7 +103,7 @@ public class SPXmlParser extends AbstractParser {
                 parseRoleMapping(xmlEventReader, sp);
             } else if (tag.equals(ConfigXmlConstants.IDP_ELEMENT)) {
                 IDPXmlParser parser = new IDPXmlParser();
-                IDP idp = (IDP)parser.parse(xmlEventReader);
+                IDP idp = (IDP) parser.parse(xmlEventReader);
                 sp.setIdp(idp);
             } else {
                 StaxParserUtil.bypassElementBlock(xmlEventReader, tag);
@@ -108,7 +113,7 @@ public class SPXmlParser extends AbstractParser {
         return sp;
     }
 
-    protected void parseRoleMapping(XMLEventReader xmlEventReader, SP sp)  throws ParsingException {
+    protected void parseRoleMapping(XMLEventReader xmlEventReader, SP sp) throws ParsingException {
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
         StaxParserUtil.validate(startElement, ConfigXmlConstants.ROLE_IDENTIFIERS_ELEMENT);
         Set<String> roleAttributes = new HashSet<>();
@@ -143,7 +148,6 @@ public class SPXmlParser extends AbstractParser {
         }
         sp.setRoleAttributes(roleAttributes);
     }
-
 
     @Override
     public boolean supports(QName qname) {
