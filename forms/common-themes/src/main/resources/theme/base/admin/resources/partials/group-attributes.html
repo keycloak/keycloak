@@ -20,14 +20,14 @@
                 <td>{{key}}</td>
                 <td><input ng-model="group.attributes[key]" class="form-control" type="text" name="{{key}}" id="attribute-{{key}}" /></td>
                 <td class="kc-action-cell">
-                    <button class="btn btn-default btn-block btn-sm" data-ng-click="removeAttribute(key)">Delete</button>
+                    <button type="button" class="btn btn-default btn-block btn-sm" data-ng-click="removeAttribute(key)">Delete</button>
                 </td>
             </tr>
             <tr>
                 <td><input ng-model="newAttribute.key" class="form-control" type="text" id="newAttributeKey" /></td>
                 <td><input ng-model="newAttribute.value" class="form-control" type="text" id="newAttributeValue" /></td>
                 <td class="kc-action-cell">
-                    <button class="btn btn-default btn-block btn-sm" data-ng-click="addAttribute()">Add</button>
+                    <button type="button" class="btn btn-default btn-block btn-sm" data-ng-click="addAttribute()">Add</button>
                 </td>
             </tr>
             </tbody>
