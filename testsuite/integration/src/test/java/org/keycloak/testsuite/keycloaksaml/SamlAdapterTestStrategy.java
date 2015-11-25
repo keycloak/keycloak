@@ -140,12 +140,13 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
     }
 
     public void testPostPassiveLoginLogout(boolean forbiddenIfNotauthenticated) {
-        // first request on passive app - no login page shown, user not logged in as we are in passive mode
+        // first request on passive app - no login page shown, user not logged in as we are in passive mode.
+        // Shown page depends on used authentication mechanism, some may return forbidden error, some return requested page with anonymous user (not logged in)
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-passive/");
         assertEquals(APP_SERVER_BASE_URL + "/sales-post-passive/", driver.getCurrentUrl());
         System.out.println(driver.getPageSource());
         if (forbiddenIfNotauthenticated) {
-            Assert.assertTrue(driver.getPageSource().contains("Forbidden"));
+            Assert.assertTrue(driver.getPageSource().contains("HTTP status code: 403"));
         } else {
             Assert.assertTrue(driver.getPageSource().contains("principal=null"));
         }

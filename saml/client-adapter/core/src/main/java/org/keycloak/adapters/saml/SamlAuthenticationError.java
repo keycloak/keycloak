@@ -40,4 +40,10 @@ public class SamlAuthenticationError implements AuthenticationError {
     public StatusResponseType getStatus() {
         return status;
     }
+
+    @Override
+    public String toString() {
+        return "SamlAuthenticationError [reason=" + reason + ", status=" + status + "]";
+    }
+    
 }

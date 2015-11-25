@@ -211,25 +211,7 @@ public abstract class SamlAuthenticator {
             return AuthOutcome.FAILED;
         }
         
-        if (statusResponse instanceof ResponseType) {
-
-            //validate status
-            StatusType status = statusResponse.getStatus();
-            if(status == null){
-                log.error("Missing Status in SAML response");
-                return AuthOutcome.FAILED;
-            }
-            if(!checkStatusCodeValue(status.getStatusCode(), JBossSAMLURIConstants.STATUS_SUCCESS.get())){
-                if(checkStatusCodeValue(status.getStatusCode(), JBossSAMLURIConstants.STATUS_RESPONDER.get()) && checkStatusCodeValue(status.getStatusCode().getStatusCode(), JBossSAMLURIConstants.STATUS_NO_PASSIVE.get())){
-                    // KEYCLOAK-2107 - handle user not authenticated due passive mode 
-                    log.debug("Not authenticated due passive mode Status found in SAML response: " + status.toString());
-                    return AuthOutcome.NOT_AUTHENTICATED;
-                }
-                log.error("Error Status found in SAML response: " + status.toString());
-                return AuthOutcome.FAILED;
-                
-            }
-            
+        if (statusResponse instanceof ResponseType) {            
             try {
                 if (deployment.getIDP().getSingleSignOnService().validateResponseSignature()) {
                     try {
@@ -276,7 +258,15 @@ public abstract class SamlAuthenticator {
                 }
 
             } else if (sessionStore.isLoggingIn()) {
+
                 try {
+                    // KEYCLOAK-2107 - handle user not authenticated due passive mode. Return special outcome so different authentication mechanisms can behave accordingly.
+                    StatusType status = statusResponse.getStatus();
+                    if(checkStatusCodeValue(status.getStatusCode(), JBossSAMLURIConstants.STATUS_RESPONDER.get()) && checkStatusCodeValue(status.getStatusCode().getStatusCode(), JBossSAMLURIConstants.STATUS_NO_PASSIVE.get())){
+                        log.debug("Not authenticated due passive mode Status found in SAML response: " + status.toString());
+                        return AuthOutcome.NOT_AUTHENTICATED;
+                    }
+
                     challenge = new AuthChallenge() {
                         @Override
                         public boolean challenge(HttpFacade exchange) {
