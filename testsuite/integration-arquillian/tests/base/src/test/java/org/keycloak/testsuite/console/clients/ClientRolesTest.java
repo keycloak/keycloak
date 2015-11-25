@@ -1,22 +1,28 @@
 package org.keycloak.testsuite.console.clients;
 
+import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.testsuite.console.page.users.UserRoleMappingsForm;
 
 import static org.junit.Assert.*;
+import org.junit.Before;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.console.page.clients.ClientRole;
 import org.keycloak.testsuite.console.page.clients.ClientRoles;
 import org.keycloak.testsuite.console.page.clients.CreateClientRole;
 import org.keycloak.testsuite.console.page.users.User;
+import org.keycloak.testsuite.util.URLAssert;
 
 /**
  * Created by fkiss.
  */
 public class ClientRolesTest extends AbstractClientTest {
 
+    private String id;
+    private final String TEST_CLIENT_ROLE_NAME = "test-client-role";
+    
     @Page
     private ClientRoles clientRolesPage;
     @Page
@@ -30,38 +36,57 @@ public class ClientRolesTest extends AbstractClientTest {
     @Page
     private UserRoleMappingsForm userRolesPage;
 
-    public void addClientRole(RoleRepresentation roleRep) {
-//        assertCurrentUrl(clientRoles);
+    @Before
+    public void beforeClientRolesTest() {
+        ClientRepresentation newClient = createClientRepresentation(TEST_CLIENT_ID, TEST_REDIRECT_URIS);
+        testRealmResource().clients().create(newClient).close();
+        
+        id = findClientRepByClientId(TEST_CLIENT_ID).getId();
+        clientPage.setId(id);
+        clientRolePage.setId(id);
+        clientRolesPage.setId(id);
+        createClientRolePage.setId(id);
+        
+        clientPage.navigateTo();
+    }
+    
+    public void addNewClientRole(RoleRepresentation roleRep) {
         clientRolesPage.roles().addRole();
-//        assertCurrentUrl(createClientRole); // can't do this, need client id to build uri
         createClientRolePage.form().setBasicAttributes(roleRep);
         createClientRolePage.form().save();
         assertFlashMessageSuccess();
-        createClientRolePage.form().setCompositeRoles(roleRep);
+        System.out.println("TODO ClientRolesTest.addNewClientRole");
+//        createClientRolePage.form().setCompositeRoles(roleRep);
         // TODO add verification of notification message when KEYCLOAK-1497 gets resolved
     }
 
     @Test
-    public void testAddClientRole() {
-        ClientRepresentation newClient = createClientRepresentation("test-client1", "http://example.com/*");
-        RoleRepresentation newRole = new RoleRepresentation("client-role", "", false);
-
-        createClient(newClient);
-        assertFlashMessageSuccess();
-
+    public void testCRUDClientRole() {
+        RoleRepresentation newRole = new RoleRepresentation(TEST_CLIENT_ROLE_NAME, "description", false);
+                
         clientPage.tabs().roles();
-        addClientRole(newRole);
-        assertFlashMessageSuccess();
+        addNewClientRole(newRole);
 
-        clientRolePage.backToClientRolesViaBreadcrumb();
-        assertFalse(clientRolesPage.roles().getRolesFromTableRows().isEmpty());
-
-        configure().clients();
-        clientsPage.table().search(newClient.getClientId());
-        clientsPage.table().deleteClient(newClient.getClientId());
-        modalDialog.confirmDeletion();
+        List<RoleRepresentation> clientRoles = testRealmResource().clients().get(id).roles().list();
+        assertEquals("Client roles should contain exactly 1 role.", 1, clientRoles.size());
+        RoleRepresentation role = clientRoles.get(0);
+        assertEquals(TEST_CLIENT_ROLE_NAME, role.getName());
+        assertEquals("description", role.getDescription());
+        assertFalse(role.isScopeParamRequired());
+        assertFalse(role.isComposite());
+        assertNull(role.getComposites());
+        
+        //edit
+        clientRolesPage.navigateTo();
+        clientRolesPage.roles().editRole(TEST_CLIENT_ROLE_NAME);
+        
+        clientRolePage.setRoleId(role.getId());
+        URLAssert.assertCurrentUrlEquals(clientRolePage);
+        
+        //delete
+        clientRolePage.delete();
         assertFlashMessageSuccess();
-        assertNull(clientsPage.table().findClient(newClient.getClientId()));
+        assertTrue("Role should be deleted.", testRealmResource().clients().get(id).roles().list().isEmpty());
     }
 
 //    @Test

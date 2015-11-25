@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.console.page.clients;
+package org.keycloak.testsuite.console.page.clients.settings;
 
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
@@ -7,6 +7,7 @@ import org.openqa.selenium.support.FindBy;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.keycloak.testsuite.console.page.clients.CreateClientForm;
 
 import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
@@ -23,6 +24,8 @@ public class ClientSettingsForm extends CreateClientForm {
 
     @FindBy(id = "newWebOrigin")
     private WebElement newWebOriginInput;
+    @FindBy(xpath = ".//i[contains(@data-ng-click, 'newWebOrigin')]")
+    private WebElement newWebOriginSubmit;
     @FindBy(xpath = ".//input[ng-model='client.webOrigins[i]']")
     private List<WebElement> webOriginInputs;
     @FindBy(xpath = ".//i[contains(@data-ng-click, 'deleteWebOrigin')]")
@@ -49,6 +52,7 @@ public class ClientSettingsForm extends CreateClientForm {
 
     public void addWebOrigin(String redirectUri) {
         newWebOriginInput.sendKeys(redirectUri);
+        newWebOriginSubmit.click();
     }
 
     public List<String> getWebOrigins() {
@@ -93,6 +97,7 @@ public class ClientSettingsForm extends CreateClientForm {
         return values;
     }
 
+    @Override
     public void setConsentRequired(boolean value) {
         consentRequired.setOn(value);
     }

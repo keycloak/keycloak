@@ -17,19 +17,20 @@
  */
 package org.keycloak.testsuite.console.clients;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import org.junit.Test;
 
 import org.keycloak.representations.idm.ClientRepresentation;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
-import org.keycloak.testsuite.console.page.clients.ClientSettings;
-import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsBooleanAttributes;
-import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsListAttributes;
-import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsStringAttributes;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+import static org.keycloak.testsuite.auth.page.login.Login.SAML;
+import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.*;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import org.keycloak.testsuite.util.Timer;
 
@@ -45,54 +46,93 @@ public class ClientSettingsTest extends AbstractClientTest {
 
     private ClientRepresentation newClient;
 
+    @Test
     public void crudOIDCConfidential() {
-        newClient = createClientRepresentation("oidc-confidential", "http://example.test/app/*");
+        newClient = createClientRepresentation("oidc-confidential", TEST_REDIRECT_URIS);
         createClient(newClient);
         assertFlashMessageSuccess();
 
-        clientPage.backToClientsViaBreadcrumb();
-        assertCurrentUrlEquals(clientsPage);
-        assertEquals(1, clientsPage.table().searchClients(newClient.getClientId()).size());
-
         // read & verify
-        clientsPage.table().clickClient(newClient);
-        ClientRepresentation found = clientSettingsPage.form().getValues();
+        ClientRepresentation found = findClientRepByClientId(newClient.getClientId());
+        assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
+        assertClientSettingsEqual(newClient, found);
+        
+        // update & verify
+        newClient.setClientId("oidc-confidential-updated");
+        newClient.setName("updatedName");
+        
+        List<String> redirectUris = new ArrayList<>();
+        redirectUris.add("http://example2.test/app/*");
+        redirectUris.add("http://example2.test/app2/*");
+        redirectUris.add("http://example3.test/app/*");
+        newClient.setRedirectUris(redirectUris);
+        
+        List<String> webOrigins = new ArrayList<>();
+        webOrigins.clear();
+        webOrigins.add("http://example2.test");
+        webOrigins.add("http://example3.test");
+        newClient.setWebOrigins(webOrigins);
+        
+        clientSettingsPage.form().setClientId("oidc-confidential-updated");
+        clientSettingsPage.form().setName("updatedName");
+        clientSettingsPage.form().setRedirectUris(redirectUris);
+        clientSettingsPage.form().setWebOrigins(webOrigins);
+        clientSettingsPage.form().save();
+        assertFlashMessageSuccess();
+        
+        found = findClientRepByClientId(newClient.getClientId());
+        assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
         assertClientSettingsEqual(newClient, found);
 
-        // update & verify
-        // TODO change attributes, add redirect uris and weborigins
         // delete
-        // TODO
-        clientPage.backToClientsViaBreadcrumb();
+        clientPage.delete();
+        assertFlashMessageSuccess();
+        found = findClientRepByClientId(newClient.getClientId());
+        assertNull("Deleted client " + newClient.getClientId() + " was found.", found);
     }
 
+    @Test
     public void createOIDCPublic() {
-        newClient = createClientRepresentation("oidc-public", "http://example.test/app/*");
+        newClient = createClientRepresentation("oidc-public", TEST_REDIRECT_URIS);
         newClient.setPublicClient(true);
         createClient(newClient);
         assertFlashMessageSuccess();
 
-        clientPage.backToClientsViaBreadcrumb();
-        assertCurrentUrlEquals(clientsPage);
-        assertEquals(1, clientsPage.table().searchClients(newClient.getClientId()).size());
-    }
-
-    public void createOIDCBearerOnly() {
-        newClient = createClientRepresentation("oidc-bearer-only", "http://example.test/app/*");
-        newClient.setBearerOnly(true);
-        createClient(newClient);
-        assertFlashMessageSuccess();
-
-        clientPage.backToClientsViaBreadcrumb();
-        assertCurrentUrlEquals(clientsPage);
-        assertEquals(1, clientsPage.table().searchClients(newClient.getClientId()).size());
+        ClientRepresentation found = findClientRepByClientId(newClient.getClientId());
+        assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
+        assertClientSettingsEqual(newClient, found);
     }
 
     @Test
-    public void successfulCRUD() {
-        crudOIDCConfidential();
-        createOIDCPublic();
-        createOIDCBearerOnly();
+    public void createOIDCBearerOnly() {
+        newClient = createClientRepresentation("oidc-bearer-only", TEST_REDIRECT_URIS);
+        newClient.setBearerOnly(true);
+        newClient.setRedirectUris(null);
+        newClient.setWebOrigins(null);
+        createClient(newClient);
+        assertFlashMessageSuccess();
+
+        ClientRepresentation found = findClientRepByClientId(newClient.getClientId());
+        assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
+        assertClientSettingsEqual(newClient, found);
+    }
+
+    @Test
+    public void createSAML() {
+        newClient = createClientRepresentation("saml", "http://example.test/app/*");
+        newClient.setProtocol(SAML);
+        newClient.setFrontchannelLogout(true);
+        newClient.setRedirectUris(null);
+        newClient.setWebOrigins(null);
+        newClient.setAttributes(getSAMLAttributes());
+        
+        createClient(newClient);
+        assertFlashMessageSuccess();
+
+        ClientRepresentation found = findClientRepByClientId(newClient.getClientId());
+        assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
+        assertClientSettingsEqual(newClient, found);
+        assertClientSamlAttributes(getSAMLAttributes(), found.getAttributes());
     }
 
     @Test
@@ -104,27 +144,6 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClientPage.form().setClientId("test-client");
         createClientPage.form().save();
         assertFlashMessageDanger();
-    }
-
-    public void assertClientSettingsEqual(ClientRepresentation c1, ClientRepresentation c2) {
-        assertEqualsStringAttributes(c1.getClientId(), c2.getClientId());
-        assertEqualsStringAttributes(c1.getName(), c2.getName());
-        assertEqualsBooleanAttributes(c1.isEnabled(), c2.isEnabled());
-        assertEqualsBooleanAttributes(c1.isConsentRequired(), c2.isConsentRequired());
-        assertEqualsBooleanAttributes(c1.isDirectGrantsOnly(), c2.isDirectGrantsOnly());
-        assertEqualsStringAttributes(c1.getProtocol(), c2.getProtocol());
-
-        assertEqualsBooleanAttributes(c1.isBearerOnly(), c2.isBearerOnly());
-        assertEqualsBooleanAttributes(c1.isPublicClient(), c2.isPublicClient());
-        assertEqualsBooleanAttributes(c1.isSurrogateAuthRequired(), c2.isSurrogateAuthRequired());
-
-        assertEqualsBooleanAttributes(c1.isFrontchannelLogout(), c2.isFrontchannelLogout());
-
-        assertEqualsBooleanAttributes(c1.isServiceAccountsEnabled(), c2.isServiceAccountsEnabled());
-        assertEqualsListAttributes(c1.getRedirectUris(), c2.getRedirectUris());
-        assertEqualsStringAttributes(c1.getBaseUrl(), c2.getBaseUrl());
-        assertEqualsStringAttributes(c1.getAdminUrl(), c2.getAdminUrl());
-        assertEqualsListAttributes(c1.getWebOrigins(), c2.getWebOrigins());
     }
 
 //    @Test
@@ -158,6 +177,32 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClients("test_client_", 100);
         clientsPage.navigateTo();
         pause(120000);
+    }
+    
+    private Map<String, String> getSAMLAttributes() {
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put(SAML_ASSERTION_SIGNATURE, "true");
+        attributes.put(SAML_AUTHNSTATEMENT, "false");
+	attributes.put(SAML_CLIENT_SIGNATURE,	"true");
+	attributes.put(SAML_ENCRYPT, "true");
+	attributes.put(SAML_FORCE_POST_BINDING, "true");
+	attributes.put(SAML_MULTIVALUED_ROLES, "false");
+	attributes.put(SAML_SERVER_SIGNATURE,	"true");
+	attributes.put(SAML_SIGNATURE_ALGORITHM, "RSA_SHA512");
+	attributes.put(SAML_ASSERTION_CONSUMER_URL_POST, "http://example0.test");
+	attributes.put(SAML_ASSERTION_CONSUMER_URL_REDIRECT, "http://example1.test");
+	attributes.put(SAML_FORCE_NAME_ID_FORMAT, "true");
+	attributes.put(SAML_NAME_ID_FORMAT, "email");
+	attributes.put(SAML_SIGNATURE_CANONICALIZATION_METHOD, "http://www.w3.org/2001/10/xml-exc-c14n#WithComments");
+	attributes.put(SAML_SINGLE_LOGOUT_SERVICE_URL_POST, "http://example2.test");
+	attributes.put(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT, "http://example3.test");
+        return attributes;
+    }
+    
+    private void assertClientSamlAttributes(Map<String, String> expected, Map<String, String> actual) {
+        for (String key : expected.keySet()) {
+            assertEquals("Expected attribute " + key, expected.get(key), actual.get(key));
+        }
     }
 
 }

@@ -14,11 +14,11 @@ public class CreateClientRole extends CreateRole {
         return super.getUriFragment() + "/clients/{" + ID + "}";
     }
 
-    public void setClientId(String id) {
+    public void setId(String id) {
         setUriParameter(ID, id);
     }
 
-    public String getClientId() {
+    public String getId() {
         return getUriParameter(ID).toString();
     }
 

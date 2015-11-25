@@ -53,6 +53,11 @@ public final class WaitUtils {
                 .until().element(element).is().not().present();
     }
 
+    public static void waitAjaxForElementVisible(WebElement element) {
+        waitAjax().withTimeout(SCRIPT_TIMEOUT, TimeUnit.MILLISECONDS).pollingEvery(POLLING_INTERVAL, TimeUnit.MILLISECONDS)
+                .until().element(element).is().visible();
+    }
+
     public static void waitAjaxForElementNotVisible(WebElement element) {
         waitAjax().withTimeout(SCRIPT_TIMEOUT, TimeUnit.MILLISECONDS).pollingEvery(POLLING_INTERVAL, TimeUnit.MILLISECONDS)
                 .until().element(element).is().not().visible();

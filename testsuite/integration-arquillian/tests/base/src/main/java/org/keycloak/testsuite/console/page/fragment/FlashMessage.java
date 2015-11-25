@@ -20,7 +20,8 @@ package org.keycloak.testsuite.console.page.fragment;
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import org.jboss.arquillian.graphene.fragment.Root;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElementPresent;
+import static org.keycloak.testsuite.util.WaitUtils.*;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
 /**
@@ -31,7 +32,15 @@ public class FlashMessage {
 
     @Root
     private WebElement root;
-
+    
+    public void close() {
+        WebElement close = root.findElement(By.tagName("button"));
+        if (close.isDisplayed()) {
+            close.click();
+        }
+        waitAjaxForElementNotVisible(close);
+    }
+    
     public boolean isSuccess() {
         waitGui().until("Flash message should be success")
                 .element(root)
@@ -61,6 +70,6 @@ public class FlashMessage {
     }
 
     public void waitUntilPresent() {
-        waitGuiForElementPresent(root, "Flash message should be visible.");
+        waitAjaxForElement(root);
     }
 }
