@@ -8,6 +8,7 @@ module.controller('GroupListCtrl', function($scope, $route, realm, groups, Group
     $scope.tree = [];
 
     $scope.edit = function(selected) {
+        if (selected.id == 'realm') return;
         $location.url("/realms/" + realm.realm + "/groups/" + selected.id);
     }
 
@@ -23,6 +24,7 @@ module.controller('GroupListCtrl', function($scope, $route, realm, groups, Group
     $scope.paste = function(selected) {
         if (selected == null) return;
         if ($scope.cutNode == null) return;
+        if (selected.id == $scope.cutNode.id) return;
         if (selected.id == 'realm') {
             Groups.save({realm: realm.realm}, {id:$scope.cutNode.id}, function() {
                 $route.reload();
