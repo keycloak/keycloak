@@ -25,8 +25,9 @@ public class ConfigTest extends AbstractConsoleTest {
     @Test
     public void configLoginEventsTest() {
         configPage.form().setSaveEvents(true);
-        configPage.form().removeSaveType("LOGIN");
         configPage.form().addSaveType("REGISTER_NODE");
+        //after removeSavedType method stay input focused -> in phantomjs drop menu doesn't appear after first click
+        configPage.form().removeSaveType("LOGIN");
         configPage.form().setExpiration("50", "Days");
         configPage.form().save();
         assertFlashMessageSuccess();
