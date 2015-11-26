@@ -25,6 +25,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -645,7 +646,12 @@ public class OfflineTokenTest {
             StringBuilder response = new StringBuilder("<html><head><title>Offline token servlet</title></head><body><pre>");
             RefreshableKeycloakSecurityContext ctx = (RefreshableKeycloakSecurityContext) req.getAttribute(KeycloakSecurityContext.class.getName());
             String accessTokenPretty = JsonSerialization.writeValueAsPrettyString(ctx.getToken());
-            RefreshToken refreshToken = new JWSInput(ctx.getRefreshToken()).readJsonContent(RefreshToken.class);
+            RefreshToken refreshToken = null;
+            try {
+                refreshToken = new JWSInput(ctx.getRefreshToken()).readJsonContent(RefreshToken.class);
+            } catch (JWSInputException e) {
+                throw new IOException(e);
+            }
             String refreshTokenPretty = JsonSerialization.writeValueAsPrettyString(refreshToken);
 
             response = response.append(accessTokenPretty)

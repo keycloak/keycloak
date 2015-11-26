@@ -9,6 +9,7 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -137,11 +138,11 @@ public class AdminRoot {
     protected AdminAuth authenticateRealmAdminRequest(HttpHeaders headers) {
         String tokenString = authManager.extractAuthorizationHeaderToken(headers);
         if (tokenString == null) throw new UnauthorizedException("Bearer");
-        JWSInput input = new JWSInput(tokenString);
         AccessToken token;
         try {
+            JWSInput input = new JWSInput(tokenString);
             token = input.readJsonContent(AccessToken.class);
-        } catch (IOException e) {
+        } catch (JWSInputException e) {
             throw new UnauthorizedException("Bearer token format error");
         }
         String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);

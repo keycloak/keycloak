@@ -9,6 +9,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -195,44 +196,46 @@ public class TokenManager {
     }
 
     public RefreshToken verifyRefreshToken(RealmModel realm, String encodedRefreshToken) throws OAuthErrorException {
-        JWSInput jws = new JWSInput(encodedRefreshToken);
-        RefreshToken refreshToken = null;
         try {
+            JWSInput jws = new JWSInput(encodedRefreshToken);
+            RefreshToken refreshToken = null;
             if (!RSAProvider.verify(jws, realm.getPublicKey())) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
             }
             refreshToken = jws.readJsonContent(RefreshToken.class);
-        } catch (Exception e) {
+
+            if (refreshToken.getExpiration() != 0 && refreshToken.isExpired()) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
+            }
+
+            if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
+            }
+            return refreshToken;
+        } catch (JWSInputException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
         }
-        if (refreshToken.getExpiration() != 0 && refreshToken.isExpired()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
-        }
-
-        if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
-        }
-        return refreshToken;
     }
     public IDToken verifyIDToken(RealmModel realm, String encodedIDToken) throws OAuthErrorException {
-        JWSInput jws = new JWSInput(encodedIDToken);
-        IDToken idToken = null;
         try {
+            JWSInput jws = new JWSInput(encodedIDToken);
+            IDToken idToken;
             if (!RSAProvider.verify(jws, realm.getPublicKey())) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken");
             }
             idToken = jws.readJsonContent(IDToken.class);
-        } catch (IOException e) {
+
+            if (idToken.isExpired()) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "IDToken expired");
+            }
+
+            if (idToken.getIssuedAt() < realm.getNotBefore()) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale IDToken");
+            }
+            return idToken;
+        } catch (JWSInputException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken", e);
         }
-        if (idToken.isExpired()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "IDToken expired");
-        }
-
-        if (idToken.getIssuedAt() < realm.getNotBefore()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale IDToken");
-        }
-        return idToken;
     }
 
     public AccessToken createClientAccessToken(KeycloakSession session, Set<RoleModel> requestedRoles, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession, ClientSessionModel clientSession) {
