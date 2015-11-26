@@ -202,7 +202,7 @@ public class TokenEndpoint {
 
         ClientSessionModel clientSession = accessCode.getClientSession();
         event.detail(Details.CODE_ID, clientSession.getId());
-        if (!accessCode.isValid(ClientSessionModel.Action.CODE_TO_TOKEN.name())) {
+        if (!accessCode.isValid(ClientSessionModel.Action.CODE_TO_TOKEN.name(), ClientSessionCode.ActionType.CLIENT)) {
             event.error(Errors.INVALID_CODE);
             throw new ErrorResponseException("invalid_grant", "Code is expired", Response.Status.BAD_REQUEST);
         }

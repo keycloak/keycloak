@@ -754,7 +754,7 @@ public class AuthenticationProcessor {
         if (!code.isValidAction(action)) {
             throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CLIENT_SESSION);
         }
-        if (!code.isActionActive(action)) {
+        if (!code.isActionActive(ClientSessionCode.ActionType.LOGIN)) {
             throw new AuthenticationFlowException(AuthenticationFlowError.EXPIRED_CODE);
         }
         clientSession.setTimestamp(Time.currentTime());

@@ -165,25 +165,25 @@ public class LoginActionsService {
         ClientSessionCode clientCode;
         Response response;
 
-        boolean verifyCode(String code, String requiredAction) {
+        boolean verifyCode(String code, String requiredAction, ClientSessionCode.ActionType actionType) {
             if (!verifyCode(code)) {
                 return false;
             }
-            if (!verifyAction(requiredAction)) {
+            if (!verifyAction(requiredAction, actionType)) {
                 return false;
             } else {
                 return true;
             }
         }
 
-        public boolean verifyAction(String requiredAction) {
+        public boolean verifyAction(String requiredAction, ClientSessionCode.ActionType actionType) {
             if (!clientCode.isValidAction(requiredAction)) {
                 event.client(clientCode.getClientSession().getClient());
                 event.error(Errors.INVALID_CODE);
                 response = ErrorPage.error(session, Messages.INVALID_CODE);
                 return false;
             }
-            if (!clientCode.isActionActive(requiredAction)) {
+            if (!clientCode.isActionActive(actionType)) {
                 event.client(clientCode.getClientSession().getClient());
                 event.clone().error(Errors.EXPIRED_CODE);
                 if (clientCode.getClientSession().getAction().equals(ClientSessionModel.Action.AUTHENTICATE.name())) {
@@ -264,7 +264,7 @@ public class LoginActionsService {
                                  @QueryParam("execution") String execution) {
         event.event(EventType.LOGIN);
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
         event.detail(Details.CODE_ID, code);
@@ -315,7 +315,7 @@ public class LoginActionsService {
                                      @QueryParam("execution") String execution) {
         event.event(EventType.LOGIN);
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
         final ClientSessionCode clientCode = checks.clientCode;
@@ -374,7 +374,7 @@ public class LoginActionsService {
     protected Response resetCredentials(String code, String execution) {
         event.event(EventType.RESET_PASSWORD);
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.USER)) {
             return checks.response;
         }
         final ClientSessionCode clientCode = checks.clientCode;
@@ -438,7 +438,7 @@ public class LoginActionsService {
         }
 
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
         event.detail(Details.CODE_ID, code);
@@ -468,7 +468,7 @@ public class LoginActionsService {
             return ErrorPage.error(session, Messages.REGISTRATION_NOT_ALLOWED);
         }
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
 
@@ -496,7 +496,7 @@ public class LoginActionsService {
         event.event(EventType.IDENTITY_PROVIDER_FIRST_LOGIN);
 
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
         event.detail(Details.CODE_ID, code);
@@ -556,7 +556,7 @@ public class LoginActionsService {
         String code = formData.getFirst("code");
 
         ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
-        if (accessCode == null || !accessCode.isValid(ClientSessionModel.Action.OAUTH_GRANT.name())) {
+        if (accessCode == null || !accessCode.isValid(ClientSessionModel.Action.OAUTH_GRANT.name(), ClientSessionCode.ActionType.LOGIN)) {
             event.error(Errors.INVALID_CODE);
             return ErrorPage.error(session, Messages.INVALID_ACCESS_CODE);
         }
@@ -622,7 +622,7 @@ public class LoginActionsService {
         event.event(EventType.VERIFY_EMAIL);
         if (key != null) {
             Checks checks = new Checks();
-            if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name())) {
+            if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
@@ -665,7 +665,7 @@ public class LoginActionsService {
             return AuthenticationProcessor.createRequiredActionRedirect(realm, clientSession, uriInfo);
         } else {
             Checks checks = new Checks();
-            if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name())) {
+            if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
@@ -697,7 +697,7 @@ public class LoginActionsService {
         event.event(EventType.EXECUTE_ACTIONS);
         if (key != null) {
             Checks checks = new Checks();
-            if (!checks.verifyCode(key, ClientSessionModel.Action.EXECUTE_ACTIONS.name())) {
+            if (!checks.verifyCode(key, ClientSessionModel.Action.EXECUTE_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
                 return checks.response;
             }
             ClientSessionModel clientSession = checks.clientCode.getClientSession();
@@ -767,7 +767,7 @@ public class LoginActionsService {
         event.event(EventType.CUSTOM_REQUIRED_ACTION);
         event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
             return checks.response;
         }
         final ClientSessionCode clientCode = checks.clientCode;
