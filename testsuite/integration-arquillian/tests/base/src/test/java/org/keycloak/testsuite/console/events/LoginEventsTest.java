@@ -49,12 +49,15 @@ public class LoginEventsTest extends AbstractConsoleTest {
         loginEventsPage.navigateTo();
         loginEventsPage.table().filter();
 
+        List<WebElement> resultList = loginEventsPage.table().rows();
+        assertEquals(3, resultList.size());
+
         loginEventsPage.table().filterForm().addEventType("LOGIN");
         loginEventsPage.table().update();
 
-        List<WebElement> resultList = loginEventsPage.table().rows();
+        resultList = loginEventsPage.table().rows();
 
-        assertEquals(7, resultList.size());
+        assertEquals(1, resultList.size());
         resultList.get(0).findElement(By.xpath("//td[text()='LOGIN']"));
         resultList.get(0).findElement(By.xpath("//td[text()='User']/../td[text()='" + testUser.getId() + "']"));
         resultList.get(0).findElement(By.xpath("//td[text()='Client']/../td[text()='security-admin-console']"));
@@ -66,7 +69,7 @@ public class LoginEventsTest extends AbstractConsoleTest {
 
         resultList = loginEventsPage.table().rows();
 
-        assertEquals(2, resultList.size());
+        assertEquals(1, resultList.size());
         resultList.get(0).findElement(By.xpath("//td[text()='LOGOUT']"));
         resultList.get(0).findElement(By.xpath("//td[text()='User']/../td[text()='" + testUser.getId() + "']"));
         resultList.get(0).findElement(By.xpath("//td[text()='IP Address']/../td[text()='127.0.0.1']"));
@@ -77,7 +80,7 @@ public class LoginEventsTest extends AbstractConsoleTest {
 
         resultList = loginEventsPage.table().rows();
 
-        assertEquals(6, resultList.size());
+        assertEquals(1, resultList.size());
         resultList.get(0).findElement(By.xpath("//td[text()='LOGIN_ERROR']"));
         resultList.get(0).findElement(By.xpath("//td[text()='User']/../td[text()='" + testUser.getId() + "']"));
         resultList.get(0).findElement(By.xpath("//td[text()='Client']/../td[text()='security-admin-console']"));
