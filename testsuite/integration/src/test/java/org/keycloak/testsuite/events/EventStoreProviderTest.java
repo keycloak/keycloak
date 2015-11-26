@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.events;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -167,6 +168,19 @@ public class EventStoreProviderTest {
         eventStore.clear("realmId");
 
         Assert.assertEquals(1, eventStore.createQuery().getResultList().size());
+    }
+
+    @Test
+    public void lengthExceedLimit(){
+        eventStore.onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId", StringUtils.repeat("clientId", 100), "userId", "127.0.0.1", "error"));
+        eventStore.onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, StringUtils.repeat("realmId", 100), "clientId", "userId", "127.0.0.1", "error"));
+        eventStore.onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId", "clientId", StringUtils.repeat("userId", 100), "127.0.0.1", "error"));
+
+    }
+
+    @Test
+    public void maxLengthWithNull(){
+        eventStore.onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, null, null, null, "127.0.0.1", "error"));
     }
 
     @Test

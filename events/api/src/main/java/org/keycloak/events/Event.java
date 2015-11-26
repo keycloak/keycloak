@@ -47,7 +47,7 @@ public class Event {
     }
 
     public void setRealmId(String realmId) {
-        this.realmId = realmId;
+        this.realmId = maxLength(realmId, 255);
     }
 
     public String getClientId() {
@@ -55,7 +55,7 @@ public class Event {
     }
 
     public void setClientId(String clientId) {
-        this.clientId = clientId;
+        this.clientId = maxLength(clientId, 255);
     }
 
     public String getUserId() {
@@ -63,7 +63,7 @@ public class Event {
     }
 
     public void setUserId(String userId) {
-        this.userId = userId;
+        this.userId = maxLength(userId, 255);
     }
 
     public String getSessionId() {
@@ -110,6 +110,13 @@ public class Event {
         clone.error = error;
         clone.details = details != null ? new HashMap<>(details) : null;
         return clone;
+    }
+
+    static String maxLength(String string, int length){
+        if (string != null && string.length() > length) {
+            return string.substring(0, length - 1);
+        }
+        return string;
     }
 
 }
