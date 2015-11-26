@@ -6,10 +6,12 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.services.ErrorResponse;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -86,9 +88,17 @@ public class ProtocolMappersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createMapper(ProtocolMapperRepresentation rep) {
         auth.requireManage();
-        ProtocolMapperModel model = RepresentationToModel.toModel(rep);
-        model = client.addProtocolMapper(model);
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
+
+        ProtocolMapperModel model = null;
+        try {
+            model = RepresentationToModel.toModel(rep);
+            model = client.addProtocolMapper(model);
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
+
+        } catch (ModelDuplicateException e) {
+            return ErrorResponse.exists("Protocol mapper exists with same name");
+        }
+
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
     /**
