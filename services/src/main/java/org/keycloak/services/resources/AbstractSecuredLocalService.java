@@ -6,9 +6,11 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
@@ -40,6 +42,9 @@ import java.util.UUID;
  */
 public abstract class AbstractSecuredLocalService {
     private static final Logger logger = Logger.getLogger(AbstractSecuredLocalService.class);
+
+    private static final String KEYCLOAK_STATE_CHECKER = "KEYCLOAK_STATE_CHECKER";
+
     protected final ClientModel client;
     protected RealmModel realm;
 
@@ -106,14 +111,14 @@ public abstract class AbstractSecuredLocalService {
     }
 
     protected void updateCsrfChecks() {
-        Cookie cookie = headers.getCookies().get(AccountService.KEYCLOAK_STATE_CHECKER);
+        Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
         if (cookie != null) {
             stateChecker = cookie.getValue();
         } else {
-            stateChecker = UUID.randomUUID().toString();
+            stateChecker = KeycloakModelUtils.generateSecret();
             String cookiePath = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
             boolean secureOnly = realm.getSslRequired().isRequired(clientConnection);
-            CookieHelper.addCookie(AccountService.KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);
+            CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);
         }
     }
 
