@@ -5,6 +5,7 @@ import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -342,7 +343,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     @Override
     public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
         if (getProtocolMapperByName(model.getProtocol(), model.getName()) != null) {
-            throw new RuntimeException("protocol mapper name must be unique per protocol");
+            throw new ModelDuplicateException("Protocol mapper name must be unique per protocol");
         }
         ProtocolMapperEntity entity = new ProtocolMapperEntity();
         String id = model.getId() != null ? model.getId() : KeycloakModelUtils.generateId();
