@@ -53,12 +53,6 @@ public class BruteForceProtector implements Runnable {
         }
     }
 
-    protected class SuccessfulLogin extends LoginEvent {
-        public SuccessfulLogin(String realmId, String userId, String ip) {
-            super(realmId, userId, ip);
-        }
-    }
-
     protected class ShutdownEvent extends LoginEvent {
         public ShutdownEvent() {
             super(null, null, null);
@@ -83,7 +77,7 @@ public class BruteForceProtector implements Runnable {
         logFailure(event);
         UsernameLoginFailureModel user = getUserModel(session, event);
         if (user == null) {
-            user = session.sessions().addUserLoginFailure(realm, event.username);
+            user = session.sessions().addUserLoginFailure(realm, event.username.toLowerCase());
         }
         user.setLastIPFailure(event.ip);
         long currentTime = System.currentTimeMillis();
@@ -122,7 +116,7 @@ public class BruteForceProtector implements Runnable {
     protected UsernameLoginFailureModel getUserModel(KeycloakSession session, LoginEvent event) {
         RealmModel realm = getRealmModel(session, event);
         if (realm == null) return null;
-        UsernameLoginFailureModel user = session.sessions().getUserLoginFailure(realm, event.username);
+        UsernameLoginFailureModel user = session.sessions().getUserLoginFailure(realm, event.username.toLowerCase());
         if (user == null) return null;
         return user;
     }
@@ -146,7 +140,6 @@ public class BruteForceProtector implements Runnable {
             throw new RuntimeException(e);
         }
     }
-
 
     public void run() {
         final ArrayList<LoginEvent> events = new ArrayList<LoginEvent>(TRANSACTION_SIZE + 1);
@@ -196,10 +189,6 @@ public class BruteForceProtector implements Runnable {
         }
     }
 
-    protected void logSuccess(LoginEvent event) {
-        logger.warn("login success for user " + event.username + " from ip " + event.ip);
-    }
-
     protected void logFailure(LoginEvent event) {
         logger.warn("login failure for user " + event.username + " from ip " + event.ip);
         failures++;
@@ -213,15 +202,6 @@ public class BruteForceProtector implements Runnable {
                 totalTime += delta;
             }
         }
-    }
-
-    public void successfulLogin(RealmModel realm, String username, ClientConnection clientConnection) {
-        logger.info("successful login user: " + username + " from ip " + clientConnection.getRemoteAddr());
-    }
-
-    public void invalidUser(RealmModel realm, String username, ClientConnection clientConnection) {
-        logger.warn("invalid user: " + username + " from ip " + clientConnection.getRemoteAddr());
-        // todo more?
     }
 
     public void failedLogin(RealmModel realm, String username, ClientConnection clientConnection) {
@@ -238,7 +218,7 @@ public class BruteForceProtector implements Runnable {
     }
 
     public boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, String username) {
-        UsernameLoginFailureModel failure = session.sessions().getUserLoginFailure(realm, username);
+        UsernameLoginFailureModel failure = session.sessions().getUserLoginFailure(realm, username.toLowerCase());
         if (failure == null) {
             return false;
         }
@@ -250,14 +230,5 @@ public class BruteForceProtector implements Runnable {
         }
         return false;
     }
-
-    public long getFailures() {
-        return failures;
-    }
-
-    public long getLastFailure() {
-        return lastFailure;
-    }
-
 
 }
