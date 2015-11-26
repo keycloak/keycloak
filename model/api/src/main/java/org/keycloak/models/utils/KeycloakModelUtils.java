@@ -1,6 +1,7 @@
 package org.keycloak.models.utils;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -55,6 +56,16 @@ public final class KeycloakModelUtils {
 
     public static String generateId() {
         return UUID.randomUUID().toString();
+    }
+
+    public static String generateSecret() {
+        return generateSecret(32);
+    }
+
+    public static String generateSecret(int bytes) {
+        byte[] buf = new byte[bytes];
+        new SecureRandom().nextBytes(buf);
+        return Base64Url.encode(buf);
     }
 
     public static PublicKey getPublicKey(String publicKeyPem) {
