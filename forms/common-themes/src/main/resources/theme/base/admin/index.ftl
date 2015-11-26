@@ -53,10 +53,10 @@
 </div>
 </div>
 
-<div class="feedback-aligner" data-ng-show="notification">
+<div class="feedback-aligner" data-ng-show="notification.display">
     <div class="alert alert-{{notification.type}} alert-dismissable">
-        <button type="button" class="close">
-            <span class="pficon pficon-close" data-ng-click="notification = null"/>
+        <button type="button" class="close" data-ng-click="notification.remove()" id="notification-close">
+            <span class="pficon pficon-close"/>
         </button>
 
         <span class="pficon pficon-ok" ng-show="notification.type == 'success'"></span>

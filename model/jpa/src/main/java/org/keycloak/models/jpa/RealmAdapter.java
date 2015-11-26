@@ -1994,6 +1994,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void moveGroup(GroupModel group, GroupModel toParent) {
+        if (toParent != null && group.getId().equals(toParent.getId())) {
+            return;
+        }
         if (group.getParentId() != null) {
             group.getParent().removeChild(group);
         }
@@ -2040,7 +2043,7 @@ public class RealmAdapter implements RealmModel {
         if (!groupEntity.getRealm().getId().equals(getId())) {
             return false;
         }
-        realm.getDefaultRoles().remove(groupEntity);
+        realm.getDefaultGroups().remove(groupEntity);
         for (GroupModel subGroup : group.getSubGroups()) {
             removeGroup(subGroup);
         }

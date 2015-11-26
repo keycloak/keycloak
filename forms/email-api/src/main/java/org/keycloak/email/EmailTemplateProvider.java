@@ -8,15 +8,15 @@ import org.keycloak.provider.Provider;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface EmailProvider extends Provider {
+public interface EmailTemplateProvider extends Provider {
 
     String IDENTITY_PROVIDER_BROKER_CONTEXT = "identityProviderBrokerCtx";
 
-    public EmailProvider setRealm(RealmModel realm);
+    public EmailTemplateProvider setRealm(RealmModel realm);
 
-    public EmailProvider setUser(UserModel user);
+    public EmailTemplateProvider setUser(UserModel user);
 
-    public EmailProvider setAttribute(String name, Object value);
+    public EmailTemplateProvider setAttribute(String name, Object value);
 
     public void sendEvent(Event event) throws EmailException;
 

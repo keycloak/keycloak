@@ -100,4 +100,9 @@ public class StatusType implements Serializable {
         this.statusDetail = value;
     }
 
+    @Override
+    public String toString() {
+        return "StatusType [statusCode=" + statusCode + ", statusMessage=" + statusMessage + ", statusDetail=" + statusDetail + "]";
+    }
+
 }

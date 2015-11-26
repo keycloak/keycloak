@@ -1,7 +1,7 @@
 package org.keycloak.events.email;
 
 import org.keycloak.Config;
-import org.keycloak.email.EmailProvider;
+import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.EventType;
@@ -26,8 +26,8 @@ public class EmailEventListenerProviderFactory implements EventListenerProviderF
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
-        EmailProvider emailProvider = session.getProvider(EmailProvider.class);
-        return new EmailEventListenerProvider(session, emailProvider, includedEvents);
+        EmailTemplateProvider emailTemplateProvider = session.getProvider(EmailTemplateProvider.class);
+        return new EmailEventListenerProvider(session, emailTemplateProvider, includedEvents);
     }
 
     @Override

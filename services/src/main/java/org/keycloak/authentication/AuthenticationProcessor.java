@@ -21,6 +21,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -470,7 +471,7 @@ public class AuthenticationProcessor {
             protocol.setRealm(getRealm())
                     .setHttpHeaders(getHttpRequest().getHttpHeaders())
                     .setUriInfo(getUriInfo());
-            Response response = protocol.cancelLogin(getClientSession());
+            Response response = protocol.sendError(getClientSession(), Error.CANCELLED_BY_USER);
             forceChallenge(response);
         }
 

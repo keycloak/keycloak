@@ -223,6 +223,9 @@ public class GroupAdapter extends AbstractMongoAdapter<MongoGroupEntity> impleme
     @Override
     public void setParent(GroupModel parent) {
         if (parent == null) group.setParentId(null);
+        else if (parent.getId().equals(getId())) {
+            return;
+        }
         else {
             group.setParentId(parent.getId());
         }
@@ -232,6 +235,9 @@ public class GroupAdapter extends AbstractMongoAdapter<MongoGroupEntity> impleme
 
     @Override
     public void addChild(GroupModel subGroup) {
+        if (subGroup.getId().equals(getId())) {
+            return;
+        }
         subGroup.setParent(this);
         updateGroup();
 
@@ -239,6 +245,9 @@ public class GroupAdapter extends AbstractMongoAdapter<MongoGroupEntity> impleme
 
     @Override
     public void removeChild(GroupModel subGroup) {
+        if (subGroup.getId().equals(getId())) {
+            return;
+        }
         subGroup.setParent(null);
         updateGroup();
 

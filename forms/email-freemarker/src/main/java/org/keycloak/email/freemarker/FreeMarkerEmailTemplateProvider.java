@@ -1,29 +1,10 @@
 package org.keycloak.email.freemarker;
 
-import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.mail.Message;
-import javax.mail.Multipart;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
-
-import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.email.EmailException;
-import org.keycloak.email.EmailProvider;
+import org.keycloak.email.EmailSenderProvider;
+import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.email.freemarker.beans.EventBean;
 import org.keycloak.email.freemarker.beans.ProfileBean;
 import org.keycloak.events.Event;
@@ -33,43 +14,43 @@ import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.freemarker.beans.MessageFormatterMethod;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
+import java.text.MessageFormat;
+import java.util.*;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class FreeMarkerEmailProvider implements EmailProvider {
-
-    private static final Logger log = Logger.getLogger(FreeMarkerEmailProvider.class);
+public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     private KeycloakSession session;
     private FreeMarkerUtil freeMarker;
     private RealmModel realm;
     private UserModel user;
-    private final Map<String, Object> attributes = new HashMap<String, Object>();
+    private final Map<String, Object> attributes = new HashMap<>();
 
-    public FreeMarkerEmailProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
+    public FreeMarkerEmailTemplateProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
         this.freeMarker = freeMarker;
     }
 
     @Override
-    public EmailProvider setRealm(RealmModel realm) {
+    public EmailTemplateProvider setRealm(RealmModel realm) {
         this.realm = realm;
         return this;
     }
 
     @Override
-    public EmailProvider setUser(UserModel user) {
+    public EmailTemplateProvider setUser(UserModel user) {
         this.user = user;
         return this;
     }
 
     @Override
-    public EmailProvider setAttribute(String name, Object value) {
+    public EmailTemplateProvider setAttribute(String name, Object value) {
         attributes.put(name, value);
         return this;
     }
@@ -178,73 +159,9 @@ public class FreeMarkerEmailProvider implements EmailProvider {
         }
     }
 
-
     private void send(String subject, String textBody, String htmlBody) throws EmailException {
-        try {
-            String address = user.getEmail();
-            Map<String, String> config = realm.getSmtpConfig();
-
-            Properties props = new Properties();
-            props.setProperty("mail.smtp.host", config.get("host"));
-
-            boolean auth = "true".equals(config.get("auth"));
-            boolean ssl = "true".equals(config.get("ssl"));
-            boolean starttls = "true".equals(config.get("starttls"));
-
-            if (config.containsKey("port")) {
-                props.setProperty("mail.smtp.port", config.get("port"));
-            }
-
-            if (auth) {
-                props.put("mail.smtp.auth", "true");
-            }
-
-            if (ssl) {
-                props.put("mail.smtp.socketFactory.port", config.get("port"));
-                props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
-            }
-
-            if (starttls) {
-                props.put("mail.smtp.starttls.enable", "true");
-            }
-
-            String from = config.get("from");
-
-            Session session = Session.getInstance(props);
-
-            Multipart multipart = new MimeMultipart("alternative");
-            
-            if(textBody != null) {
-            	MimeBodyPart textPart = new MimeBodyPart();
-            	textPart.setText(textBody, "UTF-8");
-            	multipart.addBodyPart(textPart);
-            }
-            
-            if(htmlBody != null) {
-            	MimeBodyPart htmlPart = new MimeBodyPart();
-            	htmlPart.setContent(htmlBody, "text/html; charset=UTF-8");
-            	multipart.addBodyPart(htmlPart);
-            }
-            
-            Message msg = new MimeMessage(session);
-            msg.setFrom(new InternetAddress(from));
-            msg.setHeader("To", address);
-            msg.setSubject(subject);
-            msg.setContent(multipart);
-            msg.saveChanges();
-            msg.setSentDate(new Date());
-
-            Transport transport = session.getTransport("smtp");
-            if (auth) {
-                transport.connect(config.get("user"), config.get("password"));
-            } else {
-                transport.connect();
-            }
-            transport.sendMessage(msg, new InternetAddress[]{new InternetAddress(address)});
-        } catch (Exception e) {
-            log.warn("Failed to send email", e);
-            throw new EmailException(e);
-        }
+        EmailSenderProvider emailSender = session.getProvider(EmailSenderProvider.class);
+        emailSender.send(realm, user, subject, textBody, htmlBody);
     }
 
     @Override

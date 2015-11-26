@@ -86,6 +86,24 @@
             }
         },
         {
+            "name": "http://localhost:8081/sales-post-passive/",
+            "enabled": true,
+            "fullScopeAllowed": true,
+            "protocol": "saml",
+            "baseUrl": "http://localhost:8081/sales-post-passive",
+            "redirectUris": [
+                "http://localhost:8081/sales-post-passive/*"
+            ],
+            "attributes": {
+                "saml.authnstatement": "true",
+                "saml_assertion_consumer_url_post": "http://localhost:8081/sales-post-passive/",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8081/sales-post-passive/",
+                "saml_single_logout_service_url_post": "http://localhost:8081/sales-post-passive/",
+                "saml_single_logout_service_url_redirect": "http://localhost:8081/sales-post-passive/",
+                "saml_idp_initiated_sso_url_name": "sales-post-passive"
+            }
+        },
+        {
             "name": "http://localhost:8081/sales-post-sig/",
             "enabled": true,
             "protocol": "saml",

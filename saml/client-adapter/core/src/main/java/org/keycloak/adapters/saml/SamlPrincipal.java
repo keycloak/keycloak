@@ -1,6 +1,7 @@
 package org.keycloak.adapters.saml;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
 
 import java.io.Serializable;
 import java.security.Principal;
@@ -18,22 +19,43 @@ public class SamlPrincipal implements Serializable, Principal {
     private String name;
     private String samlSubject;
     private String nameIDFormat;
+    private AssertionType assertion;
 
-    public SamlPrincipal(String name, String samlSubject, String nameIDFormat, MultivaluedHashMap<String, String> attributes, MultivaluedHashMap<String, String> friendlyAttributes) {
+    public SamlPrincipal(AssertionType assertion, String name, String samlSubject, String nameIDFormat, MultivaluedHashMap<String, String> attributes, MultivaluedHashMap<String, String> friendlyAttributes) {
         this.name = name;
         this.attributes = attributes;
         this.friendlyAttributes = friendlyAttributes;
         this.samlSubject = samlSubject;
         this.nameIDFormat = nameIDFormat;
+        this.assertion = assertion;
     }
 
     public SamlPrincipal() {
     }
 
+    /**
+     * Get full saml assertion
+     *
+     * @return
+     */
+    public AssertionType getAssertion() {
+        return assertion;
+    }
+
+    /**
+     * Get SAML subject sent in assertion
+     *
+     * @return
+     */
     public String getSamlSubject() {
         return samlSubject;
     }
 
+    /**
+     * Subject nameID format
+     *
+     * @return
+     */
     public String getNameIDFormat() {
         return nameIDFormat;
     }
@@ -43,7 +65,12 @@ public class SamlPrincipal implements Serializable, Principal {
         return name;
     }
 
-
+    /**
+     * Convenience function that gets Attribute value by attribute name
+     *
+     * @param name
+     * @return
+     */
     public List<String> getAttributes(String name) {
         List<String> list = attributes.get(name);
         if (list != null) {
@@ -53,6 +80,13 @@ public class SamlPrincipal implements Serializable, Principal {
         }
 
     }
+
+    /**
+     * Convenience function that gets Attribute value by attribute friendly name
+     *
+     * @param friendlyName
+     * @return
+     */
     public List<String> getFriendlyAttributes(String friendlyName) {
         List<String> list = friendlyAttributes.get(name);
         if (list != null) {
@@ -63,19 +97,42 @@ public class SamlPrincipal implements Serializable, Principal {
 
     }
 
+    /**
+     * Convenience function that gets first  value of an attribute by attribute name
+     *
+     * @param name
+     * @return
+     */
     public String getAttribute(String name) {
         return attributes.getFirst(name);
     }
 
+    /**
+     * Convenience function that gets first  value of an attribute by attribute name
+     *
+     *
+     * @param friendlyName
+     * @return
+     */
     public String getFriendlyAttribute(String friendlyName) {
         return friendlyAttributes.getFirst(friendlyName);
     }
 
+    /**
+     * Get set of all assertion attribute names
+     *
+     * @return
+     */
     public Set<String> getAttributeNames() {
         return Collections.unmodifiableSet(attributes.keySet());
 
     }
 
+    /**
+     * Get set of all assertion friendly attribute names
+     *
+     * @return
+     */
     public Set<String> getFriendlyNames() {
         return Collections.unmodifiableSet(friendlyAttributes.keySet());
 

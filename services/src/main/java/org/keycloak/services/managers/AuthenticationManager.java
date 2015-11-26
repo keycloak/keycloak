@@ -36,6 +36,7 @@ import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
@@ -523,7 +524,7 @@ public class AuthenticationManager {
                         .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
                         .setUriInfo(context.getUriInfo());
                 event.error(Errors.REJECTED_BY_USER);
-                return protocol.consentDenied(context.getClientSession());
+                return protocol.sendError(context.getClientSession(), Error.CONSENT_DENIED);
             }
             else if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
                 clientSession.setNote(CURRENT_REQUIRED_ACTION, model.getProviderId());
