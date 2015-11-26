@@ -1,11 +1,14 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.infinispan.Cache;
+import org.infinispan.commands.write.RemoveCommand;
+import org.infinispan.container.entries.CacheEntry;
+import org.infinispan.context.InvocationContext;
+import org.infinispan.interceptors.base.CommandInterceptor;
 import org.infinispan.notifications.Listener;
-import org.infinispan.notifications.cachelistener.annotation.CacheEntryCreated;
-import org.infinispan.notifications.cachelistener.annotation.CacheEntryRemoved;
-import org.infinispan.notifications.cachelistener.event.CacheEntryCreatedEvent;
-import org.infinispan.notifications.cachelistener.event.CacheEntryRemovedEvent;
+import org.infinispan.notifications.cachelistener.annotation.*;
+import org.infinispan.notifications.cachelistener.event.*;
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
@@ -20,6 +23,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class InfinispanCacheUserProviderFactory implements CacheUserProviderFactory {
+
+    private static final Logger log = Logger.getLogger(InfinispanCacheUserProviderFactory.class);
 
     protected InfinispanUserCache userCache;
 
@@ -82,36 +87,63 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
         @CacheEntryCreated
         public void userCreated(CacheEntryCreatedEvent<String, CachedUser> event) {
             if (!event.isPre()) {
-
-                CachedUser cachedUser;
+                CachedUser user;
 
                 // Try optimized version if available
                 if (isNewInfinispan) {
-                    cachedUser = event.getValue();
+                    user = event.getValue();
                 } else {
                     String userId = event.getKey();
-                    cachedUser = event.getCache().get(userId);
+                    user = event.getCache().get(userId);
                 }
 
-                if (cachedUser != null) {
-                    String realm = cachedUser.getRealm();
-                    usernameLookup.put(realm, cachedUser.getUsername(), cachedUser.getId());
-                    if (cachedUser.getEmail() != null) {
-                        emailLookup.put(realm, cachedUser.getEmail(), cachedUser.getId());
+                if (user != null) {
+                    String realm = user.getRealm();
+
+                    usernameLookup.put(realm, user.getUsername(), user.getId());
+                    if (user.getEmail() != null) {
+                        emailLookup.put(realm, user.getEmail(), user.getId());
                     }
+
+                    log.tracev("User added realm={0}, id={1}, username={2}", realm, event.getValue().getId(), event.getValue().getUsername());
                 }
             }
         }
 
         @CacheEntryRemoved
         public void userRemoved(CacheEntryRemovedEvent<String, CachedUser> event) {
-            if (event.isPre() && event.getValue() != null) {
-                CachedUser cachedUser = event.getValue();
-                String realm = cachedUser.getRealm();
-                usernameLookup.remove(realm, cachedUser.getUsername());
-                if (cachedUser.getEmail() != null) {
-                    emailLookup.remove(realm, cachedUser.getEmail());
-                }
+            CachedUser user = event.getOldValue();
+            if (event.isPre() &&  user != null) {
+                removeUser(user);
+
+                log.tracev("User invalidated realm={0}, id={1}, username={2}", user.getRealm(), user.getId(), user.getUsername());
+            }
+        }
+
+        @CacheEntryInvalidated
+        public void userInvalidated(CacheEntryInvalidatedEvent<String, CachedUser> event) {
+            CachedUser user = event.getValue();
+            if (event.isPre() && user != null) {
+                removeUser(user);
+
+                log.tracev("User invalidated realm={0}, id={1}, username={2}", user.getRealm(), user.getId(), user.getUsername());
+            }
+        }
+
+        @CacheEntriesEvicted
+        public void userEvicted(CacheEntriesEvictedEvent<String, CachedUser> event) {
+            for (CachedUser user : event.getEntries().values()) {
+                removeUser(user);
+
+                log.tracev("User evicted realm={0}, id={1}, username={2}", user.getRealm(), user.getId(), user.getUsername());
+            }
+        }
+
+        private void removeUser(CachedUser cachedUser) {
+            String realm = cachedUser.getRealm();
+            usernameLookup.remove(realm, cachedUser.getUsername());
+            if (cachedUser.getEmail() != null) {
+                emailLookup.remove(realm, cachedUser.getEmail());
             }
         }
 
@@ -119,12 +151,12 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
 
     static class RealmLookup {
 
-        protected final ConcurrentHashMap<String, ConcurrentHashMap<String, String>> lookup = new ConcurrentHashMap<String, ConcurrentHashMap<String, String>>();
+        protected final ConcurrentHashMap<String, ConcurrentHashMap<String, String>> lookup = new ConcurrentHashMap<>();
 
         public void put(String realm, String key, String value) {
             ConcurrentHashMap<String, String> map = lookup.get(realm);
             if(map == null) {
-                map = new ConcurrentHashMap<String, String>();
+                map = new ConcurrentHashMap<>();
                 ConcurrentHashMap<String, String> p = lookup.putIfAbsent(realm, map);
                 if (p != null) {
                     map = p;
