@@ -1,12 +1,14 @@
 package org.keycloak.testsuite.console.page.fragment;
 
-import java.util.List;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
 import org.openqa.selenium.By;
-import static org.openqa.selenium.By.xpath;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import java.util.List;
+
+import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
+import static org.openqa.selenium.By.xpath;
 
 /**
  *
@@ -23,7 +25,7 @@ public class DataTable {
     private WebElement header;
     @FindBy(css = "tbody")
     private WebElement body;
-    @FindBy(css = "tbody tr.ng-scope")
+    @FindBy(xpath = "(//table)[1]/tbody/tr[@class='ng-scope']")
     private List<WebElement> rows;
     
     @FindBy
