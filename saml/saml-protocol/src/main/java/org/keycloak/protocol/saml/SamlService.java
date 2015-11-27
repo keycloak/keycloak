@@ -142,15 +142,15 @@ public class SamlService extends AuthorizationEndpointBase {
                 event.error(Errors.CLIENT_DISABLED);
                 return ErrorPage.error(session, Messages.LOGIN_REQUESTER_NOT_ENABLED);
             }
-            if ((client instanceof ClientModel) && ((ClientModel) client).isBearerOnly()) {
+            if (client.isBearerOnly()) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.NOT_ALLOWED);
                 return ErrorPage.error(session, Messages.BEARER_ONLY);
             }
-            if (client.isDirectGrantsOnly()) {
+            if (!client.isStandardFlowEnabled()) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.NOT_ALLOWED);
-                return ErrorPage.error(session, Messages.DIRECT_GRANTS_ONLY);
+                return ErrorPage.error(session, Messages.STANDARD_FLOW_DISABLED);
             }
 
             session.getContext().setClient(client);

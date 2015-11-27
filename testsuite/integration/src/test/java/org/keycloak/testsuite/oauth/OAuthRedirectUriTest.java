@@ -40,6 +40,7 @@ import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
 import java.io.IOException;
+import java.net.URL;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
@@ -174,7 +175,10 @@ public class OAuthRedirectUriTest {
         OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertNotNull(response.getCode());
-        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/app?code="));
+        URL url = new URL(driver.getCurrentUrl());
+        Assert.assertTrue(url.toString().startsWith("http://localhost:8081/app"));
+        Assert.assertTrue(url.getQuery().contains("code="));
+        Assert.assertTrue(url.getQuery().contains("state="));
     }
 
     @Test
@@ -192,7 +196,11 @@ public class OAuthRedirectUriTest {
         OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertNotNull(response.getCode());
-        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/app?key=value&code="));
+        URL url = new URL(driver.getCurrentUrl());
+        Assert.assertTrue(url.toString().startsWith("http://localhost:8081/app"));
+        Assert.assertTrue(url.getQuery().contains("key=value"));
+        Assert.assertTrue(url.getQuery().contains("state="));
+        Assert.assertTrue(url.getQuery().contains("code="));
     }
 
     @Test

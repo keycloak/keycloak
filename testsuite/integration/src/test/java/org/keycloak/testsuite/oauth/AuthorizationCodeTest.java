@@ -30,6 +30,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
@@ -164,8 +165,8 @@ public class AuthorizationCodeTest {
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         b.replaceQueryParam(OAuth2Constants.RESPONSE_TYPE, "token");
         driver.navigate().to(b.build().toURL());
-        assertEquals("Invalid parameter: response_type", errorPage.getError());
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "token").assertEvent();
+        assertEquals("Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.", errorPage.getError());
+        events.expectLogin().error(Errors.NOT_ALLOWED).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, OIDCResponseType.TOKEN).assertEvent();
     }
 
     private void assertCode(String expectedCodeId, String actualCode) {

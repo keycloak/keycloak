@@ -327,7 +327,7 @@ public class TokenEndpoint {
     }
 
     public Response buildResourceOwnerPasswordCredentialsGrant() {
-        event.detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, "token");
+        event.detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD);
 
         if (client.isConsentRequired()) {
             event.error(Errors.CONSENT_DENIED);
@@ -393,7 +393,7 @@ public class TokenEndpoint {
             throw new ErrorResponseException("unauthorized_client", "Client not enabled to retrieve service account", Response.Status.UNAUTHORIZED);
         }
 
-        event.detail(Details.RESPONSE_TYPE, ServiceAccountConstants.CLIENT_AUTH);
+        event.detail(Details.RESPONSE_TYPE, OAuth2Constants.CLIENT_CREDENTIALS);
 
         UserModel clientUser = session.users().getUserByServiceAccountClient(client);
 

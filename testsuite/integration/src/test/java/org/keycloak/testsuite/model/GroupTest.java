@@ -7,6 +7,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -256,7 +257,7 @@ public class GroupTest {
                 .client(clientId)
                 .user(userId)
                 .session(accessToken.getSessionState())
-                .detail(Details.RESPONSE_TYPE, "token")
+                .detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.USERNAME, login)

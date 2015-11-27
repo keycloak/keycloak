@@ -8,6 +8,7 @@ import org.junit.Assert;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 import org.keycloak.Config;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.admin.AdminEvent;
@@ -134,7 +135,7 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
         return expect(EventType.CLIENT_LOGIN)
                 .detail(Details.CODE_ID, isCodeId())
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
-                .detail(Details.RESPONSE_TYPE, ServiceAccountConstants.CLIENT_AUTH)
+                .detail(Details.RESPONSE_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
                 .removeDetail(Details.CODE_ID)
                 .session(isUUID());
     }

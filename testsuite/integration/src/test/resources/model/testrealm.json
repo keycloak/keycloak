@@ -154,6 +154,7 @@
             "clientId": "Application",
             "name": "Applicationn",
             "enabled": true,
+            "implicitFlowEnabled": true,
             "nodeReRegistrationTimeout": 50,
             "registeredNodes": {
                 "node1": 10,
@@ -164,6 +165,8 @@
             "clientId": "OtherApp",
             "name": "Other Application",
             "enabled": true,
+            "standardFlowEnabled": false,
+            "directAccessGrantsEnabled": false,
             "serviceAccountsEnabled": true,
             "clientAuthenticatorType": "client-jwt",
             "protocolMappers" : [
