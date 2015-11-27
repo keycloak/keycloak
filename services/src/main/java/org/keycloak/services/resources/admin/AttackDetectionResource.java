@@ -53,7 +53,7 @@ public class AttackDetectionResource {
         this.realm = realm;
         this.adminEvent = adminEvent.realm(realm);
 
-        auth.init(RealmAuth.Resource.REALM);
+        auth.init(RealmAuth.Resource.USER);
     }
 
     /**
