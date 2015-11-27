@@ -46,8 +46,9 @@
         <org.apache.james.apache-mime4j.version>0.6.0.redhat-5</org.apache.james.apache-mime4j.version>
         <bouncycastle.crypto.version>1.52.0.redhat-2</bouncycastle.crypto.version>
         <jackson.version>2.5.4.redhat-1</jackson.version>
+        <!-- both httpcomponents versions have to be in sync with eap6-supported-artifacts bom -->
         <apache.httpcomponents.version>4.3.6.redhat-1</apache.httpcomponents.version>
-        <!--<apache.httpcomponents.httpcore.version>4.3.3</apache.httpcomponents.httpcore.version>-->
+        <apache.httpcomponents.httpcore.version>4.3.3.redhat-1</apache.httpcomponents.httpcore.version>
         <resteasy.community.version>3.0.14.Final</resteasy.community.version>
         <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
@@ -385,7 +386,7 @@
                 <version>${mysql.version}</version>
                 <scope>test</scope>
             </dependency>
-           <!--<dependency>
+           <dependency>
                <groupId>org.apache.httpcomponents</groupId>
                <artifactId>httpclient</artifactId>
                <version>${apache.httpcomponents.version}</version>
@@ -394,7 +395,7 @@
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
                 <version>${apache.httpcomponents.httpcore.version}</version>
-            </dependency>-->
+            </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpmime</artifactId>
