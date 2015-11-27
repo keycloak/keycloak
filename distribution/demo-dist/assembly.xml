@@ -33,7 +33,7 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-wf9-adapter-${project.version}</directory>
+            <directory>${project.build.directory}/unpacked/keycloak-wildfly-adapter-${project.version}</directory>
             <outputDirectory>keycloak</outputDirectory>
             <excludes>
                 <exclude>standalone/configuration/standalone-keycloak.xml</exclude>

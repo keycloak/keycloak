@@ -6,15 +6,15 @@
         <version>1.7.0.Final-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
-    <name>Keycloak Wildfly 9 Adapter</name>
+    <name>Keycloak Wildfly Adapter</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-wf9-adapter-dist-pom</artifactId>
+    <artifactId>keycloak-wildfly-adapter-dist-pom</artifactId>
     <packaging>pom</packaging>
 
     <modules>
-        <module>wf9-modules</module>
-        <module>wf9-adapter-zip</module>
+        <module>wildfly-modules</module>
+        <module>wildfly-adapter-zip</module>
     </modules>
 </project>

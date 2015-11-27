@@ -239,12 +239,12 @@
 
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-wf9-adapter-dist</artifactId>
+                                    <artifactId>keycloak-wildfly-adapter-dist</artifactId>
                                     <type>zip</type>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-wf9-adapter-dist</artifactId>
+                                    <artifactId>keycloak-wildfly-adapter-dist</artifactId>
                                     <type>tar.gz</type>
                                 </artifactItem>
                             </artifactItems>

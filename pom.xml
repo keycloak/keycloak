@@ -838,7 +838,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-wf9-subsystem</artifactId>
+                <artifactId>keycloak-wildfly-subsystem</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1137,7 +1137,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-wf9-modules</artifactId>
+                <artifactId>keycloak-wildfly-modules</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
@@ -1149,7 +1149,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-wf9-adapter-dist</artifactId>
+                <artifactId>keycloak-wildfly-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>

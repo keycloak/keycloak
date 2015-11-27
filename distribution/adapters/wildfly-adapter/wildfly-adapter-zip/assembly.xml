@@ -18,7 +18,7 @@
                 <include>org/keycloak/keycloak-jboss-adapter-core/**</include>
                 <include>org/keycloak/keycloak-undertow-adapter/**</include>
                 <include>org/keycloak/keycloak-wildfly-adapter/**</include>
-                <include>org/keycloak/keycloak-wf9-subsystem/**</include>
+                <include>org/keycloak/keycloak-wildfly-subsystem/**</include>
                 <include>org/keycloak/keycloak-adapter-subsystem/**</include>
                 <include>org/keycloak/keycloak-servlet-oauth-client/**</include>
             </includes>
