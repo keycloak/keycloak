@@ -31,7 +31,7 @@
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="name">{{:: 'name' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="name" type="text" ng-model="mapper.name" data-ng-readonly="!create">
+                    <input class="form-control" id="name" type="text" ng-model="mapper.name" data-ng-readonly="!create" required>
                 </div>
                 <kc-tooltip>{{:: 'mapper.name.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -56,7 +56,8 @@
                     <div>
                         <select class="form-control" id="mapperTypeCreate"
                                 ng-model="mapperType"
-                                ng-options="mapperType.name for mapperType in mapperTypes">
+                                ng-options="mapperType.name for mapperType in mapperTypes"
+                                required>
                         </select>
                     </div>
                 </div>
