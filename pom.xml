@@ -30,8 +30,8 @@
         <!-- Bouncycastle, Jakson and httpcomponents versions have to be in sync with versions in eap-runtime-artifacts bom -->
         <bouncycastle.crypto.version>1.52.0.redhat-2</bouncycastle.crypto.version>
         <jackson.version>1.9.13.redhat-2</jackson.version>
-        <apache.httpcomponents.version>4.5.0.redhat-1</apache.httpcomponents.version>
-        <!--<apache.httpcomponents.httpcore.version>4.3.3</apache.httpcomponents.httpcore.version>-->
+        <apache.httpcomponents.version>4.3.6.redhat-1</apache.httpcomponents.version>
+        <apache.httpcomponents.httpcore.version>4.3.3.redhat-1</apache.httpcomponents.httpcore.version>
         <!-- resteasy version has to be aligned with version in eap-runtime-artifacts bom version -->
         <resteasy.version>3.0.14.Final-redhat-1</resteasy.version>
         <resteasy.latest.version>${resteasy.version}</resteasy.latest.version>
@@ -373,7 +373,7 @@
                 <version>${mysql.version}</version>
                 <scope>test</scope>
             </dependency>
-           <!--<dependency>
+           <dependency>
                <groupId>org.apache.httpcomponents</groupId>
                <artifactId>httpclient</artifactId>
                <version>${apache.httpcomponents.version}</version>
@@ -382,7 +382,7 @@
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
                 <version>${apache.httpcomponents.httpcore.version}</version>
-            </dependency>-->
+            </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpmime</artifactId>
