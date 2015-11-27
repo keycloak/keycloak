@@ -5,6 +5,7 @@
 
 .kc-dropdown{
     position: relative;
+    z-index: 9999;
 }
 .kc-dropdown > a{
     position: absolute;
