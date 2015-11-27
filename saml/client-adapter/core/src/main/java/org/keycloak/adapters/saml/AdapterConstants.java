@@ -5,5 +5,5 @@ package org.keycloak.adapters.saml;
  * @version $Revision: 1 $
  */
 public class AdapterConstants {
-    public static final String AUTH_DATA_PARAM_NAME="org.keycloak.auth.deployment.data";
+    public static final String AUTH_DATA_PARAM_NAME="org.keycloak.saml.xml.adapterConfig";
 }

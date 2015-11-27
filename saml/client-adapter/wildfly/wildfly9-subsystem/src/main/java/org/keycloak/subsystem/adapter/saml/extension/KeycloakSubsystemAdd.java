@@ -16,7 +16,6 @@
  */
 package org.keycloak.subsystem.adapter.saml.extension;
 
-
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.server.AbstractDeploymentChainStep;

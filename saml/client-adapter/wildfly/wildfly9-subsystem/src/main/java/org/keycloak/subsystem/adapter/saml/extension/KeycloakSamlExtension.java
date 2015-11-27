@@ -37,13 +37,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 public class KeycloakSamlExtension implements Extension {
 
     public static final String SUBSYSTEM_NAME = "keycloak-saml";
-    public static final String NAMESPACE = "urn:jboss:domain:keycloak-saml:1.6";
+    public static final String NAMESPACE = "urn:jboss:domain:keycloak-saml:1.1";
     private static final KeycloakSubsystemParser PARSER = new KeycloakSubsystemParser();
     static final PathElement PATH_SUBSYSTEM = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
     private static final String RESOURCE_NAME = KeycloakSamlExtension.class.getPackage().getName() + ".LocalDescriptions";
-    private static final ModelVersion MGMT_API_VERSION = ModelVersion.create(1,1,0);
+    private static final ModelVersion MGMT_API_VERSION = ModelVersion.create(1, 1, 0);
     static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
-    private static final ResourceDefinition KEYCLOAK_SUBSYSTEM_RESOURCE = new KeycloakSubsystemDefinition();
 
     public static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
         StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
@@ -68,7 +67,12 @@ public class KeycloakSamlExtension implements Extension {
     public void initialize(final ExtensionContext context) {
         final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, MGMT_API_VERSION);
 
-        ManagementResourceRegistration registration = subsystem.registerSubsystemModel(KEYCLOAK_SUBSYSTEM_RESOURCE);
+        ManagementResourceRegistration registration = subsystem.registerSubsystemModel(KeycloakSubsystemDefinition.INSTANCE);
+        ManagementResourceRegistration secureDeploymentRegistration = registration.registerSubModel(SecureDeploymentDefinition.INSTANCE);
+        ManagementResourceRegistration serviceProviderRegistration = secureDeploymentRegistration.registerSubModel(ServiceProviderDefinition.INSTANCE);
+        serviceProviderRegistration.registerSubModel(KeyDefinition.INSTANCE);
+        ManagementResourceRegistration idpRegistration = serviceProviderRegistration.registerSubModel(IdentityProviderDefinition.INSTANCE);
+        idpRegistration.registerSubModel(KeyDefinition.INSTANCE);
 
         subsystem.registerXMLElementWriter(PARSER);
     }
