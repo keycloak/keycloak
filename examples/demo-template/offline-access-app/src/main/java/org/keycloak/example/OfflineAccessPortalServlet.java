@@ -23,6 +23,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.adapters.spi.LogoutError;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.JsonSerialization;
@@ -49,40 +50,44 @@ public class OfflineAccessPortalServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        try {
+            if (req.getRequestURI().endsWith("/login")) {
+                storeToken(req);
+                req.getRequestDispatcher("/WEB-INF/pages/loginCallback.jsp").forward(req, resp);
+                return;
+            }
 
-        if (req.getRequestURI().endsWith("/login")) {
-            storeToken(req);
-            req.getRequestDispatcher("/WEB-INF/pages/loginCallback.jsp").forward(req, resp);
-            return;
+            String refreshToken = RefreshTokenDAO.loadToken();
+            String refreshTokenInfo;
+            boolean savedTokenAvailable;
+            if (refreshToken == null) {
+                refreshTokenInfo = "No token saved in database. Please login first";
+                savedTokenAvailable = false;
+            } else {
+                RefreshToken refreshTokenDecoded = null;
+                    refreshTokenDecoded = TokenUtil.getRefreshToken(refreshToken);
+                String exp = (refreshTokenDecoded.getExpiration() == 0) ? "NEVER" : Time.toDate(refreshTokenDecoded.getExpiration()).toString();
+                refreshTokenInfo = String.format("<p>Type: %s</p><p>ID: %s</p><p>Expires: %s</p>", refreshTokenDecoded.getType(), refreshTokenDecoded.getId(), exp);
+                savedTokenAvailable = true;
+            }
+            req.setAttribute("tokenInfo", refreshTokenInfo);
+            req.setAttribute("savedTokenAvailable", savedTokenAvailable);
+
+            String customers;
+            if (req.getRequestURI().endsWith("/loadCustomers")) {
+                customers = loadCustomers(req, refreshToken);
+            } else {
+                customers = "";
+            }
+            req.setAttribute("customers", customers);
+
+            req.getRequestDispatcher("/WEB-INF/pages/view.jsp").forward(req, resp);
+        } catch (JWSInputException e) {
+            throw new ServletException(e);
         }
-
-        String refreshToken = RefreshTokenDAO.loadToken();
-        String refreshTokenInfo;
-        boolean savedTokenAvailable;
-        if (refreshToken == null) {
-            refreshTokenInfo = "No token saved in database. Please login first";
-            savedTokenAvailable = false;
-        } else {
-            RefreshToken refreshTokenDecoded = TokenUtil.getRefreshToken(refreshToken);
-            String exp = (refreshTokenDecoded.getExpiration() == 0) ? "NEVER" : Time.toDate(refreshTokenDecoded.getExpiration()).toString();
-            refreshTokenInfo = String.format("<p>Type: %s</p><p>ID: %s</p><p>Expires: %s</p>", refreshTokenDecoded.getType(), refreshTokenDecoded.getId(), exp);
-            savedTokenAvailable = true;
-        }
-        req.setAttribute("tokenInfo", refreshTokenInfo);
-        req.setAttribute("savedTokenAvailable", savedTokenAvailable);
-
-        String customers;
-        if (req.getRequestURI().endsWith("/loadCustomers")) {
-            customers = loadCustomers(req, refreshToken);
-        } else {
-            customers = "";
-        }
-        req.setAttribute("customers", customers);
-
-        req.getRequestDispatcher("/WEB-INF/pages/view.jsp").forward(req, resp);
     }
 
-    private void storeToken(HttpServletRequest req) throws IOException {
+    private void storeToken(HttpServletRequest req) throws IOException, JWSInputException {
         RefreshableKeycloakSecurityContext ctx = (RefreshableKeycloakSecurityContext) req.getAttribute(KeycloakSecurityContext.class.getName());
         String refreshToken = ctx.getRefreshToken();
 

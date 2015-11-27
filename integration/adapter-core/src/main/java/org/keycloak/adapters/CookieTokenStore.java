@@ -9,6 +9,7 @@ import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.VerificationException;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -58,10 +59,10 @@ public class CookieTokenStore {
             AccessToken accessToken = RSATokenVerifier.verifyToken(accessTokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl(), false, true);
             IDToken idToken;
             if (idTokenString != null && idTokenString.length() > 0) {
-                JWSInput input = new JWSInput(idTokenString);
                 try {
+                    JWSInput input = new JWSInput(idTokenString);
                     idToken = input.readJsonContent(IDToken.class);
-                } catch (IOException e) {
+                } catch (JWSInputException e) {
                     throw new VerificationException(e);
                 }
             } else {

@@ -3,6 +3,7 @@ package org.keycloak.services.clientregistration;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
@@ -44,7 +45,7 @@ public class ClientRegistrationTokenUtils {
         JWSInput input;
         try {
             input = new JWSInput(token);
-        } catch (Exception e) {
+        } catch (JWSInputException e) {
             throw new ForbiddenException(e);
         }
 
@@ -55,7 +56,7 @@ public class ClientRegistrationTokenUtils {
         JsonWebToken jwt;
         try {
             jwt = input.readJsonContent(JsonWebToken.class);
-        } catch (IOException e) {
+        } catch (JWSInputException e) {
             throw new ForbiddenException(e);
         }
 

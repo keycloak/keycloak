@@ -1,6 +1,7 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
@@ -73,11 +74,11 @@ public class CredentialValidation {
     }
 
     public static boolean validPasswordToken(RealmModel realm, UserModel user, String encodedPasswordToken) {
-        JWSInput jws = new JWSInput(encodedPasswordToken);
-        if (!RSAProvider.verify(jws, realm.getPublicKey())) {
-            return false;
-        }
         try {
+            JWSInput jws = new JWSInput(encodedPasswordToken);
+            if (!RSAProvider.verify(jws, realm.getPublicKey())) {
+                return false;
+            }
             PasswordToken passwordToken = jws.readJsonContent(PasswordToken.class);
             if (!passwordToken.getRealm().equals(realm.getName())) {
                 return false;
@@ -89,7 +90,7 @@ public class CredentialValidation {
                 return false;
             }
             return true;
-        } catch (IOException e) {
+        } catch (JWSInputException e) {
             return false;
         }
     }

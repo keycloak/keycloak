@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.RefreshToken;
 
 /**
@@ -41,11 +42,15 @@ public class TokenUtil {
      * @param decodedToken
      * @return
      */
-    public static RefreshToken getRefreshToken(byte[] decodedToken) throws IOException {
-        return JsonSerialization.readValue(decodedToken, RefreshToken.class);
+    public static RefreshToken getRefreshToken(byte[] decodedToken) throws JWSInputException {
+        try {
+            return JsonSerialization.readValue(decodedToken, RefreshToken.class);
+        } catch (IOException e) {
+            throw new JWSInputException(e);
+        }
     }
 
-    public static RefreshToken getRefreshToken(String refreshToken) throws IOException {
+    public static RefreshToken getRefreshToken(String refreshToken) throws JWSInputException {
         byte[] encodedContent = new JWSInput(refreshToken).getContent();
         return getRefreshToken(encodedContent);
     }
@@ -56,13 +61,9 @@ public class TokenUtil {
      * @param refreshToken
      * @return
      */
-    public static boolean isOfflineToken(String refreshToken) {
-        try {
-            RefreshToken token = getRefreshToken(refreshToken);
-            return token.getType().equals(TOKEN_TYPE_OFFLINE);
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
+    public static boolean isOfflineToken(String refreshToken) throws JWSInputException {
+        RefreshToken token = getRefreshToken(refreshToken);
+        return token.getType().equals(TOKEN_TYPE_OFFLINE);
     }
 
 }

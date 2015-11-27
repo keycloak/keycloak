@@ -116,6 +116,14 @@ public class RefreshTokenTest {
     }
 
     @Test
+    public void invalidRefreshToken() throws Exception {
+        AccessTokenResponse response = oauth.doRefreshTokenRequest("invalid", "password");
+        Assert.assertEquals(400, response.getStatusCode());
+        Assert.assertEquals("invalid_grant", response.getError());
+        events.clear();
+    }
+
+    @Test
     public void refreshTokenRequest() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 

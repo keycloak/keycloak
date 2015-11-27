@@ -2,6 +2,7 @@ package org.keycloak;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.util.TokenUtil;
@@ -22,7 +23,7 @@ public class RSATokenVerifier {
         JWSInput input = null;
         try {
             input = new JWSInput(tokenString);
-        } catch (Exception e) {
+        } catch (JWSInputException e) {
             throw new VerificationException("Couldn't parse token", e);
         }
         if (!isPublicKeyValid(input, realmKey)) throw new VerificationException("Invalid token signature.");
@@ -30,7 +31,7 @@ public class RSATokenVerifier {
         AccessToken token;
         try {
             token = input.readJsonContent(AccessToken.class);
-        } catch (IOException e) {
+        } catch (JWSInputException e) {
             throw new VerificationException("Couldn't parse token signature", e);
         }
         String user = token.getSubject();

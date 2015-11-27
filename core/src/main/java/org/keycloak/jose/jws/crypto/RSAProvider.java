@@ -64,7 +64,7 @@ public class RSAProvider implements SignatureProvider {
             verifier.update(input.getEncodedSignatureInput().getBytes("UTF-8"));
             return verifier.verify(input.getSignature());
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            return false;
         }
 
     }
