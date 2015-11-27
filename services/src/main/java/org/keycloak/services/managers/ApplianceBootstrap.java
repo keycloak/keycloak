@@ -43,6 +43,7 @@ public class ApplianceBootstrap {
             realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
             realm.setSsoSessionIdleTimeout(1800);
             realm.setAccessTokenLifespan(60);
+            realm.setAccessTokenLifespanForImplicitFlow(Constants.DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT);
             realm.setSsoSessionMaxLifespan(36000);
             realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
             realm.setAccessCodeLifespan(60);

@@ -56,7 +56,9 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         client.setClientId(clientId);
         client.setEnabled(true);
         client.setConsentRequired(false);
-        client.setDirectGrantsOnly(false);
+        client.setStandardFlowEnabled(true);
+        client.setImplicitFlowEnabled(false);
+        client.setDirectAccessGrantsEnabled(true);
         
         client.setProtocol(OIDC);
         

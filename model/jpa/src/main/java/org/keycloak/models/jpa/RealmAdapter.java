@@ -361,6 +361,16 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public int getAccessTokenLifespanForImplicitFlow() {
+        return realm.getAccessTokenLifespanForImplicitFlow();
+    }
+
+    @Override
+    public void setAccessTokenLifespanForImplicitFlow(int seconds) {
+        realm.setAccessTokenLifespanForImplicitFlow(seconds);
+    }
+
+    @Override
     public int getSsoSessionIdleTimeout() {
         return realm.getSsoSessionIdleTimeout();
     }

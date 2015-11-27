@@ -205,6 +205,7 @@ public class ModelToRepresentation {
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
         rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());
         rep.setAccessTokenLifespan(realm.getAccessTokenLifespan());
+        rep.setAccessTokenLifespanForImplicitFlow(realm.getAccessTokenLifespanForImplicitFlow());
         rep.setSsoSessionIdleTimeout(realm.getSsoSessionIdleTimeout());
         rep.setSsoSessionMaxLifespan(realm.getSsoSessionMaxLifespan());
         rep.setOfflineSessionIdleTimeout(realm.getOfflineSessionIdleTimeout());

@@ -26,6 +26,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -455,14 +456,24 @@ public class TokenManager {
         if (session != null) {
             token.setSessionState(session.getId());
         }
-        if (realm.getAccessTokenLifespan() > 0) {
-            token.expiration(Time.currentTime() + realm.getAccessTokenLifespan());
+        int tokenLifespan = getTokenLifespan(realm, clientSession);
+        if (tokenLifespan > 0) {
+            token.expiration(Time.currentTime() + tokenLifespan);
         }
         Set<String> allowedOrigins = client.getWebOrigins();
         if (allowedOrigins != null) {
             token.setAllowedOrigins(WebOriginsUtils.resolveValidWebOrigins(uriInfo, client));
         }
         return token;
+    }
+
+    private int getTokenLifespan(RealmModel realm, ClientSessionModel clientSession) {
+        boolean implicitFlow = false;
+        String responseType = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+        if (responseType != null) {
+            implicitFlow = OIDCResponseType.parse(responseType).isImplicitFlow();
+        }
+        return implicitFlow ? realm.getAccessTokenLifespanForImplicitFlow() : realm.getAccessTokenLifespan();
     }
 
     protected void addComposites(AccessToken token, RoleModel role) {
@@ -582,9 +593,7 @@ public class TokenManager {
             idToken.issuer(accessToken.getIssuer());
             idToken.setNonce(accessToken.getNonce());
             idToken.setSessionState(accessToken.getSessionState());
-            if (realm.getAccessTokenLifespan() > 0) {
-                idToken.expiration(Time.currentTime() + realm.getAccessTokenLifespan());
-            }
+            idToken.expiration(accessToken.getExpiration());
             transformIDToken(session, idToken, realm, client, userSession.getUser(), userSession, clientSession);
             return this;
         }

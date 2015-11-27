@@ -154,11 +154,10 @@ public class OIDCLoginProtocol implements LoginProtocol {
         }
 
         // Implicit or hybrid flow
-        if (responseType.hasResponseType(OIDCResponseType.TOKEN) || responseType.hasResponseType(OIDCResponseType.ID_TOKEN) || responseType.hasResponseType(OIDCResponseType.REFRESH_TOKEN)) {
+        if (responseType.isImplicitOrHybridFlow()) {
             TokenManager tokenManager = new TokenManager();
             AccessTokenResponse res = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSession)
                     .generateAccessToken()
-                    .generateRefreshToken()
                     .generateIDToken()
                     .build();
 
@@ -171,12 +170,6 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 redirectUri.addParam("token_type", res.getTokenType());
                 redirectUri.addParam("session-state", res.getSessionState());
                 redirectUri.addParam("expires_in", String.valueOf(res.getExpiresIn()));
-            }
-
-            // Not OIDC standard, but supported
-            if (responseType.hasResponseType(OIDCResponseType.REFRESH_TOKEN)) {
-                redirectUri.addParam("refresh_token", res.getRefreshToken());
-                redirectUri.addParam("refresh_expires_in", String.valueOf(res.getRefreshExpiresIn()));
             }
 
             redirectUri.addParam("not-before-policy", String.valueOf(res.getNotBeforePolicy()));

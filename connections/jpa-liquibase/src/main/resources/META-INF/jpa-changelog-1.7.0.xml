@@ -51,6 +51,11 @@
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+
+        <addColumn tableName="REALM">
+            <column name="ACCESS_TOKEN_LIFE_IMPLICIT" type="INT" defaultValueNumeric="0"/>
+        </addColumn>
+
         <dropColumn tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LGN_MD"/>
 
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_GROUP" tableName="KEYCLOAK_GROUP"/>

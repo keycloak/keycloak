@@ -51,14 +51,15 @@
                             kc.responseType = 'code';
                             break;
                         case 'implicit':
-                            kc.responseType = 'id_token token refresh_token';
+                            kc.responseType = 'id_token token';
                             break;
                         case 'hybrid':
-                            kc.responseType = 'code id_token token refresh_token';
+                            kc.responseType = 'code id_token token';
                             break;
                         default:
                             throw 'Invalid value for flow';
                     }
+                    kc.flow = initOptions.flow;
                 }
             }
 
@@ -67,9 +68,8 @@
             }
             if (!kc.responseType) {
                 kc.responseType = 'code';
+                kc.flow = 'standard';
             }
-
-            console.log('responseMode=' + kc.responseMode + ', responseType=' + kc.responseType);
 
             var promise = createPromise();
 
@@ -128,7 +128,7 @@
                     return;
                 } else if (initOptions) {
                     if (initOptions.token || initOptions.refreshToken) {
-                        setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
+                        setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken, false);
 
                         if (loginIframe.enable) {
                             setupCheckLoginIframe().success(function() {
@@ -313,7 +313,7 @@
         }
 
         kc.isTokenExpired = function(minValidity) {
-            if (!kc.tokenParsed || !kc.refreshToken) {
+            if (!kc.tokenParsed || (!kc.refreshToken && kc.flow != 'implicit' )) {
                 throw 'Not authenticated';
             }
 
@@ -363,7 +363,7 @@
                                     timeLocal = (timeLocal + new Date().getTime()) / 2;
 
                                     var tokenResponse = JSON.parse(req.responseText);
-                                    setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token']);
+                                    setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token'], true);
 
                                     kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
 
@@ -401,7 +401,7 @@
 
         kc.clearToken = function() {
             if (kc.token) {
-                setToken(null, null, null);
+                setToken(null, null, null, true);
                 kc.onAuthLogout && kc.onAuthLogout();
                 if (kc.loginRequired) {
                     kc.login();
@@ -432,7 +432,19 @@
 
             var timeLocal = new Date().getTime();
 
-            if (code) {
+            if (error) {
+                if (prompt != 'none') {
+                    kc.onAuthError && kc.onAuthError();
+                    promise && promise.setError();
+                } else {
+                    promise && promise.setSuccess();
+                }
+                return;
+            } else if ((kc.flow != 'standard') && (oauth.access_token || oauth.id_token)) {
+                authSuccess(oauth.access_token, null, oauth.id_token, true);
+            }
+
+            if ((kc.flow != 'implicit') && code) {
                 var params = 'code=' + code + '&grant_type=authorization_code';
                 var url = getRealmUrl() + '/protocol/openid-connect/token';
 
@@ -455,7 +467,7 @@
                         if (req.status == 200) {
 
                             var tokenResponse = JSON.parse(req.responseText);
-                            authSuccess(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token'])
+                            authSuccess(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token'], kc.flow === 'standard');
                         } else {
                             kc.onAuthError && kc.onAuthError();
                             promise && promise.setError();
@@ -464,22 +476,12 @@
                 };
 
                 req.send(params);
-            } else if (error) {
-                if (prompt != 'none') {
-                    kc.onAuthError && kc.onAuthError();
-                    promise && promise.setError();
-                } else {
-                    promise && promise.setSuccess();
-                }
-            } else if (oauth.access_token || oauth.id_token || oauth.refresh_token) {
-                authSuccess(oauth.access_token, oauth.refresh_token, oauth.id_token);
             }
 
-
-            function authSuccess(accessToken, refreshToken, idToken) {
+            function authSuccess(accessToken, refreshToken, idToken, fulfillPromise) {
                 timeLocal = (timeLocal + new Date().getTime()) / 2;
 
-                setToken(accessToken, refreshToken, idToken);
+                setToken(accessToken, refreshToken, idToken, true);
 
                 if ((kc.tokenParsed && kc.tokenParsed.nonce != oauth.storedNonce) ||
                     (kc.refreshTokenParsed && kc.refreshTokenParsed.nonce != oauth.storedNonce) ||
@@ -491,8 +493,10 @@
                 } else {
                     kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
 
-                    kc.onAuthSuccess && kc.onAuthSuccess();
-                    promise && promise.setSuccess();
+                    if (fulfillPromise) {
+                        kc.onAuthSuccess && kc.onAuthSuccess();
+                        promise && promise.setSuccess();
+                    }
                 }
             }
 
@@ -561,7 +565,12 @@
             return promise.promise;
         }
 
-        function setToken(token, refreshToken, idToken) {
+        function setToken(token, refreshToken, idToken, useTokenTime) {
+            if (kc.tokenTimeoutHandle) {
+                clearTimeout(kc.tokenTimeoutHandle);
+                kc.tokenTimeoutHandle = null;
+            }
+
             if (token) {
                 kc.token = token;
                 kc.tokenParsed = decodeToken(token);
@@ -574,6 +583,13 @@
                 kc.subject = kc.tokenParsed.sub;
                 kc.realmAccess = kc.tokenParsed.realm_access;
                 kc.resourceAccess = kc.tokenParsed.resource_access;
+
+                if (kc.onTokenExpired) {
+                    var start = useTokenTime ? kc.tokenParsed.iat : (new Date().getTime() / 1000);
+                    var expiresIn = kc.tokenParsed.exp - start;
+                    kc.tokenTimeoutHandle = setTimeout(kc.onTokenExpired, expiresIn * 1000);
+                }
+
             } else {
                 delete kc.token;
                 delete kc.tokenParsed;
@@ -1022,8 +1038,6 @@
                     }
                 }
 
-                console.log("OAUTH: ");
-                console.log(oauth);
                 return oauth;
             }
         }

@@ -14,10 +14,9 @@ public class OIDCResponseType {
     public static final String CODE = OIDCLoginProtocol.CODE_PARAM;
     public static final String TOKEN = "token";
     public static final String ID_TOKEN = "id_token";
-    public static final String REFRESH_TOKEN = "refresh_token"; // Not officially supported by OIDC
     public static final String NONE = "none";
 
-    private static final List<String> ALLOWED_RESPONSE_TYPES = Arrays.asList(CODE, TOKEN, ID_TOKEN, REFRESH_TOKEN, NONE);
+    private static final List<String> ALLOWED_RESPONSE_TYPES = Arrays.asList(CODE, TOKEN, ID_TOKEN, NONE);
 
     private final List<String> responseTypes;
 
@@ -29,7 +28,7 @@ public class OIDCResponseType {
 
     public static OIDCResponseType parse(String responseTypeParam) {
         if (responseTypeParam == null) {
-            throw new IllegalStateException("response_type is null");
+            throw new IllegalArgumentException("response_type is null");
         }
 
         String[] responseTypes = responseTypeParam.trim().split(" ");
@@ -38,10 +37,28 @@ public class OIDCResponseType {
             if (ALLOWED_RESPONSE_TYPES.contains(current)) {
                 allowedTypes.add(current);
             } else {
-                throw new IllegalStateException("Unsupported response_type: " + responseTypeParam);
+                throw new IllegalArgumentException("Unsupported response_type: " + responseTypeParam);
             }
         }
+
+        validateAllowedTypes(allowedTypes);
+
         return new OIDCResponseType(allowedTypes);
+    }
+
+    private static void validateAllowedTypes(List<String> responseTypes) {
+        if (responseTypes.size() == 0) {
+            throw new IllegalStateException("No responseType provided");
+        }
+        if (responseTypes.contains(NONE) && responseTypes.size() > 1) {
+            throw new IllegalArgumentException("None not allowed with some other response_type");
+        }
+        if (responseTypes.contains(ID_TOKEN) && responseTypes.size() == 1) {
+            throw new IllegalArgumentException("Not supported to use response_type=id_token alone");
+        }
+        if (responseTypes.contains(TOKEN) && responseTypes.size() == 1) {
+            throw new IllegalArgumentException("Not supported to use response_type=token alone");
+        }
     }
 
 
@@ -51,7 +68,11 @@ public class OIDCResponseType {
 
 
     public boolean isImplicitOrHybridFlow() {
-        return hasResponseType(TOKEN) || hasResponseType(ID_TOKEN) || hasResponseType(REFRESH_TOKEN);
+        return hasResponseType(TOKEN) || hasResponseType(ID_TOKEN);
+    }
+
+    public boolean isImplicitFlow() {
+        return hasResponseType(TOKEN) && hasResponseType(ID_TOKEN) && !hasResponseType(CODE);
     }
 
 

@@ -172,8 +172,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             throw new ErrorPageException(session, Messages.STANDARD_FLOW_DISABLED);
         }
 
-        if ((parsedResponseType.hasResponseType(OIDCResponseType.TOKEN) || parsedResponseType.hasResponseType(OIDCResponseType.ID_TOKEN) || parsedResponseType.hasResponseType(OIDCResponseType.REFRESH_TOKEN))
-            && !client.isImplicitFlowEnabled()) {
+        if (parsedResponseType.isImplicitOrHybridFlow() && !client.isImplicitFlowEnabled()) {
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorPageException(session, Messages.IMPLICIT_FLOW_DISABLED);
         }

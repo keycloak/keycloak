@@ -2,6 +2,7 @@
     "realm": "test-realm",
     "enabled": true,
     "accessTokenLifespan": 6000,
+    "accessTokenLifespanForImplicitFlow": 1500,
     "accessCodeLifespan": 30,
     "accessCodeLifespanUserAction": 600,
     "offlineSessionIdleTimeout": 3600000,

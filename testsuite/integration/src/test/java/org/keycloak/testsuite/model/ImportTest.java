@@ -74,6 +74,7 @@ public class ImportTest extends AbstractModelTest {
     public static void assertDataImportedInRealm(KeycloakSession session, RealmModel realm) {
         Assert.assertTrue(realm.isVerifyEmail());
         Assert.assertEquals(3600000, realm.getOfflineSessionIdleTimeout());
+        Assert.assertEquals(1500, realm.getAccessTokenLifespanForImplicitFlow());
 
         List<RequiredCredentialModel> creds = realm.getRequiredCredentials();
         Assert.assertEquals(1, creds.size());
@@ -351,6 +352,7 @@ public class ImportTest extends AbstractModelTest {
         RealmModel realm =manager.importRealm(rep);
 
         Assert.assertEquals(600, realm.getAccessCodeLifespanUserAction());
+        Assert.assertEquals(Constants.DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT, realm.getAccessTokenLifespanForImplicitFlow());
         Assert.assertEquals(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT, realm.getOfflineSessionIdleTimeout());
         verifyRequiredCredentials(realm.getRequiredCredentials(), "password");
     }
