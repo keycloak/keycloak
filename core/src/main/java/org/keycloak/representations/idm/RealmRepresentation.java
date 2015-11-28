@@ -12,6 +12,7 @@ public class RealmRepresentation {
     protected Integer notBefore;
     protected Boolean revokeRefreshToken;
     protected Integer accessTokenLifespan;
+    protected Integer accessTokenLifespanForImplicitFlow;
     protected Integer ssoSessionIdleTimeout;
     protected Integer ssoSessionMaxLifespan;
     protected Integer offlineSessionIdleTimeout;
@@ -185,6 +186,14 @@ public class RealmRepresentation {
 
     public void setAccessTokenLifespan(Integer accessTokenLifespan) {
         this.accessTokenLifespan = accessTokenLifespan;
+    }
+
+    public Integer getAccessTokenLifespanForImplicitFlow() {
+        return accessTokenLifespanForImplicitFlow;
+    }
+
+    public void setAccessTokenLifespanForImplicitFlow(Integer accessTokenLifespanForImplicitFlow) {
+        this.accessTokenLifespanForImplicitFlow = accessTokenLifespanForImplicitFlow;
     }
 
     public Integer getSsoSessionIdleTimeout() {

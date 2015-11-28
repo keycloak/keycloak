@@ -369,6 +369,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public int getAccessTokenLifespanForImplicitFlow() {
+        return realm.getAccessTokenLifespanForImplicitFlow();
+    }
+
+    @Override
+    public void setAccessTokenLifespanForImplicitFlow(int seconds) {
+        realm.setAccessTokenLifespanForImplicitFlow(seconds);
+        updateRealm();
+    }
+
+    @Override
     public int getAccessCodeLifespan() {
         return realm.getAccessCodeLifespan();
     }
@@ -799,6 +810,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         clientEntity.setClientId(clientId);
         clientEntity.setRealmId(getId());
         clientEntity.setEnabled(true);
+        clientEntity.setStandardFlowEnabled(true);
+        clientEntity.setDirectAccessGrantsEnabled(true);
         getMongoStore().insertEntity(clientEntity, invocationContext);
 
         final ClientModel model = new ClientAdapter(session, this, clientEntity, invocationContext);

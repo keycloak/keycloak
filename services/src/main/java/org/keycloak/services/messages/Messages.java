@@ -110,7 +110,9 @@ public class Messages {
 
     public static final String BEARER_ONLY = "bearerOnlyMessage";
 
-    public static final String DIRECT_GRANTS_ONLY = "directGrantsOnlyMessage";
+    public static final String STANDARD_FLOW_DISABLED = "standardFlowDisabledMessage";
+
+    public static final String IMPLICIT_FLOW_DISABLED = "implicitFlowDisabledMessage";
 
     public static final String INVALID_REDIRECT_URI = "invalidRedirectUriMessage";
 

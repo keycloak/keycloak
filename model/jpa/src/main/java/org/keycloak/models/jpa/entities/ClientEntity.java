@@ -95,14 +95,20 @@ public class ClientEntity {
     @Column(name="MANAGEMENT_URL")
     private String managementUrl;
 
-    @Column(name="DIRECT_GRANTS_ONLY")
-    protected boolean directGrantsOnly;
-
     @Column(name="BEARER_ONLY")
     private boolean bearerOnly;
 
     @Column(name="CONSENT_REQUIRED")
     private boolean consentRequired;
+
+    @Column(name="STANDARD_FLOW_ENABLED")
+    private boolean standardFlowEnabled;
+
+    @Column(name="IMPLICIT_FLOW_ENABLED")
+    private boolean implicitFlowEnabled;
+
+    @Column(name="DIRECT_ACCESS_GRANTS_ENABLED")
+    private boolean directAccessGrantsEnabled;
 
     @Column(name="SERVICE_ACCOUNTS_ENABLED")
     private boolean serviceAccountsEnabled;
@@ -339,20 +345,36 @@ public class ClientEntity {
         this.consentRequired = consentRequired;
     }
 
+    public boolean isStandardFlowEnabled() {
+        return standardFlowEnabled;
+    }
+
+    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
+        this.standardFlowEnabled = standardFlowEnabled;
+    }
+
+    public boolean isImplicitFlowEnabled() {
+        return implicitFlowEnabled;
+    }
+
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        this.implicitFlowEnabled = implicitFlowEnabled;
+    }
+
+    public boolean isDirectAccessGrantsEnabled() {
+        return directAccessGrantsEnabled;
+    }
+
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        this.directAccessGrantsEnabled = directAccessGrantsEnabled;
+    }
+
     public boolean isServiceAccountsEnabled() {
         return serviceAccountsEnabled;
     }
 
     public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
-    }
-
-    public boolean isDirectGrantsOnly() {
-        return directGrantsOnly;
-    }
-
-    public void setDirectGrantsOnly(boolean directGrantsOnly) {
-        this.directGrantsOnly = directGrantsOnly;
     }
 
     public int getNodeReRegistrationTimeout() {

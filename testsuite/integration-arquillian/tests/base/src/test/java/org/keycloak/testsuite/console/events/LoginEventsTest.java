@@ -55,7 +55,7 @@ public class LoginEventsTest extends AbstractConsoleTest {
 
         List<WebElement> resultList = loginEventsPage.table().rows();
 
-        assertEquals(7, resultList.size());
+        assertEquals(8, resultList.size());
         resultList.get(0).findElement(By.xpath("//td[text()='LOGIN']"));
         resultList.get(0).findElement(By.xpath("//td[text()='User']/../td[text()='" + testUser.getId() + "']"));
         resultList.get(0).findElement(By.xpath("//td[text()='Client']/../td[text()='security-admin-console']"));

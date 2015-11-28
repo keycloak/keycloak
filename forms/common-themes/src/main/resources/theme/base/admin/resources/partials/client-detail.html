@@ -59,13 +59,6 @@
                 </div>
                 <kc-tooltip>{{:: 'consent-required.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix block">
-                <label class="col-md-2 control-label" for="directGrantsOnly">{{:: 'direct-grants-only' | translate}}</label>
-                <div class="col-sm-6">
-                    <input ng-model="client.directGrantsOnly" name="directGrantsOnly" id="directGrantsOnly" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
-                </div>
-                <kc-tooltip>{{:: 'direct-grants-only.tooltip' | translate}}</kc-tooltip>
-            </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="protocol">{{:: 'client-protocol' | translate}}</label>
                 <div class="col-sm-6">
@@ -91,6 +84,27 @@
                     </div>
                 </div>
                 <kc-tooltip>{{:: 'access-type.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="protocol == 'openid-connect' && !client.bearerOnly">
+                <label class="col-md-2 control-label" for="standardFlowEnabled">{{:: 'standard-flow-enabled' | translate}}</label>
+                <kc-tooltip>{{:: 'standard-flow-enabled.tooltip' | translate}}</kc-tooltip>
+                <div class="col-md-6">
+                    <input ng-model="client.standardFlowEnabled" name="standardFlowEnabled" id="standardFlowEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+            </div>
+            <div class="form-group" data-ng-show="protocol == 'openid-connect' && client.publicClient && !client.bearerOnly">
+                <label class="col-md-2 control-label" for="implicitFlowEnabled">{{:: 'implicit-flow-enabled' | translate}}</label>
+                <kc-tooltip>{{:: 'implicit-flow-enabled.tooltip' | translate}}</kc-tooltip>
+                <div class="col-md-6">
+                    <input ng-model="client.implicitFlowEnabled" name="implicitFlowEnabled" id="implicitFlowEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+            </div>
+            <div class="form-group" data-ng-show="protocol == 'openid-connect' && !client.bearerOnly">
+                <label class="col-md-2 control-label" for="directAccessGrantsEnabled">{{:: 'direct-access-grants-enabled' | translate}}</label>
+                <kc-tooltip>{{:: 'direct-access-grants-enabled.tooltip' | translate}}</kc-tooltip>
+                <div class="col-md-6">
+                    <input ng-model="client.directAccessGrantsEnabled" name="directAccessGrantsEnabled" id="directAccessGrantsEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
             </div>
             <div class="form-group" data-ng-show="protocol == 'openid-connect' && !client.publicClient && !client.bearerOnly">
                 <label class="col-md-2 control-label" for="serviceAccountsEnabled">{{:: 'service-accounts-enabled' | translate}}</label>
@@ -202,7 +216,7 @@
                 <kc-tooltip>{{:: 'root-url.tooltip' | translate}}</kc-tooltip>
             </div>
 
-            <div class="form-group clearfix block" data-ng-hide="client.bearerOnly || client.directGrantsOnly">
+            <div class="form-group clearfix block" data-ng-hide="client.bearerOnly || (!client.standardFlowEnabled && !client.implicitFlowEnabled)">
                 <label class="col-md-2 control-label" for="newRedirectUri"><span class="required" data-ng-show="protocol != 'saml'">*</span> {{:: 'valid-redirect-uris' | translate}}</label>
 
                 <div class="col-sm-6">
