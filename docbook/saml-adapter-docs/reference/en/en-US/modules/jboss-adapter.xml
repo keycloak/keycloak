@@ -38,7 +38,7 @@ $ unzip keycloak-saml-eap6-adapter-dist.zip
         from the server's bin directory:
 <programlisting>
 $ cd $JBOSS_HOME/bin
-$ jboss-cli.sh -c --file=adapter-install.cli
+$ jboss-cli.sh -c --file=adapter-install-saml.cli
 </programlisting>
         The script will add the extension, subsystem, and optional security-domain as described below.
     </para>
