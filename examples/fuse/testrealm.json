@@ -182,6 +182,7 @@
             "clientId": "ssh-jmx-admin-client",
             "enabled": true,
             "publicClient": false,
+            "standardFlowEnabled": false,
             "directAccessGrantsEnabled": true,
             "secret": "password"
         }

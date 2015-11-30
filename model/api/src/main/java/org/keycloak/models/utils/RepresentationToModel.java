@@ -460,6 +460,10 @@ public class RepresentationToModel {
             newRealm.setClientAuthenticationFlow(newRealm.getFlowByAlias(rep.getClientAuthenticationFlow()));
         }
 
+        // Added in 1.7
+        if (newRealm.getFlowByAlias(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW) == null) {
+            DefaultAuthenticationFlows.firstBrokerLoginFlow(newRealm, true);
+        }
     }
 
     private static void convertDeprecatedSocialProviders(RealmRepresentation rep) {

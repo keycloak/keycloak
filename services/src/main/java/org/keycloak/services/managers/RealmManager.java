@@ -400,7 +400,16 @@ public class RealmManager implements RealmImporter {
 
         if (!hasBrokerClient(rep)) setupBrokerService(realm);
         if (!hasAdminConsoleClient(rep)) setupAdminConsole(realm);
-        if (!hasAdminCliClient(rep)) setupAdminCli(realm);
+
+        boolean postponeAdminCliSetup = false;
+        if (!hasAdminCliClient(rep)) {
+            if (hasRealmAdminManagementClient(rep)) {
+                postponeAdminCliSetup = true;
+            } else {
+                setupAdminCli(realm);
+            }
+        }
+
         if (!hasRealmRole(rep, Constants.OFFLINE_ACCESS_ROLE)) setupOfflineTokens(realm);
 
         RepresentationToModel.importRealm(session, rep, realm);
@@ -413,6 +422,10 @@ public class RealmManager implements RealmImporter {
         // I need to postpone impersonation because it needs "realm-management" client and its roles set
         if (postponeImpersonationSetup) {
             setupImpersonationService(realm);
+        }
+
+        if (postponeAdminCliSetup) {
+            setupAdminCli(realm);
         }
 
         setupAuthenticationFlows(realm);

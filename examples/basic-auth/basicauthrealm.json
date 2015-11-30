@@ -43,6 +43,7 @@
     "clients": [
         {
             "clientId": "basic-auth-service",
+            "standardFlowEnabled": false,
             "directAccessGrantsEnabled": true,
             "enabled": true,
             "adminUrl": "/basicauth",

@@ -178,6 +178,7 @@
             "clientId": "admin-client",
             "enabled": true,
             "publicClient": true,
+            "standardFlowEnabled": false,
             "directAccessGrantsEnabled": true
         },
         {

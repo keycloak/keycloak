@@ -48,7 +48,7 @@
 
         <addColumn tableName="IDENTITY_PROVIDER">
             <column name="FIRST_BROKER_LOGIN_FLOW_ID" type="VARCHAR(36)">
-                <constraints nullable="false"/>
+                <constraints nullable="true"/>
             </column>
         </addColumn>
 
@@ -56,6 +56,7 @@
             <column name="ACCESS_TOKEN_LIFE_IMPLICIT" type="INT" defaultValueNumeric="0"/>
         </addColumn>
 
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LGN_MD" />
         <dropColumn tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LGN_MD"/>
 
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_GROUP" tableName="KEYCLOAK_GROUP"/>
